@@ -51,6 +51,13 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 031 | On Linux, package tests need `-Xswiftc -DSQLITE_DISABLE_SNAPSHOT` (Ubuntu SQLite lacks the snapshot API); `ci.sh`/`Makefile` add it automatically. Apple builds unaffected. | Applied |
 | 032 | Not built in M1: private/no-history session mode (PRD item 6), content-free telemetry (item 8), conflict highlighting beyond listing all matches. | Open — owner to schedule |
 
+## Voice and brain decisions (owner, 2026-10-08)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 033 | **Brain: OpenAI** is the preferred text/reasoning provider for M2, behind the provider-neutral `AssistantClient`. Model, gateway host and spend cap are not yet chosen; key stays server-side. | Provider chosen by owner — model, host, cap open |
+| 034 | **Voice: ElevenLabs library voice "Eric - Laid back, young, casual"** (`fFTWtnfNJV661LpjMrzv`, English) is the preferred Doddy voice, chosen after listening to preview lines (sample lines are persona previews, not shipped behaviour). Planned for M3; not integrated. | Provisional — check library-voice licence for commercial app use, Polish support, and persona `owner_signoff` before shipping |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.
