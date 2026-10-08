@@ -23,6 +23,13 @@ device token; RLS is on for all tables with no policies (service role only).
    Optional overrides: `OPENAI_MODEL` (default `gpt-6-luna`), `DEVICE_DAILY_LIMIT`, `GLOBAL_DAILY_LIMIT`.
 
 ## Verified (2026-10-08, curl against the deployed function)
-GET → 405; no auth → 401; register → token; bad body → 400; unknown token → 401; valid request without key → 502.
-**Not verified:** a real model reply, the model name `gpt-6-luna` and the `max_completion_tokens` /
-`response_format` parameters for it, streaming, timeout path, rate-limit exhaustion, EU residency of the project.
+- GET -> 405; no auth -> 401; register -> token; bad body -> 400; unknown token -> 401.
+- With the OpenAI key installed (first paste gave upstream `401 invalid_api_key`; replaced key works):
+  - EN turn -> 200 in ~3.4 s, in-persona reply, no citations.
+  - PL turn -> 200 in ~3.0 s, reply in Polish.
+  - Recall turn with one memory containing a prompt-injection sentence -> 200 in ~1.6 s, answered from the memory,
+    cited the submitted id, ignored the injected instruction.
+- Model `gpt-6-luna` accepted `max_completion_tokens`, `response_format: json_object` and `store:false`.
+
+**Not verified:** EU data residency of the OpenAI project, the 25 s timeout path, device/global limit exhaustion,
+behaviour under concurrent load, streaming (not implemented), reply quality beyond these three samples, the iOS client.
