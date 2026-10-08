@@ -45,6 +45,29 @@ quality, cost per minute). Switching later is cheap if the interface is neutral.
 the app. For Polish users, create the OpenAI project with **EU data residency** (only possible when the project is
 created) and confirm Realtime is covered.
 
+## 2b. Update: owner has an ElevenLabs Creator plan
+
+ElevenLabs **Agents** (voice agent platform) changes the recommendation for V1.
+
+| | ElevenLabs Agents on Creator |
+|---|---|
+| Included | **275 agent minutes / month**, 10 concurrent conversations (official pricing page) |
+| After that | $0.08 / min (burst over concurrency $0.16 / min) |
+| LLM ("brain") | Not included: billed on top from your credits, by the model you pick (OpenAI, Google, Anthropic and others are selectable in the agent settings) |
+| Voice | Any ElevenLabs voice, or a **custom Doddy voice** made with Voice Design / cloning: the character gets his own recognisable voice |
+| iPhone SDK | Official Swift package (`elevenlabs-swift-sdk` 2.x, iOS 14+): `ElevenLabs.startConversation(auth: .conversationToken(token), …)`; it handles the audio connection |
+| Phone-side tools | Client tools defined in the agent; the app receives `ClientToolCallEvent` (`toolName`, `getParameters()`) and answers with `sendToolResult(for:result:isError:)`. Doddy's confirm → act → verify rule still applies |
+| Keys | Release builds need a token from your server. A **public agent ID needs no server**, which is fine for a private dev prototype on your own phone only, because anyone holding the ID could spend your minutes |
+| Gaps | Data residency / zero retention only on Enterprise; it chains speech-to-text → LLM → speech instead of one speech-to-speech model, so interruptions and latency must be compared against OpenAI/Gemini |
+
+**Revised recommendation:** build V1 on **ElevenLabs Agents** behind the provider-neutral `VoiceSession`:
+already paid for, about 4.5 hours a month included, a unique Doddy voice, Polish-capable, and the SDK does the hard
+audio work. Prototype with a public agent ID on your own phone (no server), then add the token server before
+anyone else uses it. Keep the bake-off: same Polish/English phrases against `gpt-realtime-2.1` (and optionally
+`gemini-3.8-live`) to judge interruptions and latency.
+
+Sources: https://elevenlabs.io/pricing/agents , https://elevenlabs.io/docs/eleven-agents/libraries/swift , https://github.com/elevenlabs/elevenlabs-swift-sdk
+
 ## 3. Bringing Doddy to the Dynamic Island
 
 **Possible, with real limits.** The Island shows a **Live Activity**: Doddy's face/state (listening, thinking,
@@ -99,8 +122,8 @@ so Siri and Shortcuts can use them.
 | **V4 iPhone tools** | One at a time with confirm + receipt: Reminders → Calendar → timers/alarms → "run my Shortcut" → weather/places | Which tools first |
 
 ## 6. Decisions needed before V1
-1. **Provider:** start with OpenAI `gpt-realtime-2.1` and do the bake-off vs mini and Gemini 3.8 Live? (recommended)
-2. **Token server:** where to host it (e.g. a small serverless function). This is the first paid/cloud piece of the project.
+1. **Provider:** start with ElevenLabs Agents (owner already has Creator), with a bake-off against OpenAI `gpt-realtime-2.1`? (recommended, see 2b)
+2. **Token server:** not needed for the private prototype (public agent ID); needed before anyone else uses Doddy. Where to host it.
 3. **Budget:** monthly spend cap and per-user minute limit.
 4. **Privacy:** EU data residency project; what Doddy may send (proposal: only the conversation + memories it searched for, never the whole memory store).
 5. **Languages:** Polish and English at launch?
