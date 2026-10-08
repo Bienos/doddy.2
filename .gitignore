@@ -1,0 +1,19 @@
+# Build output
+.build/
+**/.build/
+.swiftpm/
+DerivedData/
+build/
+# Xcode (the project is generated from project.yml; see docs/BUILD_AND_TEST.md)
+Doddy.xcodeproj/
+*.xcworkspace/xcuserdata/
+xcuserdata/
+*.xcuserstate
+# Local secrets / environment (none are required or used)
+.env
+.env.*
+*.p12
+*.mobileprovision
+*.xcconfig.local
+# OS
+.DS_Store

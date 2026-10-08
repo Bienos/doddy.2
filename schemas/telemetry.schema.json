@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Doddy content-free event envelope proposal",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "name",
+    "relativeDayBucket",
+    "resultKind"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "name": {
+      "enum": [
+        "app_started",
+        "memory_save_requested",
+        "memory_save_succeeded",
+        "memory_save_failed",
+        "memory_recall_requested",
+        "memory_recall_hit",
+        "memory_recall_miss",
+        "memory_correction_succeeded",
+        "memory_deleted",
+        "export_succeeded",
+        "ai_request_failed",
+        "tool_confirmation_shown",
+        "tool_receipt_verified",
+        "privacy_session_started"
+      ]
+    },
+    "relativeDayBucket": {
+      "type": "string",
+      "pattern": "^(D[0-9]+|unknown)$"
+    },
+    "resultKind": {
+      "enum": [
+        "succeeded",
+        "failed",
+        "cancelled",
+        "not_applicable",
+        "unknown"
+      ]
+    },
+    "latencyBucket": {
+      "enum": [
+        "lt250ms",
+        "250to1000ms",
+        "1to5s",
+        "gt5s",
+        "unknown"
+      ]
+    },
+    "errorCategory": {
+      "enum": [
+        "none",
+        "validation",
+        "storage",
+        "network",
+        "denial",
+        "timeout",
+        "unknown"
+      ]
+    },
+    "localeBucket": {
+      "enum": [
+        "pl",
+        "en",
+        "other",
+        "unknown"
+      ]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+id,milestone,priority,task,depends_on,definition_of_done,status
+M0-001,M0,P0,Create native Xcode/SwiftUI app and test target,,xcodebuild list/build and tests evidenced,proposed
+M0-002,M0,P0,"Repository guardrails, config, README, no secret scanning",M0-001,AGENTS/CLAUDE guidance and .gitignore present,proposed
+M0-003,M0,P0,"Accessible static Home, Memories, Settings screens",M0-001,Real UI launches; no fake connected states,proposed
+M0-004,M0,P0,Domain models/interfaces and error types,M0-001,Unit tests compile; contracts documented,proposed
+M0-005,M0,P0,Candidate brand tokens / static character asset,M0-003,Contrast and candidate status visible,proposed
+M1-001,M1,P0,Versioned GRDB schema and transactional store,M0-004,Restart and failures do not create false success,proposed
+M1-002,M1,P0,Explicit Unicode capture validation,M1-001,Save errors and max-size tests pass,proposed
+M1-003,M1,P0,"Source metadata, raw/current text, edits",M1-001,Provenance survives edit and relaunch,proposed
+M1-004,M1,P0,FTS/lexical candidate retrieval,M1-001,Source backed real record IDs only,proposed
+M1-005,M1,P0,Memory UI search/detail/edit/delete,M1-002;M1-003;M1-004,All M1 UX states accessible,proposed
+M1-006,M1,P0,Export and delete-all with cache invalidation,M1-005,Deleted results absent after restart,proposed
+M1-007,M1,P0,Failure injection migration/index/data protection,M1-001,Recorded tests A-04;A-10 pass,proposed
+M2-001,M2,P0,Provider selection + privacy and cost decision,M1-007,Approved DPA/quotas/route decision,blocked-owner
+M2-002,M2,P0,Secure server-side model key gateway,M2-001,No client keys; rate limit verified,proposed
+M2-003,M2,P0,Real text AI + permissioned memory retrieval,M2-002,Response from real provider; citations verified,proposed
+M2-004,M2,P0,Network and prompt injection failure tests,M2-003,A-14..16 pass,proposed
+M3-001,M3,P1,Voice path benchmark and selection,M2-004,Real device evidence for PL/EN,blocked-owner
+M3-002,M3,P1,"Foreground ASR/TTS, permissions, cancellation",M3-001,Real mic and denial test passed,proposed
+M3-003,M3,P1,Audio interruption/device and accessibility QA,M3-002,A-17..19 on physical iPhone,proposed
+M4-001,M4,P1,Typed reminder proposal and time clarification,M3-003,No inferred ambiguous due time,proposed
+M4-002,M4,P1,"EventKit adapter, permission, receipt",M4-001,Verified external ID after save,proposed
+M4-003,M4,P1,"Idempotency, unknown outcomes, retry recovery",M4-002,No duplicates from simulated timeout,proposed
+M5-001,M5,P1,Privacy security legal beta readiness,M4-003,Qualified review and documented gates,blocked-owner
+M5-002,M5,P1,Study preparation and instrumentation,M5-001,Cohort denominators and consent defined,proposed
+M5-003,M5,P1,Data-backed go/no-go review,M5-002,Report spontaneous use and economics,proposed

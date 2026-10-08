@@ -1,0 +1,80 @@
+# XcodeGen spec for the Doddy iPhone app (https://github.com/yonaskolb/XcodeGen).
+# `Doddy.xcodeproj` is GENERATED from this file and is intentionally not committed:
+# no Xcode was available to open or build a generated project when M0 was authored.
+# Generate on a Mac with:  make project      (needs `brew install xcodegen`)
+name: Doddy
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: false
+packages:
+  DoddyCore:
+    path: Packages/DoddyCore
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_STYLE: Automatic
+    # No signing team is committed. Select your own team in Xcode to run on a device.
+    DEVELOPMENT_TEAM: ""
+targets:
+  Doddy:
+    type: application
+    platform: iOS
+    sources:
+      - path: DoddyApp
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+      - package: DoddyCore
+        product: DoddyDesignTokens
+    settings:
+      base:
+        # Development identifier only; the production identifier is an owner decision.
+        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
+        PRODUCT_NAME: Doddy
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        # Deliberately no usage-description keys (microphone, speech, reminders, ...):
+        # M0 requests no permissions.
+  DoddyTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: DoddyTests
+    dependencies:
+      - target: Doddy
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.tests
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+  DoddyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: DoddyUITests
+    dependencies:
+      - target: Doddy
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.uitests
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  Doddy:
+    build:
+      targets:
+        Doddy: all
+    test:
+      targets:
+        - DoddyTests
+        - DoddyUITests

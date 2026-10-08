@@ -1,0 +1,515 @@
+{
+  "product": "DODDY V2 interface design (consolidated no font binaries)",
+  "files": [
+    {
+      "path": "MANIFEST_ORIGINAL.json",
+      "bytes": 17626,
+      "sha256": "63ccfb7e0aa270b2482537656d28a54e7d1568ff5427fe9ae9f53ffe10482aa8"
+    },
+    {
+      "path": "README.md",
+      "bytes": 6058,
+      "sha256": "90c2086c678f2f96e2e188afe87c80cde4d926fd68aa477a0d059db4b5774ddc"
+    },
+    {
+      "path": "assets/Caveat-OFL.txt",
+      "bytes": 4385,
+      "sha256": "1f9d81d094273d82f3898a1ee8b598a717d050ecbf5ff7bede105b704880157b"
+    },
+    {
+      "path": "assets/Inter-OFL.txt",
+      "bytes": 4377,
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
+    },
+    {
+      "path": "assets/Licences-and-Provenance.md",
+      "bytes": 1016,
+      "sha256": "b7734ee7602c884703091fb7059f08af7973c6477341e41dd13e1a64323a414a"
+    },
+    {
+      "path": "assets/doddy-pose-approaching-dark-v1.3-r1.svg",
+      "bytes": 5681,
+      "sha256": "32f87d5f0492eb3a8729a4e6cb93ee9ccf838607ed67972cc32a78adf22b9a83"
+    },
+    {
+      "path": "assets/doddy-pose-approaching-light-v1.3-r1.svg",
+      "bytes": 5681,
+      "sha256": "7ea0e1bbc523965070f9916aa084eca02113e928c05431a8135ff412441e3204"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-dribble-dark-v1.3-r1.svg",
+      "bytes": 5584,
+      "sha256": "9c6704189eaa770cbc07b3171860da0f0e0eb1728866fc7b17eb66cdac92942a"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-dribble-light-v1.3-r1.svg",
+      "bytes": 5565,
+      "sha256": "1d05d0e10bcea4eb9ce731b31f6397587045d4e561777b8c9605b41b4da5511f"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-follow-through-dark-v1.3-r1.svg",
+      "bytes": 5630,
+      "sha256": "8d30aa734b348335696d02c6b2f90aae420fa261d24b935b39f0c11000d57c8a"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-follow-through-light-v1.3-r1.svg",
+      "bytes": 5611,
+      "sha256": "1bc58581dedfff7ac94bc9f610207989c0b725fc41befdf51649d224d62f8f9c"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-gather-dark-v1.3-r1.svg",
+      "bytes": 5184,
+      "sha256": "77b2faff1d4ba70e5fe268739320e57c5560296ffb5532d100f8ea06edf277b5"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-gather-light-v1.3-r1.svg",
+      "bytes": 5165,
+      "sha256": "941f5ca9146f6ca77efcae6f3172dea1783d228434dddfffbe93c3ca36a26c9d"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-shot-dark-v1.3-r1.svg",
+      "bytes": 5107,
+      "sha256": "bd624a11f662d5a6691f604a9ea24ecb21ff070755ec78dfbb4a05353e3dc72a"
+    },
+    {
+      "path": "assets/doddy-pose-basketball-shot-light-v1.3-r1.svg",
+      "bytes": 5088,
+      "sha256": "1db7ee3bf6458ea84999bf7be06705cae99dc9ad33e772ec63a95b9fef90e534"
+    },
+    {
+      "path": "assets/doddy-pose-fist-bump-dark-v1.3-r1.svg",
+      "bytes": 5573,
+      "sha256": "251df6d17a8a508783ae76bad27dfae3a16c8cfb86a909ee164044dd80e96f58"
+    },
+    {
+      "path": "assets/doddy-pose-fist-bump-light-v1.3-r1.svg",
+      "bytes": 5554,
+      "sha256": "1f071a169a15892f6e0beebe3a56a25236c49110bb27a426800e054ce2394d5f"
+    },
+    {
+      "path": "assets/doddy-pose-holding-coffee-dark-v1.3-r1.svg",
+      "bytes": 5562,
+      "sha256": "0c4ce9f8f98c808de03b49cb58e40c7b26cdcd8ecb0bb21ce6c0bac3ade91960"
+    },
+    {
+      "path": "assets/doddy-pose-holding-coffee-light-v1.3-r1.svg",
+      "bytes": 5543,
+      "sha256": "26337557bba9a4de701ef393cdcad29cb841cd83f45c0198cc6450a580498a00"
+    },
+    {
+      "path": "assets/doddy-pose-listening-dark-v1.3-r1.svg",
+      "bytes": 5633,
+      "sha256": "23dbd16839887ee43c079717c9e851903ba34c27c00407deb5813d9167f7a981"
+    },
+    {
+      "path": "assets/doddy-pose-listening-light-v1.3-r1.svg",
+      "bytes": 5614,
+      "sha256": "2a4ebfb5ee56ac2f9e7339783a0fa99291842fd73c9ff889fa9126442aae58e0"
+    },
+    {
+      "path": "assets/doddy-pose-memory-card-dark-v1.3-r1.svg",
+      "bytes": 5599,
+      "sha256": "c61ff7ff23c7426692d6f0e840e78d38a076b6d2310a290af49c9ddbfe79a178"
+    },
+    {
+      "path": "assets/doddy-pose-memory-card-light-v1.3-r1.svg",
+      "bytes": 5580,
+      "sha256": "248d8f528a309ea71b36c084dfdf9825d19039a1841e49e158b57ed32bef341a"
+    },
+    {
+      "path": "assets/doddy-pose-pointing-dark-v1.3-r1.svg",
+      "bytes": 5623,
+      "sha256": "947b98124769c80973be08b2f362a0566b4a0ca4b90a61f9182a49ed630b09fc"
+    },
+    {
+      "path": "assets/doddy-pose-pointing-light-v1.3-r1.svg",
+      "bytes": 5604,
+      "sha256": "6ea672a28cc92a24f96aa87d158e86bd0fa0cb7b28f20f6ad4023a069f48605d"
+    },
+    {
+      "path": "assets/doddy-pose-reading-dark-v1.3-r1.svg",
+      "bytes": 5216,
+      "sha256": "e6614424ba6f462e068c702b8bfd210a0da315cdb4720adfb405c647c38d8ddd"
+    },
+    {
+      "path": "assets/doddy-pose-reading-light-v1.3-r1.svg",
+      "bytes": 5197,
+      "sha256": "14adea168f56bac88afc65fde4f00c81afb77bba60e4dde2871853de9fa439ef"
+    },
+    {
+      "path": "assets/doddy-pose-relaxing-dark-v1.3-r1.svg",
+      "bytes": 5545,
+      "sha256": "a338bd8b0b9882d521307a68bf4fa8074138e502ffe33e485bee00d96bdb20fb"
+    },
+    {
+      "path": "assets/doddy-pose-relaxing-light-v1.3-r1.svg",
+      "bytes": 5526,
+      "sha256": "c3bbb0cca3d5d29d58ef91f66fea6cc40c49871a56a0e91ad1489cbf8e849e84"
+    },
+    {
+      "path": "assets/doddy-pose-running-dark-v1.3-r1.svg",
+      "bytes": 5908,
+      "sha256": "e41b6ebdd680030c9e3487a160157aaa5ff9ded99affe387a25a2f8e4dcaa4a9"
+    },
+    {
+      "path": "assets/doddy-pose-running-light-v1.3-r1.svg",
+      "bytes": 5889,
+      "sha256": "2023187d1b1b60f079f041e250201a0c47ae3e5cbd9422648fc08eaee895a76f"
+    },
+    {
+      "path": "assets/doddy-pose-sitting-dark-v1.3-r1.svg",
+      "bytes": 5490,
+      "sha256": "a91811c62b0b52f9a719ae61b680eb7390f95c1e2081a9ac0dc9faadd550e373"
+    },
+    {
+      "path": "assets/doddy-pose-sitting-light-v1.3-r1.svg",
+      "bytes": 5471,
+      "sha256": "9923fcf4b4cb6c5f8015fcd42f9f2b2beb4a721b3a8a55bbef11e6dc6ffd5972"
+    },
+    {
+      "path": "assets/doddy-pose-walking-dark-v1.3-r1.svg",
+      "bytes": 5672,
+      "sha256": "89ed86366069c13f772c1882cdc74f4d2b0fdcb01bdc0deb726fba0504e5e681"
+    },
+    {
+      "path": "assets/doddy-pose-walking-light-v1.3-r1.svg",
+      "bytes": 5653,
+      "sha256": "dbe6d0766cfdbf6dff7da3d84d3117ebd27f070ca74b8f742c24d656a51f6e13"
+    },
+    {
+      "path": "assets/doddy-pose-walking-with-coffee-light-v1.3-r1.svg",
+      "bytes": 5672,
+      "sha256": "3f61ec364db349f04e0a214493f56ea8e9b4efcb2d0abcc459fc28f233870d67"
+    },
+    {
+      "path": "assets/doddy-pose-waving-dark-v1.3-r1.svg",
+      "bytes": 5943,
+      "sha256": "35a79e9ea828bbfb20290b80be77257311bf0e4c2922e9fd9410d8753976feaa"
+    },
+    {
+      "path": "assets/doddy-pose-waving-light-v1.3-r1.svg",
+      "bytes": 5924,
+      "sha256": "ec8b8fc537ea8bd363a1e37d3790f4a10d1c9e9ec1be47d440c15c2dd6c982cb"
+    },
+    {
+      "path": "assets/doddy-pose-working-laptop-dark-v1.3-r1.svg",
+      "bytes": 6201,
+      "sha256": "47a9d6430748e25f238f063283292c2dee24fe42e3fae1201c7b4d71ab023e73"
+    },
+    {
+      "path": "assets/doddy-pose-working-laptop-light-v1.3-r1.svg",
+      "bytes": 6182,
+      "sha256": "095b1c71b9109d4b974c7e1cedd480e1c92ad17a0f5db3648c8f9e52ac04b3ae"
+    },
+    {
+      "path": "docs/ASSET-MAP.md",
+      "bytes": 4293,
+      "sha256": "16bcda5ed63d3f3eb1c1e2ced92cdced33ae87de9f300a92fa9a86d6aba152b2"
+    },
+    {
+      "path": "docs/CLAUDE-GUIDED-SETUP-PROMPT.md",
+      "bytes": 8972,
+      "sha256": "c7351199688c9ccb80dd6dbf35f5123f04b5a432917c2dab52c1713bdfbc94c9"
+    },
+    {
+      "path": "docs/DESIGN-DECISIONS.md",
+      "bytes": 5985,
+      "sha256": "78b13669d7c49d7b4544052a2149ca1a164dd34efbac1c8c17ebf89caeefe0bd"
+    },
+    {
+      "path": "docs/DESIGN-SYSTEM.md",
+      "bytes": 6358,
+      "sha256": "b13c1028dbbcde050a4f231afd5cecac1e5b720dcc346f309f213542460d9946"
+    },
+    {
+      "path": "docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md",
+      "bytes": 8187,
+      "sha256": "32b3d254ca42786cc2f5a01ca0e9a23b74af4a93bebd7b25093201ed81be4115"
+    },
+    {
+      "path": "docs/IMPLEMENTATION-NOTES.md",
+      "bytes": 3624,
+      "sha256": "85a49eb1a950e625625b2c1ba63d75feafabc5916de40f63fa7de9d4c8bafe0e"
+    },
+    {
+      "path": "docs/MOTION-AND-STATES.md",
+      "bytes": 3891,
+      "sha256": "4094c71a1c5059ed1b7faa74ea8c6d488e49a0979c56184bbec3fa1cbd8cc43c"
+    },
+    {
+      "path": "docs/ONBOARDING-AND-PERSONAL-HOME.md",
+      "bytes": 6870,
+      "sha256": "32e3c1e13f877c4a4dfdcec31e3a5348b29c975700d778723697c7894dc34fc3"
+    },
+    {
+      "path": "docs/asset-provenance.json",
+      "bytes": 13014,
+      "sha256": "2d27184790075a521f95017d6d101ef22d0317c2ad775f2a700ff28cbbaabb4c"
+    },
+    {
+      "path": "index.html",
+      "bytes": 949,
+      "sha256": "d363ab4bed7699f50bd1a9f8bec4a7caeb9852ca849ec75d1a212b3b65aa59be"
+    },
+    {
+      "path": "onboarding.js",
+      "bytes": 14649,
+      "sha256": "e03ff2da1c364dadd854a4394d318929bc99e8eb42067d389e4cfed0024f5f91"
+    },
+    {
+      "path": "previews/01-pocket-notebook.png",
+      "bytes": 188287,
+      "sha256": "9917ebbc7d07e206a517ae0b566f0f0ab84a6f0916f68504c4d49a89fc747237"
+    },
+    {
+      "path": "previews/02-quiet-companion.png",
+      "bytes": 183494,
+      "sha256": "cafb21c8ffe110c0f1d132a789f1deb93f5cbc74c068ce9972978f2ef2d677ba"
+    },
+    {
+      "path": "previews/03-tiny-investigation.png",
+      "bytes": 185899,
+      "sha256": "00be88670b81189bb5a42877135478d0e57f2edbd41eacaacd3410f74ab4553e"
+    },
+    {
+      "path": "previews/04-core-gallery.png",
+      "bytes": 802072,
+      "sha256": "c1961d4836f23415bd361df1d15b62ccd68ba11df4c1676916b131b31a399646"
+    },
+    {
+      "path": "previews/05-failure-recovery.png",
+      "bytes": 363574,
+      "sha256": "61de94cd22053a16fe2fbb798be2552df5351377fc54d013fe7e810b9db89aec"
+    },
+    {
+      "path": "previews/06-planned-voice.png",
+      "bytes": 197824,
+      "sha256": "03244d35995adc5bd7d290b8987d112e90f302a2d03b6de279db10c079b533b4"
+    },
+    {
+      "path": "previews/07-appearance-accessibility.png",
+      "bytes": 337873,
+      "sha256": "618b087c708761f8eec7c8b97858af4d6e614b75eec318597aebb484098df2ae"
+    },
+    {
+      "path": "previews/08-motion-storyboard.png",
+      "bytes": 72722,
+      "sha256": "c65649947c2fc08e41806f9bcc294a1d62e5f6f444f16b5474e1af75bb294d3a"
+    },
+    {
+      "path": "previews/09-recommended-overview.png",
+      "bytes": 170463,
+      "sha256": "fa65c79a1075f1884c12a4dd6e0550d8aa66ea6dbed84d66d9d6baa2db9efc08"
+    },
+    {
+      "path": "previews/10-first-hello-personal-home.png",
+      "bytes": 205788,
+      "sha256": "b15150a290b23155cdc31b322c00e65574efbea8d28bb9e4a841a9dc9b7f6999"
+    },
+    {
+      "path": "previews/11-guided-back-tap-setup.png",
+      "bytes": 209887,
+      "sha256": "239f9bf3a85dd791ff1a4c784cebcab6bb8f96ab9ce24fdb4a5da383b31266cf"
+    },
+    {
+      "path": "previews/capture.png",
+      "bytes": 39489,
+      "sha256": "380db5632acf1a279032530f24500e29685201fc5789b6f4e49433f623e4c06d"
+    },
+    {
+      "path": "previews/dark-home.png",
+      "bytes": 49436,
+      "sha256": "f65de63ab6b2ecf26909b1acc27c6bfa5da679e8d693ea107493ac06f2178347"
+    },
+    {
+      "path": "previews/detail.png",
+      "bytes": 43063,
+      "sha256": "ef827c635b025aa11d15f31161e09b818d426f109ec50add32d4124e91365980"
+    },
+    {
+      "path": "previews/home.png",
+      "bytes": 48751,
+      "sha256": "16ec8de4b919ce7da470c877dcbe62d7c03c9f66215acc947165e49aeaf78bf2"
+    },
+    {
+      "path": "previews/intro-chat.png",
+      "bytes": 53030,
+      "sha256": "896ec92c4a077f71f3b88109f2f11b4322214e9d2d4f6105e532fee06b8856ab"
+    },
+    {
+      "path": "previews/large-home.png",
+      "bytes": 46053,
+      "sha256": "71bbe18b87f0e0251cce6d521a2c12468066ce06108bed5376778bb34feb6878"
+    },
+    {
+      "path": "previews/personal-home.png",
+      "bytes": 53415,
+      "sha256": "397ca9db23fb1e63273931b6755664a2119d7be526e256a04f8eb65c2776bec0"
+    },
+    {
+      "path": "previews/polish-home.png",
+      "bytes": 54100,
+      "sha256": "a3c35ac7181607a3ab2eb59b5f00111439aaa8e822e828d816f7023fc12b0847"
+    },
+    {
+      "path": "previews/profile-preferences.png",
+      "bytes": 51557,
+      "sha256": "d0842cbd17c3480b83a529176e015b2ce1f9a3cc4586ca79292c388c86da8f7b"
+    },
+    {
+      "path": "previews/profile-review.png",
+      "bytes": 50479,
+      "sha256": "908765cca80a798488cc4d4e1334bd0378b2c391e374db4ade6102d9500fc508"
+    },
+    {
+      "path": "previews/recall.png",
+      "bytes": 45127,
+      "sha256": "e587a9bc02cfd9b4cda4f713ec5fba7bb426c05d06375d8fc7eef1696e8430bd"
+    },
+    {
+      "path": "previews/save-failed.png",
+      "bytes": 44967,
+      "sha256": "5891b9088d64bdc3c4c1568d3e1a80ec921934727433647a1c5fe2e3927da5ff"
+    },
+    {
+      "path": "previews/setup-done.png",
+      "bytes": 48271,
+      "sha256": "50c1b911b58f437b0ff6bc545bafa32a826c2329d8edba8a46c7095d4d894a96"
+    },
+    {
+      "path": "previews/setup-fallback.png",
+      "bytes": 54392,
+      "sha256": "a9a5e566f6fc313478c3030011534226546c451383cf39fc84457723bf036232"
+    },
+    {
+      "path": "previews/setup-guide.png",
+      "bytes": 54678,
+      "sha256": "fdbd741f201d61de3e677dabe6f6fa4c760797cf4efb7cc489b1bc9861563d0b"
+    },
+    {
+      "path": "previews/setup-intro.png",
+      "bytes": 53641,
+      "sha256": "e03634a151fb7960d94fd93407941b1235d9ef6d6f4278d64c914d3202e32dde"
+    },
+    {
+      "path": "previews/setup-large-dark.png",
+      "bytes": 50223,
+      "sha256": "4fa27f8756d78bff69c1a43cfc00cd740242037fabc7d6498056772186a00ff7"
+    },
+    {
+      "path": "previews/setup-shortcut.png",
+      "bytes": 70646,
+      "sha256": "9eca79448200a5370462c100f6fbc48617e83b248d2ca4935076d02004350796"
+    },
+    {
+      "path": "previews/setup-test.png",
+      "bytes": 49814,
+      "sha256": "637014982cd1965cd2c1644865738c39830f3d393d03bfb619468d5630ca4313"
+    },
+    {
+      "path": "previews/setup-voice.png",
+      "bytes": 55507,
+      "sha256": "2f6a400f4bade4b53dc1057fbef1834c504ff4bf4055c941c17c1b90c4912777"
+    },
+    {
+      "path": "previews/small-home.png",
+      "bytes": 40190,
+      "sha256": "cf0877f8cfde4af632c4bede55d5d9863884dee7f1e7ebf5dc7e3d858197da07"
+    },
+    {
+      "path": "previews/unknown.png",
+      "bytes": 46944,
+      "sha256": "301d8c2b751dccb1fcccc3e2ecab3b0a71abc4dc0ed72c84e8a418a6ec4e7cb6"
+    },
+    {
+      "path": "previews/welcome.png",
+      "bytes": 52889,
+      "sha256": "dae7eb430dc925dc615f320bb2de41064d2d1960674534d22cf0f8d772b3c046"
+    },
+    {
+      "path": "setup.js",
+      "bytes": 15515,
+      "sha256": "6d4b24f113dd86ff7718448dd2dbaba1aa5182de8cfae568bc3181cd9ea34cba"
+    },
+    {
+      "path": "studio.css",
+      "bytes": 33440,
+      "sha256": "859fc1c290d64c350386f5ab3a3df99740fc4aea5e57077021826ae000ad7de9"
+    },
+    {
+      "path": "studio.js",
+      "bytes": 43250,
+      "sha256": "9c7f64b493db09df945af4bae61e9b29e7fe0abfd6432c493424919797d764ec"
+    },
+    {
+      "path": "verification/BASELINE-v1.0-REVIEW.md",
+      "bytes": 3856,
+      "sha256": "b3205c4ea764da5a79157293d9699464254e67b55297ba6e44c6f30096a8a7cf"
+    },
+    {
+      "path": "verification/REVIEW.md",
+      "bytes": 2737,
+      "sha256": "d9828d12971da860c4652e0ee31cddb1693831661b0bfea7b722deed9e144ad3"
+    },
+    {
+      "path": "verification/baseline-v1.0-browser-results.json",
+      "bytes": 6977,
+      "sha256": "0fd25d01410f4d6d3028b667ec0c99e25260c0ab80521a3a49311444d01a02f0"
+    },
+    {
+      "path": "verification/baseline-v1.1-REVIEW.md",
+      "bytes": 3289,
+      "sha256": "53782d89e52b7473b2c7155b2e80d692b453fc10c96ffee4199c08cf7b712e3c"
+    },
+    {
+      "path": "verification/baseline-v1.1-browser-results.json",
+      "bytes": 7326,
+      "sha256": "18f2698673f6c7f27fb554b731120b0ce2786501b05707ab8ae354b477a74272"
+    },
+    {
+      "path": "verification/baseline-v1.1-onboarding-results.json",
+      "bytes": 2135,
+      "sha256": "c6fb6054bff258fc348a8e722d8b8e4ec37d6f676468df4b4e5f6ba613a4ed3e"
+    },
+    {
+      "path": "verification/browser-results.json",
+      "bytes": 7667,
+      "sha256": "2e5a486b65bff5a236e201d7b527fffcc1adeb9c14518ad6347ce2a95c41f100"
+    },
+    {
+      "path": "verification/contrast.json",
+      "bytes": 2254,
+      "sha256": "0a157085750a520253264e024eb0a3eb98e99dbd53865107260e1f6478fbc4f3"
+    },
+    {
+      "path": "verification/onboarding-results.json",
+      "bytes": 2135,
+      "sha256": "c6fb6054bff258fc348a8e722d8b8e4ec37d6f676468df4b4e5f6ba613a4ed3e"
+    },
+    {
+      "path": "verification/review-onboarding.cjs",
+      "bytes": 6819,
+      "sha256": "402a3b94aba1f0e087d1edeb115f94b77b670d5272f4359d532c4a3e162dd3ca"
+    },
+    {
+      "path": "verification/review-prototype.cjs",
+      "bytes": 9029,
+      "sha256": "d3cc47009b46c86eaa2b79b0cf6da909ac43e4280d46c87b4e7255cdd3e20903"
+    },
+    {
+      "path": "verification/review-setup.cjs",
+      "bytes": 11280,
+      "sha256": "e02462e8d7de5de8bd92b4939f2b5ebe088f9da989bad5afd3924a32a0000575"
+    },
+    {
+      "path": "verification/setup-results.json",
+      "bytes": 5434,
+      "sha256": "6ee6c47f718672688f9e4e30cff676e5f6b856fd6f99564539093157f544d569"
+    },
+    {
+      "path": "verification/verify-bundle.py",
+      "bytes": 869,
+      "sha256": "e06962ccbebe6b6d953d43bf949bf72c9e8e0f1b94b0cfb9e8b87b68f5e178b6"
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Doddy V2 action proposal; never an authorization",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operationId",
+    "tool",
+    "state",
+    "requiresConfirmation",
+    "payload"
+  ],
+  "properties": {
+    "operationId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "tool": {
+      "enum": [
+        "create_apple_reminder"
+      ]
+    },
+    "state": {
+      "enum": [
+        "drafted",
+        "needs_clarification",
+        "ready_for_confirmation",
+        "user_confirmed",
+        "pending_external_write",
+        "verified_succeeded",
+        "verified_failed",
+        "unknown_outcome"
+      ]
+    },
+    "requiresConfirmation": {
+      "type": "boolean",
+      "const": true
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "title"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dueAtISO8601": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timeZoneId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "listId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "receipt": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "externalId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "verifiedAt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "verified_succeeded",
+            "verified_failed",
+            "unknown_outcome"
+          ]
+        }
+      },
+      "required": [
+        "status"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

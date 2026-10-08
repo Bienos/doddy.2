@@ -1,0 +1,96 @@
+{
+  "method": "WCAG relative luminance formula; flat CSS colors only",
+  "pairs": [
+    {
+      "role": "ink/paper",
+      "foreground": "#171715",
+      "background": "#fff7e9",
+      "contrast": 16.87,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "muted/paper",
+      "foreground": "#655f56",
+      "background": "#fff7e9",
+      "contrast": 5.94,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "muted/surface",
+      "foreground": "#655f56",
+      "background": "#f5ead8",
+      "contrast": 5.31,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "accent/paper",
+      "foreground": "#a64b00",
+      "background": "#fff7e9",
+      "contrast": 5.44,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "confirmed/paper",
+      "foreground": "#326746",
+      "background": "#fff7e9",
+      "contrast": 6.24,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "error/paper",
+      "foreground": "#a3342e",
+      "background": "#fff7e9",
+      "contrast": 6.39,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "night-text/night",
+      "foreground": "#fff7e9",
+      "background": "#171f29",
+      "contrast": 15.61,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "night-muted/night",
+      "foreground": "#c5bcad",
+      "background": "#171f29",
+      "contrast": 8.83,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "night-muted/surface",
+      "foreground": "#c5bcad",
+      "background": "#252e39",
+      "contrast": 7.31,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "night-accent/night",
+      "foreground": "#ffb56b",
+      "background": "#171f29",
+      "contrast": 9.55,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "night-confirmed/night",
+      "foreground": "#97cea6",
+      "background": "#171f29",
+      "contrast": 9.25,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "night-error/night",
+      "foreground": "#ffaaa1",
+      "background": "#171f29",
+      "contrast": 9.11,
+      "normal_text_4_5_pass": true
+    },
+    {
+      "role": "ink/orange",
+      "foreground": "#171715",
+      "background": "#f58a24",
+      "contrast": 7.3,
+      "normal_text_4_5_pass": true
+    }
+  ]
+}

@@ -1,0 +1,222 @@
+{
+  "date": "2026-10-08",
+  "scope": "Scripted browser design only; no native microphone, background audio, ActivityKit, Settings or physical Back Tap verification.",
+  "checksPassed": 53,
+  "checks": [
+    {
+      "name": "First launch precedes intro with Back Tap setup",
+      "passed": true
+    },
+    {
+      "name": "Guide choice discloses explicit start and browser simulation",
+      "passed": true
+    },
+    {
+      "name": "Voice preview starts only after explicit request",
+      "passed": true
+    },
+    {
+      "name": "Shortcut instructions include public Open App fallback",
+      "passed": true
+    },
+    {
+      "name": "Missing intent has usable personal shortcut fallback",
+      "passed": true
+    },
+    {
+      "name": "Shortcut creation is user-reported, starts at Settings",
+      "passed": true
+    },
+    {
+      "name": "Island concept states no live mic",
+      "passed": true
+    },
+    {
+      "name": "Pause removes active listening indicator",
+      "passed": true
+    },
+    {
+      "name": "Explicit resume returns preview state",
+      "passed": true
+    },
+    {
+      "name": "Compact Island can expand",
+      "passed": true
+    },
+    {
+      "name": "Open steps preserves current voice mode and step",
+      "passed": true
+    },
+    {
+      "name": "Reported Touch location yields exact next instruction",
+      "passed": true
+    },
+    {
+      "name": "Typed page report advances to Double Tap instruction",
+      "passed": true
+    },
+    {
+      "name": "Unknown question asks location without inventing observed screen",
+      "passed": true
+    },
+    {
+      "name": "Missing Back Tap explains supported-device check and defer",
+      "passed": true
+    },
+    {
+      "name": "Missing shortcut redirects to creation before assignment",
+      "passed": true
+    },
+    {
+      "name": "Double Tap instructions specify Shortcuts and apply by going back",
+      "passed": true
+    },
+    {
+      "name": "Test secondary actions occupy separate touch rows",
+      "passed": true
+    },
+    {
+      "name": "Test requires a new invocation",
+      "passed": true
+    },
+    {
+      "name": "Cannot confirm before shortcut receipt",
+      "passed": true
+    },
+    {
+      "name": "Shortcut receipt does not claim physical Double Tap",
+      "passed": true
+    },
+    {
+      "name": "Other trigger clears receipt and leaves Back Tap unconfirmed",
+      "passed": true
+    },
+    {
+      "name": "Success screen labels preview and user confirmation",
+      "passed": true
+    },
+    {
+      "name": "Setup then proceeds to intro with voice stopped",
+      "passed": true
+    },
+    {
+      "name": "Deferral reaches usable intro without configured status",
+      "passed": true
+    },
+    {
+      "name": "Denied mic routes to non-recording fallback",
+      "passed": true
+    },
+    {
+      "name": "Text fallback has microphone-off status",
+      "passed": true
+    },
+    {
+      "name": "Unavailable Live Activity does not promise recording-intent voice",
+      "passed": true
+    },
+    {
+      "name": "Non-Island devices have labeled Lock Screen concept",
+      "passed": true
+    },
+    {
+      "name": "Availability loss stops preview listening immediately",
+      "passed": true
+    },
+    {
+      "name": "Stop does not expose silent resume",
+      "passed": true
+    },
+    {
+      "name": "Continued intro is a new explicit phase with old voice stopped",
+      "passed": true
+    },
+    {
+      "name": "Setup utterances are not saved as profile or memories",
+      "passed": true
+    },
+    {
+      "name": "Small large dark wraps: setup-intro",
+      "passed": true
+    },
+    {
+      "name": "English setup language correctly tagged: setup-intro",
+      "passed": true
+    },
+    {
+      "name": "Small large dark wraps: setup-voice",
+      "passed": true
+    },
+    {
+      "name": "English setup language correctly tagged: setup-voice",
+      "passed": true
+    },
+    {
+      "name": "Small large dark wraps: setup-shortcut",
+      "passed": true
+    },
+    {
+      "name": "English setup language correctly tagged: setup-shortcut",
+      "passed": true
+    },
+    {
+      "name": "Small large dark wraps: setup-guide",
+      "passed": true
+    },
+    {
+      "name": "English setup language correctly tagged: setup-guide",
+      "passed": true
+    },
+    {
+      "name": "Small large dark wraps: setup-test",
+      "passed": true
+    },
+    {
+      "name": "English setup language correctly tagged: setup-test",
+      "passed": true
+    },
+    {
+      "name": "Small large dark wraps: setup-done",
+      "passed": true
+    },
+    {
+      "name": "English setup language correctly tagged: setup-done",
+      "passed": true
+    },
+    {
+      "name": "Small large dark wraps: setup-fallback",
+      "passed": true
+    },
+    {
+      "name": "English setup language correctly tagged: setup-fallback",
+      "passed": true
+    },
+    {
+      "name": "Island controls have at least 44 CSS px targets",
+      "passed": true
+    },
+    {
+      "name": "Setup navigation remains English in English-only study",
+      "passed": true
+    },
+    {
+      "name": "No browser storage",
+      "passed": true
+    },
+    {
+      "name": "No external network requests",
+      "passed": true
+    },
+    {
+      "name": "No runtime errors",
+      "passed": true
+    },
+    {
+      "name": "No failed assets",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "bad": [],
+  "external": []
+}

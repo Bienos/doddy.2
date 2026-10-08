@@ -1,0 +1,2 @@
+# Candidate assets; not approved master
+These are SMALL SAMPLES extracted from `DODDY_BRAND_SYSTEM_v1.3.zip` solely to bootstrap a prototype. The separately archived `DODDY_BRAND_SYSTEM_v1.3_COMPLETE.zip` differs in asset counts and art. Before brand release, select a single source pack and validate vector fidelity, wordmark typography, accessibility, animation pipeline and licensing. Full assets and brand-guidelines PDF/PPTX are retained unchanged inside the original archives. Do not treat fonts referenced by tokens as bundled or licensed.

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Doddy V2 memory record proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "rawText",
+    "currentText",
+    "source",
+    "category",
+    "userEdited",
+    "schemaVersion"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "rawText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000
+    },
+    "currentText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 5000
+    },
+    "source": {
+      "enum": [
+        "explicit_text",
+        "explicit_voice",
+        "shared_content",
+        "imported_legacy_unknown",
+        "sample_fixture"
+      ]
+    },
+    "category": {
+      "enum": [
+        "fact",
+        "preference",
+        "commitment",
+        "recommendation",
+        "decision",
+        "item",
+        "place",
+        "intention",
+        "other"
+      ]
+    },
+    "capturedAtMs": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "updatedAtMs": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "userEdited": {
+      "type": "boolean"
+    },
+    "deletedAtMs": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    }
+  }
+}

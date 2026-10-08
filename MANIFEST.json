@@ -1,0 +1,308 @@
+{
+  "name": "DODDY V2 Claude/Codex Build Pack",
+  "date": "2026-10-08",
+  "status": "PROPOSED NOT APPROVED",
+  "sourceArchivesIncluded": 5,
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sizeBytes": 1980,
+      "sha256": "45e19bcb0654fbe34506bed0587d07f6d344dec1140d7e146985de5063e784b6"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sizeBytes": 2276,
+      "sha256": "b9e6cd42aab4b481dc55e2551d83c40a3b6479c29e46956fdea38121a0b26af9"
+    },
+    {
+      "path": "README.md",
+      "sizeBytes": 4758,
+      "sha256": "8c9a4a46db0ca2617796b4ef57cbabcf5299a4c64e61ce4d4c652302e6db89b4"
+    },
+    {
+      "path": "assets/brand_candidate/BRAND_SOURCE_LIMITATIONS.md",
+      "sizeBytes": 2071,
+      "sha256": "b8157b267e100de7c726e42c5db9ea49f2864021b5b2bd7b714476f7d3befb87"
+    },
+    {
+      "path": "assets/brand_candidate/README.md",
+      "sizeBytes": 547,
+      "sha256": "170eea6c8aa4f63aae7b1b8a6da8b221d3257aa6cbe3c49b5627fee40a9dad6f"
+    },
+    {
+      "path": "assets/brand_candidate/doddy_face_mark_candidate.svg",
+      "sizeBytes": 677,
+      "sha256": "0693562e8c50de181faba00fc2870aa951e3e51b382d35cc2353565b6396da06"
+    },
+    {
+      "path": "assets/brand_candidate/doddy_master_front_candidate.svg",
+      "sizeBytes": 3622,
+      "sha256": "170a54f00a4f6df899c5d6716ff65da2fb1258ea2ae45a425f34f75c27551567"
+    },
+    {
+      "path": "assets/brand_candidate/doddy_master_front_dark_candidate.svg",
+      "sizeBytes": 3669,
+      "sha256": "1558cbc6bde0d249520633164bc4d0c825eabbfce2550e83a53e07d19ef9caf6"
+    },
+    {
+      "path": "assets/brand_candidate/doddy_tokens_candidate.json",
+      "sizeBytes": 1640,
+      "sha256": "417754b61fb050b9ef19aa7062cefb5360c5f12a5ec59eb58140caad15301737"
+    },
+    {
+      "path": "assets/brand_candidate/expression_happy_candidate.svg",
+      "sizeBytes": 2850,
+      "sha256": "06ae9b64ca8626cfebf0e4b2c5ba6a1cc57f9e6bb78860ceda5bf4b0bc0206d1"
+    },
+    {
+      "path": "assets/brand_candidate/expression_neutral_candidate.svg",
+      "sizeBytes": 2850,
+      "sha256": "06ae9b64ca8626cfebf0e4b2c5ba6a1cc57f9e6bb78860ceda5bf4b0bc0206d1"
+    },
+    {
+      "path": "docs/00_START_HERE/DECISIONS_AND_STATUS.md",
+      "sizeBytes": 3775,
+      "sha256": "109a4efe75809814e104d095234560f2340661382ea714896d2d7076cde3cc46"
+    },
+    {
+      "path": "docs/00_START_HERE/SOURCE_AUDIT.md",
+      "sizeBytes": 4408,
+      "sha256": "337af1ff6de0f9cfc4c74022814a7603c230c496ca0575e61d50c51d63652782"
+    },
+    {
+      "path": "docs/architecture/AI_RUNTIME.md",
+      "sizeBytes": 3101,
+      "sha256": "c8377cc795c25553a2888bd8e25087696130f05a5c2cfa137ac3c4708829e344"
+    },
+    {
+      "path": "docs/architecture/DECISIONS.md",
+      "sizeBytes": 1879,
+      "sha256": "d683eaaaa0a4deb31c76d86ed3abb00eecc2932e4f635942e629f4f77cdbef83"
+    },
+    {
+      "path": "docs/architecture/IOS_ARCHITECTURE.md",
+      "sizeBytes": 2671,
+      "sha256": "ff0363685abc8fd69e414caf1a01d75df72a7002dd1e32b0dcdde485c42d61fb"
+    },
+    {
+      "path": "docs/architecture/MEMORY_AND_DATA.md",
+      "sizeBytes": 4091,
+      "sha256": "3bc2cca33b9326227299ca5f7031a961b981b2210b798a154b35118c32ec4fa7"
+    },
+    {
+      "path": "docs/architecture/TOOLS_AND_ACTIONS.md",
+      "sizeBytes": 2016,
+      "sha256": "371927388d5a3c41b057ab9084894f06f58d04d3de67c53ff52dcf999e349c72"
+    },
+    {
+      "path": "docs/architecture/VOICE_AND_APPLE_SURFACES.md",
+      "sizeBytes": 2722,
+      "sha256": "a83edb4ae7e925c2d953a4a14222d9b6ccc5c615178247449eabf48f15d8d350"
+    },
+    {
+      "path": "docs/design/BRAND_AND_CHARACTER.md",
+      "sizeBytes": 2894,
+      "sha256": "9939aa9f3cfb0a8e4efaaafa88440da6987bc7b589bd32676be8e8c732d57561"
+    },
+    {
+      "path": "docs/implementation/M0_FIRST_MILESTONE.md",
+      "sizeBytes": 2102,
+      "sha256": "1682940bfb1d8646284aad1fa79ec89817c449bb8c6996f4adc052191c6b76f8"
+    },
+    {
+      "path": "docs/implementation/MILESTONES.md",
+      "sizeBytes": 3281,
+      "sha256": "00acde15e3c1c71af6f02778f64ffc71fe11a939ac6dc127eac390f6c0fb4fe6"
+    },
+    {
+      "path": "docs/implementation/OWNER_REVIEW_CHECKLIST.md",
+      "sizeBytes": 1014,
+      "sha256": "e1aa3e146b47435cad2d518196e5c84f13087a22ef5d574c56f5762b571f612d"
+    },
+    {
+      "path": "docs/implementation/TICKETS.csv",
+      "sizeBytes": 2820,
+      "sha256": "d8e0a242de11e069e4d0eec1246f3b66a7e164dfb8a417614f42f3be3a8990e0"
+    },
+    {
+      "path": "docs/product/JOURNEYS_AND_SCREENS.md",
+      "sizeBytes": 2120,
+      "sha256": "5f0e346eb6b11075bee110a9a177239b5369f0c76d48817a4afe796f5aa69652"
+    },
+    {
+      "path": "docs/product/PRODUCT_REQUIREMENTS.md",
+      "sizeBytes": 4216,
+      "sha256": "d198614285dba327fcd2c3189c3793b979834fbfd0c48e435a5118082c2f91c5"
+    },
+    {
+      "path": "docs/quality/ACCEPTANCE_TESTS.md",
+      "sizeBytes": 3229,
+      "sha256": "f96a49a122fb270042ff73e419edeabbba19883f29b90dda11ef645ae5d18ab8"
+    },
+    {
+      "path": "docs/quality/RELEASE_GATES.md",
+      "sizeBytes": 1380,
+      "sha256": "30ff2570398c63f7e1abec5852cdd53ae83b41118403073488a42719c49fd3d3"
+    },
+    {
+      "path": "docs/quality/VALIDATION_AND_METRICS.md",
+      "sizeBytes": 2919,
+      "sha256": "568d239d5cbd27384411810b70a6d2d6ef04a8d30add8a65c29e46d5adf019cb"
+    },
+    {
+      "path": "docs/security/PRIVACY_GDPR_AI_ACT.md",
+      "sizeBytes": 4219,
+      "sha256": "9028f6aa91825ae9bd4dd4314b7d4ccae3dcf903466fcd09a445be4496388035"
+    },
+    {
+      "path": "docs/security/THREAT_MODEL.md",
+      "sizeBytes": 1831,
+      "sha256": "ba15546bd60c8eddc0d3a74aaa36a1f64f9b176ff0443dfc33f29b09c4fb1023"
+    },
+    {
+      "path": "prompts/M1_MEMORY.md",
+      "sizeBytes": 1004,
+      "sha256": "45b61c27c75b763d94e4a1b2dc25bcefb523dbbd02fd1d23c9f40692bcd87374"
+    },
+    {
+      "path": "prompts/M2_AI.md",
+      "sizeBytes": 740,
+      "sha256": "701ad3a30db140f8a1fa3a3195090e18ed945f108fe4a0f8592b21242049defc"
+    },
+    {
+      "path": "prompts/M3_VOICE.md",
+      "sizeBytes": 595,
+      "sha256": "d3112e023168589a5722e2020e9ea04d326d777d00508f23b6baa562b21f4141"
+    },
+    {
+      "path": "prompts/M4_REMINDERS.md",
+      "sizeBytes": 591,
+      "sha256": "8344084af26adc8cda2fd49dbe6eda77d6e6a94e1c30e32d7f06a7925b0511f2"
+    },
+    {
+      "path": "prompts/M5_BETA.md",
+      "sizeBytes": 590,
+      "sha256": "ef7d99bd7b8cf2b4029fa34142ebe0e9ae677113ab7894d68992c89ec7dd60c6"
+    },
+    {
+      "path": "prompts/START_BUILD.md",
+      "sizeBytes": 1590,
+      "sha256": "ac908d46d151433f236435afe76e90069f324587966895792eac9d3aed57bfb2"
+    },
+    {
+      "path": "reference/ARCHIVE_CHECKSUMS.md",
+      "sizeBytes": 683,
+      "sha256": "f77cffb3b2f2b87b66f6c9f968c70c7a2abdcd2fa0d73db2285e4ec139872f4d"
+    },
+    {
+      "path": "reference/README.md",
+      "sizeBytes": 550,
+      "sha256": "dbce10d508b2fcf05889f5ed4a48c3f705c9205c0f594c38e4571080a77f3eec"
+    },
+    {
+      "path": "reference/SOURCE_PROVENANCE.md",
+      "sizeBytes": 3495,
+      "sha256": "0ae2f2c43b7a4a841ac2f13d841d95f2fe25790b63e382bc5d32bf86bee5b1da"
+    },
+    {
+      "path": "reference/character_evals/behavioural_evals_64.csv",
+      "sizeBytes": 16109,
+      "sha256": "1ed3e56b8c936a1db03cd49dc776f24d1bb02060f00bc5efc7ebdd7c64adbbed"
+    },
+    {
+      "path": "reference/character_evals/behavioural_evals_64.jsonl",
+      "sizeBytes": 28465,
+      "sha256": "d555af476a43486aadec1b212da7fa0d0ade32fd72a13ed3f04f15ea11290308"
+    },
+    {
+      "path": "reference/character_evals/character_quick_reference.md",
+      "sizeBytes": 3563,
+      "sha256": "9fa64d131953e2a779b4e8a783d87f7964b054d9f7d572b79296984f491b80a8"
+    },
+    {
+      "path": "reference/character_evals/doddy_persona_v1.yaml",
+      "sizeBytes": 3547,
+      "sha256": "5c7c5950a71ced5e85bb9dc4f344ba7e959ce65b2d18235c97223ba233843eb7"
+    },
+    {
+      "path": "reference/compiled_research/D01_RESEARCH.md",
+      "sizeBytes": 49731,
+      "sha256": "e10ced5e515f24d1017893edbfa13ca6b0de9f505dddec8864bbf47193009b85"
+    },
+    {
+      "path": "reference/compiled_research/D05_RESEARCH.md",
+      "sizeBytes": 51906,
+      "sha256": "4079c5ccb0c104d8aa51e3ed04498a6d475426823437c8d5b3290c310ac8c791"
+    },
+    {
+      "path": "reference/compiled_research/DODDY_90_Day_Plan.md",
+      "sizeBytes": 7568,
+      "sha256": "cf94e1e460b133dbbf4882c1994545e736d6a6ff6b1aac7933baad26bbf9ca98"
+    },
+    {
+      "path": "reference/compiled_research/DODDY_ALL_IN_ONE.md",
+      "sizeBytes": 144018,
+      "sha256": "13aab6bea367e56e0c3ef671e1c1d19cc63ef2059dbdf24fb4fac4bb64cc9bdb"
+    },
+    {
+      "path": "reference/compiled_research/DODDY_Executive_Decision_Memo.md",
+      "sizeBytes": 2935,
+      "sha256": "09f2203bf18bb71af62e0cbf969c70eb34bdeec14fe595b4e1af1c4aad7d357d"
+    },
+    {
+      "path": "reference/compiled_research/DODDY_HQ_Development_Blueprint.md",
+      "sizeBytes": 13405,
+      "sha256": "1d1276c8769bbb58f56b7fb4d7ffa5925d8b0e2c300fe1747e43756efd467bbc"
+    },
+    {
+      "path": "reference/compiled_research/DODDY_STRATEGIC_RECOMMENDATIONS.md",
+      "sizeBytes": 73873,
+      "sha256": "1721b9a670f28cf951fed0b06e61564547f76e6608bdd84061e0bd76dc308b13"
+    },
+    {
+      "path": "reference/original_archives/DODDY_BRAND_SYSTEM_v1.3.zip",
+      "sizeBytes": 7960531,
+      "sha256": "37d5cdeee95650147a158d7cb7f74d56549cff5ae1da8c17871b4cb9e2da2720"
+    },
+    {
+      "path": "reference/original_archives/DODDY_BRAND_SYSTEM_v1.3_COMPLETE.zip",
+      "sizeBytes": 19986532,
+      "sha256": "4ac6e93c2a0eb8e2946ac351d949c2fb7ad1cdf8b33b949cbc3d2898d0411631"
+    },
+    {
+      "path": "reference/original_archives/DODDY_Character_Bible_v1_Complete.zip",
+      "sizeBytes": 931944,
+      "sha256": "9efcfadc8aff97895b237c48627744d248cb281f553e8968103987d5e9f7bcbd"
+    },
+    {
+      "path": "reference/original_archives/DODDY_Deep_Research_2026-10-08.zip",
+      "sizeBytes": 337762,
+      "sha256": "a53ad7d4fac79cab2fd5cb8b43fd56f28ae883ac82af939c9b4f964846b5f3b3"
+    },
+    {
+      "path": "reference/original_archives/DODDY_First_Useful_Product_Research_2026.zip",
+      "sizeBytes": 216397,
+      "sha256": "06e4baefd3bed7170def51b1bab7161174620488e71198c8a3d42e2f8ee31342"
+    },
+    {
+      "path": "schemas/README.md",
+      "sizeBytes": 710,
+      "sha256": "bba8865bafd5d33d41275d1720718f9b7d6fb4ab662a255746513a38972698ae"
+    },
+    {
+      "path": "schemas/memory.schema.json",
+      "sizeBytes": 1427,
+      "sha256": "19a088468d2fd52d7b9ea6167c01c2f7e25fdebece105bb26ef849e9481c5fd2"
+    },
+    {
+      "path": "schemas/telemetry.schema.json",
+      "sizeBytes": 1546,
+      "sha256": "7591d61c4882e4e553c31f242a416086a637e0c6019dc683029dee9cf80344cd"
+    },
+    {
+      "path": "schemas/tool_proposal.schema.json",
+      "sizeBytes": 1948,
+      "sha256": "625e80c70c356e15969efbf49447f6225a0d08e2afa3d0768134a495d63c4c94"
+    }
+  ]
+}

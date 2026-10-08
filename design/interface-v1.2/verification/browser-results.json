@@ -1,0 +1,345 @@
+{
+  "date": "2026-10-08",
+  "scope": "Local Chrome browser design prototype. No native/device tests.",
+  "checksPassed": 66,
+  "checks": [
+    {
+      "name": "notebook 3 comparable screens",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "notebook original art loaded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "quiet 3 comparable screens",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "quiet original art loaded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "investigation 3 comparable screens",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "investigation original art loaded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: setup-intro design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: setup-guide design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: setup-done design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: welcome design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: intro-chat design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: profile-review design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: personal-home design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: capture design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: saved design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: recall design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: detail design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: edit design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: corrected design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: conversation design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: settings design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: empty design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: no-match design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: multiple design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: saving design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: save-failed design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: unknown design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: conflict design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: offline design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: delete-confirm design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: voice-permission design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: voice-listening design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: voice-processing design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: voice-speaking design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: voice-interrupted design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: voice-denied design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: detail design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: settings design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: dark-home design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: polish-home design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: large-home design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No horizontal clipping: small-home design",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "All 42 screen studies present",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Confirmed save follows mock commit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Keyword recall returns saved candidate",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Exact source detail opens",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Correction preserves original capture",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete removes candidate",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Failure preserves draft",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Failure does not show success",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Unknown has no success or direct write retry",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Cancelled late receipt cannot create success",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Failure/unknown/cancel did not create memory",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Delete all does not reseed samples",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Dark mode uses original dark SVG",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Large text removes decorative staging",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Small/large Polish layout wraps without horizontal clipping",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Reduced motion disables character animation",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Voice scene carries simulation disclosure",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Interruption gives user the floor",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "OS reduced motion overrides normal selector",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Mobile studio has no page horizontal overflow",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Portable file opening works",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Portable font loaded",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No JavaScript runtime errors",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "name": "No failed local asset requests",
+      "passed": true,
+      "detail": "[]"
+    }
+  ],
+  "errors": [],
+  "bad": [],
+  "limitations": [
+    "No SwiftUI implementation",
+    "No live AI/voice/reminders/system surfaces",
+    "No physical-device, VoiceOver or bilingual user study",
+    "Large-text study is a browser approximation, not native Dynamic Type validation"
+  ]
+}
