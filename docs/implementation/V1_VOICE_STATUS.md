@@ -7,7 +7,7 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 | Agent | "Doddy (dev prototype)" `agent_0501m4et27vyeawrwqfdxxfszfa6`, tags doddy/dev |
 | Mode | **Public (no auth)**: development only, on the owner's own phone |
 | LLM | gemini-2.5-flash, temperature 0.3, timezone Europe/Warsaw |
-| Speech | Scribe realtime (in), eleven_v4_turbo (out), voice **Surfer McDude VF – Classic California Vibe** `Mtmp3KhFIjYpWYRycDe3` (ElevenLabs Voice Library professional voice, English/American character voice; owner's choice 2026-10-08, agent version `agtvrsn_3801m4eyqrvrejktq81vth1tg3y2`; the Polish preset has no voice override, so one voice serves both languages); max 10 min per conversation |
+| Speech | Scribe realtime (in), eleven_v4_turbo (out), voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` (ElevenLabs Voice Library professional voice, English/American, young male, made for dialogue; added to the account's My Voices and set 2026-10-08, agent version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`; the Polish preset has no voice override, so one voice serves both languages); max 10 min per conversation |
 | Languages | English default, Polish preset ("Hej, tu Doddy. Co słychać?"), automatic language detection |
 | Client tools | `search_memories(query)` `tool_6701m4et16pveywrpymdw3h3v0wp`, `save_memory(text)` `tool_9401m4et17pfe598c1wmvdhpwhcv` (both expect a response) |
 | Prompt | AI disclosure, short spoken replies, strict memory rules (answer only from tool results, say "couldn't find it", never claim a save without "saved"), no reminders/messages/other apps |
@@ -25,9 +25,9 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 Linux: core package 30 tests pass (incl. tool parsing and replies), guard passes (and fails on audio code outside `Features/Voice`), all Swift files syntax-parse, XcodeGen resolves the project with the ElevenLabs package.
 
 ## Not verified (needs the Mac and a real iPhone)
-App compile with the SDK; microphone prompt; a real conversation in English and Polish; that client tool calls arrive (the agent's `client_events` list does not name `client_tool_call`; SDK and docs suggest they are always sent); the save confirmation round-trip within the 90 s tool timeout; ending on background. That the chosen voice is in the account's My Voices (the listing marks it as a Voice Library voice; a library voice must be added to the account before an agent can speak with it, and this could not be checked from here). How it sounds through the agent in Polish (it is an English character voice; if Polish needs its own, add a voice override to the Polish language preset).
+App compile with the SDK; microphone prompt; a real conversation in English and Polish; that client tool calls arrive (the agent's `client_events` list does not name `client_tool_call`; SDK and docs suggest they are always sent); the save confirmation round-trip within the 90 s tool timeout; ending on background. How the chosen voice sounds through the agent in Polish (it is an English voice; if Polish needs its own, add a voice override to the Polish language preset). Note: ElevenLabs rejects an agent voice that is not in the account's My Voices (`voice_not_found`), so a Voice Library voice must be added there first.
 
 ## Before anyone else uses it
 1. Turn on agent authentication and add a small token server (`conversationToken` path in the SDK).
-2. Voice chosen (owner instruction 2026-10-08): Voice Library voice Surfer McDude VF. Confirm it is added to My Voices, judge Polish pronunciation on a device, and check the voice's library licence terms before release.
+2. Voice chosen (owner instruction 2026-10-08): Voice Library voice Josh – Conversational Agent, already in My Voices. Judge Polish pronunciation on a device and check the voice's library licence terms before release.
 3. Decide on data handling with ElevenLabs (zero retention and EU residency are Enterprise-only).

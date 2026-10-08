@@ -60,7 +60,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
-| 038 | Doddy speaks with the ElevenLabs Voice Library voice **Surfer McDude VF – Classic California Vibe** `Mtmp3KhFIjYpWYRycDe3` for both languages (set on the dev agent 2026-10-08, version `agtvrsn_3801m4eyqrvrejktq81vth1tg3y2`); no per-language voice override | Applied (owner instruction) — must be present in the account's My Voices; Polish pronunciation to be judged on device; library licence terms to be checked before release |
+| 038 | Doddy speaks with the ElevenLabs Voice Library voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` for both languages (added to My Voices and set on the dev agent 2026-10-08, version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`); no per-language voice override | Applied (owner instruction) — Polish pronunciation to be judged on device; library licence terms to be checked before release |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
