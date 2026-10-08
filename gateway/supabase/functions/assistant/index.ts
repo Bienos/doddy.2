@@ -136,7 +136,12 @@ async function chat(req: Request): Promise<Response> {
     clearTimeout(timer);
   }
   if (res.status === 429) return fail(429, "rateLimited", requestId);
-  if (!res.ok) return fail(502, "providerUnavailable", requestId);
+  if (!res.ok) {
+    // Log only OpenAI's error type/code/param, never user text.
+    const e = (await res.json().catch(() => ({})))?.error ?? {};
+    console.log(JSON.stringify({ requestId, upstreamStatus: res.status, code: e.code, type: e.type, param: e.param }));
+    return fail(502, "providerUnavailable", requestId);
+  }
 
   let text = "";
   let cited: string[] = [];
