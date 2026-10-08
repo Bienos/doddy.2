@@ -1,6 +1,6 @@
 # M1 status — local memory loop
 Date: 2026-10-08. Built on owner instruction "don't make unnecessary tests, just build stuff".
-Still **no Xcode**: the iOS app has not been compiled or run. Storage was exercised on real SQLite (Linux).
+Storage was exercised on real SQLite (Linux and macOS). The app built and its unit + UI tests passed on Xcode 27.0 / iPhone simulator — see "Mac verification" below.
 
 ## Built
 | PRD M1 item | What exists |
@@ -18,4 +18,15 @@ Still **no Xcode**: the iOS app has not been compiled or run. Storage was exerci
 `scripts/ci.sh --core-only` → pack PASS, guard PASS, **28 tests, 0 failures** (incl. 2 SQLite tests: save/correct/search/reopen/delete/delete-all and export); app sources syntax-parse; XcodeGen generates the project with `DoddyPersistence` linked.
 
 ## Not run
-Everything in the app target on iOS: compile, UI, Data Protection behaviour, backups, share sheet, force-quit relaunch on device, acceptance rows A-02…A-13 as UI flows.
+Manual UI review, Data Protection behaviour, backups, share sheet, force-quit relaunch on a physical device, and acceptance rows A-02…A-13 as end-to-end UI flows (only smoke UI tests exist, by owner instruction).
+
+## Mac verification — 2026-10-08 (owner's Mac, reported by owner)
+| Item | Result |
+|---|---|
+| Environment | Xcode 27.0 (27A266a), Apple Swift 6.4, macOS 27 host, arm64 |
+| Destination | first available iPhone simulator, auto-selected by `scripts/ci.sh` (owner's list began with iPhone 18 Pro) |
+| `scripts/ci.sh` | **RESULT: PASS** — pack integrity, forbidden-capability guard, Swift package tests, `xcodegen generate`, `xcodebuild -list`, `xcodebuild test` (unit + UI): `** TEST SUCCEEDED **` |
+| Fixes needed to get there | `ci.sh` bash 3.2 empty-array bug (2c860dd); no `AppIcon` set → `ASSETCATALOG_COMPILER_APPICON_NAME: ""` (58d6961). No Swift source changes were needed. |
+| Not captured | per-test counts of the app targets (only the summary was pasted; the run's `.xcresult` is on the owner's Mac) |
+
+Still unverified: manual visual/accessibility review (dark mode, largest Dynamic Type, VoiceOver), behaviour on a physical iPhone (Data Protection, backups, force-quit relaunch), and the share sheet exports.

@@ -59,3 +59,14 @@ Date: 2026-10-08. Branch `claude/loving-dirac-uuxoux`. Repository `Bienos/doddy.
 
 ## Next step
 **Stop.** M1 (local memory) is not started. Run the "Needs a Mac" steps in `BUILD_AND_TEST.md`, record results here, then decide the items in `DECISIONS.md`.
+
+## Mac verification — 2026-10-08 (owner's Mac, reported by owner)
+| Item | Result |
+|---|---|
+| Environment | Xcode 27.0 (27A266a), Apple Swift 6.4, macOS 27 host, arm64 |
+| Destination | first available iPhone simulator, auto-selected by `scripts/ci.sh` (owner's list began with iPhone 18 Pro) |
+| `scripts/ci.sh` | **RESULT: PASS** — pack integrity, forbidden-capability guard, Swift package tests, `xcodegen generate`, `xcodebuild -list`, `xcodebuild test` (unit + UI): `** TEST SUCCEEDED **` |
+| Fixes needed to get there | `ci.sh` bash 3.2 empty-array bug (2c860dd); no `AppIcon` set → `ASSETCATALOG_COMPILER_APPICON_NAME: ""` (58d6961). No Swift source changes were needed. |
+| Not captured | per-test counts of the app targets (only the summary was pasted; the run's `.xcresult` is on the owner's Mac) |
+
+Still unverified: manual visual/accessibility review (dark mode, largest Dynamic Type, VoiceOver), behaviour on a physical iPhone (Data Protection, backups, force-quit relaunch), and the share sheet exports.
