@@ -39,3 +39,13 @@ public struct URLSessionTransport: HTTPTransport {
         }
     }
 }
+
+extension GatewayAssistantClient {
+    /// Production wiring, kept here so app code never names the network stack directly.
+    public static func live(baseURL: URL, locale: String, tokenStore: any DeviceTokenStore) -> GatewayAssistantClient {
+        GatewayAssistantClient(
+            configuration: GatewayConfiguration(baseURL: baseURL, locale: locale),
+            transport: URLSessionTransport(),
+            tokenStore: tokenStore)
+    }
+}

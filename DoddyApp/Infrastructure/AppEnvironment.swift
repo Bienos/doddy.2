@@ -1,9 +1,11 @@
+import DoddyAssistant
 import DoddyCore
 import DoddyPersistence
 import Foundation
 import SwiftUI
 
-/// Composition root. Local memory uses SQLite; AI, voice and reminders stay explicit
+/// Composition root. Local memory uses SQLite. The cloud assistant is wired but only used after the
+/// user accepts the cloud-AI notice (preview, untested on device); voice and reminders stay explicit
 /// `Unavailable*` adapters until their milestones ship with real tests.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
@@ -33,7 +35,11 @@ struct AppEnvironment: Sendable {
             return AppEnvironment(
                 memoryRepository: repository,
                 recallService: RepositoryRecallService(repository: repository),
-                assistantClient: UnavailableAssistantClient(),
+                // No network call happens until the user has accepted the notice and asks a question.
+                assistantClient: GatewayAssistantClient.live(
+                    baseURL: GatewayEndpoint.baseURL,
+                    locale: Locale.current.language.languageCode?.identifier ?? "en",
+                    tokenStore: KeychainDeviceTokenStore()),
                 toolExecutor: UnavailableToolExecutor(),
                 capabilities: .m1,
                 privacy: .m0,

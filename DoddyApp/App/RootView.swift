@@ -8,13 +8,14 @@ enum PreferenceKey {
 }
 
 enum AppTab: Hashable {
-    case home, memories, settings
+    case home, memories, ask, settings
 }
 
 struct RootView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hasSeenFirstHello) private var hasSeenFirstHello = false
+    @AppStorage(CloudAIConsent.storageKey) private var consentVersion = 0
     @State private var selectedTab: AppTab = .home
 
     private var colorScheme: ColorScheme? {
@@ -33,6 +34,11 @@ struct RootView: View {
             MemoriesView()
                 .tabItem { Label("Memories", systemImage: "note.text") }
                 .tag(AppTab.memories)
+            if CloudAIConsent.isGranted(consentVersion) {
+                AskView(environment: store.environment)
+                    .tabItem { Label("Ask", systemImage: "bubble.left") }
+                    .tag(AppTab.ask)
+            }
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
                 .tag(AppTab.settings)

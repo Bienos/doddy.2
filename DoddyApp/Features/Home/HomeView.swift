@@ -43,7 +43,7 @@ struct HomeView: View {
 
                     recent
 
-                    Text("Stored on this iPhone only. Doddy is an AI assistant, not a person; AI answers, voice and reminders aren't built yet.")
+                    Text("Stored on this iPhone only. Doddy is an AI assistant, not a person; AI answers are an optional preview you can turn on in Settings (untested on a device); voice and reminders aren't built yet.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")

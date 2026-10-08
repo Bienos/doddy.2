@@ -13,6 +13,14 @@ public struct PrivacyDefaults: Equatable, Sendable {
         accountRequired: false, networkRequestsMade: false, microphoneUsed: false,
         contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: false, syncEnabled: false)
 
+    /// M2 preview: identical to `m0` until the user accepts the cloud-AI notice. After consent,
+    /// questions (and up to a few matching saved notes) are sent only when the user asks Doddy.
+    public static func m2(cloudAIConsented: Bool) -> PrivacyDefaults {
+        PrivacyDefaults(
+            accountRequired: false, networkRequestsMade: cloudAIConsented, microphoneUsed: false,
+            contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: cloudAIConsented, syncEnabled: false)
+    }
+
     /// True when nothing leaves the device and nothing listens.
     public var isFullyLocal: Bool {
         !(accountRequired || networkRequestsMade || microphoneUsed || contentTelemetryEnabled

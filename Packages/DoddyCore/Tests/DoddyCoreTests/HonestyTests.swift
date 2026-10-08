@@ -27,6 +27,17 @@ final class HonestyTests: XCTestCase {
         XCTAssertFalse(PrivacyDefaults.m0.cloudAIEnabled)
     }
 
+    func testM2PrivacyIsLocalUntilConsentThenCloudOnly() {
+        XCTAssertTrue(PrivacyDefaults.m2(cloudAIConsented: false).isFullyLocal)
+        let on = PrivacyDefaults.m2(cloudAIConsented: true)
+        XCTAssertFalse(on.isFullyLocal)
+        XCTAssertTrue(on.cloudAIEnabled)
+        XCTAssertTrue(on.networkRequestsMade)
+        XCTAssertFalse(on.microphoneUsed)
+        XCTAssertFalse(on.accountRequired)
+        XCTAssertFalse(on.analyticsEnabled)
+    }
+
     func testUnavailableAdaptersThrowAndNeverFabricateResults() async throws {
         let new = try NewMemory(text: "x", capturedAt: Date(timeIntervalSince1970: 0))
         let repo = UnavailableMemoryRepository()

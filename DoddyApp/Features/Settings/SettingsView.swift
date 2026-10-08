@@ -6,11 +6,16 @@ struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(CloudAIConsent.storageKey) private var consentVersion = 0
+    @State private var showConsentNotice = false
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
     private var environment: AppEnvironment { store.environment }
-    private var privacy: PrivacyDefaults { environment.privacy }
+    private var cloudAIConsented: Bool { CloudAIConsent.isGranted(consentVersion) }
+    private var privacy: PrivacyDefaults {
+        cloudAIConsented ? .m2(cloudAIConsented: true) : environment.privacy
+    }
 
     var body: some View {
         NavigationStack {
@@ -48,14 +53,28 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                Section("Cloud AI (preview)") {
+                    Toggle("Let Doddy answer questions", isOn: Binding(
+                        get: { cloudAIConsented },
+                        set: { newValue in
+                            if newValue { showConsentNotice = true } else { consentVersion = 0 }
+                        }))
+                        .accessibilityIdentifier("settings.cloudAI")
+                    Text("Off by default. When on, a question you ask — plus up to 3 matching saved notes — is sent over the internet to Doddy's server and on to OpenAI to write the answer. Nothing is sent unless you ask. Untested on a physical iPhone.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
                 Section("Privacy") {
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
-                    StatusRow(title: "Network requests", value: privacy.networkRequestsMade ? "Yes" : "None")
+                    StatusRow(title: "Network requests", value: privacy.networkRequestsMade ? "Yes, when you ask Doddy" : "None")
                     StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "In use" : "Not used")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
-                    StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "On" : "Off (not built)")
+                    StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "On (preview)" : "Off")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("This build has no networking, microphone or reminders code. Nothing you save leaves this iPhone unless you export it.")
+                    Text(privacy.cloudAIEnabled
+                         ? "Cloud AI preview is on: only the question you ask and up to 3 matching saved notes leave this iPhone, and only when you ask. The rest of your memories stay here. There is no microphone or reminders code."
+                         : "Until you turn on the Cloud AI preview, this app makes no network requests. Nothing you save leaves this iPhone unless you export it. There is no microphone or reminders code.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -86,6 +105,11 @@ struct SettingsView: View {
             .background(Theme.canvas)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showConsentNotice) {
+                CloudAIConsentSheet(
+                    onAccept: { consentVersion = CloudAIConsent.noticeVersion; showConsentNotice = false },
+                    onDecline: { showConsentNotice = false })
+            }
             .confirmationDialog(
                 "Delete all \(store.memories.count) memories?",
                 isPresented: $confirmDeleteAll, titleVisibility: .visible
