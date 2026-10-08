@@ -35,7 +35,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.staticTexts["Microphone"].waitForExistence(timeout: 5))
+        // Settings is a lazy list: rows below the fold only exist once scrolled into view.
+        let microphone = app.staticTexts["Microphone"]
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 5))
+        for _ in 0..<5 where !microphone.exists { app.swipeUp() }
+        XCTAssertTrue(microphone.exists)
         XCTAssertTrue(app.staticTexts["Not used"].exists)
     }
 
