@@ -42,6 +42,12 @@ public struct CapabilityCatalog: Sendable {
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
     ])
+
+    /// M1: local text memory (save, list, correct, delete, export, lexical recall).
+    public static let m1 = CapabilityCatalog(statuses: m0.statuses.merging([
+        .memoryStorage: .available,
+        .memoryRecall: .available,
+    ]) { _, new in new })
 }
 
 public enum DoddyError: Error, Equatable, Sendable {
@@ -51,6 +57,8 @@ public enum DoddyError: Error, Equatable, Sendable {
 public struct UnavailableMemoryRepository: MemoryRepository {
     public init() {}
     public func save(_ draft: NewMemory) async throws -> MemoryRecord { throw DoddyError.capabilityUnavailable(.memoryStorage) }
+    public func list(limit: Int?) async throws -> [MemoryRecord] { throw DoddyError.capabilityUnavailable(.memoryStorage) }
+    public func deleteAll() async throws { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func query(_ query: String, limit: Int) async throws -> [MemoryCandidate] { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func update(id: UUID, currentText: String) async throws -> MemoryRecord { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func delete(id: UUID) async throws { throw DoddyError.capabilityUnavailable(.memoryStorage) }

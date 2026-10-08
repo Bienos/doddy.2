@@ -1,5 +1,5 @@
-import SwiftUI
 import DoddyCore
+import SwiftUI
 
 enum PreferenceKey {
     static let appearance = "appearance"
@@ -7,9 +7,15 @@ enum PreferenceKey {
     static let hasSeenFirstHello = "hasSeenFirstHello"
 }
 
+enum AppTab: Hashable {
+    case home, memories, settings
+}
+
 struct RootView: View {
+    @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hasSeenFirstHello) private var hasSeenFirstHello = false
+    @State private var selectedTab: AppTab = .home
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -20,16 +26,20 @@ struct RootView: View {
     }
 
     var body: some View {
-        TabView {
-            HomeView()
+        TabView(selection: $selectedTab) {
+            HomeView(selectedTab: $selectedTab)
                 .tabItem { Label("Home", systemImage: "house") }
+                .tag(AppTab.home)
             MemoriesView()
                 .tabItem { Label("Memories", systemImage: "note.text") }
+                .tag(AppTab.memories)
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
+                .tag(AppTab.settings)
         }
         .tint(Theme.accentText)
         .preferredColorScheme(colorScheme)
+        .task { await store.reload() }
         .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {
             FirstHelloView { hasSeenFirstHello = true }
                 .preferredColorScheme(colorScheme)

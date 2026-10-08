@@ -27,7 +27,9 @@ run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
 
 if command -v swift >/dev/null 2>&1; then
   swift --version
-  run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
+  # Ubuntu's system SQLite lacks the snapshot API GRDB enables by default; Doddy does not use it.
+  extra=(); [ "$(uname)" = "Linux" ] && extra=(-Xswiftc -DSQLITE_DISABLE_SNAPSHOT)
+  run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore "${extra[@]}"
 else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi

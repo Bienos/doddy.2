@@ -29,6 +29,8 @@ targets:
         product: DoddyCore
       - package: DoddyCore
         product: DoddyDesignTokens
+      - package: DoddyCore
+        product: DoddyPersistence
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.

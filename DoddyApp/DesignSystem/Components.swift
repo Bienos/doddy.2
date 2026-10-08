@@ -1,5 +1,5 @@
-import SwiftUI
 import DoddyCore
+import SwiftUI
 
 /// Decorative character art. Labelled as candidate art; hidden from VoiceOver; hidden
 /// entirely when the user turns on "Hide character artwork".
@@ -25,8 +25,7 @@ struct CandidateCharacterView: View {
     }
 }
 
-/// A plain status row: label on the left, an explicit text value on the right
-/// (state is never conveyed by colour alone).
+/// Label on the left, explicit text value on the right (never colour alone).
 struct StatusRow: View {
     let title: String
     let value: String
@@ -40,6 +39,103 @@ struct StatusRow: View {
                 .multilineTextAlignment(.trailing)
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+struct PrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundStyle(Theme.canvas)
+            .padding(.horizontal, 18)
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(
+                Theme.ink.opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.35),
+                in: RoundedRectangle(cornerRadius: 18))
+            .contentShape(RoundedRectangle(cornerRadius: 18))
+    }
+}
+
+struct SecondaryButtonStyle: ButtonStyle {
+    var tint: Color = Theme.ink
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(tint)
+            .padding(.horizontal, 18)
+            .frame(maxWidth: .infinity, minHeight: 54)
+            .background(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(Theme.separator, lineWidth: 1)
+                    .background(configuration.isPressed ? Theme.quietSurface : .clear, in: RoundedRectangle(cornerRadius: 18)))
+            .opacity(isEnabled ? 1 : 0.4)
+            .contentShape(RoundedRectangle(cornerRadius: 18))
+    }
+}
+
+/// Text editor with a live length counter (Unicode scalars, same rule as validation).
+struct MemoryTextEditor: View {
+    @Binding var text: String
+    let label: String
+
+    private var length: Int { text.unicodeScalars.count }
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 6) {
+            TextEditor(text: $text)
+                .frame(minHeight: 160)
+                .scrollContentBackground(.hidden)
+                .padding(12)
+                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+                .accessibilityLabel(label)
+            Text("\(length) / \(MemoryLimits.maxTextLength)")
+                .font(.footnote)
+                .monospacedDigit()
+                .foregroundStyle(length > MemoryLimits.maxTextLength ? Theme.error : Theme.secondaryText)
+                .accessibilityLabel("\(length) of \(MemoryLimits.maxTextLength) characters")
+        }
+    }
+}
+
+struct MemoryRow: View {
+    let record: MemoryRecord
+    var matchedTerms: [String] = []
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "note.text")
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(record.currentText)
+                    .lineLimit(3)
+                Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · corrected" : "")")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                if !matchedTerms.isEmpty {
+                    Text("Matched: \(matchedTerms.joined(separator: ", "))")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.accentText)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
+    }
+}
+
+struct ProblemView: View {
+    let message: String
+
+    var body: some View {
+        Label(message, systemImage: "exclamationmark.triangle")
+            .foregroundStyle(Theme.error)
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -64,6 +160,34 @@ extension Capability {
         case .reminders: "Reminders"
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
+        }
+    }
+}
+
+extension MemorySource {
+    var displayName: String {
+        switch self {
+        case .explicitText: "Your typed note"
+        case .explicitVoice: "Your voice note"
+        case .sharedContent: "Shared into Doddy"
+        case .importedLegacyUnknown: "Imported, date unknown"
+        case .sampleFixture: "Sample"
+        }
+    }
+}
+
+extension MemoryCategory {
+    var displayName: String {
+        switch self {
+        case .fact: "Fact"
+        case .preference: "Preference"
+        case .commitment: "Commitment"
+        case .recommendation: "Recommendation"
+        case .decision: "Decision"
+        case .item: "Item"
+        case .place: "Place"
+        case .intention: "Intention"
+        case .other: "Other"
         }
     }
 }

@@ -16,13 +16,24 @@ public struct MemoryCandidate: Equatable, Sendable {
     public var memoryID: UUID { record.id }
 }
 
-/// Durable local storage. A returned record means the write is committed (M1 contract).
+/// Durable local storage. A returned record means the write is committed and read back.
 public protocol MemoryRepository: Sendable {
     func save(_ draft: NewMemory) async throws -> MemoryRecord
+    /// Newest first. `nil` limit returns everything.
+    func list(limit: Int?) async throws -> [MemoryRecord]
     func query(_ query: String, limit: Int) async throws -> [MemoryCandidate]
     func update(id: UUID, currentText: String) async throws -> MemoryRecord
     func delete(id: UUID) async throws
+    func deleteAll() async throws
     func export() async throws -> Data
+}
+
+public enum MemoryStoreError: Error, Equatable, Sendable {
+    case notFound(UUID)
+    /// The write reported success but reading it back did not match. Treated as a failed save.
+    case verificationFailed
+    /// A stored row no longer satisfies the domain rules.
+    case corruptRecord(String)
 }
 
 public enum RecallOutcome: Equatable, Sendable {

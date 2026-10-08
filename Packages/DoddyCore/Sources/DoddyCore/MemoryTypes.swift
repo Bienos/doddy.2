@@ -76,7 +76,7 @@ public struct NewMemory: Equatable, Sendable {
 /// A stored memory. `rawText` is the exact accepted text and never changes;
 /// `currentText` is the user's correction. Field names and JSON keys follow
 /// `schemas/memory.schema.json` (tombstones are not modelled; deletion is a purge).
-public struct MemoryRecord: Equatable, Sendable, Identifiable {
+public struct MemoryRecord: Hashable, Sendable, Identifiable {
     public static let schemaVersion = 1
 
     public let id: UUID

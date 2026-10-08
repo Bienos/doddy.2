@@ -1,8 +1,12 @@
 # Dependencies and licences — M0
 
 ## Shipped in the app
-**None.** The app and `DoddyCore` import only Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`).
-No third-party Swift packages, no network SDKs, no analytics, no fonts.
+| Package | Version | Licence | Used for |
+|---|---|---|---|
+| [GRDB.swift](https://github.com/groue/GRDB.swift) | 7.9.0 (exact pin, `Packages/DoddyCore/Package.resolved`) | MIT | SQLite access, migrations, FTS5 (M1, ADR-003) |
+
+Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, system SQLite). No network
+SDKs, no analytics, no fonts.
 
 ## Development tooling (not shipped, not linked)
 | Tool | Used for | Licence | Note |
@@ -14,7 +18,7 @@ No third-party Swift packages, no network SDKs, no analytics, no fonts.
 ## Candidates for later milestones (NOT added)
 | Candidate | Milestone | Status |
 |---|---|---|
-| GRDB.swift (SQLite, FTS5) | M1 | ADR-003 proposes it; add only with M1 and review its licence (MIT) and release at that time |
+| (none pending) | | GRDB was added in M1 |
 
 ## Fonts
 No font binaries in the repository or app (pack policy). The UI uses system fonts with Dynamic Type.

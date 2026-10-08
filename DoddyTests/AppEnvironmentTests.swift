@@ -4,8 +4,8 @@ import DoddyCore
 
 /// App-target tests. NOT RUN in the authoring environment (no Xcode); see BUILD_AND_TEST.md.
 final class AppEnvironmentTests: XCTestCase {
-    func testM0WiresOnlyUnavailableAdapters() {
-        let env = AppEnvironment.m0
+    func testUnavailableEnvironmentWiresOnlyUnavailableAdapters() {
+        let env = AppEnvironment.unavailable
         XCTAssertTrue(env.memoryRepository is UnavailableMemoryRepository)
         XCTAssertTrue(env.recallService is UnavailableRecallService)
         XCTAssertTrue(env.assistantClient is UnavailableAssistantClient)
@@ -15,7 +15,7 @@ final class AppEnvironmentTests: XCTestCase {
     func testEveryCapabilityHasHonestDisplayCopy() {
         for capability in Capability.allCases {
             XCTAssertFalse(capability.displayName.isEmpty)
-            let text = StatusCopy.text(for: AppEnvironment.m0.capabilities.status(of: capability))
+            let text = StatusCopy.text(for: AppEnvironment.unavailable.capabilities.status(of: capability))
             XCTAssertTrue(text.hasPrefix("Not built"), "\(capability): \(text)")
         }
     }

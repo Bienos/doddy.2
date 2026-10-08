@@ -1,4 +1,4 @@
-# Build and test — DODDY V2, milestone M0
+# Build and test — DODDY V2 (M0 shell + M1 local memory)
 
 **Status of this document: written without access to Xcode.** Everything under "Verified on Linux"
 was executed (results in [docs/implementation/M0_REPORT.md](docs/implementation/M0_REPORT.md)).
@@ -23,7 +23,7 @@ scripts/ci.sh --core-only      # pack integrity + forbidden-capability guard + S
 # or individually:
 python3 -I scripts/verify_imported_pack.py
 scripts/check_forbidden_capabilities.sh
-swift test --package-path Packages/DoddyCore
+swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT   # flag needed on Linux only
 ```
 
 `scripts/ci.sh` **without** flags needs Xcode too; if it cannot run a step it prints `NOT RUN` and exits
@@ -58,8 +58,9 @@ simulator name availability, and whether the UI tests' launch-argument defaults 
 Packages/DoddyCore/          platform-agnostic Swift package (tested on Linux)
   Sources/DoddyCore/           domain types, ports, Unavailable adapters, capability catalog, privacy defaults
   Sources/DoddyDesignTokens/   CANDIDATE colour tokens + WCAG contrast maths (no SwiftUI)
-  Tests/                       26 XCTest cases
-DoddyApp/                    SwiftUI app target (iPhone): App/, Features/{Home,Memories,Settings,Onboarding}/,
+  Sources/DoddyPersistence/    SQLite memory store (GRDB 7.9.0, FTS5)
+  Tests/                       28 XCTest cases
+DoddyApp/                    SwiftUI app target (iPhone): App/, Features/{Home,Capture,Memories,Settings,Onboarding}/,
                              DesignSystem/, Infrastructure/, Resources/ (asset catalog, PrivacyInfo.xcprivacy)
 DoddyTests/ DoddyUITests/    app-level unit and UI smoke tests (NOT RUN without Xcode)
 project.yml                  XcodeGen spec (source of truth for the Xcode project)

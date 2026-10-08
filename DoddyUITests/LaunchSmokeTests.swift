@@ -10,7 +10,7 @@ final class LaunchSmokeTests: XCTestCase {
     private func launch(seenFirstHello: Bool) -> XCUIApplication {
         let app = XCUIApplication()
         // Overrides UserDefaults for this launch only.
-        app.launchArguments += ["-hasSeenFirstHello", seenFirstHello ? "YES" : "NO", "-appearance", "system"]
+        app.launchArguments += ["-hasSeenFirstHello", seenFirstHello ? "YES" : "NO", "-appearance", "system", "-inMemoryStore", "YES"]
         app.launch()
         return app
     }
@@ -29,7 +29,7 @@ final class LaunchSmokeTests: XCTestCase {
     func testThreeTabsAndHonestPlaceholders() {
         let app = launch(seenFirstHello: true)
         XCTAssertTrue(app.tabBars.buttons["Home"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.otherElements["home.status"].exists || app.staticTexts["Right now"].exists)
+        XCTAssertTrue(app.buttons["home.save"].exists)
 
         app.tabBars.buttons["Memories"].tap()
         XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))

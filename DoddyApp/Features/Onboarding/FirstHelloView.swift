@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Minimal First Hello: honest introduction with equal-weight Start and Skip. It saves no
-/// preferences, asks no questions and starts no setup wizard (M0 scope).
+/// First Hello: honest introduction with equal-weight Start and Skip. Saves no preferences
+/// and asks nothing.
 struct FirstHelloView: View {
     let onFinish: () -> Void
 
@@ -11,27 +11,22 @@ struct FirstHelloView: View {
                 Text("Hey. I'm Doddy.")
                     .font(.largeTitle.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text("I'm an AI assistant, not a person. This is an early development build, so I can't save anything, answer questions, listen, or set reminders yet. Nothing you do here leaves your phone.")
+                Text("I'm an AI assistant, not a person. For now I keep the details you choose to save and help you find them again, on this iPhone only. I can't answer questions, listen, or set reminders yet.")
 
                 CandidateCharacterView(assetName: "Doddy_waving")
                     .frame(maxWidth: .infinity)
 
                 VStack(spacing: 12) {
                     Button(action: onFinish) {
-                        Text("Take a look around")
-                            .foregroundStyle(Theme.canvas)
-                            .frame(maxWidth: .infinity, minHeight: 54)
+                        HStack { Text("Take a look around"); Spacer(); Image(systemName: "arrow.right") }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.ink)
+                    .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("firstHello.start")
 
                     Button(action: onFinish) {
                         Text("Skip")
-                            .frame(maxWidth: .infinity, minHeight: 54)
                     }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.ink)
+                    .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("firstHello.skip")
                 }
             }
