@@ -37,7 +37,7 @@ brew install xcodegen
 make project                   # xcodegen generate --spec project.yml  -> Doddy.xcodeproj
 xcodebuild -list -project Doddy.xcodeproj
 xcodebuild test -project Doddy.xcodeproj -scheme Doddy \
-  -destination 'platform=iOS Simulator,name=iPhone 16'   # pick any installed iPhone simulator
+  -destination 'platform=iOS Simulator,name=iPhone 17'   # pick any installed iPhone simulator
 # or all of the above plus the Linux-safe steps:
 scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 ```

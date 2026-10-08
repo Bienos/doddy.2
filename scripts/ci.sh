@@ -28,8 +28,12 @@ run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
 if command -v swift >/dev/null 2>&1; then
   swift --version
   # Ubuntu's system SQLite lacks the snapshot API GRDB enables by default; Doddy does not use it.
-  extra=(); [ "$(uname)" = "Linux" ] && extra=(-Xswiftc -DSQLITE_DISABLE_SNAPSHOT)
-  run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore "${extra[@]}"
+  # (No arrays: macOS ships bash 3.2, where an empty "${arr[@]}" fails under `set -u`.)
+  if [ "$(uname)" = "Linux" ]; then
+    run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT
+  else
+    run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
+  fi
 else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
@@ -42,7 +46,14 @@ elif ! command -v xcodegen >/dev/null 2>&1; then
   not_run "iOS app build + tests" "xcodegen not found (brew install xcodegen)"
 else
   run_step "Generate Xcode project" xcodegen generate --spec project.yml
-  dest=${DODDY_DESTINATION:-"platform=iOS Simulator,name=iPhone 16"}
+  # Default: first available iPhone simulator; override with DODDY_DESTINATION.
+  if [ -n "${DODDY_DESTINATION:-}" ]; then
+    dest=$DODDY_DESTINATION
+  else
+    sim_id=$(xcrun simctl list devices available | grep -E '^ +iPhone' | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+    dest="platform=iOS Simulator,id=${sim_id}"
+  fi
+  echo "Destination: $dest"
   run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
   run_step "xcodebuild test (unit + UI)" xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "$dest"
 fi
