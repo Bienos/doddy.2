@@ -3,8 +3,8 @@ import DoddyPersistence
 import Foundation
 import SwiftUI
 
-/// Composition root. Local memory uses SQLite; AI, voice and reminders stay explicit
-/// `Unavailable*` adapters until their milestones ship with real tests.
+/// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView);
+/// reminders and other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let recallService: any RecallService
@@ -35,8 +35,8 @@ struct AppEnvironment: Sendable {
                 recallService: RepositoryRecallService(repository: repository),
                 assistantClient: UnavailableAssistantClient(),
                 toolExecutor: UnavailableToolExecutor(),
-                capabilities: .m1,
-                privacy: .m0,
+                capabilities: .v1Voice,
+                privacy: .v1Voice,
                 storageProblem: nil)
         } catch {
             return AppEnvironment(

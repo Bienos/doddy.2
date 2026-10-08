@@ -11,6 +11,9 @@ options:
 packages:
   DoddyCore:
     path: Packages/DoddyCore
+  ElevenLabs:
+    url: https://github.com/elevenlabs/elevenlabs-swift-sdk
+    exactVersion: 3.3.1
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -31,6 +34,7 @@ targets:
         product: DoddyDesignTokens
       - package: DoddyCore
         product: DoddyPersistence
+      - package: ElevenLabs
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.
@@ -46,8 +50,8 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
-        # Deliberately no usage-description keys (microphone, speech, reminders, ...):
-        # M0 requests no permissions.
+        # Only the microphone, for voice conversations the user starts. No other permission keys.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens only while you are talking to him, after you tap Talk to Doddy. Your voice is sent to ElevenLabs to run the conversation."
   DoddyTests:
     type: bundle.unit-test
     platform: iOS

@@ -51,6 +51,16 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 031 | On Linux, package tests need `-Xswiftc -DSQLITE_DISABLE_SNAPSHOT` (Ubuntu SQLite lacks the snapshot API); `ci.sh`/`Makefile` add it automatically. Apple builds unaffected. | Applied |
 | 032 | Not built in M1: private/no-history session mode (PRD item 6), content-free telemetry (item 8), conflict highlighting beyond listing all matches. | Open — owner to schedule |
 
+## V1 voice decisions
+
+| ADR | Decision | Status |
+|---|---|---|
+| 033 | Voice runs on **ElevenLabs Agents** (owner has Creator plan), behind app-side tool handling; provider bake-off vs OpenAI Realtime still recommended | Applied (owner instruction) |
+| 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Applied for dev — **must change before TestFlight** |
+| 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
+| 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
+| 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.

@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -17,7 +18,7 @@ struct SettingsView: View {
             Form {
                 Section("About this build") {
                     StatusRow(title: "Version", value: Self.versionText)
-                    Text("Development build. DODDY is an AI assistant, not a person. The colours and character artwork are candidates awaiting approval, not a final brand.")
+                    Text("Development build. DODDY is an AI assistant, not a person. The colours, voice and character artwork are candidates awaiting approval, not a final brand.")
                 }
 
                 Section("Your memories") {
@@ -50,16 +51,30 @@ struct SettingsView: View {
 
                 Section("Privacy") {
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
-                    StatusRow(title: "Network requests", value: privacy.networkRequestsMade ? "Yes" : "None")
-                    StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "In use" : "Not used")
+                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "Only while talking (ElevenLabs)" : "None")
+                    StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "Only while talking" : "Not used")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
-                    StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "On" : "Off (not built)")
+                    StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("This build has no networking, microphone or reminders code. Nothing you save leaves this iPhone unless you export it.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .accessibilityIdentifier("settings.privacy")
+
+                Section("Voice") {
+                    TextField("ElevenLabs agent ID", text: $voiceAgentID)
+                        .font(.body.monospaced())
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("settings.voiceAgentID")
+                    if voiceAgentID != VoiceConfig.developmentAgentID {
+                        Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
+                    }
+                    Text("Development prototype: Doddy's voice runs on an ElevenLabs agent. Conversations count toward the owner's ElevenLabs minutes.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
 
                 Section("Appearance and accessibility") {
                     Picker("Appearance", selection: $appearanceRaw) {

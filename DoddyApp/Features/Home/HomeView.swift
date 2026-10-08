@@ -6,6 +6,7 @@ struct HomeView: View {
 
     @Environment(MemoryStore.self) private var store
     @State private var showCapture = false
+    @State private var showVoice = false
 
     var body: some View {
         NavigationStack {
@@ -27,10 +28,17 @@ struct HomeView: View {
                     }
 
                     VStack(spacing: 12) {
-                        Button { showCapture = true } label: {
-                            HStack { Text("Save a detail"); Spacer(); Image(systemName: "arrow.right") }
+                        Button { showVoice = true } label: {
+                            HStack { Text("Talk to Doddy"); Spacer(); Image(systemName: "waveform") }
                         }
                         .buttonStyle(PrimaryButtonStyle())
+                        .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
+                        .accessibilityIdentifier("home.talk")
+
+                        Button { showCapture = true } label: {
+                            HStack { Text("Save a detail"); Spacer(); Image(systemName: "square.and.pencil") }
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
                         .disabled(!store.isStorageAvailable)
                         .accessibilityIdentifier("home.save")
 
@@ -43,7 +51,7 @@ struct HomeView: View {
 
                     recent
 
-                    Text("Stored on this iPhone only. Doddy is an AI assistant, not a person; AI answers, voice and reminders aren't built yet.")
+                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Reminders and other apps aren't built yet.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")
@@ -56,6 +64,7 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .sheet(isPresented: $showCapture) { CaptureView() }
+            .fullScreenCover(isPresented: $showVoice) { VoiceView() }
         }
         .foregroundStyle(Theme.ink)
     }

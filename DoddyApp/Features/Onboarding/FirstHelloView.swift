@@ -11,7 +11,7 @@ struct FirstHelloView: View {
                 Text("Hey. I'm Doddy.")
                     .font(.largeTitle.bold())
                     .accessibilityAddTraits(.isHeader)
-                Text("I'm an AI assistant, not a person. For now I keep the details you choose to save and help you find them again, on this iPhone only. I can't answer questions, listen, or set reminders yet.")
+                Text("I'm an AI assistant, not a person. You can talk to me, and I keep the details you choose to save and help you find them again. Your notes stay on this iPhone; when we talk, your voice goes to ElevenLabs to run the conversation. I can't set reminders or use other apps yet.")
 
                 CandidateCharacterView(assetName: "Doddy_waving")
                     .frame(maxWidth: .infinity)

@@ -1,24 +1,31 @@
 #!/usr/bin/env bash
-# M0 guard: the app and core sources must not contain networking, audio, speech, reminders,
-# account or secret code. Settings/Home copy claims exactly this ("no networking, microphone
-# or reminders code"), so this check is what makes that claim testable.
+# Capability guard. Settings/Home copy makes specific privacy claims; this check keeps them true:
+#  - no networking code of our own (the ElevenLabs SDK does the voice connection),
+#  - audio/ElevenLabs code only inside DoddyApp/Features/Voice,
+#  - no speech framework, EventKit, accounts, analytics or crash SDKs,
+#  - no secrets, and no permission keys except the microphone.
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 dirs=(DoddyApp Packages/DoddyCore/Sources)
-pattern='URLSession|URLRequest|NWConnection|import Network|import AVFoundation|import AVFAudio|AVAudio|import Speech|SFSpeech|import EventKit|EKEventStore|import AuthenticationServices|import CloudKit|import FirebaseCore|import Sentry|import Analytics'
-secrets='(sk-[A-Za-z0-9]{20,}|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
+voice_dir=DoddyApp/Features/Voice
+anywhere='URLSession|URLRequest|NWConnection|import Network|import Speech|SFSpeech|import EventKit|EKEventStore|import AuthenticationServices|import CloudKit|import FirebaseCore|import Sentry|import Analytics'
+voice_only='import AVFoundation|import AVFAudio|AVAudio|import ElevenLabs'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
 
 status=0
-if grep -RInE --include='*.swift' --include='*.plist' --include='*.yml' "$pattern" "${dirs[@]}" project.yml; then
+if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}"; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE "$secrets" "${dirs[@]}" project.yml scripts; then
+if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
+  echo "FAIL: audio/ElevenLabs code outside $voice_dir." >&2; status=1
+fi
+if grep -RInE "$secrets" "${dirs[@]}" project.yml scripts --exclude=check_forbidden_capabilities.sh; then
   echo "FAIL: possible secret found." >&2; status=1
 fi
-if grep -nE 'NS(Microphone|SpeechRecognition|RemindersFullAccess|Reminders)[A-Za-z]*UsageDescription' project.yml DoddyApp -r; then
-  echo "FAIL: M0 must not request OS permissions." >&2; status=1
+if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp | grep -v 'NSMicrophoneUsageDescription'; then
+  echo "FAIL: only the microphone permission is allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: no networking/audio/speech/EventKit/account code, no secrets, no permission keys (M0)."
+[ "$status" -eq 0 ] && echo "PASS: no own networking, audio only in Voice, no EventKit/speech/accounts/analytics, no secrets, microphone is the only permission."
 exit "$status"

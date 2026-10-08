@@ -13,6 +13,13 @@ public struct PrivacyDefaults: Equatable, Sendable {
         accountRequired: false, networkRequestsMade: false, microphoneUsed: false,
         contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: false, syncEnabled: false)
 
+    /// V1 voice: the microphone and the ElevenLabs connection are used only while a voice
+    /// conversation is open. Saved notes stay on the device; the ones the agent looks up
+    /// during a conversation are sent to it.
+    public static let v1Voice = PrivacyDefaults(
+        accountRequired: false, networkRequestsMade: true, microphoneUsed: true,
+        contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: true, syncEnabled: false)
+
     /// True when nothing leaves the device and nothing listens.
     public var isFullyLocal: Bool {
         !(accountRequired || networkRequestsMade || microphoneUsed || contentTelemetryEnabled

@@ -5,6 +5,7 @@ enum PreferenceKey {
     static let appearance = "appearance"
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
+    static let voiceAgentID = "voiceAgentID"
 }
 
 enum AppTab: Hashable {
