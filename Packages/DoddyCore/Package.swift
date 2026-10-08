@@ -10,6 +10,8 @@ let package = Package(
         .library(name: "DoddyCore", targets: ["DoddyCore"]),
         .library(name: "DoddyDesignTokens", targets: ["DoddyDesignTokens"]),
         .library(name: "DoddyPersistence", targets: ["DoddyPersistence"]),
+        // M2: gateway client. Not linked into the app target until the owner approves wiring it in.
+        .library(name: "DoddyAssistant", targets: ["DoddyAssistant"]),
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift", exact: "7.9.0"),
@@ -20,8 +22,10 @@ let package = Package(
         .target(
             name: "DoddyPersistence",
             dependencies: ["DoddyCore", .product(name: "GRDB", package: "GRDB.swift")]),
+        .target(name: "DoddyAssistant", dependencies: ["DoddyCore"]),
         .testTarget(name: "DoddyCoreTests", dependencies: ["DoddyCore"]),
         .testTarget(name: "DoddyDesignTokensTests", dependencies: ["DoddyDesignTokens"]),
         .testTarget(name: "DoddyPersistenceTests", dependencies: ["DoddyPersistence"]),
+        .testTarget(name: "DoddyAssistantTests", dependencies: ["DoddyAssistant", "DoddyCore"]),
     ]
 )

@@ -11,7 +11,9 @@ pattern='URLSession|URLRequest|NWConnection|import Network|import AVFoundation|i
 secrets='(sk-[A-Za-z0-9]{20,}|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
 
 status=0
-if grep -RInE --include='*.swift' --include='*.plist' --include='*.yml' "$pattern" "${dirs[@]}" project.yml; then
+# M2: the network stack may appear in exactly one file (the gateway transport adapter, which the app
+# target does not link yet). Everything else stays forbidden.
+if grep -RInE --include='*.swift' --include='*.plist' --include='*.yml' --exclude='URLSessionTransport.swift' "$pattern" "${dirs[@]}" project.yml; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
 if grep -RInE "$secrets" "${dirs[@]}" project.yml scripts; then
