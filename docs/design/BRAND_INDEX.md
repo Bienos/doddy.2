@@ -19,21 +19,33 @@ One map of every brand/design source in this repo. **Status: reference only.** N
 
 The extracts under `reference/brand_v1.3_unpacked/` are copies from the zips; if they ever differ, the zips win.
 
-## 2. Known conflicts — do not resolve silently
+## 2. Decision: brand master = `v1.3_COMPLETE` (owner, 2026-10-08, in chat)
 
-The two v1.3 archives disagree on almost every shared file (`diff -rq` shows PDF, PPTX, overview, status, character bible, motion bible, naming and implementation guide all differ).
+The owner chose `DODDY_BRAND_SYSTEM_v1.3_COMPLETE.zip` and asked for the app tokens to follow it. Applied in `CandidateTokens.swift`; see `DECISIONS.md` ADR-010 and ADR-018. **Still open:** approval of the final character art, logo and app icon.
 
-| Topic | v1.3 (smaller zip) | v1.3_COMPLETE | v1.2 Pocket Notebook (working UI) |
+The two v1.3 archives disagree on almost every shared file (`diff -rq` shows PDF, PPTX, overview, status, character bible, motion bible, naming and implementation guide all differ). Where they differ:
+
+| Topic | v1.3_COMPLETE (**chosen**) | v1.3 (smaller zip, not used) | v1.2 Pocket Notebook (previous app values) |
 |---|---|---|---|
-| Type: UI | Inter | Inter (SIL OFL, no binary) | Inter + native Dynamic Type |
-| Type: display | Lobster Two Bold Italic (exploration) | Custom hand-inked lettering (not yet drawn); wordmark SVG is a fallback | Caveat, 2–3 line accents only |
-| Type: accent | Comic Neue | none ("avoid multiple handwritten fonts") | — |
-| Orange | #FF6A00; accessible text #A44200 | not in a token file | #F58A24; accent text #A64B00 |
-| Paper / ink | #F8F4EB / #111115 | not in a token file | #FFF7E9 / #171715 |
-| Token file | `doddy_tokens.json` (colour, type, radius, motion) | `doddy.tokens.json` | `DESIGN-SYSTEM.md` tables |
-| Scale | Display 64/68 … label 12/16 | Display 60/62 … label 13/18 | Inter 32 / 25 / 15–16 / 12–14 |
+| Orange | #FF7A00 | #FF6A00 (accessible text #A44200) | #F58A24 (accent text #A64B00) |
+| Paper / canvas | #F7F2E9 | #F8F4EB | #FFF7E9 |
+| Ink | #0B0B0B | #111115 | #171715 |
+| Dark | #151515 (slate #1E1E1E) | #16171C | #171F29 |
+| Greys | #4B4B4B / #BABABA / #E6E6E6 | #67676B | #655F56 / #C5BCAD |
+| Status colours | success #22C55E, error #EF4444, info #3B82F6, warning #F59E0B | none | #326746 / #A3342E |
+| Type: UI | Inter | Inter | Inter + native Dynamic Type |
+| Type: display | Custom hand-inked lettering (not yet drawn; wordmark SVG is a fallback) | Lobster Two Bold Italic (+ Comic Neue accent) | Caveat, 2–3 line accents |
+| Radii / motion | card 24, button 16; 140/260/450/720 ms | card 24; 120/240/420/680 ms | — |
+| Token file | `doddy.tokens.json` | `doddy_tokens.json` | `DESIGN-SYSTEM.md` tables |
 
-Consequence: the v1.3 colour and font values must not be copied into `CandidateTokens.swift`. The shell follows v1.2 until you decide.
+**Precedence note:** `CANONICAL_DESIGN_DIRECTION.md`, `BRAND_AND_CHARACTER.md` and `GAPS_AND_DECISIONS.md` are imported pack files and are deliberately left unmodified (DECISIONS.md ADR-024). Where they still say the v1.2 colours (#FFF7E9 / #171715 / #F58A24), the non-COMPLETE v1.3 tokens, or "brand master unselected", this section and `DECISIONS.md` ADR-010/018 supersede them.
+
+(An earlier version of this index wrongly said the COMPLETE pack had no token file. It does; the table above is read from it.)
+
+What is **derived, not from the pack** (needs owner/designer sign-off):
+- Light `accentText` #B05400: #FF7A00 darkened to reach 4.5:1 on paper (4.58:1). The pack gives no accessible orange; #FF7A00 itself is 2.34:1 on paper.
+- `confirmed` / `error` text colours: kept from v1.2, because the pack's success/error fills are only 2.04:1 / 3.37:1 as text on its paper.
+- Display typography: the pack's lettering does not exist yet, so the app uses system fonts. No font binaries are bundled.
 
 ## 3. Honest limits (from the packs' own status notes)
 
@@ -46,8 +58,8 @@ Consequence: the v1.3 colour and font values must not be copied into `CandidateT
 ## 4. Decisions needed from the owner
 
 1. Final UI master: Pocket Notebook, Quiet Companion or a hybrid.
-2. Which v1.3 archive (or neither) is the brand master, and approval of final character drawings, logo and icon.
-3. Typography: acquire/licence a display face, or stay on system type plus Inter/Caveat after licence verification.
-4. Which orange and paper/ink values are canonical (v1.2 vs v1.3 above).
+2. ~~Which v1.3 archive~~ — decided: `v1.3_COMPLETE`. Still needed: approval of final character drawings, logo and icon. The app still ships v1.2 character art; the COMPLETE pack has its own SVG/PNG art in the zip.
+3. Typography: commission the hand-inked display lettering, licence a display face, or stay on system type (current).
+4. Sign-off on the three derived colour roles above.
 5. Localisation priorities and motion work.
 6. Starting Xcode/iOS target, devices, and whether Dynamic Island / Back Tap are real requirements.

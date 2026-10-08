@@ -3,8 +3,8 @@ import XCTest
 
 final class CandidateTokensTests: XCTestCase {
     func testHexParsing() {
-        XCTAssertEqual(HexColor(hex: "#FFF7E9"), HexColor(red: 255, green: 247, blue: 233))
-        XCTAssertEqual(HexColor(hex: "171715"), HexColor(red: 23, green: 23, blue: 21))
+        XCTAssertEqual(HexColor(hex: "#F7F2E9"), HexColor(red: 247, green: 242, blue: 233))
+        XCTAssertEqual(HexColor(hex: "0B0B0B"), HexColor(red: 11, green: 11, blue: 11))
         XCTAssertNil(HexColor(hex: "#FFF"))
         XCTAssertNil(HexColor(hex: "#GGGGGG"))
         XCTAssertNil(HexColor(hex: ""))
@@ -16,15 +16,15 @@ final class CandidateTokensTests: XCTestCase {
         XCTAssertEqual(white.contrastRatio(against: white), 1, accuracy: 0.001)
     }
 
-    func testMatchesPublishedContrastFigures() {
-        // design/interface-v1.2/verification/contrast.json (rounded to 2 dp there).
+    func testMatchesIndependentlyComputedContrastFigures() {
+        // Computed outside Swift (Python, WCAG 2.x formula) from the v1.3_COMPLETE values; 2 dp.
         let cases: [(CandidateColorRole, CandidateColorRole, CandidateColorScheme, Double)] = [
-            (.readingInk, .canvas, .light, 16.87), (.secondaryText, .canvas, .light, 5.94),
-            (.secondaryText, .quietSurface, .light, 5.31), (.accentText, .canvas, .light, 5.44),
-            (.confirmed, .canvas, .light, 6.24), (.error, .canvas, .light, 6.39),
-            (.readingInk, .canvas, .dark, 15.61), (.secondaryText, .canvas, .dark, 8.83),
-            (.secondaryText, .quietSurface, .dark, 7.31), (.accentText, .canvas, .dark, 9.55),
-            (.confirmed, .canvas, .dark, 9.25), (.error, .canvas, .dark, 9.11),
+            (.readingInk, .canvas, .light, 17.65), (.secondaryText, .canvas, .light, 7.82),
+            (.secondaryText, .quietSurface, .light, 8.58), (.accentText, .canvas, .light, 4.58),
+            (.confirmed, .canvas, .light, 5.95), (.error, .canvas, .light, 6.10),
+            (.readingInk, .canvas, .dark, 16.38), (.secondaryText, .canvas, .dark, 9.41),
+            (.secondaryText, .quietSurface, .dark, 8.59), (.accentText, .canvas, .dark, 6.99),
+            (.confirmed, .canvas, .dark, 10.17), (.error, .canvas, .dark, 10.01),
         ]
         for (fg, bg, scheme, expected) in cases {
             let ratio = fg.hex(scheme).contrastRatio(against: bg.hex(scheme))
@@ -51,7 +51,7 @@ final class CandidateTokensTests: XCTestCase {
     }
 
     func testBrightOrangeIsNotUsableAsBodyText() {
-        // Documents why `orangeCue` is decoration-only: it fails 4.5:1 on the light canvas.
+        // Documents why `orangeCue` is decoration-only: it fails 4.5:1 on the light canvas (2.34:1).
         let ratio = CandidateColorRole.orangeCue.hex(.light).contrastRatio(against: CandidateColorRole.canvas.hex(.light))
         XCTAssertLessThan(ratio, 4.5)
         XCTAssertFalse(CandidateColorRole.textRoles.contains(.orangeCue))
