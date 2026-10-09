@@ -30,3 +30,9 @@ No new provider, account, permission or cost.
 - Voice-guided setup and the Dynamic Island guide from the design: V3 (Live Activity, needs a developer account and a device).
 - Polish Siri phrases (needs an `AppShortcuts.xcstrings` catalog, Polish phrase review).
 - A `shortcut` memory source. Saves from Shortcuts are recorded as `explicit_text`, because the app receives text and can't tell whether Siri dictated it. A new source needs a schema change in the imported pack.
+
+## Owner report — 2026-10-09
+Owner: "i use doddy on my phone it wokred". Recorded as reported. Not yet known: which commit was installed, and
+which of voice (EN/PL), the save confirmation card, Siri / Save / Ask, Control Center, Back Tap tap test were tried.
+At report time the token server had no API key or access codes set (Vercel env), so any voice conversation used the
+public development agent.
