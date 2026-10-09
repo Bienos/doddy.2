@@ -85,7 +85,7 @@ struct VoiceView: View {
                                 .id("pendingSave")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes and your last few conversations are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing becomes a note unless you tap Save. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End.")
+                        Text("While you talk, your voice, this conversation, your saved notes and your last few conversations are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing becomes a note unless you tap Save. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
