@@ -7,6 +7,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
+    @AppStorage(PreferenceKey.backTapTestedAt) private var backTapTestedAt = 0.0
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -72,6 +73,21 @@ struct SettingsView: View {
                         Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
                     }
                     Text("Development prototype: Doddy's voice runs on an ElevenLabs agent. Conversations count toward the owner's ElevenLabs minutes.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
+                Section("Quick access") {
+                    NavigationLink {
+                        QuickAccessSetupView()
+                    } label: {
+                        Label("Set up Double Back Tap", systemImage: "hand.tap")
+                    }
+                    .accessibilityIdentifier("settings.quickAccess")
+                    StatusRow(
+                        title: "Double Back Tap",
+                        value: QuickAccessStatus.backTap(testedAt: backTapTestedAt > 0 ? Date(timeIntervalSince1970: backTapTestedAt) : nil))
+                    Text("Siri and Shortcuts: “Talk to Doddy”, “Save to Doddy” and “Ask Doddy”. Save and Ask work without opening the app and use only notes on this iPhone. When you use Siri, Apple handles your request and the reply it reads out. Doddy can't see or change your Back Tap, Action Button or Control Center settings.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

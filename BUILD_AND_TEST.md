@@ -32,6 +32,10 @@ narrower scope and still prints the iOS step as `NOT RUN`.
 
 ## Needs a Mac (UNVERIFIED)
 
+V2 adds a second target, the `DoddyControls` widget extension (iOS 18+). It is embedded in the app
+automatically. To run on a device, set your team on **both** targets. Device checks for Siri, the
+Control Center control and Back Tap are listed in `docs/implementation/V2_SHORTCUTS_STATUS.md`.
+
 ```sh
 brew install xcodegen
 make project                   # xcodegen generate --spec project.yml  -> Doddy.xcodeproj

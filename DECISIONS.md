@@ -61,6 +61,17 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
 
+## V2 Shortcuts decisions
+
+| ADR | Decision | Status |
+|---|---|---|
+| 038 | Three App Shortcuts: Talk to Doddy (opens app), Save to Doddy and Ask Doddy (no app launch, local only). Siri phrases English only for now | Applied (owner instruction "lets do" V2) |
+| 039 | One `MemoryStore` and `AppRouter` per process (`AppServices`), shared by the scene and App Intents, so there is one SQLite connection and the UI updates after a Siri save | Applied |
+| 040 | Control Center control in a new iOS 18+ widget extension `DoddyControls`; app stays iOS 17+. `Shared/TalkToDoddyIntent.swift` is in both targets, app-only code behind `DODDY_CONTROLS_EXTENSION` | Applied: **needs a Mac build** |
+| 041 | Back Tap setup records only "Tested by you · date", after a real shortcut arrival plus the user's yes; never "verified". Doddy can't read or set Back Tap / Action Button / Control Center | Applied |
+| 042 | Saves from Shortcuts/Siri use source `explicit_text` (the app receives text; dictation is unknowable). A dedicated `shortcut` source would change `schemas/memory.schema.json` | Open: owner may want a new source |
+| 043 | A shortcut that asks to talk before First Hello waits until First Hello is dismissed, so the AI disclosure always comes first | Applied |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.

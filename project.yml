@@ -27,7 +27,9 @@ targets:
     platform: iOS
     sources:
       - path: DoddyApp
+      - path: Shared
     dependencies:
+      - target: DoddyControls
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore
@@ -52,6 +54,26 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only the microphone, for voice conversations the user starts. No other permission keys.
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens only while you are talking to him, after you tap Talk to Doddy. Your voice is sent to ElevenLabs to run the conversation."
+  # Control Center / Lock Screen control "Talk to Doddy" (iOS 18+; the app itself stays iOS 17+).
+  DoddyControls:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: DoddyControls
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.controls
+        PRODUCT_NAME: DoddyControls
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: DoddyControls/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        SKIP_INSTALL: YES
+        # Shared/TalkToDoddyIntent.swift skips app-only code here; iOS runs it in the app.
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DODDY_CONTROLS_EXTENSION"
   DoddyTests:
     type: bundle.unit-test
     platform: iOS

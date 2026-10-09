@@ -36,7 +36,7 @@ final class LaunchSmokeTests: XCTestCase {
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Microphone"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Not used"].exists)
+        XCTAssertTrue(app.staticTexts["Only while talking"].exists)
     }
 
     @MainActor

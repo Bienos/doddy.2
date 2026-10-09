@@ -8,6 +8,8 @@ public enum Capability: String, CaseIterable, Sendable {
     case cloudAssistant
     case voiceInput
     case voiceOutput
+    /// Siri, Shortcuts, Back Tap / Action Button via Shortcuts, Control Center control.
+    case appShortcuts
     case reminders
     case connectedAccounts
     case cloudSync
@@ -38,6 +40,7 @@ public struct CapabilityCatalog: Sendable {
         .cloudAssistant: .notImplemented(plannedMilestone: "M2"),
         .voiceInput: .notImplemented(plannedMilestone: "M3"),
         .voiceOutput: .notImplemented(plannedMilestone: "M3"),
+        .appShortcuts: .notImplemented(plannedMilestone: "V2"),
         .reminders: .notImplemented(plannedMilestone: "M4"),
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
@@ -54,6 +57,12 @@ public struct CapabilityCatalog: Sendable {
         .cloudAssistant: .available,
         .voiceInput: .available,
         .voiceOutput: .available,
+    ]) { _, new in new })
+
+    /// V2: V1 plus App Shortcuts ("Talk to Doddy", "Save to Doddy", "Ask Doddy") and guided
+    /// Back Tap setup. Doddy cannot assign or inspect Back Tap / Action Button settings.
+    public static let v2Shortcuts = CapabilityCatalog(statuses: v1Voice.statuses.merging([
+        .appShortcuts: .available,
     ]) { _, new in new })
 }
 

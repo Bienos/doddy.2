@@ -5,8 +5,9 @@ struct HomeView: View {
     @Binding var selectedTab: AppTab
 
     @Environment(MemoryStore.self) private var store
+    @Environment(AppRouter.self) private var router
+    @AppStorage(PreferenceKey.backTapTestedAt) private var backTapTestedAt = 0.0
     @State private var showCapture = false
-    @State private var showVoice = false
 
     var body: some View {
         NavigationStack {
@@ -28,7 +29,7 @@ struct HomeView: View {
                     }
 
                     VStack(spacing: 12) {
-                        Button { showVoice = true } label: {
+                        Button { router.requestTalk() } label: {
                             HStack { Text("Talk to Doddy"); Spacer(); Image(systemName: "waveform") }
                         }
                         .buttonStyle(PrimaryButtonStyle())
@@ -49,6 +50,17 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.find")
                     }
 
+                    if backTapTestedAt == 0 && store.environment.capabilities.isAvailable(.appShortcuts) {
+                        NavigationLink {
+                            QuickAccessSetupView()
+                        } label: {
+                            Label("Make Doddy easier to reach", systemImage: "hand.tap")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.accentText)
+                        }
+                        .accessibilityIdentifier("home.quickAccess")
+                    }
+
                     recent
 
                     Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Reminders and other apps aren't built yet.")
@@ -64,7 +76,6 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .sheet(isPresented: $showCapture) { CaptureView() }
-            .fullScreenCover(isPresented: $showVoice) { VoiceView() }
         }
         .foregroundStyle(Theme.ink)
     }

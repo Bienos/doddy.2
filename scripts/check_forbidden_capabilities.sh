@@ -8,7 +8,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyControls Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 anywhere='URLSession|URLRequest|NWConnection|import Network|import Speech|SFSpeech|import EventKit|EKEventStore|import AuthenticationServices|import CloudKit|import FirebaseCore|import Sentry|import Analytics'
 voice_only='import AVFoundation|import AVFAudio|AVAudio|import ElevenLabs'
@@ -24,7 +24,7 @@ fi
 if grep -RInE "$secrets" "${dirs[@]}" project.yml scripts --exclude=check_forbidden_capabilities.sh; then
   echo "FAIL: possible secret found." >&2; status=1
 fi
-if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp | grep -v 'NSMicrophoneUsageDescription'; then
+if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyControls | grep -v 'NSMicrophoneUsageDescription'; then
   echo "FAIL: only the microphone permission is allowed." >&2; status=1
 fi
 [ "$status" -eq 0 ] && echo "PASS: no own networking, audio only in Voice, no EventKit/speech/accounts/analytics, no secrets, microphone is the only permission."

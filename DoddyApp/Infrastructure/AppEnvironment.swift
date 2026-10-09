@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 
 /// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView);
+/// App Shortcuts live in Shortcuts/ and reach the app through `AppServices`;
 /// reminders and other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
@@ -35,7 +36,7 @@ struct AppEnvironment: Sendable {
                 recallService: RepositoryRecallService(repository: repository),
                 assistantClient: UnavailableAssistantClient(),
                 toolExecutor: UnavailableToolExecutor(),
-                capabilities: .v1Voice,
+                capabilities: .v2Shortcuts,
                 privacy: .v1Voice,
                 storageProblem: nil)
         } catch {

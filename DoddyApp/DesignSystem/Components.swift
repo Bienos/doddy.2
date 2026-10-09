@@ -157,6 +157,7 @@ extension Capability {
         case .cloudAssistant: "AI answers"
         case .voiceInput: "Listening (voice)"
         case .voiceOutput: "Speaking (voice)"
+        case .appShortcuts: "Siri & Shortcuts"
         case .reminders: "Reminders"
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
