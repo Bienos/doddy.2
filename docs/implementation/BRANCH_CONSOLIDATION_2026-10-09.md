@@ -30,6 +30,11 @@ Result branch: `claude/brave-keller-f8h6uq`. Base: `claude/nice-albattani-t1yan6
 
 **Not verified:** the iOS app and widget build, unit and UI tests (no Xcode here). A read-through review after the merge found and fixed one compile error (a unit test used a removed `SetupDecision.statusText`), a unit test still expecting the removed setup step, the onboarding save-problem message no longer shown anywhere, and a stale Connections summary in Settings. Several files were joined by hand (`VoiceSessionController`, `VoiceView`, `SettingsView`, `HomeView`, `RootView`, `DoddyApp`), so expect a few compile fixes on the first Mac build.
 
+## Mac build (owner report, 2026-10-09)
+The owner reported "built" for `claude/brave-keller-f8h6uq` at `75cb69c` (merge + personality/profile, recall,
+Control Center control, Today card) after `make project` and `scripts/ci.sh`. No log was shared, so which steps
+ran (unit/UI tests, simulator or device, iOS version) is not recorded. On-device checks below are still open.
+
 ## Owner checklist on the Mac / iPhone
 1. `make project` then `scripts/ci.sh`; send any compile errors.
 2. Voice: a conversation still works and recall finds a saved note.
