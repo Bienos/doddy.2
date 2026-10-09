@@ -33,8 +33,9 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 
 - **Storage:** private Vercel Blob store `doddy-waitlist` (Frankfurt). One file per email, named by a SHA-256 hash of the email, so the same address is stored once and emails never appear in file names or logs.
 - **Checks in `api/waitlist.js`:** same-site origin only, 2 KB body limit, email format and length, honeypot field, leading formula characters stripped.
+- **Admin page:** `/admin/` (Doddy style, not linked from the site, `noindex`). Sign in with `WAITLIST_ADMIN_PASSWORD`. Shows total, today, last 7 days, latest signup, sign-ups per day (30 days, 14 on phones), and a searchable table with copy, delete (two taps, for removal requests), copy all emails and download for Excel. Data comes from `api/waitlist-admin.js` (GET list, DELETE one by hashed id); shared code in `api/_waitlist-store.js`.
 - **Download:** open `/api/waitlist-export` in a browser, enter any username and the `WAITLIST_ADMIN_PASSWORD`; you get `doddy-waitlist-YYYY-MM-DD.csv` (UTF-8 with BOM, opens in Excel). Change the password in Vercel → Project → Settings → Environment Variables, then redeploy.
-- **Not built:** rate limiting beyond Vercel's defaults, deletion requests (delete the blob in Vercel → Storage), double opt-in emails.
+- **Not built:** rate limiting beyond Vercel's defaults, double opt-in emails, multiple admin accounts.
 
 ## Needs the owner
 
@@ -51,6 +52,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 - Dark OS setting and an explicit `data-theme="dark"` both still render the light page and light poses.
 - Waitlist form against a mocked `/api/waitlist`: added, already on the list, invalid email, server busy; body is JSON with email, page, consent version and the empty honeypot.
 - `api/waitlist.js` and `api/waitlist-export.js` against an in-memory Blob stand-in: added, already, invalid, formula email, honeypot, bad JSON, oversized body, foreign origin, hashed file names; export locked without/with wrong password, CSV with BOM, quoting and formula neutralising.
+- Admin page against a mocked API at 1440 and 390 px: wrong password refused, stats, chart tooltip on hover, search, two-step delete, copy, download, stays signed in on reload, an `<img onerror>` "email" renders as text. Admin API against the in-memory Blob stand-in: list, delete, bad id, wrong password, export after delete.
 - "Take a shot" (`court.js`): auto shots and a dragged slingshot throw at 1440 and 390 px; "Shoot for me" lands about 60% of the time.
 
 Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom, touch throwing), VoiceOver, Lighthouse.
