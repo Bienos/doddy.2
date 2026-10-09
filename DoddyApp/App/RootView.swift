@@ -41,6 +41,15 @@ struct RootView: View {
         .tint(Theme.accentText)
         .preferredColorScheme(colorScheme)
         .task { await store.reload() }
+        .onOpenURL { url in
+            // doddy://home | memories | settings — navigation only; unknown links are ignored.
+            guard let link = DeepLink(url: url) else { return }
+            switch link {
+            case .home: selectedTab = .home
+            case .memories: selectedTab = .memories
+            case .settings: selectedTab = .settings
+            }
+        }
         .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {
             FirstHelloView { hasSeenFirstHello = true }
                 .preferredColorScheme(colorScheme)

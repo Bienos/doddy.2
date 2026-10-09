@@ -27,6 +27,14 @@ targets:
     platform: iOS
     sources:
       - path: DoddyApp
+    # XcodeGen writes this small Info.plist (git-ignored); Xcode merges it with the generated keys below.
+    # It only registers doddy:// so the landing page's "Open Doddy" link opens the app (DeepLink.swift).
+    info:
+      path: DoddyApp/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: com.bienos.doddy2.dev.links
+            CFBundleURLSchemes: [doddy]
     dependencies:
       - package: DoddyCore
         product: DoddyCore

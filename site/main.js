@@ -14,6 +14,16 @@ function setPose(picture, name) {
   picture.querySelector("img").src = poseSrc(name, "light");
 }
 
+// Poses swap to their dark drawings with the OS setting. An explicit data-theme="light"/"dark"
+// on the root (set by a host page or a future toggle) wins, so the art always matches the tokens.
+function syncPoseTheme() {
+  const theme = document.documentElement.dataset.theme;
+  const media = theme === "dark" ? "all" : theme === "light" ? "not all" : "(prefers-color-scheme: dark)";
+  document.querySelectorAll("picture source").forEach((s) => { s.media = media; });
+}
+syncPoseTheme();
+new MutationObserver(syncPoseTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
 // Swap with a short fade unless reduced motion is on.
 function swap(el, apply) {
   if (reduceMotion.matches) { apply(); return; }

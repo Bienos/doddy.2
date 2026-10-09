@@ -15,11 +15,11 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 
 | Link | Where |
 |---|---|
-| Colours | `tokens.css` is generated from `Packages/DoddyCore/Sources/DoddyDesignTokens/CandidateTokens.swift`. Run `python3 -I tools/gen_site_tokens.py` after changing app tokens; `--check` fails if the site is out of date. |
+| Colours | `tokens.css` (light, dark, and an explicit `data-theme` override; poses follow it too) is generated from `Packages/DoddyCore/Sources/DoddyDesignTokens/CandidateTokens.swift`. Run `python3 -I tools/gen_site_tokens.py` after changing app tokens; `--check` fails if the site is out of date. |
 | Character | `assets/poses/` are copies of the poses in `design/interface-v1.2/assets/` (light and dark; dark swaps in with the system appearance). |
 | Copy | Headings and disclosures reuse the app's words (`HomeView`, `VoiceView`, `SettingsView`, `RecallCopy.noMatch`). |
 | Waitlist | `WAITLIST_URL` at the top of `main.js`. Empty (the default) means the form says the waitlist isn't open and sends nothing. When set, it POSTs `{"email": "..."}` as JSON and shows success or a retry message. |
-| Open Doddy | `APP_URL` in `main.js` (`doddy://home`). On non-iPhone devices it explains that Doddy runs on iPhone; on iPhone, if the page is still visible after 1.5 s, it says the app isn't installed. |
+| Open Doddy | `APP_URL` in `main.js` (`doddy://home`); the app handles `doddy://home`, `memories` and `settings`. On non-iPhone devices it explains that Doddy runs on iPhone; on iPhone, if the page is still visible after 1.5 s, it says the app isn't installed. |
 | App Store | Commented-out Smart App Banner in `index.html`; enable when there's an App Store ID. |
 
 ## What's real on the page
@@ -30,7 +30,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 
 ## Needs the owner
 
-1. **App side of the deep link:** the app doesn't register `doddy://` yet. Add `CFBundleURLTypes` in `project.yml` and handle the URL, or switch to Universal Links (needs a domain and an `apple-app-site-association` file).
+1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
 2. **Waitlist provider** and its privacy notice, then set `WAITLIST_URL`.
 3. **Domain, hosting, contact address and privacy policy.** The footer has none yet.
 4. **Fonts:** the handwritten face (Caveat, OFL) loads from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host it after licence review; the CSS falls back to system handwriting fonts without it.
