@@ -110,13 +110,61 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(parse("lookup_contact", #"{}"#), .invalid(name: "lookup_contact", reason: "missing name"))
     }
 
+    // MARK: Timers, maps, shortcuts and drafts
+
+    func testTimerDurations() {
+        XCTAssertEqual(parse("set_timer", #"{"minutes":10,"label":"Pasta"}"#),
+                       .setTimer(TimerDraft(seconds: 600, label: "Pasta")))
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1.5}"#),
+                       .setTimer(TimerDraft(seconds: 90, label: nil)))
+        XCTAssertEqual(parse("set_timer", #"{"seconds":45}"#),
+                       .setTimer(TimerDraft(seconds: 45, label: nil)))
+        XCTAssertEqual(parse("set_timer", #"{}"#), .invalid(name: "set_timer", reason: "missing duration"))
+        XCTAssertEqual(parse("set_timer", #"{"minutes":-5}"#), .invalid(name: "set_timer", reason: "negative duration"))
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1500}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+    }
+
+    func testMapAndShortcutNeedTheirText() {
+        XCTAssertEqual(parse("open_map", #"{"place":"Mokotów Tower"}"#), .openMap(place: "Mokotów Tower"))
+        XCTAssertEqual(parse("open_map", #"{}"#), .invalid(name: "open_map", reason: "missing place"))
+        XCTAssertEqual(parse("run_shortcut", #"{"name":"Morning routine"}"#), .runShortcut(name: "Morning routine"))
+        XCTAssertEqual(parse("run_shortcut", #"{}"#), .invalid(name: "run_shortcut", reason: "missing name"))
+    }
+
+    func testMessageDraftChannels() {
+        XCTAssertEqual(parse("draft_message", #"{"to":"Marta","body":"See you at six"}"#),
+                       .draftMessage(MessageDraft(recipientName: "Marta", channel: .text, body: "See you at six")))
+        XCTAssertEqual(parse("draft_message", #"{"to":"Marta","channel":"Email","body":"Agenda attached"}"#),
+                       .draftMessage(MessageDraft(recipientName: "Marta", channel: .email, body: "Agenda attached")))
+        XCTAssertEqual(parse("draft_message", #"{"to":"Marta","channel":"fax","body":"x"}"#),
+                       .invalid(name: "draft_message", reason: "channel must be text or email"))
+        XCTAssertEqual(parse("draft_message", #"{"to":"Marta"}"#), .invalid(name: "draft_message", reason: "missing body"))
+    }
+
+    func testOpenLinksEncodeAndRefuseEmptyNumbers() {
+        XCTAssertEqual(OpenLinks.map(place: "Mokotów Tower")?.absoluteString, "https://maps.apple.com/?q=Mokot%C3%B3w%20Tower")
+        XCTAssertEqual(OpenLinks.shortcut(name: "Morning routine")?.absoluteString, "shortcuts://run-shortcut?name=Morning%20routine")
+        XCTAssertEqual(OpenLinks.call(number: "+48 600-123-456")?.absoluteString, "tel:+48600123456")
+        XCTAssertNil(OpenLinks.call(number: "call me"))
+        XCTAssertEqual(OpenLinks.text(number: "+48600123456", body: "Hi & bye +1")?.absoluteString,
+                       "sms:+48600123456&body=Hi%20%26%20bye%20%2B1")
+        XCTAssertEqual(OpenLinks.email(address: "marta@example.com", body: "Hej")?.absoluteString,
+                       "mailto:marta@example.com?body=Hej")
+        XCTAssertNil(OpenLinks.email(address: "marta @example.com", body: "Hej"))
+    }
+
     func testConnectionServesItsTools() {
         XCTAssertEqual(VoiceConnection.serving("read_calendar"), .calendar)
         XCTAssertEqual(VoiceConnection.serving("create_calendar_event"), .calendar)
         XCTAssertEqual(VoiceConnection.serving("create_reminder"), .reminders)
         XCTAssertEqual(VoiceConnection.serving("lookup_contact"), .contacts)
+        XCTAssertEqual(VoiceConnection.serving("set_timer"), .timers)
+        XCTAssertEqual(VoiceConnection.serving("open_map"), .maps)
+        XCTAssertEqual(VoiceConnection.serving("run_shortcut"), .shortcuts)
+        XCTAssertEqual(VoiceConnection.serving("draft_message"), .messages)
         XCTAssertNil(VoiceConnection.serving("save_memory"))
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
+        XCTAssertEqual(VoiceConnection.allCases.count, 7)
     }
 
     // MARK: Replies
@@ -134,6 +182,24 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.declinedEvent.hasPrefix("declined: "))
         XCTAssertTrue(VoiceToolReply.notAdded("Calendar is read-only.").hasPrefix("failed: "))
         XCTAssertTrue(VoiceToolReply.addUnconfirmed.hasPrefix("unknown: "))
+    }
+
+    func testTimerReplyStatesWhenItRings() {
+        let draft = TimerDraft(seconds: 600, label: "Pasta")
+        let reply = VoiceToolReply.timerAdded(draft, endsAt: date(2026, 10, 9, 10, 10), calendar: calendar)
+        XCTAssertEqual(reply, "added: timer \"Pasta\", 10 minutes, rings at 2026-10-09 10:10.")
+        XCTAssertEqual(VoiceToolReply.timerAdded(TimerDraft(seconds: 45, label: nil), endsAt: date(2026, 10, 9, 10, 0), calendar: calendar),
+                       "added: timer 45 seconds, rings at 2026-10-09 10:00.")
+    }
+
+    func testOpenedRepliesNeverClaimSending() {
+        let draft = MessageDraft(recipientName: "Marta", channel: .text, body: "See you")
+        XCTAssertTrue(VoiceToolReply.messageOpened(draft, recipient: "Marta").contains("Nothing was sent by Doddy"))
+        XCTAssertTrue(VoiceToolReply.messageOpened(draft, recipient: "Marta").hasPrefix("opened: Messages"))
+        XCTAssertTrue(VoiceToolReply.shortcutRequested("Morning routine").contains("can't see whether it finished"))
+        XCTAssertTrue(VoiceToolReply.noAddress("Marta", channel: .email).hasPrefix("failed: Marta has no email address"))
+        XCTAssertTrue(VoiceToolReply.declinedMessage.hasPrefix("declined: "))
+        XCTAssertEqual(VoiceToolReply.notOpened("Maps didn't open."), "failed: Maps didn't open. Nothing was opened.")
     }
 
     func testCalendarReplyListsOnlyTitlesAndTimes() {

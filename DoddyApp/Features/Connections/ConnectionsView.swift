@@ -2,8 +2,9 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// Settings → Connections. One card per function: what you can say, whether it's on, and a tap
-/// to see exactly what Doddy can do and what leaves the phone. Nothing turns on without a tap.
+/// Settings → Connections. One card per function, in three groups. Each card shows what you can
+/// say and whether it's on; a tap shows exactly what Doddy can do and what leaves the phone.
+/// Nothing turns on without a tap.
 struct ConnectionsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var controller = ConnectionController()
@@ -11,17 +12,27 @@ struct ConnectionsView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Doddy can use these only when you say so. Each one starts off. Nothing is added until you tap Add.")
+            VStack(alignment: .leading, spacing: 26) {
+                Text("Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.")
                     .foregroundStyle(Theme.secondaryText)
 
-                ForEach(VoiceConnection.allCases) { connection in
-                    Button {
-                        selected = connection
-                    } label: {
-                        ConnectionCard(connection: connection, state: controller.state(of: connection))
+                ForEach(ConnectionGroup.all) { group in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(group.title)
+                            .font(.footnote.weight(.semibold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(Theme.secondaryText)
+                            .accessibilityAddTraits(.isHeader)
+
+                        ForEach(group.items) { connection in
+                            Button {
+                                selected = connection
+                            } label: {
+                                ConnectionCard(connection: connection, state: controller.state(of: connection))
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
                 }
 
                 Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs and are always on.")
@@ -33,15 +44,29 @@ struct ConnectionsView: View {
         .background(Theme.canvas)
         .navigationTitle("Connections")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $selected, onDismiss: { controller.refresh() }) { connection in
+        .sheet(item: $selected, onDismiss: { Task { await controller.refresh() } }) { connection in
             ConnectionSheet(connection: connection, controller: controller)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { controller.refresh() }
+            if phase == .active { Task { await controller.refresh() } }
         }
     }
+}
+
+/// A heading and the functions under it, in the order the screen shows them.
+struct ConnectionGroup: Identifiable {
+    let title: String
+    let items: [VoiceConnection]
+
+    var id: String { title }
+
+    static let all: [ConnectionGroup] = [
+        ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
+        ConnectionGroup(title: "People", items: [.contacts, .messages]),
+        ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
+    ]
 }
 
 /// One function as a card. The state is written out in words, not only colour.
@@ -249,7 +274,7 @@ struct ConnectionSheet: View {
 }
 
 /// Plain-language copy for each function. What it can do and what leaves the phone must match
-/// the code in DoddyCore and DeviceConnections.
+/// the code in DoddyCore, DeviceConnections and VoiceSessionController.
 struct ConnectionInfo {
     let symbol: String
     let examples: [String]
@@ -276,13 +301,53 @@ struct ConnectionInfo {
                 canDo: ["Add a reminder, after you tap Add"],
                 leavesPhone: "The reminder text and due time, when Doddy adds one.",
                 staysHere: "Doddy doesn't read or change your existing reminders.")
+        case .timers:
+            ConnectionInfo(
+                symbol: "timer",
+                examples: ["Set a timer for ten minutes", "Forty-five seconds for the eggs"],
+                canDo: [
+                    "Start a countdown, after you tap Start",
+                    "Ring with a notification when it's done, even if the app is closed",
+                ],
+                leavesPhone: "The length and label of a timer, when Doddy starts one.",
+                staysHere: "iPhone asks once for notification permission. Doddy doesn't keep track of the timer after it starts.")
         case .contacts:
             ConnectionInfo(
                 symbol: "person.crop.circle",
                 examples: ["What's Marta's number?", "Find Tomek Kowalski"],
-                canDo: ["Look up a contact by name and show the details on your screen"],
+                canDo: [
+                    "Look up a contact by name and show the details on your screen",
+                    "Call, text or email them from that card, after you tap",
+                ],
                 leavesPhone: "Only the names Doddy finds. Numbers and email addresses stay on your screen.",
-                staysHere: "Doddy can't call, text or email anyone.")
+                staysHere: "Doddy never calls, texts or emails anyone by itself.")
+        case .messages:
+            ConnectionInfo(
+                symbol: "text.bubble",
+                examples: ["Text Marta that I'm running late", "Email Tomek the agenda"],
+                canDo: [
+                    "Draft a text or email, then open it in Messages or Mail for you to check and send",
+                    "Needs Contacts too, to find the person",
+                ],
+                leavesPhone: "The draft and the person's name, when Doddy drafts one.",
+                staysHere: "Doddy never sends a message or email. The number or address is shown only on your screen.")
+        case .maps:
+            ConnectionInfo(
+                symbol: "map",
+                examples: ["Show me Mokotów Tower on the map", "Open the Old Town in Maps"],
+                canDo: ["Open a place or address in Apple Maps, after you tap Open in Maps"],
+                leavesPhone: "The place name you asked for, when you open it in Maps.",
+                staysHere: "Doddy doesn't read your location or search for places by itself.")
+        case .shortcuts:
+            ConnectionInfo(
+                symbol: "square.stack.3d.up",
+                examples: ["Run my morning routine", "Start the movie shortcut"],
+                canDo: [
+                    "Run one of your Shortcuts, after you tap Run",
+                    "The Shortcuts app opens for a moment",
+                ],
+                leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
+                staysHere: "Doddy can't see what a shortcut does or whether it finished.")
         }
     }
 }

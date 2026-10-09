@@ -9,12 +9,16 @@ public enum VoiceToolName {
     public static let createCalendarEvent = "create_calendar_event"
     public static let createReminder = "create_reminder"
     public static let lookupContact = "lookup_contact"
+    public static let setTimer = "set_timer"
+    public static let openMap = "open_map"
+    public static let runShortcut = "run_shortcut"
+    public static let draftMessage = "draft_message"
 }
 
-/// The phone connections the user turns on in Settings, Connections. All are off until the
-/// user turns them on, and each also needs the matching iOS permission.
+/// The functions a user turns on in Settings, Connections. All start off, and each one may also
+/// need an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
-    case calendar, reminders, contacts
+    case calendar, reminders, contacts, timers, maps, shortcuts, messages
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -22,6 +26,10 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .calendar: "Calendar"
         case .reminders: "Reminders"
         case .contacts: "Contacts"
+        case .timers: "Timers"
+        case .maps: "Maps"
+        case .shortcuts: "Shortcuts"
+        case .messages: "Messages and email"
         }
     }
 
@@ -34,6 +42,10 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent: .calendar
         case VoiceToolName.createReminder: .reminders
         case VoiceToolName.lookupContact: .contacts
+        case VoiceToolName.setTimer: .timers
+        case VoiceToolName.openMap: .maps
+        case VoiceToolName.runShortcut: .shortcuts
+        case VoiceToolName.draftMessage: .messages
         default: nil
         }
     }
@@ -72,6 +84,23 @@ public struct ReminderDraft: Equatable, Sendable {
     public let notes: String?
 }
 
+/// A countdown the agent proposed. Nothing starts until the user taps Start on the card.
+public struct TimerDraft: Equatable, Sendable {
+    public let seconds: Int
+    public let label: String?
+}
+
+public enum MessageChannel: String, Equatable, Sendable {
+    case text, email
+}
+
+/// A text or email the agent drafted. Doddy never sends it: the user sends it in Messages or Mail.
+public struct MessageDraft: Equatable, Sendable {
+    public let recipientName: String
+    public let channel: MessageChannel
+    public let body: String
+}
+
 /// What the agent is allowed to hear about an event: title and time only.
 public struct CalendarEventSummary: Equatable, Sendable {
     public let title: String
@@ -98,6 +127,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case createReminder(ReminderDraft)
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
+    case setTimer(TimerDraft)
+    case openMap(place: String)
+    case runShortcut(name: String)
+    case draftMessage(MessageDraft)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -119,6 +152,16 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)
+        case VoiceToolName.setTimer:
+            return parseTimer(args, name: name)
+        case VoiceToolName.openMap:
+            guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
+            return .openMap(place: place)
+        case VoiceToolName.runShortcut:
+            guard let shortcut = args.text("name") else { return .invalid(name: name, reason: "missing name") }
+            return .runShortcut(name: shortcut)
+        case VoiceToolName.draftMessage:
+            return parseMessage(args, name: name)
         default:
             return .unsupported(name: name)
         }
@@ -191,6 +234,25 @@ public enum VoiceToolRequest: Equatable, Sendable {
         }
         return .createReminder(ReminderDraft(title: title, due: due, dueHasTime: dueHasTime, notes: args.text("notes")))
     }
+
+    private static func parseTimer(_ args: Arguments, name: String) -> VoiceToolRequest {
+        let minutes = args.number("minutes") ?? 0
+        let seconds = args.number("seconds") ?? 0
+        guard minutes >= 0, seconds >= 0 else { return .invalid(name: name, reason: "negative duration") }
+        let total = Int((minutes * 60 + seconds).rounded())
+        guard total >= 1 else { return .invalid(name: name, reason: "missing duration") }
+        guard total <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
+        return .setTimer(TimerDraft(seconds: total, label: args.text("label")))
+    }
+
+    private static func parseMessage(_ args: Arguments, name: String) -> VoiceToolRequest {
+        guard let recipient = args.text("to") else { return .invalid(name: name, reason: "missing to") }
+        guard let body = args.text("body") else { return .invalid(name: name, reason: "missing body") }
+        guard let channel = MessageChannel(rawValue: (args.text("channel") ?? "text").lowercased()) else {
+            return .invalid(name: name, reason: "channel must be text or email")
+        }
+        return .draftMessage(MessageDraft(recipientName: recipient, channel: channel, body: body))
+    }
 }
 
 /// Tool arguments as the model sent them. Missing or blank values read as nil.
@@ -208,6 +270,10 @@ private struct Arguments {
 
     func flag(_ key: String) -> Bool {
         values[key] as? Bool ?? false
+    }
+
+    func number(_ key: String) -> Double? {
+        values[key] as? Double
     }
 }
 
@@ -248,13 +314,58 @@ struct VoiceLocalDate: Equatable {
     }
 }
 
+/// Links that open other apps. The user always taps; Doddy never sends a message or places a call.
+public enum OpenLinks {
+    public static func map(place: String) -> URL? {
+        URL(string: "https://maps.apple.com/?q=\(encode(place))")
+    }
+
+    public static func shortcut(name: String) -> URL? {
+        URL(string: "shortcuts://run-shortcut?name=\(encode(name))")
+    }
+
+    /// Digits and a leading plus sign only. Nil when nothing dialable is left.
+    public static func call(number: String) -> URL? {
+        let digits = dialable(number)
+        guard !digits.isEmpty else { return nil }
+        return URL(string: "tel:\(digits)")
+    }
+
+    public static func text(number: String, body: String) -> URL? {
+        let digits = dialable(number)
+        guard !digits.isEmpty else { return nil }
+        return URL(string: "sms:\(digits)&body=\(encode(body))")
+    }
+
+    public static func email(address: String, body: String) -> URL? {
+        let trimmed = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !trimmed.contains(where: \.isWhitespace) else { return nil }
+        return URL(string: "mailto:\(trimmed)?body=\(encode(body))")
+    }
+
+    private static func dialable(_ number: String) -> String {
+        String(number.enumerated().compactMap { index, character in
+            character.isNumber || (index == 0 && character == "+") ? character : nil
+        })
+    }
+
+    /// Encodes everything except letters and digits, so "+", "&" and spaces survive the trip.
+    private static func encode(_ text: String) -> String {
+        text.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? text
+    }
+}
+
 /// Text returned to the agent. Written for the model: it states only what the app verified.
-/// Result prefixes ("added", "declined", "failed", "unknown", "saved") are what the agent's
-/// prompt tells it to look for, so they must not change without changing the prompt.
+/// Result prefixes ("added", "declined", "failed", "unknown", "saved", "opened") are what the
+/// agent's prompt tells it to look for, so they must not change without changing the prompt.
 public enum VoiceToolReply {
     public static let declined = "declined: the user chose not to save this note. Nothing was saved."
     public static let declinedEvent = "declined: the user chose not to add this event. Nothing was added."
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."
+    public static let declinedTimer = "declined: the user chose not to start this timer. Nothing was set."
+    public static let declinedMap = "declined: the user chose not to open the map. Nothing was opened."
+    public static let declinedShortcut = "declined: the user chose not to run the shortcut. Nothing was run."
+    public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
     public static func search(_ outcome: RecallOutcome, limit: Int = 5) -> String {
         guard case .matches(let candidates) = outcome, !candidates.isEmpty else {
@@ -283,7 +394,7 @@ public enum VoiceToolReply {
         "The app does not support the tool \"\(name)\". Tell the user this isn't available yet."
     }
 
-    /// Used when a connection is off or its iOS permission is not granted.
+    /// Used when a function is off or its iOS permission is not granted.
     public static func notConnected(_ connection: VoiceConnection) -> String {
         "\(connection.title) isn't connected. Tell the user they can connect it in Settings, Connections."
     }
@@ -318,6 +429,39 @@ public enum VoiceToolReply {
         return "added: reminder \"\(draft.title)\" due \(localText(due, hasTime: draft.dueHasTime, calendar: calendar))."
     }
 
+    /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`.
+    public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar) -> String {
+        let what = draft.label.map { "\"\($0)\", " } ?? ""
+        return "added: timer \(what)\(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+    }
+
+    /// Maps opened on the user's tap. Nothing else is claimed.
+    public static func mapOpened(_ place: String) -> String {
+        "opened: Apple Maps opened for \"\(place)\"."
+    }
+
+    /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.
+    public static func shortcutRequested(_ name: String) -> String {
+        "opened: asked Shortcuts to run \"\(name)\". Doddy can't see whether it finished."
+    }
+
+    /// The draft opened in Messages or Mail. Doddy did not send it.
+    public static func messageOpened(_ draft: MessageDraft, recipient: String) -> String {
+        let app = draft.channel == .text ? "Messages" : "Mail"
+        return "opened: \(app) opened with the draft for \(recipient). Nothing was sent by Doddy; the user sends it there."
+    }
+
+    /// The contact has no phone number or email for the channel the agent asked for.
+    public static func noAddress(_ recipient: String, channel: MessageChannel) -> String {
+        let what = channel == .text ? "phone number" : "email address"
+        return "failed: \(recipient) has no \(what) in Contacts. Nothing was opened."
+    }
+
+    /// The app could not open the other app.
+    public static func notOpened(_ reason: String) -> String {
+        "failed: \(reason) Nothing was opened."
+    }
+
     /// The app could not add the item.
     public static func notAdded(_ reason: String) -> String {
         "failed: \(reason) Nothing was added."
@@ -333,6 +477,14 @@ public enum VoiceToolReply {
         }
         let list = names.joined(separator: ", ")
         return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\": \(list). Their details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
+    }
+
+    private static func durationText(_ seconds: Int) -> String {
+        if seconds >= 60, seconds % 60 == 0 {
+            let minutes = seconds / 60
+            return "\(minutes) minute\(minutes == 1 ? "" : "s")"
+        }
+        return "\(seconds) second\(seconds == 1 ? "" : "s")"
     }
 
     private static func timestamp(_ date: Date?) -> String {

@@ -60,7 +60,7 @@ struct VoiceView: View {
             Task { await controller?.stop() }
         }
         .sheet(item: $openConnection, onDismiss: {
-            connections.refresh()
+            Task { await connections.refresh() }
             controller?.refreshConnectionNeeded()
         }) { connection in
             ConnectionSheet(connection: connection, controller: connections)
@@ -111,7 +111,7 @@ struct VoiceView: View {
                                 .id("contactCard")
                         }
 
-                        Text("While you talk, your voice and the notes, calendar entries and contact names Doddy uses are sent to ElevenLabs to run the conversation. Nothing is saved or added unless you tap Save or Add.")
+                        Text("While you talk, your voice and the notes, calendar entries, contact names and drafts Doddy uses are sent to ElevenLabs to run the conversation. Nothing is saved, added, started, sent or opened unless you tap for it.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -162,51 +162,22 @@ struct VoiceView: View {
         }
     }
 
-    /// Card for anything that changes data. Nothing happens until the user taps the button.
+    /// Card for anything that changes data or opens another app. Nothing happens until the user taps.
     private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
-        let isMemory: Bool
-        if case .memory = pending { isMemory = true } else { isMemory = false }
+        let labels = actionLabels(pending)
         return VStack(alignment: .leading, spacing: 12) {
-            switch pending {
-            case .memory(_, let text):
-                Text("Save this note?")
-                    .font(.headline)
-                Text("“\(text)”")
-                    .font(.body)
-            case .event(_, let draft):
-                Text("Add this event?")
-                    .font(.headline)
-                Text(draft.title)
-                    .font(.body)
-                Text(eventWhen(draft))
-                    .foregroundStyle(Theme.secondaryText)
-                if let location = draft.location {
-                    Text(location)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            case .reminder(_, let draft):
-                Text("Add this reminder?")
-                    .font(.headline)
-                Text(draft.title)
-                    .font(.body)
-                if let due = draft.due {
-                    Text(draft.dueHasTime
-                         ? due.formatted(date: .abbreviated, time: .shortened)
-                         : due.formatted(date: .abbreviated, time: .omitted))
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
+            actionContent(pending)
             Button {
                 Task { await controller.confirmPendingAction() }
             } label: {
-                HStack { Text(isMemory ? "Save" : "Add"); Spacer(); Image(systemName: "checkmark") }
+                HStack { Text(labels.confirm); Spacer(); Image(systemName: "checkmark") }
             }
             .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier("voice.confirm")
             Button {
                 Task { await controller.declinePendingAction() }
             } label: {
-                Text(isMemory ? "Don't save" : "Don't add")
+                Text(labels.decline)
             }
             .buttonStyle(SecondaryButtonStyle())
         }
@@ -214,34 +185,80 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    /// Names and details of a contact lookup. Only the agent's copy is names; this is the full view.
-    private func contactCard(_ card: VoiceSessionController.ContactCard, controller: VoiceSessionController) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Contacts for “\(card.query)”")
+    @ViewBuilder
+    private func actionContent(_ pending: VoiceSessionController.PendingAction) -> some View {
+        switch pending {
+        case .memory(_, let text):
+            Text("Save this note?")
                 .font(.headline)
-            if card.matches.isEmpty {
-                Text("No contact matched.")
+            Text("“\(text)”")
+                .font(.body)
+        case .event(_, let draft):
+            Text("Add this event?")
+                .font(.headline)
+            Text(draft.title)
+                .font(.body)
+            Text(eventWhen(draft))
+                .foregroundStyle(Theme.secondaryText)
+            if let location = draft.location {
+                Text(location)
                     .foregroundStyle(Theme.secondaryText)
             }
-            ForEach(card.matches) { match in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(match.name)
-                        .font(.body.bold())
-                    ForEach(match.phoneNumbers, id: \.self) { number in
-                        Text(number).textSelection(.enabled)
-                    }
-                    ForEach(match.emailAddresses, id: \.self) { address in
-                        Text(address).textSelection(.enabled)
-                    }
-                }
+        case .reminder(_, let draft):
+            Text("Add this reminder?")
+                .font(.headline)
+            Text(draft.title)
+                .font(.body)
+            if let due = draft.due {
+                Text(draft.dueHasTime
+                     ? due.formatted(date: .abbreviated, time: .shortened)
+                     : due.formatted(date: .abbreviated, time: .omitted))
+                    .foregroundStyle(Theme.secondaryText)
             }
-            Button("Close") {
-                controller.dismissContactCard()
+        case .timer(_, let draft):
+            Text("Start this timer?")
+                .font(.headline)
+            Text(Duration.seconds(Double(draft.seconds)).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .wide)))
+                .font(.body)
+            if let label = draft.label {
+                Text(label)
+                    .foregroundStyle(Theme.secondaryText)
             }
-            .buttonStyle(SecondaryButtonStyle())
+        case .map(_, let place):
+            Text("Open this in Maps?")
+                .font(.headline)
+            Text(place)
+                .font(.body)
+        case .shortcut(_, let name):
+            Text("Run this Shortcut?")
+                .font(.headline)
+            Text(name)
+                .font(.body)
+            Text("The Shortcuts app opens for a moment.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .message(_, let draft, let address):
+            Text(draft.channel == .text ? "Open this text in Messages?" : "Open this email in Mail?")
+                .font(.headline)
+            Text("To \(draft.recipientName) · \(address)")
+                .foregroundStyle(Theme.secondaryText)
+            Text("“\(draft.body)”")
+                .font(.body)
+            Text("You check it and send it there yourself. Doddy never sends it.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         }
-        .padding(16)
-        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func actionLabels(_ pending: VoiceSessionController.PendingAction) -> (confirm: String, decline: String) {
+        switch pending {
+        case .memory: ("Save", "Don't save")
+        case .event, .reminder: ("Add", "Don't add")
+        case .timer: ("Start", "Don't start")
+        case .map: ("Open in Maps", "Don't open")
+        case .shortcut: ("Run", "Don't run")
+        case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
+        }
     }
 
     /// Shown when the agent asked for something that is switched off. One tap opens the same
@@ -262,6 +279,55 @@ struct VoiceView: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// Names and details of a contact lookup. Only the agent's copy is names; this is the full view.
+    /// Call, Text and Email open the iPhone's own apps, and each one is a tap.
+    private func contactCard(_ card: VoiceSessionController.ContactCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Contacts for “\(card.query)”")
+                .font(.headline)
+            if card.matches.isEmpty {
+                Text("No contact matched.")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(card.matches) { match in
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(match.name)
+                        .font(.body.bold())
+                    ForEach(match.phoneNumbers, id: \.self) { number in
+                        Text(number)
+                            .textSelection(.enabled)
+                        HStack(spacing: 8) {
+                            contactAction("Call", systemImage: "phone") { OpenLinks.call(number: number) }
+                            contactAction("Text", systemImage: "text.bubble") { OpenLinks.text(number: number, body: "") }
+                        }
+                    }
+                    ForEach(match.emailAddresses, id: \.self) { address in
+                        Text(address)
+                            .textSelection(.enabled)
+                        contactAction("Email", systemImage: "envelope") { OpenLinks.email(address: address, body: "") }
+                    }
+                }
+            }
+            Button("Close") {
+                controller.dismissContactCard()
+            }
+            .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func contactAction(_ title: String, systemImage: String, url: @escaping () -> URL?) -> some View {
+        Button {
+            guard let link = url() else { return }
+            Task { _ = await UIApplication.shared.open(link) }
+        } label: {
+            Label(title, systemImage: systemImage)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(SecondaryButtonStyle())
     }
 
     private func eventWhen(_ draft: CalendarEventDraft) -> String {

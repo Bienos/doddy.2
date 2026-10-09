@@ -2,10 +2,12 @@ import Contacts
 import DoddyCore
 import EventKit
 import Foundation
+import UserNotifications
 
-/// The only code that touches the calendar, reminders and contacts. Nothing here runs unless the
-/// user turned the matching toggle on in Settings, Connections; the caller checks that first.
-/// Each call also checks iOS permission. The guard script keeps these imports in this folder.
+/// The only code that touches the calendar, reminders, contacts and notifications. Nothing here
+/// runs unless the user turned the matching switch on in Settings, Connections; the caller checks
+/// that first. Each call also checks iOS permission. The guard script keeps the EventKit and
+/// Contacts imports in this folder.
 @MainActor
 final class DeviceConnections {
     enum Access: Equatable {
@@ -42,28 +44,52 @@ final class DeviceConnections {
 
     // MARK: Permission
 
+    /// Synchronous for calendar, reminders and contacts. Timers use notification permission, which
+    /// iOS only reports asynchronously; use `notificationAccess()` for those. Maps, Shortcuts and
+    /// Messages need no permission of their own.
     func access(for connection: VoiceConnection) -> Access {
         switch connection {
         case .calendar: Self.eventAccess(EKEventStore.authorizationStatus(for: .event))
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
+        case .timers: .notDetermined
+        case .maps, .shortcuts, .messages: .granted
         }
     }
 
     /// Asks iOS for the permission only if it has never been asked. Returns the outcome.
     func request(_ connection: VoiceConnection) async -> Access {
-        guard access(for: connection) == .notDetermined else { return access(for: connection) }
-        let granted: Bool
-        do {
-            switch connection {
-            case .calendar: granted = try await eventStore.requestFullAccessToEvents()
-            case .reminders: granted = try await eventStore.requestFullAccessToReminders()
-            case .contacts: granted = try await contactStore.requestAccess(for: .contacts)
+        switch connection {
+        case .timers:
+            let current = await notificationAccess()
+            guard current == .notDetermined else { return current }
+            let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
+            return granted ? .granted : .denied
+        case .maps, .shortcuts, .messages:
+            return .granted
+        case .calendar, .reminders, .contacts:
+            guard access(for: connection) == .notDetermined else { return access(for: connection) }
+            let granted: Bool
+            do {
+                switch connection {
+                case .calendar: granted = try await eventStore.requestFullAccessToEvents()
+                case .reminders: granted = try await eventStore.requestFullAccessToReminders()
+                default: granted = try await contactStore.requestAccess(for: .contacts)
+                }
+            } catch {
+                granted = false
             }
-        } catch {
-            granted = false
+            return granted ? .granted : .denied
         }
-        return granted ? .granted : .denied
+    }
+
+    func notificationAccess() async -> Access {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        switch settings.authorizationStatus {
+        case .authorized, .provisional, .ephemeral: return .granted
+        case .notDetermined: return .notDetermined
+        default: return .denied
+        }
     }
 
     private static func eventAccess(_ status: EKAuthorizationStatus) -> Access {
@@ -127,6 +153,23 @@ final class DeviceConnections {
         return eventStore.calendarItem(withIdentifier: reminder.calendarItemIdentifier) != nil ? .verified : .unconfirmed
     }
 
+    // MARK: Timers
+
+    /// Schedules a local notification for the timer and reads it back from iOS to confirm.
+    func startTimer(_ draft: TimerDraft) async throws -> AddOutcome {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = TimerBanners.shared
+        let content = UNMutableNotificationContent()
+        content.title = "Timer done"
+        content.body = draft.label ?? "Your timer is done."
+        content.sound = .default
+        let identifier = "doddy.timer.\(UUID().uuidString)"
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
+        try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
+        let pending = await center.pendingNotificationRequests()
+        return pending.contains { $0.identifier == identifier } ? .verified : .unconfirmed
+    }
+
     // MARK: Contacts
 
     func findContacts(named name: String) throws -> [ContactMatch] {
@@ -143,5 +186,15 @@ final class DeviceConnections {
                 phoneNumbers: contact.phoneNumbers.map { $0.value.stringValue },
                 emailAddresses: contact.emailAddresses.map { $0.value as String })
         }
+    }
+}
+
+/// iOS hides notification banners for the app that is in front. This shows timer banners anyway,
+/// so a timer still rings while Doddy is open.
+final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
+    static let shared = TimerBanners()
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        [.banner, .sound]
     }
 }

@@ -17,20 +17,23 @@ final class ConnectionController {
 
     private let devices = DeviceConnections()
     private var switches: [VoiceConnection: Bool]
-    /// Bumped when the app comes back to the foreground, so permission changes made in iPhone
-    /// Settings show up without restarting.
+    /// Notification permission is asynchronous, so the last answer is kept for the cards.
+    private var notificationAccess: DeviceConnections.Access = .notDetermined
+    /// Bumped when permission may have changed, so cards redraw.
     private var revision = 0
 
     init() {
         switches = Dictionary(uniqueKeysWithValues: VoiceConnection.allCases.map {
             ($0, UserDefaults.standard.bool(forKey: $0.preferenceKey))
         })
+        Task { await refresh() }
     }
 
     func state(of connection: VoiceConnection) -> State {
         _ = revision
         guard switches[connection] == true else { return .off }
-        return devices.access(for: connection) == .granted ? .on : .blocked
+        let access = connection == .timers ? notificationAccess : devices.access(for: connection)
+        return access == .granted ? .on : .blocked
     }
 
     /// Turning on asks iOS first. The switch stays off if iOS refuses. Returns the outcome.
@@ -40,11 +43,15 @@ final class ConnectionController {
             return nil
         }
         let access = await devices.request(connection)
+        if connection == .timers { notificationAccess = access }
         store(connection, access == .granted)
         return access
     }
 
-    func refresh() {
+    /// Re-reads notification permission and redraws. Called when the app comes forward and when a
+    /// sheet closes, because the user may have changed permission in iPhone Settings.
+    func refresh() async {
+        notificationAccess = await devices.notificationAccess()
         revision += 1
     }
 

@@ -3,11 +3,12 @@ import DoddyCore
 import ElevenLabs
 import Foundation
 import Observation
+import UIKit
 
 /// One voice conversation with the ElevenLabs agent. State shown in the UI comes only from real
 /// SDK events (connected, listening, speaking, disconnected), never from timers.
-/// Tool calls are proposals: searches and lookups run on the phone, and anything that changes
-/// data (a note, an event, a reminder) waits for the user's tap.
+/// Tool calls are proposals. Lookups run on the phone. Anything that changes data, starts
+/// something, or opens another app waits for the user's tap, and Doddy never sends a message.
 @MainActor
 @Observable
 final class VoiceSessionController {
@@ -28,10 +29,17 @@ final class VoiceSessionController {
         case memory(toolCallID: String, text: String)
         case event(toolCallID: String, draft: CalendarEventDraft)
         case reminder(toolCallID: String, draft: ReminderDraft)
+        case timer(toolCallID: String, draft: TimerDraft)
+        case map(toolCallID: String, place: String)
+        case shortcut(toolCallID: String, name: String)
+        /// `address` is the phone number or email from Contacts. It is shown on screen only.
+        case message(toolCallID: String, draft: MessageDraft, address: String)
 
         var toolCallID: String {
             switch self {
-            case .memory(let id, _), .event(let id, _), .reminder(let id, _): id
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
+                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _):
+                id
             }
         }
     }
@@ -137,7 +145,7 @@ final class VoiceSessionController {
         }
     }
 
-    /// The user tapped Save or Add on the card.
+    /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
     func confirmPendingAction() async {
         guard let action = pendingAction else { return }
         pendingAction = nil
@@ -153,10 +161,38 @@ final class VoiceSessionController {
             await reply(id, addEvent(draft))
         case .reminder(let id, let draft):
             await reply(id, addReminder(draft))
+        case .timer(let id, let draft):
+            await reply(id, await startTimer(draft))
+        case .map(let id, let place):
+            guard let url = OpenLinks.map(place: place) else {
+                await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
+                return
+            }
+            let opened = await open(url)
+            await reply(id, opened ? VoiceToolReply.mapOpened(place) : VoiceToolReply.notOpened("Maps didn't open."))
+        case .shortcut(let id, let name):
+            guard let url = OpenLinks.shortcut(name: name) else {
+                await reply(id, VoiceToolReply.notOpened("That shortcut name can't be used."))
+                return
+            }
+            let opened = await open(url)
+            await reply(id, opened ? VoiceToolReply.shortcutRequested(name) : VoiceToolReply.notOpened("Shortcuts didn't open."))
+        case .message(let id, let draft, let address):
+            let url = draft.channel == .text
+                ? OpenLinks.text(number: address, body: draft.body)
+                : OpenLinks.email(address: address, body: draft.body)
+            guard let url else {
+                await reply(id, VoiceToolReply.notOpened("That address can't be used."))
+                return
+            }
+            let opened = await open(url)
+            await reply(id, opened
+                ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
+                : VoiceToolReply.notOpened("Messages or Mail didn't open."))
         }
     }
 
-    /// The user tapped "Don't save" or "Don't add". Nothing changes.
+    /// The user tapped the card's decline button. Nothing changes.
     func declinePendingAction() async {
         guard let action = pendingAction else { return }
         pendingAction = nil
@@ -164,6 +200,10 @@ final class VoiceSessionController {
         case .memory(let id, _): await reply(id, VoiceToolReply.declined)
         case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
+        case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
+        case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
+        case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
+        case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         }
     }
 
@@ -218,6 +258,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .saveMemory(let text):
+            // Nothing is stored until the user taps Save on the card.
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
         case .readCalendar(let range):
             guard devices.access(for: .calendar) == .granted else {
@@ -239,6 +280,35 @@ final class VoiceSessionController {
                 let matches = try devices.findContacts(named: name)
                 contactCard = ContactCard(query: name, matches: matches)
                 await reply(call.toolCallId, VoiceToolReply.contactMatches(matches.map(\.name), query: name))
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .setTimer(let draft):
+            guard await devices.notificationAccess() == .granted else {
+                await notConnected(call.toolCallId, .timers)
+                return
+            }
+            propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .openMap(let place):
+            propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
+        case .runShortcut(let name):
+            propose(.shortcut(toolCallID: call.toolCallId, name: name), toolCallID: call.toolCallId)
+        case .draftMessage(let draft):
+            guard devices.access(for: .contacts) == .granted else {
+                await notConnected(call.toolCallId, .contacts)
+                return
+            }
+            do {
+                guard let match = try devices.findContacts(named: draft.recipientName).first else {
+                    await reply(call.toolCallId, VoiceToolReply.contactMatches([], query: draft.recipientName))
+                    return
+                }
+                let address = draft.channel == .text ? match.phoneNumbers.first : match.emailAddresses.first
+                guard let address else {
+                    await reply(call.toolCallId, VoiceToolReply.noAddress(match.name, channel: draft.channel), isError: true)
+                    return
+                }
+                propose(.message(toolCallID: call.toolCallId, draft: draft, address: address), toolCallID: call.toolCallId)
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
@@ -287,6 +357,23 @@ final class VoiceSessionController {
         }
     }
 
+    private func startTimer(_ draft: TimerDraft) async -> String {
+        guard await devices.notificationAccess() == .granted else {
+            return VoiceToolReply.notAdded("Notifications are off for Doddy.")
+        }
+        do {
+            switch try await devices.startTimer(draft) {
+            case .verified:
+                let endsAt = Date().addingTimeInterval(TimeInterval(draft.seconds))
+                return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
+            case .unconfirmed:
+                return VoiceToolReply.addUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
         connectionNeeded = connection
         await reply(toolCallID, VoiceToolReply.notConnected(connection))
@@ -296,6 +383,10 @@ final class VoiceSessionController {
     func refreshConnectionNeeded() {
         guard let needed = connectionNeeded, isOn(needed) else { return }
         connectionNeeded = nil
+    }
+
+    private func open(_ url: URL) async -> Bool {
+        await UIApplication.shared.open(url)
     }
 
     private func isOn(_ connection: VoiceConnection) -> Bool {
