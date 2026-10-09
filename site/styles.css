@@ -1,4 +1,4 @@
-/* Doddy landing page, v2 "editorial notebook".
+/* Doddy landing page, v3 "light editorial notebook" (light-only by owner request).
    Layout: one 1200px column; hero split copy/device; numbered three-step row; receipt card; inverted ink privacy panel.
    Colours come only from tokens.css (generated from the app's CandidateTokens.swift).
    Type: Bricolage Grotesque for headings (the brand speaking), Caveat only for Doddy's own voice and the wordmark,
@@ -9,9 +9,11 @@
   --hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
   --text: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
   --gutter: clamp(16px, 4vw, 40px);
+  /* A brighter paper for cards, derived from the app's canvas so it stays on-brand. */
+  --paper: color-mix(in srgb, var(--canvas) 35%, #fff);
   --rule: color-mix(in srgb, var(--separator) 60%, transparent);
-  --lift: 0 1px 2px color-mix(in srgb, #000 8%, transparent), 0 18px 40px -18px color-mix(in srgb, #000 35%, transparent);
-  --lift-strong: 0 2px 4px color-mix(in srgb, #000 10%, transparent), 0 40px 80px -30px color-mix(in srgb, #000 45%, transparent);
+  --lift: 0 1px 2px rgb(60 40 10 / 6%), 0 16px 36px -20px rgb(60 40 10 / 28%);
+  --lift-strong: 0 2px 4px rgb(60 40 10 / 8%), 0 40px 80px -32px rgb(60 40 10 / 40%);
 }
 
 * { box-sizing: border-box; }
@@ -198,7 +200,7 @@ h3 {
 .scraps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; align-content: start; }
 .scraps li {
   padding: 10px 16px;
-  background: var(--quiet-surface);
+  background: var(--paper); border: 1px solid var(--separator);
   border-radius: 4px 14px 4px 14px;
   font-family: var(--hand); font-weight: 600; font-size: 1.5rem; line-height: 1.1;
 }
@@ -221,7 +223,8 @@ h3 {
 .step-visual {
   position: relative; display: grid; justify-items: center;
   padding: 32px 0 28px; margin-bottom: 24px;
-  background: var(--quiet-surface); border-radius: 28px;
+  background: linear-gradient(to bottom, var(--paper), var(--quiet-surface));
+  border: 1px solid var(--separator); border-radius: 28px;
   overflow: hidden;
 }
 .step-pose { position: absolute; left: 4%; bottom: 10px; width: 34%; max-width: 130px; }
@@ -245,7 +248,7 @@ h3 {
 .no-match-pose { width: 110px; flex: none; }
 .no-match blockquote {
   margin: 0 0 40px; padding: 14px 18px;
-  background: var(--quiet-surface); border-radius: 18px 18px 18px 4px;
+  background: var(--paper); border: 1px solid var(--separator); border-radius: 18px 18px 18px 4px;
   max-width: 18rem;
 }
 .no-match blockquote p { font-family: var(--hand); font-weight: 700; font-size: 1.7rem; line-height: 1.05; margin: 0; }
@@ -288,30 +291,43 @@ h3 {
   transition: background 250ms ease, color 250ms ease, border-color 250ms ease;
 }
 .voice-states li.now { background: var(--reading-ink); border-color: var(--reading-ink); color: var(--canvas); }
-.voice-card { padding: 18px; background: var(--quiet-surface); border-radius: 22px; box-shadow: var(--lift); }
+.voice-card { padding: 18px; background: var(--paper); border: 1px solid var(--separator); border-radius: 22px; box-shadow: var(--lift); }
 .voice-q { font-weight: 700; margin: 0 0 4px; }
 .voice-quote { color: var(--secondary-text); margin: 0 0 14px; }
 .voice-btn { display: flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 14px; font-weight: 600; font-size: 0.9375rem; }
 .voice-btn.primary { background: var(--reading-ink); color: var(--canvas); margin-bottom: 4px; }
 
-/* ---------- Privacy (inverted panel: ink in light mode, paper in dark mode) ---------- */
+/* ---------- Privacy (light paper panel) ---------- */
 
 .privacy { padding: clamp(24px, 4vw, 48px) 0; }
 .privacy-panel {
+  position: relative; overflow: hidden; isolation: isolate;
   padding: clamp(36px, 6vw, 72px);
   border-radius: 36px;
-  background: var(--reading-ink); color: var(--canvas);
+  background: var(--paper);
+  border: 1px solid var(--separator);
+  box-shadow: var(--lift);
+}
+.privacy-panel::after {
+  /* a soft warm corner, echoing the hero glow */
+  content: ""; position: absolute; right: -120px; top: -120px; width: 360px; height: 360px; border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-cue) 16%, transparent), transparent);
+  pointer-events: none; z-index: -1;
 }
 .privacy-panel .display-m { max-width: 14ch; }
 .facts { list-style: none; margin: 40px 0 36px; padding: 0; display: grid; gap: 32px; }
 @media (min-width: 640px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1000px) { .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.facts svg { width: 34px; height: 34px; margin-bottom: 14px; fill: none; stroke: var(--orange-cue); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.facts p { color: color-mix(in srgb, var(--canvas) 72%, var(--reading-ink)); margin: 0; font-size: 0.9375rem; }
+.facts svg {
+  width: 52px; height: 52px; padding: 12px; margin-bottom: 16px; border-radius: 16px;
+  background: var(--quiet-surface);
+  fill: none; stroke: var(--accent-text); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.facts p { color: var(--secondary-text); margin: 0; font-size: 0.9375rem; }
 .privacy-note {
   margin: 0; padding-top: 24px; font-size: 0.875rem; max-width: 46rem;
-  border-top: 1px solid color-mix(in srgb, var(--canvas) 20%, transparent);
-  color: color-mix(in srgb, var(--canvas) 72%, var(--reading-ink));
+  border-top: 1px solid var(--separator);
+  color: var(--secondary-text);
 }
 
 /* ---------- Meet ---------- */
@@ -333,9 +349,12 @@ h3 {
 .join-panel {
   display: grid; gap: 24px; align-items: end;
   padding: clamp(32px, 6vw, 64px);
-  background: var(--quiet-surface);
+  background:
+    radial-gradient(60% 80% at 100% 100%, color-mix(in srgb, var(--orange-cue) 14%, transparent), transparent),
+    var(--paper);
   border-radius: 36px;
   border: 1px solid var(--separator);
+  box-shadow: var(--lift);
 }
 .join-copy { min-width: 0; }
 .join-copy > p { max-width: 32rem; }
@@ -389,3 +408,36 @@ h3 {
 @media (max-width: 959px) {
   .says { display: none; }
 }
+
+/* ---------- v3 additions ---------- */
+
+/* Warm light behind the hero phone. */
+.hero-glow {
+  position: absolute; z-index: -1; left: 50%; top: 46%; width: 130%; aspect-ratio: 1; translate: -42% -50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-cue) 22%, transparent), color-mix(in srgb, var(--orange-cue) 6%, transparent) 60%, transparent);
+  pointer-events: none;
+}
+.hero-stage { isolation: isolate; }
+
+/* A floating save receipt, the moment the app is built around. */
+.hero-chip {
+  position: absolute; z-index: 3; right: -6%; top: 66%;
+  display: flex; align-items: flex-start; gap: 10px;
+  width: min(250px, 62%); padding: 12px 14px;
+  background: var(--paper); border: 1px solid var(--separator); border-radius: 16px;
+  box-shadow: var(--lift);
+  font-size: 0.8125rem; line-height: 1.4; color: var(--secondary-text);
+  transform: rotate(-2deg);
+}
+.hero-chip strong { color: var(--confirmed); font-size: 0.875rem; }
+.chip-check {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--confirmed); color: var(--paper); font-size: 0.8125rem; font-weight: 700;
+}
+@media (max-width: 959px) { .hero-chip { right: 0; top: 64%; } }
+
+/* Footer links */
+.foot-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px; margin-bottom: 8px; }
+.foot-links { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 24px; }
+.foot-links a { display: inline-flex; min-height: 44px; align-items: center; text-decoration: none; color: var(--secondary-text); font-weight: 550; }
+.foot-links a:hover { color: var(--reading-ink); }

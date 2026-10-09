@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Doddy, your mate in your pocket</title>
   <meta name="description" content="Doddy is an iPhone app with a hand-drawn mate inside. Save the small details that matter in your own words, and get the exact note back when you need it.">
-  <meta name="theme-color" content="#FFF7E9" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#171F29" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
   <meta property="og:type" content="website">
   <meta property="og:title" content="Doddy, your mate in your pocket">
   <meta property="og:description" content="Save the small details in your own words. Get the exact note back later.">
@@ -60,12 +60,17 @@
         </div>
 
         <div class="hero-stage">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="hero-chip" aria-hidden="true">
+            <span class="chip-check">✓</span>
+            <span><strong>Saved</strong><br>The spare keys are in the blue tin above the fridge.</span>
+          </div>
           <div class="device tilt">
             <img src="assets/screens/home.png" width="390" height="845" alt="Doddy's Home screen: A little less to carry. Buttons to save a detail or find something, and a recently saved note about spare keys.">
           </div>
           <div class="hero-doddy">
             <p class="says" aria-hidden="true">Hey. I'm Doddy.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <picture class="hero-pose"><source srcset="assets/poses/doddy-pose-waving-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt=""></picture>
+            <picture class="hero-pose"><img src="assets/poses/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt=""></picture>
           </div>
           <p class="caption">Design preview of the app</p>
         </div>
@@ -96,7 +101,7 @@
           <li class="step">
             <div class="step-visual">
               <div class="device small"><img src="assets/screens/capture.png" width="390" height="845" loading="lazy" alt="The New memory screen: What shall we keep? The detail reads: The spare keys are in the blue tin above the fridge."></div>
-              <picture class="step-pose"><source srcset="assets/poses/doddy-pose-memory-card-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+              <picture class="step-pose"><img src="assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">1</p>
             <h3>Tell Doddy</h3>
@@ -106,7 +111,7 @@
           <li class="step">
             <div class="step-visual">
               <div class="device small"><img src="assets/screens/recall.png" width="390" height="845" loading="lazy" alt="The Memories screen: It's in here somewhere. A search for spare keys finds the saved note, written by you on 8 October."></div>
-              <picture class="step-pose"><source srcset="assets/poses/doddy-pose-reading-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+              <picture class="step-pose"><img src="assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">2</p>
             <h3>Ask later</h3>
@@ -116,7 +121,7 @@
           <li class="step">
             <div class="step-visual">
               <div class="device small"><img src="assets/screens/detail.png" width="390" height="845" loading="lazy" alt="The Your memory screen: the saved note with its date and source, and buttons to correct this detail or delete this memory."></div>
-              <picture class="step-pose"><source srcset="assets/poses/doddy-pose-fist-bump-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+              <picture class="step-pose"><img src="assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">3</p>
             <h3>Fix it or forget it</h3>
@@ -136,7 +141,7 @@
           <p>Doddy never rewrites what you said. Each note shows when it was saved and where it came from, and a correction is added on top, so the first version is still there.</p>
           <p>When nothing matches, Doddy tells you so instead of making something up.</p>
           <div class="no-match">
-            <picture class="no-match-pose"><source srcset="assets/poses/doddy-pose-pointing-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture class="no-match-pose"><img src="assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             <blockquote><p>I couldn't find that in your saved memories.</p></blockquote>
           </div>
         </div>
@@ -160,7 +165,7 @@
     <section class="voice" aria-labelledby="voice-title">
       <div class="wrap voice-grid">
         <div class="voice-art">
-          <picture class="voice-pose"><source srcset="assets/poses/doddy-pose-listening-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-listening-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <picture class="voice-pose"><img src="assets/poses/doddy-pose-listening-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
           <ol class="voice-states" aria-label="What the voice screen shows">
             <li>Connecting…</li>
             <li>Listening</li>
@@ -226,21 +231,21 @@
         <ul class="sketches">
           <li class="sketch">
             <button class="shot" type="button" aria-label="Doddy takes a shot">
-              <picture><source srcset="assets/poses/doddy-pose-basketball-dribble-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+              <picture><img src="assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             </button>
             <p>Always has a side quest going.</p>
             <span class="hint">Tap for a shot</span>
           </li>
           <li class="sketch">
-            <picture><source srcset="assets/poses/doddy-pose-holding-coffee-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture><img src="assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             <p>Notices the small stuff that slows your day.</p>
           </li>
           <li class="sketch">
-            <picture><source srcset="assets/poses/doddy-pose-working-laptop-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-working-laptop-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture><img src="assets/poses/doddy-pose-working-laptop-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             <p>Helps first, chats second.</p>
           </li>
           <li class="sketch">
-            <picture><source srcset="assets/poses/doddy-pose-relaxing-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture><img src="assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             <p>Jokes about the queue, never about you.</p>
           </li>
         </ul>
@@ -270,7 +275,7 @@
               <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
             </div>
           </div>
-          <picture class="join-pose"><source srcset="assets/poses/doddy-pose-basketball-shot-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-basketball-shot-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <picture class="join-pose"><img src="assets/poses/doddy-pose-basketball-shot-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
         </div>
         <div class="later">
           <h2 class="later-title">Later, maybe</h2>
@@ -282,7 +287,15 @@
 
   <footer class="foot">
     <div class="wrap foot-inner">
-      <p class="wordmark">Doddy</p>
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="#how">How it works</a></li>
+          <li><a href="#meet">Meet Doddy</a></li>
+          <li><a href="#privacy">Privacy</a></li>
+          <li><a href="#join">Join early access</a></li>
+        </ul>
+      </div>
       <p>Doddy is an AI assistant, not a person. Your notes stay on your iPhone. Voice conversations run through ElevenLabs while the voice screen is open.</p>
       <p>© 2026 Doddy</p>
     </div>
