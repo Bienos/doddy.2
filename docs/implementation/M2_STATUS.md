@@ -14,13 +14,13 @@ Date: 2026-10-09. Owner instruction: build with an OpenAI model, the cheap one.
 
 ## Executed
 - `npm test` in `services/assistant-gateway` (Node 22.22.0): **13 tests, 13 pass, 0 fail**. The provider is stubbed. These tests do not show the real OpenAI API responds.
+- **Live provider run (2026-10-09):** one `memory_answer` request through the gateway with a test key passed as an environment variable for that process only (not stored). Result: HTTP 200 in 2.3 s; answer "Your locker code is 412." citing the sent note id; model `gpt-4o-mini` accepted by the key. One request only; cost and the current model price were not measured or checked.
 - Start-up smoke test: `/health` 200; wrong token → 401 `notAuthorized`.
 - `scripts/check_forbidden_capabilities.sh`: PASS. `scripts/verify_imported_pack.py`: PASS.
 
 ## Not run / blocked
 | Item | Blocker |
 |---|---|
-| **Live OpenAI call** | No `OPENAI_API_KEY` in this environment. The key must be set in the gateway host's secret store by the owner. |
 | Deployment (TLS, spend cap, host) | Billable infrastructure. Needs owner approval. |
 | Provider terms (DPA, retention, region, moderation) | Owner and legal decision (`AI_RUNTIME.md` production gate). |
 | Device/user auth and quotas | Open security design decision. Until then the gateway must not be exposed publicly. |
@@ -37,5 +37,6 @@ Date: 2026-10-09. Owner instruction: build with an OpenAI model, the cheap one.
 ## Decisions for the owner
 1. Provide an OpenAI key for the gateway host (secret store, not chat or git).
 2. Choose a host for the gateway and approve its spend cap.
-3. Approve the device/user auth approach before any user outside the owner's devices.
-4. Confirm the cheap model (`OPENAI_MODEL`) after checking current pricing.
+3. Revoke the key pasted into chat on 2026-10-09 and issue a new one with a spend cap.
+4. Approve the device/user auth approach before any user outside the owner's devices.
+5. Confirm the cheap model (`OPENAI_MODEL`) after checking current pricing.
