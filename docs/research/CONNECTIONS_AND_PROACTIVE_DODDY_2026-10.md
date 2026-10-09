@@ -344,6 +344,24 @@ Nothing in V4 changes M1 behaviour: a user who connects nothing keeps the same l
 
 ---
 
+### 5a. Owner answers (2026-10-09)
+
+| # | Decision | Answer |
+|---|---|---|
+| 1 | First slice | **V4a as described:** Calendar + Reminders + Contacts, Today card, local "before this event" nudges |
+| 2 | Calendar permission | **Full access** by default, privacy card first |
+| 3 | Gateway hosting | **Render, EU region** |
+| 4 | External channel | **Notifications first, then WhatsApp** (owner already has a Meta Business account and number); Telegram not planned |
+| 5 | Watcher | **Exa search**, provider-neutral relevance model, hard cap **20 EUR/month** |
+| 6 | MCP placement | **Skip MCP for now** |
+| 7 | Google | **Through iPhone Calendar sync** (EventKit); no Google OAuth |
+| 8 | Nudge defaults | Not asked; 3/day, quiet 22:00–07:30, 90-day server retention stay as defaults |
+| 9 | Phone-call nudges | Not asked; out of scope by default |
+
+Build order after these answers: **V4a** (phone only) → **V4b** with WhatsApp instead of Telegram (gateway on Render EU,
+APNs message-style nudges, WhatsApp Cloud API templates and opt-in) → **V4c** watch notes on Exa. V4d is deferred; V4e
+keeps only the WhatsApp template work, which moves into V4b.
+
 ## 6. What this document does not claim
 
 - No code, screen or server from this proposal exists. Capability catalog rows stay "not built" until executed tests say otherwise.

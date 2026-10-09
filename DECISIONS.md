@@ -80,10 +80,14 @@ Source: `docs/research/CONNECTIONS_AND_PROACTIVE_DODDY_2026-10.md` (calendar/Goo
 
 | ADR | Proposal | Status |
 |---|---|---|
-| 038 | Layer order: on-phone connections (EventKit, Contacts, AlarmKit, Shortcuts) before accounts/MCP before a Watcher backend; a user who connects nothing keeps the M1 local app unchanged | Open |
-| 039 | A connection shows "Connected" only after a verified read; reads auto once connected, every write/send goes through the existing proposal → confirmation card → verified receipt path | Open |
-| 040 | Proactive nudges come only from explicit **watch notes** (a memory type with provenance) or confirmed event nudges; never from inferred interests. Every nudge carries evidence, a link and "Stop watching" | Open |
-| 041 | Primary reach channel = push notification in Apple's message style (Doddy as sender) + in-app Nudge inbox; Telegram as first opt-in external channel; WhatsApp/calls later; iMessage cannot be sent by the app and is offered only as a user-built Shortcuts recipe | Open |
-| 042 | One small gateway (the voice token server already required) also hosts APNs sending, the Watcher scheduler, delivery channels and, later, an OAuth broker and a per-user MCP server for the ElevenLabs agent (`require_approval_per_tool`, per-conversation token header) | Open |
-| 043 | Google Calendar is read through EventKit when it is already synced to the iPhone; Google OAuth (sensitive scopes) only when an account feature needs it; Gmail read (restricted scope, CASA audit) is out of scope for now | Open |
-| 044 | Default nudge policy: 3 per day, quiet hours 22:00–07:30 local, 90-day server retention of nudge history, urgent cadence only for notes the user marked urgent | Open |
+| 038 | Layer order: on-phone connections (EventKit, Contacts, AlarmKit, Shortcuts) before accounts/MCP before a Watcher backend; a user who connects nothing keeps the M1 local app unchanged | Decided 2026-10-09: first slice V4a = Calendar + Reminders + Contacts, Today card, local event nudges |
+| 039 | A connection shows "Connected" only after a verified read; reads auto once connected, every write/send goes through the existing proposal → confirmation card → verified receipt path | Accepted 2026-10-09 |
+| 040 | Proactive nudges come only from explicit **watch notes** (a memory type with provenance) or confirmed event nudges; never from inferred interests. Every nudge carries evidence, a link and "Stop watching" | Accepted 2026-10-09 |
+| 041 | Primary reach channel = push notification in Apple's message style (Doddy as sender) + in-app Nudge inbox; Telegram as first opt-in external channel; WhatsApp/calls later; iMessage cannot be sent by the app and is offered only as a user-built Shortcuts recipe | Changed 2026-10-09: notifications first, then **WhatsApp** (owner has a Meta Business account and number); Telegram not planned |
+| 042 | One small gateway (the voice token server already required) also hosts APNs sending, the Watcher scheduler, delivery channels and, later, an OAuth broker and a per-user MCP server for the ElevenLabs agent (`require_approval_per_tool`, per-conversation token header) | Accepted 2026-10-09 with gateway on **Render, EU region**; the per-user MCP server part is deferred (ADR-047) |
+| 043 | Google Calendar is read through EventKit when it is already synced to the iPhone; Google OAuth (sensitive scopes) only when an account feature needs it; Gmail read (restricted scope, CASA audit) is out of scope for now | Accepted 2026-10-09: Google Calendar via iPhone Calendar sync (EventKit); no Google OAuth |
+| 044 | Default nudge policy: 3 per day, quiet hours 22:00–07:30 local, 90-day server retention of nudge history, urgent cadence only for notes the user marked urgent | Default applied (owner not asked separately); change any time |
+| 045 | Calendar connection asks for **full access** by default (Today card + read-back verification), explained by a privacy card first | Decided 2026-10-09 |
+| 046 | News Watcher: **Exa search** + provider-neutral relevance judgement against the watch-note text, hard cap **20 EUR/month** | Decided 2026-10-09 |
+| 047 | "Bring your own MCP server" is **skipped for now**; revisit after V4a–V4c ship | Decided 2026-10-09 |
+| 048 | Phone-call nudges (ElevenLabs outbound) out of scope | Default applied; owner may reopen |
