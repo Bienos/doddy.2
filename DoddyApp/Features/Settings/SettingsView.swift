@@ -7,11 +7,23 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
+    @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
     private var environment: AppEnvironment { store.environment }
     private var privacy: PrivacyDefaults { environment.privacy }
+    private var router: ShortcutRouter { .shared }
+    private var conversationLogs: ConversationLogStore { .shared }
+
+    private var backTapStatus: String {
+        switch router.setup.phase {
+        case .notStarted: "Not set up"
+        case .deferred: "Set up later"
+        case .userReportedTested(let at): "Tested by you · \(DateText.full(at))"
+        case .shortcutPreparation, .guiding, .testing, .receiptReceived: "In progress"
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -56,11 +68,26 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes and (if switched on) your last few conversations are sent to ElevenLabs, which runs the voice agent. Weather and Wikipedia lookups are made by ElevenLabs\u{2019} servers, not by this app. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .accessibilityIdentifier("settings.privacy")
+
+                Section("What Doddy knows") {
+                    Toggle("Remember recent conversations", isOn: $rememberConversations)
+                        .accessibilityIdentifier("settings.rememberConversations")
+                    StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
+                    Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
+                        .disabled(conversationLogs.logs.isEmpty)
+                    if let problem = conversationLogs.problem {
+                        Label(problem, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.error)
+                    }
+                    Text("When a conversation starts, the app hands Doddy your saved notes and, if this is on, your last few conversations, so he can carry on where you left off. They are kept only on this iPhone. Weather comes from Open-Meteo and facts from Wikipedia.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
 
                 Section("Voice") {
                     TextField("ElevenLabs agent ID", text: $voiceAgentID)
@@ -72,6 +99,17 @@ struct SettingsView: View {
                         Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
                     }
                     Text("Development prototype: Doddy's voice runs on an ElevenLabs agent. Conversations count toward the owner's ElevenLabs minutes.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
+                Section("Back Tap and Siri") {
+                    StatusRow(title: "Double Back Tap", value: backTapStatus)
+                    Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
+                        router.isSetupPresented = true
+                    }
+                    .accessibilityIdentifier("settings.backTap")
+                    Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button. Back Tap is chosen by you in iOS Settings; Doddy can't set it and can't see what it's set to.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

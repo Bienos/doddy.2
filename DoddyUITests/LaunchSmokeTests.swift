@@ -7,10 +7,10 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(seenFirstHello: Bool) -> XCUIApplication {
+    private func launch(seenFirstHello: Bool, backTapSetup: String = "deferred") -> XCUIApplication {
         let app = XCUIApplication()
         // Overrides UserDefaults for this launch only.
-        app.launchArguments += ["-hasSeenFirstHello", seenFirstHello ? "YES" : "NO", "-appearance", "system", "-inMemoryStore", "YES"]
+        app.launchArguments += ["-hasSeenFirstHello", seenFirstHello ? "YES" : "NO", "-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
         app.launch()
         return app
     }
@@ -36,7 +36,19 @@ final class LaunchSmokeTests: XCTestCase {
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Microphone"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Not used"].exists)
+        XCTAssertTrue(app.staticTexts["Only while talking"].exists, "V1: the microphone is used only during a voice conversation")
+    }
+
+    @MainActor
+    func testBackTapCardCanBeDeferredAndNeverShowsAsVerified() {
+        let app = launch(seenFirstHello: true, backTapSetup: "notStarted")
+        XCTAssertTrue(app.buttons["home.backTap.later"].waitForExistence(timeout: 5))
+        app.buttons["home.backTap.later"].tap()
+        XCTAssertFalse(app.buttons["home.backTap.later"].exists)
+
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.staticTexts["Set up later"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] 'verified'")).firstMatch.exists)
     }
 
     @MainActor

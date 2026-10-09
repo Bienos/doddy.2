@@ -6,7 +6,7 @@ struct HomeView: View {
 
     @Environment(MemoryStore.self) private var store
     @State private var showCapture = false
-    @State private var showVoice = false
+    private var router: ShortcutRouter { .shared }
 
     var body: some View {
         NavigationStack {
@@ -28,7 +28,7 @@ struct HomeView: View {
                     }
 
                     VStack(spacing: 12) {
-                        Button { showVoice = true } label: {
+                        Button { router.isVoicePresented = true } label: {
                             HStack { Text("Talk to Doddy"); Spacer(); Image(systemName: "waveform") }
                         }
                         .buttonStyle(PrimaryButtonStyle())
@@ -49,9 +49,13 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.find")
                     }
 
+                    if router.setup.phase == .notStarted {
+                        backTapCard
+                    }
+
                     recent
 
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Reminders and other apps aren't built yet.")
+                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Reminders and other apps aren't built yet.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")
@@ -64,9 +68,31 @@ struct HomeView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .sheet(isPresented: $showCapture) { CaptureView() }
-            .fullScreenCover(isPresented: $showVoice) { VoiceView() }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    /// Offered once; "Later" hides it (Settings can reopen the guide). Never shown as done
+    /// unless the user reported a successful tap test.
+    private var backTapCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Reach Doddy with two taps")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            Text("Double-tap the back of your iPhone to start talking. It takes a minute in Settings, and Doddy walks you through it.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+            HStack(spacing: 12) {
+                Button("Set up") { router.isSetupPresented = true }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityIdentifier("home.backTap.setup")
+                Button("Later") { router.setup.send(.deferSetup) }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("home.backTap.later")
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
     @ViewBuilder
