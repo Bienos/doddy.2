@@ -107,6 +107,12 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 060 | Agent **background voice detection on** after a background video kept the user's turn open and Doddy never answered | Applied 2026-10-09 to fix owner's report; revert = vad.background_voice_detection false |
 | 061 | A 2026-10-08 branch switched the colour tokens to `v1.3_COMPLETE` (`#FF7A00`). Not kept at merge time: ADR-056 (C, `#F58A24`) is the later owner decision and the app icon (ADR-050) uses `#F58A24`. The v1.3 readable extracts and `docs/design/BRAND_INDEX.md` were kept, with a superseded note | Applied at branch consolidation 2026-10-09 — owner to confirm |
 
+## Personality settings (2026-10-09, renumbered from 058 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 062 | Personality settings (humour, reply length, tone, mood) from the persona draft's fixed options, stored as UI preferences in `UserDefaults`, sent to the agent as the fixed-text dynamic variable `doddy_personality`; safety rules are not adjustable. See `docs/product/PERSONALITY_SETTINGS.md` | App applied; **agent prompt change pending owner approval** |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.

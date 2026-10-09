@@ -85,6 +85,9 @@ final class VoiceSessionController {
                 "saved_notes_count": "\(notes.includedCount)",
                 "saved_notes_truncated": notes.truncated ? "yes" : "no",
                 "recent_conversations": recent.text,
+                // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
+                // placeholder defaults to the persona defaults, so a build that sends nothing still works.
+                PersonalityPrompt.variableName: PersonalityPrompt.render(.stored()),
             ],
             userId: Self.userID())
         config.onAgentStateChange = { state in

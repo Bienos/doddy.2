@@ -19,6 +19,7 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 - `search_memories` runs the local SQLite recall and returns only stored text (`VoiceToolReply.search`).
 - `save_memory` shows a **Save this note?** card; nothing is stored until the user taps Save. The agent is told saved, declined or failed.
 - Microphone denied → explanation + Open Settings; the rest of the app keeps working.
+- Settings → Voice → **Doddy's personality**: humour, reply length, tone and mood, sent as `doddy_personality` (see `docs/product/PERSONALITY_SETTINGS.md`; agent prompt change still pending).
 - Settings → Voice: the agent ID (prefilled with the dev agent). Privacy rows now say "Only while talking (ElevenLabs)".
 - Privacy manifest declares audio data and other user content (app functionality, not linked, no tracking).
 

@@ -90,6 +90,7 @@ struct SettingsView: View {
                 }
 
                 Section("Voice") {
+                    PersonalityLinkRow()
                     TextField("ElevenLabs agent ID", text: $voiceAgentID)
                         .font(.body.monospaced())
                         .textInputAutocapitalization(.never)

@@ -14,6 +14,10 @@ enum PreferenceKey {
     static let rememberConversations = "rememberConversations"
     /// Random, stable per-install id passed to ElevenLabs as the conversation user id.
     static let voiceUserID = "voiceUserID"
+    static let personalityHumour = "personality.humour"
+    static let personalityLength = "personality.length"
+    static let personalityFormality = "personality.formality"
+    static let personalityMood = "personality.mood"
 }
 
 enum AppTab: Hashable {
