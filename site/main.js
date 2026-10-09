@@ -15,6 +15,49 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const hero = document.querySelector(".hero");
 requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add("loaded")));
 
+// ---------- Film: a muted 9-second preview loops while on screen; sound only after a tap ----------
+const PREVIEW_SECONDS = 9;
+const film = document.querySelector(".film");
+const player = film.querySelector(".player");
+const video = player.querySelector("video");
+const chapters = [...film.querySelectorAll("[data-seek]")];
+let filmFull = false;
+
+// Take over from the native controls: muted, inline, no controls until someone asks for sound.
+video.controls = false;
+video.muted = true;
+video.loop = true;
+if (reduceMotion.matches) player.classList.add("still");
+
+function playFull(at) {
+  filmFull = true;
+  player.classList.add("playing");
+  video.loop = false;
+  video.muted = false;
+  video.controls = true;
+  video.currentTime = at;
+  video.play().catch(() => {});
+}
+player.querySelector(".cover").addEventListener("click", () => playFull(0));
+chapters.forEach((button) => button.addEventListener("click", () => {
+  playFull(Number(button.dataset.seek));
+  video.focus();
+}));
+video.addEventListener("timeupdate", () => {
+  if (!filmFull) {
+    if (video.currentTime > PREVIEW_SECONDS) video.currentTime = 0;
+    return;
+  }
+  const now = chapters.filter((b) => video.currentTime >= Number(b.dataset.seek)).pop();
+  chapters.forEach((b) => b.setAttribute("aria-current", String(b === now)));
+});
+new IntersectionObserver(([entry]) => {
+  if (entry.isIntersecting) film.classList.add("loaded");
+  if (filmFull) return;
+  if (entry.isIntersecting && !reduceMotion.matches) video.play().catch(() => {});
+  else video.pause();
+}, { threshold: 0.4 }).observe(player);
+
 // ---------- Voice: step through the app's real status words while the section is on screen ----------
 const voiceStates = [...document.querySelectorAll(".voice-states li")];
 let voiceTimer = null;

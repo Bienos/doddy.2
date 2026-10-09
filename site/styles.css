@@ -191,6 +191,95 @@ h3 {
 .js .hero-pose { display: block; transition: transform 420ms cubic-bezier(.2,.8,.2,1); }
 .js .hero:not(.loaded) .hero-pose { transform: translate(-14px, 6px); }
 
+/* ---------- Film ---------- */
+/* The film is taped onto a paper card that straightens as it scrolls in.
+   Doddy dribbles in at the corner, and the chapters reuse the problem section's scraps. */
+.film { padding: 0 0 clamp(56px, 8vw, 104px); }
+.film-stage { position: relative; padding-left: clamp(0px, 9vw, 120px); }
+.film-card {
+  position: relative; padding: 12px;
+  background: var(--paper); border: 1px solid var(--separator); border-radius: 30px;
+  box-shadow: var(--lift-strong);
+}
+.js .film-card { transform: rotate(-1.2deg); transition: transform 900ms cubic-bezier(.2,.8,.2,1); }
+.js .film.loaded .film-card { transform: rotate(0); }
+.tape {
+  position: absolute; z-index: 2; top: -13px; width: 110px; height: 28px;
+  background: color-mix(in srgb, var(--quiet-surface) 75%, transparent);
+  border: 1px solid color-mix(in srgb, var(--separator) 70%, transparent);
+  box-shadow: 0 2px 6px rgb(60 40 10 / 8%);
+}
+.tape.t1 { left: 9%; transform: rotate(-5deg); }
+.tape.t2 { right: 9%; transform: rotate(4deg); }
+
+.player { position: relative; overflow: hidden; border-radius: 20px; background: #0f0f0e; }
+.player video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.preview-tag, .player .cover { display: none; }
+.js .player .cover {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  border: 0; padding: 0; cursor: pointer; color: inherit;
+  background: linear-gradient(180deg, transparent 50%, rgb(15 15 14 / 55%));
+}
+.js .preview-tag {
+  position: absolute; left: 12px; top: 12px; display: inline-flex; align-items: center; gap: 7px;
+  padding: 4px 11px 5px; border-radius: 999px;
+  background: rgb(15 15 14 / 62%); color: var(--canvas);
+  font-size: 0.75rem; font-weight: 600; pointer-events: none;
+}
+.preview-tag .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--orange-cue); }
+.js .player.playing .cover, .js .player.playing .preview-tag, .js .player.still .preview-tag { display: none; }
+.play-dot {
+  width: clamp(68px, 8vw, 92px); aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--reading-ink);
+  box-shadow: inset 0 -5px 0 var(--orange-cue), 0 12px 30px -8px rgb(0 0 0 / 50%);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.play-dot svg { width: 34%; margin-left: 8%; fill: var(--canvas); }
+.player .cover:hover .play-dot { transform: translateY(-2px) scale(1.04); box-shadow: inset 0 -7px 0 var(--orange-cue), 0 16px 34px -8px rgb(0 0 0 / 55%); }
+.cover-label {
+  position: absolute; left: clamp(14px, 2.4vw, 26px); bottom: clamp(12px, 2vw, 22px);
+  color: var(--canvas); text-align: left; font-size: 0.875rem; font-weight: 600; line-height: 1.25;
+}
+.cover-title { display: block; font-family: var(--hand); font-weight: 700; font-size: clamp(1.6rem, 1.2rem + 1.2vw, 2.3rem); line-height: 1; }
+
+.film-doddy { position: absolute; z-index: 3; left: 0; bottom: -10px; width: clamp(120px, 15vw, 190px); }
+.film-doddy .says {
+  position: absolute; right: 58%; top: -30%;
+  font-size: clamp(1.6rem, 1.2rem + 1vw, 2.2rem);
+  white-space: nowrap; transform: rotate(-5deg); margin: 0;
+}
+
+.chapters { display: none; }
+.js .chapters { list-style: none; margin: 28px 0 0; padding: 0 0 0 clamp(0px, 9vw, 120px); display: flex; flex-wrap: wrap; gap: 10px; }
+.chapters button {
+  display: inline-flex; align-items: baseline; gap: 8px; min-height: 44px;
+  padding: 8px 14px 9px; cursor: pointer; color: var(--reading-ink);
+  background: var(--paper); border: 1px solid var(--separator); border-radius: 4px 14px 4px 14px;
+  font-family: var(--hand); font-weight: 600; font-size: 1.35rem; line-height: 1.1;
+  transition: border-color 150ms, box-shadow 150ms;
+}
+.chapters li:nth-child(odd) button { transform: rotate(-1.2deg); }
+.chapters li:nth-child(even) button { transform: rotate(1deg); }
+.chapters button:hover { border-color: var(--orange-cue); }
+.chapters .t { font-family: var(--text); font-size: 0.75rem; font-weight: 600; color: var(--secondary-text); font-variant-numeric: tabular-nums; }
+.chapters button[aria-current="true"] { border-color: var(--orange-cue); box-shadow: inset 0 -3px 0 var(--orange-cue); }
+.film-caption { text-align: left; padding-left: clamp(0px, 9vw, 120px); margin-top: 18px; }
+
+@media (max-width: 700px) {
+  .film-stage, .js .chapters, .film-caption { padding-left: 0; }
+  .film-card { padding: 7px; border-radius: 20px; }
+  .player { border-radius: 14px; }
+  /* Bottom-right on phones, clear of the "Watch the film" label; the note would run off-screen. */
+  .film-doddy { width: 84px; left: auto; right: -4px; bottom: -50px; }
+  .film-doddy .says { display: none; }
+  .js .chapters { margin-top: 44px; flex-wrap: nowrap; overflow-x: auto; padding: 6px 2px 10px; scroll-snap-type: x mandatory; }
+  .chapters li { flex: none; scroll-snap-align: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .film-card, .play-dot, .chapters button { transition: none; }
+}
+
 /* ---------- Problem ---------- */
 
 .problem { padding: 0 0 clamp(56px, 8vw, 104px); }

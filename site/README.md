@@ -24,7 +24,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. No cookies, n
 
 ## What's real on the page
 
-- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, Take a shot (basketball game), join. The example note in the receipt card is labelled as an example.
+- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the brand film, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, Take a shot (basketball game), join. The example note in the receipt card is labelled as an example.
 - **Screens are design previews**, copied from `design/interface-v1.2/previews/` and labelled "Design preview". Replace them with simulator screenshots of the native app (same file names in `assets/screens/`) once someone with Xcode captures them.
 - The voice section has no app screenshot. It shows the app's real status words and its "Save this note?" card as an illustration, labelled as such, and is marked **In testing** because voice hasn't run on a real iPhone.
 - Claims follow the feature table in the prompt: save, search, edit, export and delete are described as working; reminders and other languages sit under "Later, maybe" with no dates.
@@ -62,6 +62,15 @@ sent before the script has loaded. No npm dependency, no build step.
 - **Custom events** (for example a waitlist signup) are possible with
   `window.va('event', { name: '...' })`; none are sent yet.
 
+## Film
+
+"One morning in Warsaw" sits directly after the hero (`#film`); the hero's second link reads "Watch the film (1:20)" and jumps to it. Design: concept A from `design/landing-film-mockup/` (owner-picked).
+
+- **Files:** `assets/film/doddy-film.mp4` (H.264 + AAC, 854×480, 1:20, faststart, 5.6 MB) re-encoded from the owner's `DODDY-LOW_RES.mov` (HEVC, which most desktop Chrome and Firefox can't play); `assets/film/poster.jpg` is the frame at 0:03. Same-origin, so the existing CSP (`default-src 'self'`) covers it; `/assets/` caching applies.
+- **Behaviour (`main.js`):** a muted 9-second preview loops while the film is on screen and pauses off screen. Tapping the play button or a chapter turns sound on, shows native controls and plays from 0:00 or that chapter. Reduced motion: no autoplay, poster until tapped. Without JavaScript it is a plain video with native controls and no chapter list.
+- **Chapters** are cut at the film's scene changes and named from what's on screen; rename them if the voice-over calls the moments something else.
+- **Not done:** captions (add a WebVTT `<track>` once the script is final), a higher-resolution master, an AV1/WebM copy, and analytics events for plays.
+
 ## Needs the owner
 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
@@ -81,5 +90,7 @@ sent before the script has loaded. No npm dependency, no build step.
 - Optional questions: browser flow at 1280 and 390 px (focus moves to the questions, chips work by keyboard, answers sent with id and key, Skip sends nothing, Android note); `api/waitlist-answers.js` against the Blob stand-in (wrong key, unknown id, foreign origin, unknown choices dropped, wish capped and formula-stripped, admin never sees the key hash, CSV has the new columns).
 - "Take a shot" (`court.js`): auto shots and a dragged slingshot throw at 1440 and 390 px; "Shoot for me" lands about 60% of the time.
 - Analytics (2026-10-09, headless Chromium 1194 via Playwright, local server sending the `vercel.json` headers, `/_vercel/insights/script.js` stubbed): under the production CSP the inline queue runs (`window.va` is a function), the script is requested and runs, queued calls land in `window.vaq`, no CSP violations, page or console errors; an unhashed inline script is still blocked; with the script answering 404 (analytics not enabled yet) the page works with no errors; 390 px has no horizontal scroll; `/admin/` carries no analytics. Not checked: the real Vercel script and that the dashboard shows data; that needs the deploy described under Analytics.
+
+- Film (2026-10-09, headless Chromium 1194 via Playwright, local server sending the `vercel.json` headers): at 1440, 390 and 320 px no horizontal scroll, no console errors, no CSP violations; JS takes over (muted, no controls, play button and chapters shown); tapping play turns on sound and controls and stops the loop; chapter buttons respond; reduced motion leaves the film paused with the poster; with JavaScript off the native controls show and the play button and chapters are hidden. At 1440×900 the film starts 93 px below the first screen. Screenshots: `VISUAL_REVIEW/landing/v3-film-1440.png`, `v3-film-390.png`. Not checked: actual playback, seeking and sound (Playwright's Chromium has no H.264 decoder), iPhone Safari inline autoplay, Low Power Mode.
 
 Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom, touch throwing), VoiceOver, Lighthouse.
