@@ -6,6 +6,8 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
+    /// HTTPS address of `server/voice-token`. Empty = development public agent.
+    static let voiceTokenServer = "voiceTokenServer"
     /// Seconds since 1970; 0 = never. Set only after the tap test received a shortcut and the
     /// user confirmed it came from Double Back Tap.
     static let backTapTestedAt = "backTapTestedAt"

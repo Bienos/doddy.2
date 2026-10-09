@@ -46,12 +46,17 @@ final class VoiceSessionController {
         }
     }
 
-    func start(agentID: String) async {
+    func start(_ mode: VoiceConnectionMode) async {
         guard !isLive else { return }
         lines = []
         pendingSave = nil
         isMuted = false
 
+        // Not set up: say so without asking for the microphone first.
+        if case .notSetUp(let reason) = mode {
+            fail(reason)
+            return
+        }
         guard await Self.microphoneAllowed() else {
             phase = .microphoneDenied
             return
@@ -79,18 +84,41 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
         }
 
+        config.onAgentReady = {
+            Task { @MainActor in
+                if ref.value?.phase == .connecting { ref.value?.phase = .listening }
+            }
+        }
+        config.onDisconnect = { _ in
+            Task { @MainActor in ref.value?.disconnected() }
+        }
+
+        let auth: ElevenLabsConfiguration
+        switch mode {
+        case .publicAgent(let agentID):
+            auth = .publicAgent(id: agentID)
+        case .tokenServer(let endpoint, let accessCode):
+            do throws(VoiceTokenError) {
+                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
+            } catch {
+                if phase == .connecting { fail(VoiceTokenServer.message(for: error)) }
+                return
+            }
+        case .notSetUp(let reason):
+            fail(reason)
+            return
+        }
+        // Closed while the token was being fetched: don't open the microphone after all.
+        guard phase == .connecting else { return }
+
         do {
-            conversation = try await ElevenLabs.startConversation(
-                agentId: agentID,
-                config: config,
-                onAgentReady: {
-                    Task { @MainActor in
-                        if ref.value?.phase == .connecting { ref.value?.phase = .listening }
-                    }
-                },
-                onDisconnect: { _ in
-                    Task { @MainActor in ref.value?.disconnected() }
-                })
+            let started = try await ElevenLabs.startConversation(auth: auth, config: config)
+            guard isLive else {
+                // Closed while connecting: end it so nothing keeps listening.
+                await started.endConversation()
+                return
+            }
+            conversation = started
         } catch {
             fail("Couldn't connect to Doddy's voice. Check your internet connection and try again. (\(error.localizedDescription))")
         }

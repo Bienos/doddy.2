@@ -7,6 +7,10 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
+    @AppStorage(PreferenceKey.voiceTokenServer) private var voiceTokenServer = ""
+    @State private var accessCodeDraft = ""
+    @State private var hasAccessCode = VoiceAccessCodeStore.read() != nil
+    @State private var accessCodeError: String?
     @AppStorage(PreferenceKey.backTapTestedAt) private var backTapTestedAt = 0.0
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
@@ -52,27 +56,54 @@ struct SettingsView: View {
 
                 Section("Privacy") {
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
-                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "Only while talking (ElevenLabs)" : "None")
+                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "Only while talking (ElevenLabs, token server)" : "None")
                     StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "Only while talking" : "Not used")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. If a token server is set, starting a conversation also sends your access code to it. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .accessibilityIdentifier("settings.privacy")
 
                 Section("Voice") {
-                    TextField("ElevenLabs agent ID", text: $voiceAgentID)
+                    StatusRow(title: "Connection", value: connectionText)
+                        .accessibilityIdentifier("settings.voiceConnection")
+                    TextField("Token server (https://…)", text: $voiceTokenServer)
                         .font(.body.monospaced())
+                        .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                        .accessibilityIdentifier("settings.voiceAgentID")
-                    if voiceAgentID != VoiceConfig.developmentAgentID {
-                        Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
+                        .accessibilityIdentifier("settings.voiceTokenServer")
+                    if hasAccessCode {
+                        Button("Remove access code", role: .destructive) {
+                            VoiceAccessCodeStore.delete()
+                            hasAccessCode = false
+                        }
+                    } else {
+                        SecureField("Access code", text: $accessCodeDraft)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .accessibilityIdentifier("settings.voiceAccessCode")
+                        Button("Save access code") { saveAccessCode() }
+                            .disabled(accessCodeDraft.allSatisfy(\.isWhitespace))
                     }
-                    Text("Development prototype: Doddy's voice runs on an ElevenLabs agent. Conversations count toward the owner's ElevenLabs minutes.")
+                    if let accessCodeError {
+                        Label(accessCodeError, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.error)
+                    }
+                    if voiceTokenServer.allSatisfy(\.isWhitespace) {
+                        TextField("ElevenLabs agent ID", text: $voiceAgentID)
+                            .font(.body.monospaced())
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .accessibilityIdentifier("settings.voiceAgentID")
+                        if voiceAgentID != VoiceConfig.developmentAgentID {
+                            Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
+                        }
+                    }
+                    Text("With a token server, Doddy sends only your access code to it to get a one-conversation pass; the conversation itself goes to ElevenLabs. Without one, the development agent is open to anyone who has its ID. Conversations count toward the owner's ElevenLabs minutes.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -128,6 +159,27 @@ struct SettingsView: View {
             }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    private var connectionText: String {
+        switch VoiceConnectionMode.resolve(
+            serverAddress: voiceTokenServer, accessCode: hasAccessCode ? VoiceAccessCodeStore.read() : nil,
+            publicAgentID: voiceAgentID) {
+        case .tokenServer: "Private (token server)"
+        case .publicAgent: "Development (public agent)"
+        case .notSetUp: "Not set up"
+        }
+    }
+
+    private func saveAccessCode() {
+        let code = accessCodeDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        if VoiceAccessCodeStore.save(code) {
+            hasAccessCode = true
+            accessCodeDraft = ""
+            accessCodeError = nil
+        } else {
+            accessCodeError = "The access code couldn't be saved in the Keychain. Nothing was stored."
+        }
     }
 
     private func deleteAll() async {

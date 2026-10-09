@@ -28,6 +28,6 @@ Linux: core package 30 tests pass (incl. tool parsing and replies), guard passes
 App compile with the SDK; microphone prompt; a real conversation in English and Polish; that client tool calls arrive (the agent's `client_events` list does not name `client_tool_call`; SDK and docs suggest they are always sent); the save confirmation round-trip within the 90 s tool timeout; ending on background.
 
 ## Before anyone else uses it
-1. Turn on agent authentication and add a small token server (`conversationToken` path in the SDK).
+1. Turn on agent authentication and add a small token server (`conversationToken` path in the SDK). **Code done 2026-10-09** (`server/voice-token`, see `docs/implementation/VOICE_TOKEN_SERVER_STATUS.md`); deploy + enable auth pending.
 2. Pick or design Doddy's own voice (library voices must first be added to the account).
 3. Decide on data handling with ElevenLabs (zero retention and EU residency are Enterprise-only).

@@ -72,6 +72,16 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 042 | Saves from Shortcuts/Siri use source `explicit_text` (the app receives text; dictation is unknowable). A dedicated `shortcut` source would change `schemas/memory.schema.json` | Open: owner may want a new source |
 | 043 | A shortcut that asks to talk before First Hello waits until First Hello is dismissed, so the AI disclosure always comes first | Applied |
 
+## Voice token server decisions
+
+| ADR | Decision | Status |
+|---|---|---|
+| 044 | `server/voice-token`: one stateless endpoint that swaps a tester access code for an ElevenLabs conversation token. Plain JS, web-standard handler, no dependencies; Vercel entry included | Applied (code); **not deployed** |
+| 045 | Testers authenticate with per-person access codes (`label:code`, ≥16 chars, revocable by removing the entry), not accounts. Codes kept in the iOS Keychain, this device only | Applied: owner may later want App Attest or accounts |
+| 046 | Spending cap = the ElevenLabs agent's own concurrency/daily call limits; the server keeps no counters | Open: **owner sets the limits** |
+| 047 | App: a token server address switches voice to private mode; an invalid address or missing code never falls back to the public agent. Public agent stays as the dev default until the owner enables agent authentication | Applied |
+| 048 | The app's only networking of its own is `VoiceTokenClient` (guard-enforced); it sends the access code, nothing about the user | Applied |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.
