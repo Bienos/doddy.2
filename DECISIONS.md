@@ -45,7 +45,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 025 | Owner instruction 2026-10-08: build M1 now, **no unnecessary tests**. M1 adds 2 storage tests only; UI flows are untested beyond the existing smoke tests. | Applied |
 | 026 | `MemoryRepository` gains `list(limit:)` and `deleteAll()`; new `MemoryStoreError`. Every write is one transaction plus read-back before success. | Applied |
 | 027 | Search indexes a folded copy of `current_text` (`search_text`: case + diacritics folded, plus ł→l, ß→ss, etc.). Query = non-stopword terms as FTS5 prefix terms joined with OR. No typo tolerance beyond prefixes. | Applied — owner may want fuzzier search later |
-| 028 | `PRAGMA secure_delete = ON`; delete-all also rebuilds the FTS index. DB in Application Support/Memories with `completeUntilFirstUserAuthentication`; **included in device backups** (disclosed in Settings). | Applied — **owner to confirm backup inclusion** |
+| 028 | `PRAGMA secure_delete = ON`; delete-all also rebuilds the FTS index. DB in Application Support/Memories with `completeUntilFirstUserAuthentication`; **included in device backups** (disclosed in Settings). | Applied — **owner confirmed 2026-10-09** |
 | 029 | If the store cannot open, the app switches saving off and shows the error; it never resets or deletes the file. | Applied |
 | 030 | Export: JSON (`formatVersion` 1 envelope of schema records) and plain text, both via the share sheet. | Applied |
 | 031 | On Linux, package tests need `-Xswiftc -DSQLITE_DISABLE_SNAPSHOT` (Ubuntu SQLite lacks the snapshot API); `ci.sh`/`Makefile` add it automatically. Apple builds unaffected. | Applied |
@@ -95,6 +95,16 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 |---|---|---|
 | 038 | `docs/design/BRAND_GUIDELINES.md` consolidates voice, product-copy, typography, colour-summary and mark rules from interface v1.2, the Character Bible and the two v1.3 brand archives. Precedence: owner-approved guidelines → `CANONICAL_DESIGN_DIRECTION.md` → this guideline for copy and type → `DESIGN-SYSTEM.md` for tokens. It records eight owner decisions (display typeface Caveat vs Lobster Two vs bespoke lettering; bundling a font; wordmark outlines; brand master palette; memory/detail/note terminology; Polish register and tagline; app icon; humour default) and recommends Caveat, informal Polish, "memory" for the record and "detail" for the content. | Proposed — **owner to review section 10** |
 | 039 | Pack files (`README.md`, `CLAUDE.md`, `docs/design/*` from the handoff) stay unmodified so `verify_imported_pack.py` keeps passing (ADR-024); the guideline is linked from the repo-authored `docs/design/README.md` and this log instead of from the pack's README and `CLAUDE.md`. If the owner prefers in-place edits, the manifest hashes must be regenerated in the same change and ADR-024 revised. | Applied — owner may revise |
+
+## Brand pick and voice-agent spec decisions (2026-10-09, renumbered from 038–042 when branches were merged)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 056 | **Character master = C**: the v1.3-r1 redraw in `design/interface-v1.2/assets` (no backpack, white sneakers, `#F58A24` on warm paper). Both v1.3 packs (A = COMPLETE, B = non-COMPLETE) stay in `reference/` as history only. Comparison: `VISUAL_REVIEW/BRAND_PICK_A_B_C.jpg` | Owner decision 2026-10-09. Still missing in C: face/expression set, app icon, outlined wordmark; illustrator fidelity review and artwork rights still open |
+| 057 | ElevenLabs dev agent keeps its defaults: **voice recording on, no retention limit, transcripts not deleted**. Settings copy tells the user ElevenLabs keeps them | Owner decision 2026-10-09, dev only (owner's own phone). Revisit before any other user (with ADR-034) |
+| 058 | Voice stays on **ElevenLabs**, but Doddy's definition lives in the repo in **OpenAI Realtime shape**: `voice-agent/instructions.md`, `tools.json` (Realtime function tools + `x_doddy`), `session.json`; `scripts/voice_agent_spec.py` checks it, renders it for either provider and detects dashboard drift. DoddyCore `RealtimeVoice.swift` holds the provider-neutral session protocol, events and state | Owner decision 2026-10-09. Voice screen not yet moved onto the protocol: waits for the voice branches to be merged |
+| 059 | Agent speed: turn eagerness normal → **eager** (speculative turn already on). Reasoning budget not settable for gemini-3.5-flash; voice model left as eleven_v4_turbo | Applied 2026-10-09 with owner OK; revert = set turn_eagerness back to normal |
+| 060 | Agent **background voice detection on** after a background video kept the user's turn open and Doddy never answered | Applied 2026-10-09 to fix owner's report; revert = vad.background_voice_detection false |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
