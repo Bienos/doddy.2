@@ -29,7 +29,7 @@ Date: 2026-10-09. Owner instruction: build with an OpenAI model, the cheap one.
 | Model choice | `gpt-4o-mini` is a placeholder default. Verify current model ids and prices before the live run. |
 
 ## Exit criteria (from MILESTONES.md) still open
-- Real provider response confirmed, not mocked — **open** (needs key).
+- Real provider response confirmed, not mocked — **done for one request (2026-10-09)**; more live cases (noMatch, invalid citation, rate limit) still to run.
 - Offline, cancellation and rate-limit paths in the app — **open** (client not built).
 - Citation verifier blocks unknown memory ids — **done in the gateway, tested with a stub**.
 - Measured request cost and logs scrubbed of personal text — logs **done**; cost measurement **open** (needs live calls).
