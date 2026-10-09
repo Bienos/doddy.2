@@ -14,7 +14,8 @@ what remains open. **No GDPR, AI Act or App Store compliance has been assessed o
 - Every read, status check and disconnect looks up the connection **by the authenticated user**; there is no
   endpoint that takes a connection ID. The adapter passes both `userId` and `connectedAccountId` to Composio.
 - Session mechanisms: `dev` (two fixed loopback identities; config refuses it unless mock mode + loopback host +
-  non-production) and `signed` (HMAC-SHA256 tokens with expiry, minted by the owner with `npm run session:mint`).
+  non-production) and `signed` (HMAC-SHA256 tokens with expiry — default 7 days, max 30 — minted by the owner with
+  `npm run session:mint`). Signed tokens cannot be revoked one by one; rotating `DODDY_SESSION_SIGNING_KEY` revokes all.
   **Production live mode is refused** until a vetted app sign-in (e.g. Sign in with Apple) replaces `signed`.
 
 Tests: `backend/test/api-boundaries.test.ts` (unauthenticated on every route, cross-user status/read/complete/disconnect,
@@ -119,8 +120,10 @@ access in their Google Account. Deleting a Doddy account / backend data export i
 
 ## Rate and cost enforcement
 
-Before every provider call the backend reserves usage atomically in SQLite: per-user reads/day, per-user provider
-calls/day, service calls/day and /month; each page and each retry reserves again. Per-user and service-wide
+Every events request is counted per user per day (4 × the read limit) before anything — including a blocked receipt —
+is written. Before every provider call the backend reserves usage atomically in SQLite: per-user reads/day, per-user
+provider calls/day (never more than a quarter of the service's daily calls), service calls/day and /month; each page and
+each retry reserves again. Disconnect and its remote cleanup are never blocked by quota. Per-user and service-wide
 concurrency limits (per process). Safe reads retry at most twice with capped backoff; a `Retry-After` longer than 2 s is
 returned to the client instead of waiting. No cache. Tests cover ceilings, retries, timeouts and rate limits.
 
@@ -134,4 +137,7 @@ returned to the client instead of waiting. No cache. Tests cover ceilings, retri
 6. App Store privacy labels for data sent to the Doddy server (`PrivacyInfo.xcprivacy` currently declares audio and
    other user content for voice; calendar handling needs owner review).
 7. TLS termination and hosting choice (none deployed; no paid resources created).
-8. Independent security review of `backend/` before any other person uses it.
+8. Independent human security review of `backend/` before any other person uses it (an automated reviewer pass on
+   2026-10-09 found and we fixed one unauthenticated crash; see IMPLEMENTATION_STATUS.md).
+9. Release builds should return via a universal link (https) instead of the `doddy-dev://` custom scheme.
+10. Usage counter rows are kept per day/month and never pruned (small, but unbounded over years).

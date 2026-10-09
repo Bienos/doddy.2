@@ -87,11 +87,28 @@ export class UsageLimiter {
   reserveCall(userId: string, now: number): void {
     const ok = this.store.reserveUsage(
       [
-        // A read may need up to maxPages pages, each with up to two retries.
-        { counter: `user:${userId}:calls`, period: `day:${day(now)}`, limit: this.limits.userDailyReads * this.limits.maxPages * 3 },
+        // A read may need up to maxPages pages, each with up to two retries — but one user may never
+        // use more than a quarter of the service-wide daily allowance.
+        {
+          counter: `user:${userId}:calls`,
+          period: `day:${day(now)}`,
+          limit: Math.max(1, Math.min(this.limits.userDailyReads * this.limits.maxPages * 3, Math.floor(this.limits.serviceDailyCalls / 4))),
+        },
         { counter: "service:calls", period: `day:${day(now)}`, limit: this.limits.serviceDailyCalls },
         { counter: "service:calls", period: `month:${month(now)}`, limit: this.limits.serviceMonthlyCalls },
       ],
+      1,
+    );
+    if (!ok) throw new AppError("quota_exceeded");
+  }
+
+  /**
+   * Any events request, counted before anything is written (including blocked receipts), so a
+   * client looping on a refused request cannot grow the database without bound.
+   */
+  reserveRequest(userId: string, now: number): void {
+    const ok = this.store.reserveUsage(
+      [{ counter: `user:${userId}:requests`, period: `day:${day(now)}`, limit: this.limits.userDailyReads * 4 }],
       1,
     );
     if (!ok) throw new AppError("quota_exceeded");

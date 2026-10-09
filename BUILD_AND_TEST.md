@@ -109,7 +109,7 @@ memory. Settings › Connected Apps.
 cd backend
 npm ci                    # installs the pinned versions from package-lock.json
 npm run typecheck         # type-checks against the installed @composio/core declarations
-npm test                  # 70 offline tests (mock + fake Composio client); no secrets, no network
+npm test                  # 73 offline tests (mock + fake Composio client); no secrets, no network
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 
 # Swift package (from repo root)

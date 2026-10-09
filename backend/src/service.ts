@@ -142,7 +142,13 @@ export class ConnectedAppsService {
     }
     // Reconnecting from an expired/insufficient state replaces the old connection; a remote cleanup
     // that failed earlier is retried first so no stale active connection blocks the new link.
-    if (existing || this.store.cleanupFor(userId, PROVIDER)) await this.removeRemote(userId);
+    if (existing || this.store.cleanupFor(userId, PROVIDER)) {
+      if ((await this.removeRemote(userId)) === "failed") {
+        throw new AppError("provider_unavailable", {
+          message: "The previous Google Calendar connection couldn't be removed yet, so a new one wasn't started. Try again shortly.",
+        });
+      }
+    }
 
     const now = this.now();
     const composioUserId = this.store.composioUserId(userId, now);
@@ -277,6 +283,7 @@ export class ConnectedAppsService {
       throw new AppError("invalid_request", { message: "Use a real date and an IANA time zone such as Europe/Warsaw." });
     }
     const now = this.now();
+    this.limiter.reserveRequest(userId, now);
     const today = localDate(now, request.timeZone);
     if (request.date < today || request.date > addDays(today, MAX_DAYS_AHEAD)) {
       throw new AppError("invalid_request", { message: `Only today and the next ${MAX_DAYS_AHEAD} days can be checked.` });

@@ -188,7 +188,8 @@ one `tools.execute` per page (1–3 per read, plus retries), `revoke` + `delete`
 Whether management calls (`link`, `get`, `list`) count as "tool calls" is **unknown**; only `tools.execute` is clearly a
 tool call. Doddy therefore counts **every** provider call against its own ceilings.
 
-Doddy ceilings (config, defaults): 30 reads/user/day; per-user provider calls ≤ reads × pages × 3; 300 provider calls
+Doddy ceilings (config, defaults): 30 reads/user/day (120 requests/user/day including refused ones); per-user provider
+calls ≤ min(reads × pages × 3, ¼ of the service daily cap); 300 provider calls
 service-wide/day; 3,000/month; 1 concurrent call per user, 4 service-wide; 10 s timeout. Counters are in SQLite (UTC
 periods) and survive restarts; concurrency is per process (single-instance deployment). **Monetary cost: estimated
 only; actual metered cost unknown** until Composio usage APIs are wired. No plan upgrade or paid fallback exists in code.

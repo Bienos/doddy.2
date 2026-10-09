@@ -15,6 +15,9 @@ try {
       );
     }
   });
+  process.on("unhandledRejection", (reason) => {
+    process.stderr.write(`${JSON.stringify({ level: "error", event: "unhandledRejection", kind: reason instanceof Error ? reason.name : typeof reason })}\n`);
+  });
   const stop = () => server.close(() => store.close());
   process.on("SIGINT", stop);
   process.on("SIGTERM", stop);

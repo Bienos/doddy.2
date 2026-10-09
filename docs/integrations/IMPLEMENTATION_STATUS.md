@@ -23,7 +23,7 @@ no Google account consent.**
 | Normalization | `backend/src/calendar.ts` | implemented, tested | all-day, recurring, cancelled, overlap edges, malformed, bounded titles, dropped fields |
 | Mock adapter | `backend/src/providers/mock.ts` | implemented, tested | zero outbound sockets asserted |
 | Composio adapter | `backend/src/providers/composio.ts` | implemented; type-checked against SDK 0.22.0; exercised with a **fake** SDK client | **never called Composio** — live-provider: blocked |
-| Service pipeline + HTTP API | `backend/src/service.ts`, `http.ts`, `app.ts`, `server.ts` | implemented, tested | 70 backend tests; manual curl smoke run in mock mode |
+| Service pipeline + HTTP API | `backend/src/service.ts`, `http.ts`, `app.ts`, `server.ts` | implemented, tested | 73 backend tests; manual curl smoke run in mock mode |
 | Opt-in live check | `backend/src/liveCheck.ts` | implemented | **NOT RUN** (no credentials); prints `NOT RUN` without config |
 | Swift contracts, client, model | `Packages/DoddyCore/Sources/DoddyCore/ConnectedApps/` | implemented, tested on Linux | 17 new XCTest cases decoding shared fixtures |
 | SwiftUI Connected Apps screen | `DoddyApp/Features/ConnectedApps/ConnectedAppsView.swift` | written | **syntax-parsed only**; never compiled or run |
@@ -40,7 +40,7 @@ $ cd backend && npm run typecheck          # tsc --noEmit against installed @com
 (no output, exit 0)
 
 $ cd backend && npm test
-ℹ tests 70  ℹ pass 70  ℹ fail 0
+ℹ tests 73  ℹ pass 73  ℹ fail 0
 
 $ swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT
 Executed 47 tests, with 0 failures (0 unexpected)        # 30 pre-existing + 17 new
@@ -100,6 +100,18 @@ RESULT: PASS for core-only scope; iOS app NOT verified
 6. Tap **Tomorrow's events**; compare with Google Calendar for the same day. Then `npm run live-check`.
 7. Disconnect; confirm reads are refused and Doddy's access is gone under Google Account › Security › Third-party access.
 8. Record the results here with date, device, and receipt statuses.
+
+## Independent security review (2026-10-09)
+
+A read-only review of `backend/src` (separate reviewer agent) found one blocking defect: a malformed request target
+(e.g. `GET //[`) made `new URL` throw outside the handler's `try`, and the unhandled rejection killed the process with
+no authentication needed. Reproduced against `node dist/src/server.js`, fixed (parse inside `try` → 400; per-request
+`catch` → close that socket; `unhandledRejection` logger), re-checked: 400 and the server keeps serving; regression test
+added. Also fixed: refused event requests are now counted before any receipt is written (no unbounded receipt growth),
+one user may use at most a quarter of the service's daily provider calls, reconnect stops if the previous remote
+connection can't be removed, minted session lifetime default 7 days / max 30. Accepted and documented: tokens are not
+individually revocable (rotate the signing key), custom-scheme return URL (use a universal link for release),
+callback mode only in development, no HSTS (TLS terminates at a proxy, not this process).
 
 ## Known limitations
 

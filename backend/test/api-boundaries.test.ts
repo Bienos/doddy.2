@@ -163,3 +163,42 @@ test("no write capability is reachable", async () => {
   assert.deepEqual(health.body.capabilities, ["calendar.listEvents"]);
   assert.equal(h.service.confirmations instanceof Object, true);
 });
+
+test("a malformed request target is a 400, and the server keeps serving", async () => {
+  h = await harness();
+  const { request } = await import("node:net").then((net) => ({
+    request: (raw: string) =>
+      new Promise<string>((resolve) => {
+        const socket = net.connect(Number(new URL(h.base).port), "127.0.0.1");
+        let data = "";
+        socket.on("data", (d) => (data += d.toString()));
+        socket.on("close", () => resolve(data));
+        socket.on("error", () => resolve(data));
+        socket.write(raw);
+        setTimeout(() => socket.end(), 200);
+      }),
+  }));
+  for (const target of ["//[", "//h:99999999"]) {
+    const reply = await request(`GET ${target} HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n`);
+    assert.match(reply.split("\r\n")[0] ?? "", /^HTTP\/1\.1 400/, target);
+  }
+  assert.equal((await h.call("GET", "/v1/health", { token: null })).status, 200);
+});
+
+test("refused requests are capped before any receipt is written", async () => {
+  h = await harness({ limits: { userDailyReads: 2 } });
+  const statuses: number[] = [];
+  for (let i = 0; i < 12; i++) {
+    statuses.push((await h.call("POST", `${CAL}/events`, { body: { date: tomorrow(h), timeZone: "Europe/Warsaw" } })).status);
+  }
+  assert.deepEqual(statuses.slice(0, 8), Array(8).fill(409));
+  assert.ok(statuses.slice(8).every((s) => s === 429));
+  const receipts = h.store.db.prepare("SELECT COUNT(*) AS n FROM receipts").get() as { n: number };
+  assert.equal(receipts.n, 8);
+});
+
+test("one user can never use more than a quarter of the service's daily provider calls", async () => {
+  h = await harness({ limits: { serviceDailyCalls: 8, userDailyReads: 30 } });
+  await connectMock(h, "dev-user-a", "many"); // 3 provider calls per read
+  assert.equal((await h.call("POST", `${CAL}/events`, { body: { date: tomorrow(h), timeZone: "Europe/Warsaw" } })).body.error.code, "quota_exceeded");
+});

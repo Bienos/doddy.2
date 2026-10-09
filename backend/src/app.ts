@@ -32,7 +32,10 @@ export function buildApp(config: Config, overrides: { provider?: CalendarProvide
     completionMode: provider.mode === "mock" ? "mock" : config.composio!.completionMode,
   });
   const handler = createHandler({ service, verifier, appReturnUrl: config.appReturnUrl, maxBodyBytes: config.limits.maxBodyBytes });
-  const server: Server = createServer((req, res) => void handler(req, res));
+  // Last line of defence: a handler failure closes that one connection, never the process.
+  const server: Server = createServer((req, res) => {
+    handler(req, res).catch(() => res.destroy());
+  });
   server.requestTimeout = 20_000;
   server.headersTimeout = 10_000;
   return { server, store, service, provider };

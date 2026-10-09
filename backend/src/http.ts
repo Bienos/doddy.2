@@ -48,8 +48,6 @@ export function createHandler(deps: HttpDeps) {
   return async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const started = Date.now();
     const correlationId = randomUUID();
-    const url = new URL(req.url ?? "/", "http://localhost");
-    const key = `${req.method ?? "GET"} ${url.pathname}`;
     let route = "unmatched";
     let status = 500;
     let code: string | undefined;
@@ -59,6 +57,15 @@ export function createHandler(deps: HttpDeps) {
       res.setHeader("cache-control", "no-store");
       res.setHeader("x-content-type-options", "nosniff");
       res.setHeader("referrer-policy", "no-referrer");
+
+      // Parsed inside the try: Node accepts request targets that URL rejects (e.g. "//[").
+      let url: URL;
+      try {
+        url = new URL(req.url ?? "/", "http://localhost");
+      } catch {
+        throw new AppError("invalid_request");
+      }
+      const key = `${req.method ?? "GET"} ${url.pathname}`;
 
       if (key === "GET /v1/health") {
         route = key;
