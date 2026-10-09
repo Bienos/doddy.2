@@ -21,8 +21,19 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 - A real deployment, a real ElevenLabs token, and a conversation started with it on an iPhone.
 - ElevenLabs agent with authentication on (currently **off**: dev agent is still public).
 
+## Deployment (2026-10-09, owner approved "ok do it")
+| Item | Value |
+|---|---|
+| Vercel project | `doddy-voice-token` (`prj_Zjw0sfhwCL9WIFhyxQEeYxZt1d0U`), team "bienos", Git `Bienos/doddy.2`, root `server/voice-token`, no framework, Node 22, functions in `fra1` (from the next deploy) |
+| Endpoint | **https://doddy-voice-token-bienos.vercel.app/api/voice-token** |
+| First deploy | `dpl_Cx43nr2JHHxfECDSSxZ3QeMUvZAB`, branch `claude/busy-mendel-cckm8b` @ `fc17931`, target production |
+| Live check | `POST` → 500 `{"error":"server_not_configured"}` (correct: no key/codes yet); `GET` → 405 |
+| Env set | `ELEVENLABS_AGENT_ID` (plain, not secret) |
+| Protection | Vercel Authentication changed from "all except custom domains" to **previews only**, so the app can reach the production URL; the endpoint itself requires an access code |
+| Note | Vercel's production branch is still `main`, which has no `server/voice-token` yet. Pushes to `main` will fail to build until this branch is merged; the live deployment is unaffected |
+
 ## Owner steps (in order; see `server/voice-token/README.md`)
-1. Choose the host (Vercel is ready: the connector is attached) and approve creating the project.
-2. Put `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `DODDY_ACCESS_CODES` into the host's environment yourself. The key must never be pasted into chat or the repo.
+1. ~~Choose the host and create the project~~ done (above).
+2. Put `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `DODDY_ACCESS_CODES` into the host's environment yourself (Vercel → doddy-voice-token → Settings → Environment Variables; `ELEVENLABS_AGENT_ID` is already there), as type Sensitive, then **Redeploy**: env changes only apply to new deployments. The key must never be pasted into chat or the repo.
 3. Set the URL + your code in the app, and confirm "Private (token server)" works.
 4. Turn on agent authentication and set concurrency/daily call limits in ElevenLabs (the spending cap).
