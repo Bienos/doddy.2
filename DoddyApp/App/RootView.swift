@@ -6,6 +6,10 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
+    static let personalityHumour = "personality.humour"
+    static let personalityLength = "personality.length"
+    static let personalityFormality = "personality.formality"
+    static let personalityMood = "personality.mood"
 }
 
 enum AppTab: Hashable {

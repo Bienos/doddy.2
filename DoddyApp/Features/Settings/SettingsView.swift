@@ -63,6 +63,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("settings.privacy")
 
                 Section("Voice") {
+                    PersonalityLinkRow()
                     TextField("ElevenLabs agent ID", text: $voiceAgentID)
                         .font(.body.monospaced())
                         .textInputAutocapitalization(.never)

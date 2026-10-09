@@ -59,7 +59,10 @@ final class VoiceSessionController {
         phase = .connecting
 
         let ref = WeakRef(self)
-        var config = ConversationConfig()
+        // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
+        // placeholder defaults to the persona defaults, so a build that sends nothing still works.
+        var config = ConversationConfig(
+            dynamicVariables: [PersonalityPrompt.variableName: PersonalityPrompt.render(.stored())])
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }

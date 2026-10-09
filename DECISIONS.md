@@ -60,6 +60,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+| 058 | Personality settings (humour, reply length, tone, mood) from the persona draft's fixed options, stored as UI preferences in `UserDefaults`, sent to the agent as the fixed-text dynamic variable `doddy_personality`; safety rules are not adjustable. See `docs/product/PERSONALITY_SETTINGS.md` | App applied; **agent prompt change pending owner approval** |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
