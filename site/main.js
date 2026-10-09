@@ -1,4 +1,5 @@
-// Doddy landing page. No trackers, no cookies, no storage.
+// Doddy landing page. No cookies, no storage. Page views are counted by Vercel Web Analytics
+// (script tag in index.html, served by Vercel); nothing here calls it.
 
 // The site's own waitlist endpoint (api/waitlist.js): stores each email privately in Vercel Blob.
 // Empty = waitlist not open: the form says so and sends nothing.
