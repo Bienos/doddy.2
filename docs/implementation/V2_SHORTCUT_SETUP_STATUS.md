@@ -7,7 +7,7 @@ everything under "Not verified" needs the Mac and a real iPhone.
 ## What was built
 | Piece | Where | What it does |
 |---|---|---|
-| `TalkToDoddyIntent` + `DoddyShortcuts` | `DoddyApp/Intents/TalkToDoddyIntent.swift` | App Intent "Talk to Doddy" that opens the app in the foreground (`openAppWhenRun`). As an App Shortcut it appears in the Shortcuts app, Siri ("Talk to Doddy", "Hey Doddy", "Open Doddy") and the Action Button picker without setup. |
+| `TalkToDoddyIntent` + `DoddyShortcuts` | `Shared/Shortcuts/TalkToDoddyIntent.swift` (app + widget extension), `DoddyApp/Intents/DoddyShortcuts.swift` (app) | App Intent "Talk to Doddy" that opens the app in the foreground (`openAppWhenRun`). As an App Shortcut it appears in the Shortcuts app, Siri ("Talk to Doddy", "Hey Doddy", "Open Doddy") and the Action Button picker without setup. |
 | `ShortcutRouter` | `DoddyApp/Infrastructure/ShortcutRouter.swift` | One owner of the voice and setup presentations. An invocation either opens/focuses the voice conversation (never a second one) or, during an active tap test, becomes the test's receipt. |
 | `BackTapSetupCoordinator` | `Packages/DoddyCore/Sources/DoddyCore/BackTapSetup.swift` | Deterministic, versioned step map (6 steps: Settings → Accessibility → Touch → Back Tap → Double Tap → Open Doddy) and state machine: not started → shortcut preparation → guiding (by the page the user *reports*) → testing (120 s window) → receipt received → **user-reported tested**, or deferred. |
 | `BackTapSetupModel` | same file as the router | Main-actor wrapper; persists only the outcome and an active test window as JSON in UserDefaults (`backTapSetup`). No transcript, no reported pages. An unexpired test window survives a relaunch, so a shortcut that opens the app after iOS killed it in the background still counts. |
@@ -49,3 +49,10 @@ everything under "Not verified" needs the Mac and a real iPhone.
 - Siri phrases: "Talk to Doddy", "Hey Doddy", "Open Doddy" are placeholders; English only for now.
 - Whether the Home card should reappear after "Later" (currently it does not; Settings keeps the entry).
 - Whether to drop the personal-shortcut fallback screen entirely once more iOS versions are seen to list the App Shortcut under Back Tap.
+
+## Control Center / Lock Screen / Action Button control (added 2026-10-09, ADR-094)
+- `DoddyWidgets/TalkToDoddyControl.swift`: an iOS 18+ `ControlWidget` button "Talk to Doddy" (kind `com.bienos.doddy2.talk`), in the existing widget extension; iOS 17 keeps everything else.
+- A tap runs the same `TalkToDoddyIntent` as Siri and Back Tap (`openAppWhenRun`, so it runs in the app and goes through `ShortcutRouter`: opens or focuses the conversation, or counts as the receipt during a Back Tap test). The intent file is in `Shared/` because the control needs the type; in the extension it does nothing (`DODDY_WIDGET_EXTENSION`).
+- The user adds it: Control Center → edit → Add a Control → Doddy; Lock Screen → customise → controls; Action Button → Controls → Doddy. Settings → Back Tap and Siri says so. Doddy can't add it or detect it.
+- **Not verified:** compile (no Xcode here; `if #available` inside `WidgetBundle` and the shared intent in two targets are the risky parts), that the control shows in the gallery, and that a tap from the Lock Screen unlocks into the conversation.
+

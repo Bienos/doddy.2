@@ -20,7 +20,7 @@ Result branch: `claude/brave-keller-f8h6uq`. Base: `claude/nice-albattani-t1yan6
 | Branch | Why |
 |---|---|
 | `vibrant-pasteur` | Third V2 Back Tap guide; duplicate |
-| `busy-mendel` V2 commit (`5c10951`) | Duplicate V2. Its **Control Center control** is the one piece no other branch has |
+| `busy-mendel` V2 commit (`5c10951`) | Duplicate V2. Its Control Center control was rebuilt in the existing widget extension afterwards (ADR-094) |
 | `upbeat-brown` (V4a) | Same features as `determined-sagan`; its **Today card and local nudges** are not in the merged app |
 | `busy-hawking` (M2) | OpenAI "Ask" tab + Supabase gateway: a different direction, needs an owner decision |
 | `loving-dirac`, `inspiring-einstein`, `stoic-lamport` | Already contained in the result |

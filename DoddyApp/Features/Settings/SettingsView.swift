@@ -234,7 +234,7 @@ struct SettingsView: View {
                         router.isSetupPresented = true
                     }
                     .accessibilityIdentifier("settings.backTap")
-                    Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button. Back Tap is chosen by you in iOS Settings; Doddy can't set it and can't see what it's set to.")
+                    Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

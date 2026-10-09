@@ -59,8 +59,9 @@ targets:
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyWidgets:
-    # Widget extension that draws the voice conversation's Live Activity (Dynamic Island and
-    # Lock Screen). No networking, no data of its own: it only renders what the app sends.
+    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen)
+    # and, on iOS 18+, the "Talk to Doddy" control (Control Center, Lock Screen, Action Button).
+    # No networking, no data of its own.
     type: app-extension
     platform: iOS
     sources:
@@ -76,6 +77,8 @@ targets:
         INFOPLIST_FILE: Config/DoddyWidgets-Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
         SKIP_INSTALL: YES
+        # Shared/ intents check this to skip app-only code (TalkToDoddyIntent runs in the app).
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DODDY_WIDGET_EXTENSION"
   DoddyTests:
     type: bundle.unit-test
     platform: iOS
