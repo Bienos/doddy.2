@@ -10,6 +10,10 @@ enum PreferenceKey {
     static let backTapSetup = "backTapSetup"
     /// UI-test override of the outcome: "-backTapSetupStatus deferred".
     static let backTapSetupStatus = "backTapSetupStatus"
+    /// Settings toggle: send the last few conversations to Doddy at the start of the next one.
+    static let rememberConversations = "rememberConversations"
+    /// Random, stable per-install id passed to ElevenLabs as the conversation user id.
+    static let voiceUserID = "voiceUserID"
 }
 
 enum AppTab: Hashable {

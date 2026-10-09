@@ -9,7 +9,7 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 | LLM | gemini-2.5-flash, temperature 0.3, timezone Europe/Warsaw |
 | Speech | Scribe realtime (in), eleven_v4_turbo (out), voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` (ElevenLabs Voice Library professional voice, English/American, young male, made for dialogue; added to the account's My Voices and set 2026-10-08, agent version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`; the Polish preset has no voice override, so one voice serves both languages); max 10 min per conversation |
 | Languages | English default, Polish preset ("Hej, tu Doddy. Co słychać?"), automatic language detection |
-| Client tools | `search_memories(query)` `tool_6701m4et16pveywrpymdw3h3v0wp`, `save_memory(text)` `tool_9401m4et17pfe598c1wmvdhpwhcv` (both expect a response) |
+| Tools | Client (run on the phone): `search_memories(query)` `tool_6701m4et16pveywrpymdw3h3v0wp`, `save_memory(text)` `tool_9401m4et17pfe598c1wmvdhpwhcv` (both expect a response). Webhooks (run from ElevenLabs servers, keyless, since 2026-10-09): `geocode_place` `tool_5701m4f28p90fm186x0zhn54sy71` and `get_weather` `tool_0601m4f25r0bfdhtb12v4g21x8ac` (Open-Meteo), `wikipedia_search` `tool_0901m4f25swxft090rnfkczn5jhj` and `wikipedia_summary` `tool_1101m4f25rx2fx7ttcempcvx8s89` (pl/en) |
 | Prompt | AI disclosure, short spoken replies, strict memory rules (answer only from tool results, say "couldn't find it", never claim a save without "saved"), no reminders/messages/other apps. Since 2026-10-09 (version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`): before `save_memory` runs, Doddy says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (also in the tool description) |
 
 ## App
@@ -47,6 +47,22 @@ Linux: core package 30 tests pass (incl. tool parsing and replies), guard passes
 - **Retention.** Audio and transcript, including the user's first name, are kept on ElevenLabs indefinitely (`retention_days: -1`, `record_voice: true`). The retention decision in the list below is still open.
 - **Relative dates.** The saved note says "tomorrow"; the app stores the capture time, so it stays interpretable, but recall does not resolve dates.
 - **Bilingual search and digits (changed 2026-10-09).** The `search_memories` tool and the prompt now tell Doddy to pass key words in both Polish and English (e.g. "kod code paczkomat parcel"), numbers as digits, and to retry once with a different word; `save_memory` now writes numbers, codes, dates and times as digits in the note. Agent version `agtvrsn_2701m4f1e2krfnysbc5w01agz5d2`. Not yet exercised on a device. The app's search itself is unchanged (prefix-OR over folded terms, `DECISIONS.md` ADR-027).
+
+## Knowledge (2026-10-09, personal single-user build; owner instruction "design it for me only")
+Owner's picks: saved notes always, memory across conversations, current info from the web. Profile document declined.
+
+| Piece | What it does | Where |
+|---|---|---|
+| Saved notes at start | The app renders every saved note (newest first, 6,000-character budget, says when cut) and hands it to the agent as dynamic variables `saved_notes`, `saved_notes_count`, `saved_notes_truncated`; the prompt treats the list as memory and falls back to `search_memories` when the list is cut | `VoiceContext.savedNotes` (DoddyCore, tested), `VoiceSessionController.start` |
+| Recent conversations | ElevenLabs user memory is **not available on the Creator plan** (`feature_not_available`), so the app keeps the transcript lines of the last 10 conversations as JSON in Application Support/Conversations (file-protected until first unlock), and sends them as `recent_conversations` (4,000-character budget, newest kept). Settings: "Remember recent conversations" toggle (on by default) and "Forget remembered conversations". Logs never become memory records | `ConversationLogStore`, `VoiceContext.recentConversations` (tested) |
+| Weather | `geocode_place` (Open-Meteo geocoding) then `get_weather` (Open-Meteo forecast, current + 3 days); keyless, no account | ElevenLabs webhook tools |
+| Facts | `wikipedia_search` then `wikipedia_summary`, Polish or English; keyless | ElevenLabs webhook tools |
+| Identity | A random, stable per-install id is sent as the conversation `user_id` | `PreferenceKey.voiceUserID` |
+| Agent | Prompt rewritten for the owner (knowledge sections, six tools attached), placeholders for the four variables so a conversation without them still starts, `trust_context: high`; version `agtvrsn_6601m4f2cnn7fw7a0z9f9r1bsqre` | ElevenLabs |
+
+Privacy for this personal build, stated in Settings, Home and the voice screen: every saved note and the last conversations leave the phone at the start of each conversation; weather and Wikipedia lookups are made by ElevenLabs' servers. Retention on ElevenLabs is still the default (forever). General web search is not wired (it needs a paid key); the prompt says today's news and prices cannot be checked.
+
+Not verified: app compile; that the dynamic variables arrive (the prompt renders the placeholders otherwise); the weather tools end to end (the Open-Meteo forecast host could not be reached from the authoring sandbox because of its TLS proxy; geocoding and Wikipedia responded); how Gemini handles a prompt with many notes; the log store's file protection on device. Suggested checks: ask "co wiesz o mnie?", "jaka jest pogoda w Warszawie jutro?", "sprawdź na Wikipedii, kim jest Maria Skłodowska-Curie", then end and start a new conversation and refer back to it.
 
 ## Before anyone else uses it
 1. Turn on agent authentication and add a small token server (`conversationToken` path in the SDK).

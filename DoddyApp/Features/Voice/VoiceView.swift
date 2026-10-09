@@ -90,7 +90,7 @@ struct VoiceView: View {
                                 .id("pendingSave")
                         }
 
-                        Text("While you talk, your voice and the notes Doddy looks up are sent to ElevenLabs to run the conversation. Nothing is saved unless you tap Save.")
+                        Text("While you talk, your voice, this conversation, your saved notes and your last few conversations are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing becomes a note unless you tap Save.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)

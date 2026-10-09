@@ -7,6 +7,8 @@ import Observation
 /// One voice conversation with the ElevenLabs agent. State shown in the UI comes only from real
 /// SDK events (connected, listening, speaking, disconnected), never from timers.
 /// Tool calls are proposals: searches run against the local store, saves wait for the user.
+/// At start the app hands the agent the saved notes and the last few conversations (dynamic
+/// variables); at the end the transcript lines are kept locally in `ConversationLogStore`.
 @MainActor
 @Observable
 final class VoiceSessionController {
@@ -33,10 +35,13 @@ final class VoiceSessionController {
     private(set) var isMuted = false
 
     private let store: MemoryStore
+    private let logs: ConversationLogStore
     private var conversation: Conversation?
+    private var startedAt: Date?
 
-    init(store: MemoryStore) {
+    init(store: MemoryStore, logs: ConversationLogStore = .shared) {
         self.store = store
+        self.logs = logs
     }
 
     var isLive: Bool {
@@ -57,9 +62,25 @@ final class VoiceSessionController {
             return
         }
         phase = .connecting
+        startedAt = Date()
+
+        // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
+        // few conversations. Both are bounded and say when they were cut.
+        await store.reload()
+        let notes = VoiceContext.savedNotes(store.memories)
+        let recent = logs.isEnabled
+            ? VoiceContext.recentConversations(logs.logs)
+            : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
 
         let ref = WeakRef(self)
-        var config = ConversationConfig()
+        var config = ConversationConfig(
+            dynamicVariables: [
+                "saved_notes": notes.text,
+                "saved_notes_count": "\(notes.includedCount)",
+                "saved_notes_truncated": notes.truncated ? "yes" : "no",
+                "recent_conversations": recent.text,
+            ],
+            userId: Self.userID())
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
@@ -101,7 +122,28 @@ final class VoiceSessionController {
         conversation = nil
         pendingSave = nil
         if isLive { phase = .ended }
+        keepLog()
         await active?.endConversation()
+    }
+
+    /// Keeps the transcript lines of this conversation on the phone, once, so the next
+    /// conversation can continue from it. Nothing is kept when there were no lines or when the
+    /// user switched "Remember recent conversations" off.
+    private func keepLog() {
+        guard let startedAt else { return }
+        self.startedAt = nil
+        let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
+        logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept))
+    }
+
+    /// A random, stable id for this install, so ElevenLabs can tell the owner's conversations
+    /// apart without knowing who they are.
+    private static func userID() -> String {
+        let defaults = UserDefaults.standard
+        if let existing = defaults.string(forKey: PreferenceKey.voiceUserID), !existing.isEmpty { return existing }
+        let fresh = UUID().uuidString.lowercased()
+        defaults.set(fresh, forKey: PreferenceKey.voiceUserID)
+        return fresh
     }
 
     func toggleMute() async {
@@ -161,6 +203,7 @@ final class VoiceSessionController {
     private func disconnected() {
         conversation = nil
         pendingSave = nil
+        keepLog()
         if case .failed = phase { return }
         phase = .ended
     }
