@@ -1,4 +1,5 @@
 # Build output
+node_modules/
 .build/
 **/.build/
 .swiftpm/
@@ -6,14 +7,28 @@ DerivedData/
 build/
 # Xcode (the project is generated from project.yml; see docs/BUILD_AND_TEST.md)
 Doddy.xcodeproj/
+DoddyApp/Info.plist
 *.xcworkspace/xcuserdata/
 xcuserdata/
 *.xcuserstate
-# Local secrets / environment (none are required or used)
+# Local secrets / environment. Real values live only in ignored files or a secret manager.
 .env
 .env.*
+!.env.example
+!backend/.env.example
+*.pem
+*.key
 *.p12
 *.mobileprovision
 *.xcconfig.local
 # OS
 .DS_Store
+# Connected Apps backend
+backend/node_modules/
+backend/dist/
+backend/data/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.log
+npm-debug.log*

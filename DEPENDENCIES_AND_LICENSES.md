@@ -10,6 +10,20 @@
 Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, `AVFAudio`, system SQLite). No analytics,
 no crash reporting, no fonts. The only network connection is the ElevenLabs voice session while it is open.
 
+## Connected Apps backend (`backend/`, server-side only, never in the app)
+Pinned exactly in `backend/package.json`; full tree locked in `backend/package-lock.json`.
+
+| Package | Version | Licence | Used for |
+|---|---|---|---|
+| [@composio/core](https://www.npmjs.com/package/@composio/core) | 0.22.0 | ISC | Composio SDK: Connect Link, connection status/ownership, revoke/delete, `GOOGLECALENDAR_EVENTS_LIST` execution |
+| @composio/client (via @composio/core) | 2.0.0-rc.8 | Apache-2.0 | HTTP client used by the SDK (note: a release-candidate version chosen by the SDK, not by Doddy) |
+| [zod](https://zod.dev) | 3.25.76 | MIT | Runtime validation of config, requests and provider results (also the SDK's peer dependency) |
+| typescript (dev) | 5.9.3 | Apache-2.0 | Type-checking against the SDK's real declarations |
+| @types/node (dev) | 22.20.5 | MIT | Node type definitions |
+
+Runtime: Node.js ≥ 22.13 for `node:sqlite` (experimental in Node 22; prints an ExperimentalWarning). `@composio/core`
+declares `engines.node >= 22.22.3`; the authoring environment ran Node 22.22.0 — all tests passed, but use ≥ 22.22.3.
+
 ## Development tooling (not shipped, not linked)
 | Tool | Used for | Licence | Note |
 |---|---|---|---|

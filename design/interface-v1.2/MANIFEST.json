@@ -8,8 +8,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 6058,
-      "sha256": "90c2086c678f2f96e2e188afe87c80cde4d926fd68aa477a0d059db4b5774ddc"
+      "bytes": 6469,
+      "sha256": "4741967fc90f16ba0a1d83ec12163607f7ec98b3c79533d17488af7e25e3a769"
     },
     {
       "path": "assets/Caveat-OFL.txt",
@@ -223,8 +223,8 @@
     },
     {
       "path": "docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md",
-      "bytes": 8187,
-      "sha256": "32b3d254ca42786cc2f5a01ca0e9a23b74af4a93bebd7b25093201ed81be4115"
+      "bytes": 8625,
+      "sha256": "76bebc61ed3833f24343a3d35da7aae40123887e8679b4a9f44247222262694b"
     },
     {
       "path": "docs/IMPLEMENTATION-NOTES.md",
@@ -372,6 +372,11 @@
       "sha256": "5891b9088d64bdc3c4c1568d3e1a80ec921934727433647a1c5fe2e3927da5ff"
     },
     {
+      "path": "previews/settings-double-back-tap-row.png",
+      "bytes": 120356,
+      "sha256": "7a6d851ea3f86f64d7e766974aa4fb159a03bb9df66c727b6e9cc837f39634c7"
+    },
+    {
       "path": "previews/setup-done.png",
       "bytes": 48271,
       "sha256": "50c1b911b58f437b0ff6bc545bafa32a826c2329d8edba8a46c7095d4d894a96"
@@ -395,6 +400,26 @@
       "path": "previews/setup-large-dark.png",
       "bytes": 50223,
       "sha256": "4fa27f8756d78bff69c1a43cfc00cd740242037fabc7d6498056772186a00ff7"
+    },
+    {
+      "path": "previews/setup-quiet-banner-off.png",
+      "bytes": 133634,
+      "sha256": "ac8a400810c5bef6d35c67fd8b182f98911523e061f3d87e7ea5baa52f51423f"
+    },
+    {
+      "path": "previews/setup-quiet-banner-on.png",
+      "bytes": 141472,
+      "sha256": "a33fa7cb8e2d5ea45c9175b2758a9c91f4b2dcfe22139a7b4dbeb745bdf07bf5"
+    },
+    {
+      "path": "previews/setup-quiet-dark.png",
+      "bytes": 135115,
+      "sha256": "a5ba3a2688055d75fa881816c7c7e004648c448d88af698c3a352e3f0acfbbed"
+    },
+    {
+      "path": "previews/setup-quiet-large.png",
+      "bytes": 128091,
+      "sha256": "bd3d04cb0a9be8461fe3f76daa4d23430137f9e4368df8d751a8864b7dc91173"
     },
     {
       "path": "previews/setup-shortcut.png",
@@ -428,18 +453,18 @@
     },
     {
       "path": "setup.js",
-      "bytes": 15515,
-      "sha256": "6d4b24f113dd86ff7718448dd2dbaba1aa5182de8cfae568bc3181cd9ea34cba"
+      "bytes": 18320,
+      "sha256": "5c2b21cb2bb38788832dfe34864fa5645b23c5207599b5f48e58b90088ccf9bb"
     },
     {
       "path": "studio.css",
-      "bytes": 33440,
-      "sha256": "859fc1c290d64c350386f5ab3a3df99740fc4aea5e57077021826ae000ad7de9"
+      "bytes": 35314,
+      "sha256": "3bd5f788fd89461602769b745d45116674751565e68a8fd4753edbb65f14d787"
     },
     {
       "path": "studio.js",
-      "bytes": 43250,
-      "sha256": "9c7f64b493db09df945af4bae61e9b29e7fe0abfd6432c493424919797d764ec"
+      "bytes": 43816,
+      "sha256": "ec79cb0c99ae6af4c7cc5aa0459991c80528710405cd661413c0de640a6b21b6"
     },
     {
       "path": "verification/BASELINE-v1.0-REVIEW.md",
@@ -498,13 +523,13 @@
     },
     {
       "path": "verification/review-setup.cjs",
-      "bytes": 11280,
-      "sha256": "e02462e8d7de5de8bd92b4939f2b5ebe088f9da989bad5afd3924a32a0000575"
+      "bytes": 11956,
+      "sha256": "1dc8d9ecf2e966bd079eb681efbd90503eb7e9bf652373fe9afed34b983bcb6b"
     },
     {
       "path": "verification/setup-results.json",
-      "bytes": 5434,
-      "sha256": "6ee6c47f718672688f9e4e30cff676e5f6b856fd6f99564539093157f544d569"
+      "bytes": 5847,
+      "sha256": "f0080b64157e1ef06d9a97f15df0e1563997dd5d9f3dc72430860f089b1974df"
     },
     {
       "path": "verification/verify-bundle.py",

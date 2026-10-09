@@ -1,0 +1,54 @@
+{
+  "mode": "mock",
+  "source": {
+    "provider": "google_calendar",
+    "calendar": "primary",
+    "label": "d•••@e•••.com"
+  },
+  "window": {
+    "date": "2026-10-10",
+    "timeZone": "Europe/Warsaw",
+    "start": "2026-10-10T00:00:00+02:00",
+    "end": "2026-10-11T00:00:00+02:00"
+  },
+  "events": [
+    {
+      "title": "Demo: Mum's birthday",
+      "allDay": true,
+      "start": "2026-10-10",
+      "end": "2026-10-11",
+      "isRecurring": false
+    },
+    {
+      "title": "Demo: Team stand-up",
+      "allDay": false,
+      "start": "2026-10-10T07:30:00.000Z",
+      "end": "2026-10-10T07:45:00.000Z",
+      "isRecurring": true
+    },
+    {
+      "title": "Demo: Dentist",
+      "allDay": false,
+      "start": "2026-10-10T12:00:00.000Z",
+      "end": "2026-10-10T12:45:00.000Z",
+      "isRecurring": false
+    }
+  ],
+  "cancelledHidden": 1,
+  "truncated": false,
+  "retrievedAt": "2026-10-09T10:00:00.000Z",
+  "expiresAt": "2026-10-09T10:15:00.000Z",
+  "receipt": {
+    "operationId": "56d3a5c9-afec-4609-8961-5955f5075cb6",
+    "operation": "read",
+    "capability": "calendar.listEvents",
+    "provider": "google_calendar",
+    "accountLabel": "d•••@e•••.com",
+    "timestamp": "2026-10-09T10:00:00.000Z",
+    "mode": "mock",
+    "status": "succeeded",
+    "summary": "3 events for 2026-10-10 (Europe/Warsaw), 1 cancelled hidden",
+    "errorCode": null,
+    "providerReference": null
+  }
+}
