@@ -64,6 +64,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 039 | ElevenLabs dev agent keeps its defaults: **voice recording on, no retention limit, transcripts not deleted**. Settings copy tells the user ElevenLabs keeps them | Owner decision 2026-10-09, dev only (owner's own phone). Revisit before any other user (with ADR-034) |
 | 040 | Voice stays on **ElevenLabs**, but Doddy's definition lives in the repo in **OpenAI Realtime shape**: `voice-agent/instructions.md`, `tools.json` (Realtime function tools + `x_doddy`), `session.json`; `scripts/voice_agent_spec.py` checks it, renders it for either provider and detects dashboard drift. DoddyCore `RealtimeVoice.swift` holds the provider-neutral session protocol, events and state | Owner decision 2026-10-09. Voice screen not yet moved onto the protocol: waits for the voice branches to be merged |
 | 041 | Agent speed: turn eagerness normal → **eager** (speculative turn already on). Reasoning budget not settable for gemini-3.5-flash; voice model left as eleven_v4_turbo | Applied 2026-10-09 with owner OK; revert = set turn_eagerness back to normal |
+| 042 | Agent **background voice detection on** after a background video kept the user's turn open and Doddy never answered | Applied 2026-10-09 to fix owner's report; revert = vad.background_voice_detection false |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
