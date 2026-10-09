@@ -58,6 +58,8 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.tabBars.buttons["Home"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["home.save"].exists)
+        // Calendar and Reminders start off, so Today only points to Settings.
+        XCTAssertTrue(app.buttons["today.openSettings"].waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Memories"].tap()
         XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))

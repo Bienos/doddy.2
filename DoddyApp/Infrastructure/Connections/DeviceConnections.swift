@@ -115,7 +115,16 @@ final class DeviceConnections {
         let predicate = eventStore.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
         return eventStore.events(matching: predicate)
             .sorted { $0.startDate < $1.startDate }
-            .map { CalendarEventSummary(title: $0.title ?? "Untitled", start: $0.startDate, end: $0.endDate, allDay: $0.isAllDay) }
+            .map {
+                CalendarEventSummary(
+                    id: Self.occurrenceID($0), title: $0.title ?? "Untitled", start: $0.startDate,
+                    end: $0.endDate, allDay: $0.isAllDay)
+            }
+    }
+
+    /// Repeating events share one identifier, so the start time is added: one id per occurrence.
+    private static func occurrenceID(_ event: EKEvent) -> String {
+        "\(event.calendarItemIdentifier)@\(Int(event.startDate.timeIntervalSince1970))"
     }
 
     func addEvent(_ draft: CalendarEventDraft) throws -> AddOutcome {
@@ -151,6 +160,57 @@ final class DeviceConnections {
         }
         try eventStore.save(reminder, commit: true)
         return eventStore.calendarItem(withIdentifier: reminder.calendarItemIdentifier) != nil ? .verified : .unconfirmed
+    }
+
+    /// Incomplete reminders due by `end` (overdue included), for Home → Today. Title and due
+    /// date only; notes are not read.
+    func remindersDue(by end: Date, calendar: Calendar) async -> [ReminderSummary] {
+        let predicate = eventStore.predicateForIncompleteReminders(withDueDateStarting: nil, ending: end, calendars: nil)
+        let found: [ReminderSummary] = await withCheckedContinuation { continuation in
+            // EventKit calls back on its own queue: @Sendable so the closure isn't main-actor code.
+            eventStore.fetchReminders(matching: predicate) { @Sendable reminders in
+                let summaries = (reminders ?? []).map { reminder in
+                    let components = reminder.dueDateComponents
+                    return ReminderSummary(
+                        id: reminder.calendarItemIdentifier,
+                        title: reminder.title ?? "Untitled",
+                        due: components.flatMap { calendar.date(from: $0) },
+                        dueHasTime: components?.hour != nil)
+                }
+                continuation.resume(returning: summaries)
+            }
+        }
+        return found
+    }
+
+    // MARK: Nudges
+
+    /// Schedules a "before this event" notification and reads it back from iOS. The identifier
+    /// is fixed per event and lead time, so setting it again replaces it.
+    func scheduleNudge(_ plan: EventNudgePlan, time: String) async throws -> AddOutcome {
+        let center = UNUserNotificationCenter.current()
+        center.delegate = TimerBanners.shared
+        let content = UNMutableNotificationContent()
+        content.title = "Doddy"
+        content.body = plan.body(time: time)
+        content.sound = .default
+        let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: plan.fireAt)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        try await center.add(UNNotificationRequest(identifier: plan.identifier, content: content, trigger: trigger))
+        return await pendingNudges().contains { $0.id == plan.identifier } ? .verified : .unconfirmed
+    }
+
+    /// Nudges iOS will actually deliver, with their fire times.
+    func pendingNudges() async -> [ScheduledNudge] {
+        await UNUserNotificationCenter.current().pendingNotificationRequests()
+            .filter { ScheduledNudge.isNudge($0.identifier) }
+            .map { ScheduledNudge(id: $0.identifier, fireAt: ($0.trigger as? UNCalendarNotificationTrigger)?.nextTriggerDate()) }
+    }
+
+    /// Returns true once the nudge is gone from iOS's pending list.
+    func cancelNudge(id: String) async -> Bool {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        return await !pendingNudges().contains { $0.id == id }
     }
 
     // MARK: Timers
@@ -189,8 +249,8 @@ final class DeviceConnections {
     }
 }
 
-/// iOS hides notification banners for the app that is in front. This shows timer banners anyway,
-/// so a timer still rings while Doddy is open.
+/// iOS hides notification banners for the app that is in front. This shows timer and nudge
+/// banners anyway, so they still ring while Doddy is open.
 final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = TimerBanners()
 

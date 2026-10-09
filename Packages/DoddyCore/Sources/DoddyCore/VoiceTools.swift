@@ -103,12 +103,16 @@ public struct MessageDraft: Equatable, Sendable {
 
 /// What the agent is allowed to hear about an event: title and time only.
 public struct CalendarEventSummary: Equatable, Sendable {
+    /// This occurrence of the event on this iPhone (event identifier + start), for nudges.
+    /// Never sent to the voice agent.
+    public let id: String?
     public let title: String
     public let start: Date
     public let end: Date
     public let allDay: Bool
 
-    public init(title: String, start: Date, end: Date, allDay: Bool) {
+    public init(id: String? = nil, title: String, start: Date, end: Date, allDay: Bool) {
+        self.id = id
         self.title = title
         self.start = start
         self.end = end
