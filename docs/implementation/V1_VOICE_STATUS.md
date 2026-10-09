@@ -10,7 +10,7 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 | Speech | Scribe realtime (in), eleven_v4_turbo (out), voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` (ElevenLabs Voice Library professional voice, English/American, young male, made for dialogue; added to the account's My Voices and set 2026-10-08, agent version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`; the Polish preset has no voice override, so one voice serves both languages); max 10 min per conversation |
 | Languages | English default, Polish preset ("Hej, tu Doddy. Co słychać?"), automatic language detection |
 | Client tools | `search_memories(query)` `tool_6701m4et16pveywrpymdw3h3v0wp`, `save_memory(text)` `tool_9401m4et17pfe598c1wmvdhpwhcv` (both expect a response) |
-| Prompt | AI disclosure, short spoken replies, strict memory rules (answer only from tool results, say "couldn't find it", never claim a save without "saved"), no reminders/messages/other apps |
+| Prompt | AI disclosure, short spoken replies, strict memory rules (answer only from tool results, say "couldn't find it", never claim a save without "saved"), no reminders/messages/other apps. Since 2026-10-09 (version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`): before `save_memory` runs, Doddy says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (also in the tool description) |
 
 ## App
 - Home → **Talk to Doddy** opens `VoiceView` (foreground only). It ends when the screen closes or the app goes to the background.
@@ -38,7 +38,7 @@ Linux: core package 30 tests pass (incl. tool parsing and replies), guard passes
 - Note: ElevenLabs rejects an agent voice that is not in the account's My Voices (`voice_not_found`), so a Voice Library voice must be added there first (observed 2026-10-08).
 
 ## Observations from the first conversation (decisions, not bugs)
-- **Pre-tool speech.** Before the Save card appeared, Doddy said "Zapisuję to dla ciebie" (I am saving this for you). It is not a completion claim, but it reads oddly if the user taps Don't save. Option: fix the phrase for `save_memory` to something like "Potwierdź na ekranie, jeśli mam to zapisać" / "Confirm on screen if I should save this".
+- **Pre-tool speech (changed 2026-10-09, owner approved).** In the first conversation Doddy said "Zapisuję to dla ciebie" (I am saving this for you) before the Save card appeared, which reads oddly if the user taps Don't save. The prompt and the `save_memory` tool description now tell Doddy to say only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." before the tool runs (agent version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`). Not yet heard on a device.
 - **Retention.** Audio and transcript, including the user's first name, are kept on ElevenLabs indefinitely (`retention_days: -1`, `record_voice: true`). The retention decision in the list below is still open.
 - **Relative dates.** The saved note says "tomorrow"; the app stores the capture time, so it stays interpretable, but recall does not resolve dates.
 
