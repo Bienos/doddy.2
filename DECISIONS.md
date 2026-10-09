@@ -35,7 +35,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 020 | Honesty by construction: `CapabilityCatalog.m0` (every capability "not built"), `Unavailable*` adapters that throw, UI copy derived from the catalog, and `scripts/check_forbidden_capabilities.sh` (no networking/audio/speech/EventKit/account code, no secrets, no permission keys). | Makes "no fake capability" testable instead of a promise. | Applied — approval pending |
 | 021 | "Accessibility toggle" is **Hide character artwork** (real effect), not a reduce-motion switch. | M0 has no animation, so a motion toggle would do nothing (a fake). System Reduce Motion stays authoritative later. | Applied — approval pending |
 | 022 | No GitHub Actions workflow; checks run via `scripts/ci.sh`. | Hosted macOS runners are billable; M0 forbids paid services without approval. | Open — owner to decide |
-| 023 | Dev bundle id `com.bienos.doddy2.dev`, version 0.0.1, no signing team, no app icon. | Production identifier/team/icon are owner decisions; placeholders are clearly development-only. | Open |
+| 023 | Dev bundle id `com.bienos.doddy2.dev`, version 0.0.1, no signing team, no app icon (icon: superseded by ADR-050). | Production identifier/team/icon are owner decisions; placeholders are clearly development-only. | Open |
 | 024 | Imported pack files unmodified; a second checker `scripts/verify_imported_pack.py` was added because `tools/verify_pack.py` rejects any file the V2 repo adds (it also hashes itself, so it was not edited). | Keep provenance intact. | Applied |
 
 ## M1 decisions (local memory loop)
@@ -60,6 +60,9 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+| 050 | **Candidate app icon** (owner request 2026-10-09): Doddy waving, cropped to head and hand from `design/interface-v1.2/assets/doddy-pose-waving-*-v1.3-r1.svg`; light = ink on orange `#F58A24` (spark recoloured to ink), dark = cream on `#171F29`. 1024 px, no alpha, light + dark appearances; `ASSETCATALOG_COMPILER_APPICON_NAME` back to `AppIcon` | Applied — candidate, not a brand master; tinted variant not made |
+| 051 | Agent voice set to `oDULUm0GMltHA6mVZkWh` (owner instruction 2026-10-09), replacing Josh `ZoiZ8fuDWInAcwPXaVeq`; one voice for EN and PL | Applied — agent version `agtvrsn_2701m4fymws8f6wama5zd3zxn1w5` |
+| 052 | "Not smart" fix (owner report 2026-10-09): LLM `gemini-2.5-flash` → `gemini-3.5-flash`, temperature 0.3 → 0.5; prompt answers general questions from own knowledge, allows up to 6 sentences when asked to explain, natural small talk; weather (`geocode_place`, `get_weather`) and Wikipedia (`wikipedia_search`, `wikipedia_summary`) webhook tools **re-attached** (a parallel calendar edit had replaced the tool list and dropped them, so Doddy told the owner it couldn't do weather). Calendar/reminder/contact tools and strict honesty rules kept; `{{saved_notes}}`/`{{recent_conversations}}` sections kept with their placeholders | Applied — agent version `agtvrsn_0901m4fynwpdfv0agh5qqn1ytyxd`; not yet heard on a device; per-minute LLM cost may rise |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
