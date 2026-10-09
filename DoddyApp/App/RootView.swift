@@ -6,6 +6,8 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
+    /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
+    static let connectedAppsServerURL = "connectedAppsServerURL"
 }
 
 enum AppTab: Hashable {

@@ -51,7 +51,7 @@ struct HomeView: View {
 
                     recent
 
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Reminders and other apps aren't built yet.")
+                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Reminders aren't built yet; Google Calendar reading is in Settings › Connected Apps.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")

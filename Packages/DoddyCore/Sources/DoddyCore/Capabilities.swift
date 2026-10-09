@@ -15,6 +15,8 @@ public enum Capability: String, CaseIterable, Sendable {
 
 public enum CapabilityStatus: Equatable, Sendable {
     case notImplemented(plannedMilestone: String)
+    /// Built, but narrower than the name suggests or not yet verified live. The note says how.
+    case limited(String)
     case available
 }
 
@@ -54,6 +56,12 @@ public struct CapabilityCatalog: Sendable {
         .cloudAssistant: .available,
         .voiceInput: .available,
         .voiceOutput: .available,
+    ]) { _, new in new })
+
+    /// Connected Apps foundation: Google Calendar read-only through a Doddy server. Demo data unless
+    /// a server in live mode is configured; live provider behaviour is unverified (see docs/integrations).
+    public static let v1ConnectedApps = CapabilityCatalog(statuses: v1Voice.statuses.merging([
+        .connectedAccounts: .limited("Google Calendar read-only, needs a Doddy server"),
     ]) { _, new in new })
 }
 

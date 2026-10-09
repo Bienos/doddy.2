@@ -7,6 +7,10 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
+    @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
+    @State private var sessionTokenDraft = ""
+    @State private var hasSessionToken = KeychainSessionStore.read() != nil
+    @State private var tokenMessage: String?
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -51,16 +55,69 @@ struct SettingsView: View {
 
                 Section("Privacy") {
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
-                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "Only while talking (ElevenLabs)" : "None")
+                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "While talking (ElevenLabs) and when you use Connected Apps" : "None")
                     StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "Only while talking" : "Not used")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. If you use Connected Apps, the app sends the date and time zone you ask about to your Doddy server, which reads Google Calendar through Composio; your notes are never sent there. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .accessibilityIdentifier("settings.privacy")
+
+                Section {
+                    NavigationLink {
+                        ConnectedAppsScreen()
+                    } label: {
+                        Label("Connected Apps", systemImage: "link")
+                    }
+                    .accessibilityIdentifier("settings.connectedApps")
+                } header: {
+                    Text("Connected Apps")
+                } footer: {
+                    Text("Google Calendar, read-only. Shows tomorrow's events when you ask; nothing is saved unless you tap Save.")
+                }
+
+                Section {
+                    TextField("Server address (https://…)", text: $connectedAppsServerURL)
+                        .font(.body.monospaced())
+                        .keyboardType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .accessibilityIdentifier("settings.connectedAppsServer")
+                    if hasSessionToken {
+                        StatusRow(title: "Session token", value: "Saved in Keychain")
+                        Button("Remove session token", role: .destructive) {
+                            KeychainSessionStore.delete()
+                            hasSessionToken = false
+                            tokenMessage = nil
+                        }
+                    } else {
+                        SecureField("Session token", text: $sessionTokenDraft)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .accessibilityIdentifier("settings.connectedAppsToken")
+                        Button("Save session token") {
+                            let token = sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if KeychainSessionStore.save(token) {
+                                hasSessionToken = true
+                                tokenMessage = nil
+                            } else {
+                                tokenMessage = "The Keychain didn't accept the token, so it wasn't saved."
+                            }
+                            sessionTokenDraft = ""
+                        }
+                        .disabled(sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    if let tokenMessage {
+                        Label(tokenMessage, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+                    }
+                } header: {
+                    Text("Connected Apps server (development)")
+                } footer: {
+                    Text("Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain.")
+                }
 
                 Section("Voice") {
                     TextField("ElevenLabs agent ID", text: $voiceAgentID)

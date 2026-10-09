@@ -73,3 +73,18 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 8. **Identity & signing** — bundle identifier, Apple developer team, and whether to commit the generated `Doddy.xcodeproj` after a first good Mac build (ADR-013).
 9. **CI** — accept local-script CI only, or approve a hosted macOS runner and its cost (ADR-022).
 10. **Run the Mac verification** listed in `docs/implementation/M0_REPORT.md` and record results; **M1 should not start until M0's iOS build/tests are confirmed on a Mac** (M0 exit criteria are not met without it).
+
+## Connected Apps decisions (2026-10-09, owner prompt "Composio integration")
+
+| ADR | Decision | Status |
+|---|---|---|
+| 038 | Add a minimal backend `backend/` (Node 22, TypeScript, `node:http`, `node:sqlite`, zod, `@composio/core` 0.22.0 exact). No framework, no microservices, no vector store, no generic tool proxy. | Applied — approval pending |
+| 039 | Doddy-owned API v1 and capability registry (`calendar.listEvents` only enabled; `calendar.createEvent` listed but disabled). Composio tool slugs appear only in `backend/src/providers/composio.ts` (guard-enforced). | Applied |
+| 040 | Read-only is enforced twice: requested scope `calendar.events.readonly` on the auth config, and a server-side allowlist on the **granted** scopes; write-capable or unverifiable grants block reads. | Applied — needs live confirmation that Composio exposes granted scopes |
+| 041 | Completion: `verifier` (Composio OAuth callback verifier + `completeAuth`) by default; `callback` mode only in `DODDY_ENV=development`. Attempts are single-use, 10-minute, nonce-bound, and re-verified server-side (status, toolkit, auth config, ownership via `userIds` filter). | Applied — verifier availability Plausible |
+| 042 | App sessions: loopback dev identities (mock only) or owner-minted HMAC tokens; production live mode refused until real sign-in exists. | Applied — **owner decision needed on sign-in** |
+| 043 | Calendar results are transient (15-minute expiry, cleared on disconnect/failure), never stored by app or backend; saving is one explicit tap per event, stored as `shared_content` naming Google Calendar. | Applied |
+| 044 | App networking only in `DoddyApp/Infrastructure/URLSessionTransport.swift`; system auth browser only in `Features/ConnectedApps/SystemWebAuthenticator.swift`; session token in Keychain (`AfterFirstUnlockThisDeviceOnly`). | Applied |
+| 045 | `CapabilityStatus.limited(note)` added; `connectedAccounts` is "Limited · Google Calendar read-only, needs a Doddy server", never "Available". | Applied |
+| 046 | Composio SDK start-up npm version check disabled and API base URL pinned (constructor otherwise contacted registry.npmjs.org). | Applied |
+| 047 | Usage ceilings are Doddy policies in SQLite (UTC day/month), reserved before every provider call including pages and retries; concurrency per process (single instance). Monetary cost estimated only. | Applied — owner to set real ceilings |

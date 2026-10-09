@@ -1,0 +1,21 @@
+{
+  "error": {
+    "code": "rate_limited",
+    "message": "Google Calendar is busy right now. Try again shortly.",
+    "correlationId": "4947bf95-eb4d-438a-b798-e5f35650e7bf",
+    "retryAfterSeconds": 30,
+    "receipt": {
+      "operationId": "e4f006ba-2d86-49e0-9896-f362342ebf39",
+      "operation": "read",
+      "capability": "calendar.listEvents",
+      "provider": "google_calendar",
+      "accountLabel": "d•••@e•••.com",
+      "timestamp": "2026-10-09T10:00:00.000Z",
+      "mode": "mock",
+      "status": "failed",
+      "summary": "Calendar wasn't read. Nothing is shown instead.",
+      "errorCode": "rate_limited",
+      "providerReference": null
+    }
+  }
+}
