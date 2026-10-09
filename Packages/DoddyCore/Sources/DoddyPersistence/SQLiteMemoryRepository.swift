@@ -56,13 +56,17 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         }
     }
 
+    /// How many of the newest notes the word-rule scan reads when the index finds too few.
+    /// A personal store stays far below this; past it, older notes rely on the index alone.
+    static let scanLimit = 5_000
+
     public func query(_ query: String, limit: Int) async throws -> [MemoryCandidate] {
-        let terms = SearchFolding.queryTerms(query)
-        guard !terms.isEmpty, limit > 0 else { return [] }
-        // Terms contain only letters/digits after folding, so quoting is safe.
-        let pattern = terms.map { "\"\($0)\"*" }.joined(separator: " OR ")
-        let records = try await dbQueue.read { db in
-            try Row.fetchAll(
+        let terms = RecallMatching.terms(query)
+        guard let pattern = RecallMatching.ftsPattern(terms), limit > 0 else { return [] }
+        let sample = MemorySource.sampleFixture.rawValue
+        // Each row comes with its stored folded text, so matching doesn't fold every note again.
+        let (indexed, scanned) = try await dbQueue.read { db -> ([Hit], [Hit]) in
+            let indexed = try Row.fetchAll(
                 db,
                 sql: """
                     SELECT memories.* FROM memories
@@ -70,16 +74,34 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                     WHERE memories_fts MATCH ? AND memories.source != ?
                     ORDER BY bm25(memories_fts) LIMIT ?
                     """,
-                arguments: [pattern, MemorySource.sampleFixture.rawValue, limit]
-            ).map(Self.record(from:))
+                arguments: [pattern, sample, limit]
+            ).map(Self.hit)
+            // Typos and spoken numbers can't be expressed as FTS terms, so when the index finds
+            // fewer than asked, the newest notes are also checked with the same word rules.
+            guard indexed.count < limit else { return (indexed, []) }
+            let scanned = try Row.fetchAll(
+                db,
+                sql: """
+                    SELECT * FROM memories WHERE source != ?
+                    ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC LIMIT ?
+                    """,
+                arguments: [sample, Self.scanLimit]
+            ).map(Self.hit)
+            return (indexed, scanned)
         }
-        let candidates = records.map {
-            MemoryCandidate(record: $0, matchedTerms: SearchFolding.matchedTerms(terms, in: $0.currentText))
+        var seen = Set<UUID>()
+        let matcher = RecallMatching.Matcher(terms)
+        // Index hits keep their rank order; scan hits follow, newest first.
+        let candidates = (indexed + scanned).compactMap { hit -> MemoryCandidate? in
+            guard seen.insert(hit.record.id).inserted else { return nil }
+            let matched = matcher.matchedWords(inFolded: hit.folded)
+            return matched.isEmpty ? nil : MemoryCandidate(record: hit.record, matchedTerms: matched)
         }
-        // More matched terms first; ties keep FTS rank order (sort is stable on enumerated index).
-        return candidates.enumerated()
+        // More matched words first; ties keep the order above (sort is stable on the index).
+        return Array(candidates.enumerated()
             .sorted { ($0.element.matchedTerms.count, -$0.offset) > ($1.element.matchedTerms.count, -$1.offset) }
             .map(\.element)
+            .prefix(limit))
     }
 
     public func update(id: UUID, currentText: String) async throws -> MemoryRecord {
@@ -120,6 +142,12 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     }
 
     // MARK: Helpers
+
+    private typealias Hit = (record: MemoryRecord, folded: String)
+
+    private static func hit(_ row: Row) throws -> Hit {
+        (try record(from: row), row["search_text"])
+    }
 
     private static func fetch(_ id: UUID, _ db: Database) throws -> MemoryRecord? {
         try Row.fetchOne(db, sql: "SELECT * FROM memories WHERE id = ?", arguments: [id.uuidString])
