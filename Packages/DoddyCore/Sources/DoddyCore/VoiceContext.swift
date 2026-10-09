@@ -35,6 +35,14 @@ public enum VoiceContext {
         public let text: String
         public let includedCount: Int
         public let truncated: Bool
+
+        // Explicit so the app target (another module) can build one, e.g. when the user has
+        // switched remembering conversations off; the memberwise init is internal.
+        public init(text: String, includedCount: Int, truncated: Bool) {
+            self.text = text
+            self.includedCount = includedCount
+            self.truncated = truncated
+        }
     }
 
     public static let defaultNotesBudget = 6000
