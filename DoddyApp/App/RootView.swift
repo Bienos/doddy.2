@@ -20,6 +20,8 @@ enum PreferenceKey {
     static let personalityMood = "personality.mood"
     /// HTTPS address of `server/voice-token`. Empty = development public agent.
     static let voiceTokenServer = "voiceTokenServer"
+    /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
+    static let connectedAppsServerURL = "connectedAppsServerURL"
 }
 
 enum AppTab: Hashable {

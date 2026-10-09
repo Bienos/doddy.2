@@ -4,8 +4,8 @@ import Foundation
 import SwiftUI
 
 /// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView); the
-/// Talk to Doddy shortcut and Back Tap guide live in `ShortcutRouter`; reminders and other
-/// actions stay explicit `Unavailable*` adapters.
+/// Talk to Doddy shortcut and Back Tap guide live in `ShortcutRouter`; Connected Apps talks to a
+/// Doddy server (ConnectedAppsScreen); other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let recallService: any RecallService
@@ -36,7 +36,7 @@ struct AppEnvironment: Sendable {
                 recallService: RepositoryRecallService(repository: repository),
                 assistantClient: UnavailableAssistantClient(),
                 toolExecutor: UnavailableToolExecutor(),
-                capabilities: .v2Shortcut,
+                capabilities: .v2WithConnectedApps,
                 privacy: .v1Voice,
                 storageProblem: nil)
         } catch {

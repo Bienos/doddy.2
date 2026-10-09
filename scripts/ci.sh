@@ -3,7 +3,7 @@
 # makes the script exit non-zero, so "green" always means everything ran and passed.
 #
 #   scripts/ci.sh              full run (needs Swift AND Xcode/xcodebuild)
-#   scripts/ci.sh --core-only  pack integrity + guards + Swift package tests only;
+#   scripts/ci.sh --core-only  pack integrity + guards + Swift package tests + backend only;
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 set -uo pipefail
@@ -43,6 +43,14 @@ if command -v node >/dev/null 2>&1; then
   run_step "Voice token server tests" node --test server/voice-token/test/handler.test.js
 else
   not_run "Voice token server tests" "node not found on PATH"
+fi
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  node --version
+  if [ ! -d backend/node_modules ]; then run_step "Backend install (npm ci)" npm ci --prefix backend; fi
+  run_step "Backend type-check" npm run --prefix backend typecheck
+  run_step "Backend tests (offline, mock + fake Composio)" npm test --prefix backend
+else
+  not_run "Backend type-check + tests" "node/npm not found on PATH"
 fi
 
 if [ "$core_only" -eq 1 ]; then

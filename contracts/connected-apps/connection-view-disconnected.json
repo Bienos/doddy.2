@@ -1,0 +1,17 @@
+{
+  "provider": "google_calendar",
+  "mode": "mock",
+  "status": "disconnected",
+  "reason": null,
+  "accountLabel": null,
+  "connectedAt": null,
+  "lastCheckedAt": null,
+  "remoteCleanup": "none",
+  "access": {
+    "summary": "Doddy reads events on your primary Google Calendar (titles and times) when you ask, for example for tomorrow's plans. It can't create, change or delete events, and it doesn't keep your calendar.",
+    "canWrite": false,
+    "requestedScopes": [
+      "https://www.googleapis.com/auth/calendar.events.readonly"
+    ]
+  }
+}

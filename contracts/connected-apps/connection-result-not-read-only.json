@@ -1,0 +1,32 @@
+{
+  "connection": {
+    "provider": "google_calendar",
+    "mode": "mock",
+    "status": "permission_insufficient",
+    "reason": "grant_not_read_only",
+    "accountLabel": null,
+    "connectedAt": "2026-10-09T10:00:00.000Z",
+    "lastCheckedAt": "2026-10-09T10:00:00.000Z",
+    "remoteCleanup": "none",
+    "access": {
+      "summary": "Doddy reads events on your primary Google Calendar (titles and times) when you ask, for example for tomorrow's plans. It can't create, change or delete events, and it doesn't keep your calendar.",
+      "canWrite": false,
+      "requestedScopes": [
+        "https://www.googleapis.com/auth/calendar.events.readonly"
+      ]
+    }
+  },
+  "receipt": {
+    "operationId": "3139a4be-ef1d-4347-b8e6-c1c565a2c14d",
+    "operation": "connect",
+    "capability": "connection.connect",
+    "provider": "google_calendar",
+    "accountLabel": null,
+    "timestamp": "2026-10-09T10:00:00.000Z",
+    "mode": "mock",
+    "status": "blocked",
+    "summary": "Connected, but the access granted could change events, so Doddy won't use it. Disconnect and reconnect with read-only access.",
+    "errorCode": "grant_not_read_only",
+    "providerReference": null
+  }
+}

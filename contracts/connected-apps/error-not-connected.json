@@ -1,0 +1,20 @@
+{
+  "error": {
+    "code": "not_connected",
+    "message": "Google Calendar is not connected.",
+    "correlationId": "9f17ea07-8466-4093-afce-a4503305f719",
+    "receipt": {
+      "operationId": "6cd6054b-308b-454b-bcb5-894ee3f2ce80",
+      "operation": "read",
+      "capability": "calendar.listEvents",
+      "provider": "google_calendar",
+      "accountLabel": null,
+      "timestamp": "2026-10-09T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not read: Google Calendar isn't connected.",
+      "errorCode": "not_connected",
+      "providerReference": null
+    }
+  }
+}

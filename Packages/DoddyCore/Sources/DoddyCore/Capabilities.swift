@@ -17,6 +17,8 @@ public enum Capability: String, CaseIterable, Sendable {
 
 public enum CapabilityStatus: Equatable, Sendable {
     case notImplemented(plannedMilestone: String)
+    /// Built, but narrower than the name suggests or not yet verified live. The note says how.
+    case limited(String)
     case available
 }
 
@@ -64,6 +66,17 @@ public struct CapabilityCatalog: Sendable {
     /// V2: V1 plus the Talk to Doddy App Shortcut and the guided (user-reported) Back Tap setup.
     public static let v2Shortcut = CapabilityCatalog(statuses: v1Voice.statuses.merging([
         .systemShortcut: .available,
+    ]) { _, new in new })
+
+    /// Connected Apps foundation: Google Calendar read-only through a Doddy server. Demo data unless
+    /// a server in live mode is configured; live provider behaviour is unverified (see docs/integrations).
+    public static let v1ConnectedApps = CapabilityCatalog(statuses: v1Voice.statuses.merging([
+        .connectedAccounts: .limited("Google Calendar read-only, needs a Doddy server"),
+    ]) { _, new in new })
+
+    /// What this build ships: V2 (voice, shortcut, Back Tap guide) plus the Connected Apps foundation.
+    public static let v2WithConnectedApps = CapabilityCatalog(statuses: v2Shortcut.statuses.merging([
+        .connectedAccounts: .limited("Google Calendar read-only, needs a Doddy server"),
     ]) { _, new in new })
 }
 
