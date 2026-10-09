@@ -75,6 +75,7 @@ form.addEventListener("submit", async (event) => {
         ? "You're already on the list. We'll email you when early access opens."
         : "You're on the list. We'll email you when early access opens.", "ok");
       form.reset();
+      if (reply.id && reply.key) askQuestions(reply.id, reply.key);
     } else if (reply.error === "invalid_email") {
       email.setAttribute("aria-invalid", "true");
       say(status, "That email address doesn't look right. Check it and try again.", "err");
@@ -85,6 +86,53 @@ form.addEventListener("submit", async (event) => {
     say(status, "That didn't go through. Check your connection and try again.", "err");
   } finally {
     submit.disabled = false;
+  }
+});
+
+// ---------- Optional questions after a new signup ----------
+const answers = document.querySelector("#answers");
+const answersStatus = document.querySelector("#answers-status");
+const answersTitle = document.querySelector("#answers-title");
+const answersSubmit = answers.querySelector('button[type="submit"]');
+let signup = null;  // { id, key } from the signup reply; kept in memory only
+
+function askQuestions(id, key) {
+  signup = { id, key };
+  form.hidden = true;
+  answers.hidden = false;
+  answersTitle.focus();
+}
+function finishQuestions(message) {
+  answers.hidden = true;
+  signup = null;
+  say(status, message, "ok");
+}
+answers.querySelector("#answers-skip").addEventListener("click", () => {
+  finishQuestions("You're on the list. We'll email you when early access opens.");
+});
+answers.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const data = new FormData(answers);
+  const phone = data.get("phone") || "";
+  const picked = { phone, heard: data.get("heard") || "", wish: String(data.get("wish") || "").trim() };
+  const thanks = "Thanks, that helps a lot. We'll email you when early access opens."
+    + (phone === "android" ? " Doddy starts on iPhone; we'll tell you if Android comes later." : "");
+  if (!picked.phone && !picked.heard && !picked.wish) { finishQuestions("You're on the list. We'll email you when early access opens."); return; }
+  answersSubmit.disabled = true;
+  say(answersStatus, "Sending…");
+  try {
+    const res = await fetch("/api/waitlist-answers", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...signup, ...picked }),
+    });
+    const reply = await res.json();
+    if (!reply.ok) throw new Error(reply.error);
+    finishQuestions(thanks);
+  } catch {
+    say(answersStatus, "That didn't go through. Try again, or skip. You're on the list either way.", "err");
+  } finally {
+    answersSubmit.disabled = false;
   }
 });
 

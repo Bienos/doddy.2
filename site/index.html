@@ -286,6 +286,39 @@
               <p id="waitlist-note" class="fineprint form-note">We'll only use your email to tell you when early access opens, and we'll delete it whenever you ask.</p>
               <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
             </form>
+            <!-- Shown only after a new signup. Every question is optional. -->
+            <form class="answers" id="answers" hidden novalidate aria-labelledby="answers-title">
+              <p class="says-small" id="answers-title" tabindex="-1">Three quick ones? All optional.</p>
+              <fieldset class="q">
+                <legend>Which phone do you use?</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="phone" value="iphone"><span>iPhone</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="android"><span>Android</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="other"><span>Something else</span></label>
+                </div>
+              </fieldset>
+              <fieldset class="q">
+                <legend>Where did you hear about Doddy?</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="heard" value="tiktok"><span>TikTok</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="instagram"><span>Instagram</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="linkedin"><span>LinkedIn</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="friend"><span>A friend</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="search"><span>Search</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="other"><span>Somewhere else</span></label>
+                </div>
+              </fieldset>
+              <div class="q">
+                <label for="wish">What would you like Doddy to do for you?</label>
+                <textarea id="wish" name="wish" rows="3" maxlength="300" placeholder="Remember where I parked, keep my kids' sizes, find that book tip…"></textarea>
+              </div>
+              <div class="answers-actions">
+                <button class="button" type="submit">Send answers</button>
+                <button class="link-button" type="button" id="answers-skip">Skip</button>
+              </div>
+              <p class="fineprint form-note">We only use these to plan Doddy's early access, and we'll delete them with your email whenever you ask.</p>
+              <p id="answers-status" class="status" role="status" aria-live="polite"></p>
+            </form>
             <div class="open-app">
               <p>Already testing Doddy? <a class="text-link" id="open-app" href="doddy://home">Open Doddy</a></p>
               <p id="open-app-status" class="status" role="status" aria-live="polite"></p>

@@ -13,10 +13,16 @@ export async function GET(request) {
   if (!isAdmin(request)) return unauthorized(true);
 
   const records = await readAll();
-  const lines = [["Signed up (UTC)", "Email", "Page", "Consent version"].map(cell).join(",")];
-  for (const r of records) lines.push([r.createdAt, r.email, r.page, r.consent].map(cell).join(","));
+  const PHONE = { iphone: "iPhone", android: "Android", other: "Something else" };
+  const HEARD = { tiktok: "TikTok", instagram: "Instagram", linkedin: "LinkedIn", friend: "A friend", search: "Search", other: "Somewhere else" };
+  const header = ["Signed up (UTC)", "Email", "Phone", "Heard about Doddy", "Wants Doddy to", "Answered (UTC)", "Page", "Consent version"];
+  const lines = [header.map(cell).join(",")];
+  for (const r of records) {
+    const a = r.answers ?? {};
+    lines.push([r.createdAt, r.email, PHONE[a.phone] ?? "", HEARD[a.heard] ?? "", a.wish ?? "", a.answeredAt ?? "", r.page, r.consent].map(cell).join(","));
+  }
   // The BOM makes Excel read the file as UTF-8.
-  const csv = "﻿" + lines.join("\r\n") + "\r\n";
+  const csv = "\uFEFF" + lines.join("\r\n") + "\r\n";
   const date = new Date().toISOString().slice(0, 10);
 
   return new Response(csv, {

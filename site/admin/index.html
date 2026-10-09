@@ -69,6 +69,12 @@
         <div class="stat"><p class="stat-label">Latest</p><p class="stat-value small" id="s-latest">None yet</p><p class="stat-note" id="s-latest-note">&nbsp;</p></div>
       </section>
 
+      <section class="wrap answers-grid" aria-label="Answers to the optional questions">
+        <div class="card"><div class="card-head"><h2>Phone</h2><p class="muted" id="a-phone-note"></p></div><div class="hbars" id="a-phone"></div></div>
+        <div class="card"><div class="card-head"><h2>Heard about Doddy</h2><p class="muted" id="a-heard-note"></p></div><div class="hbars" id="a-heard"></div></div>
+        <div class="card wishes"><div class="card-head"><h2>Wants Doddy to</h2><p class="muted" id="a-wish-note"></p></div><ul class="wish-list" id="a-wish"></ul></div>
+      </section>
+
       <section class="wrap" aria-labelledby="chart-title">
         <div class="card chart-card">
           <div class="card-head">
@@ -85,16 +91,23 @@
           <div class="card-head list-head">
             <h2 id="list-title">Everyone <span class="count" id="list-count"></span></h2>
             <div class="tools">
-              <label class="search"><span class="sr-only">Search emails</span><input id="search" type="search" placeholder="Search emails" autocomplete="off"></label>
+              <label class="search"><span class="sr-only">Search emails and wishes</span><input id="search" type="search" placeholder="Search emails or wishes" autocomplete="off"></label>
               <button class="button secondary" id="copy-emails" type="button">Copy emails</button>
               <button class="button" id="download" type="button">Download for Excel</button>
             </div>
+          </div>
+          <div class="filters" role="group" aria-label="Show">
+            <button class="filter on" type="button" data-filter="all" aria-pressed="true">All</button>
+            <button class="filter" type="button" data-filter="iphone" aria-pressed="false">iPhone</button>
+            <button class="filter" type="button" data-filter="android" aria-pressed="false">Android</button>
+            <button class="filter" type="button" data-filter="answered" aria-pressed="false">Answered questions</button>
+            <button class="filter" type="button" data-filter="wish" aria-pressed="false">Has a wish</button>
           </div>
           <p id="tools-status" class="status" role="status" aria-live="polite"></p>
           <div class="table-wrap">
             <table class="people">
               <thead>
-                <tr><th scope="col">#</th><th scope="col">Email</th><th scope="col">Signed up</th><th scope="col">From page</th><th scope="col">Note version</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
+                <tr><th scope="col">#</th><th scope="col">Email</th><th scope="col">Signed up</th><th scope="col">Phone</th><th scope="col">Heard from</th><th scope="col">Wants Doddy to</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
               </thead>
               <tbody id="rows"></tbody>
             </table>

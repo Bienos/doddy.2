@@ -125,10 +125,11 @@ input[type="password"], input[type="search"] {
 .people tr:last-child td { border-bottom: 0; }
 .people tbody tr:hover { background: color-mix(in srgb, var(--quiet-surface) 55%, transparent); }
 .people .num { color: var(--secondary-text); font-variant-numeric: tabular-nums; width: 3ch; }
-.people .email { font-weight: 650; overflow-wrap: anywhere; }
+.people .email { font-weight: 650; overflow-wrap: break-word; min-width: 12rem; }
 .people .when { white-space: nowrap; }
 .people .when small { display: block; color: var(--secondary-text); font-size: 0.8125rem; }
-.people .page, .people .consent { color: var(--secondary-text); font-size: 0.875rem; overflow-wrap: anywhere; }
+.people .phone, .people .heard { white-space: nowrap; font-size: 0.875rem; }
+.people .wish { color: var(--secondary-text); font-size: 0.875rem; max-width: 34ch; overflow-wrap: anywhere; }
 .people .actions { text-align: right; white-space: nowrap; }
 .people .new { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--quiet-surface); color: var(--accent-text); font-size: 0.75rem; font-weight: 700; }
 .mini { min-height: 36px; padding: 0 12px; border-radius: 10px; font-size: 0.8125rem; }
@@ -141,14 +142,31 @@ input[type="password"], input[type="search"] {
   .people tr { padding: 12px 0; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; }
   .people td { border: 0; padding: 0; }
   .people .num { display: none; }
-  .people .email { grid-column: 1; }
+  .people .email { grid-column: 1; min-width: 0; overflow-wrap: anywhere; }
   .people .actions { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
-  .people .when, .people .page, .people .consent { grid-column: 1; font-size: 0.8125rem; color: var(--secondary-text); }
+  .people .when, .people .phone, .people .heard, .people .wish { grid-column: 1; font-size: 0.8125rem; color: var(--secondary-text); max-width: none; }
   .people .when { white-space: normal; }
   .people .when small { display: inline; margin-left: 6px; }
-  .people .consent { display: none; }
 }
 
 .empty { display: grid; justify-items: center; gap: 8px; padding: 24px 0 8px; text-align: center; }
 .empty img { width: 180px; }
 .foot { font-size: 0.8125rem; padding-block: 8px 48px; }
+
+/* answers */
+.answers-grid { display: grid; gap: 14px; margin-bottom: 18px; }
+@media (min-width: 900px) { .answers-grid { grid-template-columns: 1fr 1fr 1.4fr; } }
+.answers-grid .card { margin: 0; }
+.hbars { display: grid; gap: 8px; }
+.hrow { display: grid; grid-template-columns: 9.5em minmax(0, 1fr) 2.5em; align-items: center; gap: 10px; font-size: 0.875rem; }
+.htrack { height: 12px; }
+.hbar { display: block; height: 12px; min-width: 2px; border-radius: 0 4px 4px 0; background: var(--orange-cue); }
+.hrow b { text-align: right; font-variant-numeric: tabular-nums; }
+.wish-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.wish-list li { padding-left: 14px; border-left: 3px solid var(--orange-cue); }
+.wish-list q { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.wish-list small { color: var(--secondary-text); font-size: 0.8125rem; overflow-wrap: anywhere; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.filter { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--separator); background: var(--paper); color: var(--secondary-text); font: 600 0.8125rem var(--text); cursor: pointer; }
+.filter:hover { color: var(--reading-ink); border-color: var(--secondary-text); }
+.filter.on { background: var(--reading-ink); border-color: var(--reading-ink); color: var(--canvas); }

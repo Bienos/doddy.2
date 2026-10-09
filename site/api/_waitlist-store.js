@@ -29,7 +29,7 @@ async function readRecord(pathname) {
   const result = await get(pathname, { access: "private" });
   if (result?.statusCode !== 200) return null;
   try {
-    const record = JSON.parse(await new Response(result.stream).text());
+    const { answerKeyHash, ...record } = JSON.parse(await new Response(result.stream).text());
     // id = the hash in the file name; used to delete one signup without sending its email around.
     return { id: pathname.slice("waitlist/".length, -".json".length), ...record };
   } catch {

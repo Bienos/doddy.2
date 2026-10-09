@@ -12,11 +12,17 @@ const els = {
   updated: $("updated"), cheer: $("cheer"), total: $("s-total"), today: $("s-today"), todayNote: $("s-today-note"),
   week: $("s-week"), weekNote: $("s-week-note"), latest: $("s-latest"), latestNote: $("s-latest-note"),
   chart: $("chart"), chartNote: $("chart-note"), tip: $("tip"), rows: $("rows"), listCount: $("list-count"), search: $("search"),
+  aPhone: $("a-phone"), aPhoneNote: $("a-phone-note"), aHeard: $("a-heard"), aHeardNote: $("a-heard-note"),
+  aWish: $("a-wish"), aWishNote: $("a-wish-note"),
   copyEmails: $("copy-emails"), download: $("download"), toolsStatus: $("tools-status"), empty: $("empty"), emptyText: $("empty-text"),
 };
 
 let password = "";
 let records = [];
+let filter = "all";
+
+const PHONE = { iphone: "iPhone", android: "Android", other: "Something else" };
+const HEARD = { tiktok: "TikTok", instagram: "Instagram", linkedin: "LinkedIn", friend: "A friend", search: "Search", other: "Somewhere else" };
 
 // ---------- helpers ----------
 const store = {
@@ -142,12 +148,59 @@ function render() {
     : today ? `${today} new today. ${total} want in!` : `${total} people want in.`;
 
   drawChart(now);
+  drawAnswers();
   drawRows();
 }
 
+// ---------- answers to the optional questions ----------
+function hbars(container, counts, labels) {
+  const max = Math.max(1, ...Object.values(counts));
+  container.replaceChildren();
+  for (const [key, label] of Object.entries(labels)) {
+    const n = counts[key] || 0;
+    const bar = el("span", { className: "hbar" });
+    bar.style.width = `${(n / max) * 100}%`;
+    container.append(el("div", { className: "hrow" },
+      el("span", { className: "hlabel", textContent: label }),
+      el("span", { className: "htrack" }, bar),
+      el("b", { textContent: String(n) })));
+  }
+}
+function drawAnswers() {
+  const answered = records.filter((r) => r.answers);
+  const tally = (field) => answered.reduce((acc, r) => { const v = r.answers[field]; if (v) acc[v] = (acc[v] || 0) + 1; return acc; }, {});
+  const phones = tally("phone"), heard = tally("heard");
+  const phoneTotal = Object.values(phones).reduce((a, b) => a + b, 0);
+  const heardTotal = Object.values(heard).reduce((a, b) => a + b, 0);
+  hbars(els.aPhone, phones, PHONE);
+  hbars(els.aHeard, heard, HEARD);
+  els.aPhoneNote.textContent = phoneTotal ? `${phoneTotal} answered${phones.iphone ? `, ${Math.round((phones.iphone / phoneTotal) * 100)}% iPhone` : ""}` : "No answers yet";
+  els.aHeardNote.textContent = heardTotal ? `${heardTotal} answered` : "No answers yet";
+  const wishes = answered.filter((r) => r.answers.wish).slice().reverse();
+  els.aWishNote.textContent = wishes.length ? `${plural(wishes.length, "wish", "wishes")}, newest first` : "No wishes yet";
+  els.aWish.replaceChildren(...wishes.slice(0, 5).map((r) =>
+    el("li", {}, el("q", { textContent: r.answers.wish }), el("small", { textContent: `${r.email}, ${ago(new Date(r.answers.answeredAt || r.createdAt))}` }))));
+}
+
+function matchesFilter(r) {
+  const a = r.answers || {};
+  if (filter === "iphone") return a.phone === "iphone";
+  if (filter === "android") return a.phone === "android";
+  if (filter === "answered") return Boolean(r.answers);
+  if (filter === "wish") return Boolean(a.wish);
+  return true;
+}
+document.querySelectorAll(".filter").forEach((btn) => btn.addEventListener("click", () => {
+  filter = btn.dataset.filter;
+  document.querySelectorAll(".filter").forEach((b) => { const on = b === btn; b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
+  drawRows();
+}));
+
 function drawRows() {
   const q = els.search.value.trim().toLowerCase();
-  const shown = records.filter((r) => !q || r.email.includes(q)).slice().reverse();  // newest first
+  const shown = records
+    .filter((r) => matchesFilter(r) && (!q || r.email.includes(q) || (r.answers?.wish || "").toLowerCase().includes(q)))
+    .slice().reverse();  // newest first
   els.rows.replaceChildren();
   const dayAgo = Date.now() - 86400000;
   for (const r of shown) {
@@ -162,14 +215,15 @@ function drawRows() {
       el("td", { className: "num", textContent: String(r.n) }),
       email,
       el("td", { className: "when" }, fmtWhen.format(r.date), el("small", { textContent: ago(r.date) })),
-      el("td", { className: "page", textContent: r.page ? r.page.replace(/^https?:\/\//, "") : "—" }),
-      el("td", { className: "consent", textContent: r.consent || "—" }),
+      el("td", { className: "phone", textContent: PHONE[r.answers?.phone] || "—" }),
+      el("td", { className: "heard", textContent: HEARD[r.answers?.heard] || "—" }),
+      el("td", { className: "wish", textContent: r.answers?.wish || (r.answers ? "—" : "Skipped") }),
       el("td", { className: "actions" }, copyBtn, delBtn),
     ));
   }
-  els.listCount.textContent = q ? `${shown.length} of ${records.length}` : `(${records.length})`;
+  els.listCount.textContent = q || filter !== "all" ? `${shown.length} of ${records.length}` : `(${records.length})`;
   els.empty.hidden = shown.length > 0;
-  els.emptyText.textContent = records.length ? "No email matches that search." : "Nobody yet. Share the link and check back.";
+  els.emptyText.textContent = records.length ? "Nobody matches that search or filter." : "Nobody yet. Share the link and check back.";
   els.copyEmails.disabled = shown.length === 0;
   els.download.disabled = records.length === 0;
 }
@@ -207,7 +261,7 @@ async function copy(text, done) {
 }
 els.copyEmails.addEventListener("click", () => {
   const q = els.search.value.trim().toLowerCase();
-  const list = records.filter((r) => !q || r.email.includes(q)).map((r) => r.email);
+  const list = records.filter((r) => matchesFilter(r) && (!q || r.email.includes(q) || (r.answers?.wish || "").toLowerCase().includes(q))).map((r) => r.email);
   copy(list.join(", "), `Copied ${plural(list.length, "email", "emails")}, separated by commas.`);
 });
 els.download.addEventListener("click", async () => {
@@ -255,7 +309,7 @@ function drawChart(now) {
 
   const root = svg("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `Sign-ups per day for the last ${span} days. Busiest day: ${Math.max(...days.map((d) => d.n))}.` });
   // recessive grid: top and middle
-  for (const v of [top, top / 2]) {
+  for (const v of Number.isInteger(top / 2) ? [top, top / 2] : [top]) {
     root.append(svg("line", { class: "grid", x1: padL, x2: W - padR, y1: y(v), y2: y(v) }));
     const t = svg("text", { x: padL - 6, y: y(v) + 4, "text-anchor": "end" }); t.textContent = Number.isInteger(v) ? v : v.toFixed(1); root.append(t);
   }

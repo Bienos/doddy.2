@@ -1,7 +1,9 @@
 // POST /api/waitlist — store one waitlist signup privately in Vercel Blob (store "doddy-waitlist", fra1).
 // Body: {"email", "page", "consent", "website"} as JSON. Replies {ok, status: "added"|"already"} or {ok:false, error}.
-// Stores only email, page, consent version and time. No IP, no user agent, and emails never go to logs.
-import { createHash } from "node:crypto";
+// A new signup also gets {id, key}: the key lets that browser add the optional answers (api/waitlist-answers.js).
+// Only a hash of the key is stored, so nobody who merely knows the email can change the answers.
+// Stores only email, page, consent version, time and the answer-key hash. No IP, no user agent, and emails never go to logs.
+import { createHash, randomBytes } from "node:crypto";
 import { BlobNotFoundError, head, put } from "@vercel/blob";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -48,12 +50,15 @@ export async function POST(request) {
   }
 
   // One blob per email; the name is a hash so the same email can only be stored once.
-  const pathname = `waitlist/${createHash("sha256").update(email).digest("hex")}.json`;
+  const id = createHash("sha256").update(email).digest("hex");
+  const pathname = `waitlist/${id}.json`;
+  const key = randomBytes(18).toString("base64url");
   const record = {
     email,
     page: clean(body.page, 200),
     consent: clean(body.consent, 40),
     createdAt: new Date().toISOString(),
+    answerKeyHash: createHash("sha256").update(key).digest("hex"),
   };
 
   try {
@@ -64,7 +69,7 @@ export async function POST(request) {
       allowOverwrite: false,
       contentType: "application/json",
     });
-    return reply({ ok: true, status: "added" });
+    return reply({ ok: true, status: "added", id, key });
   } catch (err) {
     // A duplicate signup can win the race between head() and put(); that is still a success.
     if (await exists(pathname).catch(() => false)) return reply({ ok: true, status: "already" });
