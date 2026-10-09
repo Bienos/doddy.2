@@ -62,6 +62,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
 | 038 | Doddy speaks with the ElevenLabs Voice Library voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` for both languages (added to My Voices and set on the dev agent 2026-10-08, version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`); no per-language voice override | Applied (owner instruction) — Polish pronunciation to be judged on device; library licence terms to be checked before release |
 | 039 | Before `save_memory` runs, the agent says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (prompt + tool description, agent version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`, 2026-10-09) instead of "I'm saving this for you" | Applied (owner approved) — not yet heard on a device |
+| 045 | Recall mismatch seen in the device log (English question, Polish note; code saved as number words): the agent now searches with key words in **both** Polish and English, numbers as digits, retries once, and saves numbers/codes/dates as digits (tool descriptions + prompt, agent version `agtvrsn_2701m4f1e2krfnysbc5w01agz5d2`, 2026-10-09). The app's lexical search is unchanged | Applied — to be exercised on a device |
 
 ## V2 decisions (shortcut and guided Back Tap setup, 2026-10-09)
 
