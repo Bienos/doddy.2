@@ -24,8 +24,23 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 ## Verified
 Linux: core package 30 tests pass (incl. tool parsing and replies), guard passes (and fails on audio code outside `Features/Voice`), all Swift files syntax-parse, XcodeGen resolves the project with the ElevenLabs package.
 
-## Not verified (needs the Mac and a real iPhone)
-App compile with the SDK; microphone prompt; a real conversation in English and Polish; that client tool calls arrive (the agent's `client_events` list does not name `client_tool_call`; SDK and docs suggest they are always sent); the save confirmation round-trip within the 90 s tool timeout; ending on background. How the chosen voice sounds through the agent in Polish (it is an English voice; if Polish needs its own, add a voice override to the Polish language preset). Note: ElevenLabs rejects an agent voice that is not in the account's My Voices (`voice_not_found`), so a Voice Library voice must be added there first.
+**iPhone, 2026-10-09, owner's first real conversation** (owner report + the ElevenLabs conversation log, read through the connector):
+- Conversation `conv_3501m4ezj8s4e4tbaqpt3xkqfj80`, source `swift_sdk 3.3.1`, agent version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z` (voice Josh), 79 s, 18 messages, ended by the client closing cleanly (`Client disconnected: 1000`). So the app compiles with the SDK, gets the microphone, connects and holds a conversation.
+- Started in English, switched to Polish through the built-in language-detection tool, Polish replies were spoken with the Josh voice.
+- **Client tool calls reach the phone.** `save_memory` was called with "Moje urodziny są jutro."; the phone answered `saved: "Moje urodziny są jutro." (saved 2026-10-09T02:05:06+02:00)` 5.7 s later, i.e. after the on-screen Save tap and well inside the 90 s tool timeout, and the agent then confirmed the save. This closes the `client_tool_call` question above.
+- Per turn: LLM first token ≈ 0.8–1.0 s, first audio after the user stops speaking ≈ 1.3–2.2 s, TTS first byte ≈ 0.1 s.
+- Cost of this conversation: 274 credits ≈ $0.05 (239 voice + 35 LLM credits), i.e. about $0.04 per minute all-in on the Creator tier.
+
+## Not verified yet
+- `search_memories` has never been called (0 executions in the tool log): recall by voice is untested.
+- Interruption while Doddy speaks, ending when the app goes to the background, and the microphone-denied path (owner to run; the first conversation did end cleanly from the client side).
+- The Mac build/test output (`scripts/ci.sh`) is not yet recorded in the repo.
+- Note: ElevenLabs rejects an agent voice that is not in the account's My Voices (`voice_not_found`), so a Voice Library voice must be added there first (observed 2026-10-08).
+
+## Observations from the first conversation (decisions, not bugs)
+- **Pre-tool speech.** Before the Save card appeared, Doddy said "Zapisuję to dla ciebie" (I am saving this for you). It is not a completion claim, but it reads oddly if the user taps Don't save. Option: fix the phrase for `save_memory` to something like "Potwierdź na ekranie, jeśli mam to zapisać" / "Confirm on screen if I should save this".
+- **Retention.** Audio and transcript, including the user's first name, are kept on ElevenLabs indefinitely (`retention_days: -1`, `record_voice: true`). The retention decision in the list below is still open.
+- **Relative dates.** The saved note says "tomorrow"; the app stores the capture time, so it stays interpretable, but recall does not resolve dates.
 
 ## Before anyone else uses it
 1. Turn on agent authentication and add a small token server (`conversationToken` path in the SDK).
