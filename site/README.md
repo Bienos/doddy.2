@@ -18,30 +18,28 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 | Colours | `tokens.css` holds the app's light values only (the site is light-only by owner request, including on dark-mode devices). It is generated from `Packages/DoddyCore/Sources/DoddyDesignTokens/CandidateTokens.swift`. Run `python3 -I tools/gen_site_tokens.py` after changing app tokens; `--check` fails if the site is out of date. |
 | Character | `assets/poses/` are copies of the light poses in `design/interface-v1.2/assets/`. |
 | Copy | Headings and disclosures reuse the app's words (`HomeView`, `VoiceView`, `SettingsView`, `RecallCopy.noMatch`). |
-| Waitlist | Sign-ups go to the Google Sheet **Doddy waitlist** (tab "Signups": time, email, page, consent version) through the Apps Script in `tools/waitlist/Code.gs`. `WAITLIST_URL` in `main.js` holds the script's web app URL; empty means the form says the waitlist isn't open and sends nothing. See "Turn on the waitlist" below. |
+| Waitlist | The form posts to `api/waitlist.js` on the same site, which stores each signup as one private JSON file in the Vercel Blob store **doddy-waitlist** (region fra1, private access; the site gets `BLOB_READ_WRITE_TOKEN` automatically). Stored: email, page, consent version, time. Download everything as an Excel-ready CSV from `/api/waitlist-export` (password = the `WAITLIST_ADMIN_PASSWORD` environment variable in Vercel, any username). |
 | Open Doddy | `APP_URL` in `main.js` (`doddy://home`); the app handles `doddy://home`, `memories` and `settings`. On non-iPhone devices it explains that Doddy runs on iPhone; on iPhone, if the page is still visible after 1.5 s, it says the app isn't installed. |
 | App Store | Commented-out Smart App Banner in `index.html`; enable when there's an App Store ID. |
 
 ## What's real on the page
 
-- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, join. The example note in the receipt card is labelled as an example.
+- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, Take a shot (basketball game), join. The example note in the receipt card is labelled as an example.
 - **Screens are design previews**, copied from `design/interface-v1.2/previews/` and labelled "Design preview". Replace them with simulator screenshots of the native app (same file names in `assets/screens/`) once someone with Xcode captures them.
 - The voice section has no app screenshot. It shows the app's real status words and its "Save this note?" card as an illustration, labelled as such, and is marked **In testing** because voice hasn't run on a real iPhone.
 - Claims follow the feature table in the prompt: save, search, edit, export and delete are described as working; reminders and other languages sit under "Later, maybe" with no dates.
 
-## Turn on the waitlist
+## Waitlist
 
-1. Open the **Doddy waitlist** sheet in Google Drive → **Extensions → Apps Script**.
-2. Replace the editor's contents with `tools/waitlist/Code.gs` and save.
-3. **Deploy → New deployment → Web app.** Execute as: *Me*. Who has access: *Anyone*. Authorise when asked.
-4. Copy the web app URL (`https://script.google.com/macros/s/…/exec`) into `WAITLIST_URL` in `main.js`.
-
-The script stores only time, email, page and consent version; duplicates return "already on the list"; a hidden honeypot field drops most bots; cells are forced to plain text so nobody can inject formulas. Tested against a fake sheet (`Code.gs` logic) and a mocked endpoint (form messages); not yet run inside Google.
+- **Storage:** private Vercel Blob store `doddy-waitlist` (Frankfurt). One file per email, named by a SHA-256 hash of the email, so the same address is stored once and emails never appear in file names or logs.
+- **Checks in `api/waitlist.js`:** same-site origin only, 2 KB body limit, email format and length, honeypot field, leading formula characters stripped.
+- **Download:** open `/api/waitlist-export` in a browser, enter any username and the `WAITLIST_ADMIN_PASSWORD`; you get `doddy-waitlist-YYYY-MM-DD.csv` (UTF-8 with BOM, opens in Excel). Change the password in Vercel → Project → Settings → Environment Variables, then redeploy.
+- **Not built:** rate limiting beyond Vercel's defaults, deletion requests (delete the blob in Vercel → Storage), double opt-in emails.
 
 ## Needs the owner
 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
-2. **Waitlist:** deploy the script (below) and add a contact address people can use to ask for deletion; the form promises deletion on request.
+2. **Waitlist:** add a contact address people can use to ask for deletion; the form promises deletion on request.
 3. **Domain, contact address and privacy policy.** Hosted on Vercel (project `doddy`, team bienos) at https://doddy-eight.vercel.app, deployed from this branch to production. The Vercel project's production branch is the repo default (`claude/loving-dirac-uuxoux`), so pushes here create previews; redeploy production after changes, or point the production branch at this one in Vercel settings. No custom domain, contact address or privacy policy yet.
 4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them.
 5. **Brand approval:** colours, character drawings and wordmark are candidates (`docs/design/CANONICAL_DESIGN_DIRECTION.md`), not an approved brand.
@@ -51,7 +49,8 @@ The script stores only time, email, page and consent version; duplicates return 
 - 1440, 390 and 320 px widths, with the OS in light and in dark mode (the page stays light): no horizontal scroll, no console errors. Screenshots in `VISUAL_REVIEW/landing/`.
 - Under the production CSP from `vercel.json`: scripts, fonts and poses load, no violations.
 - Dark OS setting and an explicit `data-theme="dark"` both still render the light page and light poses.
-- Waitlist against a mocked Apps Script endpoint: added, already on the list, invalid email, server busy; body is text/plain JSON with email, page, consent version and the empty honeypot.
-- `tools/waitlist/Code.gs` against a fake sheet: validation, dedupe, honeypot, formula stripping, malformed JSON.
+- Waitlist form against a mocked `/api/waitlist`: added, already on the list, invalid email, server busy; body is JSON with email, page, consent version and the empty honeypot.
+- `api/waitlist.js` and `api/waitlist-export.js` against an in-memory Blob stand-in: added, already, invalid, formula email, honeypot, bad JSON, oversized body, foreign origin, hashed file names; export locked without/with wrong password, CSV with BOM, quoting and formula neutralising.
+- "Take a shot" (`court.js`): auto shots and a dragged slingshot throw at 1440 and 390 px; "Shoot for me" lands about 60% of the time.
 
-Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom), VoiceOver, Lighthouse, and the Apps Script running inside Google.
+Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom, touch throwing), VoiceOver, Lighthouse.

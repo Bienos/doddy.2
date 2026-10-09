@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js')</script>
   <script src="main.js" defer></script>
+  <script src="court.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -36,6 +37,7 @@
         <ul class="nav-links">
           <li><a href="#how">How it works</a></li>
           <li><a href="#meet">Meet Doddy</a></li>
+          <li><a href="#play">Take a shot</a></li>
           <li><a href="#privacy">Privacy</a></li>
         </ul>
       </nav>
@@ -230,11 +232,8 @@
         </div>
         <ul class="sketches">
           <li class="sketch">
-            <button class="shot" type="button" aria-label="Doddy takes a shot">
-              <picture><img src="assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
-            </button>
+            <picture><img src="assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
             <p>Always has a side quest going.</p>
-            <span class="hint">Tap for a shot</span>
           </li>
           <li class="sketch">
             <picture><img src="assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
@@ -249,6 +248,23 @@
             <p>Jokes about the queue, never about you.</p>
           </li>
         </ul>
+      </div>
+    </section>
+
+    <!-- Take a shot: a small game with Doddy's basketball. -->
+    <section class="court" id="play" aria-labelledby="play-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="play-title" class="display-m">Take a shot</h2>
+          <p>Doddy never quite puts the ball down. Press anywhere on the court, pull back and let go to throw. Or let Doddy try.</p>
+        </div>
+        <div class="court-panel">
+          <canvas id="court" width="800" height="520" role="img" aria-label="Basketball game: Doddy throws the ball at a hoop. Use the Shoot for me button to throw."></canvas>
+          <div class="court-bar">
+            <p class="court-score" aria-live="polite">Baskets <strong id="made">0</strong> from <strong id="shots">0</strong> shots</p>
+            <button class="button small" id="auto-shot" type="button">Shoot for me</button>
+          </div>
+        </div>
       </div>
     </section>
 

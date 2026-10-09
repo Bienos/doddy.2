@@ -1,19 +1,14 @@
 // Doddy landing page. No trackers, no cookies, no storage.
 
-// The waitlist receiver's web app URL (tools/waitlist/Code.gs, writes to the "Doddy waitlist" sheet).
+// The site's own waitlist endpoint (api/waitlist.js): stores each email privately in Vercel Blob.
 // Empty = waitlist not open: the form says so and sends nothing.
-const WAITLIST_URL = "";
+const WAITLIST_URL = "/api/waitlist";
 // Saved with each signup, so you know which wording of the form note someone agreed to.
 const CONSENT_VERSION = "waitlist-note-v1";
 // Deep link into the app. The app must register this URL scheme first (see site/README.md).
 const APP_URL = "doddy://home";
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-const poseSrc = (name, scheme) => `assets/poses/doddy-pose-${name}-${scheme}-v1.3-r1.svg`;
-
-function setPose(picture, name) {
-  picture.querySelector("img").src = poseSrc(name, "light");
-}
 
 // ---------- Hero: one arrival moment. Doddy settles, then the greeting underlines itself. ----------
 const hero = document.querySelector(".hero");
@@ -36,19 +31,6 @@ if (reduceMotion.matches) {
     voiceTimer = setInterval(() => { i = (i + 1) % voiceStates.length; showVoiceState(i); }, 1400);
   }, { threshold: 0.4 }).observe(document.querySelector(".voice"));
 }
-
-// ---------- Sketchbook: Doddy takes a shot ----------
-const shot = document.querySelector(".shot");
-const shotPicture = shot.querySelector("picture");
-let shooting = false;
-shot.addEventListener("click", () => {
-  if (shooting) return;
-  shooting = true;
-  const frames = [["basketball-gather", 0], ["basketball-shot", 260], ["basketball-follow-through", 620], ["basketball-dribble", 1700]];
-  for (const [name, at] of frames) setTimeout(() => setPose(shotPicture, name), reduceMotion.matches ? 0 : at);
-  setTimeout(() => { shooting = false; }, reduceMotion.matches ? 0 : 1700);
-  if (reduceMotion.matches) setPose(shotPicture, "basketball-shot");
-});
 
 // ---------- Waitlist ----------
 const form = document.querySelector(".waitlist");
@@ -77,10 +59,9 @@ form.addEventListener("submit", async (event) => {
   submit.disabled = true;
   say(status, "Sending…");
   try {
-    // text/plain (no Content-Type header) keeps this a simple request, which the Apps Script
-    // receiver (tools/waitlist/Code.gs) accepts without a CORS preflight.
     const res = await fetch(WAITLIST_URL, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         email: email.value.trim(),
         page: location.origin + location.pathname,
