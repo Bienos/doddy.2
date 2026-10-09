@@ -19,7 +19,10 @@ One map of every brand/design source in this repo. **Status: reference only.** N
 
 The extracts under `reference/brand_v1.3_unpacked/` are copies from the zips; if they ever differ, the zips win.
 
-## 2. Decision: brand master = `v1.3_COMPLETE` (owner, 2026-10-08, in chat)
+## 2. Decision: brand master = `v1.3_COMPLETE` (owner, 2026-10-08, in chat) — **superseded**
+
+> **Superseded on 2026-10-09 by DECISIONS.md ADR-056:** the owner compared A (v1.3_COMPLETE), B (v1.3) and C (the v1.3-r1 redraw in `design/interface-v1.2/assets`, `#F58A24` on warm paper) and chose **C**. Both v1.3 packs are history only, so the app keeps the Pocket Notebook colour tokens (`#F58A24`, accent text `#A64B00`) and the `#FF7A00` token switch described below was not kept when the branches were merged. The readable extracts stay for reference.
+
 
 The owner chose `DODDY_BRAND_SYSTEM_v1.3_COMPLETE.zip` and asked for the app tokens to follow it. Applied in `CandidateTokens.swift`; see `DECISIONS.md` ADR-010 and ADR-018. **Still open:** approval of the final character art, logo and app icon.
 

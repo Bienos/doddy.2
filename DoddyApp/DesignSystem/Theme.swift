@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import DoddyDesignTokens
 
-/// CANDIDATE semantic colours: Pocket Notebook layout, brand v1.3_COMPLETE palette (docs/design/CANONICAL_DESIGN_DIRECTION.md).
+/// CANDIDATE semantic colours (Pocket Notebook, docs/design/CANONICAL_DESIGN_DIRECTION.md).
 /// Values live in `DoddyDesignTokens` so contrast is unit-tested; this file only adapts them.
 enum Theme {
     static var ink: Color { .candidate(.readingInk) }
