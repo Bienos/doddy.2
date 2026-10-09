@@ -29,15 +29,17 @@ everything under "Not verified" needs the Mac and a real iPhone.
 | Imported pack integrity | PASS (259 files match the manifest, no font binaries) |
 | Forbidden-capability guard | PASS (no networking of our own, audio only in `Features/Voice`, microphone the only permission; App Intents adds none) |
 | Swift package tests | PASS: 42 tests, 0 failures (DoddyCoreTests 33 incl. the 12 new `BackTapSetupTests`; DoddyDesignTokens 7; DoddyPersistence 2) |
-| iOS app build + tests | NOT RUN (no Xcode here) |
+| iOS app build + tests | NOT RUN here (no Xcode) |
+
+**iPhone, 2026-10-09, owner report (not a recorded log):** the branch built in Xcode and ran on the owner's iPhone; the Home card and the guide showed; the tap test reached "That worked". Under Settings → Accessibility → Touch → Back Tap → Double Tap, the Shortcuts section listed **"Talk to Doddy" directly**, so no personal shortcut had to be created. iOS version, the two refusal paths (shortcut run another way; expired test), the relaunch-during-test case and the UI smoke tests were not reported. After this report the guide's "create a shortcut" screen was shortened to "Nothing to create first" with the personal-shortcut instructions kept as a fallback for iOS versions that do not list the App Shortcut (core tests re-run: 33 DoddyCore tests pass).
 
 `BackTapSetupTests` cover: six non-empty unique steps and the manual path; happy path to `userReportedTested`; confirm without a receipt refused; receipt outside a test, before its start, after expiry and duplicate receipts refused; "I ran it another way" returns to the shortcut step without completion; reported pages jump to their step and unknown pages change nothing; next/previous bounds; defer and revisit; summary JSON round-trip that resumes an unexpired test window after a relaunch and drops an expired one; in-progress phases persist as not started.
 
 ## Not verified (needs the Mac and a real iPhone)
-1. App compile with App Intents on the current SDK. `openAppWhenRun` may warn as deprecated on iOS 18+ SDKs (`supportedModes` is the replacement, iOS 18 only; the deployment target is iOS 17).
-2. That "Talk to Doddy" appears in the Shortcuts app, Siri and the Action Button picker after one launch.
-3. Whether Back Tap's Shortcuts list offers the App Shortcut directly or only a personal shortcut created in the Shortcuts app (the guide covers both; the copy says "if Back Tap already lists Talk to Doddy, choose it there").
-4. The tap test on a real iPhone: start the test, go Home, double-tap → Doddy opens → "That worked" → confirm → Settings shows "Tested by you · date". Also the two refusals: run the shortcut from the Shortcuts app instead (→ "I ran it another way" path) and let the 120 s window expire (→ "Start the test again").
+1. Compiler warnings, if any, on the Mac (`openAppWhenRun` may warn as deprecated on iOS 18+ SDKs; `supportedModes` is the iOS 18-only replacement, the deployment target is iOS 17). The build itself succeeded per the owner.
+2. That "Talk to Doddy" appears in Siri and the Action Button picker (the Back Tap list is confirmed; the other two were not reported).
+3. The personal-shortcut fallback on an iOS version that does not list the App Shortcut under Back Tap (none seen yet).
+4. The two tap-test refusals: run the shortcut from the Shortcuts app instead (→ "I ran it another way" path) and let the 120 s window expire (→ "Start the test again").
 5. Relaunch during a test: force-quit Doddy mid-test, double-tap → the receipt must still be accepted (persisted window).
 6. UI smoke tests (`LaunchSmokeTests`), including the corrected microphone row assertion ("Only while talking") and the new Back Tap card test.
 7. VoiceOver order on the step cards and chip selection announcement; Dynamic Type at accessibility sizes.
@@ -46,3 +48,4 @@ everything under "Not verified" needs the Mac and a real iPhone.
 - Keep the setup optional from Home/Settings (current) or move it before First Hello as the design proposes.
 - Siri phrases: "Talk to Doddy", "Hey Doddy", "Open Doddy" are placeholders; English only for now.
 - Whether the Home card should reappear after "Later" (currently it does not; Settings keeps the entry).
+- Whether to drop the personal-shortcut fallback screen entirely once more iOS versions are seen to list the App Shortcut under Back Tap.

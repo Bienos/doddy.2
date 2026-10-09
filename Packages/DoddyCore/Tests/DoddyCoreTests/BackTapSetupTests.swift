@@ -18,7 +18,9 @@ final class BackTapSetupTests: XCTestCase {
             XCTAssertFalse(step.title.isEmpty); XCTAssertFalse(step.instruction.isEmpty); XCTAssertFalse(step.reportLabel.isEmpty)
         }
         XCTAssertEqual(Set(BackTapGuide.steps.map(\.id)).count, 6, "step ids are unique")
-        XCTAssertEqual(BackTapGuide.settingsPath, ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", "Open Doddy"])
+        XCTAssertEqual(BackTapGuide.settingsPath, ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", "Talk to Doddy"])
+        XCTAssertEqual(BackTapGuide.appShortcutTitle, "Talk to Doddy")
+        XCTAssertEqual(BackTapGuide.fallbackShortcutName, "Open Doddy")
         XCTAssertEqual(BackTapGuide.reportableSteps.count, 5)
         XCTAssertEqual(BackTapGuide.steps[BackTapGuide.chooseShortcutStepIndex].id, "double-tap")
     }

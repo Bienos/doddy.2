@@ -77,21 +77,24 @@ struct BackTapSetupView: View {
 
     private var shortcutPreparation: some View {
         Group {
-            miniLabel("First, the shortcut")
-            Text("Give those taps a destination.")
+            miniLabel("Nothing to create first")
+            Text("Those taps already have a destination.")
                 .font(.largeTitle.bold())
                 .accessibilityAddTraits(.isHeader)
-            Text("Back Tap runs a shortcut from the Shortcuts app, so create a personal one named \(BackTapGuide.shortcutName).")
-            VStack(alignment: .leading, spacing: 12) {
-                numbered(1, "Open the Shortcuts app and tap the plus button.")
-                numbered(2, "Search for Doddy and add \"Talk to Doddy\". If it isn't offered, add \"Open App\" and choose Doddy.")
-                numbered(3, "Name the shortcut \(BackTapGuide.shortcutName), tap Done, then run it once.")
+            Text("Doddy comes with a built-in \"\(BackTapGuide.appShortcutTitle)\" shortcut, and Back Tap can use it directly. Five steps in Settings and you're done.")
+            VStack(alignment: .leading, spacing: 8) {
+                Text("If your iPhone doesn't list it under Back Tap")
+                    .font(.subheadline.weight(.semibold))
+                numbered(1, "Open the Shortcuts app, tap the plus button, search for Doddy and add \"\(BackTapGuide.appShortcutTitle)\". If it isn't offered, add \"Open App\" and choose Doddy.")
+                numbered(2, "Name the shortcut \(BackTapGuide.fallbackShortcutName), tap Done, then run it once. Then choose it under Back Tap instead.")
             }
-            callout("If Back Tap already lists \"Talk to Doddy\" on your iPhone, you can choose that there instead of creating one.")
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
             Button {
                 model.send(.shortcutReady)
             } label: {
-                HStack { Text("I created the shortcut"); Spacer(); Image(systemName: "arrow.right") }
+                HStack { Text("Show me the steps"); Spacer(); Image(systemName: "arrow.right") }
             }
             .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier("setup.shortcutReady")
@@ -100,7 +103,7 @@ struct BackTapSetupView: View {
                 dismiss()
             }
             .buttonStyle(SecondaryButtonStyle())
-            hint("Doddy can't check whether the shortcut exists. This button is your report.")
+            hint("Doddy can't check what Back Tap lists on your iPhone or whether a shortcut exists.")
         }
     }
 

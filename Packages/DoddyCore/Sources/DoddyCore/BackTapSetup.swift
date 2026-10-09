@@ -28,10 +28,14 @@ public struct BackTapGuideStep: Equatable, Sendable, Identifiable {
 public enum BackTapGuide {
     /// Bump when the step text or order changes. Stored next to the user's completion marker.
     public static let version = 1
-    /// The personal shortcut the user creates in the Shortcuts app.
-    public static let shortcutName = "Open Doddy"
+    /// The built-in App Shortcut. Observed 2026-10-09 on the owner's iPhone: Back Tap's Shortcuts
+    /// section lists it directly, so nothing has to be created first.
+    public static let appShortcutTitle = "Talk to Doddy"
+    /// Fallback: the personal shortcut the user creates in the Shortcuts app if their iOS version
+    /// does not list the App Shortcut under Back Tap.
+    public static let fallbackShortcutName = "Open Doddy"
     /// The manual path. There is no public API to assign Back Tap or to read its assignment.
-    public static let settingsPath = ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", shortcutName]
+    public static let settingsPath = ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", appShortcutTitle]
 
     public static let steps: [BackTapGuideStep] = [
         BackTapGuideStep(
@@ -52,12 +56,12 @@ public enum BackTapGuide {
             reportLabel: "I'm in Back Tap"),
         BackTapGuideStep(
             id: "double-tap", title: "Choose your shortcut", route: "Back Tap → Double Tap",
-            instruction: "Scroll to the Shortcuts section and choose Open Doddy. Then go back.",
+            instruction: "Scroll to the Shortcuts section and choose Talk to Doddy. Then go back.",
             reportLabel: "I'm in Double Tap"),
         BackTapGuideStep(
-            id: "assigned", title: "Let's try it", route: "Double Tap → Open Doddy",
+            id: "assigned", title: "Let's try it", route: "Double Tap → Talk to Doddy",
             instruction: "With the shortcut chosen, come back to Doddy and start the test. Then double-tap the back of your iPhone.",
-            reportLabel: "I chose Open Doddy"),
+            reportLabel: "I chose Talk to Doddy"),
     ]
 
     /// Index of the step the user can be sent back to when the shortcut arrived some other way.
@@ -122,7 +126,7 @@ public struct ShortcutReceipt: Equatable, Sendable {
 
 public enum BackTapSetupPhase: Equatable, Sendable {
     case notStarted
-    /// "First, the shortcut": create and run the personal Open Doddy shortcut.
+    /// "Nothing to create first": the built-in shortcut, plus the personal-shortcut fallback.
     case shortcutPreparation
     /// Settings walkthrough, by step index into `BackTapGuide.steps`.
     case guiding(step: Int)
