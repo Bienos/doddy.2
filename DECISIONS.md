@@ -121,6 +121,16 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 064 | Weather and Wikipedia are ElevenLabs webhook tools: ElevenLabs makes those requests, so they cannot be switched off from the phone. Alarms (AlarmKit, iOS 26+ and a new permission) are not added. | Applied |
 | 065 | Owner choice 2026-10-09: timers (local notification, notification permission), maps (opens Apple Maps after a tap), Shortcuts (asks to run a named shortcut after a tap) and messages and email (drafts a text or email, opened in Messages or Mail for the user to send; needs Contacts). Contact card gains Call, Text and Email buttons, each a tap. Doddy never sends a message or places a call. No new Info.plist usage strings. Live agent gained four client tools and a prompt update. | Applied — verify on Mac |
 
+## Voice token server decisions (2026-10-09, renumbered from 044–048 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 066 | `server/voice-token`: one stateless endpoint that swaps a tester access code for an ElevenLabs conversation token. Plain JS, web-standard handler, no dependencies; Vercel entry included | Applied (code); **not deployed** |
+| 067 | Testers authenticate with per-person access codes (`label:code`, ≥16 chars, revocable by removing the entry), not accounts. Codes kept in the iOS Keychain, this device only | Applied: owner may later want App Attest or accounts |
+| 068 | Spending cap = the ElevenLabs agent's own concurrency/daily call limits; the server keeps no counters | Open: **owner sets the limits** |
+| 069 | App: a token server address switches voice to private mode; an invalid address or missing code never falls back to the public agent. Public agent stays as the dev default until the owner enables agent authentication | Applied |
+| 070 | The app's only networking of its own is `VoiceTokenClient` (guard-enforced); it sends the access code, nothing about the user | Applied |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.

@@ -39,6 +39,12 @@ else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
 
+if command -v node >/dev/null 2>&1; then
+  run_step "Voice token server tests" node --test server/voice-token/test/handler.test.js
+else
+  not_run "Voice token server tests" "node not found on PATH"
+fi
+
 if [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
 elif ! command -v xcodebuild >/dev/null 2>&1; then

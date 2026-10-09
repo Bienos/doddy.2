@@ -9,21 +9,21 @@ struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
+    @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
     @State private var controller: VoiceSessionController?
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
 
-    private var trimmedAgentID: String { agentID.trimmingCharacters(in: .whitespacesAndNewlines) }
+    /// Read when a conversation starts, so a changed setting or access code applies next time.
+    private var mode: VoiceConnectionMode {
+        VoiceConnectionMode.resolve(
+            serverAddress: tokenServer, accessCode: VoiceAccessCodeStore.read(), publicAgentID: agentID)
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if trimmedAgentID.isEmpty {
-                    ScrollView {
-                        ProblemView(message: "Voice isn't set up. Add an ElevenLabs agent ID in Settings → Voice.")
-                            .padding(24)
-                    }
-                } else if let controller {
+                if let controller {
                     session(controller)
                 } else {
                     ProgressView()
@@ -46,10 +46,9 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
-            guard !trimmedAgentID.isEmpty else { return }
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
-            await controller.start(agentID: trimmedAgentID)
+            await controller.start(mode)
         }
         .onDisappear {
             Task { await controller?.stop() }
@@ -351,7 +350,7 @@ struct VoiceView: View {
                 .accessibilityIdentifier("voice.end")
             } else {
                 Button {
-                    Task { await controller.start(agentID: trimmedAgentID) }
+                    Task { await controller.start(mode) }
                 } label: {
                     Label("Talk again", systemImage: "waveform")
                 }

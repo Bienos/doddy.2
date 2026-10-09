@@ -114,7 +114,7 @@ Not verified: app compile; that the dynamic variables arrive (the prompt renders
 4. **Leaving the app:** with V3's background audio the conversation should keep running while Maps, Shortcuts, Messages or Mail is open. Not yet checked on a device.
 
 ## Before anyone else uses it
-1. Turn on agent authentication and add a small token server (`conversationToken` path in the SDK; a token server exists in `server/voice-token/`, see `VOICE_TOKEN_SERVER_STATUS.md`).
+1. Turn on agent authentication and add a small token server (`conversationToken` path in the SDK; **code done 2026-10-09** in `server/voice-token/`, see `VOICE_TOKEN_SERVER_STATUS.md`; deploy + enable auth pending).
 2. Lower concurrency and daily limits, and turn on the prompt-injection guardrail. (The owner decided not to do this for the dev agent on 2026-10-09; this is still a requirement before any other user.)
 3. Voice picked by the owner (`oDULUm0GMltHA6mVZkWh`, ADR-051). Judge Polish pronunciation on a device and check the voice's licence terms before release.
 4. Decide on data handling with ElevenLabs (zero retention and EU residency are Enterprise-only).

@@ -18,6 +18,8 @@ enum PreferenceKey {
     static let personalityLength = "personality.length"
     static let personalityFormality = "personality.formality"
     static let personalityMood = "personality.mood"
+    /// HTTPS address of `server/voice-token`. Empty = development public agent.
+    static let voiceTokenServer = "voiceTokenServer"
 }
 
 enum AppTab: Hashable {
