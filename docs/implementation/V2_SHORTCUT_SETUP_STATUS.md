@@ -1,8 +1,8 @@
 # V2 status — "Talk to Doddy" shortcut and guided Back Tap setup
 Date: 2026-10-09. Owner instruction: build the App Shortcut plus the guided Back Tap setup (research doc
 `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` §1 and §5, design `design/interface-v1.2/docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md`).
-**Status: written on Linux, never compiled for iOS.** The core state machine is unit-tested where a Swift toolchain
-was available (see "Verified"); everything under "Not verified" needs the Mac and a real iPhone.
+**Status: written on Linux, never compiled for iOS.** The core state machine is unit-tested on Linux (see "Verified");
+everything under "Not verified" needs the Mac and a real iPhone.
 
 ## What was built
 | Piece | Where | What it does |
@@ -23,9 +23,15 @@ was available (see "Verified"); everything under "Not verified" needs the Mac an
 - A duplicate invocation while the conversation is open focuses it; no second microphone session.
 - Unknown page reports change nothing; the app asks which page the user is on rather than guessing.
 
-## Verified
-- `scripts/check_forbidden_capabilities.sh`: PASS after the change (no networking of our own, audio only in `Features/Voice`, microphone still the only permission; App Intents adds none).
-- Core package tests (`BackTapSetupTests`, 12 cases): see the test log recorded in the commit message / CI output. If no toolchain was available when this file was written, the section below says so.
+## Verified (Linux, 2026-10-09, Swift 6.4 x86_64, `scripts/ci.sh --core-only`, exit 0)
+| Step | Result |
+|---|---|
+| Imported pack integrity | PASS (259 files match the manifest, no font binaries) |
+| Forbidden-capability guard | PASS (no networking of our own, audio only in `Features/Voice`, microphone the only permission; App Intents adds none) |
+| Swift package tests | PASS: 42 tests, 0 failures (DoddyCoreTests 33 incl. the 12 new `BackTapSetupTests`; DoddyDesignTokens 7; DoddyPersistence 2) |
+| iOS app build + tests | NOT RUN (no Xcode here) |
+
+`BackTapSetupTests` cover: six non-empty unique steps and the manual path; happy path to `userReportedTested`; confirm without a receipt refused; receipt outside a test, before its start, after expiry and duplicate receipts refused; "I ran it another way" returns to the shortcut step without completion; reported pages jump to their step and unknown pages change nothing; next/previous bounds; defer and revisit; summary JSON round-trip that resumes an unexpired test window after a relaunch and drops an expired one; in-progress phases persist as not started.
 
 ## Not verified (needs the Mac and a real iPhone)
 1. App compile with App Intents on the current SDK. `openAppWhenRun` may warn as deprecated on iOS 18+ SDKs (`supportedModes` is the replacement, iOS 18 only; the deployment target is iOS 17).
