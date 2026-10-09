@@ -52,11 +52,13 @@ public struct CapabilityCatalog: Sendable {
         .memoryRecall: .available,
     ]) { _, new in new })
 
-    /// V1: local memory plus voice conversation (ElevenLabs agent, foreground only).
+    /// V1: local memory plus voice conversation (ElevenLabs agent, foreground only), with
+    /// reminders added through the voice tools after the user taps Add (off until Settings turns them on).
     public static let v1Voice = CapabilityCatalog(statuses: m1.statuses.merging([
         .cloudAssistant: .available,
         .voiceInput: .available,
         .voiceOutput: .available,
+        .reminders: .available,
     ]) { _, new in new })
 
     /// V2: V1 plus the Talk to Doddy App Shortcut and the guided (user-reported) Back Tap setup.

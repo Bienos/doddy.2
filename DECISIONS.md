@@ -59,7 +59,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Applied for dev — **must change before TestFlight** |
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Superseded by ADR-053 (V3) |
-| 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+| 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied; the permission rule is superseded by 063 |
 | 038 | Doddy speaks with the ElevenLabs Voice Library voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` for both languages (added to My Voices and set on the dev agent 2026-10-08, version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`); no per-language voice override | Applied (owner instruction) — Polish pronunciation to be judged on device; library licence terms to be checked before release |
 | 039 | Before `save_memory` runs, the agent says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (prompt + tool description, agent version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`, 2026-10-09) instead of "I'm saving this for you" | Applied (owner approved) — not yet heard on a device |
 | 045 | Recall mismatch seen in the device log (English question, Polish note; code saved as number words): the agent now searches with key words in **both** Polish and English, numbers as digits, retries once, and saves numbers/codes/dates as digits (tool descriptions + prompt, agent version `agtvrsn_2701m4f1e2krfnysbc5w01agz5d2`, 2026-10-09). The app's lexical search is unchanged | Applied — to be exercised on a device |
@@ -112,6 +112,14 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | ADR | Decision | Status |
 |---|---|---|
 | 062 | Personality settings (humour, reply length, tone, mood) from the persona draft's fixed options, stored as UI preferences in `UserDefaults`, sent to the agent as the fixed-text dynamic variable `doddy_personality`; safety rules are not adjustable. See `docs/product/PERSONALITY_SETTINGS.md` | App applied; **agent prompt change pending owner approval** |
+
+## Connections decisions (2026-10-09, renumbered from 038–040 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 063 | Owner choice 2026-10-09: calendar (read, add with Add tap), reminders (add with Add tap) and contacts (name lookup, details on screen only) are built behind a Settings → Connections card screen (with in-call "Turn on" prompts), all **off by default**. Turning one on asks iOS for permission (calendar and reminders full access, contacts). Only `Infrastructure/Connections` imports EventKit or Contacts; the guard enforces this and allows only those four permission keys. Not compiled for iOS yet (no Xcode here). | Applied — verify on Mac |
+| 064 | Weather and Wikipedia are ElevenLabs webhook tools: ElevenLabs makes those requests, so they cannot be switched off from the phone. Alarms (AlarmKit, iOS 26+ and a new permission) are not added. | Applied |
+| 065 | Owner choice 2026-10-09: timers (local notification, notification permission), maps (opens Apple Maps after a tap), Shortcuts (asks to run a named shortcut after a tap) and messages and email (drafts a text or email, opened in Messages or Mail for the user to send; needs Contacts). Contact card gains Call, Text and Email buttons, each a tap. Doddy never sends a message or places a call. No new Info.plist usage strings. Live agent gained four client tools and a prompt update. | Applied — verify on Mac |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
+    @State private var connections = ConnectionController()
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -68,7 +69,7 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes and (if switched on) your last few conversations are sent to ElevenLabs, which runs the voice agent. Weather and Wikipedia lookups are made by ElevenLabs\u{2019} servers, not by this app. ElevenLabs keeps a recording and transcript of each conversation. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes and (if switched on) your last few conversations are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -115,6 +116,19 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                Section {
+                    NavigationLink {
+                        ConnectionsView()
+                    } label: {
+                        StatusRow(title: "Calendar, reminders, contacts", value: connectionSummary)
+                    }
+                    .accessibilityIdentifier("settings.connections")
+                } header: {
+                    Text("Connections")
+                } footer: {
+                    Text("Each one starts off. Turning one on asks iPhone for permission first.")
+                }
+
                 Section("Appearance and accessibility") {
                     Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppearancePreference.allCases, id: \.rawValue) { option in
@@ -151,6 +165,11 @@ struct SettingsView: View {
             }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    private var connectionSummary: String {
+        let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
+        return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
     }
 
     private func deleteAll() async {
