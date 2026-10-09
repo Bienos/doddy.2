@@ -6,6 +6,12 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
+    /// Seconds since 1970 when the Open Doddy shortcut last opened the app (0 = never).
+    static let lastOpenedByShortcut = "lastOpenedByShortcut"
+    /// Seconds since 1970 when the tap test started (0 = not running).
+    static let tapTestStartedAt = "tapTestStartedAt"
+    /// Seconds since 1970 when the user said their double tap opened Doddy (0 = not yet).
+    static let backTapConfirmedAt = "backTapConfirmedAt"
 }
 
 enum AppTab: Hashable {

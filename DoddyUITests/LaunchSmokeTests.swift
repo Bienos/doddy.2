@@ -48,4 +48,19 @@ final class LaunchSmokeTests: XCTestCase {
             XCTAssertFalse(app.staticTexts[label].exists, label)
         }
     }
+
+    @MainActor
+    func testBackTapSetupOffersDirectLinksAndATapTest() {
+        let app = launch(seenFirstHello: true)
+        XCTAssertTrue(app.buttons["home.backTap"].waitForExistence(timeout: 5))
+        app.buttons["home.backTap"].tap()
+        XCTAssertTrue(app.buttons["backTap.newShortcut"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["backTap.tryShortcut"].exists)
+        XCTAssertTrue(app.buttons["backTap.openSettings"].exists)
+        // Nothing claims Back Tap works until the user confirms a shortcut open during the test.
+        XCTAssertFalse(app.buttons["backTap.confirm"].exists)
+        app.swipeUp()
+        app.buttons["backTap.startTest"].tap()
+        XCTAssertTrue(app.buttons["Cancel test"].waitForExistence(timeout: 5))
+    }
 }

@@ -7,6 +7,8 @@ struct HomeView: View {
     @Environment(MemoryStore.self) private var store
     @State private var showCapture = false
     @State private var showVoice = false
+    @State private var showBackTapSetup = false
+    @AppStorage(PreferenceKey.backTapConfirmedAt) private var backTapConfirmedAt: Double = 0
 
     var body: some View {
         NavigationStack {
@@ -47,6 +49,14 @@ struct HomeView: View {
                         }
                         .buttonStyle(SecondaryButtonStyle())
                         .accessibilityIdentifier("home.find")
+
+                        if backTapConfirmedAt == 0 {
+                            Button { showBackTapSetup = true } label: {
+                                HStack { Text("Open Doddy with two taps"); Spacer(); Image(systemName: "hand.tap") }
+                            }
+                            .buttonStyle(SecondaryButtonStyle())
+                            .accessibilityIdentifier("home.backTap")
+                        }
                     }
 
                     recent
@@ -65,6 +75,7 @@ struct HomeView: View {
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .sheet(isPresented: $showCapture) { CaptureView() }
             .fullScreenCover(isPresented: $showVoice) { VoiceView() }
+            .sheet(isPresented: $showBackTapSetup) { BackTapSetupView() }
         }
         .foregroundStyle(Theme.ink)
     }

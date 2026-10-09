@@ -60,6 +60,8 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+| 038 | Back Tap setup opens exact screens: documented `shortcuts://` links for the shortcut; the **undocumented** `App-prefs:` Back Tap URL for Settings, with fallbacks and the written path always shown. Kept in one file (guarded); must be re-checked on each iOS release and reviewed before App Store submission (Guideline 2.5.1) | Applied — owner approval pending |
+| 039 | Back Tap status is "Tested by you" only after the Open Doddy intent opened the app during a tap test **and** the user confirmed it was the double tap; never "verified" | Applied |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

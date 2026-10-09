@@ -7,6 +7,8 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
+    @AppStorage(PreferenceKey.backTapConfirmedAt) private var backTapConfirmedAt: Double = 0
+    @State private var showBackTapSetup = false
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -76,6 +78,19 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                Section("Back Tap") {
+                    StatusRow(
+                        title: "Double-tap to open Doddy",
+                        value: backTapConfirmedAt > 0
+                            ? "Tested by you, \(Date(timeIntervalSince1970: backTapConfirmedAt).formatted(date: .abbreviated, time: .omitted))"
+                            : "Not tested")
+                    Button(backTapConfirmedAt > 0 ? "Change or test Back Tap" : "Set up Back Tap") { showBackTapSetup = true }
+                        .accessibilityIdentifier("settings.backTap")
+                    Text("Doddy opens the right screens in Shortcuts and Settings; you make the change. iOS doesn't let apps see what Back Tap is set to.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
                 Section("Appearance and accessibility") {
                     Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppearancePreference.allCases, id: \.rawValue) { option in
@@ -101,6 +116,7 @@ struct SettingsView: View {
             .background(Theme.canvas)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showBackTapSetup) { BackTapSetupView() }
             .confirmationDialog(
                 "Delete all \(store.memories.count) memories?",
                 isPresented: $confirmDeleteAll, titleVisibility: .visible
