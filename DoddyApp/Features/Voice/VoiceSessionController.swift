@@ -29,13 +29,14 @@ final class VoiceSessionController {
         let text: String
     }
 
-    private(set) var phase: Phase = .idle
+    private(set) var phase: Phase = .idle { didSet { syncIsland() } }
     private(set) var lines: [Line] = []
-    private(set) var pendingSave: PendingSave?
-    private(set) var isMuted = false
+    private(set) var pendingSave: PendingSave? { didSet { syncIsland() } }
+    private(set) var isMuted = false { didSet { syncIsland() } }
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
+    private let island = VoiceLiveActivity()
     private var conversation: Conversation?
     private var startedAt: Date?
 
@@ -61,8 +62,13 @@ final class VoiceSessionController {
             phase = .microphoneDenied
             return
         }
-        phase = .connecting
         startedAt = Date()
+        phase = .connecting
+
+        // The Dynamic Island / Lock Screen buttons reach this conversation through these.
+        let actions = VoiceActivityActions.shared
+        actions.endConversation = { [weak self] in await self?.stop() }
+        actions.toggleMute = { [weak self] in await self?.toggleMute() }
 
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
@@ -172,6 +178,29 @@ final class VoiceSessionController {
         guard let pending = pendingSave else { return }
         pendingSave = nil
         await reply(pending.toolCallID, VoiceToolReply.declined)
+    }
+
+    // MARK: Dynamic Island
+
+    /// What the Live Activity shows, or nil when no conversation is running.
+    private var islandState: DoddyVoiceAttributes.ContentState? {
+        let status: DoddyVoiceAttributes.ContentState.Status
+        switch phase {
+        case .connecting: status = .connecting
+        case .listening: status = .listening
+        case .thinking: status = .thinking
+        case .speaking: status = .speaking
+        case .idle, .ended, .microphoneDenied, .failed: return nil
+        }
+        return .init(status: pendingSave == nil ? status : .needsConfirmation, isMuted: isMuted)
+    }
+
+    private func syncIsland() {
+        if let state = islandState {
+            island.show(state, startedAt: startedAt ?? .now)
+        } else {
+            island.end()
+        }
     }
 
     // MARK: Events

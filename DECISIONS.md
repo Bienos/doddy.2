@@ -58,7 +58,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 033 | Voice runs on **ElevenLabs Agents** (owner has Creator plan), behind app-side tool handling; provider bake-off vs OpenAI Realtime still recommended | Applied (owner instruction) |
 | 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Applied for dev — **must change before TestFlight** |
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
-| 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
+| 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Superseded by ADR-053 (V3) |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
 | 038 | Doddy speaks with the ElevenLabs Voice Library voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` for both languages (added to My Voices and set on the dev agent 2026-10-08, version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`); no per-language voice override | Applied (owner instruction) — Polish pronunciation to be judged on device; library licence terms to be checked before release |
 | 039 | Before `save_memory` runs, the agent says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (prompt + tool description, agent version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`, 2026-10-09) instead of "I'm saving this for you" | Applied (owner approved) — not yet heard on a device |
@@ -70,6 +70,13 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 050 | **Candidate app icon** (owner request 2026-10-09): Doddy waving, cropped to head and hand from `design/interface-v1.2/assets/doddy-pose-waving-*-v1.3-r1.svg`; light = ink on orange `#F58A24` (spark recoloured to ink), dark = cream on `#171F29`. 1024 px, no alpha, light + dark appearances; `ASSETCATALOG_COMPILER_APPICON_NAME` back to `AppIcon` | Applied — candidate, not a brand master; tinted variant not made |
 | 051 | Agent voice set to `oDULUm0GMltHA6mVZkWh` (owner instruction 2026-10-09), replacing Josh `ZoiZ8fuDWInAcwPXaVeq` (ADR-038); one voice for EN and PL | Applied — agent version `agtvrsn_2701m4fymws8f6wama5zd3zxn1w5` |
 | 052 | "Not smart" fix (owner report 2026-10-09): LLM `gemini-2.5-flash` → `gemini-3.5-flash`, temperature 0.3 → 0.5; prompt answers general questions from own knowledge, allows up to 6 sentences when asked to explain, natural small talk; weather (`geocode_place`, `get_weather`) and Wikipedia (`wikipedia_search`, `wikipedia_summary`) webhook tools **re-attached** (a parallel calendar edit had replaced the tool list and dropped them, so Doddy told the owner it couldn't do weather). Calendar/reminder/contact tools and strict honesty rules kept; `{{saved_notes}}`/`{{recent_conversations}}` sections kept with their placeholders | Applied — agent version `agtvrsn_0901m4fynwpdfv0agh5qqn1ytyxd`; not yet heard on a device; per-minute LLM cost may rise |
+
+## V3 decisions (Dynamic Island, 2026-10-09)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 053 | Owner request "now live island": a conversation keeps running when the user leaves the app (background audio mode, `Config/Doddy-Info.plist`) and shows a **Live Activity** (new `DoddyWidgets` widget extension): Doddy's head, status mirrored from SDK events (connecting / listening / thinking / speaking / "Confirm in Doddy" while a save waits / muted), elapsed time, **Mute** and **End** buttons (`LiveActivityIntent`s that run in the app). Reverses ADR-036's "ends on background". The activity ends immediately with the conversation and stale ones are cleared at launch. A conversation still has to start in the foreground (iOS rule) | Applied — unbuilt; needs device testing (background audio kill reports on recent iOS, see research §3) |
+| 054 | Live Activities are optional: if the user disables them for Doddy the conversation still runs in the background and iOS shows its own microphone indicator. No push updates, no App Group, no data in the extension beyond the status it is given | Applied |
 
 ## V2 decisions (shortcut and guided Back Tap setup, 2026-10-09)
 

@@ -1,12 +1,12 @@
 import SwiftUI
 import UIKit
 
-/// Foreground voice conversation. It ends when the screen closes or the app goes to the
-/// background (background listening and the Dynamic Island are a later step).
+/// Voice conversation. It starts in the foreground and keeps running if the user leaves the app
+/// (shown in the Dynamic Island / on the Lock Screen with Mute and End); it ends when the user
+/// taps End or Close, from the island, or when the connection drops.
 struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.scenePhase) private var scenePhase
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @State private var controller: VoiceSessionController?
 
@@ -48,11 +48,6 @@ struct VoiceView: View {
             self.controller = controller
             await controller.start(agentID: trimmedAgentID)
         }
-        .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .background {
-                Task { await controller?.stop() }
-            }
-        }
         .onDisappear {
             Task { await controller?.stop() }
         }
@@ -90,7 +85,7 @@ struct VoiceView: View {
                                 .id("pendingSave")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes and your last few conversations are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing becomes a note unless you tap Save.")
+                        Text("While you talk, your voice, this conversation, your saved notes and your last few conversations are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing becomes a note unless you tap Save. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the Doddy app target. Xcode merges it with the keys it generates from
+  the INFOPLIST_KEY_* build settings in project.yml (GENERATE_INFOPLIST_FILE = YES).
+  V3 (DECISIONS.md ADR-053): background audio, so a conversation the user started keeps running
+  after they leave the app, and Live Activities for its Dynamic Island.
+-->
+<plist version="1.0">
+<dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+</dict>
+</plist>

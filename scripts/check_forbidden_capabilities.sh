@@ -8,14 +8,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 anywhere='URLSession|URLRequest|NWConnection|import Network|import Speech|SFSpeech|import EventKit|EKEventStore|import AuthenticationServices|import CloudKit|import FirebaseCore|import Sentry|import Analytics'
 voice_only='import AVFoundation|import AVFAudio|AVAudio|import ElevenLabs'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
 
 status=0
-if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}"; then
+if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
@@ -24,7 +24,7 @@ fi
 if grep -RInE "$secrets" "${dirs[@]}" project.yml scripts --exclude=check_forbidden_capabilities.sh; then
   echo "FAIL: possible secret found." >&2; status=1
 fi
-if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp | grep -v 'NSMicrophoneUsageDescription'; then
+if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -v 'NSMicrophoneUsageDescription'; then
   echo "FAIL: only the microphone permission is allowed." >&2; status=1
 fi
 [ "$status" -eq 0 ] && echo "PASS: no own networking, audio only in Voice, no EventKit/speech/accounts/analytics, no secrets, microphone is the only permission."

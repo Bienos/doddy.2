@@ -13,7 +13,7 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 | Prompt | AI disclosure, short spoken replies, strict memory rules (answer only from tool results, say "couldn't find it", never claim a save without "saved"), no reminders/messages/other apps. Since 2026-10-09 (version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`): before `save_memory` runs, Doddy says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (also in the tool description) |
 
 ## App
-- Home → **Talk to Doddy** opens `VoiceView` (foreground only). It ends when the screen closes or the app goes to the background.
+- Home → **Talk to Doddy** opens `VoiceView`. It ends when the screen closes; since V3 it keeps running in the background with a Dynamic Island (`V3_ISLAND_STATUS.md`).
 - `VoiceSessionController` uses the ElevenLabs Swift SDK 3.3.1 (`ElevenLabs.startConversation(agentId:…)`). Status (connecting, listening, thinking, speaking, ended) comes from real SDK events.
 - `search_memories` runs the local SQLite recall and returns only stored text (`VoiceToolReply.search`).
 - `save_memory` shows a **Save this note?** card; nothing is stored until the user taps Save. The agent is told saved, declined or failed.
