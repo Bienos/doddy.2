@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(ProfileStore.self) private var profiles
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
@@ -19,6 +20,9 @@ struct SettingsView: View {
     @State private var tokenMessage: String?
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
+    @State private var editingProfile = false
+    @State private var confirmForget = false
+    @State private var forgetError: String?
 
     private var environment: AppEnvironment { store.environment }
     private var privacy: PrivacyDefaults { environment.privacy }
@@ -40,6 +44,34 @@ struct SettingsView: View {
                 Section("About this build") {
                     StatusRow(title: "Version", value: Self.versionText)
                     Text("Development build. DODDY is an AI assistant, not a person. The colours, voice and character artwork are candidates awaiting approval, not a final brand.")
+                }
+
+                Section("About you") {
+                    if profiles.profile.isEmpty {
+                        Text("Nothing saved. Doddy only keeps what you review and save.")
+                            .foregroundStyle(Theme.secondaryText)
+                    } else {
+                        ForEach(ProfileKey.allCases.filter { profiles.profile.value($0) != nil }, id: \.self) { key in
+                            StatusRow(title: key.label, value: profiles.profile.value(key) ?? "")
+                        }
+                    }
+                    Button(profiles.profile.isEmpty ? "Add preferences" : "Edit") { editingProfile = true }
+                        .disabled(profiles.progress == nil)
+                        .accessibilityIdentifier("settings.editProfile")
+                    Button("Answer the intro questions again") {
+                        Task { await profiles.reopenIntroduction() }
+                    }
+                    .disabled(profiles.progress == nil)
+                    Button("Forget all of this", role: .destructive) { confirmForget = true }
+                        .disabled(profiles.profile.isEmpty)
+                        .accessibilityIdentifier("settings.forgetProfile")
+                    if let forgetError {
+                        Label(forgetError, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.error)
+                    }
+                    Text("Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. Voice conversations don't use them yet.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
                 }
 
                 Section("Your memories") {
@@ -251,6 +283,16 @@ struct SettingsView: View {
             } message: {
                 Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
             }
+            .confirmationDialog(
+                "Forget your name and preferences?",
+                isPresented: $confirmForget, titleVisibility: .visible
+            ) {
+                Button("Forget", role: .destructive) { Task { await forgetProfile() } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This removes what you told Doddy in the introduction from this iPhone. Your saved memories stay.")
+            }
+            .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
         }
         .foregroundStyle(Theme.ink)
     }
@@ -290,11 +332,91 @@ struct SettingsView: View {
         }
     }
 
+    private func forgetProfile() async {
+        do {
+            try await profiles.forget()
+            forgetError = nil
+        } catch {
+            forgetError = ProfileErrorText.message(for: error)
+        }
+    }
+
     private static var versionText: String {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "?"
         let build = info?["CFBundleVersion"] as? String ?? "?"
         return "\(version) (\(build))"
+    }
+}
+
+/// Edit the approved profile. Cancel leaves it exactly as it was.
+private struct ProfileEditSheet: View {
+    @Environment(ProfileStore.self) private var profiles
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft = ProfileDraft()
+    @State private var isSaving = false
+    @State private var errorText: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ProfileFieldsEditor(draft: $draft)
+                    if draft.isEffectivelyEmpty {
+                        Text("Saving now stores nothing and removes anything saved before.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    addMissing
+                    if let errorText {
+                        ProblemView(message: errorText)
+                    }
+                }
+                .padding(24)
+            }
+            .background(Theme.canvas)
+            .navigationTitle("About you")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(isSaving ? "Saving…" : "Save") { Task { await save() } }
+                        .disabled(isSaving)
+                        .accessibilityIdentifier("profileEdit.save")
+                }
+            }
+            .onAppear { draft = profiles.profile.draft }
+        }
+        .foregroundStyle(Theme.ink)
+        .interactiveDismissDisabled(isSaving)
+    }
+
+    /// Fields not answered yet can be added here too.
+    @ViewBuilder
+    private var addMissing: some View {
+        let missing = ProfileKey.allCases.filter { draft[$0] == nil }
+        if !missing.isEmpty {
+            Menu {
+                ForEach(missing, id: \.self) { key in
+                    Button(key.label) { draft[key] = "" }
+                }
+            } label: {
+                Label("Add a preference", systemImage: "plus")
+            }
+        }
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        do {
+            try await profiles.commit(draft)
+            dismiss()
+        } catch {
+            errorText = ProfileErrorText.message(for: error)
+        }
     }
 }
 

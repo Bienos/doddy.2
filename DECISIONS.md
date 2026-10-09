@@ -131,6 +131,24 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 069 | App: a token server address switches voice to private mode; an invalid address or missing code never falls back to the public agent. Public agent stays as the dev default until the owner enables agent authentication | Applied |
 | 070 | The app's only networking of its own is `VoiceTokenClient` (guard-enforced); it sends the access code, nothing about the user | Applied |
 
+## Onboarding decisions (2026-10-09, `docs/implementation/ONBOARDING_STATUS.md`; renumbered from 038–043 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 083 | First use = optional written Back Tap guide → optional introduction → Home, replacing First Hello. Skipping never blocks; both reopen from Settings. Voice-guided setup and Live Activities not built. | Applied — **Back Tap part superseded by ADR-089** |
+| 084 | Back Tap status is a **user report** (`userReportedDone` / `userReportedTestPassed`), never "verified". The Open Doddy App Intent receipt (in memory, 5-minute test window) only changes wording. | Applied — **Back Tap part superseded by ADR-089** |
+| 085 | Reviewed profile: six optional fields, stored only on explicit Save, in `profile_fields` (same SQLite file, separate table) via migration `v2_profile_onboarding`. Stale edits rejected; forget ≠ delete memories. | Applied |
+| 086 | `DoddyDatabase` owns the file and migrations; opening a database from a newer app version fails without touching it. | Applied |
+| 087 | The profile is **not** sent to the ElevenLabs voice agent. Doing so (name, style, language) is a new data flow to a third party. | Open — **owner to decide** |
+| 088 | Profile is not in the memory export; export format unchanged. | Open — owner to decide |
+
+## Branch consolidation (2026-10-09)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 089 | Onboarding and V2 each shipped a Back Tap guide and a shortcut intent. Kept **one**: V2's `BackTapSetupView` + `TalkToDoddyIntent` (the one tried on the owner's iPhone, ADR-040 to 043). Onboarding's `SetupGuideView`, `OpenDoddyIntent` and Settings "Getting started" were removed; first use is now the optional introduction only (`ProfileStore.route` skips the core's setup step, whose types and tests stay in DoddyCore unused by the app). | Applied — owner may want Back Tap back as a first-use step; that would mean showing V2's guide inside onboarding |
+| 090 | Calendar/Reminders/Contacts: kept the `determined-sagan` Connections (matches the 14 tools on the live agent), not `upbeat-brown` V4a (Today card, local nudges). Control Center control from `busy-mendel` and the OpenAI "Ask" tab with Supabase gateway from `busy-hawking` were not merged. | Applied — owner to decide whether any of those come back |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.

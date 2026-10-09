@@ -5,6 +5,7 @@ struct HomeView: View {
     @Binding var selectedTab: AppTab
 
     @Environment(MemoryStore.self) private var store
+    @Environment(ProfileStore.self) private var profiles
     @State private var showCapture = false
     private var router: ShortcutRouter { .shared }
 
@@ -13,9 +14,10 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("A little less to carry.")
+                        Text(greeting)
                             .font(.largeTitle.bold())
                             .accessibilityAddTraits(.isHeader)
+                            .accessibilityIdentifier("home.greeting")
                         Text("Save a useful detail. Find it when you need it.")
                             .foregroundStyle(Theme.secondaryText)
                     }
@@ -52,6 +54,7 @@ struct HomeView: View {
                     if router.setup.phase == .notStarted {
                         backTapCard
                     }
+                    aboutYou
 
                     recent
 
@@ -93,6 +96,35 @@ struct HomeView: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// Uses only the approved name; without one, the neutral line.
+    private var greeting: String {
+        if let name = profiles.profile.value(.name) { return "Hi, \(name)." }
+        return "A little less to carry."
+    }
+
+    /// What the user approved in the introduction, shown back plainly. Nothing is invented
+    /// when the profile is empty.
+    @ViewBuilder
+    private var aboutYou: some View {
+        let profile = profiles.profile
+        let shown = [ProfileKey.context, .help, .style].filter { profile.value($0) != nil }
+        if !shown.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("What you told me")
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(shown, id: \.self) { key in
+                    StatusRow(title: key.label, value: profile.value(key) ?? "")
+                }
+                Text("Change or forget these in Settings. Voice conversations don't use them yet.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .padding(16)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+        }
     }
 
     @ViewBuilder

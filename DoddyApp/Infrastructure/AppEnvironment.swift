@@ -3,11 +3,13 @@ import DoddyPersistence
 import Foundation
 import SwiftUI
 
-/// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView); the
-/// Talk to Doddy shortcut and Back Tap guide live in `ShortcutRouter`; Connected Apps talks to a
-/// Doddy server (ConnectedAppsScreen); other actions stay explicit `Unavailable*` adapters.
+/// Composition root. Local memory and the reviewed profile use one SQLite file; voice uses the
+/// ElevenLabs agent (VoiceView); the Talk to Doddy shortcut and Back Tap guide live in
+/// `ShortcutRouter`; Connected Apps talks to a Doddy server (ConnectedAppsScreen); other actions
+/// stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
+    let profileRepository: any ProfileRepository
     let recallService: any RecallService
     let assistantClient: any AssistantClient
     let toolExecutor: any ToolExecutor
@@ -18,6 +20,7 @@ struct AppEnvironment: Sendable {
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
+        profileRepository: UnavailableProfileRepository(),
         recallService: UnavailableRecallService(),
         assistantClient: UnavailableAssistantClient(),
         toolExecutor: UnavailableToolExecutor(),
@@ -28,11 +31,13 @@ struct AppEnvironment: Sendable {
     /// `-inMemoryStore` (UI tests) keeps everything in memory and writes nothing to disk.
     static func live(arguments: [String] = ProcessInfo.processInfo.arguments) -> AppEnvironment {
         do {
-            let repository = arguments.contains("-inMemoryStore")
-                ? try SQLiteMemoryRepository.inMemory()
-                : try SQLiteMemoryRepository(path: try databaseURL().path)
+            let database = arguments.contains("-inMemoryStore")
+                ? try DoddyDatabase.inMemory()
+                : try DoddyDatabase(path: try databaseURL().path)
+            let repository = SQLiteMemoryRepository(database: database)
             return AppEnvironment(
                 memoryRepository: repository,
+                profileRepository: SQLiteProfileRepository(database: database),
                 recallService: RepositoryRecallService(repository: repository),
                 assistantClient: UnavailableAssistantClient(),
                 toolExecutor: UnavailableToolExecutor(),
@@ -42,13 +47,21 @@ struct AppEnvironment: Sendable {
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),
+                profileRepository: UnavailableProfileRepository(),
                 recallService: UnavailableRecallService(),
                 assistantClient: UnavailableAssistantClient(),
                 toolExecutor: UnavailableToolExecutor(),
                 capabilities: .m0,
                 privacy: .m0,
-                storageProblem: "Doddy couldn't open its memory store, so saving is switched off. Nothing was deleted or reset. Try closing and reopening the app. (\(error.localizedDescription))")
+                storageProblem: storageProblem(for: error))
         }
+    }
+
+    private static func storageProblem(for error: any Error) -> String {
+        if error as? DoddyDatabaseError == .newerSchema {
+            return "Your memories were saved by a newer version of Doddy, so this version can't open them. Nothing was deleted or reset. Install the latest version of Doddy."
+        }
+        return "Doddy couldn't open its memory store, so saving is switched off. Nothing was deleted or reset. Try closing and reopening the app. (\(error.localizedDescription))"
     }
 
     /// Application Support/Memories/memories.sqlite, readable after first unlock only.

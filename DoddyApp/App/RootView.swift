@@ -4,7 +4,6 @@ import SwiftUI
 enum PreferenceKey {
     static let appearance = "appearance"
     static let hideCharacterArt = "hideCharacterArt"
-    static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
@@ -31,7 +30,7 @@ enum AppTab: Hashable {
 struct RootView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
-    @AppStorage(PreferenceKey.hasSeenFirstHello) private var hasSeenFirstHello = false
+    @Environment(ProfileStore.self) private var profiles
     @State private var selectedTab: AppTab = .home
     @Bindable private var router = ShortcutRouter.shared
 
@@ -44,16 +43,22 @@ struct RootView: View {
     }
 
     var body: some View {
-        // The VStack exists so the First Hello cover and the voice/setup presentations hang off
-        // different views.
-        VStack(spacing: 0) {
-            tabs
-        }
-        .preferredColorScheme(colorScheme)
-        .task { await store.reload() }
-        .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {
-            FirstHelloView { hasSeenFirstHello = true }
-                .preferredColorScheme(colorScheme)
+        if profiles.hasLoaded {
+            // The VStack exists so the onboarding cover and the voice/setup presentations hang off
+            // different views.
+            VStack(spacing: 0) {
+                tabs
+            }
+            .preferredColorScheme(colorScheme)
+            .task { await store.reload() }
+            .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
+                OnboardingFlowView()
+                    .preferredColorScheme(colorScheme)
+            }
+        } else {
+            // A moment while the store opens, so Home doesn't flash before first-use onboarding.
+            Theme.canvas.ignoresSafeArea()
+                .task { await profiles.load() }
         }
     }
 
