@@ -26,6 +26,7 @@
   <script>document.documentElement.classList.add('js')</script>
   <script src="main.js" defer></script>
   <script src="court.js" defer></script>
+  <script src="memory.js" defer></script>
   <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
        /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
        queue below is the HTML snippet from vercel.com/docs/analytics (its hash is in vercel.json). -->
@@ -310,6 +311,30 @@
           <div class="court-bar">
             <p class="court-score" aria-live="polite">Baskets <strong id="made">0</strong> from <strong id="shots">0</strong> shots</p>
             <button class="button small" id="auto-shot" type="button">Shoot for me</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- "Remember it": a memory game with the small things Doddy keeps. Cards are built by memory.js;
+         without JavaScript the section stays hidden. -->
+    <section class="memory" id="remember" aria-labelledby="remember-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="remember-title" class="display-m">Remember it</h2>
+          <p>Six small things, twelve cards. Flip two at a time and find the pairs. Doddy is better at this than the rest of us.</p>
+        </div>
+        <div class="court-panel memory-panel">
+          <div class="memory-stage">
+            <div class="memory-grid" id="memory-grid" role="group" aria-label="Memory cards"></div>
+            <div class="memory-doddy">
+              <p class="memory-bubble" id="memory-bubble" aria-live="polite">Flip two. Find the pair.</p>
+              <img src="assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt="">
+            </div>
+          </div>
+          <div class="court-bar">
+            <p class="court-score">Pairs <strong id="memory-pairs">0</strong> of 6 · Moves <strong id="memory-moves">0</strong></p>
+            <button class="button small" id="memory-restart" type="button">New game</button>
           </div>
         </div>
       </div>

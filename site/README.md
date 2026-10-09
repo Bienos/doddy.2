@@ -25,7 +25,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. No cookies, n
 
 ## What's real on the page
 
-- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the brand film, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, Take a shot (basketball game), join. The example note in the receipt card is labelled as an example.
+- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the brand film, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, Take a shot (basketball game), Remember it (memory game), join. The example note in the receipt card is labelled as an example.
 - **Screens are design previews**, copied from `design/interface-v1.2/previews/` and labelled "Design preview". Replace them with simulator screenshots of the native app (same file names in `assets/screens/`) once someone with Xcode captures them.
 - The voice section has no app screenshot. It shows the app's real status words and its "Save this note?" card as an illustration, labelled as such, and is marked **In testing** because voice hasn't run on a real iPhone.
 - Claims follow the feature table in the prompt: save, search, edit, export and delete are described as working; reminders and other languages sit under "Later, maybe" with no dates.
@@ -72,6 +72,10 @@ sent before the script has loaded. No npm dependency, no build step.
 - **Chapters** are cut at the film's scene changes and named from what's on screen; rename them if the voice-over calls the moments something else.
 - **Not done:** captions (add a WebVTT `<track>` once the script is final), a higher-resolution master, an AV1/WebM copy, and analytics events for plays.
 
+## Remember it
+
+A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards, six pairs of the small things the page talks about (spare keys, locker 4471, Marta's book, shoe size 31, Wi-Fi password, parked on B2). A match makes Doddy say where the thing is; finishing swaps him to the fist-bump pose. Cards are buttons with spoken labels ("Card 3, face down" / "Card 3: Spare keys, matched"), so it works with a keyboard and VoiceOver; Doddy's bubble is a polite live region. Nothing is stored. Hidden without JavaScript. Icons are inline line drawings in `memory.js`.
+
 ## Needs the owner
 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
@@ -93,5 +97,7 @@ sent before the script has loaded. No npm dependency, no build step.
 - Analytics (2026-10-09, headless Chromium 1194 via Playwright, local server sending the `vercel.json` headers, `/_vercel/insights/script.js` stubbed): under the production CSP the inline queue runs (`window.va` is a function), the script is requested and runs, queued calls land in `window.vaq`, no CSP violations, page or console errors; an unhashed inline script is still blocked; with the script answering 404 (analytics not enabled yet) the page works with no errors; 390 px has no horizontal scroll; `/admin/` carries no analytics. Not checked: the real Vercel script and that the dashboard shows data; that needs the deploy described under Analytics.
 
 - Film (2026-10-09, headless Chromium 1194 via Playwright, local server sending the `vercel.json` headers): at 1440, 390 and 320 px no horizontal scroll, no console errors, no CSP violations; JS takes over (muted, no controls, play button and chapters shown); tapping play turns on sound and controls and stops the loop; chapter buttons respond; reduced motion leaves the film paused with the poster; with JavaScript off the native controls show and the play button and chapters are hidden. At 1440×900 the film starts 93 px below the first screen. Screenshots: `VISUAL_REVIEW/landing/v3-film-1440.png`, `v3-film-390.png`. Not checked: actual playback, seeking and sound (Playwright's Chromium has no H.264 decoder), iPhone Safari inline autoplay, Low Power Mode.
+
+- Remember it (2026-10-09, headless Chromium 1194 via Playwright, `vercel.json` headers): full game at 1440, 390 and 320 px; a mismatch flips back, a pair played by keyboard (focus + Enter) matches, the win message and fist-bump pose show, New game resets; no horizontal scroll, console errors or CSP violations; hidden with JavaScript off. Screenshots: `VISUAL_REVIEW/landing/v3-remember-1440.png`, `v3-remember-390.png`. Not checked: VoiceOver, real touch.
 
 Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom, touch throwing), VoiceOver, Lighthouse.
