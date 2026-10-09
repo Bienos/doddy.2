@@ -12,6 +12,7 @@ struct SettingsView: View {
     @State private var hasAccessCode = VoiceAccessCodeStore.read() != nil
     @State private var accessCodeError: String?
     @AppStorage(PreferenceKey.backTapTestedAt) private var backTapTestedAt = 0.0
+    @State private var connections = ConnectionController()
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -61,7 +62,7 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. If a token server is set, starting a conversation also sends your access code to it. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, and any notes, calendar entries, contact names or message drafts Doddy uses are sent to ElevenLabs, which runs the voice agent. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia. If a token server is set, starting a conversation also sends your access code to it. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -123,6 +124,19 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                Section {
+                    NavigationLink {
+                        ConnectionsView()
+                    } label: {
+                        StatusRow(title: "Calendar, reminders, contacts", value: connectionSummary)
+                    }
+                    .accessibilityIdentifier("settings.connections")
+                } header: {
+                    Text("Connections")
+                } footer: {
+                    Text("Each one starts off. Turning one on asks iPhone for permission first.")
+                }
+
                 Section("Appearance and accessibility") {
                     Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppearancePreference.allCases, id: \.rawValue) { option in
@@ -180,6 +194,11 @@ struct SettingsView: View {
         } else {
             accessCodeError = "The access code couldn't be saved in the Keychain. Nothing was stored."
         }
+    }
+
+    private var connectionSummary: String {
+        let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
+        return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
     }
 
     private func deleteAll() async {

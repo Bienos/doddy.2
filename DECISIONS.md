@@ -59,7 +59,10 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Applied for dev — **must change before TestFlight** |
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
-| 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+| 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied; the permission rule is superseded by 038 |
+| 038 | Owner choice 2026-10-09: calendar (read, add with Add tap), reminders (add with Add tap) and contacts (name lookup, details on screen only) are built behind a Settings → Connections card screen (with in-call "Turn on" prompts), all **off by default**. Turning one on asks iOS for permission (calendar and reminders full access, contacts). Only `Infrastructure/Connections` imports EventKit or Contacts; the guard enforces this and allows only those four permission keys. Not compiled for iOS yet (no Xcode here). | Applied — verify on Mac |
+| 039 | Weather and Wikipedia are ElevenLabs webhook tools: ElevenLabs makes those requests, so they cannot be switched off from the phone. Alarms (AlarmKit, iOS 26+ and a new permission) are not added. | Applied |
+| 040 | Owner choice 2026-10-09: timers (local notification, notification permission), maps (opens Apple Maps after a tap), Shortcuts (asks to run a named shortcut after a tap) and messages and email (drafts a text or email, opened in Messages or Mail for the user to send; needs Contacts). Contact card gains Call, Text and Email buttons, each a tap. Doddy never sends a message or places a call. No new Info.plist usage strings. Live agent gained four client tools and a prompt update. | Applied — verify on Mac |
 
 ## V2 Shortcuts decisions
 

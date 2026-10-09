@@ -36,6 +36,7 @@ final class LaunchSmokeTests: XCTestCase {
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Microphone"].waitForExistence(timeout: 5))
+        // The voice profile is always on (V1), so the microphone is used only while talking.
         XCTAssertTrue(app.staticTexts["Only while talking"].exists)
     }
 
