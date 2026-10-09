@@ -1,7 +1,7 @@
 {
   "date": "2026-10-08",
   "scope": "Scripted browser design only; no native microphone, background audio, ActivityKit, Settings or physical Back Tap verification.",
-  "checksPassed": 53,
+  "checksPassed": 57,
   "checks": [
     {
       "name": "First launch precedes intro with Back Tap setup",
@@ -69,6 +69,22 @@
     },
     {
       "name": "Double Tap instructions specify Shortcuts and apply by going back",
+      "passed": true
+    },
+    {
+      "name": "Double Tap step leads to optional quiet-taps screen",
+      "passed": true
+    },
+    {
+      "name": "Quiet screen says Doddy cannot change the iPhone setting",
+      "passed": true
+    },
+    {
+      "name": "Illustration toggle changes no real setting and records no report",
+      "passed": true
+    },
+    {
+      "name": "Banner choice is user report only",
       "passed": true
     },
     {
