@@ -113,6 +113,22 @@ connection can't be removed, minted session lifetime default 7 days / max 30. Ac
 individually revocable (rotate the signing key), custom-scheme return URL (use a universal link for release),
 callback mode only in development, no HSTS (TLS terminates at a proxy, not this process).
 
+## Backend-only live check from a cloud session (no Mac needed)
+
+Proves the live Composio → Google path without the iOS app. Requires `COMPOSIO_API_KEY` as an environment secret
+(picked up by a new session) and the owner completing Google consent in any browser.
+
+1. `npm run setup:composio -- --create` → creates a Composio-managed auth config limited to
+   `calendar.events.readonly` and prints its ID and the tool version to pin.
+2. Start the backend in live mode on loopback: `DODDY_MODE=live DODDY_ENV=development DODDY_AUTH_MODE=signed`,
+   `DODDY_PUBLIC_BASE_URL=http://127.0.0.1:8787`, `COMPOSIO_COMPLETION_MODE=callback` (development only), a fresh
+   signing key; mint a token.
+3. `POST /connect` with that token → the owner opens `authorizationUrl` and approves Google. Composio's final
+   redirect to `127.0.0.1` fails in the owner's browser — expected; the connection is still created at Composio.
+4. `POST /complete` with `{kind: "callback", status: "success", connectedAccountId: <pending id from the attempts
+   table>}` → the server re-reads status, ownership and granted scopes. Expect `connected`; anything else is a finding.
+5. `npm run live-check` (counts only), then `POST /disconnect` and confirm reads are refused.
+
 ## Known limitations
 
 - One Google account, primary calendar, one local day per request, ≤ 100 events. No conversational routing (the
