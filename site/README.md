@@ -65,9 +65,9 @@ sent before the script has loaded. No npm dependency, no build step.
 
 ## Film
 
-"One morning in Warsaw" sits directly after the hero (`#film`); the hero's second link reads "Watch the film (1:20)" and jumps to it. Design: concept A from `design/landing-film-mockup/` (owner-picked).
+"One morning in Warsaw" sits directly after the hero (`#film`); the hero's second link reads "Watch the film (1:15)" and jumps to it. Design: concept A from `design/landing-film-mockup/` (owner-picked).
 
-- **Files:** `assets/film/doddy-film.mp4` (H.264 + AAC, 854×480, 1:20, faststart, 5.6 MB) re-encoded from the owner's `DODDY-LOW_RES.mov` (HEVC, which most desktop Chrome and Firefox can't play); `assets/film/poster.jpg` is the frame at 0:03. Same-origin, so the existing CSP (`default-src 'self'`) covers it; `/assets/` caching applies.
+- **Files:** `assets/film/doddy-film-v2.mp4` (H.264 + AAC, 854×480, 30 fps, 1:15, faststart, 5.6 MB) re-encoded from the owner's `doddy_new1.mov` (HEVC, which most desktop Chrome and Firefox can't play); `assets/film/poster-v2.jpg` is the frame at 0:03. A new cut gets a new file name (`-v3`, …) because `/assets/` is cached for a day. Same-origin, so the existing CSP (`default-src 'self'`) covers it; `/assets/` caching applies.
 - **Behaviour (`main.js`):** a muted 9-second preview loops while the film is on screen and pauses off screen. Tapping the play button or a chapter turns sound on, shows native controls and plays from 0:00 or that chapter. Reduced motion: no autoplay, poster until tapped. Without JavaScript it is a plain video with native controls and no chapter list.
 - **Chapters** are cut at the film's scene changes and named from what's on screen; rename them if the voice-over calls the moments something else.
 - **Not done:** captions (add a WebVTT `<track>` once the script is final), a higher-resolution master, an AV1/WebM copy, and analytics events for plays.
