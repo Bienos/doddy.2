@@ -24,6 +24,7 @@ not_run() { record "$1" "NOT RUN" "$2"; blocked=1; echo; echo "=== $1"; echo "NO
 
 run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
+run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
 
 if command -v swift >/dev/null 2>&1; then
   swift --version
