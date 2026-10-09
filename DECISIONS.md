@@ -73,3 +73,17 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 8. **Identity & signing** — bundle identifier, Apple developer team, and whether to commit the generated `Doddy.xcodeproj` after a first good Mac build (ADR-013).
 9. **CI** — accept local-script CI only, or approve a hosted macOS runner and its cost (ADR-022).
 10. **Run the Mac verification** listed in `docs/implementation/M0_REPORT.md` and record results; **M1 should not start until M0's iOS build/tests are confirmed on a Mac** (M0 exit criteria are not met without it).
+
+## Connections proposal (research 2026-10-09 — nothing built)
+
+Source: `docs/research/CONNECTIONS_AND_PROACTIVE_DODDY_2026-10.md` (calendar/Google/MCP connections, iPhone actions, nudges by notification/Telegram/WhatsApp, news watch notes). All rows are **Open** until the owner answers §5 of that document.
+
+| ADR | Proposal | Status |
+|---|---|---|
+| 038 | Layer order: on-phone connections (EventKit, Contacts, AlarmKit, Shortcuts) before accounts/MCP before a Watcher backend; a user who connects nothing keeps the M1 local app unchanged | Open |
+| 039 | A connection shows "Connected" only after a verified read; reads auto once connected, every write/send goes through the existing proposal → confirmation card → verified receipt path | Open |
+| 040 | Proactive nudges come only from explicit **watch notes** (a memory type with provenance) or confirmed event nudges; never from inferred interests. Every nudge carries evidence, a link and "Stop watching" | Open |
+| 041 | Primary reach channel = push notification in Apple's message style (Doddy as sender) + in-app Nudge inbox; Telegram as first opt-in external channel; WhatsApp/calls later; iMessage cannot be sent by the app and is offered only as a user-built Shortcuts recipe | Open |
+| 042 | One small gateway (the voice token server already required) also hosts APNs sending, the Watcher scheduler, delivery channels and, later, an OAuth broker and a per-user MCP server for the ElevenLabs agent (`require_approval_per_tool`, per-conversation token header) | Open |
+| 043 | Google Calendar is read through EventKit when it is already synced to the iPhone; Google OAuth (sensitive scopes) only when an account feature needs it; Gmail read (restricted scope, CASA audit) is out of scope for now | Open |
+| 044 | Default nudge policy: 3 per day, quiet hours 22:00–07:30 local, 90-day server retention of nudge history, urgent cadence only for notes the user marked urgent | Open |
