@@ -1,8 +1,13 @@
 import Foundation
 
-/// CANDIDATE design tokens from `design/interface-v1.2/docs/DESIGN-SYSTEM.md` (Pocket Notebook).
-/// Not an approved brand. Nothing here is from `assets/brand_candidate/` (historical palette),
-/// per docs/design/CANONICAL_DESIGN_DIRECTION.md. Bright orange is decoration, never body text.
+/// Colour tokens from the owner-selected brand master: `DODDY_BRAND_SYSTEM_v1.3_COMPLETE.zip`
+/// (`doddy.tokens.json`, mirrored in `reference/brand_v1.3_unpacked/v1.3_COMPLETE/`).
+/// Layout/roles still follow the Pocket Notebook UI direction. Final logo, icon and character art are NOT
+/// approved yet, so these stay "candidate". The historical `assets/brand_candidate/` palette and the
+/// smaller v1.3 zip's palette are not used. Bright orange is decoration, never body text.
+///
+/// Roles the pack does not define are marked DERIVED below. They exist because the pack's own
+/// success/error fills fail 4.5:1 as text on its paper (2.04:1 and 3.37:1) and it gives no accessible orange.
 public struct HexColor: Equatable, Sendable {
     public let red: UInt8, green: UInt8, blue: UInt8
 
@@ -46,13 +51,19 @@ public enum CandidateColorRole: String, CaseIterable, Sendable {
     /// (light, dark) hex values.
     var pair: (String, String) {
         switch self {
-        case .readingInk: ("#171715", "#FFF7E9")
-        case .canvas: ("#FFF7E9", "#171F29")
-        case .orangeCue: ("#F58A24", "#F58A24")
-        case .secondaryText: ("#655F56", "#C5BCAD")
-        case .quietSurface: ("#F5EAD8", "#252E39")
-        case .separator: ("#DFD5C6", "#414953")
-        case .accentText: ("#A64B00", "#FFB56B")
+        // Pack values: ink #0B0B0B, paper #F7F2E9, orange #FF7A00, gray600 #4B4B4B, gray300 #BABABA,
+        // gray100 #E6E6E6, white #FFFDF7, dark #151515, slate #1E1E1E.
+        case .readingInk: ("#0B0B0B", "#F7F2E9")
+        case .canvas: ("#F7F2E9", "#151515")
+        case .orangeCue: ("#FF7A00", "#FF7A00")
+        case .secondaryText: ("#4B4B4B", "#BABABA")
+        case .quietSurface: ("#FFFDF7", "#1E1E1E")
+        case .separator: ("#E6E6E6", "#4B4B4B")
+        // DERIVED (not in pack): light = #FF7A00 darkened to reach 4.5:1 on canvas and quietSurface;
+        // dark = the pack orange itself (6.99:1 on #151515).
+        case .accentText: ("#B05400", "#FF7A00")
+        // DERIVED (not in pack): accessible text/icon variants for the pack's success/error hues.
+        // Carried over from the v1.2 interface system, where they were contrast-verified.
         case .confirmed: ("#326746", "#97CEA6")
         case .error: ("#A3342E", "#FFAAA1")
         }
