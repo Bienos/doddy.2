@@ -1,0 +1,455 @@
+[
+  {
+    "id": "01",
+    "slug": "voice",
+    "title": "Voice session",
+    "family": "REFINED ORIGINAL",
+    "idea": "A raised eyebrow and a compact speech signal make listening feel attentive.",
+    "rationale": "Doddy leans in through his eyes and eyebrow; the speech signal distinguishes listening from speaking.",
+    "motion": "Update the signal only when speech data changes. Replace the mouth when speech starts.",
+    "variants": [
+      {
+        "label": "LISTENING",
+        "status": "Listening",
+        "context": "Talk it through",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "SPEAKING",
+        "status": "Speaking",
+        "context": "One step at a time",
+        "kind": "speak",
+        "control": "pause",
+        "meta": "00:08"
+      }
+    ]
+  },
+  {
+    "id": "02",
+    "slug": "focus",
+    "title": "Focus timer",
+    "family": "REFINED ORIGINAL",
+    "idea": "A steady countdown with a gently knowing face and one clear next action.",
+    "rationale": "Time remains primary; a smaller task line gives purpose and the pause state feels deliberate.",
+    "motion": "Tabular digits update without shifting; progress stops when paused.",
+    "variants": [
+      {
+        "label": "RUNNING",
+        "status": "12:48",
+        "context": "Write one paragraph",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "Focus",
+        "fraction": 0.512
+      },
+      {
+        "label": "PAUSED",
+        "status": "12:48",
+        "context": "Ready when you are",
+        "kind": "paused",
+        "control": "play",
+        "meta": "Paused",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "03",
+    "slug": "music",
+    "title": "Playback",
+    "family": "REFINED ORIGINAL",
+    "idea": "Small headphones and a precise playback rail keep Doddy present without taking over.",
+    "rationale": "Playback controls share one stable group; progress and expression distinguish playing from paused.",
+    "motion": "Progress advances with actual playback; freeze the marks when paused.",
+    "variants": [
+      {
+        "label": "PLAYING",
+        "status": "Playing",
+        "context": "Sunday slow-down",
+        "kind": "music",
+        "control": "pause",
+        "meta": "01:24",
+        "fraction": 0.38
+      },
+      {
+        "label": "PAUSED",
+        "status": "Paused",
+        "context": "Sunday slow-down",
+        "kind": "music-paused",
+        "control": "play",
+        "meta": "01:24",
+        "fraction": 0.38
+      }
+    ]
+  },
+  {
+    "id": "04",
+    "slug": "companion",
+    "title": "Companion session",
+    "family": "REFINED ORIGINAL",
+    "idea": "A raised eyebrow and an offered hand give the ongoing conversation a recognisable presence.",
+    "rationale": "The session stays bounded. Open goes to the conversation; thinking is distinct from speaking.",
+    "motion": "A thought marker appears during processing; updates replace it with the current state.",
+    "variants": [
+      {
+        "label": "ACTIVE SESSION",
+        "status": "Session active",
+        "context": "Talk it through",
+        "kind": "session",
+        "control": "open",
+        "meta": "03:12"
+      },
+      {
+        "label": "THINKING",
+        "status": "Thinking",
+        "context": "Finding a useful next step",
+        "kind": "think",
+        "control": "open",
+        "meta": "03:12"
+      }
+    ]
+  },
+  {
+    "id": "A",
+    "slug": "orbit",
+    "title": "Orbit",
+    "family": "CORE DIRECTION",
+    "idea": "An orbit becomes a quiet instrument for activity and remaining time.",
+    "rationale": "An elliptical orbit belongs to Doddy’s face; its orange marker has a defined data role.",
+    "motion": "Voice uses a short active segment. Focus arc encodes remaining fraction. No decorative continuous loop.",
+    "strong": 1,
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Talk it through",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "One next step",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "Focus",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "B",
+    "slug": "ink-ripple",
+    "title": "Ink Ripple",
+    "family": "CORE DIRECTION",
+    "idea": "Speech becomes two soft ink envelopes; focus settles the contours.",
+    "rationale": "Contour amplitude represents speech energy; the focus variant is flatter and carries a progress marker.",
+    "motion": "Cap speech-driven amplitude; hold a quiet contour between updates.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Save a thought",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Write one paragraph",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "Focus",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "C",
+    "slug": "negative-space",
+    "title": "Negative Space",
+    "family": "CORE DIRECTION",
+    "idea": "A cream hand presents a black cutout, with an orange point carrying the state.",
+    "rationale": "Doddy’s hand offers the phrase; a black slot carved into a cream form turns progress into negative space.",
+    "motion": "Move the small state point only with activity updates. Gesture is a static signature.",
+    "strong": 2,
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Translate a phrase",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Practise French",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "Focus",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "D",
+    "slug": "kinetic-ribbon",
+    "title": "Kinetic Ribbon",
+    "family": "CORE DIRECTION",
+    "idea": "One ribbon folds with speech and straightens into a measured focus rail.",
+    "rationale": "A single controlled fold expresses speech; a straightened ribbon makes focus progress precise.",
+    "motion": "Replace a fold with a new shape on speech updates; never use arbitrary wandering curves.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Reading aloud",
+        "context": "Your saved article",
+        "kind": "speak",
+        "control": "pause",
+        "meta": "00:42",
+        "fraction": 0.38
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Read ten pages",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "Focus",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "E",
+    "slug": "editorial",
+    "title": "Editorial",
+    "family": "CORE DIRECTION",
+    "idea": "Beautiful numerals, a tiny Doddy signature and a precise editorial caret.",
+    "rationale": "Typography leads. A caret means capture is active; the focus rail is exact and quiet.",
+    "motion": "Caret changes with capture state. Use numeric content replacement for the countdown.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Draft a reply",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Send three replies",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "Focus",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "F",
+    "slug": "abstract-landscape",
+    "title": "Abstract Landscape",
+    "family": "CORE DIRECTION",
+    "idea": "A curved cream horizon and orange sun make progress feel like a small journey.",
+    "rationale": "The sun is a progress marker, not scenery decoration; voice and focus use the same restrained horizon.",
+    "motion": "The marker changes position with state/progress. Keep the horizon still.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Plan a quiet walk",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Make room to think",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "Focus",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "G",
+    "slug": "thought-drop",
+    "title": "Thought Drop",
+    "family": "ACTION DIRECTION",
+    "idea": "A thought gathers into a cream vessel, then resolves into a saved mark.",
+    "rationale": "Gathering orange points represent capture; the same vessel becomes a clear completion symbol.",
+    "motion": "A brief content update changes capture points to a check. End the confirmation promptly.",
+    "variants": [
+      {
+        "label": "CAPTURE",
+        "status": "Listening",
+        "context": "Save this bookshop idea",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:06"
+      },
+      {
+        "label": "CONFIRMED",
+        "status": "Thought saved",
+        "context": "Got your bookshop idea",
+        "kind": "done",
+        "control": "open",
+        "meta": "Saved",
+        "gesture": "offer"
+      }
+    ]
+  },
+  {
+    "id": "H",
+    "slug": "language-bridge",
+    "title": "Language Bridge",
+    "family": "ACTION DIRECTION",
+    "idea": "Two language anchors and one bridge make translation unmistakable.",
+    "rationale": "EN and FR anchors explain the bridge; a small listening face becomes a knowing, ready-to-play face.",
+    "motion": "The orange bridge completes when translation is ready. Play opens a separate narration state.",
+    "strong": 3,
+    "variants": [
+      {
+        "label": "TRANSLATING",
+        "status": "Translating",
+        "context": "EN → FR",
+        "kind": "think",
+        "control": "stop",
+        "meta": ""
+      },
+      {
+        "label": "READY TO PLAY",
+        "status": "Translation ready",
+        "context": "Où est la gare ?",
+        "kind": "done",
+        "control": "play",
+        "meta": "FR",
+        "gesture": "offer"
+      }
+    ]
+  },
+  {
+    "id": "I",
+    "slug": "reminder-pin",
+    "title": "Reminder Pin",
+    "family": "ACTION DIRECTION",
+    "idea": "A clock pin becomes a neatly confirmed reminder, with time still readable.",
+    "rationale": "A pin and compact time connect the setup to its outcome without filling the island with a note card.",
+    "motion": "Pin settles once on confirmation. End setup; deliver the future reminder as a notification.",
+    "variants": [
+      {
+        "label": "SETTING",
+        "status": "Setting reminder",
+        "context": "Call Mum at 18:00",
+        "kind": "think",
+        "control": "stop",
+        "meta": "18:00"
+      },
+      {
+        "label": "CONFIRMED",
+        "status": "Reminder set",
+        "context": "Call Mum · 18:00",
+        "kind": "done",
+        "control": "open",
+        "meta": "18:00",
+        "gesture": "point"
+      }
+    ]
+  },
+  {
+    "id": "J",
+    "slug": "step-path",
+    "title": "Step Path",
+    "family": "ACTION DIRECTION",
+    "idea": "A three-step path gives a task a beginning and a clear next move.",
+    "rationale": "One active orange node and two quiet cream nodes encode three concrete steps; no ornamental dots.",
+    "motion": "Node changes only on completion. Plan-ready opens the full task breakdown.",
+    "variants": [
+      {
+        "label": "PLANNING",
+        "status": "Making a plan",
+        "context": "Start the presentation",
+        "kind": "think",
+        "control": "stop",
+        "meta": "Planning"
+      },
+      {
+        "label": "NEXT STEP",
+        "status": "Plan ready",
+        "context": "Outline first · 3 steps",
+        "kind": "done",
+        "control": "open",
+        "meta": "1 / 3"
+      }
+    ]
+  },
+  {
+    "id": "K",
+    "slug": "spoken-mark",
+    "title": "Spoken Mark",
+    "family": "ACTION DIRECTION",
+    "idea": "Quotation strokes and a word marker give reading aloud a distinctive rhythm.",
+    "rationale": "Quotation marks identify readout; progress reflects playback and freezes in the paused view.",
+    "motion": "Update a word marker with narration; keep the static quotation signature.",
+    "variants": [
+      {
+        "label": "READING",
+        "status": "Reading aloud",
+        "context": "Your saved article",
+        "kind": "speak",
+        "control": "pause",
+        "meta": "00:42",
+        "fraction": 0.38
+      },
+      {
+        "label": "PAUSED",
+        "status": "Paused",
+        "context": "Pick up where you left off",
+        "kind": "paused",
+        "control": "play",
+        "meta": "00:42",
+        "fraction": 0.38
+      }
+    ]
+  },
+  {
+    "id": "L",
+    "slug": "calm-pulse",
+    "title": "Calm Pulse",
+    "family": "ACTION DIRECTION",
+    "idea": "A calm face and an expanding phase arc offer a clear one-minute reset.",
+    "rationale": "Phase words remain essential; an arc supports inhale/exhale without pretending to be a medical metric.",
+    "motion": "Phase change may use a bounded transition. Reduced motion keeps phase words and time visible.",
+    "variants": [
+      {
+        "label": "EXHALE",
+        "status": "Breathe out",
+        "context": "A little room to reset",
+        "kind": "breathe-out",
+        "control": "stop",
+        "meta": "00:24",
+        "fraction": 0.4
+      },
+      {
+        "label": "INHALE",
+        "status": "Breathe in",
+        "context": "Easy does it",
+        "kind": "breathe-in",
+        "control": "stop",
+        "meta": "00:18",
+        "fraction": 0.3
+      }
+    ]
+  }
+]

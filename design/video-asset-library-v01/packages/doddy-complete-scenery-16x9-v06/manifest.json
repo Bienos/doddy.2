@@ -1,0 +1,806 @@
+[
+  {
+    "id": 0,
+    "slug": "bedroom",
+    "name": "Bedroom",
+    "group": "01-home",
+    "scene": "Cosy bedroom with rounded bed tucked at left, orange blanket, bedside lamp, arched window, a little plant on right. Clear open central floor.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Cosy bedroom with rounded bed tucked at left, orange blanket, bedside lamp, arched window, a little plant on right. Clear open central floor.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-1daf18dd-e7f5-44fa-9bfa-9a8ccde470b7.png",
+    "file": "01-home/bedroom_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "6d6de2b523ea3e1eef7b06c80cbc06234d658332b9a096dfde6c07f762b090e6",
+    "kind": "new"
+  },
+  {
+    "id": 1,
+    "slug": "kitchen",
+    "name": "Kitchen",
+    "group": "01-home",
+    "scene": "Friendly kitchen with rounded cabinets along back wall, simple oven and sink, orange kettle, small breakfast table far right, no island in centre. Clear foreground floor.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Friendly kitchen with rounded cabinets along back wall, simple oven and sink, orange kettle, small breakfast table far right, no island in centre. Clear foreground floor.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-3c93dbb9-162c-4eaa-a345-83b6fadfb4f9.png",
+    "file": "01-home/kitchen_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "6ec75cb676dc00b756f6a599a92b28d95d1eec713384961fab910269d7c79828",
+    "kind": "new"
+  },
+  {
+    "id": 2,
+    "slug": "study",
+    "name": "Study and notebook corner",
+    "group": "01-home",
+    "scene": "Quiet study with small desk against left wall, orange notebook and lamp, simple bookcase on right, framed abstract drawing, rounded stool near desk. Clear centre floor.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Quiet study with small desk against left wall, orange notebook and lamp, simple bookcase on right, framed abstract drawing, rounded stool near desk. Clear centre floor.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.\nFINAL CLEANUP: Precise small cleanup to this exact indoor room illustration: erase ALL tiny grass-tuft marks growing from the interior floor. Replace those little marks with the matching unmarked cream floor. Preserve potted plant leaves and foliage visible outside the window. Preserve room layout, furniture, colors, framing, all other linework and the wide landscape aspect ratio. No other change.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-edc03115-6468-4924-af50-680b428503dc.png",
+    "file": "01-home/study_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "9de41e49e7b34fce386540ab667479fc3232e41195a3a82fab8cc2287793004c",
+    "kind": "new"
+  },
+  {
+    "id": 3,
+    "slug": "art_studio",
+    "name": "Art studio",
+    "group": "01-home",
+    "scene": "Playful art studio with blank easel at left, orange paint pots on small table, rolled papers and simple shelf at right, two abstract shapes on back wall. Spacious central floor.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Playful art studio with blank easel at left, orange paint pots on small table, rolled papers and simple shelf at right, two abstract shapes on back wall. Spacious central floor.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.\nFINAL CLEANUP: Precise small cleanup to this exact indoor room illustration: erase ALL tiny grass-tuft marks growing from the interior floor. Replace those little marks with the matching unmarked cream floor. Preserve potted plant leaves and foliage visible outside the window. Preserve room layout, furniture, colors, framing, all other linework and the wide landscape aspect ratio. No other change.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-0c992ec1-ff9d-4d63-bbf6-e12cdb1138e9.png",
+    "file": "01-home/art_studio_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "3d1702f44a5c3414d43a4991e2a99fa9fc71df8a28e02cd1233c5b29f6fe4351",
+    "kind": "new"
+  },
+  {
+    "id": 4,
+    "slug": "grandparents_garden",
+    "name": "Grandparents\u2019 garden",
+    "group": "01-home",
+    "scene": "Cozy enclosed back garden with rounded cottage door behind left, simple wooden bench and orange flowerpots at edges, curved fence, a little vegetable bed at right. Spacious centre lawn.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Cozy enclosed back garden with rounded cottage door behind left, simple wooden bench and orange flowerpots at edges, curved fence, a little vegetable bed at right. Spacious centre lawn.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-80517c06-dac6-40cc-9e0f-8e5e3c2e2689.png",
+    "file": "01-home/grandparents_garden_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "77345c009ba78695460d127ce57fbbb01215b9cce54003fe6033f3407153f816",
+    "kind": "new"
+  },
+  {
+    "id": 5,
+    "slug": "rooftop",
+    "name": "Rooftop terrace",
+    "group": "01-home",
+    "scene": "Peaceful rooftop terrace with low parapet wall and simple rounded skyline, orange cushion on chair at left, potted plant at right, cream sky and small crescent moon. Empty centre patio.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Peaceful rooftop terrace with low parapet wall and simple rounded skyline, orange cushion on chair at left, potted plant at right, cream sky and small crescent moon. Empty centre patio.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-c2b2fdd1-4154-4318-90f9-459891bdf180.png",
+    "file": "01-home/rooftop_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "593726d0565db533602d1fadf9afc20c6bf455d6964ebbf19f09088d711b9d0a",
+    "kind": "new"
+  },
+  {
+    "id": 6,
+    "slug": "bakery",
+    "name": "Bakery",
+    "group": "02-neighbourhood",
+    "scene": "Small cosy bakery interior, rounded counter along right wall with simple outlined breads and croissants, orange pendant, empty compact table left, arch window. Spacious centre floor.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Small cosy bakery interior, rounded counter along right wall with simple outlined breads and croissants, orange pendant, empty compact table left, arch window. Spacious centre floor.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-52544584-2d37-4a0c-8ba8-5e6ce5c4a2db.png",
+    "file": "02-neighbourhood/bakery_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "29c18289d98b863c070dada0a1388496714b3b3654af88ff875b19020e9e473d",
+    "kind": "new"
+  },
+  {
+    "id": 7,
+    "slug": "bookshop",
+    "name": "Bookshop",
+    "group": "02-neighbourhood",
+    "scene": "Welcoming bookshop with short bookshelves flanking sides, tiny orange bookmarks, rounded reading chair left, arched doorway at back. All book covers blank. Spacious centre floor.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy animation background.\nReference image is STYLE ONLY. Create a DIFFERENT environment in the exact same gentle cream, ink-black, small orange accent visual language.\nSCENE: Welcoming bookshop with short bookshelves flanking sides, tiny orange bookmarks, rounded reading chair left, arched doorway at back. All book covers blank. Spacious centre floor.\nFinished single full-bleed widescreen 16:9 landscape background, 1920x1080 requested. Eye-level wide stage-like perspective, generous clear lower-central area for adding Doddy characters; environment furniture and detail tucked along sides and rear. Confident smooth thick black slightly hand-drawn outlines, simple rounded shapes, flat warm cream #F8F4EB, ivory, small orange #FF822B accents, minimal pale beige layering. Keep restrained detail and coherent line weight. Friendly calm pocket-companion universe.\nScenery ONLY: no characters, people, animals, faces, anthropomorphic objects, lettering, text, logos, watermarks, borders, inset panels, montage, gradients, 3D, realism, shading or checkerboard. Opaque artwork, one scene.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-61c53de0-bba4-430b-9ca3-afb89e62b53f.png",
+    "file": "02-neighbourhood/bookshop_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "a84b779a28f006dad792e119b89a7ca43a4db3737b393e6f2f9872a9cacc698d",
+    "kind": "new"
+  },
+  {
+    "id": 8,
+    "slug": "bus_stop",
+    "name": "Bus stop",
+    "group": "02-neighbourhood",
+    "scene": "Quiet neighborhood bus stop, simple rounded shelter and bench left, orange blank round sign, distant cream houses and tree at right. Clear pavement foreground. No bus.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Quiet neighborhood bus stop, simple rounded shelter and bench left, orange blank round sign, distant cream houses and tree at right. Clear pavement foreground. No bus.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-e78083c3-6dcf-44ac-be94-6d9426a07b71.png",
+    "file": "02-neighbourhood/bus_stop_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "bf9b23b72d6e975d1d43c424cbc1b1228c9880d57585b0e34749963b8755f563",
+    "kind": "new"
+  },
+  {
+    "id": 9,
+    "slug": "train_platform",
+    "name": "Train platform",
+    "group": "02-neighbourhood",
+    "scene": "Friendly small train station platform, simple clock on rear station wall, arch entrance, orange bench at left and flowerpot right, train tracks only along very far back. Clear safe foreground platform.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Friendly small train station platform, simple clock on rear station wall, arch entrance, orange bench at left and flowerpot right, train tracks only along very far back. Clear safe foreground platform.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-cce3c01b-4c3e-46ba-acb6-db149e2b3d9a.png",
+    "file": "02-neighbourhood/train_platform_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "fc376ee756a9732953ef10e00cc95809fd85c2e7929b64c8a42de75065044bc0",
+    "kind": "new"
+  },
+  {
+    "id": 10,
+    "slug": "town_square",
+    "name": "Town square",
+    "group": "02-neighbourhood",
+    "scene": "Charming town square with rounded low buildings and blank shopfronts on back and sides, small central distant fountain, orange awning at far left. Wide clear foreground paving.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Charming town square with rounded low buildings and blank shopfronts on back and sides, small central distant fountain, orange awning at far left. Wide clear foreground paving.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-b66cc471-4abb-4f34-83d0-372baf9da242.png",
+    "file": "02-neighbourhood/town_square_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "76b7797f5fe28b6e3c60ca7d27314481f6b3c28b0aaa6cfdccf62e4f13868fdc",
+    "kind": "new"
+  },
+  {
+    "id": 11,
+    "slug": "playground",
+    "name": "Playground",
+    "group": "02-neighbourhood",
+    "scene": "Cozy little playground with rounded slide left, swings behind right, distant fence and simple trees, one orange swing seat. Broad open foreground.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Cozy little playground with rounded slide left, swings behind right, distant fence and simple trees, one orange swing seat. Broad open foreground.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-b3fc0000-7b2d-44df-81fb-7c6bcf6513bd.png",
+    "file": "02-neighbourhood/playground_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "d03a404a29ba5294428d6cb079399ee74816e89986acd766cb8814a182a26951",
+    "kind": "new"
+  },
+  {
+    "id": 12,
+    "slug": "basketball_court",
+    "name": "Basketball court",
+    "group": "02-neighbourhood",
+    "scene": "Friendly outdoor basketball court, single hoop behind left, simple low fence, rounded trees beyond, orange basketball tucked at far right edge. Clear broad court centre, simple court markings.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Friendly outdoor basketball court, single hoop behind left, simple low fence, rounded trees beyond, orange basketball tucked at far right edge. Clear broad court centre, simple court markings.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-62949cf3-f2af-4864-8b2b-f30f8ca0f583.png",
+    "file": "02-neighbourhood/basketball_court_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "288a8413cb2cd58f3dc8f2e591243c8e27a2fa53c1623c45fde5268ac0f018a2",
+    "kind": "new"
+  },
+  {
+    "id": 13,
+    "slug": "skate_park",
+    "name": "Skate park",
+    "group": "02-neighbourhood",
+    "scene": "Minimal skate park with a small rounded ramp left, low rail at far right, trees and soft hills in back, orange accent on ramp edge. Wide flat central concrete ground.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Minimal skate park with a small rounded ramp left, low rail at far right, trees and soft hills in back, orange accent on ramp edge. Wide flat central concrete ground.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-b5d6c913-1a07-491b-9fed-781a0cb51e77.png",
+    "file": "02-neighbourhood/skate_park_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "6badb254cc2bed8197d92f8b1464491b305b171d487fce6dd47cbcf80a1cfec7",
+    "kind": "new"
+  },
+  {
+    "id": 14,
+    "slug": "river_bridge",
+    "name": "River and little bridge",
+    "group": "03-nature",
+    "scene": "Peaceful riverbank with rounded arch bridge across narrow distant stream, simple reeds left, orange flowers right, gentle trees in back. Large empty near-bank foreground meadow.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Peaceful riverbank with rounded arch bridge across narrow distant stream, simple reeds left, orange flowers right, gentle trees in back. Large empty near-bank foreground meadow.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-5a618a4c-c638-4985-a248-9185b7ac1593.png",
+    "file": "03-nature/river_bridge_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "21e771204f7219a0727e1498460300e4c308105cd675114261d859de8a39b1e9",
+    "kind": "new"
+  },
+  {
+    "id": 15,
+    "slug": "forest_clearing",
+    "name": "Forest clearing",
+    "group": "03-nature",
+    "scene": "Whimsical forest clearing framed by rounded cream tree trunks and simple scalloped canopies, little mushrooms and orange leaf clusters near edges. Distant winding path. Clear open central meadow.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery for animation.\nReference is STYLE ONLY. Draw a NEW scene matching the warm cream, bold black ink, small orange accent reference.\nSCENE: Whimsical forest clearing framed by rounded cream tree trunks and simple scalloped canopies, little mushrooms and orange leaf clusters near edges. Distant winding path. Clear open central meadow.\nSingle full-bleed widescreen 16:9 landscape, 1920x1080 requested. Eye-level wide stage perspective, generous open lower central ground for adding characters. Put furniture, architecture and detail at sides and back. Thick smooth slightly hand-drawn black contours, flat cream #F8F4EB and ivory shapes, restrained orange #FF822B highlights, minimal pale beige separation. Simple rounded geometry, friendly cozy quiet vibe, restrained detail.\nNo characters, people, animals, faces, lettering, signage with text, logos, watermarks, border, panels, collage, gradients, shading, photorealism, 3D or checkerboard. Opaque background, one complete environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-09f75e76-d6d9-4714-a27a-1d4d7adff90a.png",
+    "file": "03-nature/forest_clearing_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "d09d941de64ad9f1b8f77a338c1fb9fdf10613746f2c856679345b62eecd822c",
+    "kind": "new"
+  },
+  {
+    "id": 16,
+    "slug": "beach",
+    "name": "Quiet beach",
+    "group": "03-nature",
+    "scene": "Minimal quiet seaside beach with black-contour gentle waves at horizon, orange parasol and folded chair far left, simple seashells near far right, cream sun. Broad open sandy foreground.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Minimal quiet seaside beach with black-contour gentle waves at horizon, orange parasol and folded chair far left, simple seashells near far right, cream sun. Broad open sandy foreground.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-e26da71e-8266-4c92-a88f-c227e5aec582.png",
+    "file": "03-nature/beach_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "f21c3164710574025068582d43908ff43c3cc5fdc1b7ff85fc74eefd89bd58f9",
+    "kind": "new"
+  },
+  {
+    "id": 17,
+    "slug": "lakeside",
+    "name": "Lakeside",
+    "group": "03-nature",
+    "scene": "Calm lakeside with cream water defined by sparse ink ripples, a simple jetty tucked on right, rounded reeds left, small orange canoe tied at distant pier. Clear open near-bank grass.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Calm lakeside with cream water defined by sparse ink ripples, a simple jetty tucked on right, rounded reeds left, small orange canoe tied at distant pier. Clear open near-bank grass.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-9227971f-288f-46d4-92e5-1a33be481515.png",
+    "file": "03-nature/lakeside_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "d78a92662b44423aa72be9bd72a5dcbb89a4eac9501bbdd29d870e06e178de17",
+    "kind": "new"
+  },
+  {
+    "id": 18,
+    "slug": "mountain_camp",
+    "name": "Mountain campsite",
+    "group": "03-nature",
+    "scene": "Cozy mountain campsite, orange triangular tent tucked left, small outlined campfire stones at right with tiny orange flame, rounded mountain contours far back, cream sky and stars. Wide empty centre campsite.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Cozy mountain campsite, orange triangular tent tucked left, small outlined campfire stones at right with tiny orange flame, rounded mountain contours far back, cream sky and stars. Wide empty centre campsite.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-8b09b955-ac8a-400a-9d5c-b455cb4a93f5.png",
+    "file": "03-nature/mountain_camp_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "d8a85d10146b363dc0c3da4e87e790f3e59e14b132869399e04e4295b7382339",
+    "kind": "new"
+  },
+  {
+    "id": 19,
+    "slug": "orchard",
+    "name": "Orchard",
+    "group": "03-nature",
+    "scene": "Friendly orchard with rounded fruit trees framing edges, a few orange fruits, simple basket under far left tree, low hills behind. Clear wide central path and grass.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Friendly orchard with rounded fruit trees framing edges, a few orange fruits, simple basket under far left tree, low hills behind. Clear wide central path and grass.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-305a6b87-a8ee-4e2f-b8dc-1e553de39e48.png",
+    "file": "03-nature/orchard_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "09fc29c4b68a88d7c69b5386d403867b6b3b61017d3ac9a0eb18db651b44b5bc",
+    "kind": "new"
+  },
+  {
+    "id": 20,
+    "slug": "rainy_street",
+    "name": "Rainy street",
+    "group": "04-seasons",
+    "scene": "Cozy rainy neighbourhood street, rounded houses in back, orange umbrella leaning at far left doorway, sparse ink raindrops and outlined puddles near edges. Broad clear centre pavement; warm cream sky.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Cozy rainy neighbourhood street, rounded houses in back, orange umbrella leaning at far left doorway, sparse ink raindrops and outlined puddles near edges. Broad clear centre pavement; warm cream sky.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-702704c3-b979-4f18-85c6-2d7676ee9f7f.png",
+    "file": "04-seasons/rainy_street_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "d3bfafff588a7d7fac01b56ecedad89c86b45226700715e9c476b7ed46788515",
+    "kind": "new"
+  },
+  {
+    "id": 21,
+    "slug": "autumn_path",
+    "name": "Autumn path",
+    "group": "04-seasons",
+    "scene": "Gentle autumn woodland path, rounded trees with cream canopies and restrained orange leaf clusters framing sides, small fallen orange leaves along edges, rolling hills beyond. Clear broad central path.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Gentle autumn woodland path, rounded trees with cream canopies and restrained orange leaf clusters framing sides, small fallen orange leaves along edges, rolling hills beyond. Clear broad central path.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-fcb3ee14-81a2-47ee-a7f2-e040d86c87e7.png",
+    "file": "04-seasons/autumn_path_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "9482cccf18f358873873f027faa7ad5c46f5dd191b4b1ce6d71d353485345327",
+    "kind": "new"
+  },
+  {
+    "id": 22,
+    "slug": "snowy_cottage",
+    "name": "Snowy cottage",
+    "group": "04-seasons",
+    "scene": "Cozy winter cottage tucked left with orange door, rounded snow-covered trees right, simple soft snow hill contours, sparse black snowflakes. Wide empty snow foreground. Cream and ink palette, no blue.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Cozy winter cottage tucked left with orange door, rounded snow-covered trees right, simple soft snow hill contours, sparse black snowflakes. Wide empty snow foreground. Cream and ink palette, no blue.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-a24d5165-360a-44b9-9e05-03e21416cbcc.png",
+    "file": "04-seasons/snowy_cottage_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "3b4acfac1d9e3e677622af1cd680a87c726483c441e29b2c5766e4eb5e20f1fb",
+    "kind": "new"
+  },
+  {
+    "id": 23,
+    "slug": "picnic_meadow",
+    "name": "Spring picnic meadow",
+    "group": "04-seasons",
+    "scene": "Cheerful spring meadow with orange-and-cream picnic blanket tucked far left, simple basket and flowerpatch near right edge, rounded distant hills and clouds, restrained orange blossoms. Broad empty centre grass.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background.\nInput image is STYLE REFERENCE ONLY; create a NEW scene in the same Doddy cream/ink/orange world.\nSCENE: Cheerful spring meadow with orange-and-cream picnic blanket tucked far left, simple basket and flowerpatch near right edge, rounded distant hills and clouds, restrained orange blossoms. Broad empty centre grass.\nComposition: one full-bleed widescreen 16:9 landscape, 1920x1080 requested, eye-level wide stage-like view. Keep large clear lower central ground area for added characters; concentrate detail at edges and behind. Bold smooth slightly hand-drawn black contours, simple rounded shapes, flat warm cream #F8F4EB and ivory, a few orange #FF822B accent shapes, very restrained pale beige only for separation. Friendly cozy quiet and playful atmosphere; uncluttered thoughtful layout.\nScenery only: no people, characters, animals, faces, anthropomorphic objects, text, numbers, letters, logos, watermark, frame, panels, montage, gradients, 3D, photorealism, shading or checkerboard. Opaque single finished illustrated environment.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-88fd9c54-1149-4ee1-be8d-6aa9654f1162.png",
+    "file": "04-seasons/picnic_meadow_16x9_v05.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "sha256": "27bd37c329da746800830f7be0b3822a1404e0de33b5ac2bafb86ff70f7d5dc6",
+    "kind": "new"
+  },
+  {
+    "slug": "cosy_living_room",
+    "name": "Cosy living room",
+    "scene": "A cosy living room. Rounded cream sofa on left, small orange cushion, low coffee table tucked to left, arched window showing simple hills, plant at right, framed abstract scribble. Keep the central floor and lower middle open for character performance.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background for widescreen animation/video.\nInput image: STYLE REFERENCE ONLY. Match the friendly minimal Doddy cream-and-black ink illustration style and small orange accents. Do not reproduce or include the character.\nPrimary request: A cosy living room. Rounded cream sofa on left, small orange cushion, low coffee table tucked to left, arched window showing simple hills, plant at right, framed abstract scribble. Keep the central floor and lower middle open for character performance.\nComposition: exact landscape widescreen 16:9 canvas, 1920 x 1080 pixels. Full-bleed one complete scene, no panels, no borders. Eye-level simple wide stage-like perspective. Keep lower central 45% spacious and uncluttered so characters can be added. Objects arranged along sides and background.\nStyle: confident thick black slightly hand-drawn smooth outlines, simple rounded shapes, flat warm cream #F8F4EB and ivory surfaces, a few orange #FF822B accent shapes; subtle pale beige only where necessary for layering. Cozy, playful, quiet and friendly. Restrained detail, coherent black line weights. This is a finished illustrated environment matching the reference character's visual universe.\nConstraints: background scenery only. No characters, people, animals, faces, eyes on objects, lettering, signs with text, logos, watermark, gradient, realistic rendering, 3D, cast shadows, glow, checkerboard or collage. Opaque background. Exact 16:9 output aspect ratio.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-ca69026c-3362-4210-bad4-d7b20294c0da.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "file": "00-original-four/cosy_living_room_16x9_v04.png",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "28be9862c4bae84822ccbe3be5e4a151c9d8855bb1ccf791daf61f8813c47776",
+    "group": "00-original-four",
+    "kind": "previous"
+  },
+  {
+    "slug": "neighbourhood_park",
+    "name": "Neighbourhood park",
+    "scene": "A friendly neighbourhood park. Soft rounded tree canopies frame the sides, simple bench on left, orange flower patch at right, a winding path into low hills. Broad empty open ground across the foreground for character scenes.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background for widescreen animation/video.\nInput image: STYLE REFERENCE ONLY. Match the friendly minimal Doddy cream-and-black ink illustration style and small orange accents. Do not reproduce or include the character.\nPrimary request: A friendly neighbourhood park. Soft rounded tree canopies frame the sides, simple bench on left, orange flower patch at right, a winding path into low hills. Broad empty open ground across the foreground for character scenes.\nComposition: exact landscape widescreen 16:9 canvas, 1920 x 1080 pixels. Full-bleed one complete scene, no panels, no borders. Eye-level simple wide stage-like perspective. Keep lower central 45% spacious and uncluttered so characters can be added. Objects arranged along sides and background.\nStyle: confident thick black slightly hand-drawn smooth outlines, simple rounded shapes, flat warm cream #F8F4EB and ivory surfaces, a few orange #FF822B accent shapes; subtle pale beige only where necessary for layering. Cozy, playful, quiet and friendly. Restrained detail, coherent black line weights. This is a finished illustrated environment matching the reference character's visual universe.\nConstraints: background scenery only. No characters, people, animals, faces, eyes on objects, lettering, signs with text, logos, watermark, gradient, realistic rendering, 3D, cast shadows, glow, checkerboard or collage. Opaque background. Exact 16:9 output aspect ratio.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-6a0e861c-1e3e-42a8-932d-4f90e1255562.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "file": "00-original-four/neighbourhood_park_16x9_v04.png",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "2f3c0ec0bb9c616614bb341735c560859efdca55604853f1f2ca6e8d2f8812ac",
+    "group": "00-original-four",
+    "kind": "previous"
+  },
+  {
+    "slug": "corner_cafe",
+    "name": "Corner caf\u00e9",
+    "scene": "A cosy neighbourhood cafe interior. Small rounded counter and orange espresso machine at far right, arched window on left, two compact cream cafe tables tucked at the sides, a hanging orange pendant. Broad empty central floor for character scenes.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background for widescreen animation/video.\nInput image: STYLE REFERENCE ONLY. Match the friendly minimal Doddy cream-and-black ink illustration style and small orange accents. Do not reproduce or include the character.\nPrimary request: A cosy neighbourhood cafe interior. Small rounded counter and orange espresso machine at far right, arched window on left, two compact cream cafe tables tucked at the sides, a hanging orange pendant. Broad empty central floor for character scenes.\nComposition: exact landscape widescreen 16:9 canvas, 1920 x 1080 pixels. Full-bleed one complete scene, no panels, no borders. Eye-level simple wide stage-like perspective. Keep lower central 45% spacious and uncluttered so characters can be added. Objects arranged along sides and background.\nStyle: confident thick black slightly hand-drawn smooth outlines, simple rounded shapes, flat warm cream #F8F4EB and ivory surfaces, a few orange #FF822B accent shapes; subtle pale beige only where necessary for layering. Cozy, playful, quiet and friendly. Restrained detail, coherent black line weights. This is a finished illustrated environment matching the reference character's visual universe.\nConstraints: background scenery only. No characters, people, animals, faces, eyes on objects, lettering, signs with text, logos, watermark, gradient, realistic rendering, 3D, cast shadows, glow, checkerboard or collage. Opaque background. Exact 16:9 output aspect ratio.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-ed1ecc38-ee1d-42d5-bd3b-55ddfc2019a8.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "file": "00-original-four/corner_cafe_16x9_v04.png",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "0e65a1eaa3df2fe60d24b352c184b3f2be28f25c4c543299e475d6bf8baebe85",
+    "group": "00-original-four",
+    "kind": "previous"
+  },
+  {
+    "slug": "moonlit_hills",
+    "name": "Moonlit hills",
+    "scene": "A calm whimsical evening landscape. Cream sky, bold black crescent moon, a few tiny simple ink stars, rounded hills in cream and subtle pale warm beige separated by black contours, orange setting sun half concealed behind a distant hill, small tree silhouette at far side. Wide empty gently curved foreground meadow for character scenes. Evening mood through shapes, retain warm light cream background.",
+    "prompt": "Use case: illustration-story. Asset type: reusable Doddy scenery background for widescreen animation/video.\nInput image: STYLE REFERENCE ONLY. Match the friendly minimal Doddy cream-and-black ink illustration style and small orange accents. Do not reproduce or include the character.\nPrimary request: A calm whimsical evening landscape. Cream sky, bold black crescent moon, a few tiny simple ink stars, rounded hills in cream and subtle pale warm beige separated by black contours, orange setting sun half concealed behind a distant hill, small tree silhouette at far side. Wide empty gently curved foreground meadow for character scenes. Evening mood through shapes, retain warm light cream background.\nComposition: exact landscape widescreen 16:9 canvas, 1920 x 1080 pixels. Full-bleed one complete scene, no panels, no borders. Eye-level simple wide stage-like perspective. Keep lower central 45% spacious and uncluttered so characters can be added. Objects arranged along sides and background.\nStyle: confident thick black slightly hand-drawn smooth outlines, simple rounded shapes, flat warm cream #F8F4EB and ivory surfaces, a few orange #FF822B accent shapes; subtle pale beige only where necessary for layering. Cozy, playful, quiet and friendly. Restrained detail, coherent black line weights. This is a finished illustrated environment matching the reference character's visual universe.\nConstraints: background scenery only. No characters, people, animals, faces, eyes on objects, lettering, signs with text, logos, watermark, gradient, realistic rendering, 3D, cast shadows, glow, checkerboard or collage. Opaque background. Exact 16:9 output aspect ratio.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-6ddbedaa-5d17-4ac6-a1eb-07a2546af490.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "file": "00-original-four/moonlit_hills_16x9_v04.png",
+    "width": 1920,
+    "height": 1080,
+    "sha256": "14877023f42c56c8b1d96782bc1c1c15d40a241a52564f2e76c6c8b4367c3cbf",
+    "group": "00-original-four",
+    "kind": "previous"
+  },
+  {
+    "id": 0,
+    "slug": "paris",
+    "name": "Paris",
+    "country": "France",
+    "group": "05-european-capitals",
+    "scene": "Eiffel Tower clearly visible in rear left, simplified Parisian mansard roof buildings and a stone Seine embankment promenade; wide empty near foreground.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: Paris, France. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Eiffel Tower clearly visible in rear left, simplified Parisian mansard roof buildings and a stone Seine embankment promenade; wide empty near foreground.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-2744794e-167b-4032-958f-64c6b7e41818.png",
+    "file": "05-european-capitals/paris_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "5342113bca59b7ebeef951496c34cfb051e50de1734502605501963a55c0e406"
+  },
+  {
+    "id": 1,
+    "slug": "london",
+    "name": "London",
+    "country": "United Kingdom",
+    "group": "05-european-capitals",
+    "scene": "Recognisable Elizabeth Tower (Big Ben) and Houses of Parliament across the Thames, Westminster Bridge in the distance, empty riverside foreground. Capture the clocktower's distinctive tall square form and pointed ornate crown.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: London, United Kingdom. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Recognisable Elizabeth Tower (Big Ben) and Houses of Parliament across the Thames, Westminster Bridge in the distance, empty riverside foreground. Capture the clocktower's distinctive tall square form and pointed ornate crown.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-c54f88fb-dc63-4db2-88e8-64b1cb44afc8.png",
+    "file": "05-european-capitals/london_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "e469a60dd8c66fac1128baa51d4a233240b84a22a6c8bba562426e26196d314d"
+  },
+  {
+    "id": 2,
+    "slug": "rome",
+    "name": "Rome",
+    "country": "Italy",
+    "group": "05-european-capitals",
+    "scene": "Immediately recognisable Colosseum with oval tiers of arches at back right, simple Roman stone paving and umbrella pines at edges, broad foreground piazza.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: Rome, Italy. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Immediately recognisable Colosseum with oval tiers of arches at back right, simple Roman stone paving and umbrella pines at edges, broad foreground piazza.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-f4c17e72-1245-420e-8867-f49942239033.png",
+    "file": "05-european-capitals/rome_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "402c16c3c82e30872d167a4d999d8cfe913f66cb350c8ec5e2d4f23ee31cd1e9"
+  },
+  {
+    "id": 3,
+    "slug": "berlin",
+    "name": "Berlin",
+    "country": "Germany",
+    "group": "05-european-capitals",
+    "scene": "Brandenburg Gate with six Doric columns, five passage openings, classical entablature and simplified quadriga silhouette on top, distant Berlin television tower off to side, empty foreground square.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: Berlin, Germany. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Brandenburg Gate with six Doric columns, five passage openings, classical entablature and simplified quadriga silhouette on top, distant Berlin television tower off to side, empty foreground square.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-a2425c9b-d498-4c75-b9fd-c97e5f5b58c9.png",
+    "file": "05-european-capitals/berlin_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "bdc46d30d16627e7688680e054224f47c120a4ee08a40c14ff8a55cc847119fc"
+  },
+  {
+    "id": 4,
+    "slug": "madrid",
+    "name": "Madrid",
+    "country": "Spain",
+    "group": "05-european-capitals",
+    "scene": "Puerta de Alcala clearly recognisable with its five openings, three central semicircular arches and two outer rectangular openings, neoclassical stone shape and sculptural top. Rounded park trees and wide clear plaza foreground.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: Madrid, Spain. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Puerta de Alcala clearly recognisable with its five openings, three central semicircular arches and two outer rectangular openings, neoclassical stone shape and sculptural top. Rounded park trees and wide clear plaza foreground.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-14fac795-ff36-414a-b15c-20f6c1c48082.png",
+    "file": "05-european-capitals/madrid_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "c81a5ada862210a14e436adae79aea731fb2bb47e9c2826b18cc2d761d7b85c1"
+  },
+  {
+    "id": 5,
+    "slug": "lisbon",
+    "name": "Lisbon",
+    "country": "Portugal",
+    "group": "05-european-capitals",
+    "scene": "Belem Tower clearly recognisable near the Tagus waterfront with square crenellated tower and small corner turrets, orange historic tram tucked far left in a simplified Lisbon hillside street edge. Clear promenade foreground.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: Lisbon, Portugal. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Belem Tower clearly recognisable near the Tagus waterfront with square crenellated tower and small corner turrets, orange historic tram tucked far left in a simplified Lisbon hillside street edge. Clear promenade foreground.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-7b817850-5924-4915-8bb9-21127adccc2a.png",
+    "file": "05-european-capitals/lisbon_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "7ae04db591883a368fc7027c376990f7803ab324d9fee7810713ac6ea5649eb9"
+  },
+  {
+    "id": 6,
+    "slug": "amsterdam",
+    "name": "Amsterdam",
+    "country": "Netherlands",
+    "group": "05-european-capitals",
+    "scene": "Distinctive narrow Dutch canal houses with varied stepped and bell gables, arched canal bridge, bicycles leaned against rail at edge, orange flowerpot. Empty near-side canal walkway foreground.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: Amsterdam, Netherlands. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Distinctive narrow Dutch canal houses with varied stepped and bell gables, arched canal bridge, bicycles leaned against rail at edge, orange flowerpot. Empty near-side canal walkway foreground.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-87c783d8-fa35-4f96-98ec-e3c27d53a30c.png",
+    "file": "05-european-capitals/amsterdam_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "f9bf5b17955574b1197c736ddb620808b22ce7a959847997670f502ccda4b789"
+  },
+  {
+    "id": 7,
+    "slug": "prague",
+    "name": "Prague",
+    "country": "Czechia",
+    "group": "05-european-capitals",
+    "scene": "Charles Bridge with recognisable Gothic Old Town Bridge Tower and simplified stone statues along balustrade, Prague Castle and St Vitus Cathedral silhouette distant behind river. Wide clear bridge foreground.",
+    "prompt": "Use case: illustration-story. Asset type: Doddy European city background.\nSTYLE reference image only. Preserve the established cream, bold black outlines, small orange accent palette but create a DIFFERENT real-city environment.\nCITY: Prague, Czechia. Landmark accuracy and immediate recognisability are the priority.\nSCENE: Charles Bridge with recognisable Gothic Old Town Bridge Tower and simplified stone statues along balustrade, Prague Castle and St Vitus Cathedral silhouette distant behind river. Wide clear bridge foreground.\nA finished full-bleed 16:9 landscape scene, 1920x1080 requested. Single coherent simplified city view, gently stage-like eye-level perspective. Main landmark clearly legible and distinctive in upper-middle/background; keep lower central 35% spacious for adding characters. Architectural landmark silhouette and essential defining details must be accurate enough to recognise the city visually, with simplified ornament, no generic substitutes. Respect plausible scale; playful condensed composition is allowed, no map accuracy required.\nWarm cream #F8F4EB, flat ivory and pale beige surfaces, confident hand-drawn smooth black contours, restrained orange #FF822B accents on small objects or roofs. Cozy friendly Doddy universe, refined uncluttered linework. No people, characters, animals, words, labels, flags, lettering, numbers, logos, watermark, panel, collage, photorealism, 3D, gradients, checkerboard. Opaque background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-25a306ad-c2d9-4cc8-b0e7-371474511e40.png",
+    "file": "05-european-capitals/prague_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "8c752bbf070e12033b6f46cbb3ff566b2c17534e6504a8b77f0fc8a90c5dddb8"
+  },
+  {
+    "id": 8,
+    "slug": "vienna",
+    "name": "Vienna",
+    "country": "Austria",
+    "group": "05-european-capitals",
+    "scene": "St Stephens Cathedral with recognisable tall slender Gothic south spire and patterned steep roof, simple Vienna facades at edges, broad empty Stephansplatz foreground.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Vienna, Austria.\nSCENE: St Stephens Cathedral with recognisable tall slender Gothic south spire and patterned steep roof, simple Vienna facades at edges, broad empty Stephansplatz foreground.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-5f45b0eb-3014-4bac-a21e-4dd74e7edc5d.png",
+    "file": "05-european-capitals/vienna_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "9a019a56e6f8224a1daa36c54a28d41c11a9fac1f1edd337e5e59e9b93dafc31"
+  },
+  {
+    "id": 9,
+    "slug": "budapest",
+    "name": "Budapest",
+    "country": "Hungary",
+    "group": "05-european-capitals",
+    "scene": "Hungarian Parliament recognisable across Danube with central dome, paired neo-Gothic towers and riverside facade, simplified Chain Bridge at side in distance. Empty near-bank promenade foreground.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Budapest, Hungary.\nSCENE: Hungarian Parliament recognisable across Danube with central dome, paired neo-Gothic towers and riverside facade, simplified Chain Bridge at side in distance. Empty near-bank promenade foreground.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-21109a9b-acd4-4dbb-97aa-f11d7d3a6fa5.png",
+    "file": "05-european-capitals/budapest_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "108b86c21fe9d4555111cf4e22786b9301a09401e3cd1893fda1661842f3a636"
+  },
+  {
+    "id": 10,
+    "slug": "warsaw",
+    "name": "Warsaw",
+    "country": "Poland",
+    "group": "05-european-capitals",
+    "scene": "Palace of Culture and Science recognisable centered in rear with tiered tall square tower, clock faces, characteristic needle spire and broad lower wings; simple distant city buildings and park tree at edges, large empty foreground plaza.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Warsaw, Poland.\nSCENE: Palace of Culture and Science recognisable centered in rear with tiered tall square tower, clock faces, characteristic needle spire and broad lower wings; simple distant city buildings and park tree at edges, large empty foreground plaza.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-2dd764e0-8644-4d48-a266-161ee1fd1af9.png",
+    "file": "05-european-capitals/warsaw_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "07a2a4b74607b2bd11a8e75689abf59b46b7676d6881817b900e97323cfc1b27"
+  },
+  {
+    "id": 11,
+    "slug": "athens",
+    "name": "Athens",
+    "country": "Greece",
+    "group": "05-european-capitals",
+    "scene": "Acropolis on raised rocky hill with recognisable Parthenon Doric column facade and horizontal classical roofline, sparse olive trees at edges, broad empty stone foreground terrace.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Athens, Greece.\nSCENE: Acropolis on raised rocky hill with recognisable Parthenon Doric column facade and horizontal classical roofline, sparse olive trees at edges, broad empty stone foreground terrace.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-b701b0af-bc72-468c-b075-7afedfeeb6a5.png",
+    "file": "05-european-capitals/athens_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "eefd3315886fa1e8ca3744adace4f2f03b49c845c587110f635297c2a2b20dc2"
+  },
+  {
+    "id": 12,
+    "slug": "copenhagen",
+    "name": "Copenhagen",
+    "country": "Denmark",
+    "group": "05-european-capitals",
+    "scene": "Recognisable Nyhavn canal with closely packed tall narrow gabled facades, orange accents on selected waterfront buildings, simple moored wooden sailboat along far bank. Wide empty near-side quay foreground.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Copenhagen, Denmark.\nSCENE: Recognisable Nyhavn canal with closely packed tall narrow gabled facades, orange accents on selected waterfront buildings, simple moored wooden sailboat along far bank. Wide empty near-side quay foreground.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-9985df95-d235-46bf-857c-c1c1b263816c.png",
+    "file": "05-european-capitals/copenhagen_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "e3f6adbe814145b84a8f40a2700cb46757afd1a751ed8dead8cafc059311563b"
+  },
+  {
+    "id": 13,
+    "slug": "stockholm",
+    "name": "Stockholm",
+    "country": "Sweden",
+    "group": "05-european-capitals",
+    "scene": "Recognisable Stockholm City Hall red-brick silhouette adapted into cream-and-ink with small orange accents: square tower topped with three crowns, waterfront low arcaded block and simple distant Gamla Stan rooftops. Clear near-side waterfront foreground.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Stockholm, Sweden.\nSCENE: Recognisable Stockholm City Hall red-brick silhouette adapted into cream-and-ink with small orange accents: square tower topped with three crowns, waterfront low arcaded block and simple distant Gamla Stan rooftops. Clear near-side waterfront foreground.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-135b6c41-345a-491e-ae9a-31984d079b88.png",
+    "file": "05-european-capitals/stockholm_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "9fca7dfce83114f42049d60cb73d862a1f149d8d21471be542d2143afe6057bf"
+  },
+  {
+    "id": 14,
+    "slug": "brussels",
+    "name": "Brussels",
+    "country": "Belgium",
+    "group": "05-european-capitals",
+    "scene": "Recognisable Atomium: nine large cream spheres connected by straight black-outline cylindrical tubes in iconic cube-shaped atom arrangement on its supports, simplified park trees flanking sides. Large empty central foreground plaza.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Brussels, Belgium.\nSCENE: Recognisable Atomium: nine large cream spheres connected by straight black-outline cylindrical tubes in iconic cube-shaped atom arrangement on its supports, simplified park trees flanking sides. Large empty central foreground plaza.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-aeb7410c-d758-42b8-91f7-690f29cf4ee0.png",
+    "file": "05-european-capitals/brussels_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "ec612ff68a84b2b7901f5ca132628d9d974ba502ae6292be538b8e294c11590a"
+  },
+  {
+    "id": 15,
+    "slug": "dublin",
+    "name": "Dublin",
+    "country": "Ireland",
+    "group": "05-european-capitals",
+    "scene": "Recognisable white cast-iron Ha'penny Bridge single shallow arch with slender repeating rails across River Liffey, classic low Georgian riverside facades beyond and distant Custom House dome. Wide empty near-bank walkway foreground.",
+    "prompt": "Use case: illustration-story. Asset type: recognisable European capital scenery for Doddy.\nReference image is STYLE ONLY, not geography. Draw a NEW city in the same warm cream, black ink and restrained orange accent illustration style.\nCITY: Dublin, Ireland.\nSCENE: Recognisable white cast-iron Ha'penny Bridge single shallow arch with slender repeating rails across River Liffey, classic low Georgian riverside facades beyond and distant Custom House dome. Wide empty near-bank walkway foreground.\nSingle full-bleed 16:9 widescreen, 1920x1080 requested. Main landmark with accurate defining silhouette and structural features occupies upper middle/background. Immediately recognisable to viewers familiar with the city. Eye-level wide simplified stage-like view with broad clear lower-central foreground for adding characters. Keep city-specific architecture, no generic replacement. Simplify small ornament, maintain plausible scale; composition is illustrative rather than a literal mapped street.\nBold smooth subtly hand-drawn black contours, rounded simple supporting forms, warm cream #F8F4EB and ivory flat surfaces, minimal pale beige separation, small orange #FF822B accents. Cozy playful calm Doddy aesthetic, restrained clean details.\nNo people, characters, animals, faces, written city names, text, signs with lettering, numbers, flags, logos, watermark, frames, panels, collage, shading, gradients, 3D, photorealism or checkerboard. Opaque complete background.",
+    "source": "/Users/popcorn/.codex/generated_images/01a12124-c49e-7302-9286-66d83ce4970d/exec-6df3cd01-2e01-4c23-b4ce-00d61479eed7.png",
+    "file": "05-european-capitals/dublin_16x9_v06.png",
+    "generated_size": [
+      1672,
+      941
+    ],
+    "width": 1920,
+    "height": 1080,
+    "kind": "city",
+    "sha256": "767c1e11e2d9d0e45dd7dcf1c7e069538abf0b93731b26a8bee9583a626d9ccb"
+  }
+]

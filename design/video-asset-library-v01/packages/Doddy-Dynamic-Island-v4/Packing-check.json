@@ -1,0 +1,10 @@
+{
+  "replacementBoards": 16,
+  "reviewSheets": 4,
+  "stateSVGs": 96,
+  "phoneSVGs": 96,
+  "nativeActionsImplemented": false,
+  "originalIdentityByteMatch": true,
+  "boardPNGDimensionsVerified": true,
+  "generatedExplorationSeparate": true
+}

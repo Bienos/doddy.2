@@ -27,7 +27,15 @@
 
 ## Access status (2026-10-09)
 
-The folder could not be read from the cloud build environment: the connected Google Drive account returned "not found" for the folder ID, and the share link redirects to sign-in. The inventory below therefore comes from the owner-supplied guide, **not** from a verified read of `000_Manifest.json`. Re-verify against the manifest before relying on an exact filename.
+**Imported (2026-10-09).** The full Drive folder is in `design/video-asset-library-v01/`, including the root numbered set, the index, manifest, prompts, the Word kit and the ZIP, plus three sub-packages under `packages/`:
+
+- `doddy-complete-scenery-16x9-v06/` — scenery (originals, home, neighbourhood, nature, seasons, European capitals).
+- `doddy-extra-poses-expressions-v02/` — transparent poses, pose sheets, expression sheets, paper poses.
+- `Doddy-Dynamic-Island-v4/` — "Little Instruments" V4 board set. The owner's guide said this folder was empty; it isn't. Its README says these are **static design mockups**; native actions and motion are not implemented.
+
+Verification: the 44 root PNGs match the SHA-256 hashes in `000_Asset_Index.csv`/`000_Manifest.json`; the Dynamic Island `SHA256SUMS.txt` passes. The root `045_tpl_safearea_exact_v01.svg` has no recorded hash. PNGs and the ZIP are stored with Git LFS (see `.gitattributes`).
+
+Still open: the guide's file list and the folder differ in places (`001`–`003`, `009`, `010` and the three sub-packages are not in the guide). Treat the manifest as authoritative.
 
 ---
 

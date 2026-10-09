@@ -1,0 +1,1608 @@
+{
+  "version": "4.0",
+  "boards": [
+    {
+      "name": "01-voice",
+      "title": "Lean In",
+      "svg": "01-boards/01-voice.svg",
+      "png": "01-boards/01-voice.png",
+      "id": "01",
+      "slug": "voice"
+    },
+    {
+      "name": "02-focus",
+      "title": "Tiny Promise",
+      "svg": "01-boards/02-focus.svg",
+      "png": "01-boards/02-focus.png",
+      "id": "02",
+      "slug": "focus"
+    },
+    {
+      "name": "03-music",
+      "title": "Pocket Radio",
+      "svg": "01-boards/03-music.svg",
+      "png": "01-boards/03-music.png",
+      "id": "03",
+      "slug": "music"
+    },
+    {
+      "name": "04-companion",
+      "title": "Here With You",
+      "svg": "01-boards/04-companion.svg",
+      "png": "01-boards/04-companion.png",
+      "id": "04",
+      "slug": "companion"
+    },
+    {
+      "name": "05-orbit",
+      "title": "Orbit",
+      "svg": "01-boards/05-orbit.svg",
+      "png": "01-boards/05-orbit.png",
+      "id": "A",
+      "slug": "orbit"
+    },
+    {
+      "name": "06-ink-ripple",
+      "title": "Ink Ripple",
+      "svg": "01-boards/06-ink-ripple.svg",
+      "png": "01-boards/06-ink-ripple.png",
+      "id": "B",
+      "slug": "ink-ripple"
+    },
+    {
+      "name": "07-negative-space",
+      "title": "Negative Space",
+      "svg": "01-boards/07-negative-space.svg",
+      "png": "01-boards/07-negative-space.png",
+      "id": "C",
+      "slug": "negative-space"
+    },
+    {
+      "name": "08-kinetic-ribbon",
+      "title": "Kinetic Ribbon",
+      "svg": "01-boards/08-kinetic-ribbon.svg",
+      "png": "01-boards/08-kinetic-ribbon.png",
+      "id": "D",
+      "slug": "kinetic-ribbon"
+    },
+    {
+      "name": "09-editorial",
+      "title": "Editorial",
+      "svg": "01-boards/09-editorial.svg",
+      "png": "01-boards/09-editorial.png",
+      "id": "E",
+      "slug": "editorial"
+    },
+    {
+      "name": "10-abstract-landscape",
+      "title": "Abstract Horizon",
+      "svg": "01-boards/10-abstract-landscape.svg",
+      "png": "01-boards/10-abstract-landscape.png",
+      "id": "F",
+      "slug": "abstract-landscape"
+    },
+    {
+      "name": "11-thought-drop",
+      "title": "Thought Pocket",
+      "svg": "01-boards/11-thought-drop.svg",
+      "png": "01-boards/11-thought-drop.png",
+      "id": "G",
+      "slug": "thought-drop"
+    },
+    {
+      "name": "12-language-bridge",
+      "title": "Language Bridge",
+      "svg": "01-boards/12-language-bridge.svg",
+      "png": "01-boards/12-language-bridge.png",
+      "id": "H",
+      "slug": "language-bridge"
+    },
+    {
+      "name": "13-reminder-pin",
+      "title": "Reminder Knot",
+      "svg": "01-boards/13-reminder-pin.svg",
+      "png": "01-boards/13-reminder-pin.png",
+      "id": "I",
+      "slug": "reminder-pin"
+    },
+    {
+      "name": "14-step-path",
+      "title": "Step Stones",
+      "svg": "01-boards/14-step-path.svg",
+      "png": "01-boards/14-step-path.png",
+      "id": "J",
+      "slug": "step-path"
+    },
+    {
+      "name": "15-spoken-mark",
+      "title": "Story Spool",
+      "svg": "01-boards/15-spoken-mark.svg",
+      "png": "01-boards/15-spoken-mark.png",
+      "id": "K",
+      "slug": "spoken-mark"
+    },
+    {
+      "name": "16-calm-pulse",
+      "title": "Calm Tide",
+      "svg": "01-boards/16-calm-pulse.svg",
+      "png": "01-boards/16-calm-pulse.png",
+      "id": "L",
+      "slug": "calm-pulse"
+    }
+  ],
+  "components": [
+    {
+      "direction": "voice",
+      "activity": "0",
+      "state": "compact",
+      "label": "LISTENING",
+      "path": "02-states/voice-0-compact.svg",
+      "phone": "03-phone-reference/voice-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "voice",
+      "activity": "0",
+      "state": "expanded",
+      "label": "LISTENING",
+      "path": "02-states/voice-0-expanded.svg",
+      "phone": "03-phone-reference/voice-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "voice",
+      "activity": "0",
+      "state": "minimal",
+      "label": "LISTENING",
+      "path": "02-states/voice-0-minimal.svg",
+      "phone": "03-phone-reference/voice-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "voice",
+      "activity": "1",
+      "state": "compact",
+      "label": "SPEAKING",
+      "path": "02-states/voice-1-compact.svg",
+      "phone": "03-phone-reference/voice-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "voice",
+      "activity": "1",
+      "state": "expanded",
+      "label": "SPEAKING",
+      "path": "02-states/voice-1-expanded.svg",
+      "phone": "03-phone-reference/voice-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "voice",
+      "activity": "1",
+      "state": "minimal",
+      "label": "SPEAKING",
+      "path": "02-states/voice-1-minimal.svg",
+      "phone": "03-phone-reference/voice-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "focus",
+      "activity": "0",
+      "state": "compact",
+      "label": "RUNNING",
+      "path": "02-states/focus-0-compact.svg",
+      "phone": "03-phone-reference/focus-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "focus",
+      "activity": "0",
+      "state": "expanded",
+      "label": "RUNNING",
+      "path": "02-states/focus-0-expanded.svg",
+      "phone": "03-phone-reference/focus-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "focus",
+      "activity": "0",
+      "state": "minimal",
+      "label": "RUNNING",
+      "path": "02-states/focus-0-minimal.svg",
+      "phone": "03-phone-reference/focus-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "focus",
+      "activity": "1",
+      "state": "compact",
+      "label": "PAUSED",
+      "path": "02-states/focus-1-compact.svg",
+      "phone": "03-phone-reference/focus-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "focus",
+      "activity": "1",
+      "state": "expanded",
+      "label": "PAUSED",
+      "path": "02-states/focus-1-expanded.svg",
+      "phone": "03-phone-reference/focus-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "focus",
+      "activity": "1",
+      "state": "minimal",
+      "label": "PAUSED",
+      "path": "02-states/focus-1-minimal.svg",
+      "phone": "03-phone-reference/focus-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "music",
+      "activity": "0",
+      "state": "compact",
+      "label": "PLAYING",
+      "path": "02-states/music-0-compact.svg",
+      "phone": "03-phone-reference/music-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "music",
+      "activity": "0",
+      "state": "expanded",
+      "label": "PLAYING",
+      "path": "02-states/music-0-expanded.svg",
+      "phone": "03-phone-reference/music-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "music",
+      "activity": "0",
+      "state": "minimal",
+      "label": "PLAYING",
+      "path": "02-states/music-0-minimal.svg",
+      "phone": "03-phone-reference/music-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "music",
+      "activity": "1",
+      "state": "compact",
+      "label": "PAUSED",
+      "path": "02-states/music-1-compact.svg",
+      "phone": "03-phone-reference/music-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "music",
+      "activity": "1",
+      "state": "expanded",
+      "label": "PAUSED",
+      "path": "02-states/music-1-expanded.svg",
+      "phone": "03-phone-reference/music-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "music",
+      "activity": "1",
+      "state": "minimal",
+      "label": "PAUSED",
+      "path": "02-states/music-1-minimal.svg",
+      "phone": "03-phone-reference/music-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "companion",
+      "activity": "0",
+      "state": "compact",
+      "label": "ACTIVE SESSION",
+      "path": "02-states/companion-0-compact.svg",
+      "phone": "03-phone-reference/companion-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "companion",
+      "activity": "0",
+      "state": "expanded",
+      "label": "ACTIVE SESSION",
+      "path": "02-states/companion-0-expanded.svg",
+      "phone": "03-phone-reference/companion-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "companion",
+      "activity": "0",
+      "state": "minimal",
+      "label": "ACTIVE SESSION",
+      "path": "02-states/companion-0-minimal.svg",
+      "phone": "03-phone-reference/companion-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "companion",
+      "activity": "1",
+      "state": "compact",
+      "label": "THINKING",
+      "path": "02-states/companion-1-compact.svg",
+      "phone": "03-phone-reference/companion-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "companion",
+      "activity": "1",
+      "state": "expanded",
+      "label": "THINKING",
+      "path": "02-states/companion-1-expanded.svg",
+      "phone": "03-phone-reference/companion-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "companion",
+      "activity": "1",
+      "state": "minimal",
+      "label": "THINKING",
+      "path": "02-states/companion-1-minimal.svg",
+      "phone": "03-phone-reference/companion-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "orbit",
+      "activity": "0",
+      "state": "compact",
+      "label": "VOICE SESSION",
+      "path": "02-states/orbit-0-compact.svg",
+      "phone": "03-phone-reference/orbit-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "orbit",
+      "activity": "0",
+      "state": "expanded",
+      "label": "VOICE SESSION",
+      "path": "02-states/orbit-0-expanded.svg",
+      "phone": "03-phone-reference/orbit-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "orbit",
+      "activity": "0",
+      "state": "minimal",
+      "label": "VOICE SESSION",
+      "path": "02-states/orbit-0-minimal.svg",
+      "phone": "03-phone-reference/orbit-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "orbit",
+      "activity": "1",
+      "state": "compact",
+      "label": "FOCUS TIMER",
+      "path": "02-states/orbit-1-compact.svg",
+      "phone": "03-phone-reference/orbit-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "orbit",
+      "activity": "1",
+      "state": "expanded",
+      "label": "FOCUS TIMER",
+      "path": "02-states/orbit-1-expanded.svg",
+      "phone": "03-phone-reference/orbit-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "orbit",
+      "activity": "1",
+      "state": "minimal",
+      "label": "FOCUS TIMER",
+      "path": "02-states/orbit-1-minimal.svg",
+      "phone": "03-phone-reference/orbit-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "ink-ripple",
+      "activity": "0",
+      "state": "compact",
+      "label": "VOICE SESSION",
+      "path": "02-states/ink-ripple-0-compact.svg",
+      "phone": "03-phone-reference/ink-ripple-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "ink-ripple",
+      "activity": "0",
+      "state": "expanded",
+      "label": "VOICE SESSION",
+      "path": "02-states/ink-ripple-0-expanded.svg",
+      "phone": "03-phone-reference/ink-ripple-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "ink-ripple",
+      "activity": "0",
+      "state": "minimal",
+      "label": "VOICE SESSION",
+      "path": "02-states/ink-ripple-0-minimal.svg",
+      "phone": "03-phone-reference/ink-ripple-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "ink-ripple",
+      "activity": "1",
+      "state": "compact",
+      "label": "FOCUS TIMER",
+      "path": "02-states/ink-ripple-1-compact.svg",
+      "phone": "03-phone-reference/ink-ripple-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "ink-ripple",
+      "activity": "1",
+      "state": "expanded",
+      "label": "FOCUS TIMER",
+      "path": "02-states/ink-ripple-1-expanded.svg",
+      "phone": "03-phone-reference/ink-ripple-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "ink-ripple",
+      "activity": "1",
+      "state": "minimal",
+      "label": "FOCUS TIMER",
+      "path": "02-states/ink-ripple-1-minimal.svg",
+      "phone": "03-phone-reference/ink-ripple-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "negative-space",
+      "activity": "0",
+      "state": "compact",
+      "label": "VOICE SESSION",
+      "path": "02-states/negative-space-0-compact.svg",
+      "phone": "03-phone-reference/negative-space-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "negative-space",
+      "activity": "0",
+      "state": "expanded",
+      "label": "VOICE SESSION",
+      "path": "02-states/negative-space-0-expanded.svg",
+      "phone": "03-phone-reference/negative-space-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "negative-space",
+      "activity": "0",
+      "state": "minimal",
+      "label": "VOICE SESSION",
+      "path": "02-states/negative-space-0-minimal.svg",
+      "phone": "03-phone-reference/negative-space-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "negative-space",
+      "activity": "1",
+      "state": "compact",
+      "label": "FOCUS TIMER",
+      "path": "02-states/negative-space-1-compact.svg",
+      "phone": "03-phone-reference/negative-space-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "negative-space",
+      "activity": "1",
+      "state": "expanded",
+      "label": "FOCUS TIMER",
+      "path": "02-states/negative-space-1-expanded.svg",
+      "phone": "03-phone-reference/negative-space-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "negative-space",
+      "activity": "1",
+      "state": "minimal",
+      "label": "FOCUS TIMER",
+      "path": "02-states/negative-space-1-minimal.svg",
+      "phone": "03-phone-reference/negative-space-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "kinetic-ribbon",
+      "activity": "0",
+      "state": "compact",
+      "label": "VOICE SESSION",
+      "path": "02-states/kinetic-ribbon-0-compact.svg",
+      "phone": "03-phone-reference/kinetic-ribbon-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "kinetic-ribbon",
+      "activity": "0",
+      "state": "expanded",
+      "label": "VOICE SESSION",
+      "path": "02-states/kinetic-ribbon-0-expanded.svg",
+      "phone": "03-phone-reference/kinetic-ribbon-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "kinetic-ribbon",
+      "activity": "0",
+      "state": "minimal",
+      "label": "VOICE SESSION",
+      "path": "02-states/kinetic-ribbon-0-minimal.svg",
+      "phone": "03-phone-reference/kinetic-ribbon-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "kinetic-ribbon",
+      "activity": "1",
+      "state": "compact",
+      "label": "FOCUS TIMER",
+      "path": "02-states/kinetic-ribbon-1-compact.svg",
+      "phone": "03-phone-reference/kinetic-ribbon-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "kinetic-ribbon",
+      "activity": "1",
+      "state": "expanded",
+      "label": "FOCUS TIMER",
+      "path": "02-states/kinetic-ribbon-1-expanded.svg",
+      "phone": "03-phone-reference/kinetic-ribbon-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "kinetic-ribbon",
+      "activity": "1",
+      "state": "minimal",
+      "label": "FOCUS TIMER",
+      "path": "02-states/kinetic-ribbon-1-minimal.svg",
+      "phone": "03-phone-reference/kinetic-ribbon-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "editorial",
+      "activity": "0",
+      "state": "compact",
+      "label": "VOICE SESSION",
+      "path": "02-states/editorial-0-compact.svg",
+      "phone": "03-phone-reference/editorial-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "editorial",
+      "activity": "0",
+      "state": "expanded",
+      "label": "VOICE SESSION",
+      "path": "02-states/editorial-0-expanded.svg",
+      "phone": "03-phone-reference/editorial-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "editorial",
+      "activity": "0",
+      "state": "minimal",
+      "label": "VOICE SESSION",
+      "path": "02-states/editorial-0-minimal.svg",
+      "phone": "03-phone-reference/editorial-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "editorial",
+      "activity": "1",
+      "state": "compact",
+      "label": "FOCUS TIMER",
+      "path": "02-states/editorial-1-compact.svg",
+      "phone": "03-phone-reference/editorial-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "editorial",
+      "activity": "1",
+      "state": "expanded",
+      "label": "FOCUS TIMER",
+      "path": "02-states/editorial-1-expanded.svg",
+      "phone": "03-phone-reference/editorial-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "editorial",
+      "activity": "1",
+      "state": "minimal",
+      "label": "FOCUS TIMER",
+      "path": "02-states/editorial-1-minimal.svg",
+      "phone": "03-phone-reference/editorial-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "abstract-landscape",
+      "activity": "0",
+      "state": "compact",
+      "label": "VOICE SESSION",
+      "path": "02-states/abstract-landscape-0-compact.svg",
+      "phone": "03-phone-reference/abstract-landscape-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "abstract-landscape",
+      "activity": "0",
+      "state": "expanded",
+      "label": "VOICE SESSION",
+      "path": "02-states/abstract-landscape-0-expanded.svg",
+      "phone": "03-phone-reference/abstract-landscape-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "abstract-landscape",
+      "activity": "0",
+      "state": "minimal",
+      "label": "VOICE SESSION",
+      "path": "02-states/abstract-landscape-0-minimal.svg",
+      "phone": "03-phone-reference/abstract-landscape-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "abstract-landscape",
+      "activity": "1",
+      "state": "compact",
+      "label": "FOCUS TIMER",
+      "path": "02-states/abstract-landscape-1-compact.svg",
+      "phone": "03-phone-reference/abstract-landscape-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "abstract-landscape",
+      "activity": "1",
+      "state": "expanded",
+      "label": "FOCUS TIMER",
+      "path": "02-states/abstract-landscape-1-expanded.svg",
+      "phone": "03-phone-reference/abstract-landscape-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "abstract-landscape",
+      "activity": "1",
+      "state": "minimal",
+      "label": "FOCUS TIMER",
+      "path": "02-states/abstract-landscape-1-minimal.svg",
+      "phone": "03-phone-reference/abstract-landscape-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "thought-drop",
+      "activity": "0",
+      "state": "compact",
+      "label": "CAPTURE",
+      "path": "02-states/thought-drop-0-compact.svg",
+      "phone": "03-phone-reference/thought-drop-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "thought-drop",
+      "activity": "0",
+      "state": "expanded",
+      "label": "CAPTURE",
+      "path": "02-states/thought-drop-0-expanded.svg",
+      "phone": "03-phone-reference/thought-drop-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "thought-drop",
+      "activity": "0",
+      "state": "minimal",
+      "label": "CAPTURE",
+      "path": "02-states/thought-drop-0-minimal.svg",
+      "phone": "03-phone-reference/thought-drop-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "thought-drop",
+      "activity": "1",
+      "state": "compact",
+      "label": "CONFIRMED",
+      "path": "02-states/thought-drop-1-compact.svg",
+      "phone": "03-phone-reference/thought-drop-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "thought-drop",
+      "activity": "1",
+      "state": "expanded",
+      "label": "CONFIRMED",
+      "path": "02-states/thought-drop-1-expanded.svg",
+      "phone": "03-phone-reference/thought-drop-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "thought-drop",
+      "activity": "1",
+      "state": "minimal",
+      "label": "CONFIRMED",
+      "path": "02-states/thought-drop-1-minimal.svg",
+      "phone": "03-phone-reference/thought-drop-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "language-bridge",
+      "activity": "0",
+      "state": "compact",
+      "label": "TRANSLATING",
+      "path": "02-states/language-bridge-0-compact.svg",
+      "phone": "03-phone-reference/language-bridge-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "language-bridge",
+      "activity": "0",
+      "state": "expanded",
+      "label": "TRANSLATING",
+      "path": "02-states/language-bridge-0-expanded.svg",
+      "phone": "03-phone-reference/language-bridge-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "language-bridge",
+      "activity": "0",
+      "state": "minimal",
+      "label": "TRANSLATING",
+      "path": "02-states/language-bridge-0-minimal.svg",
+      "phone": "03-phone-reference/language-bridge-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "language-bridge",
+      "activity": "1",
+      "state": "compact",
+      "label": "READY TO PLAY",
+      "path": "02-states/language-bridge-1-compact.svg",
+      "phone": "03-phone-reference/language-bridge-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "language-bridge",
+      "activity": "1",
+      "state": "expanded",
+      "label": "READY TO PLAY",
+      "path": "02-states/language-bridge-1-expanded.svg",
+      "phone": "03-phone-reference/language-bridge-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "language-bridge",
+      "activity": "1",
+      "state": "minimal",
+      "label": "READY TO PLAY",
+      "path": "02-states/language-bridge-1-minimal.svg",
+      "phone": "03-phone-reference/language-bridge-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "reminder-pin",
+      "activity": "0",
+      "state": "compact",
+      "label": "SETTING",
+      "path": "02-states/reminder-pin-0-compact.svg",
+      "phone": "03-phone-reference/reminder-pin-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "reminder-pin",
+      "activity": "0",
+      "state": "expanded",
+      "label": "SETTING",
+      "path": "02-states/reminder-pin-0-expanded.svg",
+      "phone": "03-phone-reference/reminder-pin-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "reminder-pin",
+      "activity": "0",
+      "state": "minimal",
+      "label": "SETTING",
+      "path": "02-states/reminder-pin-0-minimal.svg",
+      "phone": "03-phone-reference/reminder-pin-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "reminder-pin",
+      "activity": "1",
+      "state": "compact",
+      "label": "CONFIRMED",
+      "path": "02-states/reminder-pin-1-compact.svg",
+      "phone": "03-phone-reference/reminder-pin-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "reminder-pin",
+      "activity": "1",
+      "state": "expanded",
+      "label": "CONFIRMED",
+      "path": "02-states/reminder-pin-1-expanded.svg",
+      "phone": "03-phone-reference/reminder-pin-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "reminder-pin",
+      "activity": "1",
+      "state": "minimal",
+      "label": "CONFIRMED",
+      "path": "02-states/reminder-pin-1-minimal.svg",
+      "phone": "03-phone-reference/reminder-pin-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "step-path",
+      "activity": "0",
+      "state": "compact",
+      "label": "PLANNING",
+      "path": "02-states/step-path-0-compact.svg",
+      "phone": "03-phone-reference/step-path-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "step-path",
+      "activity": "0",
+      "state": "expanded",
+      "label": "PLANNING",
+      "path": "02-states/step-path-0-expanded.svg",
+      "phone": "03-phone-reference/step-path-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "step-path",
+      "activity": "0",
+      "state": "minimal",
+      "label": "PLANNING",
+      "path": "02-states/step-path-0-minimal.svg",
+      "phone": "03-phone-reference/step-path-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "step-path",
+      "activity": "1",
+      "state": "compact",
+      "label": "NEXT STEP",
+      "path": "02-states/step-path-1-compact.svg",
+      "phone": "03-phone-reference/step-path-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "step-path",
+      "activity": "1",
+      "state": "expanded",
+      "label": "NEXT STEP",
+      "path": "02-states/step-path-1-expanded.svg",
+      "phone": "03-phone-reference/step-path-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "step-path",
+      "activity": "1",
+      "state": "minimal",
+      "label": "NEXT STEP",
+      "path": "02-states/step-path-1-minimal.svg",
+      "phone": "03-phone-reference/step-path-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "spoken-mark",
+      "activity": "0",
+      "state": "compact",
+      "label": "READING",
+      "path": "02-states/spoken-mark-0-compact.svg",
+      "phone": "03-phone-reference/spoken-mark-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "spoken-mark",
+      "activity": "0",
+      "state": "expanded",
+      "label": "READING",
+      "path": "02-states/spoken-mark-0-expanded.svg",
+      "phone": "03-phone-reference/spoken-mark-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "spoken-mark",
+      "activity": "0",
+      "state": "minimal",
+      "label": "READING",
+      "path": "02-states/spoken-mark-0-minimal.svg",
+      "phone": "03-phone-reference/spoken-mark-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "spoken-mark",
+      "activity": "1",
+      "state": "compact",
+      "label": "PAUSED",
+      "path": "02-states/spoken-mark-1-compact.svg",
+      "phone": "03-phone-reference/spoken-mark-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "spoken-mark",
+      "activity": "1",
+      "state": "expanded",
+      "label": "PAUSED",
+      "path": "02-states/spoken-mark-1-expanded.svg",
+      "phone": "03-phone-reference/spoken-mark-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "spoken-mark",
+      "activity": "1",
+      "state": "minimal",
+      "label": "PAUSED",
+      "path": "02-states/spoken-mark-1-minimal.svg",
+      "phone": "03-phone-reference/spoken-mark-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "calm-pulse",
+      "activity": "0",
+      "state": "compact",
+      "label": "EXHALE",
+      "path": "02-states/calm-pulse-0-compact.svg",
+      "phone": "03-phone-reference/calm-pulse-0-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "calm-pulse",
+      "activity": "0",
+      "state": "expanded",
+      "label": "EXHALE",
+      "path": "02-states/calm-pulse-0-expanded.svg",
+      "phone": "03-phone-reference/calm-pulse-0-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "calm-pulse",
+      "activity": "0",
+      "state": "minimal",
+      "label": "EXHALE",
+      "path": "02-states/calm-pulse-0-minimal.svg",
+      "phone": "03-phone-reference/calm-pulse-0-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    },
+    {
+      "direction": "calm-pulse",
+      "activity": "1",
+      "state": "compact",
+      "label": "INHALE",
+      "path": "02-states/calm-pulse-1-compact.svg",
+      "phone": "03-phone-reference/calm-pulse-1-compact.svg",
+      "width": 230,
+      "height": 36.67
+    },
+    {
+      "direction": "calm-pulse",
+      "activity": "1",
+      "state": "expanded",
+      "label": "INHALE",
+      "path": "02-states/calm-pulse-1-expanded.svg",
+      "phone": "03-phone-reference/calm-pulse-1-expanded.svg",
+      "width": 371,
+      "height": 156
+    },
+    {
+      "direction": "calm-pulse",
+      "activity": "1",
+      "state": "minimal",
+      "label": "INHALE",
+      "path": "02-states/calm-pulse-1-minimal.svg",
+      "phone": "03-phone-reference/calm-pulse-1-minimal.svg",
+      "width": 45,
+      "height": 36.67
+    }
+  ],
+  "catalog": [
+    {
+      "id": "01",
+      "slug": "voice",
+      "title": "Lean In",
+      "family": "REFINED ORIGINAL",
+      "idea": "A little lean-in. A proper conversation.",
+      "rationale": "The cupped hand and short voice bars show attentive capture; the mouth changes when Doddy speaks.",
+      "motion": "Replace the capture bars and mouth only with voice-state updates.",
+      "variants": [
+        {
+          "label": "LISTENING",
+          "status": "Listening",
+          "context": "Talk it through",
+          "kind": "listen",
+          "control": "stop",
+          "meta": "00:42"
+        },
+        {
+          "label": "SPEAKING",
+          "status": "Speaking",
+          "context": "One step at a time",
+          "kind": "speak",
+          "control": "pause",
+          "meta": "00:08"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "slug": "focus",
+      "title": "Tiny Promise",
+      "family": "REFINED ORIGINAL",
+      "idea": "One small promise, kept one minute at a time.",
+      "rationale": "A measured dial holds Doddy close to the countdown. The paused state keeps the same time and progress.",
+      "motion": "Countdown and dial follow actual remaining time. Pause holds both.",
+      "variants": [
+        {
+          "label": "RUNNING",
+          "status": "12:48",
+          "context": "Write one paragraph",
+          "kind": "focus",
+          "control": "pause",
+          "meta": "25 min",
+          "fraction": 0.512
+        },
+        {
+          "label": "PAUSED",
+          "status": "12:48",
+          "context": "Ready when you are",
+          "kind": "paused",
+          "control": "play",
+          "meta": "Paused",
+          "fraction": 0.512
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "slug": "music",
+      "title": "Pocket Radio",
+      "family": "REFINED ORIGINAL",
+      "idea": "A tiny pocket radio, with Doddy on the dial.",
+      "rationale": "Vinyl-like rings and a restrained orange needle make playback identifiable without an album cover.",
+      "motion": "The orange record segment follows playback progress and holds when paused.",
+      "variants": [
+        {
+          "label": "PLAYING",
+          "status": "Playing",
+          "context": "Sunday slow-down",
+          "kind": "music",
+          "control": "pause",
+          "meta": "01:24",
+          "fraction": 0.38
+        },
+        {
+          "label": "PAUSED",
+          "status": "Paused",
+          "context": "Sunday slow-down",
+          "kind": "music-paused",
+          "control": "play",
+          "meta": "01:24",
+          "fraction": 0.38
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "slug": "companion",
+      "title": "Here With You",
+      "family": "REFINED ORIGINAL",
+      "idea": "Here with you, without taking over.",
+      "rationale": "Two small hands and a held conversation loop convey presence. Thinking replaces the active voice cue.",
+      "motion": "Replace the conversation loop with thought points while processing.",
+      "variants": [
+        {
+          "label": "ACTIVE SESSION",
+          "status": "Session active",
+          "context": "Talk it through",
+          "kind": "session",
+          "control": "open",
+          "meta": "03:12"
+        },
+        {
+          "label": "THINKING",
+          "status": "Thinking",
+          "context": "Finding a useful next step",
+          "kind": "think",
+          "control": "open",
+          "meta": "03:12"
+        }
+      ]
+    },
+    {
+      "id": "A",
+      "slug": "orbit",
+      "title": "Orbit",
+      "family": "CORE DIRECTION",
+      "idea": "A small instrument for a little momentum.",
+      "rationale": "Three quiet ticks give the elliptical dial precision; one orange segment carries focus progress or voice activity.",
+      "motion": "Dial segment follows progress; voice uses a bounded activity segment.",
+      "strong": 1,
+      "variants": [
+        {
+          "label": "VOICE SESSION",
+          "status": "Listening",
+          "context": "Talk it through",
+          "kind": "listen",
+          "control": "stop",
+          "meta": "00:42"
+        },
+        {
+          "label": "FOCUS TIMER",
+          "status": "12:48",
+          "context": "One next step",
+          "kind": "focus",
+          "control": "pause",
+          "meta": "25 min",
+          "fraction": 0.512
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "slug": "ink-ripple",
+      "title": "Ink Ripple",
+      "family": "CORE DIRECTION",
+      "idea": "Thoughts take shape before they become words.",
+      "rationale": "An organic cream silhouette and an orange energy contour form one speech instrument, rather than a decorative waveform.",
+      "motion": "Speech updates change the energy contour. Focus settles it into a quiet curve.",
+      "variants": [
+        {
+          "label": "VOICE SESSION",
+          "status": "Listening",
+          "context": "Save a thought",
+          "kind": "listen",
+          "control": "stop",
+          "meta": "00:42"
+        },
+        {
+          "label": "FOCUS TIMER",
+          "status": "12:48",
+          "context": "Write one paragraph",
+          "kind": "focus",
+          "control": "pause",
+          "meta": "25 min",
+          "fraction": 0.512
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "slug": "negative-space",
+      "title": "Negative Space",
+      "family": "CORE DIRECTION",
+      "idea": "The island becomes part of Doddy\u2019s gesture.",
+      "rationale": "A cream crescent cut from the island supports Doddy\u2019s face and an offered hand. The black surface completes the gesture.",
+      "motion": "The gesture stays still; the orange state point changes with useful updates.",
+      "variants": [
+        {
+          "label": "VOICE SESSION",
+          "status": "Listening",
+          "context": "Translate a phrase",
+          "kind": "listen",
+          "control": "stop",
+          "meta": "00:42"
+        },
+        {
+          "label": "FOCUS TIMER",
+          "status": "12:48",
+          "context": "Practise French",
+          "kind": "focus",
+          "control": "pause",
+          "meta": "25 min",
+          "fraction": 0.512
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "slug": "kinetic-ribbon",
+      "title": "Kinetic Ribbon",
+      "family": "CORE DIRECTION",
+      "idea": "Speech folds. Focus finds its line.",
+      "rationale": "The ribbon wraps the identity and changes from a controlled speech fold to a measured focus loop.",
+      "motion": "A bounded fold change follows voice-state updates. Focus has a stable measured loop.",
+      "variants": [
+        {
+          "label": "VOICE SESSION",
+          "status": "Reading aloud",
+          "context": "Your saved article",
+          "kind": "speak",
+          "control": "pause",
+          "meta": "00:42",
+          "fraction": 0.38
+        },
+        {
+          "label": "FOCUS TIMER",
+          "status": "12:48",
+          "context": "Read ten pages",
+          "kind": "focus",
+          "control": "pause",
+          "meta": "25 min",
+          "fraction": 0.512
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "slug": "editorial",
+      "title": "Editorial",
+      "family": "CORE DIRECTION",
+      "idea": "Less illustration. More confidence. Still Doddy.",
+      "rationale": "Large tabular numerals and a small character signature let the information do the work. A caret marks active capture.",
+      "motion": "Numeric content changes stay on a fixed baseline; a caret indicates active capture.",
+      "variants": [
+        {
+          "label": "VOICE SESSION",
+          "status": "Listening",
+          "context": "Draft a reply",
+          "kind": "listen",
+          "control": "stop",
+          "meta": "00:42"
+        },
+        {
+          "label": "FOCUS TIMER",
+          "status": "12:48",
+          "context": "Send three replies",
+          "kind": "focus",
+          "control": "pause",
+          "meta": "25 min",
+          "fraction": 0.512
+        }
+      ]
+    },
+    {
+      "id": "F",
+      "slug": "abstract-landscape",
+      "title": "Abstract Horizon",
+      "family": "CORE DIRECTION",
+      "idea": "A quiet horizon for the thing ahead.",
+      "rationale": "Two cream contours form a horizon beneath Doddy. An orange marker indicates the active phase or timer progress.",
+      "motion": "The horizon stays still; only the state/progress marker changes.",
+      "variants": [
+        {
+          "label": "VOICE SESSION",
+          "status": "Listening",
+          "context": "Plan a quiet walk",
+          "kind": "listen",
+          "control": "stop",
+          "meta": "00:42"
+        },
+        {
+          "label": "FOCUS TIMER",
+          "status": "12:48",
+          "context": "Make room to think",
+          "kind": "focus",
+          "control": "pause",
+          "meta": "25 min",
+          "fraction": 0.512
+        }
+      ]
+    },
+    {
+      "id": "G",
+      "slug": "thought-drop",
+      "title": "Thought Pocket",
+      "family": "ACTION DIRECTION",
+      "idea": "Catch it. Keep it close.",
+      "rationale": "An orange thought token drops into a cream pocket. The proud face and offered hand turn completion into a Doddy moment.",
+      "motion": "A short transition tucks the thought token into the pocket and reveals the saved check.",
+      "variants": [
+        {
+          "label": "CAPTURE",
+          "status": "Listening",
+          "context": "Save this bookshop idea",
+          "kind": "listen",
+          "control": "stop",
+          "meta": "00:06"
+        },
+        {
+          "label": "CONFIRMED",
+          "status": "Thought saved",
+          "context": "Got your bookshop idea",
+          "kind": "done",
+          "control": "open",
+          "meta": "Saved",
+          "gesture": "offer"
+        }
+      ],
+      "strong": 2
+    },
+    {
+      "id": "H",
+      "slug": "language-bridge",
+      "title": "Language Bridge",
+      "family": "ACTION DIRECTION",
+      "idea": "Different words. Same understanding.",
+      "rationale": "Two dialogue shapes carry EN and FR. The crossing turns orange when the phrase is ready to hear.",
+      "motion": "The crossing completes when the translation becomes ready. Hear it starts narration.",
+      "strong": 3,
+      "variants": [
+        {
+          "label": "TRANSLATING",
+          "status": "Translating",
+          "context": "EN \u2192 FR",
+          "kind": "think",
+          "control": "stop",
+          "meta": ""
+        },
+        {
+          "label": "READY TO PLAY",
+          "status": "Translation ready",
+          "context": "O\u00f9 est la gare ?",
+          "kind": "done",
+          "control": "play",
+          "meta": "FR",
+          "gesture": "offer"
+        }
+      ]
+    },
+    {
+      "id": "I",
+      "slug": "reminder-pin",
+      "title": "Reminder Knot",
+      "family": "ACTION DIRECTION",
+      "idea": "Tie a little knot for later.",
+      "rationale": "A cream reminder tag and a small orange knot connect setup to confirmation. The scheduled time stays primary metadata.",
+      "motion": "The knot settles once when setup completes; the later reminder is a notification.",
+      "variants": [
+        {
+          "label": "SETTING",
+          "status": "Setting reminder",
+          "context": "Call Mum",
+          "kind": "think",
+          "control": "stop",
+          "meta": "18:00"
+        },
+        {
+          "label": "CONFIRMED",
+          "status": "Reminder set",
+          "context": "Call Mum",
+          "kind": "done",
+          "control": "open",
+          "meta": "18:00",
+          "gesture": "point"
+        }
+      ]
+    },
+    {
+      "id": "J",
+      "slug": "step-path",
+      "title": "Step Stones",
+      "family": "ACTION DIRECTION",
+      "idea": "Make the big thing a few smaller things.",
+      "rationale": "Three stepping stones encode the plan. The orange first stone identifies the next step; the app contains the full breakdown.",
+      "motion": "The active stone changes when a task step is completed.",
+      "variants": [
+        {
+          "label": "PLANNING",
+          "status": "Making a plan",
+          "context": "Start the presentation",
+          "kind": "think",
+          "control": "stop",
+          "meta": "Planning"
+        },
+        {
+          "label": "NEXT STEP",
+          "status": "Plan ready",
+          "context": "Outline first \u00b7 3 steps",
+          "kind": "done",
+          "control": "open",
+          "meta": "1 / 3"
+        }
+      ]
+    },
+    {
+      "id": "K",
+      "slug": "spoken-mark",
+      "title": "Story Spool",
+      "family": "ACTION DIRECTION",
+      "idea": "A good story, kept rolling.",
+      "rationale": "An open paper spool and an orange word marker give read-aloud its own identity. Pause holds the marker in place.",
+      "motion": "The orange word marker advances with narration; pause holds its position.",
+      "variants": [
+        {
+          "label": "READING",
+          "status": "Reading aloud",
+          "context": "Your saved article",
+          "kind": "speak",
+          "control": "pause",
+          "meta": "00:42",
+          "fraction": 0.38
+        },
+        {
+          "label": "PAUSED",
+          "status": "Paused",
+          "context": "Pick up where you left off",
+          "kind": "paused",
+          "control": "play",
+          "meta": "00:42",
+          "fraction": 0.38
+        }
+      ]
+    },
+    {
+      "id": "L",
+      "slug": "calm-pulse",
+      "title": "Calm Tide",
+      "family": "ACTION DIRECTION",
+      "idea": "A little room to reset.",
+      "rationale": "A tide line and phase arc support the literal In/Out labels. The face remains calm as the breathing phase changes.",
+      "motion": "The tide and phase arc change with the breathing phase; keep explicit In/Out text with reduced motion.",
+      "variants": [
+        {
+          "label": "EXHALE",
+          "status": "Breathe out",
+          "context": "A little room to reset",
+          "kind": "breathe-out",
+          "control": "stop",
+          "meta": "00:24",
+          "fraction": 0.4
+        },
+        {
+          "label": "INHALE",
+          "status": "Breathe in",
+          "context": "Easy does it",
+          "kind": "breathe-in",
+          "control": "stop",
+          "meta": "00:18",
+          "fraction": 0.3
+        }
+      ]
+    }
+  ],
+  "review": {
+    "comparison": {
+      "name": "Comparison-sheet",
+      "title": "Sixteen new designs",
+      "svg": "04-review/Comparison-sheet.svg",
+      "png": "04-review/Comparison-sheet.png"
+    },
+    "overview": {
+      "name": "All-16-boards",
+      "title": "All sixteen new boards",
+      "svg": "04-review/All-16-boards.svg",
+      "png": "04-review/All-16-boards.png"
+    },
+    "audit": {
+      "title": "What changed",
+      "svg": "04-review/Visual-audit.svg",
+      "png": "04-review/Visual-audit.png"
+    }
+  },
+  "system": {
+    "board": [
+      2560,
+      1440
+    ],
+    "expanded": [
+      371,
+      156,
+      44
+    ],
+    "compact": [
+      230,
+      36.67
+    ],
+    "minimal": [
+      45,
+      36.67
+    ],
+    "phone": [
+      393,
+      852
+    ],
+    "phoneScale": 0.9,
+    "expandedDetailScale": 2.25,
+    "smallDetailScale": 1.8
+  },
+  "method": "New vector compositions following an AI art-direction exploration; deterministic final PNGs and editable SVGs.",
+  "reviewExtras": [
+    {
+      "title": "Direction showcase",
+      "png": "04-review/Direction-showcase.png",
+      "svg": "04-review/Direction-showcase.svg"
+    },
+    {
+      "title": "Separate AI art-direction exploration",
+      "png": "04-review/Art-direction-exploration.png",
+      "finalSpecification": false
+    }
+  ]
+}

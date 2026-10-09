@@ -1,0 +1,455 @@
+[
+  {
+    "id": "01",
+    "slug": "voice",
+    "title": "Lean In",
+    "family": "REFINED ORIGINAL",
+    "idea": "A little lean-in. A proper conversation.",
+    "rationale": "The cupped hand and short voice bars show attentive capture; the mouth changes when Doddy speaks.",
+    "motion": "Replace the capture bars and mouth only with voice-state updates.",
+    "variants": [
+      {
+        "label": "LISTENING",
+        "status": "Listening",
+        "context": "Talk it through",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "SPEAKING",
+        "status": "Speaking",
+        "context": "One step at a time",
+        "kind": "speak",
+        "control": "pause",
+        "meta": "00:08"
+      }
+    ]
+  },
+  {
+    "id": "02",
+    "slug": "focus",
+    "title": "Tiny Promise",
+    "family": "REFINED ORIGINAL",
+    "idea": "One small promise, kept one minute at a time.",
+    "rationale": "A measured dial holds Doddy close to the countdown. The paused state keeps the same time and progress.",
+    "motion": "Countdown and dial follow actual remaining time. Pause holds both.",
+    "variants": [
+      {
+        "label": "RUNNING",
+        "status": "12:48",
+        "context": "Write one paragraph",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "25 min",
+        "fraction": 0.512
+      },
+      {
+        "label": "PAUSED",
+        "status": "12:48",
+        "context": "Ready when you are",
+        "kind": "paused",
+        "control": "play",
+        "meta": "Paused",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "03",
+    "slug": "music",
+    "title": "Pocket Radio",
+    "family": "REFINED ORIGINAL",
+    "idea": "A tiny pocket radio, with Doddy on the dial.",
+    "rationale": "Vinyl-like rings and a restrained orange needle make playback identifiable without an album cover.",
+    "motion": "The orange record segment follows playback progress and holds when paused.",
+    "variants": [
+      {
+        "label": "PLAYING",
+        "status": "Playing",
+        "context": "Sunday slow-down",
+        "kind": "music",
+        "control": "pause",
+        "meta": "01:24",
+        "fraction": 0.38
+      },
+      {
+        "label": "PAUSED",
+        "status": "Paused",
+        "context": "Sunday slow-down",
+        "kind": "music-paused",
+        "control": "play",
+        "meta": "01:24",
+        "fraction": 0.38
+      }
+    ]
+  },
+  {
+    "id": "04",
+    "slug": "companion",
+    "title": "Here With You",
+    "family": "REFINED ORIGINAL",
+    "idea": "Here with you, without taking over.",
+    "rationale": "Two small hands and a held conversation loop convey presence. Thinking replaces the active voice cue.",
+    "motion": "Replace the conversation loop with thought points while processing.",
+    "variants": [
+      {
+        "label": "ACTIVE SESSION",
+        "status": "Session active",
+        "context": "Talk it through",
+        "kind": "session",
+        "control": "open",
+        "meta": "03:12"
+      },
+      {
+        "label": "THINKING",
+        "status": "Thinking",
+        "context": "Finding a useful next step",
+        "kind": "think",
+        "control": "open",
+        "meta": "03:12"
+      }
+    ]
+  },
+  {
+    "id": "A",
+    "slug": "orbit",
+    "title": "Orbit",
+    "family": "CORE DIRECTION",
+    "idea": "A small instrument for a little momentum.",
+    "rationale": "Three quiet ticks give the elliptical dial precision; one orange segment carries focus progress or voice activity.",
+    "motion": "Dial segment follows progress; voice uses a bounded activity segment.",
+    "strong": 1,
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Talk it through",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "One next step",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "25 min",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "B",
+    "slug": "ink-ripple",
+    "title": "Ink Ripple",
+    "family": "CORE DIRECTION",
+    "idea": "Thoughts take shape before they become words.",
+    "rationale": "An organic cream silhouette and an orange energy contour form one speech instrument, rather than a decorative waveform.",
+    "motion": "Speech updates change the energy contour. Focus settles it into a quiet curve.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Save a thought",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Write one paragraph",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "25 min",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "C",
+    "slug": "negative-space",
+    "title": "Negative Space",
+    "family": "CORE DIRECTION",
+    "idea": "The island becomes part of Doddy’s gesture.",
+    "rationale": "A cream crescent cut from the island supports Doddy’s face and an offered hand. The black surface completes the gesture.",
+    "motion": "The gesture stays still; the orange state point changes with useful updates.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Translate a phrase",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Practise French",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "25 min",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "D",
+    "slug": "kinetic-ribbon",
+    "title": "Kinetic Ribbon",
+    "family": "CORE DIRECTION",
+    "idea": "Speech folds. Focus finds its line.",
+    "rationale": "The ribbon wraps the identity and changes from a controlled speech fold to a measured focus loop.",
+    "motion": "A bounded fold change follows voice-state updates. Focus has a stable measured loop.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Reading aloud",
+        "context": "Your saved article",
+        "kind": "speak",
+        "control": "pause",
+        "meta": "00:42",
+        "fraction": 0.38
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Read ten pages",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "25 min",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "E",
+    "slug": "editorial",
+    "title": "Editorial",
+    "family": "CORE DIRECTION",
+    "idea": "Less illustration. More confidence. Still Doddy.",
+    "rationale": "Large tabular numerals and a small character signature let the information do the work. A caret marks active capture.",
+    "motion": "Numeric content changes stay on a fixed baseline; a caret indicates active capture.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Draft a reply",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Send three replies",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "25 min",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "F",
+    "slug": "abstract-landscape",
+    "title": "Abstract Horizon",
+    "family": "CORE DIRECTION",
+    "idea": "A quiet horizon for the thing ahead.",
+    "rationale": "Two cream contours form a horizon beneath Doddy. An orange marker indicates the active phase or timer progress.",
+    "motion": "The horizon stays still; only the state/progress marker changes.",
+    "variants": [
+      {
+        "label": "VOICE SESSION",
+        "status": "Listening",
+        "context": "Plan a quiet walk",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:42"
+      },
+      {
+        "label": "FOCUS TIMER",
+        "status": "12:48",
+        "context": "Make room to think",
+        "kind": "focus",
+        "control": "pause",
+        "meta": "25 min",
+        "fraction": 0.512
+      }
+    ]
+  },
+  {
+    "id": "G",
+    "slug": "thought-drop",
+    "title": "Thought Pocket",
+    "family": "ACTION DIRECTION",
+    "idea": "Catch it. Keep it close.",
+    "rationale": "An orange thought token drops into a cream pocket. The proud face and offered hand turn completion into a Doddy moment.",
+    "motion": "A short transition tucks the thought token into the pocket and reveals the saved check.",
+    "variants": [
+      {
+        "label": "CAPTURE",
+        "status": "Listening",
+        "context": "Save this bookshop idea",
+        "kind": "listen",
+        "control": "stop",
+        "meta": "00:06"
+      },
+      {
+        "label": "CONFIRMED",
+        "status": "Thought saved",
+        "context": "Got your bookshop idea",
+        "kind": "done",
+        "control": "open",
+        "meta": "Saved",
+        "gesture": "offer"
+      }
+    ],
+    "strong": 2
+  },
+  {
+    "id": "H",
+    "slug": "language-bridge",
+    "title": "Language Bridge",
+    "family": "ACTION DIRECTION",
+    "idea": "Different words. Same understanding.",
+    "rationale": "Two dialogue shapes carry EN and FR. The crossing turns orange when the phrase is ready to hear.",
+    "motion": "The crossing completes when the translation becomes ready. Hear it starts narration.",
+    "strong": 3,
+    "variants": [
+      {
+        "label": "TRANSLATING",
+        "status": "Translating",
+        "context": "EN → FR",
+        "kind": "think",
+        "control": "stop",
+        "meta": ""
+      },
+      {
+        "label": "READY TO PLAY",
+        "status": "Translation ready",
+        "context": "Où est la gare ?",
+        "kind": "done",
+        "control": "play",
+        "meta": "FR",
+        "gesture": "offer"
+      }
+    ]
+  },
+  {
+    "id": "I",
+    "slug": "reminder-pin",
+    "title": "Reminder Knot",
+    "family": "ACTION DIRECTION",
+    "idea": "Tie a little knot for later.",
+    "rationale": "A cream reminder tag and a small orange knot connect setup to confirmation. The scheduled time stays primary metadata.",
+    "motion": "The knot settles once when setup completes; the later reminder is a notification.",
+    "variants": [
+      {
+        "label": "SETTING",
+        "status": "Setting reminder",
+        "context": "Call Mum",
+        "kind": "think",
+        "control": "stop",
+        "meta": "18:00"
+      },
+      {
+        "label": "CONFIRMED",
+        "status": "Reminder set",
+        "context": "Call Mum",
+        "kind": "done",
+        "control": "open",
+        "meta": "18:00",
+        "gesture": "point"
+      }
+    ]
+  },
+  {
+    "id": "J",
+    "slug": "step-path",
+    "title": "Step Stones",
+    "family": "ACTION DIRECTION",
+    "idea": "Make the big thing a few smaller things.",
+    "rationale": "Three stepping stones encode the plan. The orange first stone identifies the next step; the app contains the full breakdown.",
+    "motion": "The active stone changes when a task step is completed.",
+    "variants": [
+      {
+        "label": "PLANNING",
+        "status": "Making a plan",
+        "context": "Start the presentation",
+        "kind": "think",
+        "control": "stop",
+        "meta": "Planning"
+      },
+      {
+        "label": "NEXT STEP",
+        "status": "Plan ready",
+        "context": "Outline first · 3 steps",
+        "kind": "done",
+        "control": "open",
+        "meta": "1 / 3"
+      }
+    ]
+  },
+  {
+    "id": "K",
+    "slug": "spoken-mark",
+    "title": "Story Spool",
+    "family": "ACTION DIRECTION",
+    "idea": "A good story, kept rolling.",
+    "rationale": "An open paper spool and an orange word marker give read-aloud its own identity. Pause holds the marker in place.",
+    "motion": "The orange word marker advances with narration; pause holds its position.",
+    "variants": [
+      {
+        "label": "READING",
+        "status": "Reading aloud",
+        "context": "Your saved article",
+        "kind": "speak",
+        "control": "pause",
+        "meta": "00:42",
+        "fraction": 0.38
+      },
+      {
+        "label": "PAUSED",
+        "status": "Paused",
+        "context": "Pick up where you left off",
+        "kind": "paused",
+        "control": "play",
+        "meta": "00:42",
+        "fraction": 0.38
+      }
+    ]
+  },
+  {
+    "id": "L",
+    "slug": "calm-pulse",
+    "title": "Calm Tide",
+    "family": "ACTION DIRECTION",
+    "idea": "A little room to reset.",
+    "rationale": "A tide line and phase arc support the literal In/Out labels. The face remains calm as the breathing phase changes.",
+    "motion": "The tide and phase arc change with the breathing phase; keep explicit In/Out text with reduced motion.",
+    "variants": [
+      {
+        "label": "EXHALE",
+        "status": "Breathe out",
+        "context": "A little room to reset",
+        "kind": "breathe-out",
+        "control": "stop",
+        "meta": "00:24",
+        "fraction": 0.4
+      },
+      {
+        "label": "INHALE",
+        "status": "Breathe in",
+        "context": "Easy does it",
+        "kind": "breathe-in",
+        "control": "stop",
+        "meta": "00:18",
+        "fraction": 0.3
+      }
+    ]
+  }
+]

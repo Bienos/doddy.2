@@ -1,0 +1,13 @@
+{
+  "boards": 16,
+  "states": 96,
+  "galleryChecks": 208,
+  "contentBoundsChecks": 96,
+  "hardwareExclusionChecks": 64,
+  "boardTextBoundsChecks": 19,
+  "pageErrors": [],
+  "overflow": [],
+  "hardwareCollisions": [],
+  "boardOverflow": [],
+  "scope": "Local static design/gallery validation only. No native iOS, simulator, device, motion, accessibility or live-service validation."
+}

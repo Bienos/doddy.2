@@ -1,0 +1,442 @@
+[
+  {
+    "id": 0,
+    "file": "01-model/doddy_turnaround_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a character turnaround sheet: front, three-quarter facing right, side profile facing right and back view, neutral relaxed pose, same height evenly spaced on one baseline. Faint light-grey guides at head top shoulders hips feet. Warm paper #F8F4EB background. Landscape 3:2. No text. Side head remains round, no protruding nose; back view no facial features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-cce8a014-5c5c-4bfd-8823-e049414b6b9a.png",
+    "sha256": "3d314375d9d9523deb145d41078e5ce627307c28e078ae5c30157add25da0c07",
+    "bytes": 1368299,
+    "number": "001",
+    "numbered_filename": "001_doddy_turnaround_v01.png"
+  },
+  {
+    "id": 1,
+    "file": "01-model/doddy_scale_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a size comparison sheet: Doddy standing next to everyday objects drawn as simple grey line drawings \u2014 a smartphone standing upright, a takeaway coffee cup, a ballpoint pen and a human hand. Doddy is 12 cm tall, so he is slightly shorter than the upright phone and a little taller than the coffee cup. Doddy stays fully on-model in black ink and cream. Plain warm paper background. Landscape 3:2. No text.\nKeep precisely one eyebrow per visible face.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-55c4b073-0a99-4476-b717-f31df1b9ba74.png",
+    "sha256": "fe9460d4a2cec41fc5855ebb36448a2743ac78584372de659818afea08d39cb3",
+    "bytes": 1605283,
+    "number": "002",
+    "numbered_filename": "002_doddy_scale_v01.png"
+  },
+  {
+    "id": 2,
+    "file": "01-model/doddy_stylespec_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a style spec sheet for Doddy: one large front view of Doddy on the left; on the right, four colour swatches as flat circles \u2014 ink black #171715, cream #FFF7E9, orange #FF6A00, warm paper #F8F4EB \u2014 and three sample strokes showing his line weights: head outline (thickest), limbs, face details (thinnest). Plain warm paper background. Landscape 3:2. No text other than the four hex codes under the swatches.\nKeep precisely one eyebrow per visible face.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-e4acdc08-ecd8-4a41-941c-e78846cb06ca.png",
+    "sha256": "bb388101f43904e913d39ccbc5a5d803ad3b6554f8bb528fd384352a66eae6ac",
+    "bytes": 1236862,
+    "number": "003",
+    "numbered_filename": "003_doddy_stylespec_v01.png"
+  },
+  {
+    "id": 3,
+    "file": "02-expressions/doddy_expr_front_v02.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nEXACT DELIVERABLE: a 4-column by 3-row sheet of HEADS ONLY, twelve front-facing circular heads all identical size, no body, no hands, no accessories. Expressions reading order: neutral, happy, big laugh, curious, thinking (look up), surprised, oops awkward smile, proud, focused, confused, sleepy, gentle reassuring smile. Keep eyes solid black oval shapes (closed eyes may be simple curves), no white eye interiors. EXACTLY ONE eyebrow above the viewer-right eye on EVERY head, including focused and sleepy heads; never any eyebrow or angled mark above viewer-left eye. Only mouth, eyes and the single eyebrow vary. Flat cream heads and flat warm-paper background, no paper texture. Square. No text.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-6d68e1ad-2b35-4f3d-8391-59669bd7716b.png",
+    "sha256": "4350617ab5cb06d5cb6a5145f9cc5045bc10bb02162fc58bb1ab44c9f0c092fd",
+    "bytes": 1443178,
+    "number": "004",
+    "numbered_filename": "004_doddy_expr_front_v02.png"
+  },
+  {
+    "id": 4,
+    "file": "02-expressions/doddy_expr_34_v02.png",
+    "prompt": "Edit this twelve-head expression sheet: turn EVERY head into a three-quarter view facing right. Keep EXACT same 4 by 3 grid, head-only closeups, facial expressions in same order, same size circles, same palette and line weights. No body, hands, sunglasses or accessories. Faces must be shifted toward right side of circular head to show three-quarter angle. Keep precisely ONE eyebrow above the viewer-right eye on EVERY head. Eyes remain solid black or closed curves. No orange anywhere. No text.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-54685b07-d254-455f-85fe-f2ab60150d25.png",
+    "sha256": "de12402e74e88469cce24f7c442c005136403d66b0c0612f923aca135a142edd",
+    "bytes": 1443915,
+    "number": "005",
+    "numbered_filename": "005_doddy_expr_34_v02.png"
+  },
+  {
+    "id": 5,
+    "file": "03-lipsync/doddy_mouths_v02.png",
+    "prompt": "Edit attached 3x3 mouth chart: add the SAME small arched eyebrow above viewer-right eye on the TOP MIDDLE and TOP RIGHT heads, matching the eyebrow of top-left. Every head must have precisely one eyebrow. Leave every other pixel, mouth, eye and grid placement unchanged. No text.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-cb56294f-68ca-47a7-8fc0-fcdb44a28bf7.png",
+    "sha256": "2a59a8caf5e69d84d715e7e43061628502f52395a52ad0373dec6932df1742ff",
+    "bytes": 1483034,
+    "number": "006",
+    "numbered_filename": "006_doddy_mouths_v02.png"
+  },
+  {
+    "id": 6,
+    "file": "03-lipsync/doddy_blink_v02.png",
+    "prompt": "Edit attached four-head blink strip: add the SAME small arched eyebrow above the viewer-right eye to heads THREE and FOUR, matching heads one and two. Every head must have exactly one eyebrow. Preserve eyes open / half-closed / closed / half-closed and every other feature. Genuinely transparent background, no paper or checkerboard. No text.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-e07b6855-7704-42e1-a616-889f3e83e023.png",
+    "sha256": "1de78fb26e69b50cb7984630a5f994f26274307749a961ca2b56f90bcb267a2a",
+    "bytes": 553696,
+    "number": "007",
+    "numbered_filename": "007_doddy_blink_v02.png"
+  },
+  {
+    "id": 7,
+    "file": "03-lipsync/doddy_eyes_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate an eye-direction sheet for Doddy: 9 identical front-facing heads in a 3\u00d73 grid with a neutral smile; only the eye position changes \u2014 up-left, up, up-right, left, centre, right, down-left, down, down-right. Plain warm paper background. Square 1:1. No text.\nFor faces, exactly one eyebrow above viewer-right eye; eyes are solid black, never white outlined eyes.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-29927464-9816-4b1b-b528-8adb42e1c2c5.png",
+    "sha256": "aa4b775be3b79d71dc6e1bba30ad24408d9f23e0d45ded8058dc7a50a5767117",
+    "bytes": 1407907,
+    "number": "008",
+    "numbered_filename": "008_doddy_eyes_v01.png"
+  },
+  {
+    "id": 8,
+    "file": "04-hands/doddy_hands_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a hand reference sheet of Doddy's cream mitten hands (#FFF7E9, black outline, same style as the reference), 12 hands in a 4\u00d73 grid, each with a short piece of black arm line: open palm, wave, fist, point, thumbs up, peace sign, OK sign, relaxed, gripping (holding a cup), holding a phone, open grabbing, fist bump. Transparent background. Square 1:1. No text.\nFor faces, exactly one eyebrow above viewer-right eye; eyes are solid black, never white outlined eyes.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-6c766cff-ff8a-45ed-8664-d218805f1f0a.png",
+    "sha256": "f2395225f7653b3ae67eea8fc3646b4963ad4ee1a6753846d86a98b0ddd7efcb",
+    "bytes": 684776,
+    "number": "009",
+    "numbered_filename": "009_doddy_hands_v01.png"
+  },
+  {
+    "id": 9,
+    "file": "05-props/doddy_props_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow this sheet layout exactly, references only show identity):\nCreate a prop sheet for Doddy's world, drawn in his exact ink style (black #171715 outline, cream #FFF7E9 and orange #FF6A00 fills, flat, no shading): a smartphone with an orange case and a small heart on the screen, a takeaway coffee cup, an open laptop, an orange basketball, a small orange backpack, an open notebook, a pencil, and a memory card shaped like a small index card with an orange heart. Each prop separated with space around it. Transparent background. Square 1:1. No text.\nNo bonus poses or panels. Eyes solid black without white pupils. Exactly one eyebrow per visible face.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-50ccdd6b-3d93-4ac3-9a35-124a777ab897.png",
+    "sha256": "c32ee190b6d425f0646c7efc46fecd2c974161b3b7b07b47eb1e86cf474f10c6",
+    "bytes": 980399,
+    "number": "010",
+    "numbered_filename": "010_doddy_props_v01.png"
+  },
+  {
+    "id": 11,
+    "file": "05-props/doddy_fx_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow this sheet layout exactly, references only show identity):\nCreate an effects sheet in Doddy's ink style: orange #FF6A00 motion tick marks (3 short dashes) in four directions, a small dust puff (cream with black outline), speed lines, a sparkle burst, a sweat drop, a question mark, an exclamation mark, a small heart, and a pencil-scribble cloud. Each separated with space. Transparent background. Square 1:1. No other text.\nNo bonus poses or panels. Eyes solid black without white pupils. Exactly one eyebrow per visible face.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-12431a86-6f27-4cae-a5d5-58c8fea0a016.png",
+    "sha256": "458631da0edd6c7a483d342103610236b82de98b4e1335f259076479afd7fdde",
+    "bytes": 446844,
+    "number": "011",
+    "numbered_filename": "011_doddy_fx_v01.png"
+  },
+  {
+    "id": 12,
+    "file": "06-poses/doddy_walk_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow this sheet layout exactly, references only show identity):\nCreate a walk-cycle key pose sheet for Doddy in side view facing right: 8 frames in one row on a shared ground line \u2014 contact, down, passing, up, contact (other leg), down, passing, up. Arms swing opposite to the legs. The big trainers stay the same size in every frame. Light-grey frame numbers 1\u20138 under each pose. Plain warm paper background. Wide 3:1.\nNo bonus poses or panels. Eyes solid black without white pupils. Exactly one eyebrow per visible face.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-ffcdd0ab-4d66-42b7-9c2b-eece9bd4b577.png",
+    "sha256": "dc5f4bfc2caaef3b2665bfa6c0f4bd66a47dbf858f68ac3be4c32454964802f8",
+    "bytes": 1472425,
+    "number": "012",
+    "numbered_filename": "012_doddy_walk_v01.png"
+  },
+  {
+    "id": 13,
+    "file": "06-poses/doddy_idle_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow this sheet layout exactly, references only show identity):\nCreate an idle breathing loop for Doddy in front view: 4 frames in one row on a shared ground line. Tiny up-down settle: frame 1 neutral, frame 2 slightly lower (knees softly bent), frame 3 neutral, frame 4 slightly taller. Changes are subtle. Light-grey frame numbers 1\u20134. Plain warm paper background. Wide 2:1.\nNo bonus poses or panels. Eyes solid black without white pupils. Exactly one eyebrow per visible face.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-6cd717cb-99d9-4943-af53-218e51442c52.png",
+    "sha256": "50877e133ccb35b542a14acdbe307c63ea6c2dadc5317d6ec3abee8acf606441",
+    "bytes": 1402936,
+    "number": "013",
+    "numbered_filename": "013_doddy_idle_v01.png"
+  },
+  {
+    "id": 14,
+    "file": "06-poses/doddy_run_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow exact layout and count; reference images only define identity):\nCreate a run-cycle key pose sheet for Doddy in side view facing right: 6 frames in one row on a shared ground line \u2014 contact, down, push-off, flight (both feet off the ground), contact (other leg), flight. Body leans forward, arms pump with bent elbows, orange motion ticks behind him only in the flight frames. Light-grey frame numbers 1\u20136. Plain warm paper background. Wide 3:1.\nExactly one eyebrow per visible face; two solid black eyes unless side view. No orange in mouths. No extra accessories.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-9e3277a8-7bbf-4259-ba8e-f9c3090349c9.png",
+    "sha256": "9b6b9dddcaada8b85156a75869c8d9fbb61f9aeff4c62501629cc30b0e137813",
+    "bytes": 1424526,
+    "number": "014",
+    "numbered_filename": "014_doddy_run_v01.png"
+  },
+  {
+    "id": 15,
+    "file": "06-poses/doddy_jump_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow exact layout and count; reference images only define identity):\nCreate a jump sequence for Doddy in three-quarter view: 5 frames in one row on a shared ground line \u2014 anticipation crouch, take-off stretch, peak (arms up, happy face), landing squash (knees bent deep), recovery standing. Light-grey frame numbers 1\u20135. Plain warm paper background. Wide 3:1.\nExactly one eyebrow per visible face; two solid black eyes unless side view. No orange in mouths. No extra accessories.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-6cb1b58e-f702-4e75-969b-e51134070317.png",
+    "sha256": "4904739cd7352b767d05c9edfc0a44966e6e632f198672922c5905ba0488df0b",
+    "bytes": 1421040,
+    "number": "015",
+    "numbered_filename": "015_doddy_jump_v01.png"
+  },
+  {
+    "id": 16,
+    "file": "06-poses/doddy_wave_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow exact layout and count; reference images only define identity):\nCreate a wave sequence for Doddy in front view: 5 frames in one row \u2014 arm down, arm rising, hand up open, hand tilted left, hand tilted right. Small orange motion ticks near the hand in frames 4 and 5. Happy face throughout. Light-grey frame numbers 1\u20135. Plain warm paper background. Wide 3:1.\nExactly one eyebrow per visible face; two solid black eyes unless side view. No orange in mouths. No extra accessories.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-3d17a408-3a68-42a7-b2b2-9186ae7849b5.png",
+    "sha256": "817a2b87f220eb74c2006de13ec87b87b4114e358099d8ba69e5b15c2cdc98cd",
+    "bytes": 1464429,
+    "number": "016",
+    "numbered_filename": "016_doddy_wave_v01.png"
+  },
+  {
+    "id": 17,
+    "file": "06-poses/doddy_sit_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow exact layout and count; reference images only define identity):\nCreate a sit-down sequence for Doddy in side view facing right: 5 frames in one row \u2014 standing beside a simple cardboard box, looking back at the box, bending knees, lowering, sitting relaxed on the box. Box drawn in the same ink style. Light-grey frame numbers 1\u20135. Plain warm paper background. Wide 3:1.\nExactly one eyebrow per visible face; two solid black eyes unless side view. No orange in mouths. No extra accessories.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-60a3d338-5e70-4c28-be3f-6574d5fd6943.png",
+    "sha256": "3dfd164d649d4ee62bb68a3578b3f483d773c540f14d00200f727918fd7d7ca6",
+    "bytes": 1369439,
+    "number": "017",
+    "numbered_filename": "017_doddy_sit_v01.png"
+  },
+  {
+    "id": 18,
+    "file": "06-poses/doddy_turn_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow exact layout and count; reference images only define identity):\nCreate a turn-around sequence for Doddy: 5 frames in one row on a shared ground line \u2014 front, three-quarter right, side right, three-quarter back, back. Neutral pose, same height in every frame. Light-grey frame numbers 1\u20135. Plain warm paper background. Wide 3:1.\nExactly one eyebrow per visible face; two solid black eyes unless side view. No orange in mouths. No extra accessories.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-aac9a6df-ec40-42cc-b2c6-52f5d59b668a.png",
+    "sha256": "abbcaf3b2f9be352bdf9b3e4accffd1b2121486ab83cd544342198be2018bed3",
+    "bytes": 1434929,
+    "number": "018",
+    "numbered_filename": "018_doddy_turn_v01.png"
+  },
+  {
+    "id": 19,
+    "file": "06-poses/doddy_pop_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nPRIMARY TASK (follow exact layout and count; reference images only define identity):\nCreate a pop-in sequence for Doddy: 5 frames in one row \u2014 a small black ink dot, the dot bursting into a scribble cloud, Doddy appearing in a stretched cheerful pose with arms up, a small squash settle, Doddy standing and smiling. Orange motion ticks in frame 3. Light-grey frame numbers 1\u20135. Plain warm paper background. Wide 3:1.\nExactly one eyebrow per visible face; two solid black eyes unless side view. No orange in mouths. No extra accessories.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-7624eeb5-0f66-4077-ace0-2732e8e20edd.png",
+    "sha256": "2581da049ae7c3cf01ec2c1e814ae55543d3bc0b73779260e8ce32250265ee48",
+    "bytes": 1348376,
+    "number": "019",
+    "numbered_filename": "019_doddy_pop_v01.png"
+  },
+  {
+    "id": 20,
+    "file": "06-poses/doddy_talking_v03.png",
+    "prompt": "Correct ONE detail in this six-pose sheet: the TOP MIDDLE character has no eyebrow. Add ONE small black arched eyebrow above that character's viewer-right eye matching all other five characters. Preserve all other artwork and colors exactly. No other change.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-293b5be3-16a0-4a35-808e-cd126c7d6078.png",
+    "sha256": "bf817e0d4aa7a0f4d892ec013ac69562c021b65a3ff8b6a29624279063556851",
+    "bytes": 1676755,
+    "number": "020",
+    "numbered_filename": "020_doddy_talking_v03.png"
+  },
+  {
+    "id": 21,
+    "file": "07-world/world_styleframe_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a style frame for Doddy's own world, called the \"Pocket Notebook\" world: everything is drawn in black ink on warm cream paper #F8F4EB with faint ruled notebook lines, flat colours, sparse orange #FF6A00 accents, hand-drawn line wobble, generous empty space, cosy and calm. Show a wide establishing view: a giant open notebook as the ground, with small sketched buildings, a lamp post and a tree growing out of the page. Include Doddy small in the centre, walking. Vertical 9:16. No text.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-55c361c0-b0c0-4a1a-9489-9a8826427815.png",
+    "sha256": "59c9c859f31183554f0351e40d3370e316e1d66773438acd9a25c4f419cba483",
+    "bytes": 1634158,
+    "number": "021",
+    "numbered_filename": "021_world_styleframe_v01.png"
+  },
+  {
+    "id": 22,
+    "file": "07-world/world_home_day_v01.png",
+    "prompt": "Create a background-only asset; attached image is STYLE REFERENCE only, do NOT include its character. Flat hand-drawn Pocket Notebook world in ink black #171715 on warm cream ruled paper #F8F4EB with sparse orange #FF6A00 accents. No shading, gradients, text, logos. Design a background location in the \"Pocket Notebook\" world style from the previous image: Doddy's home \u2014 a cosy desk corner on a giant notebook page, with a lamp, a mug and a tiny shelf of index cards. NO characters \u2014 background only. Vertical 9:16; leave the lower-middle third open for Doddy to stand in. No text.\nExactly vertical 9:16. Leave lower-middle third open for future compositing. No character anywhere.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-0bbc1fe6-9fab-425c-9ea2-d9c1a8586e29.png",
+    "sha256": "b197008f3f5c9593af44ef35b83c93360972039f21669d3c4b8e86f2aca55d1d",
+    "bytes": 1604017,
+    "number": "022",
+    "numbered_filename": "022_world_home_day_v01.png"
+  },
+  {
+    "id": 122,
+    "file": "07-world/world_home_night_v01.png",
+    "prompt": "Redraw this exact background as a NIGHT VERSION. Preserve composition, perspective, all object positions and sizes precisely. Charcoal #16171C background, all ink outlines become cream #FFF7E9 lines, a few orange #FF6A00 light sources. Flat hand-drawn notebook style. No characters, no text, no logos, no gradients or glow. Same vertical 9:16 canvas. Lower-middle third remains open.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-17c3e4e3-9fbc-4a3f-bb40-89211a30aea9.png",
+    "sha256": "4bad5b1a4928c4fc80c9c0f58d477c6936c7daecba5a8fbce336c88c7218e374",
+    "bytes": 1632367,
+    "number": "023",
+    "numbered_filename": "023_world_home_night_v01.png"
+  },
+  {
+    "id": 222,
+    "file": "07-world/world_home_fg_v01.png",
+    "prompt": "Extract ONLY the nearest FOREGROUND objects from this background onto a genuinely transparent background. Keep the SAME full vertical 9:16 canvas and EXACT object placement, scale, outlines and colors; do not recenter objects. Foreground objects are the bottom-corner plants, page/desk edge, near bench/counter fronts or near card holders/planters that sit nearest camera. Remove all distant buildings furniture shelves skyline floor ruled lines and background. Leave center mostly transparent. Preserve cream fills inside extracted objects. Do not add any character text or new objects. This is an overlay concept for parallax.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-308f89f4-fd3d-47d0-a163-daf33d3e624d.png",
+    "sha256": "1d2dd16b455abb67989bec954bfb533d8d97b6e4bc3ccb756d6fd83cab1c3e51",
+    "bytes": 521967,
+    "number": "024",
+    "numbered_filename": "024_world_home_fg_v01.png"
+  },
+  {
+    "id": 23,
+    "file": "07-world/world_court_day_v01.png",
+    "prompt": "Create a background-only asset; attached image is STYLE REFERENCE only, do NOT include its character. Flat hand-drawn Pocket Notebook world in ink black #171715 on warm cream ruled paper #F8F4EB with sparse orange #FF6A00 accents. No shading, gradients, text, logos. Design a background location in the same \"Pocket Notebook\" world style: an outdoor basketball court drawn on graph paper, one hoop with an orange rim, a bench, a few sketched trees. NO characters \u2014 background only. Vertical 9:16; leave the lower-middle third open for Doddy. No text.\nExactly vertical 9:16. Leave lower-middle third open for future compositing. No character anywhere.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-38354fba-3c52-4867-a073-f142d9d734ad.png",
+    "sha256": "a9822a0398b7d9d3e76e28d781bc2533a2e919031fad9d0bbcb58db9274fca80",
+    "bytes": 1555925,
+    "number": "025",
+    "numbered_filename": "025_world_court_day_v01.png"
+  },
+  {
+    "id": 123,
+    "file": "07-world/world_court_night_v01.png",
+    "prompt": "Redraw this exact background as a NIGHT VERSION. Preserve composition, perspective, all object positions and sizes precisely. Charcoal #16171C background, all ink outlines become cream #FFF7E9 lines, a few orange #FF6A00 light sources. Flat hand-drawn notebook style. No characters, no text, no logos, no gradients or glow. Same vertical 9:16 canvas. Lower-middle third remains open.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-8b580c0a-4a5d-4682-bfba-11c13d41a6ea.png",
+    "sha256": "50409221750bea584d5c24fa305c5db961a97b9d81b9ed1617487d24c6fd539e",
+    "bytes": 1529635,
+    "number": "026",
+    "numbered_filename": "026_world_court_night_v01.png"
+  },
+  {
+    "id": 223,
+    "file": "07-world/world_court_fg_v01.png",
+    "prompt": "Extract ONLY the nearest FOREGROUND objects from this background onto a genuinely transparent background. Keep the SAME full vertical 9:16 canvas and EXACT object placement, scale, outlines and colors; do not recenter objects. Foreground objects are the bottom-corner plants, page/desk edge, near bench/counter fronts or near card holders/planters that sit nearest camera. Remove all distant buildings furniture shelves skyline floor ruled lines and background. Leave center mostly transparent. Preserve cream fills inside extracted objects. Do not add any character text or new objects. This is an overlay concept for parallax.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-8bc95620-9c2e-43a8-927c-071c27162b4d.png",
+    "sha256": "9a6c20e9ac4bfbd6cd97db1b96bebd09cdcf16137eaabd99127018faf89551e1",
+    "bytes": 118626,
+    "number": "027",
+    "numbered_filename": "027_world_court_fg_v01.png"
+  },
+  {
+    "id": 24,
+    "file": "07-world/world_coffee_day_v01.png",
+    "prompt": "Create a background-only asset; attached image is STYLE REFERENCE only, do NOT include its character. Flat hand-drawn Pocket Notebook world in ink black #171715 on warm cream ruled paper #F8F4EB with sparse orange #FF6A00 accents. No shading, gradients, text, logos. Design a background location in the same \"Pocket Notebook\" world style: a small coffee corner with a counter, a coffee machine, a pastry stand and a chalkboard with only doodles on it. NO characters \u2014 background only. Vertical 9:16; leave the lower-middle third open for Doddy. No text.\nExactly vertical 9:16. Leave lower-middle third open for future compositing. No character anywhere.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-8c743723-4c3b-4722-bee0-4f69d0c0d34e.png",
+    "sha256": "15191a0263cc3cabee9d5e41aaecfebe0c62f393f66c28c82153303bd5eeb8f0",
+    "bytes": 1597791,
+    "number": "028",
+    "numbered_filename": "028_world_coffee_day_v01.png"
+  },
+  {
+    "id": 124,
+    "file": "07-world/world_coffee_night_v01.png",
+    "prompt": "Redraw this exact background as a NIGHT VERSION. Preserve composition, perspective, all object positions and sizes precisely. Charcoal #16171C background, all ink outlines become cream #FFF7E9 lines, a few orange #FF6A00 light sources. Flat hand-drawn notebook style. No characters, no text, no logos, no gradients or glow. Same vertical 9:16 canvas. Lower-middle third remains open.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-884c1416-f40a-427b-9b93-44d590d264fa.png",
+    "sha256": "9ef98509db55d713649828b256ae06f157c9238094658c54a87ecc558d0e69b3",
+    "bytes": 1525149,
+    "number": "029",
+    "numbered_filename": "029_world_coffee_night_v01.png"
+  },
+  {
+    "id": 224,
+    "file": "07-world/world_coffee_fg_v01.png",
+    "prompt": "Extract ONLY the nearest FOREGROUND objects from this background onto a genuinely transparent background. Keep the SAME full vertical 9:16 canvas and EXACT object placement, scale, outlines and colors; do not recenter objects. Foreground objects are the bottom-corner plants, page/desk edge, near bench/counter fronts or near card holders/planters that sit nearest camera. Remove all distant buildings furniture shelves skyline floor ruled lines and background. Leave center mostly transparent. Preserve cream fills inside extracted objects. Do not add any character text or new objects. This is an overlay concept for parallax.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-ef087a75-c7eb-46c3-bc5a-285a17cd4dc1.png",
+    "sha256": "89d07d410b6d5629363e7de69a6670ca7711c039f0610810d58695c9935f87e7",
+    "bytes": 400948,
+    "number": "030",
+    "numbered_filename": "030_world_coffee_fg_v01.png"
+  },
+  {
+    "id": 25,
+    "file": "07-world/world_memory_day_v01.png",
+    "prompt": "Create a background-only asset; attached image is STYLE REFERENCE only, do NOT include its character. Flat hand-drawn Pocket Notebook world in ink black #171715 on warm cream ruled paper #F8F4EB with sparse orange #FF6A00 accents. No shading, gradients, text, logos. Design a background location in the same \"Pocket Notebook\" world style: a tall library bookcase filled with index cards, folders and small boxes, a rolling ladder, a few cards marked with small orange hearts. NO characters \u2014 background only. Vertical 9:16; leave the lower-middle third open for Doddy. No text.\nExactly vertical 9:16. Leave lower-middle third open for future compositing. No character anywhere.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-a3024526-0c65-4e7e-8a8e-9831848181d1.png",
+    "sha256": "f094c1d60aee4b5a0d5d1fb5312c0fa56e4c741c4b5a69f459c8daad6fe7521d",
+    "bytes": 1766808,
+    "number": "031",
+    "numbered_filename": "031_world_memory_day_v01.png"
+  },
+  {
+    "id": 125,
+    "file": "07-world/world_memory_night_v01.png",
+    "prompt": "Redraw this exact background as a NIGHT VERSION. Preserve composition, perspective, all object positions and sizes precisely. Charcoal #16171C background, all ink outlines become cream #FFF7E9 lines, a few orange #FF6A00 light sources. Flat hand-drawn notebook style. No characters, no text, no logos, no gradients or glow. Same vertical 9:16 canvas. Lower-middle third remains open.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-518bebbd-6ed3-43dc-83c8-a381defb211b.png",
+    "sha256": "225c45007b279cb6a890ec4aa181f38af0c473d0b9af50d326d5944d9cb0d378",
+    "bytes": 1806057,
+    "number": "032",
+    "numbered_filename": "032_world_memory_night_v01.png"
+  },
+  {
+    "id": 225,
+    "file": "07-world/world_memory_fg_v01.png",
+    "prompt": "Extract ONLY the nearest FOREGROUND objects from this background onto a genuinely transparent background. Keep the SAME full vertical 9:16 canvas and EXACT object placement, scale, outlines and colors; do not recenter objects. Foreground objects are the bottom-corner plants, page/desk edge, near bench/counter fronts or near card holders/planters that sit nearest camera. Remove all distant buildings furniture shelves skyline floor ruled lines and background. Leave center mostly transparent. Preserve cream fills inside extracted objects. Do not add any character text or new objects. This is an overlay concept for parallax.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-8863eee4-74c5-4589-aa13-6504eaafe300.png",
+    "sha256": "c30c16b39148e3211fd88a7803604f927dae9578b9f383b0f5f0cb9f9bfe1984",
+    "bytes": 352569,
+    "number": "033",
+    "numbered_filename": "033_world_memory_fg_v01.png"
+  },
+  {
+    "id": 26,
+    "file": "07-world/world_rooftop_night_v01.png",
+    "prompt": "Create a background-only asset; attached image is STYLE REFERENCE only, do NOT include its character. Flat hand-drawn Pocket Notebook world in ink black #171715 on warm cream ruled paper #F8F4EB with sparse orange #FF6A00 accents. No shading, gradients, text, logos. Design a background location in the \"Pocket Notebook\" world NIGHT style: charcoal background #16171C, all lines in cream #FFF7E9 instead of black, a rooftop with a railing, a sketched city skyline, a moon, and a few warm orange #FF6A00 lit windows. NO characters \u2014 background only. Vertical 9:16; leave the lower-middle third open for Doddy. No text.\nExactly vertical 9:16. Leave lower-middle third open for future compositing. No character anywhere.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-53003e4f-cf7d-401f-9fb5-fe5216f90fec.png",
+    "sha256": "59f377c8db058966f8e66889104876ad9600b22e4bc891c20b71b3aff072175e",
+    "bytes": 1468348,
+    "number": "034",
+    "numbered_filename": "034_world_rooftop_night_v01.png"
+  },
+  {
+    "id": 226,
+    "file": "07-world/world_rooftop_fg_v01.png",
+    "prompt": "Extract ONLY the nearest FOREGROUND objects from this background onto a genuinely transparent background. Keep the SAME full vertical 9:16 canvas and EXACT object placement, scale, outlines and colors; do not recenter objects. Foreground objects are the bottom-corner plants, page/desk edge, near bench/counter fronts or near card holders/planters that sit nearest camera. Remove all distant buildings furniture shelves skyline floor ruled lines and background. Leave center mostly transparent. Preserve cream fills inside extracted objects. Do not add any character text or new objects. This is an overlay concept for parallax.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-32510104-954b-4c8b-8748-fe2837f69bf6.png",
+    "sha256": "82f9e6d13ec1117ec7ee9fbd5b5e3224dce77faceff4f69ce7b296bf5a88ccf3",
+    "bytes": 229272,
+    "number": "035",
+    "numbered_filename": "035_world_rooftop_fg_v01.png"
+  },
+  {
+    "id": 29,
+    "file": "07-world/world_home_placement_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nInput image 1 is EDIT TARGET, home desk background; Input image 2 character identity reference. Place Doddy into the home desk notebook world, lower-middle third, standing reading an open small cream notebook. His head about one-eighth frame height. Keep all background objects and perspective unchanged. No other character or text. Vertical 9:16.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-312aa03a-a7d5-42df-a766-f6d594585700.png",
+    "sha256": "e287ac8a0d9bcf8db3fb87143e25a5fa9cec9f83c8c9bb4f361de5f96b7165b9",
+    "bytes": 1728802,
+    "number": "036",
+    "numbered_filename": "036_world_home_placement_v01.png"
+  },
+  {
+    "id": 30,
+    "file": "08-transitions/trans_phone_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a 4-frame storyboard strip (vertical frames side by side) of Doddy stepping OUT of a smartphone screen into the real world: 1) Doddy inside the phone screen in his notebook world, 2) his hand and trainer poking out past the screen edge, 3) half in / half out, 4) standing next to the phone on a real wooden desk. Doddy stays flat 2D ink in every frame, even in the real world; the real world is photographic. Light-grey frame numbers. No other text.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-c5ba24f4-249c-45fa-b231-5b23a085934e.png",
+    "sha256": "66c2f0848383e18fd537530f78aa1ad146307dd4c462c0126934777e238149f0",
+    "bytes": 1996683,
+    "number": "037",
+    "numbered_filename": "037_trans_phone_v01.png"
+  },
+  {
+    "id": 31,
+    "file": "08-transitions/trans_page_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a 4-frame storyboard strip (vertical frames side by side): 1) a real-world photo of a desk, 2) the corner of the photo curling like a notebook page, 3) the page half turned, revealing the \"Pocket Notebook\" world underneath, 4) the notebook world fully revealed with Doddy waving. Light-grey frame numbers. No other text.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-a37730e0-65b8-47ee-a7a5-1b8d5874f8d2.png",
+    "sha256": "11816f914ecf07361e60c0bb626de2983ef00b7deae56f3267555771381ca34a",
+    "bytes": 1850195,
+    "number": "038",
+    "numbered_filename": "038_trans_page_v01.png"
+  },
+  {
+    "id": 32,
+    "file": "08-transitions/trans_door_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a 4-frame storyboard strip (vertical frames side by side): 1) Doddy in the notebook world holding a giant pencil, 2) Doddy drawing a door outline in the air, 3) the door opening to show a photographic real-world kitchen beyond it, 4) Doddy stepping through, still flat 2D ink, into the real kitchen. Light-grey frame numbers. No other text.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-9d0237e9-3601-48ab-ad00-00d1a2503475.png",
+    "sha256": "357d5844abbb908ecf82255fe3e5474a5508b8ac7b9805efc545919aefcc8705",
+    "bytes": 1805204,
+    "number": "039",
+    "numbered_filename": "039_trans_door_v01.png"
+  },
+  {
+    "id": 33,
+    "file": "08-transitions/trans_ink_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a 4-frame storyboard strip (vertical frames side by side) of an ink-splat transition: 1) the notebook world, 2) a black ink drop falling into the centre, 3) the splat spreading to cover most of the frame, 4) the splat clearing to reveal a real-world photo with Doddy standing in it. Light-grey frame numbers. No other text.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-ca634933-5b3a-4187-9daf-19601ac56bb3.png",
+    "sha256": "4db68b4f02005ebcc76e330d9e740592b842fe14a982c553dceb27fb32782999",
+    "bytes": 1902500,
+    "number": "040",
+    "numbered_filename": "040_trans_ink_v01.png"
+  },
+  {
+    "id": 37,
+    "file": "09-realworld/rw_keys_storyboard_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a 6-panel vertical storyboard (2\u00d73 grid) for a 15-second video, \"Doddy finds your keys\": 1) a real hallway photo, a keys hook with no keys, 2) Doddy pops out of the phone on a side table, 3) Doddy looking around with a hand above his eyes, 4) Doddy pointing at the keys under a cushion, 5) a human hand picking up the keys, 6) Doddy giving a thumbs up. Real world photographic, Doddy flat 2D ink. Light-grey panel numbers. No other text.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-2650ea6a-b097-4fee-806d-c5a62f9013cf.png",
+    "sha256": "846b0999e562902dda957686b9459b4ca698226dced27c65515750d9ba32be50",
+    "bytes": 2271595,
+    "number": "041",
+    "numbered_filename": "041_rw_keys_storyboard_v01.png"
+  },
+  {
+    "id": 38,
+    "file": "10-templates/tpl_safearea_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a vertical 9:16 layout template on plain warm paper #F8F4EB: a thin grey outline marking the central safe area (leave about 14% clear at the top and 20% at the bottom and right side for social media buttons), a small Doddy waving in the lower-left of the safe area, and a large empty space for captions above him. No text.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-4e2cb587-9e80-4b45-8535-23c774b48c3c.png",
+    "sha256": "661431a907881e00c55bd853cd97b111dcae8322d89ff730baef8a7eadf25439",
+    "bytes": 1336747,
+    "number": "042",
+    "numbered_filename": "042_tpl_safearea_v01.png"
+  },
+  {
+    "id": 39,
+    "file": "10-templates/tpl_endcard_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a vertical 9:16 end card in the \"Pocket Notebook\" style: warm paper background with faint ruled lines, Doddy in the centre waving goodbye with a happy face, a small orange heart floating above his hand, and a clean empty band in the lower third for a logo to be added later. No text, no logo.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-27e637c9-fb76-4c91-bcc0-ab09a23649c6.png",
+    "sha256": "0ba04885fec3ecc25545780106ec522ea07f100361c13546e9224af897016ff5",
+    "bytes": 1429800,
+    "number": "043",
+    "numbered_filename": "043_tpl_endcard_v01.png"
+  },
+  {
+    "id": 40,
+    "file": "10-templates/tpl_caption_v01.png",
+    "prompt": "Match the attached Doddy character references: large perfectly round cream #FFF7E9 head, thick ink #171715 outline; two small vertical oval black eyes, exactly ONE arched eyebrow above viewer-right eye, warm curved smile, no nose ears hair cheeks. Single curved ink line spine and single-line arms/legs, rounded ends, cream mitten hands and oversized cream low-top laced trainers. Flat clean ink with slight hand wobble; no torso clothes backpack, gradients shading 3D glow. Orange #FF6A00 only on props/effects. Preserve reference proportions. No unwanted text logos watermark. This is internal concept/reference art.\nCreate a vertical 9:16 frame showing a caption style for Doddy videos: one short caption line \"your mate in your pocket\" in a clean rounded sans-serif, black #171715 text on a cream #FFF7E9 rounded pill with a thin black outline, sitting in the lower-middle third over a blurred real-world photo. Doddy, small and flat 2D, stands next to the pill pointing at it.\nFollow requested panel count exactly. Precisely one eyebrow per visible face. Photography in fictional storyboards may be generated as generic unbranded spaces; Doddy remains flat 2D ink. Notebook environment follows attached style reference. No UI implying functioning app features.",
+    "source": "/Users/popcorn/.codex/generated_images/01a1209f-0994-75f0-be5a-80f476d1881a/exec-903804ca-68ed-47c4-80f5-23533426828d.png",
+    "sha256": "abe7e4c749e1f01a51641d0e62b319591802e19c7543cdcffaccbce3c78db903",
+    "bytes": 1610054,
+    "number": "044",
+    "numbered_filename": "044_tpl_caption_v01.png"
+  }
+]

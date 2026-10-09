@@ -65,7 +65,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 
 | ADR | Decision | Status |
 |---|---|---|
-| 038 | Owner's source of truth for Doddy assets is the Google Drive library `DODDY-Numbered-Video-Assets-v01` (`000_Asset_Index.csv` / `000_Manifest.json` authoritative). Binaries are not copied into the repo unless requested; in-app art stays v1.2 until the owner chooses library poses. See `docs/design/ASSET_SOURCE_OF_TRUTH.md`; agent pointer in `.claude/CLAUDE.md` (pack `CLAUDE.md` is hash-checked, so not edited). | Applied (owner instruction 2026-10-09) — in-app replacement **open**; folder not yet readable from the cloud environment |
+| 038 | Owner's source of truth for Doddy assets is the Google Drive library `DODDY-Numbered-Video-Assets-v01` (`000_Asset_Index.csv` / `000_Manifest.json` authoritative). Binaries imported on owner request (2026-10-09) into `design/video-asset-library-v01/`, with Git LFS for PNG/ZIP; in-app art stays v1.2 until the owner chooses library poses. See `docs/design/ASSET_SOURCE_OF_TRUTH.md`; agent pointer in `.claude/CLAUDE.md` (pack `CLAUDE.md` is hash-checked, so not edited). | Applied (owner instruction 2026-10-09); library **imported** into `design/video-asset-library-v01/` (owner-supplied material, rights not reviewed) — in-app replacement **open** |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

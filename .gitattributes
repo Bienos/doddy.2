@@ -1,0 +1,2 @@
+design/video-asset-library-v01/**/*.png filter=lfs diff=lfs merge=lfs -text
+design/video-asset-library-v01/**/*.zip filter=lfs diff=lfs merge=lfs -text
