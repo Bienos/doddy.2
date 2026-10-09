@@ -26,3 +26,16 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 2. Put `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `DODDY_ACCESS_CODES` into the host's environment yourself. The key must never be pasted into chat or the repo.
 3. Set the URL + your code in the app, and confirm "Private (token server)" works.
 4. Turn on agent authentication and set concurrency/daily call limits in ElevenLabs (the spending cap).
+
+## Deployment (2026-10-09)
+| Item | State |
+|---|---|
+| Vercel project | `doddy-voice-token` (team `bienos`), linked to `Bienos/doddy.2`, root `server/voice-token`; created earlier the same day by a parallel session |
+| Production | Deployed from `claude/brave-keller-f8h6uq` @ `882fe97`, region `fra1`. Endpoint `https://doddy-voice-token.vercel.app/api/voice-token` |
+| Env `ELEVENLABS_AGENT_ID` | Set (plain, production + preview) |
+| Env `DODDY_ACCESS_CODES` | Set (sensitive, production): one owner code, label `owner`. The code was given to the owner as a file, not in chat or the repo |
+| Env `ELEVENLABS_API_KEY` | **Not set: owner adds it in Vercel** (Settings → Environment Variables, Sensitive, Production). Needs a redeploy afterwards |
+| Live check | `POST` with a wrong code → `500 {"error":"server_not_configured"}` (fails closed without the key); `GET` → `405` |
+| Previews | Behind Vercel Authentication (SSO), so only production is usable by the app |
+| Agent authentication | Still **off**. Turn on only after the app works in "Private (token server)" mode |
+
