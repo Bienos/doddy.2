@@ -9,7 +9,7 @@ cd site && python3 -m http.server 8765
 # open http://localhost:8765
 ```
 
-There's no build step: plain HTML, CSS and a small vanilla script. No analytics, no cookies, no storage.
+There's no build step: plain HTML, CSS and a small vanilla script. No cookies, no storage. Visits are counted with Vercel Web Analytics (see [Analytics](#analytics)).
 
 ## How it connects to the app
 
@@ -38,6 +38,30 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 - **Download:** open `/api/waitlist-export` in a browser, enter any username and the `WAITLIST_ADMIN_PASSWORD`; you get `doddy-waitlist-YYYY-MM-DD.csv` (UTF-8 with BOM, opens in Excel). Change the password in Vercel → Project → Settings → Environment Variables, then redeploy.
 - **Not built:** rate limiting beyond Vercel's defaults, double opt-in emails, multiple admin accounts.
 
+## Analytics
+
+Vercel Web Analytics counts page views and visitors on the landing page. It is the plain-HTML
+setup from [vercel.com/docs/analytics](https://vercel.com/docs/analytics/quickstart), not the
+`@vercel/analytics` package: `index.html` loads `/_vercel/insights/script.js`, which Vercel serves
+from the site's own origin, after a two-line inline queue (`window.va`) so custom events can be
+sent before the script has loaded. No npm dependency, no build step.
+
+- **Turn it on:** Vercel → project `doddy` → Analytics → Enable, then deploy. Until that deploy
+  is live, the script URL answers 404; the page works unchanged apart from one failed request in
+  the browser console.
+- **Where it runs:** only `index.html`. `/admin/` has no analytics, so the owner's own visits to
+  the waitlist page don't count as traffic.
+- **CSP:** `vercel.json` allows the inline queue by its SHA-256 hash; the script and its beacons
+  (`/_vercel/insights/*`) are same-origin, so the existing `'self'` entries cover them. If the
+  inline snippet changes, recompute the hash:
+  `printf '%s' "<exact script contents>" | openssl dgst -sha256 -binary | base64`.
+- **Privacy:** no cookies. Vercel identifies a visitor by a hash of the incoming request that it
+  discards after 24 hours, and keeps page, referrer, country, device and browser class; see
+  [Vercel's analytics privacy note](https://vercel.com/docs/analytics/privacy-policy). The footer
+  says so. Check the wording against your privacy policy once there is one.
+- **Custom events** (for example a waitlist signup) are possible with
+  `window.va('event', { name: '...' })`; none are sent yet.
+
 ## Needs the owner
 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
@@ -56,5 +80,6 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 - Admin page against a mocked API at 1440 and 390 px: wrong password refused, stats, chart tooltip on hover, search, two-step delete, copy, download, stays signed in on reload, an `<img onerror>` "email" renders as text. Admin API against the in-memory Blob stand-in: list, delete, bad id, wrong password, export after delete.
 - Optional questions: browser flow at 1280 and 390 px (focus moves to the questions, chips work by keyboard, answers sent with id and key, Skip sends nothing, Android note); `api/waitlist-answers.js` against the Blob stand-in (wrong key, unknown id, foreign origin, unknown choices dropped, wish capped and formula-stripped, admin never sees the key hash, CSV has the new columns).
 - "Take a shot" (`court.js`): auto shots and a dragged slingshot throw at 1440 and 390 px; "Shoot for me" lands about 60% of the time.
+- Analytics (2026-10-09, headless Chromium 1194 via Playwright, local server sending the `vercel.json` headers, `/_vercel/insights/script.js` stubbed): under the production CSP the inline queue runs (`window.va` is a function), the script is requested and runs, queued calls land in `window.vaq`, no CSP violations, page or console errors; an unhashed inline script is still blocked; with the script answering 404 (analytics not enabled yet) the page works with no errors; 390 px has no horizontal scroll; `/admin/` carries no analytics. Not checked: the real Vercel script and that the dashboard shows data; that needs the deploy described under Analytics.
 
 Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom, touch throwing), VoiceOver, Lighthouse.
