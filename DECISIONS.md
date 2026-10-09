@@ -61,6 +61,17 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
 | 038 | Doddy speaks with the ElevenLabs Voice Library voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` for both languages (added to My Voices and set on the dev agent 2026-10-08, version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`); no per-language voice override | Applied (owner instruction) — Polish pronunciation to be judged on device; library licence terms to be checked before release |
+| 039 | Before `save_memory` runs, the agent says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (prompt + tool description, agent version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`, 2026-10-09) instead of "I'm saving this for you" | Applied (owner approved) — not yet heard on a device |
+
+## V2 decisions (shortcut and guided Back Tap setup, 2026-10-09)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 040 | "Talk to Doddy" ships as an App Intent + App Shortcut (`openAppWhenRun`, iOS 17 target). The guided Back Tap setup is **optional**, reachable from a Home card and Settings, not inserted before First Hello as design v1.2 proposes; `CANONICAL_DESIGN_DIRECTION.md` and the build-order doc say skippable/deferred and "do not force the wizard" | Applied — owner may move it first-first later |
+| 041 | Setup completion is `userReportedTested` only: an intent receipt inside a 120 s test window plus the user's own "I used Double Back Tap". No `verified` state exists because iOS exposes no Back Tap API; stale, early, duplicate and out-of-test receipts are refused; "confirm" without a receipt is refused (unit-tested in `BackTapSetupTests`) | Applied |
+| 042 | `ShortcutRouter` is the single owner of the voice and setup presentations (moved out of `HomeView`), so a second invocation focuses the open conversation rather than starting another | Applied |
+| 043 | Setup state persisted in UserDefaults as JSON (`backTapSetup`): outcome + active test window only, never transcripts or reported pages. Extends ADR-019's "UI preferences only" rule; an unexpired window is restored after a relaunch so a background-killed app still accepts the tap-test receipt | Applied — owner to confirm |
+| 044 | `LaunchSmokeTests` corrected: since V1 the Settings microphone row reads "Only while talking", not "Not used" (the old assertion would have failed on the first Mac run of `scripts/ci.sh`) | Applied |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

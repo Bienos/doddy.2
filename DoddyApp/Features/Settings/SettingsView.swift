@@ -12,6 +12,16 @@ struct SettingsView: View {
 
     private var environment: AppEnvironment { store.environment }
     private var privacy: PrivacyDefaults { environment.privacy }
+    private var router: ShortcutRouter { .shared }
+
+    private var backTapStatus: String {
+        switch router.setup.phase {
+        case .notStarted: "Not set up"
+        case .deferred: "Set up later"
+        case .userReportedTested(let at): "Tested by you · \(DateText.full(at))"
+        case .shortcutPreparation, .guiding, .testing, .receiptReceived: "In progress"
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -72,6 +82,17 @@ struct SettingsView: View {
                         Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
                     }
                     Text("Development prototype: Doddy's voice runs on an ElevenLabs agent. Conversations count toward the owner's ElevenLabs minutes.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
+                Section("Back Tap and Siri") {
+                    StatusRow(title: "Double Back Tap", value: backTapStatus)
+                    Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
+                        router.isSetupPresented = true
+                    }
+                    .accessibilityIdentifier("settings.backTap")
+                    Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button. Back Tap is chosen by you in iOS Settings; Doddy can't set it and can't see what it's set to.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
