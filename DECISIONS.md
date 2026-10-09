@@ -45,7 +45,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 025 | Owner instruction 2026-10-08: build M1 now, **no unnecessary tests**. M1 adds 2 storage tests only; UI flows are untested beyond the existing smoke tests. | Applied |
 | 026 | `MemoryRepository` gains `list(limit:)` and `deleteAll()`; new `MemoryStoreError`. Every write is one transaction plus read-back before success. | Applied |
 | 027 | Search indexes a folded copy of `current_text` (`search_text`: case + diacritics folded, plus ł→l, ß→ss, etc.). Query = non-stopword terms as FTS5 prefix terms joined with OR. No typo tolerance beyond prefixes. | Applied — owner may want fuzzier search later |
-| 028 | `PRAGMA secure_delete = ON`; delete-all also rebuilds the FTS index. DB in Application Support/Memories with `completeUntilFirstUserAuthentication`; **included in device backups** (disclosed in Settings). | Applied — **owner to confirm backup inclusion** |
+| 028 | `PRAGMA secure_delete = ON`; delete-all also rebuilds the FTS index. DB in Application Support/Memories with `completeUntilFirstUserAuthentication`; **included in device backups** (disclosed in Settings). | Applied — **owner confirmed 2026-10-09** |
 | 029 | If the store cannot open, the app switches saving off and shows the error; it never resets or deletes the file. | Applied |
 | 030 | Export: JSON (`formatVersion` 1 envelope of schema records) and plain text, both via the share sheet. | Applied |
 | 031 | On Linux, package tests need `-Xswiftc -DSQLITE_DISABLE_SNAPSHOT` (Ubuntu SQLite lacks the snapshot API); `ci.sh`/`Makefile` add it automatically. Apple builds unaffected. | Applied |
@@ -60,6 +60,8 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+| 038 | **Character master = C**: the v1.3-r1 redraw in `design/interface-v1.2/assets` (no backpack, white sneakers, `#F58A24` on warm paper). Both v1.3 packs (A = COMPLETE, B = non-COMPLETE) stay in `reference/` as history only. Comparison: `VISUAL_REVIEW/BRAND_PICK_A_B_C.jpg` | Owner decision 2026-10-09. Still missing in C: face/expression set, app icon, outlined wordmark; illustrator fidelity review and artwork rights still open |
+| 039 | ElevenLabs dev agent keeps its defaults: **voice recording on, no retention limit, transcripts not deleted**. Settings copy tells the user ElevenLabs keeps them | Owner decision 2026-10-09, dev only (owner's own phone). Revisit before any other user (with ADR-034) |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

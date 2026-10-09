@@ -6,7 +6,8 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 |---|---|
 | Agent | "Doddy (dev prototype)" `agent_0501m4et27vyeawrwqfdxxfszfa6`, tags doddy/dev |
 | Mode | **Public (no auth)**: development only, on the owner's own phone |
-| LLM | gemini-2.5-flash, temperature 0.3, timezone Europe/Warsaw |
+| LLM | gemini-3.5-flash (read from the agent 2026-10-09; was gemini-2.5-flash at setup), temperature 0.3, timezone Europe/Warsaw |
+| Data kept by ElevenLabs | Audio recording **on**, retention **unlimited**, transcripts and audio **not** auto-deleted, zero-retention off. Kept as is by owner decision (ADR-039) |
 | Speech | Scribe realtime (in), eleven_v4_turbo (out), default voice for now; max 10 min per conversation |
 | Languages | English default, Polish preset ("Hej, tu Doddy. Co słychać?"), automatic language detection |
 | Client tools | `search_memories(query)` `tool_6701m4et16pveywrpymdw3h3v0wp`, `save_memory(text)` `tool_9401m4et17pfe598c1wmvdhpwhcv` (both expect a response) |

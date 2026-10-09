@@ -2,7 +2,10 @@
 ## Identity (derived from provided v1.3 candidates and Character Bible)
 **Doddy — Your mate in your pocket.** Expressive, hand-drawn stick figure with round head, vertical oval eyes, warm asymmetrical smile, black-ink line body and mitten hands, oversized trainers, orange backpack and basketball. Warm paper + ink dark environments, orange motion accents, editorial handwritten display lettering. Character serves usability, never outranks it.
 
-## Brand version collision
+## Owner decision 2026-10-09: character master is C
+The v1.3-r1 redraw in `design/interface-v1.2/assets` (and its PNG exports in `design/ios-ready-asset-catalog`) is the character master (ADR-038). It drops the backpack and uses white sneakers and `#F58A24` orange. The identity description above and the token list below describe the older packs. Still to make in C's style: expressions, app icon, outlined wordmark. Comparison sheet: `VISUAL_REVIEW/BRAND_PICK_A_B_C.jpg`.
+
+## Brand version collision (history)
 Two source ZIPs have names ending in **v1.3** but are materially different. `DODDY_BRAND_SYSTEM_v1.3_COMPLETE.zip` includes 30 expression SVGs and 25 pose SVGs; `DODDY_BRAND_SYSTEM_v1.3.zip` reports 33 and 28. Both note font-based editable wordmark, not final outlined mark; illustration approval and production motion rig pending. Preserve both; sample tokens from non-COMPLETE pack currently under `assets/brand_candidate/`, not an approved master. Owner/illustrator must select one and document master asset IDs before publishing.
 
 ## Current candidate tokens (NOT approved app design spec)
