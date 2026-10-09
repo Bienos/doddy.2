@@ -12,9 +12,6 @@ struct DoddyApp: App {
         let environment = AppEnvironment.live()
         _store = State(initialValue: MemoryStore(environment: environment))
         _profiles = State(initialValue: ProfileStore(environment: environment))
-    }
-
-    init() {
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
     }
