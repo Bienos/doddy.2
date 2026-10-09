@@ -10,7 +10,6 @@ const APP_URL = "doddy://home";
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const poseSrc = (name, scheme) => `assets/poses/doddy-pose-${name}-${scheme}-v1.3-r1.svg`;
-const screenSrc = (name) => `assets/screens/${name}.png`;
 
 function setPose(picture, name) {
   picture.querySelector("source").srcset = poseSrc(name, "dark");
@@ -27,68 +26,26 @@ function syncPoseTheme() {
 syncPoseTheme();
 new MutationObserver(syncPoseTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-// Swap with a short fade unless reduced motion is on.
-function swap(el, apply) {
-  if (reduceMotion.matches) { apply(); return; }
-  el.classList.add("swap");
-  setTimeout(() => { apply(); el.classList.remove("swap"); }, 180);
+// ---------- Hero: one arrival moment. Doddy settles, then the greeting underlines itself. ----------
+const hero = document.querySelector(".hero");
+requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add("loaded")));
+
+// ---------- Voice: step through the app's real status words while the section is on screen ----------
+const voiceStates = [...document.querySelectorAll(".voice-states li")];
+let voiceTimer = null;
+function showVoiceState(i) {
+  voiceStates.forEach((li, j) => li.classList.toggle("now", j === i));
 }
-
-// ---------- Headings: draw the orange underline once, when seen ----------
-const headingObserver = new IntersectionObserver((entries) => {
-  for (const entry of entries) {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("drawn");
-      headingObserver.unobserve(entry.target);
-    }
-  }
-}, { threshold: 0.6 });
-document.querySelectorAll(".display").forEach((h) => headingObserver.observe(h));
-
-// ---------- Sticky stage: phone screen and Doddy's pose follow the story ----------
-const stage = document.querySelector(".stage");
-const stagePose = stage.querySelector(".stage-pose");
-const stageScreen = stage.querySelector(".stage-screen");
-const voiceStates = [...stage.querySelectorAll(".voice-states li")];
-let current = { pose: "approaching", screen: "welcome" };
-let voiceTimers = [];
-
-function playVoiceStates() {
-  voiceTimers.forEach(clearTimeout);
-  voiceTimers = [];
-  voiceStates.forEach((li) => li.classList.remove("on", "now"));
-  const step = (i) => {
-    voiceStates.forEach((li, j) => { li.classList.toggle("on", j <= i); li.classList.toggle("now", j === i); });
-  };
-  if (reduceMotion.matches) { step(voiceStates.length - 1); return; }
-  voiceStates.forEach((_, i) => voiceTimers.push(setTimeout(() => step(i), 150 + i * 650)));
-}
-
-function show(beat) {
-  const { pose, screen } = beat.dataset;
-  const isVoice = screen === "voice";
-  stage.classList.toggle("is-voice", isVoice);
-  if (isVoice) playVoiceStates();
-  if (pose !== current.pose) swap(stagePose, () => setPose(stagePose, pose));
-  if (!isVoice && screen !== current.screen) swap(stageScreen, () => { stageScreen.src = screenSrc(screen); });
-  current = { pose, screen: isVoice ? current.screen : screen };
-}
-
-const beatObserver = new IntersectionObserver((entries) => {
-  for (const entry of entries) if (entry.isIntersecting) show(entry.target);
-}, { rootMargin: "-45% 0px -45% 0px" });
-document.querySelectorAll(".beat").forEach((b) => beatObserver.observe(b));
-
-// One orchestrated arrival: Doddy walks in, settles, then waves.
 if (reduceMotion.matches) {
-  setPose(stagePose, "waving");
-  current.pose = "waving";
+  showVoiceState(1);
 } else {
-  stagePose.classList.add("arrive");
-  setTimeout(() => {
-    stagePose.classList.remove("arrive");
-    if (current.pose === "approaching") { swap(stagePose, () => setPose(stagePose, "waving")); current.pose = "waving"; }
-  }, 900);
+  new IntersectionObserver(([entry]) => {
+    clearInterval(voiceTimer);
+    if (!entry.isIntersecting) return;
+    let i = 0;
+    showVoiceState(i);
+    voiceTimer = setInterval(() => { i = (i + 1) % voiceStates.length; showVoiceState(i); }, 1400);
+  }, { threshold: 0.4 }).observe(document.querySelector(".voice"));
 }
 
 // ---------- Sketchbook: Doddy takes a shot ----------

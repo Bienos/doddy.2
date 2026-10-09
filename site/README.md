@@ -24,6 +24,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. No analytics,
 
 ## What's real on the page
 
+- **Design v2 (editorial notebook):** headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, join. The example note in the receipt card is labelled as an example.
 - **Screens are design previews**, copied from `design/interface-v1.2/previews/` and labelled "Design preview". Replace them with simulator screenshots of the native app (same file names in `assets/screens/`) once someone with Xcode captures them.
 - The voice section has no app screenshot. It shows the app's real status words and its "Save this note?" card as an illustration, labelled as such, and is marked **In testing** because voice hasn't run on a real iPhone.
 - Claims follow the feature table in the prompt: save, search, edit, export and delete are described as working; reminders and other languages sit under "Later, maybe" with no dates.
@@ -42,15 +43,15 @@ The script stores only time, email, page and consent version; duplicates return 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
 2. **Waitlist:** deploy the script (below) and add a contact address people can use to ask for deletion; the form promises deletion on request.
 3. **Domain, hosting, contact address and privacy policy.** The footer has none yet.
-4. **Fonts:** the handwritten face (Caveat, OFL) loads from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host it after licence review; the CSS falls back to system handwriting fonts without it.
+4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them.
 5. **Brand approval:** colours, character drawings and wordmark are candidates (`docs/design/CANONICAL_DESIGN_DIRECTION.md`), not an approved brand.
 
-## Checked (2026-10-09, headless Chromium 1194 via Playwright, local server)
+## Checked (2026-10-09, design v2, headless Chromium 1194 via Playwright, local server)
 
-- 1440, 390 and 320 px widths: no horizontal scroll; light and dark; reduced motion (static poses, underlines already drawn).
-- No console or page errors.
-- Waitlist: empty and invalid email show an error and mark the field; no endpoint shows "isn't open yet"; a mocked endpoint gets `{"email":"name@example.com"}` and shows success; a 500 shows the retry message.
-- Open Doddy on desktop shows the iPhone message and doesn't navigate. Tab order: skip link, header, hero actions, basketball button, email field, submit, Open Doddy.
-- Screenshots: `VISUAL_REVIEW/landing/`.
+- 1440, 390 and 320 px widths, light and dark: no horizontal scroll, no console errors. Screenshots in `VISUAL_REVIEW/landing/`.
+- Under the production CSP from `vercel.json`: scripts, fonts and poses load, no violations.
+- Explicit `data-theme` light/dark overrides the OS setting for colours and poses.
+- Waitlist against a mocked Apps Script endpoint: added, already on the list, invalid email, server busy; body is text/plain JSON with email, page, consent version and the empty honeypot.
+- `tools/waitlist/Code.gs` against a fake sheet: validation, dedupe, honeypot, formula stripping, malformed JSON.
 
-Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom), VoiceOver, a screen-reader pass, and Lighthouse.
+Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom), VoiceOver, Lighthouse, and the Apps Script running inside Google.
