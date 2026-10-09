@@ -64,7 +64,6 @@ struct SettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
-                .accessibilityIdentifier("settings.aboutYou")
 
                 Section("Your memories") {
                     StatusRow(title: "Saved on this iPhone", value: "\(store.memories.count)")

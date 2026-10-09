@@ -46,7 +46,7 @@ This differs on purpose from the archived package's proposed `003_setup_and_prof
 - Tap-test window: stale, in-window and late receipts.
 - SQLite: commit + reopen, edit keeps/bumps/removes, stale draft rejected, invalid draft writes nothing, profile and memories independent, every enum value passes the CHECKs and survives reopen, **v1 → v2 upgrade keeps memories**, newer-schema file rejected byte-for-byte untouched.
 
-All app Swift files pass `swiftc -parse` (syntax only).
+All app Swift files pass `swiftc -parse` (syntax only). A separate code review of the app sources against the package APIs found no definite compile errors; its logic findings were fixed (reopening setup then "Set this up later" keeps an earlier report, each walkthrough card starts at the top, overlapping saves keep the newest state, container accessibility IDs removed, UI tests wait and scroll). Two items to watch in Xcode: method references passed as closures (now wrapped) and `Binding(get:set:)` in the profile fields.
 
 ## NOT verified (needs the Mac and a real iPhone)
 - **App compile**: SwiftUI, AppIntents and the app/UI tests can't build on Linux. Run `scripts/ci.sh` on the Mac.

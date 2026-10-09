@@ -15,6 +15,9 @@ final class ProfileStore {
     private(set) var hasLoaded = false
     /// Set when setup progress couldn't be saved. The flow still moves on, so nobody is stuck.
     private(set) var progressSaveProblem: String?
+    /// The finished Back Tap report from before the guide was reopened in Settings, so that
+    /// "Set this up later" doesn't erase it. In memory only.
+    private var setupDecisionBeforeReopen: SetupDecision?
 
     init(environment: AppEnvironment, arguments: [String] = ProcessInfo.processInfo.arguments) {
         repository = environment.profileRepository
@@ -49,7 +52,9 @@ final class ProfileStore {
         let next = transition(progress ?? .initial(at: .now))
         progress = next
         do {
-            progress = try await repository.saveOnboarding(next)
+            let saved = try await repository.saveOnboarding(next)
+            // A newer tap may have moved on while this save was in flight; keep the newest.
+            if progress == next { progress = saved }
             progressSaveProblem = nil
         } catch {
             progressSaveProblem = "Doddy couldn't save your place in setup, so you may see these steps again next time. (\(error.localizedDescription))"
@@ -57,7 +62,32 @@ final class ProfileStore {
     }
 
     func reopenSetup() async {
+        setupDecisionBeforeReopen = progress?.setupDecision
         await updateProgress { $0.guiding(to: .welcome, at: .now) }
+    }
+
+    /// "Set this up later": restores an earlier finished report if the guide was only reopened.
+    func setUpLater() async {
+        let earlier = setupDecisionBeforeReopen
+        setupDecisionBeforeReopen = nil
+        switch earlier {
+        case .userReportedDone, .userReportedTestPassed:
+            await updateProgress { $0.finishingSetup(testPassed: earlier == .userReportedTestPassed, at: .now) }
+        default:
+            await updateProgress { $0.deferringSetup(at: .now) }
+        }
+    }
+
+    func finishSetup(testPassed: Bool) async {
+        setupDecisionBeforeReopen = nil
+        await updateProgress { $0.finishingSetup(testPassed: testPassed, at: .now) }
+    }
+
+    /// Leaving the introduction without saving. If a profile is already stored (the intro was
+    /// reopened from Settings), it still counts as saved.
+    func finishIntroduction(saved: Bool) async {
+        let decision: IntroDecision = saved || !profile.isEmpty ? .saved : .skipped
+        await updateProgress { $0.decidingIntro(decision, at: .now) }
     }
 
     func reopenIntroduction() async {

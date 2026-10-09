@@ -99,7 +99,6 @@ struct HomeView: View {
             }
             .padding(16)
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
-            .accessibilityIdentifier("home.aboutYou")
         }
     }
 

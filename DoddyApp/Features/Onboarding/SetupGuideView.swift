@@ -13,10 +13,13 @@ struct SetupGuideView: View {
         VStack(spacing: 0) {
             Group {
                 switch step {
-                case .welcome: SetupWelcomeView(go: go, setUpLater: setUpLater)
-                case .shortcut: SetupShortcutView(go: go, setUpLater: setUpLater)
-                case .test: SetupTestView(go: go, finish: finish, setUpLater: setUpLater)
-                default: SetupWalkthroughView(step: step, go: go, setUpLater: setUpLater)
+                case .welcome: SetupWelcomeView(go: { go($0) }, setUpLater: { setUpLater() })
+                case .shortcut: SetupShortcutView(go: { go($0) }, setUpLater: { setUpLater() })
+                case .test: SetupTestView(go: { go($0) }, finish: { finish(testPassed: $0) }, setUpLater: { setUpLater() })
+                default:
+                    // New identity per page: each card starts at the top, and VoiceOver resets.
+                    SetupWalkthroughView(step: step, go: { go($0) }, setUpLater: { setUpLater() })
+                        .id(step)
                 }
             }
             .frame(maxHeight: .infinity)
@@ -34,11 +37,11 @@ struct SetupGuideView: View {
     }
 
     private func setUpLater() {
-        Task { await profiles.updateProgress { $0.deferringSetup(at: .now) } }
+        Task { await profiles.setUpLater() }
     }
 
     private func finish(testPassed: Bool) {
-        Task { await profiles.updateProgress { $0.finishingSetup(testPassed: testPassed, at: .now) } }
+        Task { await profiles.finishSetup(testPassed: testPassed) }
     }
 }
 
@@ -84,7 +87,6 @@ private struct SetupWelcomeView: View {
 
             SetUpLaterButton(action: setUpLater)
         }
-        .accessibilityIdentifier("setup.welcome")
     }
 }
 
@@ -227,7 +229,6 @@ private struct SetupWalkthroughView: View {
 
             SetUpLaterButton(action: setUpLater)
         }
-        .accessibilityIdentifier("setup.walkthrough")
     }
 }
 
@@ -325,7 +326,6 @@ private struct SetupTestView: View {
                 break
             }
         }
-        .accessibilityIdentifier("setup.test")
     }
 }
 

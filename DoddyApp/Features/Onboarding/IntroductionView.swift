@@ -36,8 +36,8 @@ struct IntroductionView: View {
                 ProfileReviewView(
                     draft: $draft,
                     back: { phase = .question(keys.count - 1) },
-                    finishWithoutSaving: { decide(.skipped) },
-                    saved: { decide(.saved) })
+                    finishWithoutSaving: { finish(saved: false) },
+                    saved: { finish(saved: true) })
             }
         }
         .onAppear {
@@ -72,7 +72,7 @@ struct IntroductionView: View {
             .buttonStyle(SecondaryButtonStyle())
             .accessibilityIdentifier("intro.capabilities")
 
-            Button { decide(.skipped) } label: {
+            Button { finish(saved: false) } label: {
                 HStack { Text("Start without the chat"); Image(systemName: "arrow.right") }
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
@@ -83,7 +83,6 @@ struct IntroductionView: View {
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
-        .accessibilityIdentifier("intro.welcome")
     }
 
     private func binding(for key: ProfileKey) -> Binding<String> {
@@ -91,8 +90,8 @@ struct IntroductionView: View {
         Binding(get: { draft[key] ?? "" }, set: { draft[key] = $0.isEmpty ? nil : $0 })
     }
 
-    private func decide(_ decision: IntroDecision) {
-        Task { await profiles.updateProgress { $0.decidingIntro(decision, at: .now) } }
+    private func finish(saved: Bool) {
+        Task { await profiles.finishIntroduction(saved: saved) }
     }
 }
 
@@ -255,7 +254,6 @@ private struct ProfileReviewView: View {
             }
             .frame(minHeight: 44)
         }
-        .accessibilityIdentifier("profile.review")
     }
 
     private func save() async {

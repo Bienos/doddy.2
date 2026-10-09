@@ -33,6 +33,7 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testWrittenGuideMovesOnTheUsersReportAndNeverClaimsVerification() {
         let app = launch(onboardingDone: false)
+        XCTAssertTrue(app.buttons["setup.start"].waitForExistence(timeout: 5))
         app.buttons["setup.start"].tap()
         XCTAssertTrue(app.buttons["setup.shortcutDone"].waitForExistence(timeout: 5))
         app.buttons["setup.shortcutDone"].tap()
@@ -58,6 +59,7 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testIntroductionKeepsOnlyReviewedAnswers() {
         let app = launch(onboardingDone: false)
+        XCTAssertTrue(app.buttons["setup.later"].waitForExistence(timeout: 5))
         app.buttons["setup.later"].tap()
         XCTAssertTrue(app.buttons["intro.begin"].waitForExistence(timeout: 5))
         app.buttons["intro.begin"].tap()
@@ -91,9 +93,12 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.staticTexts["Microphone"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Nothing saved. Doddy only keeps what you review and save."].waitForExistence(timeout: 5))
+        // Privacy sits below Getting started, About you and Your memories.
+        let microphone = app.staticTexts["Microphone"]
+        for _ in 0..<4 where !microphone.exists { app.swipeUp() }
+        XCTAssertTrue(microphone.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Only while talking"].exists)
-        XCTAssertTrue(app.staticTexts["Nothing saved. Doddy only keeps what you review and save."].exists)
     }
 
     @MainActor
