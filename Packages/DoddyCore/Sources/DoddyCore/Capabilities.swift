@@ -9,6 +9,10 @@ public enum Capability: String, CaseIterable, Sendable {
     case voiceInput
     case voiceOutput
     case reminders
+    case calendar
+    case contacts
+    /// Local "before this event" notifications scheduled on the iPhone.
+    case localNudges
     case connectedAccounts
     case cloudSync
 }
@@ -39,6 +43,9 @@ public struct CapabilityCatalog: Sendable {
         .voiceInput: .notImplemented(plannedMilestone: "M3"),
         .voiceOutput: .notImplemented(plannedMilestone: "M3"),
         .reminders: .notImplemented(plannedMilestone: "M4"),
+        .calendar: .notImplemented(plannedMilestone: "V4a"),
+        .contacts: .notImplemented(plannedMilestone: "V4a"),
+        .localNudges: .notImplemented(plannedMilestone: "V4a"),
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
     ])
@@ -54,6 +61,15 @@ public struct CapabilityCatalog: Sendable {
         .cloudAssistant: .available,
         .voiceInput: .available,
         .voiceOutput: .available,
+    ]) { _, new in new })
+
+    /// V4a: on-phone connections (Calendar, Reminders, Contacts) and local event nudges.
+    /// "Available" means the adapter exists; each connection still needs the user's permission.
+    public static let v4aConnections = CapabilityCatalog(statuses: v1Voice.statuses.merging([
+        .calendar: .available,
+        .reminders: .available,
+        .contacts: .available,
+        .localNudges: .available,
     ]) { _, new in new })
 }
 

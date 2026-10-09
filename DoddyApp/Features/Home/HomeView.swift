@@ -49,9 +49,11 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.find")
                     }
 
+                    TodayCard()
+
                     recent
 
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Reminders and other apps aren't built yet.")
+                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Calendar, Reminders and Contacts are used only after you connect them in Settings.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")

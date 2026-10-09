@@ -6,6 +6,9 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
+
+    /// The user's in-app switch for a connection (not the iOS permission).
+    static func connectionEnabled(_ kind: ConnectionKind) -> String { "connection.\(kind.rawValue).enabled" }
 }
 
 enum AppTab: Hashable {
@@ -14,6 +17,8 @@ enum AppTab: Hashable {
 
 struct RootView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(ConnectionsStore.self) private var connections
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hasSeenFirstHello) private var hasSeenFirstHello = false
     @State private var selectedTab: AppTab = .home
@@ -40,7 +45,14 @@ struct RootView: View {
         }
         .tint(Theme.accentText)
         .preferredColorScheme(colorScheme)
-        .task { await store.reload() }
+        .task {
+            await store.reload()
+            await connections.refresh()
+        }
+        // Permissions can change in iOS Settings while Doddy is in the background.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await connections.refresh() } }
+        }
         .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {
             FirstHelloView { hasSeenFirstHello = true }
                 .preferredColorScheme(colorScheme)

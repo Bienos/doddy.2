@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the Doddy app target. Xcode merges it with the keys it generates from
+  the INFOPLIST_KEY_* build settings in project.yml (GENERATE_INFOPLIST_FILE = YES).
+  Only permission strings live here, for the iOS 17 EventKit keys whose build-setting names could
+  not be confirmed without Xcode. Every key is checked by scripts/check_forbidden_capabilities.sh.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Only if you connect Calendar in Doddy: to show today's events, answer what's on when you ask, and add an event after you tap Add.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Only if you connect Reminders in Doddy: to show what's due today and add a reminder after you tap Add.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Only if you connect Contacts in Doddy: to find a person by name when you ask. Numbers and e-mail addresses stay on your screen.</string>
+</dict>
+</plist>

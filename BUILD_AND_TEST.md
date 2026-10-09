@@ -1,4 +1,4 @@
-# Build and test — DODDY V2 (M0 shell + M1 local memory)
+# Build and test — DODDY V2 (M0 shell, M1 local memory, V1 voice, V4a connections)
 
 **Status of this document: written without access to Xcode.** Everything under "Verified on Linux"
 was executed (results in [docs/implementation/M0_REPORT.md](docs/implementation/M0_REPORT.md)).
@@ -59,11 +59,12 @@ Packages/DoddyCore/          platform-agnostic Swift package (tested on Linux)
   Sources/DoddyCore/           domain types, ports, Unavailable adapters, capability catalog, privacy defaults
   Sources/DoddyDesignTokens/   CANDIDATE colour tokens + WCAG contrast maths (no SwiftUI)
   Sources/DoddyPersistence/    SQLite memory store (GRDB 7.9.0, FTS5)
-  Tests/                       28 XCTest cases
-DoddyApp/                    SwiftUI app target (iPhone): App/, Features/{Home,Capture,Memories,Settings,Onboarding}/,
+  Tests/                       39 XCTest cases
+DoddyApp/                    SwiftUI app target (iPhone): App/, Features/{Home,Capture,Memories,Settings,Onboarding,Voice,Connections}/,
                              DesignSystem/, Infrastructure/, Resources/ (asset catalog, PrivacyInfo.xcprivacy)
 DoddyTests/ DoddyUITests/    app-level unit and UI smoke tests (NOT RUN without Xcode)
 project.yml                  XcodeGen spec (source of truth for the Xcode project)
+Config/Doddy-Info.plist      partial Info.plist: calendar/reminders/contacts permission strings (V4a)
 scripts/                     ci.sh, check_forbidden_capabilities.sh, verify_imported_pack.py
 docs/ schemas/ assets/ design/ reference/ prompts/   imported pack (read-only reference; not in the app target)
 ```

@@ -82,6 +82,8 @@ public protocol AssistantClient: Sendable {
 
 public enum ToolKind: String, Codable, Sendable {
     case createReminder = "create_reminder"
+    case createCalendarEvent = "create_calendar_event"
+    case scheduleEventNudge = "schedule_event_nudge"
 }
 
 /// A model- or app-suggested action. A proposal alone authorises nothing.

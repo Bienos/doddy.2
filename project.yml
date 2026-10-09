@@ -50,8 +50,10 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
-        # Only the microphone, for voice conversations the user starts. No other permission keys.
+        # Microphone: voice conversations the user starts. Calendar, Reminders and Contacts strings
+        # live in Config/Doddy-Info.plist (merged with the generated Info.plist). No other keys.
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens only while you are talking to him, after you tap Talk to Doddy. Your voice is sent to ElevenLabs to run the conversation."
+        INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyTests:
     type: bundle.unit-test
     platform: iOS

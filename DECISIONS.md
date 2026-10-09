@@ -91,3 +91,18 @@ Source: `docs/research/CONNECTIONS_AND_PROACTIVE_DODDY_2026-10.md` (calendar/Goo
 | 046 | News Watcher: **Exa search** + provider-neutral relevance judgement against the watch-note text, hard cap **20 EUR/month** | Decided 2026-10-09 |
 | 047 | "Bring your own MCP server" is **skipped for now**; revisit after V4a–V4c ship | Decided 2026-10-09 |
 | 048 | Phone-call nudges (ElevenLabs outbound) out of scope | Default applied; owner may reopen |
+
+## V4a decisions (Connections on this iPhone, built 2026-10-09)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 049 | Connections live in DoddyCore as pure types. `ConnectionState.status` is derived: "Connected" needs the in-app switch, a reading permission and a successful read in this refresh; it is never stored | Applied |
+| 050 | EventKit, Contacts and UserNotifications only under `DoddyApp/Features/Connections/` (guard enforced). Permission strings in `Config/Doddy-Info.plist`, merged with the generated plist, because the `INFOPLIST_KEY_` names of the iOS 17 EventKit keys could not be confirmed without Xcode | Applied — **check on first Mac build** |
+| 051 | The per-connection in-app switch is a UI preference in UserDefaults (`connection.<kind>.enabled`), like ADR-019; no calendar, reminder or contact data is stored by Doddy | Applied |
+| 052 | Voice: `read_calendar` and `lookup_contact` run without a card once connected; `create_calendar_event` and `create_reminder` always show a card and write after the tap; one card at a time; contacts → names only to the agent | Applied |
+| 053 | A write is "added" only after the item is read back by identifier; a failed read-back is `unknown` (user told to check before retrying), never retried automatically | Applied |
+| 054 | Nudges are local `UNCalendarNotificationTrigger` requests, id = event + lead time (idempotent), leads 10/30/60 min for today's timed events, verified against the pending list; a moved event is flagged, not auto-rescheduled; banner shown in the foreground | Applied |
+| 055 | Catalog `.v4aConnections` in the live app; privacy manifest adds Contacts (names sent to ElevenLabs during voice lookups, not linked, app functionality) | Applied — review with the privacy notice |
+| 056 | UI smoke test corrected: since V1 the Settings microphone row says "Only while talking", not "Not used" | Applied |
+| 057 | ElevenLabs dev agent: 4 client tools added and prompt updated (version `agtvrsn_2101m4f2ypb4ehnanva5da8pjcte`; rollback `agtvrsn_2701m4f1e2krfnysbc5w01agz5d2`) | Applied (dev agent only) |
+

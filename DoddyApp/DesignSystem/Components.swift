@@ -158,6 +158,9 @@ extension Capability {
         case .voiceInput: "Listening (voice)"
         case .voiceOutput: "Speaking (voice)"
         case .reminders: "Reminders"
+        case .calendar: "Calendar"
+        case .contacts: "Contacts"
+        case .localNudges: "Nudges before events"
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
         }

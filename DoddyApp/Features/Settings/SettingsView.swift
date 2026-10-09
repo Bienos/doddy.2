@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(ConnectionsStore.self) private var connections
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
@@ -19,6 +20,17 @@ struct SettingsView: View {
                 Section("About this build") {
                     StatusRow(title: "Version", value: Self.versionText)
                     Text("Development build. DODDY is an AI assistant, not a person. The colours, voice and character artwork are candidates awaiting approval, not a final brand.")
+                }
+
+                Section {
+                    NavigationLink {
+                        ConnectionsView()
+                    } label: {
+                        StatusRow(title: "Connections", value: "\(connections.connectedCount) of \(ConnectionKind.allCases.count) connected")
+                    }
+                    .accessibilityIdentifier("settings.connections")
+                } footer: {
+                    Text("Calendar, Reminders, Contacts and nudges on this iPhone. Each stays off until you connect it.")
                 }
 
                 Section("Your memories") {
@@ -56,7 +68,9 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
+                    StatusRow(title: "Calendar, Reminders, Contacts", value: "Only what you connect")
+                    StatusRow(title: "Notifications", value: "Only nudges you set")
+                    Text("Your notes, calendar, reminders and contacts stay on this iPhone. During a voice conversation, your voice, the conversation and anything Doddy looks up (notes, calendar events, contact names, never numbers or e-mail addresses) are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

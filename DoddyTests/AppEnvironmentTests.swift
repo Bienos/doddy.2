@@ -10,6 +10,10 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(env.recallService is UnavailableRecallService)
         XCTAssertTrue(env.assistantClient is UnavailableAssistantClient)
         XCTAssertTrue(env.toolExecutor is UnavailableToolExecutor)
+        XCTAssertTrue(env.calendarGateway is UnavailableCalendarGateway)
+        XCTAssertTrue(env.remindersGateway is UnavailableRemindersGateway)
+        XCTAssertTrue(env.contactsGateway is UnavailableContactsGateway)
+        XCTAssertTrue(env.nudgeScheduler is UnavailableNudgeScheduler)
     }
 
     func testEveryCapabilityHasHonestDisplayCopy() {

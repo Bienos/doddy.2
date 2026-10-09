@@ -35,8 +35,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
 
         app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.buttons["settings.connections"].waitForExistence(timeout: 5))
+        for _ in 0..<4 where !app.staticTexts["Microphone"].exists { app.swipeUp() }
         XCTAssertTrue(app.staticTexts["Microphone"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Not used"].exists)
+        // V1 voice: the microphone is used, but only during a conversation the user starts.
+        XCTAssertTrue(app.staticTexts["Only while talking"].exists)
     }
 
     @MainActor

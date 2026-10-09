@@ -7,7 +7,7 @@
 | [ElevenLabs Swift SDK](https://github.com/elevenlabs/elevenlabs-swift-sdk) | 3.3.1 (exact pin in `project.yml`) | MIT | Voice conversations with the ElevenLabs agent (V1) |
 | [LiveKit Swift SDK](https://github.com/livekit/client-sdk-swift) | ≥ 2.10.0 (pulled in by the ElevenLabs SDK) | Apache-2.0 | Real-time audio transport used by the ElevenLabs SDK |
 
-Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, `AVFAudio`, system SQLite). No analytics,
+Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, `AVFAudio`, system SQLite, and since V4a `EventKit`, `Contacts`, `UserNotifications`, all on-device). No analytics,
 no crash reporting, no fonts. The only network connection is the ElevenLabs voice session while it is open.
 
 ## Development tooling (not shipped, not linked)
