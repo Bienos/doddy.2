@@ -198,9 +198,12 @@
         <form class="waitlist" novalidate>
           <label for="email">Email</label>
           <div class="field-row">
-            <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@example.com" aria-describedby="waitlist-status">
+            <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-note waitlist-status">
             <button class="button" type="submit">Join early access</button>
           </div>
+          <!-- Left empty by people; bots that fill it are ignored. -->
+          <div class="hp" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+          <p id="waitlist-note" class="fineprint form-note">We'll only use your email to tell you when early access opens, and we'll delete it whenever you ask.</p>
           <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
         </form>
         <div class="open-app">

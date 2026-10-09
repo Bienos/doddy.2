@@ -496,3 +496,7 @@ p { margin: 0 0 16px; max-width: 34rem; }
   *, *::before, *::after { transition: none !important; animation: none !important; }
   .js .scribble { clip-path: none; }
 }
+
+/* Waitlist honeypot: off-screen for people, still in the form for bots. */
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.form-note { margin: 10px 0 0; }

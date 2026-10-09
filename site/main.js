@@ -1,7 +1,10 @@
 // Doddy landing page. No trackers, no cookies, no storage.
 
-// Where the waitlist form posts { email } as JSON. Empty = waitlist not open: nothing is sent.
+// The waitlist receiver's web app URL (tools/waitlist/Code.gs, writes to the "Doddy waitlist" sheet).
+// Empty = waitlist not open: the form says so and sends nothing.
 const WAITLIST_URL = "";
+// Saved with each signup, so you know which wording of the form note someone agreed to.
+const CONSENT_VERSION = "waitlist-note-v1";
 // Deep link into the app. The app must register this URL scheme first (see site/README.md).
 const APP_URL = "doddy://home";
 
@@ -128,14 +131,29 @@ form.addEventListener("submit", async (event) => {
   submit.disabled = true;
   say(status, "Sending…");
   try {
+    // text/plain (no Content-Type header) keeps this a simple request, which the Apps Script
+    // receiver (tools/waitlist/Code.gs) accepts without a CORS preflight.
     const res = await fetch(WAITLIST_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email.value.trim() }),
+      body: JSON.stringify({
+        email: email.value.trim(),
+        page: location.origin + location.pathname,
+        consent: CONSENT_VERSION,
+        website: form.querySelector("#website").value,
+      }),
     });
-    if (!res.ok) throw new Error(String(res.status));
-    say(status, "You're on the list. We'll email you when early access opens.", "ok");
-    form.reset();
+    const reply = await res.json();
+    if (reply.ok) {
+      say(status, reply.status === "already"
+        ? "You're already on the list. We'll email you when early access opens."
+        : "You're on the list. We'll email you when early access opens.", "ok");
+      form.reset();
+    } else if (reply.error === "invalid_email") {
+      email.setAttribute("aria-invalid", "true");
+      say(status, "That email address doesn't look right. Check it and try again.", "err");
+    } else {
+      throw new Error(reply.error);
+    }
   } catch {
     say(status, "That didn't go through. Check your connection and try again.", "err");
   } finally {
