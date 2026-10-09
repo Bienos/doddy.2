@@ -9,55 +9,20 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     private let dbQueue: DatabaseQueue
     private let now: @Sendable () -> Date
 
+    public init(database: DoddyDatabase, now: @escaping @Sendable () -> Date = Date.init) {
+        self.dbQueue = database.queue
+        self.now = now
+    }
+
     /// Opens (or creates) the store at `path` and runs migrations. Never deletes or resets an
     /// existing file: a failure is thrown to the caller untouched.
     public convenience init(path: String, now: @escaping @Sendable () -> Date = Date.init) throws {
-        try self.init(queue: DatabaseQueue(path: path, configuration: Self.configuration()), now: now)
+        self.init(database: try DoddyDatabase(path: path), now: now)
     }
 
     /// In-memory store for tests and UI-test launches. Nothing is written to disk.
     public static func inMemory(now: @escaping @Sendable () -> Date = Date.init) throws -> SQLiteMemoryRepository {
-        try SQLiteMemoryRepository(queue: DatabaseQueue(configuration: configuration()), now: now)
-    }
-
-    private init(queue: DatabaseQueue, now: @escaping @Sendable () -> Date) throws {
-        self.dbQueue = queue
-        self.now = now
-        try Self.migrator.migrate(queue)
-    }
-
-    private static func configuration() -> Configuration {
-        var config = Configuration()
-        config.prepareDatabase { db in
-            try db.execute(sql: "PRAGMA secure_delete = ON")
-        }
-        return config
-    }
-
-    static var migrator: DatabaseMigrator {
-        var migrator = DatabaseMigrator()
-        migrator.registerMigration("v1_memories") { db in
-            try db.create(table: "memories") { t in
-                t.primaryKey("id", .text)
-                t.column("raw_text", .text).notNull()
-                t.column("current_text", .text).notNull()
-                t.column("category", .text).notNull().defaults(to: MemoryCategory.other.rawValue)
-                t.column("source", .text).notNull()
-                t.column("captured_at_ms", .integer)
-                t.column("updated_at_ms", .integer)
-                t.column("user_edited", .boolean).notNull().defaults(to: false)
-                // Folded copy of current_text (SearchFolding) — the only indexed column.
-                t.column("search_text", .text).notNull()
-                t.column("schema_version", .integer).notNull().defaults(to: MemoryRecord.schemaVersion)
-            }
-            try db.create(index: "memories_captured_at", on: "memories", columns: ["captured_at_ms"])
-            try db.create(virtualTable: "memories_fts", using: FTS5()) { t in
-                t.synchronize(withTable: "memories")
-                t.tokenizer = .unicode61()
-                t.column("search_text")
-            }
-        }
-        return migrator
+        SQLiteMemoryRepository(database: try DoddyDatabase.inMemory(), now: now)
     }
 
     // MARK: MemoryRepository
@@ -180,11 +145,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         }
     }
 
-    private static func milliseconds(_ date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 * 1000).rounded(.down))
-    }
+    private static func milliseconds(_ date: Date) -> Int64 { DoddyDatabase.milliseconds(date) }
 
-    private static func truncatedToMilliseconds(_ date: Date) -> Date {
-        Date(timeIntervalSince1970: Double(milliseconds(date)) / 1000)
-    }
+    private static func truncatedToMilliseconds(_ date: Date) -> Date { DoddyDatabase.truncatedToMilliseconds(date) }
 }

@@ -4,7 +4,6 @@ import SwiftUI
 enum PreferenceKey {
     static let appearance = "appearance"
     static let hideCharacterArt = "hideCharacterArt"
-    static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
 }
 
@@ -15,7 +14,7 @@ enum AppTab: Hashable {
 struct RootView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
-    @AppStorage(PreferenceKey.hasSeenFirstHello) private var hasSeenFirstHello = false
+    @Environment(ProfileStore.self) private var profiles
     @State private var selectedTab: AppTab = .home
 
     private var colorScheme: ColorScheme? {
@@ -27,6 +26,16 @@ struct RootView: View {
     }
 
     var body: some View {
+        if profiles.hasLoaded {
+            tabs
+        } else {
+            // A moment while the store opens, so Home doesn't flash before first-use setup.
+            Theme.canvas.ignoresSafeArea()
+                .task { await profiles.load() }
+        }
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             HomeView(selectedTab: $selectedTab)
                 .tabItem { Label("Home", systemImage: "house") }
@@ -41,8 +50,8 @@ struct RootView: View {
         .tint(Theme.accentText)
         .preferredColorScheme(colorScheme)
         .task { await store.reload() }
-        .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {
-            FirstHelloView { hasSeenFirstHello = true }
+        .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
+            OnboardingFlowView()
                 .preferredColorScheme(colorScheme)
         }
     }

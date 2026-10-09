@@ -61,6 +61,17 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
 
+## Onboarding decisions (2026-10-09, `docs/implementation/ONBOARDING_STATUS.md`)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 038 | First use = optional written Back Tap guide → optional introduction → Home, replacing First Hello. Skipping never blocks; both reopen from Settings. Voice-guided setup and Live Activities not built. | Applied |
+| 039 | Back Tap status is a **user report** (`userReportedDone` / `userReportedTestPassed`), never "verified". The Open Doddy App Intent receipt (in memory, 5-minute test window) only changes wording. | Applied |
+| 040 | Reviewed profile: six optional fields, stored only on explicit Save, in `profile_fields` (same SQLite file, separate table) via migration `v2_profile_onboarding`. Stale edits rejected; forget ≠ delete memories. | Applied |
+| 041 | `DoddyDatabase` owns the file and migrations; opening a database from a newer app version fails without touching it. | Applied |
+| 042 | The profile is **not** sent to the ElevenLabs voice agent. Doing so (name, style, language) is a new data flow to a third party. | Open — **owner to decide** |
+| 043 | Profile is not in the memory export; export format unchanged. | Open — owner to decide |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.
