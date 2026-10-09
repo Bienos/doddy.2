@@ -1,6 +1,5 @@
 import DoddyCore
 import SwiftUI
-import UIKit
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
@@ -8,11 +7,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
-    @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
-    @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
-    @AppStorage(VoiceConnection.contacts.preferenceKey) private var contactsOn = false
-    @State private var devices = DeviceConnections()
-    @State private var connectionNote: String?
+    @State private var connections = ConnectionController()
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -83,31 +78,16 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    Toggle("Calendar", isOn: connectionBinding(.calendar, $calendarOn))
-                    Text("Doddy can read your events for a day or range you name, and add an event after you tap Add.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                    Toggle("Reminders", isOn: connectionBinding(.reminders, $remindersOn))
-                    Text("Doddy can add a reminder after you tap Add.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                    Toggle("Contacts", isOn: connectionBinding(.contacts, $contactsOn))
-                    Text("Doddy can look up a contact by name. The details stay on your screen; only the name goes to the agent.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                    if let connectionNote {
-                        Label(connectionNote, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(Theme.error)
-                        Button("Open iPhone Settings") {
-                            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-                        }
+                    NavigationLink {
+                        ConnectionsView()
+                    } label: {
+                        StatusRow(title: "Calendar, reminders, contacts", value: connectionSummary)
                     }
-                    StatusRow(title: "Your notes", value: "Always on, on this iPhone")
-                    StatusRow(title: "Weather and Wikipedia", value: "Always on, run by ElevenLabs")
+                    .accessibilityIdentifier("settings.connections")
                 } header: {
                     Text("Connections")
                 } footer: {
-                    Text("Everything here is off until you turn it on. Turning one on asks iPhone for permission. You can turn any of them off here at any time.")
+                    Text("Each one starts off. Turning one on asks iPhone for permission first.")
                 }
 
                 Section("Appearance and accessibility") {
@@ -148,31 +128,9 @@ struct SettingsView: View {
         .foregroundStyle(Theme.ink)
     }
 
-    /// Turning a connection on asks iOS for permission first. The toggle stays off if it is refused.
-    private func connectionBinding(_ connection: VoiceConnection, _ isOn: Binding<Bool>) -> Binding<Bool> {
-        Binding(
-            get: { isOn.wrappedValue },
-            set: { newValue in
-                Task { await setConnection(connection, isOn: isOn, to: newValue) }
-            })
-    }
-
-    private func setConnection(_ connection: VoiceConnection, isOn: Binding<Bool>, to newValue: Bool) async {
-        guard newValue else {
-            isOn.wrappedValue = false
-            connectionNote = nil
-            return
-        }
-        switch await devices.request(connection) {
-        case .granted:
-            isOn.wrappedValue = true
-            connectionNote = nil
-        case .denied:
-            isOn.wrappedValue = false
-            connectionNote = "\(connection.title) is off for Doddy in iPhone Settings. Turn it on there, then try again."
-        case .notDetermined:
-            isOn.wrappedValue = false
-        }
+    private var connectionSummary: String {
+        let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
+        return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
     }
 
     private func deleteAll() async {

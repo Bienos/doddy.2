@@ -10,6 +10,8 @@ struct VoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @State private var controller: VoiceSessionController?
+    @State private var connections = ConnectionController()
+    @State private var openConnection: VoiceConnection?
 
     private var trimmedAgentID: String { agentID.trimmingCharacters(in: .whitespacesAndNewlines) }
 
@@ -57,6 +59,14 @@ struct VoiceView: View {
         .onDisappear {
             Task { await controller?.stop() }
         }
+        .sheet(item: $openConnection, onDismiss: {
+            connections.refresh()
+            controller?.refreshConnectionNeeded()
+        }) { connection in
+            ConnectionSheet(connection: connection, controller: connections)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     private func session(_ controller: VoiceSessionController) -> some View {
@@ -89,6 +99,11 @@ struct VoiceView: View {
                         if let pending = controller.pendingAction {
                             actionCard(pending, controller: controller)
                                 .id("pendingAction")
+                        }
+
+                        if let needed = controller.connectionNeeded {
+                            connectionCard(needed)
+                                .id("connectionNeeded")
                         }
 
                         if let card = controller.contactCard {
@@ -224,6 +239,26 @@ struct VoiceView: View {
                 controller.dismissContactCard()
             }
             .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// Shown when the agent asked for something that is switched off. One tap opens the same
+    /// Connections sheet as Settings, so the terms are visible before anything turns on.
+    private func connectionCard(_ connection: VoiceConnection) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("\(connection.title) is off", systemImage: ConnectionInfo.of(connection).symbol)
+                .font(.headline)
+            Text("Turn it on to let Doddy use \(connection.title.lowercased()). Then ask again.")
+                .foregroundStyle(Theme.secondaryText)
+            Button {
+                openConnection = connection
+            } label: {
+                Label("Turn on \(connection.title)", systemImage: "checkmark")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .accessibilityIdentifier("voice.turnOnConnection")
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))

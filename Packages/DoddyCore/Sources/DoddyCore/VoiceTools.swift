@@ -39,6 +39,10 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     }
 }
 
+extension VoiceConnection: Identifiable {
+    public var id: String { rawValue }
+}
+
 /// A window of time the agent asked about, resolved to absolute dates.
 public struct VoiceTimeRange: Equatable, Sendable {
     public let start: Date

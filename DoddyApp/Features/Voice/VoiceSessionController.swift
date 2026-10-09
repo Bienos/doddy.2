@@ -46,6 +46,8 @@ final class VoiceSessionController {
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction?
     private(set) var contactCard: ContactCard?
+    /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
+    private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false
 
     private let store: MemoryStore
@@ -68,6 +70,7 @@ final class VoiceSessionController {
         lines = []
         pendingAction = nil
         contactCard = nil
+        connectionNeeded = nil
         isMuted = false
 
         guard await Self.microphoneAllowed() else {
@@ -119,6 +122,7 @@ final class VoiceSessionController {
         conversation = nil
         pendingAction = nil
         contactCard = nil
+        connectionNeeded = nil
         if isLive { phase = .ended }
         await active?.endConversation()
     }
@@ -202,7 +206,7 @@ final class VoiceSessionController {
 
     private func handle(_ call: ClientToolCallEvent) async {
         if let connection = VoiceConnection.serving(call.toolName), !isOn(connection) {
-            await reply(call.toolCallId, VoiceToolReply.notConnected(connection))
+            await notConnected(call.toolCallId, connection)
             return
         }
         switch VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData) {
@@ -217,7 +221,7 @@ final class VoiceSessionController {
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
         case .readCalendar(let range):
             guard devices.access(for: .calendar) == .granted else {
-                await reply(call.toolCallId, VoiceToolReply.notConnected(.calendar))
+                await notConnected(call.toolCallId, .calendar)
                 return
             }
             let events = devices.events(in: range)
@@ -228,7 +232,7 @@ final class VoiceSessionController {
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .lookupContact(let name):
             guard devices.access(for: .contacts) == .granted else {
-                await reply(call.toolCallId, VoiceToolReply.notConnected(.contacts))
+                await notConnected(call.toolCallId, .contacts)
                 return
             }
             do {
@@ -281,6 +285,17 @@ final class VoiceSessionController {
         } catch {
             return VoiceToolReply.notAdded(UserFacingError.message(for: error))
         }
+    }
+
+    private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
+        connectionNeeded = connection
+        await reply(toolCallID, VoiceToolReply.notConnected(connection))
+    }
+
+    /// Called after the Connections sheet closes: the prompt goes away once the switch is on.
+    func refreshConnectionNeeded() {
+        guard let needed = connectionNeeded, isOn(needed) else { return }
+        connectionNeeded = nil
     }
 
     private func isOn(_ connection: VoiceConnection) -> Bool {
