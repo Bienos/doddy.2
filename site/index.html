@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Doddy, your mate in your pocket</title>
+  <meta name="description" content="Doddy is an iPhone app with a hand-drawn mate inside. Save the small details that matter in your own words, and get the exact note back when you need it.">
+  <meta name="theme-color" content="#FFF7E9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#171F29" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Doddy, your mate in your pocket">
+  <meta property="og:description" content="Save the small details in your own words. Get the exact note back later.">
+  <meta property="og:image" content="assets/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- Smart App Banner: enable once Doddy has an App Store ID.
+  <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
+  -->
+  <link rel="icon" href="assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="main.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="#main">Doddy</a>
+    <a class="top-cta" href="#join">Join early access</a>
+  </header>
+
+  <main id="main">
+    <div class="story">
+      <div class="beats">
+
+        <section class="beat hero" id="hello" data-screen="welcome" data-pose="waving" aria-labelledby="hello-title">
+          <h1 id="hello-title" class="display">
+            <span class="line">Hey.</span>
+            <span class="line underlined">I'm Doddy.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none" aria-hidden="true"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></span>
+          </h1>
+          <p class="lede">Your mate in your pocket. Tell me the small stuff you don't want to lose, like where the spare keys went or the book someone swore you'd love, and I'll hand your exact words back when you need them.</p>
+          <div class="actions">
+            <a class="button" href="#join">Join early access</a>
+            <a class="text-link" href="#carry">See how it works</a>
+          </div>
+          <p class="aside">Just an email. That's it.</p>
+          <p class="fineprint">An iPhone app in early testing. Doddy is an AI, not a person.</p>
+          <figure class="beat-visual">
+            <img class="screen" src="assets/screens/welcome.png" width="390" height="845" alt="Doddy's first screen: Hey. Let's talk. With buttons to get to know each other, see what Doddy can do, or start without the chat.">
+            <picture class="pose"><source srcset="assets/poses/doddy-pose-waving-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt=""></picture>
+            <figcaption>Design preview</figcaption>
+          </figure>
+        </section>
+
+        <section class="beat" id="carry" data-screen="home" data-pose="holding-coffee" aria-labelledby="carry-title">
+          <h2 id="carry-title" class="display">A little less <span class="underlined">to carry.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none" aria-hidden="true"><path d="M4 9 C 70 14, 150 2, 236 8"/></svg></span></h2>
+          <p>The code for the parcel locker. Which tin the spare keys went in. The book Marta recommended over coffee. Small things that vanish the moment you need them.</p>
+          <p>Doddy is a pocket notebook with a mate attached. You decide what goes in. Doddy helps you get it back.</p>
+          <figure class="beat-visual">
+            <img class="screen" src="assets/screens/home.png" width="390" height="845" loading="lazy" alt="Doddy's Home screen: A little less to carry. Buttons to save a detail or find something, and a recently saved note about spare keys.">
+            <picture class="pose"><source srcset="assets/poses/doddy-pose-holding-coffee-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <figcaption>Design preview</figcaption>
+          </figure>
+        </section>
+
+        <section class="beat" id="save" data-screen="capture" data-pose="memory-card" aria-labelledby="save-title">
+          <h2 id="save-title" class="display">Tell Doddy.</h2>
+          <p>Type it the way you'd say it. Doddy keeps your exact words, along with when you saved them and where they came from.</p>
+          <p>Saved means saved. You only see the receipt once the note is safely stored on your iPhone. If something goes wrong, your words stay right where you typed them so you can try again.</p>
+          <p class="aside">Up to 5,000 characters. Room for a whole recipe.</p>
+          <figure class="beat-visual">
+            <img class="screen" src="assets/screens/capture.png" width="390" height="845" loading="lazy" alt="The New memory screen: What shall we keep? The detail reads: The spare keys are in the blue tin above the fridge. A Save this memory button sits below.">
+            <picture class="pose"><source srcset="assets/poses/doddy-pose-memory-card-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <figcaption>Design preview</figcaption>
+          </figure>
+        </section>
+
+        <section class="beat" id="find" data-screen="recall" data-pose="reading" aria-labelledby="find-title">
+          <h2 id="find-title" class="display">Ask later.</h2>
+          <p>Search with the words you remember: keys, Marta, book. Doddy shows the notes that match, in your original words, with where and when each one came from.</p>
+          <figure class="note-card">
+            <blockquote><p>I couldn't find that in your saved memories.</p></blockquote>
+            <figcaption>What Doddy says when nothing matches. It won't make something up.</figcaption>
+          </figure>
+          <figure class="beat-visual">
+            <img class="screen" src="assets/screens/recall.png" width="390" height="845" loading="lazy" alt="The Memories screen: It's in here somewhere. A search for spare keys finds the note: The spare keys are in the blue tin above the fridge, written by you on 8 October.">
+            <picture class="pose"><source srcset="assets/poses/doddy-pose-reading-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <figcaption>Design preview</figcaption>
+          </figure>
+        </section>
+
+        <section class="beat" id="talk" data-screen="voice" data-pose="listening" aria-labelledby="talk-title">
+          <p class="badge">In testing</p>
+          <h2 id="talk-title" class="display">Or just say it.</h2>
+          <p>Tap Talk to Doddy and ask out loud. Doddy looks through your notes and answers from what you saved.</p>
+          <p>Doddy only listens while the voice screen is open. If you say something worth keeping, Doddy asks first, and nothing is stored until you tap Save.</p>
+          <p class="fineprint">While you talk, your voice and the notes Doddy looks up are sent to ElevenLabs to run the conversation. Voice hasn't been tested on a real iPhone yet.</p>
+          <figure class="beat-visual voice-visual">
+            <picture class="pose"><source srcset="assets/poses/doddy-pose-listening-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-listening-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <div class="voice-card" role="img" aria-label="Doddy asks: Save this note? With a Save button and a Don't save button.">
+              <p class="voice-q">Save this note?</p>
+              <p class="voice-quote">“Marta's book is The Hobbit.”</p>
+              <span class="voice-btn primary">Save</span>
+              <span class="voice-btn">Don't save</span>
+            </div>
+            <figcaption>Illustration using the app's wording</figcaption>
+          </figure>
+        </section>
+
+        <section class="beat" id="your-call" data-screen="detail" data-pose="fist-bump" aria-labelledby="call-title">
+          <h2 id="call-title" class="display">Your notes, your call.</h2>
+          <ul class="checks">
+            <li><strong>Correct a note</strong> and the original stays, so you can always see what you first wrote.</li>
+            <li><strong>Copy or export</strong> everything as JSON or plain text.</li>
+            <li><strong>Delete one note, or all of them.</strong> They're gone from search straight away.</li>
+            <li><strong>No account.</strong> Your notes live on your iPhone.</li>
+          </ul>
+          <p class="fineprint">Doddy is an AI, not a person. Notes stay on your iPhone; talking uses ElevenLabs only while a conversation is open. Reminders and other apps aren't built yet.</p>
+          <figure class="beat-visual">
+            <img class="screen" src="assets/screens/detail.png" width="390" height="845" loading="lazy" alt="The Your memory screen: the saved note with its date and source, This is your note, and buttons to correct this detail or delete this memory.">
+            <picture class="pose"><source srcset="assets/poses/doddy-pose-fist-bump-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <figcaption>Design preview</figcaption>
+          </figure>
+        </section>
+
+      </div>
+
+      <aside class="stage" aria-hidden="true">
+        <div class="stage-inner">
+          <div class="phone">
+            <img class="stage-screen" src="assets/screens/welcome.png" width="390" height="845" alt="">
+          </div>
+          <div class="stage-voice">
+            <ol class="voice-states">
+              <li>Connecting…</li>
+              <li>Listening</li>
+              <li>Thinking…</li>
+              <li>Speaking</li>
+            </ol>
+            <div class="voice-card">
+              <p class="voice-q">Save this note?</p>
+              <p class="voice-quote">“Marta's book is The Hobbit.”</p>
+              <span class="voice-btn primary">Save</span>
+              <span class="voice-btn">Don't save</span>
+            </div>
+          </div>
+          <picture class="stage-pose"><source srcset="assets/poses/doddy-pose-approaching-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-approaching-light-v1.3-r1.svg" width="512" height="512" alt=""></picture>
+          <p class="stage-label">Design preview</p>
+        </div>
+      </aside>
+    </div>
+
+    <section class="sketchbook" id="who" aria-labelledby="who-title">
+      <h2 id="who-title" class="display">Who's Doddy?</h2>
+      <p class="sketch-intro">A hand-drawn mate with an orange backpack, oversized trainers and a basketball that never quite gets put down. Helpful first, funny second, and honest about what's real.</p>
+      <ul class="sketches">
+        <li class="sketch">
+          <button class="shot" type="button" aria-label="Doddy takes a shot">
+            <picture><source srcset="assets/poses/doddy-pose-basketball-dribble-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          </button>
+          <p>Always has a side quest going. <span class="hint">Tap for a shot.</span></p>
+        </li>
+        <li class="sketch">
+          <picture><source srcset="assets/poses/doddy-pose-holding-coffee-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <p>Notices the small stuff that slows your day down.</p>
+        </li>
+        <li class="sketch">
+          <picture><source srcset="assets/poses/doddy-pose-working-laptop-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-working-laptop-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <p>Helps first, chats second.</p>
+        </li>
+        <li class="sketch">
+          <picture><source srcset="assets/poses/doddy-pose-relaxing-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <p>Jokes about the queue, never about you.</p>
+        </li>
+        <li class="sketch">
+          <picture><source srcset="assets/poses/doddy-pose-pointing-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <p>Says so when it doesn't know.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="later" id="later" aria-labelledby="later-title">
+      <h2 id="later-title" class="display">Later, maybe.</h2>
+      <p>Not built yet, and no dates promised.</p>
+      <ul>
+        <li>Reminders that you check and confirm before Doddy sets them.</li>
+        <li>More languages, starting with Polish.</li>
+      </ul>
+    </section>
+
+    <section class="join" id="join" aria-labelledby="join-title">
+      <div class="join-copy">
+        <h2 id="join-title" class="display">Come say <span class="underlined">hey.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none" aria-hidden="true"><path d="M4 8 C 60 2, 160 16, 236 7"/></svg></span></h2>
+        <p>Doddy is in early testing. Leave your email to hear when early access opens.</p>
+        <form class="waitlist" novalidate>
+          <label for="email">Email</label>
+          <div class="field-row">
+            <input id="email" name="email" type="email" autocomplete="email" required placeholder="name@example.com" aria-describedby="waitlist-status">
+            <button class="button" type="submit">Join early access</button>
+          </div>
+          <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
+        </form>
+        <div class="open-app">
+          <p>Already testing Doddy?</p>
+          <a class="button secondary" id="open-app" href="doddy://home">Open Doddy</a>
+          <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+      <picture class="join-pose"><source srcset="assets/poses/doddy-pose-basketball-shot-dark-v1.3-r1.svg" media="(prefers-color-scheme: dark)"><img src="assets/poses/doddy-pose-basketball-shot-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p class="wordmark">Doddy</p>
+    <p>Doddy is an AI assistant, not a person. Your notes stay on your iPhone. Voice conversations run through ElevenLabs while the voice screen is open.</p>
+    <p>© 2026 Doddy</p>
+  </footer>
+</body>
+</html>
