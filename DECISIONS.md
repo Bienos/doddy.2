@@ -79,3 +79,10 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 8. **Identity & signing** — bundle identifier, Apple developer team, and whether to commit the generated `Doddy.xcodeproj` after a first good Mac build (ADR-013).
 9. **CI** — accept local-script CI only, or approve a hosted macOS runner and its cost (ADR-022).
 10. **Run the Mac verification** listed in `docs/implementation/M0_REPORT.md` and record results; **M1 should not start until M0's iOS build/tests are confirmed on a Mac** (M0 exit criteria are not met without it).
+
+## M2 decisions
+
+| ADR | Decision | Status |
+|---|---|---|
+| 039 | Text AI provider is OpenAI, using a low-cost chat model set by `OPENAI_MODEL` (default placeholder `gpt-4o-mini`, to verify at the live run). Owner instruction 2026-10-09. | Applied (owner choice); model id and pricing **unverified**; live call not run (no key here) |
+| 040 | Model calls go only through `services/assistant-gateway`, which holds the key, requires a bearer token (fail closed), validates the contract, verifies citations and logs content-free. No device auth or deployment yet. | Applied in code, tested with a stub; device auth, quotas and hosting **open** |
