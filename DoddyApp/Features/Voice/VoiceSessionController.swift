@@ -6,7 +6,8 @@ import Observation
 
 /// One voice conversation with the ElevenLabs agent. State shown in the UI comes only from real
 /// SDK events (connected, listening, speaking, disconnected), never from timers.
-/// Tool calls are proposals: searches run against the local store, saves wait for the user.
+/// Tool calls are proposals: searches and lookups run on the phone, and anything that changes
+/// data (a note, an event, a reminder) waits for the user's tap.
 @MainActor
 @Observable
 final class VoiceSessionController {
@@ -22,17 +23,33 @@ final class VoiceSessionController {
         var text: String
     }
 
-    struct PendingSave: Equatable {
-        let toolCallID: String
-        let text: String
+    /// Something the agent proposed that waits for the user's tap on the card.
+    enum PendingAction: Equatable {
+        case memory(toolCallID: String, text: String)
+        case event(toolCallID: String, draft: CalendarEventDraft)
+        case reminder(toolCallID: String, draft: ReminderDraft)
+
+        var toolCallID: String {
+            switch self {
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _): id
+            }
+        }
+    }
+
+    /// Contacts found by a lookup. Shown on screen only; the agent receives names.
+    struct ContactCard: Equatable {
+        let query: String
+        let matches: [DeviceConnections.ContactMatch]
     }
 
     private(set) var phase: Phase = .idle
     private(set) var lines: [Line] = []
-    private(set) var pendingSave: PendingSave?
+    private(set) var pendingAction: PendingAction?
+    private(set) var contactCard: ContactCard?
     private(set) var isMuted = false
 
     private let store: MemoryStore
+    private let devices = DeviceConnections()
     private var conversation: Conversation?
 
     init(store: MemoryStore) {
@@ -49,7 +66,8 @@ final class VoiceSessionController {
     func start(agentID: String) async {
         guard !isLive else { return }
         lines = []
-        pendingSave = nil
+        pendingAction = nil
+        contactCard = nil
         isMuted = false
 
         guard await Self.microphoneAllowed() else {
@@ -99,7 +117,8 @@ final class VoiceSessionController {
     func stop() async {
         let active = conversation
         conversation = nil
-        pendingSave = nil
+        pendingAction = nil
+        contactCard = nil
         if isLive { phase = .ended }
         await active?.endConversation()
     }
@@ -114,22 +133,38 @@ final class VoiceSessionController {
         }
     }
 
-    /// The user approved the note shown on screen.
-    func confirmSave() async {
-        guard let pending = pendingSave else { return }
-        pendingSave = nil
-        do {
-            let record = try await store.save(text: pending.text, category: .other)
-            await reply(pending.toolCallID, VoiceToolReply.saved(record))
-        } catch {
-            await reply(pending.toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+    /// The user tapped Save or Add on the card.
+    func confirmPendingAction() async {
+        guard let action = pendingAction else { return }
+        pendingAction = nil
+        switch action {
+        case .memory(let id, let text):
+            do {
+                let record = try await store.save(text: text, category: .other)
+                await reply(id, VoiceToolReply.saved(record))
+            } catch {
+                await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .event(let id, let draft):
+            await reply(id, addEvent(draft))
+        case .reminder(let id, let draft):
+            await reply(id, addReminder(draft))
         }
     }
 
-    func declineSave() async {
-        guard let pending = pendingSave else { return }
-        pendingSave = nil
-        await reply(pending.toolCallID, VoiceToolReply.declined)
+    /// The user tapped "Don't save" or "Don't add". Nothing changes.
+    func declinePendingAction() async {
+        guard let action = pendingAction else { return }
+        pendingAction = nil
+        switch action {
+        case .memory(let id, _): await reply(id, VoiceToolReply.declined)
+        case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
+        case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
+        }
+    }
+
+    func dismissContactCard() {
+        contactCard = nil
     }
 
     // MARK: Events
@@ -155,17 +190,21 @@ final class VoiceSessionController {
 
     private func fail(_ message: String) {
         phase = .failed(message)
-        pendingSave = nil
+        pendingAction = nil
     }
 
     private func disconnected() {
         conversation = nil
-        pendingSave = nil
+        pendingAction = nil
         if case .failed = phase { return }
         phase = .ended
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
+        if let connection = VoiceConnection.serving(call.toolName), !isOn(connection) {
+            await reply(call.toolCallId, VoiceToolReply.notConnected(connection))
+            return
+        }
         switch VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData) {
         case .searchMemories(let query):
             do {
@@ -175,13 +214,77 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .saveMemory(let text):
-            // Nothing is stored until the user taps Save on the card.
-            pendingSave = PendingSave(toolCallID: call.toolCallId, text: text)
+            propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
+        case .readCalendar(let range):
+            guard devices.access(for: .calendar) == .granted else {
+                await reply(call.toolCallId, VoiceToolReply.notConnected(.calendar))
+                return
+            }
+            let events = devices.events(in: range)
+            await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
+        case .createCalendarEvent(let draft):
+            propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .createReminder(let draft):
+            propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .lookupContact(let name):
+            guard devices.access(for: .contacts) == .granted else {
+                await reply(call.toolCallId, VoiceToolReply.notConnected(.contacts))
+                return
+            }
+            do {
+                let matches = try devices.findContacts(named: name)
+                contactCard = ContactCard(query: name, matches: matches)
+                await reply(call.toolCallId, VoiceToolReply.contactMatches(matches.map(\.name), query: name))
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
             await reply(call.toolCallId, VoiceToolReply.failed("The request was incomplete (\(reason))."), isError: true)
         }
+    }
+
+    /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
+    /// call is left without an answer.
+    private func propose(_ action: PendingAction, toolCallID: String) {
+        guard pendingAction == nil else {
+            Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
+            return
+        }
+        pendingAction = action
+    }
+
+    private func addEvent(_ draft: CalendarEventDraft) -> String {
+        guard devices.access(for: .calendar) == .granted else {
+            return VoiceToolReply.notAdded("Calendar isn't connected.")
+        }
+        do {
+            switch try devices.addEvent(draft) {
+            case .verified: return VoiceToolReply.eventAdded(draft, calendar: .current)
+            case .unconfirmed: return VoiceToolReply.addUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
+    private func addReminder(_ draft: ReminderDraft) -> String {
+        guard devices.access(for: .reminders) == .granted else {
+            return VoiceToolReply.notAdded("Reminders isn't connected.")
+        }
+        do {
+            switch try devices.addReminder(draft, calendar: .current) {
+            case .verified: return VoiceToolReply.reminderAdded(draft, calendar: .current)
+            case .unconfirmed: return VoiceToolReply.addUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
+    private func isOn(_ connection: VoiceConnection) -> Bool {
+        UserDefaults.standard.bool(forKey: connection.preferenceKey)
     }
 
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false) async {

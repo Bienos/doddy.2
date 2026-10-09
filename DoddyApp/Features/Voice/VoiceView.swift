@@ -1,3 +1,4 @@
+import DoddyCore
 import SwiftUI
 import UIKit
 
@@ -85,12 +86,17 @@ struct VoiceView: View {
                                 .id(line.id)
                         }
 
-                        if let pending = controller.pendingSave {
-                            saveCard(pending, controller: controller)
-                                .id("pendingSave")
+                        if let pending = controller.pendingAction {
+                            actionCard(pending, controller: controller)
+                                .id("pendingAction")
                         }
 
-                        Text("While you talk, your voice and the notes Doddy looks up are sent to ElevenLabs to run the conversation. Nothing is saved unless you tap Save.")
+                        if let card = controller.contactCard {
+                            contactCard(card, controller: controller)
+                                .id("contactCard")
+                        }
+
+                        Text("While you talk, your voice and the notes, calendar entries and contact names Doddy uses are sent to ElevenLabs to run the conversation. Nothing is saved or added unless you tap Save or Add.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -100,8 +106,11 @@ struct VoiceView: View {
                 .onChange(of: controller.lines.count) { _, _ in
                     if let last = controller.lines.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
-                .onChange(of: controller.pendingSave) { _, pending in
-                    if pending != nil { withAnimation { proxy.scrollTo("pendingSave", anchor: .bottom) } }
+                .onChange(of: controller.pendingAction) { _, pending in
+                    if pending != nil { withAnimation { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                }
+                .onChange(of: controller.contactCard) { _, card in
+                    if card != nil { withAnimation { proxy.scrollTo("contactCard", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -138,28 +147,94 @@ struct VoiceView: View {
         }
     }
 
-    private func saveCard(_ pending: VoiceSessionController.PendingSave, controller: VoiceSessionController) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Save this note?")
-                .font(.headline)
-            Text("“\(pending.text)”")
-                .font(.body)
+    /// Card for anything that changes data. Nothing happens until the user taps the button.
+    private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
+        let isMemory: Bool
+        if case .memory = pending { isMemory = true } else { isMemory = false }
+        return VStack(alignment: .leading, spacing: 12) {
+            switch pending {
+            case .memory(_, let text):
+                Text("Save this note?")
+                    .font(.headline)
+                Text("“\(text)”")
+                    .font(.body)
+            case .event(_, let draft):
+                Text("Add this event?")
+                    .font(.headline)
+                Text(draft.title)
+                    .font(.body)
+                Text(eventWhen(draft))
+                    .foregroundStyle(Theme.secondaryText)
+                if let location = draft.location {
+                    Text(location)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            case .reminder(_, let draft):
+                Text("Add this reminder?")
+                    .font(.headline)
+                Text(draft.title)
+                    .font(.body)
+                if let due = draft.due {
+                    Text(draft.dueHasTime
+                         ? due.formatted(date: .abbreviated, time: .shortened)
+                         : due.formatted(date: .abbreviated, time: .omitted))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
             Button {
-                Task { await controller.confirmSave() }
+                Task { await controller.confirmPendingAction() }
             } label: {
-                HStack { Text("Save"); Spacer(); Image(systemName: "checkmark") }
+                HStack { Text(isMemory ? "Save" : "Add"); Spacer(); Image(systemName: "checkmark") }
             }
             .buttonStyle(PrimaryButtonStyle())
-            .accessibilityIdentifier("voice.confirmSave")
+            .accessibilityIdentifier("voice.confirm")
             Button {
-                Task { await controller.declineSave() }
+                Task { await controller.declinePendingAction() }
             } label: {
-                Text("Don't save")
+                Text(isMemory ? "Don't save" : "Don't add")
             }
             .buttonStyle(SecondaryButtonStyle())
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// Names and details of a contact lookup. Only the agent's copy is names; this is the full view.
+    private func contactCard(_ card: VoiceSessionController.ContactCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Contacts for “\(card.query)”")
+                .font(.headline)
+            if card.matches.isEmpty {
+                Text("No contact matched.")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(card.matches) { match in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(match.name)
+                        .font(.body.bold())
+                    ForEach(match.phoneNumbers, id: \.self) { number in
+                        Text(number).textSelection(.enabled)
+                    }
+                    ForEach(match.emailAddresses, id: \.self) { address in
+                        Text(address).textSelection(.enabled)
+                    }
+                }
+            }
+            Button("Close") {
+                controller.dismissContactCard()
+            }
+            .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func eventWhen(_ draft: CalendarEventDraft) -> String {
+        if draft.allDay {
+            return draft.start.formatted(date: .abbreviated, time: .omitted) + " (all day)"
+        }
+        return draft.start.formatted(date: .abbreviated, time: .shortened)
+            + " – " + draft.end.formatted(date: .omitted, time: .shortened)
     }
 
     private func controls(_ controller: VoiceSessionController) -> some View {

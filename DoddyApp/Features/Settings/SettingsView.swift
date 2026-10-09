@@ -1,5 +1,6 @@
 import DoddyCore
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
@@ -7,6 +8,11 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
+    @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
+    @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
+    @AppStorage(VoiceConnection.contacts.preferenceKey) private var contactsOn = false
+    @State private var devices = DeviceConnections()
+    @State private var connectionNote: String?
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
 
@@ -56,7 +62,7 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, and any notes, calendar entries or contact names Doddy uses are sent to ElevenLabs, which runs the voice agent. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -74,6 +80,34 @@ struct SettingsView: View {
                     Text("Development prototype: Doddy's voice runs on an ElevenLabs agent. Conversations count toward the owner's ElevenLabs minutes.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                }
+
+                Section {
+                    Toggle("Calendar", isOn: connectionBinding(.calendar, $calendarOn))
+                    Text("Doddy can read your events for a day or range you name, and add an event after you tap Add.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    Toggle("Reminders", isOn: connectionBinding(.reminders, $remindersOn))
+                    Text("Doddy can add a reminder after you tap Add.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    Toggle("Contacts", isOn: connectionBinding(.contacts, $contactsOn))
+                    Text("Doddy can look up a contact by name. The details stay on your screen; only the name goes to the agent.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    if let connectionNote {
+                        Label(connectionNote, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.error)
+                        Button("Open iPhone Settings") {
+                            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                        }
+                    }
+                    StatusRow(title: "Your notes", value: "Always on, on this iPhone")
+                    StatusRow(title: "Weather and Wikipedia", value: "Always on, run by ElevenLabs")
+                } header: {
+                    Text("Connections")
+                } footer: {
+                    Text("Everything here is off until you turn it on. Turning one on asks iPhone for permission. You can turn any of them off here at any time.")
                 }
 
                 Section("Appearance and accessibility") {
@@ -112,6 +146,33 @@ struct SettingsView: View {
             }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    /// Turning a connection on asks iOS for permission first. The toggle stays off if it is refused.
+    private func connectionBinding(_ connection: VoiceConnection, _ isOn: Binding<Bool>) -> Binding<Bool> {
+        Binding(
+            get: { isOn.wrappedValue },
+            set: { newValue in
+                Task { await setConnection(connection, isOn: isOn, to: newValue) }
+            })
+    }
+
+    private func setConnection(_ connection: VoiceConnection, isOn: Binding<Bool>, to newValue: Bool) async {
+        guard newValue else {
+            isOn.wrappedValue = false
+            connectionNote = nil
+            return
+        }
+        switch await devices.request(connection) {
+        case .granted:
+            isOn.wrappedValue = true
+            connectionNote = nil
+        case .denied:
+            isOn.wrappedValue = false
+            connectionNote = "\(connection.title) is off for Doddy in iPhone Settings. Turn it on there, then try again."
+        case .notDetermined:
+            isOn.wrappedValue = false
+        }
     }
 
     private func deleteAll() async {
