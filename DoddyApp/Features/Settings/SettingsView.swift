@@ -243,6 +243,8 @@ struct SettingsView: View {
                         StatusRow(title: "Calendar, reminders, contacts", value: connectionSummary)
                     }
                     .accessibilityIdentifier("settings.connections")
+                    // Connections uses its own controller; re-read when coming back from it.
+                    .onAppear { Task { await connections.refresh() } }
                 } header: {
                     Text("Connections")
                 } footer: {

@@ -48,9 +48,13 @@ final class ConnectionController {
         return access
     }
 
-    /// Re-reads notification permission and redraws. Called when the app comes forward and when a
-    /// sheet closes, because the user may have changed permission in iPhone Settings.
+    /// Re-reads the switches and notification permission and redraws. Called when the app comes
+    /// forward, when a sheet closes and when Settings reappears, because another screen's
+    /// controller or iPhone Settings may have changed them.
     func refresh() async {
+        switches = Dictionary(uniqueKeysWithValues: VoiceConnection.allCases.map {
+            ($0, UserDefaults.standard.bool(forKey: $0.preferenceKey))
+        })
         notificationAccess = await devices.notificationAccess()
         revision += 1
     }

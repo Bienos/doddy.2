@@ -30,10 +30,11 @@ final class AppEnvironmentTests: XCTestCase {
     }
 
     @MainActor
-    func testFreshInstallRoutesToSetupAndSkipFlagOnlyWorksInMemory() async {
+    func testFreshInstallRoutesToIntroductionAndSkipFlagOnlyWorksInMemory() async {
         let fresh = ProfileStore(environment: .live(arguments: ["-inMemoryStore"]), arguments: ["-inMemoryStore"])
         await fresh.load()
-        XCTAssertEqual(fresh.route, .setup(.welcome))
+        // The Back Tap guide is not a first-use step (ADR-089), so a fresh install starts on the introduction.
+        XCTAssertEqual(fresh.route, .introduction)
 
         let skipped = ProfileStore(
             environment: .live(arguments: ["-inMemoryStore"]), arguments: ["-inMemoryStore", "-onboardingDone"])
@@ -41,13 +42,10 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertEqual(skipped.route, .home)
     }
 
-    func testEveryProfileFieldHasCopyAndNoSetupStatusClaimsVerification() {
+    func testEveryProfileFieldHasCopy() {
         for key in ProfileKey.allCases {
             XCTAssertFalse(key.label.isEmpty)
             XCTAssertTrue(key.question.hasSuffix("?"), key.question)
-        }
-        for decision in SetupDecision.allCases {
-            XCTAssertFalse(decision.statusText.lowercased().contains("verified"))
         }
     }
 

@@ -57,6 +57,10 @@ struct IntroductionView: View {
                 .accessibilityAddTraits(.isHeader)
             Text("Let's get to know each other a little. I'm an AI assistant, not a person. I'll ask a few short questions, and you decide what I keep.")
 
+            if let problem = profiles.progressSaveProblem {
+                ProblemView(message: problem)
+            }
+
             CandidateCharacterView(assetName: "Doddy_waving")
                 .frame(maxWidth: .infinity)
 

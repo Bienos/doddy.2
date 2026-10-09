@@ -28,7 +28,7 @@ Result branch: `claude/brave-keller-f8h6uq`. Base: `claude/nice-albattani-t1yan6
 ## Verified (Linux, 2026-10-09, Swift 6.1.2, Node 22.22.0)
 `scripts/ci.sh --core-only`: pack integrity PASS (259 files), capability guard PASS, voice-agent spec PASS, Swift package tests PASS (122 tests, 0 failures, incl. persistence on real SQLite), token server tests PASS (6), backend type-check PASS, backend tests PASS (73). `swiftc -parse` on all 39 app/widget/test files: PASS (syntax only).
 
-**Not verified:** the iOS app and widget build, unit and UI tests (no Xcode here). Several files were joined by hand (`VoiceSessionController`, `VoiceView`, `SettingsView`, `HomeView`, `RootView`, `DoddyApp`), so expect a few compile fixes on the first Mac build.
+**Not verified:** the iOS app and widget build, unit and UI tests (no Xcode here). A read-through review after the merge found and fixed one compile error (a unit test used a removed `SetupDecision.statusText`), a unit test still expecting the removed setup step, the onboarding save-problem message no longer shown anywhere, and a stale Connections summary in Settings. Several files were joined by hand (`VoiceSessionController`, `VoiceView`, `SettingsView`, `HomeView`, `RootView`, `DoddyApp`), so expect a few compile fixes on the first Mac build.
 
 ## Owner checklist on the Mac / iPhone
 1. `make project` then `scripts/ci.sh`; send any compile errors.
