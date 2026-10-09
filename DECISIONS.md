@@ -111,7 +111,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 
 | ADR | Decision | Status |
 |---|---|---|
-| 062 | Personality settings (humour, reply length, tone, mood) from the persona draft's fixed options, stored as UI preferences in `UserDefaults`, sent to the agent as the fixed-text dynamic variable `doddy_personality`; safety rules are not adjustable. See `docs/product/PERSONALITY_SETTINGS.md` | App applied; **agent prompt change pending owner approval** |
+| 062 | Personality settings (humour, reply length, tone, mood) from the persona draft's fixed options, stored as UI preferences in `UserDefaults`, sent to the agent as the fixed-text dynamic variable `doddy_personality`; safety rules are not adjustable. See `docs/product/PERSONALITY_SETTINGS.md` | Applied — app and live agent (prompt `agtvrsn_8101m4gvnve7fdzsyqk5rjyqcfb8`, 2026-10-09); not yet heard on a device |
 
 ## Connections decisions (2026-10-09, renumbered from 038–040 at branch consolidation)
 
@@ -139,7 +139,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 084 | Back Tap status is a **user report** (`userReportedDone` / `userReportedTestPassed`), never "verified". The Open Doddy App Intent receipt (in memory, 5-minute test window) only changes wording. | Applied — **Back Tap part superseded by ADR-089** |
 | 085 | Reviewed profile: six optional fields, stored only on explicit Save, in `profile_fields` (same SQLite file, separate table) via migration `v2_profile_onboarding`. Stale edits rejected; forget ≠ delete memories. | Applied |
 | 086 | `DoddyDatabase` owns the file and migrations; opening a database from a newer app version fails without touching it. | Applied |
-| 087 | The profile is **not** sent to the ElevenLabs voice agent. Doing so (name, style, language) is a new data flow to a third party. | Open — **owner to decide** |
+| 087 | The profile is **not** sent to the ElevenLabs voice agent. Doing so (name, style, language) is a new data flow to a third party. | Open — **owner to decide** — **superseded by ADR-092** |
 | 088 | Profile is not in the memory export; export format unchanged. | Open — owner to decide |
 
 ## Branch consolidation (2026-10-09)
@@ -149,6 +149,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 089 | Onboarding and V2 each shipped a Back Tap guide and a shortcut intent. Kept **one**: V2's `BackTapSetupView` + `TalkToDoddyIntent` (the one tried on the owner's iPhone, ADR-040 to 043). Onboarding's `SetupGuideView`, `OpenDoddyIntent` and Settings "Getting started" were removed; first use is now the optional introduction only (`ProfileStore.route` skips the core's setup step, whose types and tests stay in DoddyCore unused by the app). | Applied — owner may want Back Tap back as a first-use step; that would mean showing V2's guide inside onboarding |
 | 090 | Calendar/Reminders/Contacts: kept the `determined-sagan` Connections (matches the 14 tools on the live agent), not `upbeat-brown` V4a (Today card, local nudges). Control Center control from `busy-mendel` and the OpenAI "Ask" tab with Supabase gateway from `busy-hawking` were not merged. | Applied — owner to decide whether any of those come back |
 | 091 | The 'keep the taps quiet' design step (`gifted-hypatia`, owner request) edited 8 files of the imported design prototype in `design/interface-v1.2/` (its manifest, README, setup guide doc, `setup.js`, `studio.css/js`, verification files), which made `verify_imported_pack.py` fail. `PACKAGE_MANIFEST.json` hashes were refreshed for exactly those 8 files, so the check passes again; every other pack file is still byte-identical. Partial exception to ADR-024 | Applied — owner to confirm; revert = restore the 16 manifest lines and the design commit |
+| 092 | The approved introduction answers can be sent to the voice agent as `{{user_profile}}` (`ProfilePrompt.render`: fixed labels, user's words on one line each, only saved fields). **Off by default**: Settings → About you → "Use in voice conversations"; when off the agent gets a fixed not-shared line. Home, About you and the Settings privacy note say which. Personality (ADR-062) and the profile sections were added to the live prompt the same day; the repo prompt (`voice-agent/instructions.md`) was also brought up to date with the live timers/maps/Shortcuts/drafts text | Applied 2026-10-09 (owner "build" on the recommendation) — owner switches it on; not yet heard on a device |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

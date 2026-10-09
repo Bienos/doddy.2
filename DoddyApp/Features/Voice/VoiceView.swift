@@ -7,6 +7,7 @@ import UIKit
 /// taps End or Close, from the island, or when the connection drops.
 struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
@@ -48,7 +49,7 @@ struct VoiceView: View {
         .task {
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
-            await controller.start(mode)
+            await controller.start(mode, profile: profiles.profile)
         }
         .onDisappear {
             Task { await controller?.stop() }
@@ -350,7 +351,7 @@ struct VoiceView: View {
                 .accessibilityIdentifier("voice.end")
             } else {
                 Button {
-                    Task { await controller.start(mode) }
+                    Task { await controller.start(mode, profile: profiles.profile) }
                 } label: {
                     Label("Talk again", systemImage: "waveform")
                 }

@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var connections = ConnectionController()
+    @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     @AppStorage(PreferenceKey.voiceTokenServer) private var voiceTokenServer = ""
     @State private var accessCodeDraft = ""
     @State private var hasAccessCode = VoiceAccessCodeStore.read() != nil
@@ -62,6 +63,8 @@ struct SettingsView: View {
                         Task { await profiles.reopenIntroduction() }
                     }
                     .disabled(profiles.progress == nil)
+                    Toggle("Use in voice conversations", isOn: $shareProfileWithVoice)
+                        .accessibilityIdentifier("settings.shareProfileWithVoice")
                     Button("Forget all of this", role: .destructive) { confirmForget = true }
                         .disabled(profiles.profile.isEmpty)
                         .accessibilityIdentifier("settings.forgetProfile")
@@ -69,7 +72,7 @@ struct SettingsView: View {
                         Label(forgetError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. Voice conversations don't use them yet.")
+                    Text("Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs at the start of each conversation so Doddy knows them; off, they stay on this iPhone.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -109,7 +112,7 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes and (if switched on) your last few conversations are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps, the app sends the date and time zone you ask about to your Doddy server, which reads Google Calendar through Composio; your notes are never sent there. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes, your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps, the app sends the date and time zone you ask about to your Doddy server, which reads Google Calendar through Composio; your notes are never sent there. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

@@ -7,6 +7,7 @@ struct HomeView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @State private var showCapture = false
+    @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     private var router: ShortcutRouter { .shared }
 
     var body: some View {
@@ -118,7 +119,9 @@ struct HomeView: View {
                 ForEach(shown, id: \.self) { key in
                     StatusRow(title: key.label, value: profile.value(key) ?? "")
                 }
-                Text("Change or forget these in Settings. Voice conversations don't use them yet.")
+                Text(shareProfileWithVoice
+                    ? "Doddy knows these in voice conversations. Change or forget them in Settings."
+                    : "Change or forget these in Settings. Voice conversations don't use them unless you turn that on there.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }

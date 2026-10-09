@@ -4,7 +4,7 @@ Date: 2026-10-08. Updated 2026-10-09 after a read-only live check of the ElevenL
 ## ElevenLabs setup (live state after the 2026-10-09 update)
 | Item | Value |
 |---|---|
-| Agent | "Doddy (dev prototype)" `agent_0501m4et27vyeawrwqfdxxfszfa6`, tags doddy/dev. Latest version `agtvrsn_6101m4gj4ms9et0rcf0qy53f8nvy` (14 custom tools attached). |
+| Agent | "Doddy (dev prototype)" `agent_0501m4et27vyeawrwqfdxxfszfa6`, tags doddy/dev. Latest version `agtvrsn_8101m4gvnve7fdzsyqk5rjyqcfb8` (14 custom tools attached; personality and profile sections added 2026-10-09). |
 | Mode | **Public (no auth)**: development only, on the owner's own phone. The owner decided on 2026-10-09 not to lock it down yet; it must change before anyone else uses it. |
 | LLM | gemini-3.5-flash, temperature 0.5, timezone Europe/Warsaw (the 10-08 entry said gemini-2.5-flash / 0.3; the live agent changed after that) |
 | Speech | Scribe realtime (in), eleven_v4_turbo (out), voice `oDULUm0GMltHA6mVZkWh` (owner pick 2026-10-09, ADR-051; before that Josh `ZoiZ8fuDWInAcwPXaVeq`, ADR-038); one voice for both languages; max 10 min per conversation |
@@ -12,7 +12,7 @@ Date: 2026-10-08. Updated 2026-10-09 after a read-only live check of the ElevenL
 | Languages | English default, Polish preset ("Hej, tu Doddy. Co słychać?"), automatic language detection |
 | Limits | Concurrency unlimited (-1); daily cap 100,000 calls; recording on; retention not set (-1); all guardrails off |
 | Prompt | Updated 2026-10-09: AI disclosure, short spoken replies, strict memory rules, and sections on calendar, reminders, contacts, timers, maps, Shortcuts and messages. Each tool's result prefix ("added", "opened", "declined", "failed", "unknown") is named in the prompt. | Before `save_memory` runs, Doddy says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." |
-| Prompt placeholders | `{{saved_notes}}`, `{{saved_notes_count}}`, `{{saved_notes_truncated}}`, `{{recent_conversations}}` have default text; the app fills them at the start of each conversation (see Knowledge below). `{{doddy_personality}}` is sent by the app but not yet in the agent prompt (`docs/product/PERSONALITY_SETTINGS.md`). |
+| Prompt placeholders | `{{saved_notes}}`, `{{saved_notes_count}}`, `{{saved_notes_truncated}}`, `{{recent_conversations}}` have default text; the app fills them at the start of each conversation (see Knowledge below). `{{doddy_personality}}` (style settings, always sent) and `{{user_profile}}` (introduction answers, only when the user turns that on in Settings → About you; ADR-092) are in the prompt with defaults. |
 
 ### Tools on the agent and what the app does with each
 | Tool | Runs on | App behaviour |
@@ -40,7 +40,7 @@ A function that is off, or whose iOS permission is refused, returns "isn't conne
 - Settings → **Connections** opens a card screen in three groups: Your day (Calendar, Reminders, Timers), People (Contacts, Messages and email), Places and apps (Maps, Shortcuts). Each card shows an example phrase and an Off / On / Blocked pill. A tap opens a sheet with what Doddy can do, what leaves the phone, and what stays on the iPhone. Turning one on is a separate tap, and it asks iOS for permission first.
 - EventKit and Contacts code lives only in `DoddyApp/Infrastructure/Connections/`. The guard script enforces that.
 - Microphone denied → explanation + Open Settings; the rest of the app keeps working.
-- Settings → Voice → **Doddy's personality**: humour, reply length, tone and mood, sent as `doddy_personality` (see `docs/product/PERSONALITY_SETTINGS.md`; agent prompt change still pending).
+- Settings → Voice → **Doddy's personality**: humour, reply length, tone and mood, sent as `doddy_personality` and used by the live prompt (see `docs/product/PERSONALITY_SETTINGS.md`).
 - Settings → Voice: the agent ID (prefilled with the dev agent). The privacy note lists what goes to ElevenLabs (voice, conversation, saved notes, recent conversations, and any calendar entries, contact names or drafts used) and that weather and fact lookups go to Open-Meteo and Wikipedia from ElevenLabs' servers.
 - Privacy manifest declares audio data, other user content (calendar, reminder and draft text), and name (contact names sent to the agent). All are app functionality, not linked, no tracking. Confirm these in App Store Connect.
 - Permission strings: microphone, calendars (full access), reminders (full access), contacts. Notifications for timers use iOS's own prompt, with no usage string.

@@ -1,6 +1,6 @@
 # Doddy's personality and the personality settings
 
-Status: built in the app on 2026-10-09; **agent prompt change pending owner approval**; not yet run on an iPhone.
+Status: built in the app and **applied to the live agent** on 2026-10-09 (prompt version `agtvrsn_8101m4gvnve7fdzsyqk5rjyqcfb8`, placeholder default = `PersonalityPrompt.render(.doddyDefault)`, pinned by `PersonalityTests.testDefaultTextMatchesTheAgentPlaceholder`); not yet heard on an iPhone.
 
 ## Who Doddy is (from the persona draft, not user-research-validated)
 Sources: `reference/character_evals/doddy_persona_v1.yaml`, `character_quick_reference.md`, `docs/design/BRAND_AND_CHARACTER.md`.
@@ -32,7 +32,7 @@ Not included: language (the agent already detects it), proactivity (nothing proa
 - `PersonalityPrompt.render` (DoddyCore) turns the four choices into fixed sentences. Every option maps to one known sentence, so the app never sends free text from the user here.
 - `VoiceSessionController.start` sends it as the dynamic variable `doddy_personality` when a conversation starts. Changes apply from the next conversation.
 
-## Agent change needed (not applied: blocked pending owner approval)
+## Agent change (applied 2026-10-09)
 On agent `agent_0501m4et27vyeawrwqfdxxfszfa6`:
 
 1. Add the dynamic variable placeholder `doddy_personality` with the default text, i.e. the output of `PersonalityPrompt.render(.doddyDefault)`. Keep the four existing placeholders (dynamic variables are replaced as a whole).
@@ -44,7 +44,7 @@ On agent `agent_0501m4et27vyeawrwqfdxxfszfa6`:
 Where these settings differ from the personality and length guidance above, follow these settings. All other rules in this prompt still apply.
 ```
 
-Until this is done the app sends the variable but the agent's prompt does not use it, so the settings have no effect on what Doddy says.
+Done on the live agent as described above (the section sits right after `# How you speak`).
 
 ## Verification
 - Linux, Swift 6.1.2: `make test-core` passes 35 tests, including 5 in `PersonalityTests` (defaults match the persona draft, per-dial fallback, every one of the 81 combinations renders all four choices plus the fixed rules sentence, options are distinct).

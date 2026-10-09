@@ -79,7 +79,9 @@ final class VoiceSessionController {
         }
     }
 
-    func start(_ mode: VoiceConnectionMode) async {
+    /// `profile` is the user's approved introduction answers; it reaches the agent only when
+    /// Settings → About you → "Use in voice conversations" is on.
+    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile) async {
         guard !isLive else { return }
         lines = []
         pendingAction = nil
@@ -122,6 +124,8 @@ final class VoiceSessionController {
                 // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
                 // placeholder defaults to the persona defaults, so a build that sends nothing still works.
                 PersonalityPrompt.variableName: PersonalityPrompt.render(.stored()),
+                ProfilePrompt.variableName: ProfilePrompt.render(
+                    profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice)),
             ],
             userId: Self.userID())
         config.onAgentStateChange = { state in

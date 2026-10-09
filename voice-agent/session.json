@@ -11,7 +11,9 @@
     "saved_notes": "Saved notes, newest first, bounded (VoiceContext.savedNotes)",
     "saved_notes_count": "How many notes are included",
     "saved_notes_truncated": "'yes' when the list was cut short, else 'no'",
-    "recent_conversations": "Recent conversations, oldest first, bounded (VoiceContext.recentConversations)"
+    "recent_conversations": "Recent conversations, oldest first, bounded (VoiceContext.recentConversations)",
+    "doddy_personality": "Style settings from Settings, Doddy's personality (PersonalityPrompt.render); default = Doddy's default",
+    "user_profile": "Approved introduction answers (ProfilePrompt.render), sent only when Settings, About you, 'Use in voice conversations' is on; otherwise the not-shared line"
   },
   "turn_taking": {
     "eagerness": "high",

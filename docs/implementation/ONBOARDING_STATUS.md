@@ -29,7 +29,7 @@ Six optional questions, one at a time, with preset choices and free text: what t
 - The **Open Doddy** App Intent (`App/OpenDoddyIntent.swift`) only opens the app and records, in memory, when it ran. A run inside the 5-minute test window changes the wording to "Your Open Doddy shortcut ran just now"; it still asks whether a double tap started it. An Open App shortcut gives no receipt, and none is invented.
 - Answers are a transient draft; nothing is written until Save, and the write is read back before Home changes. Setup stores task state only (step, decision, version), never answers or speech.
 - Profile and memories share the SQLite file but not tables: forgetting the profile keeps memories, deleting all memories keeps the profile (tested).
-- Voice conversations do **not** receive the profile yet. Sending the name/preferences to ElevenLabs is a new data flow and needs an owner decision (ADR-087). Home and Settings say so.
+- Voice conversations receive the profile **only when the user turns on** Settings → About you → "Use in voice conversations" (off by default, ADR-092). It is sent as `{{user_profile}}` at the start of each conversation; Home and Settings say whether it is on.
 - The language answer is stored for later replies; the app's screens stay in English.
 
 ## Data

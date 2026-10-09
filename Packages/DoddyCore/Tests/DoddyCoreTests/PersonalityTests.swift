@@ -42,4 +42,17 @@ final class PersonalityTests: XCTestCase {
         XCTAssertEqual(Set(Formality.allCases.map(PersonalityPrompt.formality)).count, Formality.allCases.count)
         XCTAssertEqual(Set(Mood.allCases.map(PersonalityPrompt.mood)).count, Mood.allCases.count)
     }
+
+    /// The live agent's `doddy_personality` placeholder default is a copy of this text
+    /// (voice-agent/session.json). If this test changes, update the agent default too.
+    func testDefaultTextMatchesTheAgentPlaceholder() {
+        XCTAssertEqual(PersonalityPrompt.render(.doddyDefault), """
+            The user chose these settings in the app:
+            - Humour: subtle. At most one small dry remark about everyday hassles, and only when the moment is light.
+            - Reply length: brief. One or two sentences unless the user asks for more.
+            - Tone: casual, like a friendly mate. Informal words are fine (in Polish use "ty").
+            - Energy: grounded. Relaxed and steady, with a little warmth when something goes well.
+            These are style preferences only. Whatever they say: answer the question first, stay honest about being an AI, follow the memory and tool rules exactly, never joke about anything serious (health, money, legal, grief, distress), and never use sarcasm at the user, guilt, flattery or clinginess.
+            """)
+    }
 }
