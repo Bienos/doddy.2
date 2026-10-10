@@ -90,8 +90,7 @@ struct MemoryDetailView: View {
         guard let reminder = noteReminders.reminder(forMemory: memoryID) else {
             return base + " Exports and older backups aren't affected."
         }
-        let when = ReminderFormat.dateTime(reminder.fireAt, timeZoneID: reminder.timeZoneID)
-        return base + " Its reminder for \(when) is cancelled too, and undo doesn't bring the reminder back. Exports and older backups aren't affected."
+        return base + " Its reminder (\(ReminderFormat.short(reminder))) is cancelled too, and undo doesn't bring the reminder back. Exports and older backups aren't affected."
     }
 
     private func setType(_ category: MemoryCategory, for record: MemoryRecord) async {

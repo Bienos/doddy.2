@@ -7,9 +7,11 @@
 #  - the system authentication browser is used only by Connected Apps,
 #  - audio/ElevenLabs code only inside DoddyApp/Features/Voice,
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
+#  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
+#    "Always" location, background location or significant-change tracking,
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
-#  - permission keys only for the microphone, calendar, reminders and contacts,
+#  - permission keys only for the microphone, calendar, reminders, contacts and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the two reviewed ones (Gmail draft, Todoist task), no proxy execution,
 #    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
@@ -30,10 +32,11 @@ network_only='URLSession([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
 voice_only='import AVFoundation|import AVFAudio|AVAudio|import ElevenLabs'
-connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact'
+connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger'
+location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
-allowed_permissions='NSMicrophoneUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription'
+allowed_permissions='NSMicrophoneUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSLocationWhenInUseUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
 code_only() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)'; }
@@ -59,7 +62,10 @@ if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_
   echo "FAIL: audio/ElevenLabs code outside $voice_dir." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$connections_dir/"; then
-  echo "FAIL: calendar or contacts code outside $connections_dir." >&2; status=1
+  echo "FAIL: calendar, contacts or location code outside $connections_dir." >&2; status=1
+fi
+if grep -RInE "$location_tracking" "${dirs[@]}" project.yml | code_only; then
+  echo "FAIL: \"Always\" or background location is not allowed; place reminders use \"While Using\" only." >&2; status=1
 fi
 if [ -d "$backend_src" ]; then
   if grep -RInE '(^|[^A-Z_])(GOOGLECALENDAR|GOOGLESUPER|GMAIL|GOOGLEDRIVE|NOTION|TODOIST)_[A-Z]' --include='*.ts' "$backend_src" | code_only | grep -v -e "^$composio_adapter:" -e "^$tools_catalog:" -e "^$tools_mock:"; then
@@ -94,5 +100,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the microphone, calendar, reminders and contacts permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport and the messaging transport, web auth only in Connected Apps, audio only in Voice, calendar and contacts only in Connections, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders and contacts; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport and the messaging transport, web auth only in Connected Apps, audio only in Voice, calendar, contacts and location only in Connections, no Always/background location, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
 exit "$status"

@@ -1,6 +1,7 @@
 import DoddyCore
-import DoddyPersistence
+@testable import DoddyPersistence
 import Foundation
+import GRDB
 import XCTest
 
 /// M4a reminder rules against real SQLite and a fake iOS notification center that behaves like
@@ -60,7 +61,7 @@ final class NoteReminderCoordinatorTests: XCTestCase {
         XCTAssertEqual(pending[reminder.notificationID]?.title, "Reminder")
         XCTAssertEqual(pending[reminder.notificationID]?.body, NoteReminderCopy.privateBody)
         XCTAssertFalse(pending[reminder.notificationID]!.body.contains("Klara"), "note text must not reach iOS by default")
-        XCTAssertEqual(pending[reminder.notificationID]?.timeZoneID, "Europe/Warsaw")
+        XCTAssertEqual(pending[reminder.notificationID]?.trigger, .time(fireAt: now.addingTimeInterval(3600), timeZoneID: "Europe/Warsaw"))
         let stored = try await repo.reminder(forMemory: memory.id)
         XCTAssertEqual(stored, reminder)
     }
@@ -235,6 +236,111 @@ final class NoteReminderCoordinatorTests: XCTestCase {
         XCTAssertEqual(pendingIDs, ["doddy.timer.123", "doddy.nudge.event-1"])
     }
 
+    // MARK: Place reminders (ADR-196)
+
+    private func postOffice(onArrival: Bool = true) throws -> ReminderPlace {
+        try ReminderPlace(name: " Post office ", latitude: 52.2297, longitude: 21.0122, radiusMeters: 200, onArrival: onArrival)
+    }
+
+    func testPlaceReminderIsVerifiedPrivateAndStaysPending() async throws {
+        let (repo, center, coordinator, _) = try make()
+        let memory = try await note(repo)
+        let outcome = try await coordinator.schedule(memoryID: memory.id, place: try postOffice())
+
+        guard case .scheduled(let reminder) = outcome else { return XCTFail("expected .scheduled, got \(outcome)") }
+        XCTAssertEqual(reminder.place?.name, "Post office")
+        XCTAssertNil(reminder.fireAt)
+        XCTAssertFalse(reminder.isDue(at: .distantFuture), "a place is never due by the clock")
+        let sent = await center.pending[reminder.notificationID]
+        XCTAssertEqual(sent?.trigger, .place(try postOffice()))
+        XCTAssertEqual(sent?.body, NoteReminderCopy.privateBody, "no note text and no place name by default")
+        let snoozed = try await coordinator.snoozeUntilTomorrowMorning(reminderID: reminder.id)
+        XCTAssertNil(snoozed, "no time snooze for a place")
+
+        // iOS lost it (restore): reconcile puts it back, even though no time is involved.
+        await center.remove([reminder.notificationID])
+        await coordinator.reconcile()
+        let pendingIDs = await Set(center.pending.keys)
+        XCTAssertEqual(pendingIDs, [reminder.notificationID])
+        XCTAssertEqual(ReminderFormat.summary(reminder), "When you arrive at Post office")
+        XCTAssertEqual(ReminderFormat.place(try postOffice(onArrival: false)), "When you leave Post office")
+    }
+
+    func testPlaceReminderNeedsNotificationsAndPreciseLocationAndStoresNothingOtherwise() async throws {
+        let (repo, center, coordinator, _) = try make(auth: .denied)
+        let memory = try await note(repo)
+        await assertThrows(.placeNeedsNotifications) {
+            _ = try await coordinator.schedule(memoryID: memory.id, place: try self.postOffice())
+        }
+        await center.setAuth(.allowed)
+        for readiness in [LocationReadiness.notDetermined, .denied, .approximateOnly, .unavailable] {
+            await center.setLocation(readiness)
+            await assertThrows(.placeNeedsLocation(readiness)) {
+                _ = try await coordinator.schedule(memoryID: memory.id, place: try self.postOffice())
+            }
+        }
+        let count = try await repo.reminderCount()
+        XCTAssertEqual(count, 0)
+        let pendingCount = await center.pending.count
+        XCTAssertEqual(pendingCount, 0)
+    }
+
+    func testPlaceLimitAndSwitchingANoteBetweenTimeAndPlace() async throws {
+        let (repo, center, coordinator, _) = try make()
+        let first = try await note(repo, "first")
+        // Time first, then the same note moves to a place: one reminder, one request.
+        _ = try await coordinator.schedule(memoryID: first.id, at: now.addingTimeInterval(3600), timeZone: warsaw)
+        let placed = try await coordinator.schedule(memoryID: first.id, place: try postOffice()).reminder
+        var pendingIDs = await Set(center.pending.keys)
+        XCTAssertEqual(pendingIDs, [placed.notificationID])
+        for index in 1..<NoteReminderLimits.maxPlaces {
+            let other = try await note(repo, "place \(index)")
+            _ = try await coordinator.schedule(memoryID: other.id, place: try postOffice())
+        }
+        let extra = try await note(repo, "one place too many")
+        await assertThrows(.placeLimitReached(maximum: NoteReminderLimits.maxPlaces)) {
+            _ = try await coordinator.schedule(memoryID: extra.id, place: try self.postOffice())
+        }
+        // Moving an existing place is not a new place.
+        _ = try await coordinator.schedule(memoryID: first.id, place: try postOffice(onArrival: false))
+        pendingIDs = await Set(center.pending.keys)
+        XCTAssertEqual(pendingIDs.count, NoteReminderLimits.maxPlaces)
+    }
+
+    /// A database written by the previous version (v3: time reminders only) keeps its reminders.
+    func testUpgradeFromTimeOnlyTableKeepsReminders() async throws {
+        let path = FileManager.default.temporaryDirectory.appendingPathComponent("doddy-\(UUID()).sqlite").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        let memoryID = UUID(), reminderID = UUID()
+        do {
+            let queue = try DatabaseQueue(path: path)
+            try DoddyDatabase.migrator.migrate(queue, upTo: "v3_note_reminders")
+            try await queue.write { db in
+                try db.execute(sql: """
+                    INSERT INTO memories (id, raw_text, current_text, source, captured_at_ms, search_text)
+                    VALUES (?, 'Old note', 'Old note', 'explicit_text', 1791630120000, 'old note');
+                    INSERT INTO note_reminders (id, memory_id, fire_at_ms, time_zone_id, created_at_ms)
+                    VALUES (?, ?, 1791702000000, 'Europe/Warsaw', 1791630120000);
+                    """, arguments: [memoryID.uuidString, reminderID.uuidString, memoryID.uuidString])
+            }
+        }
+        let upgraded = Repo(try DoddyDatabase(path: path))
+        let stored = try await upgraded.allReminders()
+        XCTAssertEqual(stored, [MemoryReminder(
+            id: reminderID, memoryID: memoryID, fireAt: Date(timeIntervalSince1970: 1_791_702_000),
+            timeZoneID: "Europe/Warsaw", createdAt: Date(timeIntervalSince1970: 1_791_630_120))])
+
+        // The rebuilt table still enforces one reminder per note and cascades on delete.
+        let place = try postOffice()
+        let moved = try await upgraded.reminders.upsertReminder(MemoryReminder(
+            id: UUID(), memoryID: memoryID, trigger: .place(place), createdAt: Date(timeIntervalSince1970: 1_791_630_200)))
+        let afterMove = try await upgraded.allReminders()
+        XCTAssertEqual(afterMove, [moved])
+        try await upgraded.delete(id: memoryID)
+        let afterDelete = try await upgraded.reminderCount()
+        XCTAssertEqual(afterDelete, 0)
+    }
+
     private func assertThrows(
         _ expected: NoteReminderError, _ body: () async throws -> Void, file: StaticString = #filePath, line: UInt = #line
     ) async {
@@ -250,11 +356,13 @@ final class NoteReminderCoordinatorTests: XCTestCase {
 private actor FakeCenter: NoteNotificationScheduling {
     private(set) var pending: [String: NoteReminderNotification] = [:]
     private var auth: NotificationAuthorization
+    private var location: LocationReadiness = .ready
     private var dropsRequests = false
 
     init(auth: NotificationAuthorization) { self.auth = auth }
 
     func setAuth(_ value: NotificationAuthorization) { auth = value }
+    func setLocation(_ value: LocationReadiness) { location = value }
     func setDropsRequests(_ value: Bool) { dropsRequests = value }
     func injectOrphan(_ id: String) {
         let stray = MemoryReminder(
@@ -265,6 +373,7 @@ private actor FakeCenter: NoteNotificationScheduling {
 
     func authorization() async -> NotificationAuthorization { auth }
     func requestAuthorization() async -> NotificationAuthorization { auth }
+    func locationReadiness() async -> LocationReadiness { location }
     func add(_ notification: NoteReminderNotification) async throws {
         guard auth == .allowed else { throw NoteReminderError.notScheduled }
         if !dropsRequests { pending[notification.identifier] = notification }

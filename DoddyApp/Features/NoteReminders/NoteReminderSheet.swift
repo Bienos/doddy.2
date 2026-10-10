@@ -1,8 +1,8 @@
 import DoddyCore
 import SwiftUI
 
-/// "When should I bring this back?" Nothing is stored until Set reminder; the first time
-/// notifications are undecided, a short explainer comes before the iOS prompt.
+/// "When should I bring this back?" At a time, or at a place (ADR-196). Nothing is stored until
+/// Set reminder; the first time a permission is undecided, a short explainer comes before the iOS prompt.
 struct NoteReminderSheet: View {
     let memoryID: UUID
 
@@ -19,6 +19,7 @@ struct NoteReminderSheet: View {
     @State private var choice: Choice = .quick(.tomorrowMorning)
     @State private var customDate = Date.now.addingTimeInterval(3600)
     @State private var showExplainer = false
+    @State private var atPlace = false
     @State private var working = false
 
     private var resolvedDate: Date {
@@ -50,10 +51,29 @@ struct NoteReminderSheet: View {
     private var chooser: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("When should I bring this back?")
+                Text(atPlace ? "Where should I bring this back?" : "When should I bring this back?")
                     .font(.title2.bold())
                     .accessibilityAddTraits(.isHeader)
 
+                Picker("Remind me", selection: $atPlace) {
+                    Text("At a time").tag(false)
+                    Text("At a place").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("reminder.mode")
+
+                if atPlace {
+                    NotePlacePicker(memoryID: memoryID) { dismiss() }
+                } else {
+                    timeChoices
+                }
+            }
+            .padding(24)
+        }
+    }
+
+    @ViewBuilder
+    private var timeChoices: some View {
                 VStack(spacing: 8) {
                     ForEach(options, id: \.pick) { option in
                         choiceRow(
@@ -90,9 +110,6 @@ struct NoteReminderSheet: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(working)
                 .accessibilityIdentifier("reminder.set")
-            }
-            .padding(24)
-        }
     }
 
     private func choiceRow(_ value: Choice, title: String, detail: String?) -> some View {
@@ -165,8 +182,10 @@ struct NoteReminderSheet: View {
 
     private func prepare() {
         options = ReminderQuickPick.options(now: .now, calendar: .autoupdatingCurrent)
-        if let existing = reminders.reminder(forMemory: memoryID), !existing.isDue(at: .now) {
-            customDate = existing.fireAt
+        if let existing = reminders.reminder(forMemory: memoryID), existing.place != nil {
+            atPlace = true
+        } else if let existing = reminders.reminder(forMemory: memoryID), let fireAt = existing.fireAt, !existing.isDue(at: .now) {
+            customDate = fireAt
             choice = .custom
         } else if let first = options.first(where: { $0.pick == .tomorrowMorning }) ?? options.first {
             choice = .quick(first.pick)

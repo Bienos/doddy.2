@@ -51,6 +51,24 @@ final class NoteReminderRulesTests: XCTestCase {
         XCTAssertEqual(ReminderFormat.zoneName("America/New_York"), "New York time")
     }
 
+    func testPlacesAreValidatedAndNeverStoreMoreThanNeeded() throws {
+        let place = try ReminderPlace(name: "  Home ", latitude: 52.23, longitude: 21.01, radiusMeters: 100, onArrival: false)
+        XCTAssertEqual(place.name, "Home")
+        for bad in [
+            { try ReminderPlace(name: "   ", latitude: 0, longitude: 0, radiusMeters: 200, onArrival: true) },
+            { try ReminderPlace(name: String(repeating: "x", count: 61), latitude: 0, longitude: 0, radiusMeters: 200, onArrival: true) },
+            { try ReminderPlace(name: "X", latitude: 91, longitude: 0, radiusMeters: 200, onArrival: true) },
+            { try ReminderPlace(name: "X", latitude: 0, longitude: -181, radiusMeters: 200, onArrival: true) },
+            { try ReminderPlace(name: "X", latitude: .nan, longitude: 0, radiusMeters: 200, onArrival: true) },
+            { try ReminderPlace(name: "X", latitude: 0, longitude: 0, radiusMeters: 50, onArrival: true) },
+        ] as [() throws -> ReminderPlace] {
+            XCTAssertThrowsError(try bad()) { XCTAssertEqual($0 as? NoteReminderError, .invalidPlace) }
+        }
+        let reminder = MemoryReminder(id: UUID(), memoryID: UUID(), trigger: .place(place), createdAt: Date(timeIntervalSince1970: 0))
+        XCTAssertTrue(reminder.wantsPendingRequest(at: .distantFuture))
+        XCTAssertEqual(ReminderFormat.short(reminder), "when you leave Home")
+    }
+
     func testNoteRemindersShipAlongsideAppleReminders() {
         XCTAssertEqual(CapabilityCatalog.m0.status(of: .noteReminders), .notImplemented(plannedMilestone: "M4a"))
         XCTAssertFalse(CapabilityCatalog.v1Voice.isAvailable(.noteReminders))

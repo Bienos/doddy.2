@@ -30,7 +30,7 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | **Memory reminder:** a saved note, at a chosen date/time | **Proposed v1** | The only notification with a user-requested purpose today |
 | Snooze of a delivered reminder | Proposed v1 (action on the notification) | Same reminder, new time, user-initiated |
 | Recurring reminders ("every Monday") | Deferred | Needs evidence of demand; adds rule editing and 64-request pressure |
-| Location-based ("when I get home") | Deferred | Needs location permission; separate privacy review |
+| Location-based ("when I get home") | **Built (ADR-196)** | See "Place reminders" below |
 | Time Sensitive interruption level | Deferred, opt-in only | Breaks through Focus; must be the user's choice per reminder |
 | Voice-session Live Activity / Dynamic Island | Separate track (V3) | Not a notification; see `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` |
 | Voice agent proposing a reminder | Later | Agent may *propose*; the same on-screen sheet confirms (tool contract in `docs/architecture/TOOLS_AND_ACTIONS.md`) |
@@ -95,6 +95,18 @@ Reminders whose time has passed and that are not Done appear at the top of Home 
 ### 7. Editing and deleting a note
 - Editing the note's text: if text is shown in notifications, the pending request is replaced with the new text.
 - Deleting a note: confirmation adds *"Its reminder for Mon 12 Oct, 09:00 will be cancelled too."*; the pending request is removed in the same operation. **Delete all** also removes all pending and delivered Doddy notifications.
+
+## Place reminders (ADR-196)
+
+Owner instruction 2026-10-10: "build location reminders next". A note reminder fires **at a time or at a place**, never both.
+
+- **Set:** in the same sheet, **At a time | At a place**. Pick the place with **Use where I am now** (one position, accurate to 150 m, read only after the tap) or **Search for a place** (Apple Maps). Then: name it (default "Here", or the search result's name), **When I arrive / When I leave**, and how close: **100 / 200 / 500 m** (default 200). The summary reads "When you arrive at Post office · within 200 m, each time, until you mark it Done".
+- **Fires:** iOS itself watches the circle (`UNLocationNotificationTrigger`, repeats) and shows the same private notification as time reminders ("Reminder — A note you asked to see again."; the place name is never in the notification). Long-press: **Open note**, **Done** (no "Tomorrow 09:00"). It fires on every arrival (or departure) until Done.
+- **Permissions:** notifications **and** location "While Using" with **Precise Location**. Never "Always", never background location (the guard script fails the build on either). A two-permission explainer comes first when either is undecided. There is no in-app fallback for a place, so if either permission is off, **nothing is stored** and the receipt says why with **Open Settings**.
+- **What's stored:** the place's name, latitude, longitude, radius and arrive/leave, in the same `note_reminders` row (migration `v4_note_reminder_places` rebuilds the table with CHECKs; existing time reminders are copied across). Doddy never records where the user is or goes; the one position read for "Use where I am now" becomes the place only if the user sets it.
+- **What leaves the phone:** only Apple Maps search: the typed words and, if Doddy already read a position in that sheet, roughly where the user is. Settings → Privacy and "What leaves this iPhone" say so.
+- **Limits:** 10 place reminders (iOS watches at most 20 regions per app), inside the 50 total.
+- **Not built:** a map to drag the circle (a map would load tiles from Apple; can come later), places shared between notes, "at a place between these hours", voice.
 
 ## Engineering contract (for the implementing milestone)
 

@@ -85,6 +85,11 @@ public enum DataFlow {
                 when: "Only when you ask about the weather or a fact.", isActive: true,
                 note: "ElevenLabs makes these requests for Doddy; this app doesn't contact them."),
             DataFlowRow(
+                id: "placeSearch", destination: "Apple Maps (place search)",
+                what: "The words you type to find a place, and roughly where you are if Doddy already knows.",
+                when: "Only when you search for a place for a reminder.", isActive: true,
+                note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
+            DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "Your access code.", when: "When a conversation starts.", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
@@ -120,6 +125,7 @@ public enum DataFlow {
                 ? "Remembered conversations, except the last few at the start of a conversation."
                 : "Conversations: none are remembered.",
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
+            "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }
