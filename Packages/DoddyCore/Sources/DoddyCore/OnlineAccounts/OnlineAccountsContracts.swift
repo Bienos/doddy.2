@@ -90,6 +90,29 @@ public struct PrepareResult: Codable, Equatable, Sendable {
     public let expiresAt: String
 }
 
+/// One listed email or task as data (ADR-213), for screens such as the morning brief. Metadata
+/// only: never an email preview or body, never task notes.
+public struct ResultItem: Codable, Equatable, Sendable {
+    public enum Kind: String, Codable, Sendable { case email, task }
+    public let kind: Kind
+    /// Email subject or task text.
+    public let title: String
+    /// Email sender as Gmail gives it ("Anna Demo <anna@demo.example>"); nil for tasks.
+    public let from: String?
+    /// Received time or due, as text in the user's time zone; nil when unknown.
+    public let when: String?
+    /// Todoist priority 1.
+    public let urgent: Bool
+
+    public init(kind: Kind, title: String, from: String?, when: String?, urgent: Bool) {
+        self.kind = kind
+        self.title = title
+        self.from = from
+        self.when = when
+        self.urgent = urgent
+    }
+}
+
 public struct RunResult: Codable, Equatable, Sendable {
     public let mode: ConnectedAppsMode
     public let tool: String
@@ -97,6 +120,8 @@ public struct RunResult: Codable, Equatable, Sendable {
     public let text: String
     public let count: Int
     public let truncated: Bool
+    /// check_email and list_todoist_tasks on servers from ADR-213 on; nil from older servers.
+    public let items: [ResultItem]?
     public let receipt: OnlineToolReceipt
 }
 

@@ -81,6 +81,63 @@ enum MorningBriefNotifications {
     }
 }
 
+extension MorningBriefSections {
+    /// The choices in Settings → Morning brief → In your brief.
+    static func stored(_ defaults: UserDefaults = .standard) -> MorningBriefSections {
+        func flag(_ key: String, _ fallback: Bool) -> Bool { defaults.object(forKey: key) as? Bool ?? fallback }
+        let standard = MorningBriefSections.standard
+        return MorningBriefSections(
+            events: flag(PreferenceKey.morningBriefEvents, standard.events),
+            reminders: flag(PreferenceKey.morningBriefReminders, standard.reminders),
+            noteReminders: flag(PreferenceKey.morningBriefNoteReminders, standard.noteReminders),
+            news: flag(PreferenceKey.morningBriefNews, standard.news),
+            todoist: flag(PreferenceKey.morningBriefTodoist, standard.todoist),
+            gmail: flag(PreferenceKey.morningBriefGmail, standard.gmail),
+            gmailImportantOnly: flag(PreferenceKey.morningBriefGmailImportant, standard.gmailImportantOnly))
+    }
+}
+
+/// What the server sections returned this morning (ADR-213). Kept in memory only (email subjects
+/// and task titles are never written to disk) and fetched at most once per day and choice, unless
+/// the user taps Refresh, so opening Home again doesn't ask Doddy's server again.
+@MainActor
+final class MorningBriefOnlineCache {
+    static let shared = MorningBriefOnlineCache()
+    private var key: String?
+    private var value: BriefOnline?
+
+    func value(for key: String) -> BriefOnline? { self.key == key ? value : nil }
+
+    func store(_ value: BriefOnline, for key: String) {
+        self.key = key
+        self.value = value
+    }
+
+    func clear() {
+        key = nil
+        value = nil
+    }
+
+    /// Fetches the chosen sections, all at once. Sections not chosen are never asked for.
+    static func fetch(_ sections: MorningBriefSections, now: Date, calendar: Calendar) async -> BriefOnline {
+        let accounts = sections.todoist || sections.gmail ? OnlineAccountsClientFactory.make() : nil
+        let news = sections.news ? ServerConfig.client() : nil
+        let zone = calendar.timeZone.identifier
+        async let todoist: BriefFetch<BriefOnlineList> = sections.todoist
+            ? MorningBriefFetcher.todoist(accounts, timeZone: zone) : .notIncluded
+        async let gmail: BriefFetch<BriefOnlineList> = sections.gmail
+            ? MorningBriefFetcher.gmail(accounts, importantOnly: sections.gmailImportantOnly, timeZone: zone) : .notIncluded
+        async let digest = newsSection(sections.news, client: news, now: now, calendar: calendar)
+        return BriefOnline(news: await digest, todoist: await todoist, gmail: await gmail)
+    }
+
+    private static func newsSection(_ chosen: Bool, client: DoddyServerClient?, now: Date, calendar: Calendar) async -> BriefFetch<[NewsDigest.Item]> {
+        guard chosen else { return .notIncluded }
+        guard let client else { return .unavailable("Doddy's server for daily news isn't set up.") }
+        return await MorningBriefFetcher.news({ try await client.newsDigests() }, now: now, calendar: calendar)
+    }
+}
+
 /// A tap on the brief's notification opens Home.
 @MainActor
 @Observable

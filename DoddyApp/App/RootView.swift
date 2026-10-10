@@ -57,6 +57,14 @@ enum PreferenceKey {
     static let morningBriefHour = "morningBrief.hour"
     static let morningBriefMinute = "morningBrief.minute"
     static let morningBriefClosedDay = "morningBrief.closedDay"
+    /// What's in the brief (ADR-213). On-iPhone sections default on; server ones default off.
+    static let morningBriefEvents = "morningBrief.events"
+    static let morningBriefReminders = "morningBrief.reminders"
+    static let morningBriefNoteReminders = "morningBrief.noteReminders"
+    static let morningBriefNews = "morningBrief.news"
+    static let morningBriefTodoist = "morningBrief.todoist"
+    static let morningBriefGmail = "morningBrief.gmail"
+    static let morningBriefGmailImportant = "morningBrief.gmailImportant"
 }
 
 enum AppTab: Hashable {

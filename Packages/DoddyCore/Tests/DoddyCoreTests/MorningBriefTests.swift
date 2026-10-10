@@ -76,8 +76,8 @@ final class MorningBriefTests: XCTestCase {
     func testMoreThanTheCardShowsIsCountedAndNamedUpToThree() {
         let reminders = (1...7).map { ReminderSummary(id: "r\($0)", title: "Task \($0)", due: at(9 + $0), dueHasTime: true) }
         let result = brief(.agenda(agenda([], reminders), calendarRead: false, remindersRead: true))
-        XCTAssertEqual(result.lines[1].text, "7 reminders due: Task 1, Task 2 and Task 3, and 4 more.")
-        XCTAssertEqual(result.lines[2].text, "Calendar is off, so events aren't in this brief.")
+        XCTAssertEqual(result.lines[1].text, "Calendar is off, so events aren't in this brief.", "in the events line's place")
+        XCTAssertEqual(result.lines[2].text, "7 reminders due: Task 1, Task 2 and Task 3, and 4 more.")
     }
 
     func testNotConnectedAndPausedNeverReadOrGuess() {

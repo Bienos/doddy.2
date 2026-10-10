@@ -7,6 +7,14 @@ struct MorningBriefSettingsSection: View {
     @AppStorage(PreferenceKey.morningBriefOn) private var isOn = false
     @AppStorage(PreferenceKey.morningBriefHour) private var hour = MorningBriefSchedule.defaultHour
     @AppStorage(PreferenceKey.morningBriefMinute) private var minute = MorningBriefSchedule.defaultMinute
+    // In your brief (ADR-213): what's on the iPhone is in by default; server sections are chosen.
+    @AppStorage(PreferenceKey.morningBriefEvents) private var events = MorningBriefSections.standard.events
+    @AppStorage(PreferenceKey.morningBriefReminders) private var reminders = MorningBriefSections.standard.reminders
+    @AppStorage(PreferenceKey.morningBriefNoteReminders) private var noteReminders = MorningBriefSections.standard.noteReminders
+    @AppStorage(PreferenceKey.morningBriefNews) private var news = MorningBriefSections.standard.news
+    @AppStorage(PreferenceKey.morningBriefTodoist) private var todoist = MorningBriefSections.standard.todoist
+    @AppStorage(PreferenceKey.morningBriefGmail) private var gmail = MorningBriefSections.standard.gmail
+    @AppStorage(PreferenceKey.morningBriefGmailImportant) private var gmailImportant = MorningBriefSections.standard.gmailImportantOnly
     @State private var status: String?
     @State private var isWorking = false
 
@@ -27,6 +35,36 @@ struct MorningBriefSettingsSection: View {
     }
 
     var body: some View {
+        mainSection
+        if isOn { contentsSection }
+    }
+
+    private var contentsSection: some View {
+        Section {
+            Toggle("Events left today", isOn: $events)
+                .accessibilityIdentifier("settings.brief.events")
+            Toggle("Reminders due", isOn: $reminders)
+                .accessibilityIdentifier("settings.brief.reminders")
+            Toggle("Doddy's note reminders", isOn: $noteReminders)
+                .accessibilityIdentifier("settings.brief.noteReminders")
+            Toggle("Today's daily news", isOn: $news)
+                .accessibilityIdentifier("settings.brief.news")
+            Toggle("Todoist tasks for today", isOn: $todoist)
+                .accessibilityIdentifier("settings.brief.todoist")
+            Toggle("Unread Gmail from the last day", isOn: $gmail)
+                .accessibilityIdentifier("settings.brief.gmail")
+            if gmail {
+                Toggle("Only mail Gmail marks important", isOn: $gmailImportant)
+                    .accessibilityIdentifier("settings.brief.gmailImportant")
+            }
+        } header: {
+            Text("In your morning brief")
+        } footer: {
+            Text("Events and reminders are read on this iPhone and need Calendar and Reminders on in Connections. News, Todoist and Gmail are fetched through Doddy's server when the brief is on Home, at most once a morning unless you tap Refresh, and kept only until the app closes: up to 3 stories from your daily news digest (set up in Daily news), Todoist tasks due today or earlier, and for Gmail only the sender and subject of up to 5 unread emails, never the message. Todoist and Gmail need the account connected and \"List my tasks\" or \"Check my email\" switched on in Online accounts; each check shows there like any other.")
+        }
+    }
+
+    private var mainSection: some View {
         Section {
             Toggle("Morning brief", isOn: $isOn)
                 .accessibilityIdentifier("settings.morningBrief")

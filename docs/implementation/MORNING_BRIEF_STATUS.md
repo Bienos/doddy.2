@@ -16,8 +16,9 @@ Date: 2026-10-10. Owner request: "build the morning brief next". Decision: `DECI
 - **Doddy's note reminders:** time reminders that fire later today, with the note's current words. Place reminders
   have no time, so they are left out.
 - **Name:** the nickname from Doddy's personality settings, else the approved name from About you, else none.
-- **Not included** (each would need its own decision): weather (the app has no weather source of its own), the
-  daily news digest (server), Todoist or Gmail (cloud reads).
+- **Daily news, Todoist, Gmail** (ADR-213): only when chosen under Settings → Morning brief → In your morning brief.
+  See "Server sections" below.
+- **Not included:** weather (the app has no weather source of its own).
 
 ## Wording rules (`Packages/DoddyCore/Sources/DoddyCore/MorningBrief.swift`)
 Counts, titles and times only. Up to 3 items named per line, then "and N more". Old reminders are "from an earlier
@@ -49,3 +50,34 @@ during a voice conversation and stops when Doddy leaves the screen. UI-test laun
 App compile of the new files (UserNotifications, AVFoundation, SwiftUI); that the repeating notification fires at
 the local time and the tap opens Home; the read-back on a real device; read aloud; the Today card after the
 refactor. Checklist B1–B7 in `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`.
+
+## Server sections and choosing what's in it (ADR-213)
+| Choice (Settings → Morning brief → In your morning brief) | Default | Where it comes from |
+|---|---|---|
+| Events left today, Reminders due | On | Calendar and Reminders on this iPhone (not read at all when both are off) |
+| Doddy's note reminders | On | This iPhone |
+| Today's daily news | Off | Today's newest digest with stories from the messaging server; up to 3 stories with source and a link that opens only when tapped |
+| Todoist tasks for today | Off | `list_todoist_tasks` (today and overdue) through the Doddy server |
+| Unread Gmail from the last day (+ "Only mail Gmail marks important") | Off | `check_email` (`in:inbox is:unread newer_than:1d`, max 5) through the Doddy server; **sender name and subject only** |
+
+- Same reads the voice agent can make: the tool's switch in Online accounts, the connection, limits and a server
+  receipt all apply. Read only, no approvals, never retried by the brief.
+- The backend now also returns the listed emails and tasks as data (`RunResult.items`, no email previews), so the
+  app never parses text written for the voice agent. An older server sends none: the brief says it can't list them.
+- Fetched when the brief shows, all chosen sections at once, **at most once per day and choice** unless the user taps
+  **Refresh**; kept in memory only and cleared by Close for today.
+- Every section that can't be read says why in one line (not set up, switched off, not connected, couldn't be
+  reached). Demo results from a test server start "Demo data, not your account:".
+
+### Verified (Linux)
+- Backend: `npm run typecheck`; `npm test` 123 pass (new: items for email and tasks, no previews, empty list, none
+  for other tools). `contracts/online-accounts/run-result-email.json` gained `items` (only that change kept; the
+  generator's fresh random ids were not committed).
+- `scripts/ci.sh --core-only`: PASS for core-only scope; 439 DoddyCore package tests (429 before), 123 backend tests.
+- DoddyCore: `MorningBriefOnlineTests` (10): defaults, left-out sections leave no line or notice, Todoist and Gmail
+  wording, sender names, demo label, unavailable/failed, news lines with links, today's newest digest only, exact
+  read arguments (no approvals), error mapping, older server without items; the email fixture decodes with items.
+- The app's cache and fetch code type-checks in Swift 6 with stand-ins for the two server-settings helpers.
+
+### Not verified
+Card and Settings compile; real Todoist, Gmail and news against a deployed server. Checklist B8–B11.

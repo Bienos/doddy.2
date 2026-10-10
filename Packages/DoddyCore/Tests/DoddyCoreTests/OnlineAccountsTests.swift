@@ -57,6 +57,9 @@ final class OnlineAccountsContractTests: XCTestCase {
         XCTAssertEqual(email.mode, .mock)
         XCTAssertEqual(email.receipt.operation, .read)
         XCTAssertTrue(VoiceToolReply.cloudResult(email).hasPrefix("DEMO DATA"), "demo data is never presented as the user's")
+        XCTAssertEqual(email.items?.map(\.title), ["Lunch on Friday?", "Your statement is ready"], "ADR-213 items decode")
+        XCTAssertEqual(email.items?.first?.kind, .email)
+        XCTAssertNil(try decode(RunResult.self, "run-result-draft").items, "older or other results have no items")
 
         let web = try decode(RunResult.self, "run-result-web-search")
         XCTAssertEqual(web.receipt.toolkit, "websearch")

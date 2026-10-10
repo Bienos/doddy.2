@@ -96,7 +96,7 @@ public enum DataFlow {
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Notion, Todoist via Composio)",
                 what: "What you ask for: a date, a search word, or the text of a draft or task you confirm. Never your saved notes.",
-                when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
+                when: "When you use Connected Apps, when Doddy uses an online-account tool you switched on, or when your morning brief includes Todoist or Gmail.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet
                     ? "No Doddy server is set, so nothing goes there."
@@ -128,7 +128,7 @@ public enum DataFlow {
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
             "Find by meaning: Apple's language model works it out from your notes on this iPhone.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
-            "Morning brief: put together and read aloud on this iPhone.",
+            "Morning brief: put together and read aloud on this iPhone. Daily news, Todoist and Gmail come through your Doddy servers only if you add them to it.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }

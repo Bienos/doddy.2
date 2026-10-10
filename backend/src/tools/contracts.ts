@@ -88,6 +88,25 @@ export const PrepareResultSchema = z
   .strict();
 export type PrepareResult = z.infer<typeof PrepareResultSchema>;
 
+/**
+ * One listed email or task, for screens such as the morning brief (ADR-213). Metadata only:
+ * never an email preview or body, never task notes.
+ */
+export const ResultItemSchema = z
+  .object({
+    kind: z.enum(["email", "task"]),
+    /** Email subject or task text. */
+    title: z.string(),
+    /** Email sender as Gmail gives it; null for tasks. */
+    from: z.string().nullable(),
+    /** Email received time or task due, in the user's time zone, as text; null when unknown. */
+    when: z.string().nullable(),
+    /** Todoist priority 1; always false for email. */
+    urgent: z.boolean(),
+  })
+  .strict();
+export type ResultItem = z.infer<typeof ResultItemSchema>;
+
 export const RunResultSchema = z
   .object({
     mode: Mode,
@@ -96,6 +115,8 @@ export const RunResultSchema = z
     text: z.string(),
     count: z.number().int().min(0),
     truncated: z.boolean(),
+    /** check_email and list_todoist_tasks only: the same items as `text`, without previews. */
+    items: z.array(ResultItemSchema).optional(),
     receipt: ToolReceiptSchema,
   })
   .strict();

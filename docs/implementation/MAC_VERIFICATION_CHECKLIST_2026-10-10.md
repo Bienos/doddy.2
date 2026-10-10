@@ -80,6 +80,10 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | B5 | Close for today; relaunch; change the time to later today | The brief stays gone today and comes back tomorrow. Status updates and iOS lists the new time (one notification only) |
 | B6 | Pause all connections; Calendar off; notifications refused in iOS | The brief says what it couldn't read; never guesses. Refused notifications: Settings says so and the brief still shows on Home |
 | B7 | Turn the brief off | Status "Off. No morning notification." and iOS no longer lists it; timers, nudges and note reminders are still there |
+| B8 | Settings → Morning brief → In your morning brief: turn off Events, leave Reminders on | The brief has no events line and no "Calendar is off" note. Back on Home without leaving the app, the card already reflects it (ADR-213) |
+| B9 | With the mock Doddy server: connect Todoist and Gmail in Online accounts, switch on "List my tasks" and "Check my email", add both to the brief | Tasks and "unread emails … from Anna Demo", both starting "Demo data, not your account:". No email preview anywhere on the card. Online accounts → receipts lists both checks. Opening Home again doesn't add receipts; Refresh adds one each |
+| B10 | Add Todoist to the brief with "List my tasks" switched off; turn off Wi-Fi and tap Refresh | "Todoist isn't in this brief: … Check Settings, Online accounts." Offline: "Couldn't … just now." Nothing invented, local lines still there |
+| B11 | Add Today's daily news with a digest from today (Daily news → Send now) | "From your daily news:" and up to 3 stories with their source; tapping one opens Safari. With no digest today: "No daily news digest yet today." Yesterday's digest is never shown |
 
 ## 5. Voice (needs a real conversation)
 | # | Do this | Expect |
