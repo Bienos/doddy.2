@@ -103,7 +103,7 @@ public struct VoiceStyle: Equatable, Sendable, Codable {
 
 /// Which language a voice conversation starts in. `auto` keeps the agent's language detection
 /// (it starts in English and follows the user); a fixed language is sent as the ElevenLabs
-/// `agent.language` override, which also picks that language's greeting (ADR-127).
+/// `agent.language` override, which also picks that language's greeting (ADR-132).
 public enum ConversationLanguage: String, CaseIterable, Sendable, Codable {
     case auto, english, polish
 

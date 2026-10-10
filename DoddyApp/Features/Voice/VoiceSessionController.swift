@@ -164,7 +164,7 @@ final class VoiceSessionController {
         if let tts = VoiceStyle.stored().override {
             config.ttsOverrides = TTSOverrides(voiceId: tts.voiceID, stability: tts.stability, speed: tts.speed)
         }
-        // Starting language (ADR-127): only sent when the user picked one; needs the agent to
+        // Starting language (ADR-132): only sent when the user picked one; needs the agent to
         // allow the `agent.language` override. Auto keeps the agent's own language detection.
         if let code = ConversationLanguage.stored().overrideCode, let language = Language(rawValue: code) {
             config.agentOverrides = AgentOverrides(language: language)

@@ -53,7 +53,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-  # Everything except the iOS build, on Linux (ADR-129): pack check, guards, agent spec, Swift
+  # Everything except the iOS build, on Linux (ADR-137): pack check, guards, agent spec, Swift
   # package tests, token server, backend and gateway tests. Cheaper than the macOS job and gives
   # every pull request a real signal even when no hosted Mac is available.
   core:

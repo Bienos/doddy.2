@@ -6,7 +6,7 @@ import Foundation
 /// app's process (the app is alive because it is in a conversation with background audio),
 /// where `VoiceSessionController` registers these handlers. The widget extension has its own,
 /// separate copy of this object whose handlers stay nil, so an intent performed there does
-/// nothing (ADR-128). Both intents therefore pin `allowedExecutionTargets` to `.main`.
+/// nothing (ADR-131). Both intents therefore pin `allowedExecutionTargets` to `.main`.
 @MainActor
 final class VoiceActivityActions {
     static let shared = VoiceActivityActions()
@@ -22,7 +22,7 @@ struct EndDoddyConversationIntent: LiveActivityIntent {
 
     #if compiler(>=6.4)
     /// iOS 27 performs an intent in "any available target" by default, and this type is compiled
-    /// into the widget extension too (the buttons need it). Only the app has the handlers (ADR-128).
+    /// into the widget extension too (the buttons need it). Only the app has the handlers (ADR-131).
     @available(iOS 27.0, *)
     static var allowedExecutionTargets: IntentExecutionTargets { .main }
     #endif
@@ -50,7 +50,7 @@ struct ToggleDoddyMuteIntent: LiveActivityIntent {
     static let isDiscoverable = false
 
     #if compiler(>=6.4)
-    /// See `EndDoddyConversationIntent.allowedExecutionTargets` (ADR-128).
+    /// See `EndDoddyConversationIntent.allowedExecutionTargets` (ADR-131).
     @available(iOS 27.0, *)
     static var allowedExecutionTargets: IntentExecutionTargets { .main }
     #endif
