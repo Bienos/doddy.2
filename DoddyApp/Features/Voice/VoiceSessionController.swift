@@ -11,6 +11,7 @@ import UIKit
 /// something, or opens another app waits for the user's tap, and Doddy never sends a message.
 /// At start the app hands the agent the saved notes and the last few conversations (dynamic
 /// variables); at the end the transcript lines are kept locally in `ConversationLogStore`.
+/// Every tool call and its verified result is recorded in "What Doddy did" (`ActivityLogStore`).
 @MainActor
 @Observable
 final class VoiceSessionController {
@@ -81,6 +82,9 @@ final class VoiceSessionController {
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
+    private let activity: ActivityLogStore
+    /// What each open tool call asked for, until its reply is sent and logged.
+    private var asked: [String: ActivityRequest] = [:]
     private let island = VoiceLiveActivity()
     private let devices = DeviceConnections()
     private var conversation: Conversation?
@@ -88,9 +92,10 @@ final class VoiceSessionController {
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
 
-    init(store: MemoryStore, logs: ConversationLogStore = .shared) {
+    init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
         self.store = store
         self.logs = logs
+        self.activity = activity
     }
 
     var isLive: Bool {
@@ -242,6 +247,7 @@ final class VoiceSessionController {
     /// conversation can continue from it. Nothing is kept when there were no lines or when the
     /// user switched "Remember recent conversations" off.
     private func keepLog() {
+        logUnanswered()
         guard let startedAt else { return }
         self.startedAt = nil
         let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
@@ -408,11 +414,18 @@ final class VoiceSessionController {
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
+        let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
+        asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
+        // Settings → Pause all: no other app or account is used; notes still work.
+        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
+            await reply(call.toolCallId, ConnectionPause.reply)
+            return
+        }
         if let connection = VoiceConnection.serving(call.toolName), !isOn(connection) {
             await notConnected(call.toolCallId, connection)
             return
         }
-        switch VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData) {
+        switch request {
         case .searchMemories(let query):
             do {
                 let outcome = try await store.recall(query)
@@ -604,7 +617,21 @@ final class VoiceSessionController {
     }
 
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false) async {
+        if let request = asked.removeValue(forKey: toolCallID) {
+            activity.append(ActivityEntry(request: request, reply: text, at: Date()))
+        }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
+    }
+
+    /// Requests still waiting on a card when the conversation ends: nothing happened.
+    private func logUnanswered() {
+        for request in asked.values {
+            var entry = ActivityEntry(request: request, reply: "", at: Date())
+            entry.outcome = .notDone
+            entry.note = "The conversation ended before you answered."
+            activity.append(entry)
+        }
+        asked = [:]
     }
 
     private static func microphoneAllowed() async -> Bool {

@@ -12,6 +12,8 @@ final class TodayModel {
         case loading
         /// Calendar and Reminders are both off (or blocked by iOS).
         case notConnected
+        /// Settings → Pause all is on: nothing is read.
+        case paused
         case agenda(TodayAgenda)
     }
 
@@ -26,6 +28,10 @@ final class TodayModel {
     }
 
     func refresh(now: Date = .now, calendar: Calendar = .current) async {
+        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) {
+            content = .paused
+            return
+        }
         let calendarOn = isOn(.calendar), remindersOn = isOn(.reminders)
         guard calendarOn || remindersOn else {
             content = .notConnected
@@ -104,6 +110,13 @@ struct TodayCard: View {
                 Button("Open Settings", action: openSettings)
                     .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("today.openSettings")
+            case .paused:
+                Text("Connections are paused, so Doddy isn't reading your calendar or reminders. Turn them back on in Settings, Connections.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                Button("Open Settings", action: openSettings)
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("today.openSettings.paused")
             case .agenda(let agenda):
                 agendaView(agenda)
             }

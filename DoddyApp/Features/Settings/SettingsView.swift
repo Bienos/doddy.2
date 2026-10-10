@@ -36,6 +36,13 @@ struct SettingsView: View {
     private var privacy: PrivacyDefaults { environment.privacy }
     private var router: ShortcutRouter { .shared }
     private var conversationLogs: ConversationLogStore { .shared }
+    private var activityLog: ActivityLogStore { .shared }
+    @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
+
+    private var activitySummary: String {
+        let today = activityLog.entries.filter { Calendar.current.isDateInToday($0.at) }.count
+        return activityLog.entries.isEmpty ? "Nothing yet" : "\(today) today"
+    }
 
     private var backTapStatus: String {
         switch router.setup.phase {
@@ -139,12 +146,19 @@ struct SettingsView: View {
                 }
 
                 Section("Privacy") {
+                    NavigationLink {
+                        DataFlowView()
+                    } label: {
+                        Label("What leaves this iPhone", systemImage: "arrow.up.right.circle")
+                    }
+                    .accessibilityIdentifier("settings.dataFlow")
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
                     StatusRow(title: "Network", value: privacy.networkRequestsMade ? "While talking (ElevenLabs, token server), when you use Connected Apps, and when you use Ask Doddy" : "None")
                     StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "Only while talking" : "Not used")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs (voice); OpenAI if Ask Doddy is on" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
+                    // DataFlow (What leaves this iPhone) restates this paragraph row by row; change both together.
                     Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes, your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft or task you confirm) to your Doddy server, which talks to Google, Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to your Doddy server. If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -287,6 +301,8 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Pause all connections", isOn: $pauseAllConnections)
+                        .accessibilityIdentifier("settings.pauseAll")
                     NavigationLink {
                         ConnectionsView()
                     } label: {
@@ -295,10 +311,18 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.connections")
                     // Connections uses its own controller; re-read when coming back from it.
                     .onAppear { Task { await connections.refresh() } }
+                    NavigationLink {
+                        ActivityView()
+                    } label: {
+                        StatusRow(title: "What Doddy did", value: activitySummary)
+                    }
+                    .accessibilityIdentifier("settings.activity")
                 } header: {
                     Text("Connections")
                 } footer: {
-                    Text("Each one starts off. Turning one on asks iPhone for permission first.")
+                    Text(pauseAllConnections
+                        ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
+                        : "Each one starts off. Turning one on asks iPhone for permission first.")
                 }
 
                 Section("Ask Doddy (typed questions)") {
@@ -400,6 +424,7 @@ struct SettingsView: View {
     }
 
     private var connectionSummary: String {
+        if pauseAllConnections { return "Paused" }
         let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
         return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
     }

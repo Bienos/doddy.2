@@ -11,6 +11,7 @@ struct VoiceView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
+    @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
@@ -99,6 +100,11 @@ struct VoiceView: View {
                         if let status = controller.reminderStatus {
                             reminderStatusCard(status, controller: controller)
                                 .id("reminderStatus")
+                        }
+
+                        if pauseAllConnections {
+                            pausedCard
+                                .id("connectionsPaused")
                         }
 
                         if let needed = controller.connectionNeeded {
@@ -316,6 +322,26 @@ struct VoiceView: View {
 
     /// Shown when the agent asked for something that is switched off. One tap opens the same
     /// Connections sheet as Settings, so the terms are visible before anything turns on.
+    /// Settings → Pause all is on. One tap brings back the connections that were on before.
+    private var pausedCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Connections are paused", systemImage: "pause.circle")
+                .font(.headline)
+            Text("Doddy is using only your notes: no calendar, reminders, contacts, other apps or online accounts.")
+                .foregroundStyle(Theme.secondaryText)
+            Button {
+                pauseAllConnections = false
+            } label: {
+                Label("Turn connections back on", systemImage: "play.circle")
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("voice.resumeConnections")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+    }
+
     private func connectionCard(_ connection: VoiceConnection) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("\(connection.title) is off", systemImage: ConnectionInfo.of(connection).symbol)

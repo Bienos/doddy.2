@@ -190,6 +190,14 @@ final class DeviceConnections {
         return reminder.calendarItemIdentifier
     }
 
+    /// For "What Doddy did" → Check: is the reminder Doddy wasn't sure about in Reminders now
+    /// (found by its marker key)? Nil when Reminders access is off or the read failed, so the
+    /// screen can say so instead of guessing.
+    func reminderIsThere(key: String) async -> Bool? {
+        guard let open = try? await incompleteReminders() else { return nil }
+        return open.contains { ReminderIdempotency.key(fromMarker: $0.markerURL) == key }
+    }
+
     nonisolated private static func snapshot(_ reminder: EKReminder) -> ReminderSnapshot {
         let due = reminder.dueDateComponents.flatMap { components -> ReminderDue? in
             guard let year = components.year, let month = components.month, let day = components.day else { return nil }
