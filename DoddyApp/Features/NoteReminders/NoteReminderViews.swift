@@ -8,23 +8,33 @@ struct NoteReminderSection: View {
 
     @Environment(NoteReminderStore.self) private var reminders
     @State private var showSheet = false
+    /// Opens the sheet on "At a time" (from a blocked place reminder's receipt).
+    @State private var sheetAtTime = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let receipt = reminders.receipts[memoryID] {
-                NoteReminderReceiptView(receipt: receipt) { showSheet = true }
+                NoteReminderReceiptView(receipt: receipt, retry: { open() }, atTimeInstead: {
+                    reminders.clearReceipt(memoryID: memoryID)
+                    open(atTime: true)
+                })
             }
             if let reminder = reminders.reminder(forMemory: memoryID) {
                 card(reminder)
             } else if reminders.isAvailable {
-                Button { showSheet = true } label: {
+                Button { open() } label: {
                     HStack { Text("Remind me"); Spacer(); Image(systemName: "bell") }
                 }
                 .buttonStyle(SecondaryButtonStyle())
                 .accessibilityIdentifier("detail.remind")
             }
         }
-        .sheet(isPresented: $showSheet) { NoteReminderSheet(memoryID: memoryID) }
+        .sheet(isPresented: $showSheet) { NoteReminderSheet(memoryID: memoryID, startAtTime: sheetAtTime) }
+    }
+
+    private func open(atTime: Bool = false) {
+        sheetAtTime = atTime
+        showSheet = true
     }
 
     private func card(_ reminder: MemoryReminder) -> some View {
@@ -51,7 +61,7 @@ struct NoteReminderSection: View {
             }
             .accessibilityElement(children: .combine)
             HStack(spacing: 10) {
-                Button("Change") { showSheet = true }
+                Button("Change") { open() }
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.ink))
                 Button("Cancel reminder", role: .destructive) {
@@ -73,6 +83,8 @@ struct NoteReminderSection: View {
 struct NoteReminderReceiptView: View {
     let receipt: NoteReminderReceipt
     let retry: () -> Void
+    /// Offered when a place reminder is blocked by a setting: a time reminder needs no location.
+    var atTimeInstead: (() -> Void)? = nil
 
     @Environment(\.openURL) private var openURL
 
@@ -107,6 +119,11 @@ struct NoteReminderReceiptView: View {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
                 .frame(minHeight: 44)
+                if let atTimeInstead {
+                    Button("Remind me at a time instead", action: atTimeInstead)
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("reminder.atTimeInstead")
+                }
             case .failed(let message):
                 Label(message, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(Theme.error)

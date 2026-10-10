@@ -41,14 +41,15 @@ final class VoiceSessionController {
         /// these arguments; the approval works once and expires after two minutes.
         case cloud(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
         /// Doddy's own reminder about one saved note (ADR-198). `noteText` is the stored note the
-        /// agent's quote matched, shown exactly; nothing is set until the user taps Set reminder.
-        case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, target: NoteReminderCardTarget)
+        /// agent's quote matched, shown exactly with when it was saved; nothing is set until the
+        /// user taps Set reminder. The user can change the time, or arrive/leave, on the card.
+        case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, savedAt: Date?, target: NoteReminderCardTarget)
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
-                 .noteReminder(let id, _, _, _):
+                 .noteReminder(let id, _, _, _, _):
                 id
             }
         }
@@ -58,6 +59,24 @@ final class VoiceSessionController {
     enum NoteReminderCardTarget: Equatable {
         case time(Date, timeZoneID: String)
         case place(results: [PlaceSearchResult], onArrival: Bool)
+    }
+
+    /// The reminder the user confirmed on a note-reminder card, exactly as it was shown.
+    struct ConfirmedNoteReminder: Equatable {
+        enum When: Equatable {
+            case time(Date, timeZoneID: String)
+            case place(ReminderPlace)
+        }
+        let memoryID: UUID
+        let noteText: String
+        let when: When
+    }
+
+    /// The receipt after Set reminder on a note-reminder card (ADR-198), read back from the store.
+    /// It stays on screen after the conversation ends, like the Reminders receipt.
+    enum NoteReminderStatus: Equatable {
+        case setting(ConfirmedNoteReminder)
+        case done(ConfirmedNoteReminder, NoteReminderReceipt)
     }
 
     /// Contacts found by a lookup. Shown on screen only; the agent receives names.
@@ -86,6 +105,7 @@ final class VoiceSessionController {
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     private(set) var contactCard: ContactCard?
     private(set) var reminderStatus: ReminderStatus?
+    private(set) var noteReminderStatus: NoteReminderStatus?
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
@@ -130,6 +150,7 @@ final class VoiceSessionController {
         pendingAction = nil
         contactCard = nil
         reminderStatus = nil
+        noteReminderStatus = nil
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
@@ -351,43 +372,93 @@ final class VoiceSessionController {
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
         case .cloud(let id, let call, _, let approvalID, _):
             await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
-        case .noteReminder(let id, let memoryID, let noteText, let target):
-            await reply(id, await setNoteReminder(memoryID: memoryID, noteText: noteText, target: target))
+        case .noteReminder(let id, let memoryID, let noteText, _, let target):
+            guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
+                await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
+                return
+            }
+            let receipt = await setNoteReminder(confirmed)
+            await reply(id, Self.noteReminderReply(receipt, note: noteText))
         }
     }
 
     func selectPlace(_ index: Int) {
-        guard case .noteReminder(_, _, _, .place(let results, _)) = pendingAction, results.indices.contains(index) else { return }
+        guard case .noteReminder(_, _, _, _, .place(let results, _)) = pendingAction, results.indices.contains(index) else { return }
         selectedPlaceIndex = index
     }
 
-    /// Sets the reminder through the same store as the note screen, then tells the agent only what
-    /// the store verified (a scheduled request, Doddy-only, or why nothing was set).
-    private func setNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) async -> String {
-        guard let reminders = store.noteReminders, reminders.isAvailable else {
-            return VoiceToolReply.noteReminderFailed("Reminders on notes aren't available on this iPhone right now.")
-        }
-        // The user just tapped Set reminder, so this is the moment to ask iOS, once.
-        if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
+    /// The user changed the time on the card. The card shows it, and Set reminder uses it.
+    func changeNoteReminderTime(_ date: Date) {
+        guard case .noteReminder(let id, let memoryID, let text, let savedAt, .time(_, let zone)) = pendingAction else { return }
+        pendingAction = .noteReminder(toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone))
+    }
+
+    /// The user switched arriving/leaving on the card (the agent may have misheard).
+    func setNoteReminderOnArrival(_ onArrival: Bool) {
+        guard case .noteReminder(let id, let memoryID, let text, let savedAt, .place(let results, _)) = pendingAction else { return }
+        pendingAction = .noteReminder(toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .place(results: results, onArrival: onArrival))
+    }
+
+    /// The card's current content, as the reminder to set.
+    private func confirmedNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) -> ConfirmedNoteReminder? {
         switch target {
         case .time(let date, let zone):
-            await reminders.set(memoryID: memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent)
+            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone))
         case .place(let results, let onArrival):
+            guard !results.isEmpty else { return nil }
             let choice = results[min(selectedPlaceIndex, results.count - 1)]
             guard let place = try? ReminderPlace(
                 name: String(choice.name.prefix(ReminderPlace.maxNameLength)),
                 latitude: choice.coordinate.latitude, longitude: choice.coordinate.longitude,
                 radiusMeters: ReminderPlace.defaultRadius, onArrival: onArrival)
-            else { return VoiceToolReply.noteReminderFailed("That place can't be used.") }
+            else { return nil }
+            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .place(place))
+        }
+    }
+
+    /// Sets the reminder through the same store as the note screen and shows the store's receipt:
+    /// a scheduled request, Doddy-only, or why nothing was set.
+    private func setNoteReminder(_ confirmed: ConfirmedNoteReminder) async -> NoteReminderReceipt {
+        guard let reminders = store.noteReminders, reminders.isAvailable else {
+            let receipt = NoteReminderReceipt.failed("Reminders on notes aren't available on this iPhone right now.")
+            noteReminderStatus = .done(confirmed, receipt)
+            return receipt
+        }
+        noteReminderStatus = .setting(confirmed)
+        // The user just tapped Set reminder, so this is the moment to ask iOS, once.
+        if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
+        switch confirmed.when {
+        case .time(let date, let zone):
+            await reminders.set(memoryID: confirmed.memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent)
+        case .place(let place):
             if reminders.locationReadiness == .notDetermined { await reminders.requestLocation() }
-            await reminders.set(memoryID: memoryID, place: place)
+            await reminders.set(memoryID: confirmed.memoryID, place: place)
         }
-        switch reminders.receipts[memoryID] {
-        case .scheduled(let reminder): return VoiceToolReply.noteReminderSet(reminder, note: noteText)
-        case .inAppOnly(let reminder): return VoiceToolReply.noteReminderInDoddyOnly(reminder, note: noteText)
-        case .failed(let message), .needsSettings(let message): return VoiceToolReply.noteReminderFailed(message)
-        case nil: return VoiceToolReply.noteReminderFailed("Doddy couldn't set the reminder.")
+        let receipt = reminders.receipts[confirmed.memoryID] ?? .failed("Doddy couldn't set the reminder.")
+        // The voice screen shows this receipt; the note screen shouldn't repeat it later.
+        reminders.clearReceipt(memoryID: confirmed.memoryID)
+        noteReminderStatus = .done(confirmed, receipt)
+        return receipt
+    }
+
+    private static func noteReminderReply(_ receipt: NoteReminderReceipt, note: String) -> String {
+        switch receipt {
+        case .scheduled(let reminder): VoiceToolReply.noteReminderSet(reminder, note: note)
+        case .inAppOnly(let reminder): VoiceToolReply.noteReminderInDoddyOnly(reminder, note: note)
+        case .failed(let message), .needsSettings(let message): VoiceToolReply.noteReminderFailed(message)
         }
+    }
+
+    /// Try again on a failed receipt: the same reminder the user confirmed, set once more on their
+    /// tap. The agent's tool call is already answered, so only the screen shows the new result.
+    func retryNoteReminder() async {
+        guard case .done(let confirmed, .failed) = noteReminderStatus else { return }
+        _ = await setNoteReminder(confirmed)
+    }
+
+    func dismissNoteReminderStatus() {
+        guard case .done = noteReminderStatus else { return }
+        noteReminderStatus = nil
     }
 
     /// The user tapped the card's decline button. Nothing changes.
@@ -403,7 +474,7 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
-        case .noteReminder(let id, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
+        case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         }
     }
 
@@ -618,7 +689,7 @@ final class VoiceSessionController {
         switch draft.target {
         case .time(let date, let zone):
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
-                                  target: .time(date, timeZoneID: zone)), toolCallID: toolCallID)
+                                  savedAt: record.capturedAt, target: .time(date, timeZoneID: zone)), toolCallID: toolCallID)
         case .place(let query, let onArrival):
             let results: [PlaceSearchResult]
             do {
@@ -633,7 +704,8 @@ final class VoiceSessionController {
             }
             selectedPlaceIndex = 0
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
-                                  target: .place(results: Array(results.prefix(5)), onArrival: onArrival)), toolCallID: toolCallID)
+                                  savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
+                    toolCallID: toolCallID)
         }
     }
 
