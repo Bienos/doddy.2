@@ -1,6 +1,6 @@
 # The opening: design preview v0.1
 
-Date: 10 Oct 2026. Status: **design study of a built timeline.** The app's opening (ADR-210, `docs/implementation/OPENING_SCENE_STATUS.md`) is SwiftUI; this page redraws the same timeline in a browser so the cartoon can be looked at before a Mac build.
+Date: 10 Oct 2026. Status: **design study of a built timeline.** The app's opening (ADR-225, `docs/implementation/OPENING_SCENE_STATUS.md`) is SwiftUI; this page redraws the same timeline in a browser so the cartoon can be looked at before a Mac build.
 
 Open `index.html` in a browser. It is self-contained except for the listening artwork, which it loads from `DoddyApp/Resources/Assets.xcassets/UploadedDoddy_Listening.imageset/art.png` (some browsers block that for `file://` pages; serve the repository root with any static server if the ready pose is missing). The four basketball SVGs from `design/interface-v1.2/assets/` are inlined. No fonts are bundled.
 

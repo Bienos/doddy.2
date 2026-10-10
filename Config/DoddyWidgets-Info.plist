@@ -2,10 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Partial Info.plist for the DoddyWidgets extension (merged with the generated keys).
-  The extension only draws the voice conversation's Live Activity.
+  The extension draws the voice conversation's Live Activity, the controls, and the Home and
+  Lock Screen widgets, which only read the snapshot the app writes (ADR-219).
 -->
 <plist version="1.0">
 <dict>
+	<!-- Widgets' shared folder (ADR-219); only works when the build is signed with the App Group. -->
+	<key>DoddyAppGroup</key>
+	<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

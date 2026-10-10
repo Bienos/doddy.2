@@ -1,6 +1,6 @@
 import AVFAudio
 
-/// Whether iOS refuses Doddy the microphone right now. Read by the opening (ADR-210) so a
+/// Whether iOS refuses Doddy the microphone right now. Read by the opening (ADR-225) so a
 /// conversation never opens by itself straight into "Microphone is off". A conversation that
 /// does start still asks iOS itself (`VoiceSessionController.microphoneAllowed`).
 @MainActor

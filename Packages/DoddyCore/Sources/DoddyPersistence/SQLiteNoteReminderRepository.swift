@@ -34,10 +34,24 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
         try await dbQueue.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM note_reminders") ?? 0 }
     }
 
+    public func isList(memoryID: UUID) async -> Bool {
+        (try? await dbQueue.read { db in
+            try String.fetchOne(db, sql: "SELECT category FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
+        }) == MemoryCategory.list.rawValue
+    }
+
     public func currentText(ofMemory memoryID: UUID) async throws -> String? {
         try await dbQueue.read { db in
-            try String.fetchOne(
-                db, sql: "SELECT current_text FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
+            guard let row = try Row.fetchOne(
+                db, sql: "SELECT current_text, category FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
+            else { return nil }
+            let text: String = row["current_text"]
+            // A list's reminder shows what is still open (ADR-216), rewritten when the list changes.
+            guard (row["category"] as String) == MemoryCategory.list.rawValue else { return text }
+            let open = try String.fetchAll(
+                db, sql: "SELECT text FROM list_items WHERE list_id = ? AND done_at_ms IS NULL ORDER BY position",
+                arguments: [memoryID.uuidString])
+            return open.isEmpty ? "\(text): nothing left" : "\(text): \(open.joined(separator: ", "))"
         }
     }
 
@@ -58,12 +72,17 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
                     "place", nil, nil, place.name, place.latitude, place.longitude, place.radiusMeters, place.onArrival,
                 ]
             }
-            arguments += [DoddyDatabase.milliseconds(reminder.createdAt)]
+            arguments += [
+                DoddyDatabase.milliseconds(reminder.createdAt), reminder.repeats?.rawValue,
+                reminder.lastDoneAt.map(DoddyDatabase.milliseconds), reminder.snoozedUntil.map(DoddyDatabase.milliseconds),
+                reminder.firstSetFor.map(DoddyDatabase.milliseconds),
+            ]
             try db.execute(
                 sql: """
                     INSERT INTO note_reminders (id, memory_id, kind, fire_at_ms, time_zone_id, place_name,
-                                                latitude, longitude, radius_m, on_arrival, created_at_ms)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                latitude, longitude, radius_m, on_arrival, created_at_ms,
+                                                repeat_rule, last_done_at_ms, snoozed_until_ms, first_set_for_ms)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                 arguments: arguments)
             guard try Self.fetchReminder(id: reminder.id, db) == reminder else {
@@ -110,7 +129,17 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
         default:
             throw MemoryStoreError.corruptRecord(idString)
         }
+        let repeats: ReminderRepeat?
+        if let raw = row["repeat_rule"] as String? {
+            guard let rule = ReminderRepeat(rawValue: raw) else { throw MemoryStoreError.corruptRecord(idString) }
+            repeats = rule
+        } else {
+            repeats = nil
+        }
+        let date = { (column: String) in (row[column] as Int64?).map(DoddyDatabase.date(milliseconds:)) }
         return MemoryReminder(
-            id: id, memoryID: memoryID, trigger: trigger, createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]))
+            id: id, memoryID: memoryID, trigger: trigger, createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]),
+            repeats: repeats, lastDoneAt: date("last_done_at_ms"), snoozedUntil: date("snoozed_until_ms"),
+            firstSetFor: date("first_set_for_ms"))
     }
 }

@@ -14,6 +14,8 @@ public enum PlanTool {
     public static let allowed: [String] = [
         VoiceToolName.saveMemory, VoiceToolName.createCalendarEvent, VoiceToolName.createReminder, VoiceToolName.setTimer,
         CloudToolName.draftEmail, CloudToolName.addTodoistTask,
+        // Adding to one of the user's lists (ADR-216): matched and read back when the step runs.
+        VoiceToolName.addToList,
     ]
 }
 
@@ -40,7 +42,11 @@ public struct PlanStep: Equatable, Sendable, Identifiable {
 
     /// "Change" edits the step in the app (ADR-205). Online-account steps can't be changed there:
     /// their preview and approval come from the server for the exact arguments.
-    public var canChange: Bool { cloudCall == nil }
+    /// A list step isn't changed on the card either: its list is matched when it runs.
+    public var canChange: Bool {
+        if case .addToList = request { return false }
+        return cloudCall == nil
+    }
 
     /// What the step does, for the confirm button ("Add 2 reminders").
     var kind: Kind {
@@ -49,11 +55,12 @@ public struct PlanStep: Equatable, Sendable, Identifiable {
         case .createCalendarEvent: .event
         case .setTimer: .timer
         case .cloudTool(let call): call.name == CloudToolName.draftEmail ? .email : .task
+        case .addToList: .list
         default: .reminder
         }
     }
 
-    enum Kind { case note, event, reminder, timer, email, task }
+    enum Kind { case note, event, reminder, timer, email, task, list }
 }
 
 /// Why a step can't run, decided by the app when the card is shown and again at the tap.
@@ -121,7 +128,7 @@ public enum PlanProposal {
             let data = (try? JSONSerialization.data(withJSONObject: fields)) ?? Data("{}".utf8)
             let request = VoiceToolRequest.parse(name: tool, parametersJSON: data, now: now, calendar: calendar)
             switch request {
-            case .saveMemory, .createCalendarEvent, .createReminder, .setTimer:
+            case .saveMemory, .createCalendarEvent, .createReminder, .setTimer, .addToList:
                 steps.append(PlanStep(number: number, toolName: tool, request: request))
             case .cloudTool(let call) where call.isWrite:
                 // The server validates the arguments when it prepares the step.
@@ -151,6 +158,7 @@ public enum PlanProposal {
         case .timer: return "Start \(counted("timer"))"
         case .email: return "Draft \(counted("email"))"
         case .task: return "Add \(counted("task"))"
+        case .list: return count == 1 ? "Add to the list" : "Add to \(count) lists"
         }
     }
 }

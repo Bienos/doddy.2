@@ -9,6 +9,8 @@
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
+#  - photo text reading (Vision) and the photo picker only inside DoddyApp/Features/Photos, never the
+#    camera or the whole photo library (ADR-218),
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
 #  - permission keys only for the microphone, calendar, reminders, contacts and "While Using" location,
@@ -33,6 +35,9 @@ web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
 voice_only='import AVFoundation|import AVFAudio|AVAudio|import ElevenLabs'
 connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger'
+photos_dir=DoddyApp/Features/Photos
+photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI|PhotosPicker'
+photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsset\.fetch|UIImagePickerController|AVCaptureSession|NSCameraUsageDescription|NSPhotoLibrary(Add)?UsageDescription'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
@@ -63,6 +68,12 @@ if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_
 fi
 if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$connections_dir/"; then
   echo "FAIL: calendar, contacts or location code outside $connections_dir." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$photos_only" "${dirs[@]}" | grep -v "^$photos_dir/"; then
+  echo "FAIL: photo reading or the photo picker outside $photos_dir." >&2; status=1
+fi
+if grep -RInE "$photo_library" "${dirs[@]}" project.yml Config | code_only; then
+  echo "FAIL: camera or photo library access; photo notes use Apple's picker only (ADR-218)." >&2; status=1
 fi
 if grep -RInE "$location_tracking" "${dirs[@]}" project.yml | code_only; then
   echo "FAIL: \"Always\" or background location is not allowed; place reminders use \"While Using\" only." >&2; status=1
@@ -100,5 +111,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the microphone, calendar, reminders and contacts permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport and the messaging transport, web auth only in Connected Apps, audio only in Voice, calendar, contacts and location only in Connections, no Always/background location, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport and the messaging transport, web auth only in Connected Apps, audio only in Voice, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
 exit "$status"

@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Draws the opening (`OpeningScene`, ADR-210) over the whole screen for the time since it
+/// Draws the opening (`OpeningScene`, ADR-225) over the whole screen for the time since it
 /// started: a pen sketches Doddy in, he dribbles, crouches, hops and shoots, the ball flies into
 /// the ring ("SWISH!", confetti, a shake), he pops up ready to talk, and then jumps into his
 /// place on Home while the paper fades and Home shows through. The last frame draws him

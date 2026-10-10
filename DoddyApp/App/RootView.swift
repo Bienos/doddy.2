@@ -4,16 +4,20 @@ import SwiftUI
 enum PreferenceKey {
     /// Off by default (owner decision D4): note reminders never carry the note text unless turned on.
     static let showNoteTextInNotifications = "showNoteTextInNotifications"
+    /// Memories shows Lists instead of Notes (ADR-216).
+    static let memoriesShowsLists = "memoriesShowsLists"
     static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
     /// Memories list order (`MemorySort` raw value); display only (ADR-186).
     static let memorySort = "memorySort"
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).
     static let pinnedNotes = "pinnedNotes"
+    /// Widgets show pinned notes, reminders and lists (ADR-219); on unless turned off.
+    static let widgetsShowContent = "widgetsShowContent"
     static let hideCharacterArt = "hideCharacterArt"
-    /// Settings → Appearance: the basketball opening each time the app is opened (ADR-210). On unless turned off.
+    /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
-    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-210). On unless turned off.
+    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
@@ -31,7 +35,7 @@ enum PreferenceKey {
     static let voiceChoice = "voice.choice"
     static let voiceSpeed = "voice.speed"
     static let voiceExpressiveness = "voice.expressiveness"
-    /// Settings → Voice and personality: auto, english or polish (`ConversationLanguage`).
+    /// Settings → Voice and personality: auto or one of 25 European languages (`ConversationLanguage`, ADR-212).
     static let voiceLanguage = "voice.language"
     /// What Doddy calls the user; sent with each voice conversation only when set (ADR-132).
     static let nickname = "personality.nickname"
@@ -71,6 +75,9 @@ struct RootView: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
     @State private var opening = OpeningModel()
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
+    @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
+    @AppStorage(PreferenceKey.showNoteTextInNotifications) private var showNoteText = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -108,7 +115,14 @@ struct RootView: View {
                 case .active: opening.appBecameActive(openingConditions)
                 default: break
                 }
+                if phase == .background { WidgetSync.shared.refresh() }
             }
+            // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
+            .onChange(of: store.revision) { WidgetSync.shared.refresh() }
+            .onChange(of: noteReminders.reminders) { WidgetSync.shared.refresh() }
+            .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
+            .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
+            .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -129,7 +143,7 @@ struct RootView: View {
         }
     }
 
-    /// What the opening's rules need to know right now (ADR-210). Read at decision time, so a
+    /// What the opening's rules need to know right now (ADR-225). Read at decision time, so a
     /// switch changed in Settings counts from the next opening.
     private var openingConditions: OpeningConditions {
         OpeningConditions(
@@ -148,7 +162,7 @@ struct RootView: View {
     private var tabs: some View {
         ZStack {
             tabContent
-            // The opening (ADR-210) sits over the ready app and fades away to reveal it; a tap
+            // The opening (ADR-225) sits over the ready app and fades away to reveal it; a tap
             // ends it early. It is removed from the hierarchy entirely once it is done.
             if let play = opening.play {
                 // No fade at the end: Doddy is already in Home's place, and everything else has faded.
@@ -168,6 +182,10 @@ struct RootView: View {
         .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             BackTapSetupView(model: router.setup)
+        }
+        // The morning check-in (ADR-220), from its notification or Settings.
+        .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
+            MorningCheckInView(openSettings: { selectedTab = .settings })
         }
         .sheet(item: $router.shownDraft, onDismiss: { router.showWaitingDraft() }) { draft in
             CaptureView(sharedText: draft.isSharedText ? draft.text : nil)
@@ -189,6 +207,12 @@ struct RootView: View {
         }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
+            // doddy://open/<id> from a widget opens that note or list on Home (ADR-219).
+            if let memoryID = WidgetLink.memoryID(from: url) {
+                selectedTab = .home
+                homePath = [memoryID]
+                return
+            }
             guard let link = DeepLink(url: url) else { return }
             switch link {
             case .home: selectedTab = .home
@@ -234,7 +258,9 @@ private struct UndoDeleteBar: View {
         HStack(spacing: 12) {
             Image(systemName: failed ? "exclamationmark.triangle" : "trash")
                 .foregroundStyle(failed ? Theme.error : Theme.secondaryText)
-            Text(failed ? "Couldn't bring the note back." : "Note deleted.")
+            Text(failed
+                 ? "Couldn't bring the \(deleted.record.category == .list ? "list" : "note") back."
+                 : deleted.record.category == .list ? "List deleted." : "Note deleted.")
                 .font(.subheadline)
             Spacer(minLength: 8)
             if !failed {

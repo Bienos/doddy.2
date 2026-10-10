@@ -50,6 +50,9 @@ struct PersonalityView: View {
                     ForEach(ConversationLanguage.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
                 }
                 .accessibilityIdentifier("settings.voice.language")
+                Text("Doddy follows you if you switch language while you talk.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
                 Button {
                     preview.toggle(voiceStyle)
                 } label: {
@@ -72,7 +75,7 @@ struct PersonalityView: View {
             } header: {
                 Text("Voice")
             } footer: {
-                Text("Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English and follows whichever language you speak. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak both languages; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.")
+                Text("Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.")
             }
 
             Section {
@@ -182,12 +185,10 @@ struct PersonalityView: View {
         }
     }
 
+    /// "Automatic", "English", or the language's own name with English after it: "Deutsch (German)".
     static func label(_ value: ConversationLanguage) -> String {
-        switch value {
-        case .auto: "Automatic"
-        case .english: "English"
-        case .polish: "Polish"
-        }
+        guard let native = value.nativeName, let english = value.englishName else { return "Automatic" }
+        return native == english ? native : "\(native) (\(english))"
     }
 
     static func label(_ value: SpeakingSpeed) -> String {
@@ -277,7 +278,7 @@ struct VoiceChoiceView: View {
                     row(choice)
                 }
             } footer: {
-                Text("Tap a face to hear Doddy's hello in that voice, in English and Polish. All voices speak both; Wiktor is a native Polish speaker. Your choice applies from the next conversation.")
+                Text("Tap a face to hear Doddy's hello in that voice, in English and Polish. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Your choice applies from the next conversation.")
             }
             if let problem = preview.problem {
                 Label(problem, systemImage: "exclamationmark.triangle")

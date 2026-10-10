@@ -5,6 +5,8 @@ import SwiftUI
 /// Set reminder; the first time a permission is undecided, a short explainer comes before the iOS prompt.
 struct NoteReminderSheet: View {
     let memoryID: UUID
+    /// Open on "At a time" even if the note has a place reminder (e.g. location is off).
+    var startAtTime = false
 
     @Environment(NoteReminderStore.self) private var reminders
     @Environment(\.dismiss) private var dismiss
@@ -21,6 +23,8 @@ struct NoteReminderSheet: View {
     @State private var showExplainer = false
     @State private var atPlace = false
     @State private var working = false
+    /// Never (nil), every day, weekdays, every week or every month (ADR-211).
+    @State private var repeatRule: ReminderRepeat?
 
     private var resolvedDate: Date {
         switch choice {
@@ -90,13 +94,22 @@ struct NoteReminderSheet: View {
                         displayedComponents: [.date, .hourAndMinute])
                 }
 
+                repeatChoices
+
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Image(systemName: "bell").accessibilityHidden(true)
+                    Image(systemName: repeatRule == nil ? "bell" : "repeat").accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(ReminderFormat.dateTime(resolvedDate, timeZoneID: zoneID)).font(.headline)
-                        Text("\(ReminderFormat.zoneName(zoneID)) · fires at this moment even if you travel")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.secondaryText)
+                        if let repeatRule {
+                            Text(ReminderFormat.repeatPhrase(repeatRule, anchor: resolvedDate, timeZoneID: zoneID)).font(.headline)
+                            Text(repeatDetail(repeatRule))
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                        } else {
+                            Text(ReminderFormat.dateTime(resolvedDate, timeZoneID: zoneID)).font(.headline)
+                            Text("\(ReminderFormat.zoneName(zoneID)) · fires at this moment even if you travel")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                        }
                     }
                 }
                 .padding(14)
@@ -110,6 +123,50 @@ struct NoteReminderSheet: View {
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(working)
                 .accessibilityIdentifier("reminder.set")
+    }
+
+    /// Repeat: Never, every day, weekdays, every week, every month (days 1–28 only).
+    private var repeatChoices: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Repeat").font(.headline)
+            Picker("Repeat", selection: $repeatRule) {
+                Text("Never").tag(ReminderRepeat?.none)
+                Text("Every day").tag(ReminderRepeat?.some(.daily))
+                Text("Weekdays").tag(ReminderRepeat?.some(.weekdays))
+                Text("Every week, on \(ReminderFormat.cadence(.weekly, anchor: resolvedDate, timeZoneID: zoneID).dropFirst(6))")
+                    .tag(ReminderRepeat?.some(.weekly))
+                if monthlyAllowed {
+                    Text("Every month, on the \(ReminderFormat.ordinal(Calendar.autoupdatingCurrent.component(.day, from: resolvedDate)))")
+                        .tag(ReminderRepeat?.some(.monthly))
+                }
+            }
+            .pickerStyle(.menu)
+            .accessibilityIdentifier("reminder.repeat")
+            if !monthlyAllowed {
+                Text("Every month works for days 1 to 28, so every month has the day.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .onChange(of: resolvedDate) {
+            if repeatRule == .monthly && !monthlyAllowed { repeatRule = nil }
+        }
+    }
+
+    private var monthlyAllowed: Bool {
+        ReminderSchedule.allows(.monthly, picked: resolvedDate, timeZoneID: zoneID)
+    }
+
+    /// "Warsaw time · first on Mon 12 Oct, 20:00 · uses 5 of your 50 reminders".
+    private func repeatDetail(_ rule: ReminderRepeat) -> String {
+        var parts = [ReminderFormat.zoneName(zoneID)]
+        if let first = ReminderSchedule.firstOccurrence(
+            rule, picked: resolvedDate, timeZoneID: zoneID, now: .now, lead: NoteReminderLimits.minimumLead) {
+            parts.append("first on \(ReminderFormat.dateTime(first, timeZoneID: zoneID))")
+        }
+        if rule == .weekdays { parts.append("uses 5 of your \(NoteReminderLimits.maxActive) reminders") }
+        parts.append("until you stop it")
+        return parts.joined(separator: " · ")
     }
 
     private func choiceRow(_ value: Choice, title: String, detail: String?) -> some View {
@@ -182,8 +239,13 @@ struct NoteReminderSheet: View {
 
     private func prepare() {
         options = ReminderQuickPick.options(now: .now, calendar: .autoupdatingCurrent)
-        if let existing = reminders.reminder(forMemory: memoryID), existing.place != nil {
+        if !startAtTime, let existing = reminders.reminder(forMemory: memoryID), existing.place != nil {
             atPlace = true
+        } else if let existing = reminders.reminder(forMemory: memoryID), existing.repeats != nil,
+                  let next = existing.nextFire(after: .now) {
+            repeatRule = existing.repeats
+            customDate = next
+            choice = .custom
         } else if let existing = reminders.reminder(forMemory: memoryID), let fireAt = existing.fireAt, !existing.isDue(at: .now) {
             customDate = fireAt
             choice = .custom
@@ -203,7 +265,7 @@ struct NoteReminderSheet: View {
 
     private func commit() async {
         working = true
-        await reminders.set(memoryID: memoryID, at: resolvedDate)
+        await reminders.set(memoryID: memoryID, at: resolvedDate, repeats: repeatRule)
         working = false
         dismiss()
     }

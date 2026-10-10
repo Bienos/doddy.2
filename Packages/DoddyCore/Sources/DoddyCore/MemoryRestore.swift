@@ -76,6 +76,15 @@ public enum MemoryRestore {
         return (records, envelope.exportedAtMs.map { Date(timeIntervalSince1970: Double($0) / 1000) })
     }
 
+    /// The list items in the file (ADR-216); empty for files without lists. A damaged item list
+    /// is refused, so no list comes back half-filled.
+    public static func listItems(_ data: Data) throws(MemoryRestoreError) -> [ListItem] {
+        struct Items: Decodable { let listItems: [ListItem]? }
+        guard data.count <= maxFileBytes else { throw .tooLarge(bytes: data.count, maximum: maxFileBytes) }
+        guard let items = try? JSONDecoder().decode(Items.self, from: data) else { throw .notADoddyExport }
+        return (items.listItems ?? []).filter { ListText.cleaned($0.text) != nil && $0.text.count <= ListLimits.itemLength }
+    }
+
     public static func plan(_ incoming: [MemoryRecord], existing: [MemoryRecord], exportedAt: Date?) -> MemoryRestorePlan {
         let here = Dictionary(existing.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         var toAdd: [MemoryRecord] = []
