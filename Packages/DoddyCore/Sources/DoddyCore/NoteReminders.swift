@@ -6,7 +6,7 @@ import Foundation
 // M4's Apple Reminders (`ReminderAction`): those live in the Reminders app; these stay in Doddy and
 // open the exact note. Other local notifications (timers, event nudges) and server pushes share the
 // iOS queue, so everything here touches only identifiers with `MemoryReminder.notificationPrefix`.
-// A reminder fires either at a time or at a place (ADR-194): for a place, iOS itself watches the
+// A reminder fires either at a time or at a place (ADR-196): for a place, iOS itself watches the
 // spot and shows the notification; Doddy never follows where the user goes.
 
 /// A place the user picked for a reminder. Only these numbers are stored; nothing about where the

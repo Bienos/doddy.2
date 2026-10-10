@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// "When should I bring this back?" At a time, or at a place (ADR-194). Nothing is stored until
+/// "When should I bring this back?" At a time, or at a place (ADR-196). Nothing is stored until
 /// Set reminder; the first time a permission is undecided, a short explainer comes before the iOS prompt.
 struct NoteReminderSheet: View {
     let memoryID: UUID

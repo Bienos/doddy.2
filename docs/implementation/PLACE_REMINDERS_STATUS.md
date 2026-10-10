@@ -1,4 +1,4 @@
-# Place reminders status (ADR-194)
+# Place reminders status (ADR-196)
 Date: 2026-10-10. Owner instruction: "build location reminders next". Design: `docs/design/NOTE_REMINDERS.md` → "Place reminders". Builds on note reminders (ADR-190, `M4A_NOTE_REMINDERS_STATUS.md`).
 
 ## What ships
@@ -13,7 +13,7 @@ Core: `NoteReminders.swift` (`ReminderTrigger`, `ReminderPlace`, `LocationReadin
 App: `Infrastructure/Connections/PlaceLocation.swift` (permission, one position, Apple Maps search, location trigger), `NoteReminderNotifications.swift` (place category and trigger), `Features/NoteReminders/NotePlacePicker.swift`, `NoteReminderSheet.swift`, `NoteReminderStore.swift`, `NoteReminderViews.swift`, `MemoryDetailView.swift`, `SettingsView.swift`; `project.yml` (`NSLocationWhenInUseUsageDescription`); `scripts/check_forbidden_capabilities.sh` (location code only in Connections; no "Always"/background location).
 
 ## Verified (Linux, Swift 6.2.1)
-- `scripts/ci.sh --core-only`: PASS, 340 package tests. New: place reminder scheduled, private and kept pending by reconcile; no time snooze for a place; nothing stored without notifications or precise location (each readiness case); 10-place limit and switching a note between time and place; **upgrade from a real v3 database file keeps its time reminder**, then the rebuilt table still enforces one per note and cascades; place validation; data-flow row.
+- `scripts/ci.sh --core-only`: PASS, 343 package tests (after merging the latest base). New: place reminder scheduled, private and kept pending by reconcile; no time snooze for a place; nothing stored without notifications or precise location (each readiness case); 10-place limit and switching a note between time and place; **upgrade from a real v3 database file keeps its time reminder**, then the rebuilt table still enforces one per note and cascades; place validation; data-flow row.
 - Guard: passes, and fails on probes importing CoreLocation outside Connections or calling `requestAlwaysAuthorization`.
 - `swiftc -parse` on every Swift file in the app, test, widget and shared targets.
 

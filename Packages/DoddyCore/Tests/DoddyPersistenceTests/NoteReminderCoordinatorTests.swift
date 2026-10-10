@@ -236,7 +236,7 @@ final class NoteReminderCoordinatorTests: XCTestCase {
         XCTAssertEqual(pendingIDs, ["doddy.timer.123", "doddy.nudge.event-1"])
     }
 
-    // MARK: Place reminders (ADR-194)
+    // MARK: Place reminders (ADR-196)
 
     private func postOffice(onArrival: Bool = true) throws -> ReminderPlace {
         try ReminderPlace(name: " Post office ", latitude: 52.2297, longitude: 21.0122, radiusMeters: 200, onArrival: onArrival)

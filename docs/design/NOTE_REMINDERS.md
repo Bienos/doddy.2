@@ -30,7 +30,7 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | **Memory reminder:** a saved note, at a chosen date/time | **Proposed v1** | The only notification with a user-requested purpose today |
 | Snooze of a delivered reminder | Proposed v1 (action on the notification) | Same reminder, new time, user-initiated |
 | Recurring reminders ("every Monday") | Deferred | Needs evidence of demand; adds rule editing and 64-request pressure |
-| Location-based ("when I get home") | **Built (ADR-194)** | See "Place reminders" below |
+| Location-based ("when I get home") | **Built (ADR-196)** | See "Place reminders" below |
 | Time Sensitive interruption level | Deferred, opt-in only | Breaks through Focus; must be the user's choice per reminder |
 | Voice-session Live Activity / Dynamic Island | Separate track (V3) | Not a notification; see `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` |
 | Voice agent proposing a reminder | Later | Agent may *propose*; the same on-screen sheet confirms (tool contract in `docs/architecture/TOOLS_AND_ACTIONS.md`) |
@@ -96,7 +96,7 @@ Reminders whose time has passed and that are not Done appear at the top of Home 
 - Editing the note's text: if text is shown in notifications, the pending request is replaced with the new text.
 - Deleting a note: confirmation adds *"Its reminder for Mon 12 Oct, 09:00 will be cancelled too."*; the pending request is removed in the same operation. **Delete all** also removes all pending and delivered Doddy notifications.
 
-## Place reminders (ADR-194)
+## Place reminders (ADR-196)
 
 Owner instruction 2026-10-10: "build location reminders next". A note reminder fires **at a time or at a place**, never both.
 

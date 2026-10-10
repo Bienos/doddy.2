@@ -7,7 +7,7 @@
 #  - the system authentication browser is used only by Connected Apps,
 #  - audio/ElevenLabs code only inside DoddyApp/Features/Voice,
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
-#  - location and Apple Maps search code (place reminders, ADR-194) only there too, and never
+#  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),

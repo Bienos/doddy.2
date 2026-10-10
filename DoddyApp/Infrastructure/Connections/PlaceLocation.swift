@@ -18,7 +18,7 @@ struct PlaceSearchResult: Identifiable, Equatable, Sendable {
     let coordinate: PlaceCoordinate
 }
 
-/// Location for place reminders only (ADR-194). Asks for "While Using" with Precise Location, never
+/// Location for place reminders only (ADR-196). Asks for "While Using" with Precise Location, never
 /// "Always"; reads one position when the user taps "Use where I am now"; searches Apple Maps when
 /// the user types a place. It never tracks where the user goes: iOS watches the reminder's place
 /// itself (`UNLocationNotificationTrigger`) and wakes nothing in Doddy when it fires.

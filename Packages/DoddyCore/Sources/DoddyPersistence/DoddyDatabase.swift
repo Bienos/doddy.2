@@ -96,7 +96,7 @@ public final class DoddyDatabase: Sendable {
             }
             try db.create(index: "note_reminders_fire_at", on: "note_reminders", columns: ["fire_at_ms"])
         }
-        // ADR-194: a note reminder fires at a time or at a place. SQLite can't relax NOT NULL in
+        // ADR-196: a note reminder fires at a time or at a place. SQLite can't relax NOT NULL in
         // place, so the table is rebuilt; every existing (time) reminder is copied across.
         migrator.registerMigration("v4_note_reminder_places") { db in
             try db.execute(sql: """

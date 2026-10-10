@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// "At a place" (ADR-194): pick where (here, or an Apple Maps search), name it, choose arrive or
+/// "At a place" (ADR-196): pick where (here, or an Apple Maps search), name it, choose arrive or
 /// leave and how close. Nothing is stored until Set reminder, and nothing is stored at all unless
 /// notifications and precise location are on: a place reminder has no in-app fallback.
 struct NotePlacePicker: View {

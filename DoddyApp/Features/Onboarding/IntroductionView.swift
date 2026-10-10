@@ -321,7 +321,8 @@ struct CapabilitiesSheet: View {
         NavigationStack {
             List {
                 Section {
-                    Text("I'm an AI assistant, not a person. Your notes stay on this iPhone. When we talk, your voice goes to ElevenLabs to run the conversation. I can't set reminders or use other apps yet.")
+                    Text(CapabilityIntroduction.text(for: environment.capabilities))
+                        .accessibilityIdentifier("capabilities.introduction")
                 }
                 Section("What's built") {
                     ForEach(Capability.allCases, id: \.self) { capability in

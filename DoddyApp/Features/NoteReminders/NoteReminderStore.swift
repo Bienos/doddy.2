@@ -79,7 +79,7 @@ final class NoteReminderStore {
         return locationReadiness
     }
 
-    /// Place reminder (ADR-194). Nothing is stored unless notifications and precise location are on.
+    /// Place reminder (ADR-196). Nothing is stored unless notifications and precise location are on.
     func set(memoryID: UUID, place: ReminderPlace) async {
         guard let coordinator else { return }
         do {

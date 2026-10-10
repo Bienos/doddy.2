@@ -199,7 +199,7 @@ Rules:
 ### 3.5 Honesty and disclosure copy
 
 - **AI identity** is stated in plain words at first hello and in Settings: "Doddy is an AI, not a person."
-- **Capability boundaries** are stated, not implied: "I can't set reminders or use other apps yet."
+- **Capability boundaries** are stated, not implied, and must match the build (the onboarding "What I can do" text is generated from the capability catalog): "I never send a message myself." / "I can't add reminders or use other apps in this build."
 - **Data location** is stated where it matters: "Your notes stay on this iPhone."
 - **Third-party processing** names the provider and the trigger: "During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere."
 - **Candidate status** is labelled in development builds: "Candidate art — not final."
