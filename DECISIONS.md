@@ -49,7 +49,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 029 | If the store cannot open, the app switches saving off and shows the error; it never resets or deletes the file. | Applied |
 | 030 | Export: JSON (`formatVersion` 1 envelope of schema records) and plain text, both via the share sheet. | Applied |
 | 031 | On Linux, package tests need `-Xswiftc -DSQLITE_DISABLE_SNAPSHOT` (Ubuntu SQLite lacks the snapshot API); `ci.sh`/`Makefile` add it automatically. Apple builds unaffected. | Applied |
-| 032 | Not built in M1: private/no-history session mode (PRD item 6), content-free telemetry (item 8), conflict highlighting beyond listing all matches. | Open — owner to schedule |
+| 032 | Not built in M1: private/no-history session mode (PRD item 6), content-free telemetry (item 8), conflict highlighting beyond listing all matches. | Private mode built (ADR-131); telemetry and conflict highlighting still open — owner to schedule |
 
 ## V1 voice decisions
 
@@ -232,3 +232,4 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | # | Decision | Status |
 |---|---|---|
 | 130 | Doddy's own accounts, TikTok `@doddy_mate` and Instagram `@doddy_mate` (owner request), are linked from the site footer next to the Telegram group and from a **Follow Doddy** section in Settings, under About this build. In the app they are plain SwiftUI `Link`s: iOS opens the TikTok/Instagram app or Safari, and Doddy sends nothing itself, so the privacy copy and the networking guard are unchanged. | Applied — app NOT BUILT here (no Xcode on Linux) |
+| 131 | **Private conversation** (PRD item 6): a Private toggle on the Talk screen. When it is on at the end of a conversation, nothing of it is kept on the phone (`ConversationRetention.shouldKeep`), so it never comes back as "recent conversations". It is per screen and off by default; explicit note saves still need a tap and are kept. The banner says plainly that ElevenLabs still runs the conversation and keeps its own recording (ADR-057), so "private" means on-device only. | Built — not compiled or tried on a device |

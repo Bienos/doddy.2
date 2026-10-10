@@ -43,6 +43,18 @@ struct VoiceView: View {
                         }
                     }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    if let controller {
+                        Button {
+                            controller.isPrivate.toggle()
+                        } label: {
+                            Label("Private", systemImage: controller.isPrivate ? "eye.slash.fill" : "eye.slash")
+                        }
+                        .accessibilityValue(controller.isPrivate ? "On" : "Off")
+                        .accessibilityHint("When on, this conversation isn't kept on your iPhone.")
+                        .accessibilityIdentifier("voice.private")
+                    }
+                }
             }
         }
         .foregroundStyle(Theme.ink)
@@ -83,6 +95,19 @@ struct VoiceView: View {
                             }
                         }
                         .accessibilityElement(children: .combine)
+
+                        if controller.isPrivate {
+                            Label {
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and keeps its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    .font(.footnote)
+                            } icon: {
+                                Image(systemName: "eye.slash.fill")
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+                            .accessibilityIdentifier("voice.privateBanner")
+                        }
 
                         problem(controller)
 

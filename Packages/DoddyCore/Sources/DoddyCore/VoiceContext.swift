@@ -113,3 +113,12 @@ public enum VoiceContext {
         return formatter.string(from: date)
     }
 }
+
+/// Whether a finished voice conversation is kept on the phone (PRD item 6, ADR-131). A private
+/// conversation is never kept, whatever the "Remember recent conversations" setting says, so it
+/// can't come back as context in a later conversation. Empty conversations are never kept.
+public enum ConversationRetention {
+    public static func shouldKeep(rememberRecent: Bool, isPrivate: Bool, lineCount: Int) -> Bool {
+        rememberRecent && !isPrivate && lineCount > 0
+    }
+}
