@@ -8,7 +8,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.openingScene) private var openingOn = true
-    @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = false
+    @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var connections = ConnectionController()
@@ -197,7 +197,7 @@ struct SettingsView: View {
                     StatusRow(
                         title: "Microphone",
                         value: !privacy.microphoneUsed ? "Not used"
-                            : listenOnOpen ? "Only while talking; a conversation starts when you open Doddy (your setting)"
+                            : listenOnOpen ? "Only while talking. A conversation starts when you open Doddy; turn that off under Voice"
                             : "Only while talking")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs (voice); OpenAI if Ask Doddy is on" : "Off (not built)")

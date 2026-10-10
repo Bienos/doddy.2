@@ -10,9 +10,12 @@ enum OpeningPreferences {
         defaults.object(forKey: PreferenceKey.openingScene) == nil ? true : defaults.bool(forKey: PreferenceKey.openingScene)
     }
 
-    /// "Start listening when I open Doddy": off unless the user turned it on.
+    /// "Start listening when I open Doddy": on unless the user turned it off (owner decision,
+    /// ADR-207). Must match the Settings toggle's default.
+    static let listenOnOpenDefault = true
+
     static func listenOnOpen(_ defaults: UserDefaults = .standard) -> Bool {
-        defaults.bool(forKey: PreferenceKey.listenOnOpen)
+        defaults.object(forKey: PreferenceKey.listenOnOpen) == nil ? listenOnOpenDefault : defaults.bool(forKey: PreferenceKey.listenOnOpen)
     }
 }
 

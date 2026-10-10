@@ -8,7 +8,8 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false) -> XCUIApplication {
+    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false,
+                        listen: Bool = false, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         // Overrides UserDefaults for this launch only.
         app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
@@ -16,6 +17,9 @@ final class LaunchSmokeTests: XCTestCase {
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         // The opening (ADR-207) is on by default; most tests start straight on Home.
         if !opening { app.launchArguments += ["-openingScene", "NO"] }
+        // Listening on open is on by default too; it would open a conversation over every test.
+        if !listen { app.launchArguments += ["-listenOnOpen", "NO"] }
+        app.launchArguments += extra
         app.launch()
         return app
     }
@@ -203,7 +207,7 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testOpeningPlaysOnLaunchCanBeSkippedAndNeverListensByItself() {
+    func testOpeningPlaysOnLaunchCanBeSkippedAndWithListeningOffOpensNothing() {
         let app = launch(onboardingDone: true, opening: true)
         let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
@@ -212,7 +216,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(scene.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["home.save"].isHittable, "the app is usable as soon as the opening is gone")
-        // "Start listening when I open Doddy" is off by default: no conversation, no microphone.
+        // "Start listening when I open Doddy" is switched off for this launch: no conversation, no microphone.
         XCTAssertFalse(app.navigationBars["Talk to Doddy"].exists)
         XCTAssertFalse(app.staticTexts["Listening"].exists)
         XCTAssertFalse(app.staticTexts["Connecting…"].exists)
@@ -241,8 +245,14 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testListeningOnOpenIsOffByDefaultAndSaysSo() {
-        let app = launch(onboardingDone: true)
+    func testListeningOnOpenIsOnByDefaultAndOpensTheConversation() {
+        // Default listening switch; no agent ID, so the conversation stops at "Couldn't connect"
+        // before it ever asks for the microphone or reaches ElevenLabs.
+        let app = launch(onboardingDone: true, listen: true, extra: ["-voiceAgentID", ""])
+        XCTAssertTrue(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 5), "opened by itself")
+        XCTAssertEqual(app.staticTexts["voice.status"].label, "Couldn't connect")
+        app.buttons["Close"].tap()
+
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
         let toggle = app.switches["settings.listenOnOpen"]
@@ -251,8 +261,7 @@ final class LaunchSmokeTests: XCTestCase {
             app.swipeUp()
         }
         XCTAssertTrue(toggle.exists)
-        XCTAssertEqual(toggle.value as? String, "0")
-        XCTAssertTrue(app.staticTexts["Off: nothing listens until you tap Talk to Doddy."].exists)
+        XCTAssertEqual(toggle.value as? String, "1")
     }
 
     @MainActor

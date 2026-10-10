@@ -14,8 +14,8 @@ final class OpeningPolicyTests: XCTestCase {
             voiceAvailable: voiceAvailable, microphoneDenied: microphoneDenied, somethingIsOpen: somethingIsOpen)
     }
 
-    func testDefaultsPlayTheOpeningAndNeverListenByThemselves() {
-        // The shipped defaults: opening on, listening on open off.
+    func testWithListeningOffTheOpeningPlaysAndNothingListens() {
+        // Both switches are on by default (the app's OpeningPreferences); this is listening turned off.
         let decision = OpeningPolicy.decide(conditions(listenOnOpen: false), trigger: .coldLaunch)
         XCTAssertEqual(decision, .scene(reducedMotion: false, thenListen: false))
         XCTAssertFalse(decision.listens)

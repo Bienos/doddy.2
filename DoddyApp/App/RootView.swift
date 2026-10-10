@@ -13,7 +13,7 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-207). On unless turned off.
     static let openingScene = "openingScene"
-    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-207). Off unless turned on.
+    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-207). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.

@@ -24,13 +24,13 @@ Date: 2026-10-10. Owner requests: "a very cool app opening every time … Doddy 
 | Model | `DoddyApp/Features/Opening/OpeningModel.swift` | Launch vs return, background time, loading the drawings once, Home's ready state for eight seconds, the one way the opening may open a conversation (`ShortcutRouter.startListeningOnOpen`). In the Linux compile check |
 | Scene | `DoddyApp/Features/Opening/OpeningSceneView.swift` | `TimelineView` draws `OpeningScene.frame(at:)`; Doddy as trimmed SwiftUI paths in the theme's ink and paper; ball, trail, hoop, net, burst, bubble, "Tap to skip". One VoiceOver element; one light haptic |
 | Home's ready state | `DoddyApp/Features/Home/HomeView.swift` | After the opening: the hello as the heading, `UploadedDoddy_Listening` popping in, the four actions sliding in (instant under Reduce Motion) |
-| Settings | `SettingsView` | Appearance → "Doddy's opening" (on). Voice → "Start listening when I open Doddy" (off) with a note. Privacy → the Microphone row follows the switch |
+| Settings | `SettingsView` | Appearance → "Doddy's opening" (on). Voice → "Start listening when I open Doddy" (on, owner decision) with a note. Privacy → the Microphone row follows the switch |
 | Microphone usage string | `project.yml` | Covers both the button and the switch |
-| UI tests | `DoddyUITests/LaunchSmokeTests.swift` (+ `-openingScene NO` in the other two files) | Play and skip; ends by itself and no replay on a quick return; off = Home at once; the listening switch off by default |
+| UI tests | `DoddyUITests/LaunchSmokeTests.swift` (+ `-openingScene NO -listenOnOpen NO` in the other two files) | Play and skip; ends by itself and no replay on a quick return; off = Home at once; listening on by default opens the conversation (with no agent ID, so no microphone or network) |
 | Preview | `design/opening-v0.1/index.html` | The same timeline in a browser, with the same SVGs inlined, a placeholder Home whose buttons slide in and answer taps, and review switches (quarter speed, Reduce Motion, dark, Polish) |
 
 ## What it does not do, on purpose
-- It never listens without the user's own switch. Off as shipped. On, the conversation that opens is the ordinary one and ends only when the user ends it.
+- Listening on open is on by default (owner decision, 2026-10-10). It is never hidden: the conversation that opens is the ordinary one, with the iOS microphone prompt the first time, the orange indicator, "Listening" only from real session events, and it ends only when the user ends it. The switch in Settings → Voice turns it off. It doesn't start after first-use onboarding, when iOS has refused the microphone, or on a return within 5 minutes.
 - The hello is text. Doddy's spoken greeting is the live agent's first message. To make it match, change the agent's first message in the ElevenLabs dashboard; `voice-agent/session.json` records the current one.
 - No sound effect: an audio file and AVFoundation outside `Features/Voice` are forbidden by the capability guard.
 - No new character art: the five drawings are the supplied ones. The motion is whole-drawing squash, stretch, hop and pop, quick cross-fades, and the pen effect.
@@ -50,14 +50,14 @@ The Swift toolchain was downloaded into the session for these runs (`swift-6.1-R
 ## Constitution evidence (DODDY AI Constitution V1)
 | Rule | How this slice meets it | Enforcing code | Tests |
 |---|---|---|---|
-| DOD-11 observable privacy | Listening on open is off until turned on; the usage string, Privacy row and switch note say when the microphone is on | `OpeningPolicy.decide`, `ShortcutRouter.startListeningOnOpen`, `MicrophoneAccess` | `OpeningPolicyTests`; UI `testListeningOnOpenIsOffByDefaultAndSaysSo`, `testOpeningPlaysOnLaunchCanBeSkippedAndNeverListensByItself` |
+| DOD-11 observable privacy | Listening on open is on by default by owner decision; the usage string, Privacy row and switch note say when the microphone is on, and the switch turns it off | `OpeningPolicy.decide`, `ShortcutRouter.startListeningOnOpen`, `MicrophoneAccess` | `OpeningPolicyTests`; UI `testListeningOnOpenIsOnByDefaultAndOpensTheConversation`, `testOpeningPlaysOnLaunchCanBeSkippedAndWithListeningOffOpensNothing` |
 | DOD-08 truthful status | The opening and Home's hello never say "Listening"; that word comes only from `VoiceSessionController` | `OpeningGreetingCopy` | `testEveryGreetingNamesDoddyAndNeverClaimsToListen` |
 | DOD-03 AI character | The hello says who is talking; no claimed feelings | `OpeningGreetingCopy` | same |
 | DOD-05 preferences | Tone, language and nickname from the user's settings | `OpeningGreetingCopy.render` | `testNicknameIsCleanedLikeEverywhereElse`, `testAutomaticLanguageFollowsTheIPhone` |
 | Accessibility | Still picture under Reduce Motion; none under VoiceOver or with artwork hidden; one element with a skip action; buttons never hidden under Reduce Motion | `OpeningScene.still`, `OpeningPolicy.decide`, `SlideIn` | `testReduceMotionIsAStillPictureOfDoddyReadyToTalk`, `testTheSceneGivesWayToAccessibilitySettings` |
-| Gaps | Nothing above is verified on a device. The spoken greeting is the agent's dashboard setting. | | |
+| Gaps | Nothing above is verified on a device. The spoken greeting is the agent's dashboard setting. With listening on by default the microphone opens on every opening without a tap; the constitution's `minimum_needed_permissions` reading that shipped it off was overruled by the owner, and that is recorded here rather than claimed as compliant. | | |
 
 ## Owner decisions
-1. Default of "Start listening when I open Doddy": off as shipped.
+1. Default of "Start listening when I open Doddy": decided, on (2026-10-10).
 2. Whether to change the agent's first message to match the hello.
 3. Timing (2.3 s), the replay threshold (5 minutes) and how long Home keeps the hello (8 s) are first guesses: `OpeningScene.Beat`, `OpeningPolicy.replayAfter`, `OpeningModel.readyFor`.
