@@ -6,11 +6,11 @@ run on a device.** Nothing here is verified until a person ticks it. Record the 
 and the result for each item in the table at the end.
 
 ## 0. What is already compiled
-Since ADR-200, `scripts/typecheck_app_logic.sh` compiles seven non-UI app files (`MemoryStore`,
+Since ADR-200, `scripts/typecheck_app_logic.sh` compiles eight non-UI app files (`MemoryStore`,
 `ShortcutRouter`, `ProfileStore`, `ConversationLogStore`, `AskController`, `PersonalityPreferences`,
-`PinnedNotesStorage`) against the real DoddyCore module on Linux, and they pass. Everything else in
+`PinnedNotesStorage`, `NoteReminderStore`) against the real DoddyCore module on Linux, and they pass. Everything else in
 the app (SwiftUI views, the App Intents, the widget control, anything using UIKit, AVFoundation or
-EventKit) has still never been compiled.
+EventKit, and `PlaceLocation`, which the check replaces with a stub) has still never been compiled.
 
 ## 1. Build first
 1. `xcodegen generate`, then `scripts/ci.sh` (the full run, not `--core-only`). Note the output.

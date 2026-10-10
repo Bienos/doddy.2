@@ -7,9 +7,11 @@
 # views, App Intents, widgets or anything importing UIKit, AVFoundation, EventKit and so on;
 # those still need Xcode (see docs/implementation/MAC_VERIFICATION_CHECKLIST_2026-10-10.md).
 #
-# Two stand-ins keep it honest and small: PreferenceKey is copied out of RootView.swift as it is
-# (so key names can't drift), and AppEnvironment, which imports SwiftUI, is replaced by a struct
-# with just the members these files read.
+# Three stand-ins keep it honest and small: PreferenceKey is copied out of RootView.swift as it is
+# (so key names can't drift); AppEnvironment, which imports SwiftUI, is replaced by a struct with
+# just the members these files read; and PlaceLocation, which imports CoreLocation and MapKit, is
+# replaced by a class with only the one method NoteReminderStore calls. The stand-ins are only
+# type-checked, never run, so their bodies say nothing about real location behaviour.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -35,8 +37,18 @@ struct AppEnvironment {
     let memoryRepository: any MemoryRepository
     let recallService: any RecallService
     let profileRepository: any ProfileRepository
+    let noteReminders: NoteReminderCoordinator?
     let capabilities: CapabilityCatalog
     let storageProblem: String?
+}
+SWIFT
+cat > "$work/PlaceLocationStub.swift" <<'SWIFT'
+import DoddyCore
+@MainActor
+final class PlaceLocation {
+    static let shared = PlaceLocation()
+    private init() {}
+    func requestWhenInUse() async -> LocationReadiness { .unavailable }
 }
 SWIFT
 
@@ -48,9 +60,10 @@ files=(
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Features/Ask/AskController.swift
+  DoddyApp/Features/NoteReminders/NoteReminderStore.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
