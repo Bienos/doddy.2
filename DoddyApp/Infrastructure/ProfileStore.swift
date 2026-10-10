@@ -8,7 +8,8 @@ import Observation
 @Observable
 final class ProfileStore {
     private let repository: any ProfileRepository
-    /// UI tests: start straight on Home (`-onboardingDone`, in-memory store only).
+    /// UI tests: start straight on Home (`-onboardingDone`, only with a test store: in-memory,
+    /// or the per-test `-memoryTestID` database, which is a DEBUG-only fixture).
     private let skipOnboarding: Bool
     private(set) var profile: ApprovedProfile = .empty
     private(set) var progress: OnboardingProgress?
@@ -18,7 +19,16 @@ final class ProfileStore {
 
     init(environment: AppEnvironment, arguments: [String] = ProcessInfo.processInfo.arguments) {
         repository = environment.profileRepository
-        skipOnboarding = arguments.contains("-onboardingDone") && arguments.contains("-inMemoryStore")
+        skipOnboarding = arguments.contains("-onboardingDone")
+            && (arguments.contains("-inMemoryStore") || Self.usesTestDatabase(arguments))
+    }
+
+    private static func usesTestDatabase(_ arguments: [String]) -> Bool {
+        #if DEBUG
+        return arguments.contains("-memoryTestID")
+        #else
+        return false
+        #endif
     }
 
     /// Without readable storage the onboarding is skipped: the app must stay usable, and Home

@@ -6,6 +6,7 @@ public enum Capability: String, CaseIterable, Sendable {
     case memoryStorage
     case memoryRecall
     case cloudAssistant
+    case textAssistant
     case voiceInput
     case voiceOutput
     case reminders
@@ -40,6 +41,7 @@ public struct CapabilityCatalog: Sendable {
         .memoryStorage: .notImplemented(plannedMilestone: "M1"),
         .memoryRecall: .notImplemented(plannedMilestone: "M1"),
         .cloudAssistant: .notImplemented(plannedMilestone: "M2"),
+        .textAssistant: .notImplemented(plannedMilestone: "M2"),
         .voiceInput: .notImplemented(plannedMilestone: "M3"),
         .voiceOutput: .notImplemented(plannedMilestone: "M3"),
         .reminders: .notImplemented(plannedMilestone: "M4"),
@@ -74,9 +76,21 @@ public struct CapabilityCatalog: Sendable {
         .connectedAccounts: .limited("Google Calendar read-only; Gmail, Drive, Notion, Todoist tools you switch on; needs a Doddy server"),
     ]) { _, new in new })
 
-    /// What this build ships: V2 (voice, shortcut, Back Tap guide) plus the Connected Apps foundation.
+    /// V2 (voice, shortcut, Back Tap guide) plus the Connected Apps foundation.
     public static let v2WithConnectedApps = CapabilityCatalog(statuses: v2Shortcut.statuses.merging([
         .connectedAccounts: .limited("Google Calendar read-only; Gmail, Drive, Notion, Todoist tools you switch on; needs a Doddy server"),
+    ]) { _, new in new })
+
+    /// M2: typed questions to a real model through the gateway, with checked citations.
+    /// "Available" means the code exists and its tests ran. Whether a given install can use it also
+    /// depends on a gateway address, an invite code and the user's consent (see `AssistantAvailability`).
+    public static let m2 = CapabilityCatalog(statuses: v1Voice.statuses.merging([
+        .textAssistant: .available,
+    ]) { _, new in new })
+
+    /// What this build ships: V2 with Connected Apps plus M2's typed questions (ADR-121).
+    public static let v2WithAssistant = CapabilityCatalog(statuses: v2WithConnectedApps.statuses.merging([
+        .textAssistant: .available,
     ]) { _, new in new })
 }
 

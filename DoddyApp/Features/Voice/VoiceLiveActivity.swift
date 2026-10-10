@@ -20,6 +20,8 @@ final class VoiceLiveActivity {
     private var activity: Activity<DoddyVoiceAttributes>?
     private var shown: DoddyVoiceAttributes.ContentState?
     private var heartbeat: Task<Void, Never>?
+    /// The last `finish`/`end` request, so callers can wait until iOS has it.
+    private var ending: Task<Void, Never>?
 
     /// Shows `state`, starting the activity on first use. iOS only allows starting one while the
     /// app is in the foreground, which is where every conversation starts.
@@ -43,14 +45,38 @@ final class VoiceLiveActivity {
         }
     }
 
+    /// How long the "Conversation ended" card stays on the Lock Screen. The Dynamic Island
+    /// drops an ended activity at once whatever this says.
+    static let endedCardFor: TimeInterval = 120
+
+    /// The conversation ended normally (End, Close, connection lost): the Lock Screen shows a
+    /// short "Conversation ended" card with the number of notes saved, then it goes away.
+    /// It carries no stale date: it claims nothing that can go out of date.
+    func finish(savedCount: Int) {
+        heartbeat?.cancel()
+        heartbeat = nil
+        guard let activity else { return }
+        self.activity = nil
+        shown = nil
+        let final = DoddyVoiceAttributes.ContentState(status: .ended, isMuted: false, savedCount: savedCount, endedAt: Date())
+        let removeAt = Date().addingTimeInterval(Self.endedCardFor)
+        ending = Task { await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .after(removeAt)) }
+    }
+
+    /// Waits until the last `finish`/`end` has reached iOS.
+    func settle() async {
+        await ending?.value
+    }
+
     /// Removes the island at once, so it never claims Doddy is listening after he stopped.
+    /// Used when the conversation failed or never really started.
     func end() {
         heartbeat?.cancel()
         heartbeat = nil
         guard let activity else { return }
         self.activity = nil
         shown = nil
-        Task { await activity.end(nil, dismissalPolicy: .immediate) }
+        ending = Task { await activity.end(nil, dismissalPolicy: .immediate) }
     }
 
     /// Clears activities left over from an earlier run that was killed mid-conversation.

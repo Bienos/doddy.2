@@ -1,4 +1,22 @@
-# Visual implementation decision record — candidate for owner approval
+# Visual implementation decision record
+
+## Owner-selected local memory interface — 10 October 2026
+
+The owner requested more mockups while keeping the cream/ink/orange design, then
+explicitly requested “build”. For this local native memory slice, the current visual
+reference is `doddy-memory-journey-mockups.html` in the task's visualization directory.
+Character art is only from `DODDY-Numbered-Video-Assets-v01.zip`: cross-legged, listening,
+kneeling inspection, fist-pump and shush poses. These are new `UploadedDoddy_*` image
+sets; historical assets, archives and the development app icon are preserved.
+
+This selection supersedes the older working-reference appearance below for Home,
+capture, save receipt, browse/find, provenance/edit/delete and the privacy summary.
+It is not a commercial brand-rights clearance or approval for broader features. No
+mockup sample notes or simulated Listening/Island images are installed as real behaviour.
+Existing voice, shortcuts and native Island code remain separate, unverified-on-device
+workstreams. See `docs/implementation/MEMORY_JOURNEY_REPORT.md` for executed evidence.
+
+## Previous working candidate (preserved reference)
 
 **Working UI master:** DODDY Interface v1.2 → **Pocket Notebook**; 42-screen browser prototype.  
 **Main comparison:** `VISUAL_REVIEW/00_COMPARE_3_DESIGNS.jpg`; expanded main views in `VISUAL_REVIEW/`.

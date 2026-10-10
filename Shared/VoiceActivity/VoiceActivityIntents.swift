@@ -23,11 +23,12 @@ struct EndDoddyConversationIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
+        // The conversation ends itself and leaves a short "Conversation ended" card.
         await VoiceActivityActions.shared.endConversation?()
-        // No handler means the process that ran the conversation is gone (iOS ended it in the
-        // background, or this is a fresh launch just to run the intent). The island must still
-        // go away, so end whatever is left.
-        for activity in Activity<DoddyVoiceAttributes>.activities {
+        // Anything still claiming to be live has no conversation behind it (iOS ended the
+        // process in the background, or this is a fresh launch just to run the intent). The
+        // island must still go away, so end it. The "ended" card is left alone.
+        for activity in Activity<DoddyVoiceAttributes>.activities where !activity.content.state.isEnded {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
         return .result()

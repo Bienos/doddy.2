@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Capability guard. Settings/Home copy makes specific privacy claims; this check keeps them true:
-#  - the app's own networking lives in two files: the voice token client (one POST of the access
-#    code to the token server) and Connected Apps' transport (to the Doddy server); the ElevenLabs
-#    SDK does the voice connection,
+#  - the app's own networking lives in three files: the voice token client (one POST of the access
+#    code to the token server), Connected Apps' transport (to the Doddy server) and the typed-assistant
+#    transport (to the M2 gateway, ADR-110); the ElevenLabs SDK does the voice connection,
 #  - the system authentication browser is used only by Connected Apps,
 #  - audio/ElevenLabs code only inside DoddyApp/Features/Voice,
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
@@ -20,6 +20,7 @@ connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import Speech|SFSpeech|import CloudKit|import FirebaseCore|import Sentry|import Analytics'
 token_client=DoddyApp/Features/Voice/VoiceTokenClient.swift
 network_file=DoddyApp/Infrastructure/URLSessionTransport.swift
+assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 network_only='URLSession([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
@@ -40,8 +41,8 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:"; then
-  echo "FAIL: networking code outside $network_file and $token_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport and $token_client." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
@@ -76,5 +77,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the microphone, calendar, reminders and contacts permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client and URLSessionTransport, web auth only in Connected Apps, audio only in Voice, calendar and contacts only in Connections, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders and contacts; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport and the assistant transport, web auth only in Connected Apps, audio only in Voice, calendar and contacts only in Connections, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders and contacts; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
 exit "$status"

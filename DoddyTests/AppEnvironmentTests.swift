@@ -9,7 +9,7 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(env.memoryRepository is UnavailableMemoryRepository)
         XCTAssertTrue(env.profileRepository is UnavailableProfileRepository)
         XCTAssertTrue(env.recallService is UnavailableRecallService)
-        XCTAssertTrue(env.assistantClient is UnavailableAssistantClient)
+        XCTAssertNil(env.assistant)
         XCTAssertTrue(env.toolExecutor is UnavailableToolExecutor)
     }
 

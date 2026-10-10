@@ -52,6 +52,13 @@ if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
 else
   not_run "Backend type-check + tests" "node/npm not found on PATH"
 fi
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  if [ ! -d gateway/node_modules ]; then run_step "Gateway install (npm ci)" npm ci --prefix gateway; fi
+  run_step "Gateway typecheck" npm run typecheck --prefix gateway
+  run_step "Gateway tests (node)" npm test --prefix gateway
+else
+  not_run "Gateway tests (node)" "node/npm not found on PATH"
+fi
 
 if [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"

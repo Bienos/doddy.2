@@ -21,6 +21,8 @@ settings:
     CODE_SIGN_STYLE: Automatic
     # No signing team is committed. Select your own team in Xcode to run on a device.
     DEVELOPMENT_TEAM: ""
+    # Override this at build time for an isolated simulator install; keep the owner's default.
+    DODDY_APP_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
 targets:
   Doddy:
     type: application
@@ -40,7 +42,7 @@ targets:
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.
-        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER)
         PRODUCT_NAME: Doddy
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
@@ -69,7 +71,7 @@ targets:
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).widgets
         PRODUCT_NAME: DoddyWidgets
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
@@ -90,7 +92,7 @@ targets:
         product: DoddyCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.tests
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).tests
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
   DoddyUITests:
@@ -102,7 +104,7 @@ targets:
       - target: Doddy
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).uitests
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
 schemes:
