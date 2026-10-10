@@ -62,9 +62,10 @@ test("everything starts off and nothing runs until the user switches it on", asy
   rig = await start();
   const catalog = await rig.call("GET", "/v1/tools");
   assert.equal(catalog.status, 200);
-  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist"]);
+  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "websearch"]);
   for (const toolkit of catalog.body.toolkits) {
-    assert.equal(toolkit.status, "disconnected");
+    // Web search has no account (test/websearch.test.ts); every account starts disconnected.
+    assert.equal(toolkit.status, toolkit.id === "websearch" ? "connected" : "disconnected");
     for (const tool of toolkit.tools) assert.equal(tool.enabled, false);
   }
   // Not connected: a switch cannot be turned on, and running is refused.
@@ -438,6 +439,7 @@ test("contracts/online-accounts fixtures match the server's schemas", async () =
   c.PrepareResultSchema.parse(load("prepare-result-draft"));
   c.RunResultSchema.parse(load("run-result-email"));
   c.RunResultSchema.parse(load("run-result-draft"));
+  c.RunResultSchema.parse(load("run-result-web-search"));
   c.ToolReceiptsSchema.parse(load("receipts"));
   // Error bodies carry a tool receipt, not a calendar receipt, so check the shape directly.
   for (const name of ["error-tool-disabled", "error-confirmation-expired", "error-permission-insufficient", "error-rate-limited"]) {

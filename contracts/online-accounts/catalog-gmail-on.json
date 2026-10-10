@@ -5,6 +5,7 @@
       "id": "gmail",
       "title": "Gmail",
       "access": "Doddy can list your recent emails (sender, subject, a short preview) and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+      "needsAccount": true,
       "status": "connected",
       "reason": null,
       "connectedAt": "2026-10-10T10:00:00.000Z",
@@ -30,6 +31,7 @@
       "id": "googledrive",
       "title": "Google Drive",
       "access": "Doddy can find files by name (name, type, last change). It can't open, change, share or delete files.",
+      "needsAccount": true,
       "status": "disconnected",
       "reason": null,
       "connectedAt": null,
@@ -48,6 +50,7 @@
       "id": "notion",
       "title": "Notion",
       "access": "Doddy can search the titles of pages you shared with it. It doesn't read page content and can't change anything.",
+      "needsAccount": true,
       "status": "disconnected",
       "reason": null,
       "connectedAt": null,
@@ -66,6 +69,7 @@
       "id": "todoist",
       "title": "Todoist",
       "access": "Doddy can list your open tasks and add a task after you tap Add. It can't complete, change or delete tasks.",
+      "needsAccount": true,
       "status": "disconnected",
       "reason": null,
       "connectedAt": null,
@@ -83,6 +87,25 @@
           "title": "Add a task",
           "blurb": "Adds a Todoist task after you tap Add on the card.",
           "risk": "write",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "id": "websearch",
+      "title": "Web search",
+      "access": "Doddy can look things up on the web when you ask: your search words go to Doddy's server and on to a search provider through Monid. No sign-in. Doddy pays for searches and there's a daily limit.",
+      "needsAccount": false,
+      "status": "connected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "web_search",
+          "title": "Search the web",
+          "blurb": "Looks up current information (opening hours, news, prices) and tells you where it came from.",
+          "risk": "read",
           "enabled": false
         }
       ]

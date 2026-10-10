@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ConnectionReason, Mode, ReceiptStatus } from "../contracts.js";
 import { TOOLKIT_IDS } from "./catalog.js";
+import { WEB_SECTION_ID } from "./websearch.js";
 
 /**
  * Doddy-owned HTTP contract for online-account tools (v1). Request bodies are strict: a user ID,
@@ -9,6 +10,8 @@ import { TOOLKIT_IDS } from "./catalog.js";
 
 export const ToolkitIdSchema = z.enum(TOOLKIT_IDS as [string, ...string[]]);
 
+/** A Settings section: a Composio account, or web search (Monid), which needs no account. */
+export const SectionIdSchema = z.enum([WEB_SECTION_ID, ...TOOLKIT_IDS] as [string, ...string[]]);
 export const ToolStatus = z.enum(["unavailable", "disconnected", "connecting", "connected", "permission_insufficient", "expired", "error"]);
 
 export const ToolViewSchema = z
@@ -24,9 +27,11 @@ export const ToolViewSchema = z
 
 export const ToolkitViewSchema = z
   .object({
-    id: ToolkitIdSchema,
+    id: SectionIdSchema,
     title: z.string(),
     access: z.string(),
+    /** False for web search: there is nothing to connect, only the tool switch. */
+    needsAccount: z.boolean(),
     status: ToolStatus,
     reason: ConnectionReason.nullable(),
     connectedAt: z.string().nullable(),
@@ -43,7 +48,7 @@ export const ToolReceiptSchema = z
   .object({
     operationId: z.string().uuid(),
     operation: z.enum(["connect", "disconnect", "switch", "read", "write"]),
-    toolkit: ToolkitIdSchema,
+    toolkit: SectionIdSchema,
     tool: z.string().nullable(),
     timestamp: z.string(),
     mode: Mode,

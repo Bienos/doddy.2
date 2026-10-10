@@ -21,7 +21,7 @@ adding one adapter, not rewriting the app or the agent.
    `{"prompt": "...", "tools": [...]}` and run `voice_agent_spec.py compare EXPORT.json`.
 
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
-step catches it. Last synced 2026-10-10 (agent version `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129; before that `agtvrsn_2801m4hqvf0qfeb8h03ts6cdethc`): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 20 live tools (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_8101m4gvnve7fdzsyqk5rjyqcfb8`.
+step catches it. Last synced 2026-10-10 (agent version `agtvrsn_3401m4k47e2revvv01sk7xv1tb26`, ADR-173: `web_search` added; before that `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 21 live tools (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_5801m4jtvazveprbj3znhn66j4tt` (before web search).
 
 **Applied to the live agent 2026-10-10 (ADR-129):** the M4 Reminders wording (ADR-126) and the calendar
 date rules (ADR-127, ADR-128) in `create_reminder`, `create_calendar_event` and the prompt. The opening line

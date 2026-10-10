@@ -127,6 +127,23 @@ export class UsageLimiter {
     if (!ok) throw new AppError("quota_exceeded");
   }
 
+  /**
+   * One web search (Monid, paid from Doddy's wallet): a per-user and a service-wide daily cap, on
+   * top of the shared provider-call ceilings. Counted before the call, so a refused search costs nothing.
+   */
+  reserveWebSearch(userId: string, now: number): void {
+    const ok = this.store.reserveUsage(
+      [
+        { counter: `user:${userId}:websearch`, period: `day:${day(now)}`, limit: this.limits.userDailyWebSearches },
+        { counter: "service:websearch", period: `day:${day(now)}`, limit: this.limits.serviceDailyWebSearches },
+        { counter: "service:calls", period: `day:${day(now)}`, limit: this.limits.serviceDailyCalls },
+        { counter: "service:calls", period: `month:${month(now)}`, limit: this.limits.serviceMonthlyCalls },
+      ],
+      1,
+    );
+    if (!ok) throw new AppError("quota_exceeded");
+  }
+
   /** One user-visible read request (counted separately from the provider calls it causes). */
   reserveRead(userId: string, now: number): void {
     const ok = this.store.reserveUsage(

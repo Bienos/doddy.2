@@ -11,25 +11,29 @@ import { MockCalendarProvider } from "../src/providers/mock.js";
 import { Store } from "../src/store.js";
 import { MockToolsProvider, type ToolsMockScenario } from "../src/tools/mock.js";
 import { CloudToolsService } from "../src/tools/service.js";
+import { MockWebSearchProvider, type WebSearchProvider } from "../src/tools/websearch.js";
 import { Clock, USER_A } from "./helpers.js";
 
 /** A running server with the mock tools provider, for tests and for fixture generation. */
 export interface Rig {
   call(method: string, path: string, o?: { token?: string | null; body?: unknown; scenario?: ToolsMockScenario }): Promise<{ status: number; body: any; text: string }>;
   provider: MockToolsProvider;
+  /** The offline demo search (null when the rig was started without web search). */
+  webSearch: MockWebSearchProvider | null;
   store: Store;
   logs: string[];
   clock: Clock;
   close(): Promise<void>;
 }
 
-export async function start(limits: Parameters<typeof testLimits>[0] = {}): Promise<Rig> {
+export async function start(limits: Parameters<typeof testLimits>[0] = {}, o: { webSearch?: WebSearchProvider | null } = {}): Promise<Rig> {
   const store = new Store(":memory:");
   const clock = new Clock(Date.parse("2026-10-10T10:00:00Z"));
   const provider = new MockToolsProvider();
   const logs: string[] = [];
   const common = { store, limits: testLimits(limits), publicBaseUrl: "https://api.doddy.test", appReturnUrl: "doddy-dev://connected-apps/return", now: clock.now, sleep: async () => {} };
-  const tools = new CloudToolsService({ ...common, provider, completionMode: "mock" });
+  const webSearch = o.webSearch === undefined ? new MockWebSearchProvider() : o.webSearch;
+  const tools = new CloudToolsService({ ...common, provider, webSearch, completionMode: "mock" });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
   const handler = createHandler({
     service,
@@ -47,6 +51,7 @@ export async function start(limits: Parameters<typeof testLimits>[0] = {}): Prom
   let closed = false;
   return {
     provider,
+    webSearch: webSearch instanceof MockWebSearchProvider ? webSearch : null,
     store,
     logs,
     clock,

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
+import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
 /**
  * Environment configuration. Every value is read once at start-up and validated.
@@ -16,6 +17,9 @@ export interface Limits {
   userDailyReads: number;
   /** Online-account tool runs (Gmail, Drive, Notion, Todoist) per user per UTC day. */
   userDailyToolRuns: number;
+  /** Web searches (Monid, paid by Doddy) per user, and for the whole service, per UTC day. */
+  userDailyWebSearches: number;
+  serviceDailyWebSearches: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -41,6 +45,12 @@ export interface ToolkitSettings {
   toolkitVersion: string;
 }
 
+/** Monid web search. Absent: web search shows as "not set up" and never runs. */
+export interface MonidSettings {
+  apiKey: string;
+  baseUrl: string;
+}
+
 export interface Config {
   mode: Mode;
   env: Env;
@@ -54,6 +64,8 @@ export interface Config {
   composio: ComposioSettings | null;
   /** Gmail, Drive, Notion, Todoist: only toolkits with both an auth config and a pinned version. */
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
+  /** Live mode only; mock mode uses the offline demo search. */
+  monid: MonidSettings | null;
   limits: Limits;
 }
 
@@ -104,6 +116,10 @@ const EnvSchema = z.object({
   COMPOSIO_NOTION_TOOLKIT_VERSION: z.string().optional(),
   COMPOSIO_TODOIST_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_TODOIST_TOOLKIT_VERSION: z.string().optional(),
+  MONID_API_KEY: z.string().optional(),
+  MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
+  DODDY_LIMIT_USER_DAILY_WEB_SEARCHES: intSetting(30, 1, 10_000),
+  DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES: intSetting(200, 1, 100_000),
   DODDY_LIMIT_SERVICE_DAILY_CALLS: intSetting(300, 1, 1_000_000),
   DODDY_LIMIT_SERVICE_MONTHLY_CALLS: intSetting(3_000, 1, 10_000_000),
   DODDY_LIMIT_USER_CONCURRENCY: intSetting(1, 1, 10),
@@ -218,6 +234,23 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     else toolkits[id] = { authConfigId, toolkitVersion };
   }
 
+  // Web search. Optional in live mode; mock mode never calls Monid.
+  let monid: MonidSettings | null = null;
+  const monidKey = (e.MONID_API_KEY ?? "").trim();
+  if (e.DODDY_MODE === "live" && monidKey !== "") {
+    if (!/^monid_[a-z]+_[A-Za-z0-9_-]{8,}$/.test(monidKey)) problems.push("MONID_API_KEY must look like monid_<stage>_<secret>");
+    let base: URL | null = null;
+    try {
+      base = new URL(e.MONID_BASE_URL);
+    } catch {
+      problems.push("MONID_BASE_URL is not a URL");
+    }
+    if (base && (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.hash)) {
+      problems.push("MONID_BASE_URL must be an https origin without a path");
+    }
+    if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
+  }
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -232,9 +265,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     sessionSigningKey,
     composio,
     toolkits,
+    monid,
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,
+      userDailyWebSearches: e.DODDY_LIMIT_USER_DAILY_WEB_SEARCHES,
+      serviceDailyWebSearches: e.DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -254,6 +290,8 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
   return {
     userDailyReads: 30,
     userDailyToolRuns: 100,
+    userDailyWebSearches: 30,
+    serviceDailyWebSearches: 200,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,

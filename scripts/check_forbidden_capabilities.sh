@@ -11,7 +11,9 @@
 #    render.yaml are checked for key values only: the server legitimately names key headers),
 #  - permission keys only for the microphone, calendar, reminders and contacts,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
-#    their answers), no write tools beyond the two reviewed ones (Gmail draft, Todoist task), no proxy execution.
+#    their answers), no write tools beyond the two reviewed ones (Gmail draft, Todoist task), no proxy execution,
+#    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
+#    can never pick another paid endpoint).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -30,7 +32,7 @@ web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebVie
 voice_only='import AVFoundation|import AVFAudio|AVAudio|import ElevenLabs'
 connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
-secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
 allowed_permissions='NSMicrophoneUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
@@ -40,6 +42,8 @@ composio_adapter=backend/src/providers/composio.ts
 # the same answer shapes. Nothing else may name a slug.
 tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
+# Web search: the only file that may talk to Monid.
+websearch=backend/src/tools/websearch.ts
 
 status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
@@ -71,6 +75,12 @@ if [ -d "$backend_src" ]; then
   fi
   if grep -RInE 'tools\.proxy|proxyExecute|COMPOSIO_MULTI_EXECUTE|COMPOSIO_REMOTE' "$backend_src"; then
     echo "FAIL: generic proxy/meta-tool execution in the backend." >&2; status=1
+  fi
+  if grep -RInE 'monid\.ai|/v1/run[^s]|/v1/runs/' --include='*.ts' "$backend_src" | code_only | grep -v "^$websearch:"; then
+    echo "FAIL: Monid called outside $websearch." >&2; status=1
+  fi
+  if grep -RInE '/v1/(discover|inspect)|monid_(discover|inspect|run)' --include='*.ts' "$backend_src"; then
+    echo "FAIL: Monid endpoint discovery in the backend; web search must stay one fixed endpoint." >&2; status=1
   fi
 fi
 secret_paths=("${dirs[@]}" project.yml scripts)

@@ -1,7 +1,7 @@
 import Foundation
 
 // Swift mirror of the online-account tools API v1 (backend/src/tools/contracts.ts): Gmail, Google
-// Drive, Notion and Todoist through Composio. Both sides decode the shared fixtures in
+// Drive, Notion and Todoist through Composio, and web search through Monid (no account). Both sides decode the shared fixtures in
 // contracts/online-accounts/, written by the backend (`npm run fixtures`).
 
 public enum ToolkitStatus: String, Codable, Sendable {
@@ -31,6 +31,8 @@ public struct ToolkitView: Codable, Equatable, Sendable, Identifiable {
     public let title: String
     /// Plain words about what Doddy can and cannot do with the account.
     public let access: String
+    /// False for web search: nothing to connect, only the switch. Older servers don't send it.
+    public let needsAccount: Bool?
     public let status: ToolkitStatus
     public let reason: ConnectionReason?
     public let connectedAt: String?
@@ -41,6 +43,11 @@ public struct ToolkitView: Codable, Equatable, Sendable, Identifiable {
 public struct ToolsCatalog: Codable, Equatable, Sendable {
     public let mode: ConnectedAppsMode
     public let toolkits: [ToolkitView]
+}
+
+extension ToolkitView {
+    /// True for accounts (Gmail, …); false for sections like web search that have only a switch.
+    public var hasAccount: Bool { needsAccount ?? true }
 }
 
 /// Sanitized record of one connect, switch, read or write. Never contains message, task or file content.
@@ -119,8 +126,10 @@ public enum CloudToolName {
     public static let searchNotion = "search_notion"
     public static let listTodoistTasks = "list_todoist_tasks"
     public static let addTodoistTask = "add_todoist_task"
+    /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
+    public static let webSearch = "web_search"
 
-    public static let all: Set<String> = [checkEmail, draftEmail, findDriveFile, searchNotion, listTodoistTasks, addTodoistTask]
+    public static let all: Set<String> = [checkEmail, draftEmail, findDriveFile, searchNotion, listTodoistTasks, addTodoistTask, webSearch]
     /// These change something in the user's account and wait for a tap on the card.
     public static let writes: Set<String> = [draftEmail, addTodoistTask]
 
@@ -135,6 +144,7 @@ public enum CloudToolName {
         case searchNotion: "Search Notion"
         case listTodoistTasks: "List my tasks"
         case addTodoistTask: "Add a task"
+        case webSearch: "Search the web"
         default: name
         }
     }
@@ -144,9 +154,13 @@ public enum CloudToolName {
         case checkEmail, draftEmail: "Gmail"
         case findDriveFile: "Google Drive"
         case searchNotion: "Notion"
+        case webSearch: "Web search"
         default: "Todoist"
         }
     }
+
+    /// Tools that work without connecting an account.
+    public static func needsAccount(_ name: String) -> Bool { name != webSearch }
 }
 
 /// A tool call from the voice agent. Arguments are passed on exactly as received.

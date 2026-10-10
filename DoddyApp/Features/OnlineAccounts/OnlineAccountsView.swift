@@ -61,7 +61,7 @@ struct OnlineAccountsView: View {
 
             if let catalog = model.catalog {
                 Section {
-                    Text("Everything here starts off. Doddy uses a tool only while its switch is on and its account is connected. Anything that adds or creates something shows you a card first and waits for your tap.")
+                    Text("Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -170,6 +170,12 @@ struct OnlineAccountsView: View {
             Button("Connect demo \(toolkit.title)") { Task { await model.completeDemo(approve: true) } }
                 .accessibilityIdentifier("onlineAccounts.demoApprove")
             Button("Cancel", role: .cancel) { Task { await model.cancelDemo() } }
+        } else if !toolkit.hasAccount {
+            // Web search: nothing to sign in to, only the switch below.
+            if toolkit.status == .unavailable {
+                Text("\(toolkit.title) isn't set up on this server.")
+                    .font(.footnote)
+            }
         } else {
             switch toolkit.status {
             case .unavailable:
@@ -211,6 +217,7 @@ struct OnlineAccountsView: View {
         case .unavailable: "Not set up"
         case .disconnected: "Not connected"
         case .connecting: "Connecting…"
+        case .connected where !toolkit.hasAccount: model.isDemo ? "Ready (demo)" : "Ready, no sign-in"
         case .connected: model.isDemo ? "Connected (demo)" : "Connected"
         case .permissionInsufficient: "Needs attention"
         case .expired: "Expired"

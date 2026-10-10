@@ -12,9 +12,13 @@ import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
+import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
-export function buildApp(config: Config, overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider } = {}) {
+export function buildApp(
+  config: Config,
+  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null } = {},
+) {
   const store = new Store(config.dbPath);
   let provider: CalendarProvider;
   if (overrides.provider) provider = overrides.provider;
@@ -40,9 +44,19 @@ export function buildApp(config: Config, overrides: { provider?: CalendarProvide
   if (overrides.toolsProvider) toolsProvider = overrides.toolsProvider;
   else if (config.mode === "live") toolsProvider = new ComposioToolsProvider(config.composio!.apiKey, config.toolkits);
   else toolsProvider = new MockToolsProvider();
+  // Web search: live only with a Monid key (otherwise "not set up"); mock mode uses offline demo results.
+  const webSearch =
+    overrides.webSearch !== undefined
+      ? overrides.webSearch
+      : config.mode === "live"
+        ? config.monid
+          ? new MonidWebSearchProvider(config.monid)
+          : null
+        : new MockWebSearchProvider();
   const tools = new CloudToolsService({
     store,
     provider: toolsProvider,
+    webSearch,
     limits: config.limits,
     publicBaseUrl: config.publicBaseUrl,
     appReturnUrl: config.appReturnUrl,
