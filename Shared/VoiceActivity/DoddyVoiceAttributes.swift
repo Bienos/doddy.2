@@ -11,6 +11,10 @@ struct DoddyVoiceAttributes: ActivityAttributes {
             case connecting, listening, thinking, speaking
             /// Doddy proposed a note and waits for Save / Don't save on the app's screen.
             case needsConfirmation
+            #if DEBUG
+            /// Native lifecycle fixture only; never represents microphone or provider state.
+            case testFixture
+            #endif
         }
 
         var status: Status
@@ -24,6 +28,9 @@ struct DoddyVoiceAttributes: ActivityAttributes {
 extension DoddyVoiceAttributes.ContentState {
     /// Short label for the island and Lock Screen.
     var title: String {
+        #if DEBUG
+        if status == .testFixture { return isMuted ? "Test muted" : "Test activity" }
+        #endif
         if isMuted, status != .needsConfirmation { return "Muted" }
         switch status {
         case .connecting: return "Connecting…"
@@ -31,6 +38,9 @@ extension DoddyVoiceAttributes.ContentState {
         case .thinking: return "Thinking…"
         case .speaking: return "Speaking"
         case .needsConfirmation: return "Confirm in Doddy"
+        #if DEBUG
+        case .testFixture: return "Test activity"
+        #endif
         }
     }
 
@@ -42,6 +52,9 @@ extension DoddyVoiceAttributes.ContentState {
         case .thinking: return "ellipsis"
         case .speaking: return "speaker.wave.2.fill"
         case .needsConfirmation: return "hand.tap.fill"
+        #if DEBUG
+        case .testFixture: return isMuted ? "mic.slash.fill" : "wrench.and.screwdriver"
+        #endif
         }
     }
 }

@@ -28,9 +28,20 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    JourneyHeading(eyebrow: "Less magic. More control.", title: "Yours to keep.\nYours to change.")
+                    HStack(spacing: 18) {
+                        UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
+                        Text("You choose each saved memory. See the original, edit it or remove it.")
+                            .font(.subheadline)
+                    }
+                    Text("Text capture and search work locally. Voice has separate network and microphone behaviour, explained below.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
+                }
+                .listRowBackground(Theme.canvas)
                 Section("About this build") {
                     StatusRow(title: "Version", value: Self.versionText)
-                    Text("Development build. DODDY is an AI assistant, not a person. The colours, voice and character artwork are candidates awaiting approval, not a final brand.")
+                    Text("Development build. DODDY is an AI assistant, not a person. This memory interface uses your approved numbered-asset design; physical-device and release checks remain outstanding.")
                 }
 
                 Section("Your memories") {
@@ -105,6 +116,7 @@ struct SettingsView: View {
 
                 Section("Back Tap and Siri") {
                     StatusRow(title: "Double Back Tap", value: backTapStatus)
+                        .accessibilityIdentifier("settings.backTap.status")
                     Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
                         router.isSetupPresented = true
                     }
@@ -138,6 +150,7 @@ struct SettingsView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.canvas)
             .navigationTitle("Settings")
+            .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
             .confirmationDialog(
                 "Delete all \(store.memories.count) memories?",

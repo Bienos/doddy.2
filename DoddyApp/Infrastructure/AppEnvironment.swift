@@ -30,7 +30,7 @@ struct AppEnvironment: Sendable {
         do {
             let repository = arguments.contains("-inMemoryStore")
                 ? try SQLiteMemoryRepository.inMemory()
-                : try SQLiteMemoryRepository(path: try databaseURL().path)
+                : try SQLiteMemoryRepository(path: try databaseURL(arguments: arguments).path)
             return AppEnvironment(
                 memoryRepository: repository,
                 recallService: RepositoryRecallService(repository: repository),
@@ -52,11 +52,22 @@ struct AppEnvironment: Sendable {
     }
 
     /// Application Support/Memories/memories.sqlite, readable after first unlock only.
-    private static func databaseURL() throws -> URL {
+    private static func databaseURL(arguments: [String]) throws -> URL {
         let fileManager = FileManager.default
-        let directory = try fileManager
+        var directory = try fileManager
             .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent("Memories", isDirectory: true)
+        #if DEBUG
+        // A persistent UI fixture must never use the user's real memory database.
+        if let index = arguments.firstIndex(of: "-memoryTestID") {
+            guard arguments.indices.contains(index + 1), let id = UUID(uuidString: arguments[index + 1]) else {
+                throw CocoaError(.fileReadInvalidFileName)
+            }
+            directory = directory.deletingLastPathComponent()
+                .appendingPathComponent("TestMemories", isDirectory: true)
+                .appendingPathComponent(id.uuidString, isDirectory: true)
+        }
+        #endif
         try fileManager.createDirectory(
             at: directory, withIntermediateDirectories: true,
             attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
