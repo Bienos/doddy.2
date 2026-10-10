@@ -13,6 +13,8 @@ struct PersonalityView: View {
     @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
     @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
 
+    @State private var preview = VoicePreviewPlayer()
+
     private var voiceStyle: VoiceStyle {
         VoiceStyle(voice: voiceRaw, speed: speedRaw, expressiveness: expressivenessRaw)
     }
@@ -46,6 +48,18 @@ struct PersonalityView: View {
                 Picker("Expressiveness", selection: $expressivenessRaw) {
                     ForEach(Expressiveness.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
                 }
+                Button {
+                    preview.toggle(voiceStyle)
+                } label: {
+                    Label(
+                        preview.playing == nil ? "Hear \(Self.name(voiceStyle.voice))" : "Stop sample",
+                        systemImage: preview.playing == nil ? "play.circle.fill" : "stop.circle.fill")
+                }
+                .accessibilityIdentifier("settings.voice.preview")
+                if let problem = preview.problem {
+                    Label(problem, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(Theme.error)
+                }
                 if voiceStyle != .doddyDefault {
                     Button("Use Doddy's own voice") {
                         voiceRaw = VoiceStyle.doddyDefault.voice.rawValue
@@ -56,7 +70,7 @@ struct PersonalityView: View {
             } header: {
                 Text("Voice")
             } footer: {
-                Text("Applies from your next voice conversation. All voices speak English and Polish; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.")
+                Text("Applies from your next voice conversation. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak both languages; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.")
             }
 
             Section("Quick picks") {
@@ -93,6 +107,9 @@ struct PersonalityView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
+        .onChange(of: voiceRaw) { _, _ in preview.stop() }
+        .onChange(of: speedRaw) { _, _ in preview.stop() }
+        .onDisappear { preview.stop() }
         .navigationTitle("Voice and personality")
         .navigationBarTitleDisplayMode(.inline)
     }

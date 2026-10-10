@@ -19,6 +19,12 @@ public enum VoiceChoice: String, CaseIterable, Sendable, Codable {
     }
 }
 
+extension VoiceChoice {
+    /// Bundled sample (`DoddyApp/Resources/VoicePreviews/<name>.mp3`): Doddy's hello in English
+    /// and Polish, recorded once in this voice (ADR-106).
+    public var previewResourceName: String { "voice-preview-\(rawValue)" }
+}
+
 /// How fast Doddy talks. ElevenLabs accepts 0.7–1.2; the agent default is 1.0.
 public enum SpeakingSpeed: String, CaseIterable, Sendable, Codable {
     case slower, normal, faster
@@ -79,6 +85,9 @@ public struct VoiceStyle: Equatable, Sendable, Codable {
             speed: speed.flatMap(SpeakingSpeed.init(rawValue:)) ?? fallback.speed,
             expressiveness: expressiveness.flatMap(Expressiveness.init(rawValue:)) ?? fallback.expressiveness)
     }
+
+    /// Playback rate for the bundled sample: the same factor the conversation uses.
+    public var previewRate: Double { speed.elevenLabsSpeed }
 
     /// What to send, or nil when everything matches the agent's defaults. Only changed fields are
     /// set, so the default style works even on an agent that allows no overrides.

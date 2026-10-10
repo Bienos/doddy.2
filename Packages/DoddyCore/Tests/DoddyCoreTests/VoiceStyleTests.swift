@@ -22,6 +22,18 @@ final class VoiceStyleTests: XCTestCase {
             VoiceStyle(voice: .wiktor, speed: .normal, expressiveness: .natural))
     }
 
+    func testEveryVoiceHasABundledSample() {
+        let previews = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("DoddyApp/Resources/VoicePreviews")
+        for choice in VoiceChoice.allCases {
+            let file = previews.appendingPathComponent(choice.previewResourceName + ".mp3")
+            XCTAssertTrue(FileManager.default.fileExists(atPath: file.path), "missing \(file.lastPathComponent)")
+        }
+        XCTAssertEqual(VoiceStyle(voice: .josh, speed: .faster, expressiveness: .natural).previewRate, 1.15)
+    }
+
     func testValuesStayInElevenLabsRanges() {
         for speed in SpeakingSpeed.allCases { XCTAssertTrue((0.7...1.2).contains(speed.elevenLabsSpeed)) }
         for level in Expressiveness.allCases { XCTAssertTrue((0...1).contains(level.elevenLabsStability)) }
