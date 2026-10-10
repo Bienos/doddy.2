@@ -1,217 +1,219 @@
 ---
-title: "Meet Doddy: an AI companion that wants to do it all for you"
+title: "Meet Doddy, an AI companion that wants to do it all for you"
 date: 2026-10-10
 author: "The Doddy team"
 status: published
-summary: "Doddy is an AI companion for your iPhone with a big goal: to help with anything you need, and always ask before it acts. Here's what it does today, what it can't do yet, how we keep it safe, and answers to the questions people ask most."
-keywords: "AI companion, AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI companion, AI safety, human in the loop"
+summary: "Doddy is an AI companion for your iPhone with a big goal. One day it should help with anything you need, and it will always ask before it acts. Here's what it does today, what it can't do yet, how we keep it safe, and answers to the questions people ask most."
+keywords: "AI companion, AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI safety, human in the loop"
 tldr:
-  - **Doddy is an AI companion for your iPhone.** A hand-drawn mate you talk to, in English or Polish.
-  - **The goal is big:** a companion that can help you with anything, one skill at a time.
-  - **Today it does a handful of things:** remembers what you tell it in your own words, finds it again, and helps with your calendar, reminders, timers, maps and message drafts.
-  - **It always asks first.** Every action is a card you tap. It never sends, buys or deletes anything on its own.
-  - **It's honest.** If it can't find something, it says so. It tells you it's an AI.
-  - **It's early.** Tested on our own iPhone, not open to the public yet. [Join early access](/#join).
+  - Doddy is an AI companion for your iPhone, a hand-drawn mate you can talk to in English or Polish.
+  - The big goal is a companion that can help with anything, and we're getting there one skill at a time.
+  - Today it remembers what you tell it in your own words and finds it again. It can also help with your calendar, reminders, timers, maps and message drafts.
+  - It always asks first. Every action is a card you tap, and it never sends, buys or deletes anything on its own.
+  - If it can't find something it tells you, and it never pretends to be a person.
+  - It's early days. We're testing it on our own iPhone and it isn't public yet, so [join early access](/#join) if you'd like a go.
 evidence:
   - docs/implementation/V1_VOICE_STATUS.md
   - docs/implementation/TODAY_STATUS.md
   - docs/implementation/BRANCH_CONSOLIDATION_2026-10-09.md
-  - DECISIONS.md (ADR-053, 063–065, 092–095)
+  - DECISIONS.md (ADR-053, 063 to 065, 092 to 095)
   - reference/compiled_research/D01_RESEARCH.md
   - reference/compiled_research/D05_RESEARCH.md
 ---
 
-Everyone's building AI agents right now. Agents that book flights, write code, shop for you,
-answer your email while you sleep. It's a lot.
+Everyone seems to be building AI agents right now. There are agents that book flights, write code,
+do your shopping and answer your email while you sleep. It's a lot.
 
-Doddy is our take on it: an **AI companion** that lives in your iPhone. A hand-drawn mate you
-talk to like a person (it's not one, and it tells you so). The dream is simple: whatever you need,
-you tell Doddy and it gets handled. Remember this, plan that, sort the other thing.
+Doddy is our version, an AI companion that lives in your iPhone. It's a hand-drawn mate you talk
+to like a person (it isn't one, and it tells you so). The dream is pretty simple. Whatever you
+need, you tell Doddy and it gets handled. Remember this, plan that, sort out the other thing.
 
-We're not there yet, and we won't pretend we are. Today Doddy does a handful of things well, and
-it gets a new skill only once it can do that skill safely. The one rule that never changes:
-**it asks before it does anything.**
+We're not there yet and we won't pretend we are. Today Doddy does a handful of things well, and it
+only learns a new skill once it can do that skill safely. One rule never changes, which is that
+Doddy asks before it does anything.
 
-This post covers what Doddy is, where it's going, what it can and can't do today, and how we're
-thinking about safety. There's an FAQ at the end, and sources, because the AI world has enough
-vibes already.
+Below you'll find where Doddy is heading, what it can and can't do right now, and how we think
+about safety. There's an FAQ at the end, plus our sources, because the AI world has enough vibes
+already.
 
-## Wait, what's an "AI agent"?
+## Wait, what's an AI agent?
 
-A chatbot talks. An agent **does things**: it can use tools, like your calendar, your contacts or
-a search, to get a job done instead of just describing it.
+A chatbot talks. An agent actually does things. It can use tools like your calendar, your
+contacts or a search to get a job done for you.
 
-That's the exciting part and the scary part. A chatbot that gets something wrong gives you a bad
-answer. An agent that gets something wrong might send the wrong message, book the wrong thing or
-delete something you needed. Security people even have a name for it: **"excessive agency"**,
-meaning an AI that has more power, more permissions or more freedom to act than the job needs
+That's the exciting part, and it's also the scary part. When a chatbot gets something wrong you
+get a bad answer. When an agent gets something wrong it might send the wrong message, book the
+wrong thing or delete something you needed. Security people even have a name for this. They call
+it "excessive agency", meaning an AI that has more power, more permissions or more freedom to act
+than the job needs
 ([OWASP Top 10 for LLM Applications](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/)).
 
-People seem to get this intuitively. In Accenture's 2026 survey of more than 25,000 consumers in
-16 countries, 74% said they'd trust a personal AI agent more than their best friend to buy
-something for them. But only **9%** were open to letting it complete a purchase on its own. Far
-more (32%) liked the idea of the AI choosing while *they* still confirm the payment
+Most people seem to sense this already. Accenture surveyed more than 25,000 consumers in 16
+countries in 2026, and 74% said they'd trust a personal AI agent more than their best friend to buy
+something for them. Yet only 9% were happy to let it finish a purchase on its own. Far more of them
+(32%) liked the idea of the AI choosing while they still confirm the payment
 ([Accenture Consumer Pulse 2026](https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent)).
 
-In other words: help me, sure. Act without asking? No thanks. That's exactly how Doddy works.
+So people want the help, and they want to say yes before anything happens. That's exactly how
+Doddy works.
 
-## The goal: a little less to carry
+## A little less to carry
 
-Your head is full of small stuff. The parcel locker code. Where you put the spare keys. The book
-your friend recommended. Your kid's shoe size. The name of that wine. None of it is important
-enough for a proper system, and all of it is annoying to lose.
+Your head is full of small stuff. The parcel locker code, where the spare keys went, the book your
+friend recommended, your kid's shoe size, the name of that wine. None of it deserves a proper
+system, and all of it is annoying to lose.
 
-Lots of people already lean on AI for this kind of everyday help. Pew's 2026 survey found that
-**49% of US adults** have used an AI chatbot and **24%** use one every day. The most common use
-was simply looking things up, at 42%
+Plenty of people already lean on AI for this kind of everyday help. In Pew's 2026 survey, 49% of
+US adults had used an AI chatbot and 24% used one every day. The most common reason was simply
+looking things up, at 42%
 ([Pew Research Center, 2026](https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/)).
-In the EU, **32.7%** of people aged 16 to 74 used generative AI tools in 2025
+In the EU, 32.7% of people aged 16 to 74 used generative AI tools in 2025
 ([Eurostat, 2025](https://ec.europa.eu/eurostat/web/products-eurostat-news/w/ddn-20251216-3)).
-And when researchers looked at how people actually use ChatGPT, more than 70% of messages were
-about everyday, non-work life: practical guidance, finding information, writing
+When researchers looked at how people really use ChatGPT, more than 70% of messages were about
+everyday life outside work, things like practical guidance, finding information and writing
 ([NBER Working Paper 34255](https://www.nber.org/papers/w34255)).
 
-So people want help with ordinary life. What they don't always get is an assistant that
-**remembers what they actually said**, and is honest when it doesn't know. General chatbots are
-great at sounding sure. Doddy is built to show you your own words instead.
+People clearly want help with ordinary life. What they don't always get is an assistant that
+remembers what they actually said and admits when it doesn't know. General chatbots are very good
+at sounding sure of themselves. Doddy's answers come straight from your own words.
 
-## Where we're going: a companion that can do it all
+## Where we're going
 
-Here's the honest version of "a companion that can do anything for you". Doddy grows one skill at
-a time, and every new skill has to pass the same three tests before it ships:
+When we say "a companion that can do anything for you", here's what we really mean. Doddy grows one
+skill at a time, and each new skill has to pass three tests before it ships.
 
-1. **It asks first.** You see what Doddy is about to do and tap to say yes.
-2. **It proves it worked.** Doddy checks the result before it says "done".
-3. **You can switch it off.** Every skill that touches your stuff has its own switch.
+1. It asks first. You see what Doddy is about to do and tap to say yes.
+2. It checks its own work. Doddy looks at the result before it says "done".
+3. You can switch it off. Every skill that touches your stuff has its own switch.
 
-Things we'd love Doddy to help with one day: keeping track of parcels and appointments, planning a
-week, remembering birthdays and what people like, sorting out the small admin that eats your
-evenings. None of these are built, and there are no dates. If a skill can't pass the three tests,
-it doesn't ship, however cool the demo looks.
+We'd love Doddy to help with lots more one day. Keeping track of parcels and appointments, planning
+your week, remembering birthdays and what people like, and sorting out the small admin that eats
+your evenings. None of that is built and there are no dates. A skill that can't pass the three
+tests stays out, however cool the demo looks.
 
 ## Why a character?
 
-Because talking to a blank text box is a bit weird, and talking to a stick figure in white
-sneakers is a bit less weird. Doddy is meant to be the mate who notices small annoyances and fixes
-them without fuss, and who might joke about the twelve tabs you have open.
+Talking to a blank text box is a bit weird. Talking to a stick figure in white sneakers is a bit
+less weird. Doddy is meant to be the mate who notices small annoyances and sorts them out without
+fuss, and who might tease you about the twelve tabs you've got open.
 
-"Companion" for us means a mate who helps, not a replacement for your friends. Researchers are starting to look
-closely at AI companions. A 2026 study in *Nature Human Behaviour* of more than 1,100
-Character.AI users found that using a chatbot mainly for companionship was linked with lower
-well-being, especially for heavy users
+When we say companion, we mean a mate who helps you get on with your day. Your friends stay your
+friends. Researchers have started looking closely at AI companions, and the early results are
+worth taking seriously. A 2026 study in *Nature Human Behaviour* of more than 1,100 Character.AI
+users found that using a chatbot mainly for companionship was linked with lower well-being,
+especially for heavy users
 ([Zhang et al., 2026](https://www.nature.com/articles/s41562-026-02516-2)). An OpenAI and MIT
-Media Lab study found something similar: emotional use was rare overall, but heavier use went
-along with worse outcomes for some people
+Media Lab study found something similar. Emotional use was rare overall, but heavier use went along
+with worse outcomes for some people
 ([MIT Media Lab, 2025](https://www.media.mit.edu/posts/openai-mit-research-collaboration-affective-use-and-emotional-wellbeing-in-ChatGPT/)).
-Neither study proves cause and effect, but the direction is clear enough for us.
+Neither study proves cause and effect, though the direction was clear enough for us.
 
-So Doddy's personality has rules. No guilt trips. No "I missed you". No pretending to have
-feelings. No trying to keep you talking longer than you need to. It's useful first and charming
-second.
+So Doddy's personality comes with rules. It won't guilt-trip you or tell you it missed you, it
+won't pretend to have feelings, and it won't try to keep you chatting longer than you need. Useful
+comes first and charm comes second.
 
 ## What Doddy can do today
 
-Honest status first: Doddy is in **early testing on our own iPhone**. Nobody outside the team
-uses it yet. Some of this has been tried on a real phone, and some has only been built and tested
-on a computer so far. We'll tell you which is which.
+First, where we are. Doddy is in early testing on our own iPhone and nobody outside the team uses
+it yet. Some of the list below has been tried on a real phone, and the rest has been built and
+tested on a computer so far. We'll tell you which is which.
 
-**Tried on a real iPhone:**
+These have been tried on a real iPhone.
 
-- **Talk to it.** Hold a real voice conversation in English or Polish. It switches language when
+- You can hold a real voice conversation in English or Polish, and Doddy switches language when
   you do.
-- **Save a note by voice.** Say "my locker code is 5678" and a **Save this note?** card appears.
+- You can save a note by voice. Say "my locker code is 5678" and a Save this note? card pops up.
   Nothing is stored until you tap Save.
-- **Find a note.** Ask "what's my locker code?" and Doddy searches the notes on your phone. If it
-  can't find one, it says so instead of guessing. (Our first post is
+- You can ask "what's my locker code?" and Doddy searches the notes on your phone. If nothing
+  turns up, it says so. (Our first post is
   [all about that](/blog/hello-doddy/).)
 
-**Built, still being tested on a phone:**
+These are built and still being tested on a phone.
 
-- **Type notes too**, then search, edit, export or delete them. The original wording is always
-  kept.
-- **Smarter search** that matches across Polish and English ("code" finds "kod"), spoken numbers
-  and small typos.
-- **Calendar and reminders.** "What's on tomorrow?" reads your calendar. "Add dentist on Friday at
-  3" shows a card, and the event is only added when you tap **Add**. Doddy then checks it was
-  really saved before saying so.
-- **A Today card** with the rest of your day, plus a gentle nudge before an event if you want one.
-- **Small phone jobs**: start a timer, open a place in Apple Maps, run one of your Shortcuts, look
-  up a contact.
-- **Draft a message.** Doddy can write "running 10 min late" and open it in Messages or Mail.
-  **You** press send. Doddy never sends anything itself.
-- **Weather and Wikipedia** questions.
-- **Talk without opening the app**: from Control Center, the Action Button, or Back Tap (you set
-  that up yourself in iOS Settings). The conversation keeps going in the Dynamic Island while you
-  use other apps.
+- Typing notes, then searching, editing, exporting or deleting them. The original wording is
+  always kept.
+- Smarter search that matches across Polish and English ("code" finds "kod"), spoken numbers and
+  small typos.
+- Calendar and reminders. "What's on tomorrow?" reads your calendar. "Add dentist on Friday at 3"
+  shows a card, and the event only goes in when you tap Add. Doddy then checks it really saved
+  before telling you so.
+- A Today card with the rest of your day, plus a gentle nudge before an event if you'd like one.
+- Small phone jobs like starting a timer, opening a place in Apple Maps, running one of your
+  Shortcuts or looking up a contact.
+- Drafting a message. Doddy can write "running 10 min late" and open it in Messages or Mail, and
+  you press send yourself.
+- Questions about the weather or anything on Wikipedia.
+- Talking without opening the app, from Control Center, the Action Button or Back Tap (you set
+  Back Tap up yourself in iOS Settings). The conversation keeps going in the Dynamic Island while
+  you use other apps.
 
 ## What Doddy can't do (on purpose, or not yet)
 
-- **It doesn't listen in the background.** Doddy only hears you while a conversation is open. No
-  "always on" microphone.
-- **It doesn't save anything by itself.** No quietly building a profile of you from your chats.
-- **It never sends, buys or deletes things in other apps.** It drafts and you decide.
-- **It can't read your screen, your email or your other apps.**
-- **It doesn't make up memories.** If it isn't in your notes, Doddy says it couldn't find it.
-- **No live web search** yet, so it can't check today's news or prices. It'll tell you that
-  rather than guess.
-- **It's not a therapist, doctor or financial adviser.** For anything serious (health, money,
-  legal stuff, feelings) it drops the jokes and stays calm and factual.
-- **iPhone only**, for now.
+Doddy only hears you while a conversation is open, so there's no always-on microphone. It
+doesn't save anything by itself either, which means it can't quietly build a profile of you from
+your chats.
+
+It never sends, buys or deletes things in your other apps. It writes the draft and you decide what
+happens next. It also can't read your screen, your email or your other apps.
+
+Doddy won't make up memories. If something isn't in your notes, it says it couldn't find it. There's
+no live web search yet, so it can't check today's news or prices, and it'll just say so.
+
+It isn't a therapist, a doctor or a financial adviser. For anything serious, like health, money,
+legal stuff or feelings, it drops the jokes and stays calm and factual. And for now it's iPhone
+only.
 
 ## How we think about safety
 
-Remember "excessive agency"? Here's how we're trying to avoid it, roughly following what the
-security folks recommend
-([OWASP](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/)):
+Remember "excessive agency"? This is how we try to avoid it, roughly following what the security
+folks recommend
+([OWASP](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/)).
 
-1. **You approve every action.** Saving, adding an event, starting a timer, opening a draft:
-   each one is a card you tap. This is what's called "human in the loop", and in Doddy it isn't
-   optional.
-2. **Only the tools it needs.** Doddy has a short, fixed list of jobs. There's no "do anything on
-   my phone" button.
-3. **Everything is off until you turn it on.** Calendar, reminders and contacts each have their
-   own switch, all off by default, plus the normal iOS permission prompt.
-4. **"Done" means done.** Doddy only says "saved" or "added" after your phone confirms it.
-   Early on we caught it saying "I'm saving this" before you'd even tapped, and we
+1. You approve every action. Saving a note, adding an event, starting a timer and opening a draft
+   are all cards you tap. People call this "human in the loop", and in Doddy you can't turn it off.
+2. Doddy only gets the tools it needs. It has a short, fixed list of jobs, and there's no "do
+   anything on my phone" button.
+3. Everything starts switched off. Calendar, reminders and contacts each have their own switch,
+   all off by default, plus the usual iOS permission prompt.
+4. Doddy only says "saved" or "added" once your phone confirms it. Early on we caught it saying
+   "I'm saving this" before anyone had tapped, and we
    [changed that](/blog/hello-doddy/).
-5. **It's upfront about being an AI.** In its introduction Doddy says it straight out: "I'm an AI
-   assistant, not a person." That's also becoming the law in
-   the EU: under the AI Act, AI systems that talk to people have to make clear they're AI, with
-   those transparency rules applying from 2 August 2026
+5. It tells you it's an AI. In its introduction Doddy says "I'm an AI assistant, not a person."
+   That's becoming the law in the EU too. Under the AI Act, AI systems that talk to people have to
+   make it clear they're AI, and those transparency rules apply from 2 August 2026
    ([European Commission](https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems)).
 
-**Where your data goes.** Your notes are stored on your iPhone, and there's no Doddy account.
-Voice is different, and we'd rather be upfront about it. Conversations run through our voice
-provider, ElevenLabs. In the current test build, when you start a conversation Doddy also sends
-your saved notes and your last few conversations along, so it has something to work with.
-Weather and Wikipedia lookups are made from ElevenLabs' servers too. Right now that provider
-keeps the recordings, and choosing a proper retention limit is on our list **before** anyone
-outside the team uses voice. People are right to care: 71% of US adults expect AI to make their
-personal information less secure
+Then there's the question of where your data goes. Your notes are stored on your iPhone and there's
+no Doddy account. Voice works differently, and we'd rather tell you now. Conversations run through
+our voice provider, ElevenLabs. In the current test build, starting a conversation also sends your
+saved notes and your last few conversations along so Doddy has something to work with. Weather and
+Wikipedia lookups come from ElevenLabs' servers as well. For now the provider keeps the recordings,
+and setting a proper retention limit is on our list before anyone outside the team uses voice.
+People are right to worry about this stuff. In the same Pew survey, 71% of US adults expected AI to
+make their personal information less secure
 ([Pew, 2026](https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/)).
 We'd like to be one of the reasons that doesn't happen.
 
 ## How you might use Doddy
 
-A few everyday examples, all built on the features above:
+Here are a few everyday examples, all using the features above.
 
-- **"Remember that the spare keys are in the blue tin above the fridge."** Three weeks later:
+- "Remember that the spare keys are in the blue tin above the fridge." Three weeks later you ask
   "where are the spare keys?"
-- **At the shop:** "what size shoes does Maja wear?"
-- **After dinner with friends:** "save: the wine was a Rioja from Bodegas Muga." Find it again
-  before your next order.
-- **Morning:** "what's on today?", then "nudge me 30 minutes before the dentist."
-- **Running late:** "tell Kasia I'm 10 minutes late." Doddy opens the draft, you hit send.
-- **Book tips:** "Tomek recommended *Project Hail Mary*." Months later: "what book did Tomek
-  recommend?"
+- Standing in a shoe shop, you ask "what size shoes does Maja wear?"
+- After dinner with friends you say "save this, the wine was a Rioja from Bodegas Muga", and find it
+  again before your next order.
+- In the morning you ask "what's on today?" and then "nudge me 30 minutes before the dentist."
+- Running late, you say "tell Kasia I'm 10 minutes late." Doddy opens the draft and you hit send.
+- "Tomek recommended *Project Hail Mary*." Months later you ask "what book did Tomek recommend?"
 
 ## What's next
 
-Doddy is a bet, not a proven product. We think people who already text themselves reminders would
-rather tell a friendly character, and would come back to find things later. We haven't tested
-that with anyone outside the team yet. So the next steps are boring and important: test every
-feature on a real phone, lock down voice and set a retention limit, then open a small early-access
-group and see if anyone actually comes back.
+Doddy is a bet. We think people who already text themselves reminders would rather tell a friendly
+character, and would come back later to find things. Nobody outside the team has tried it yet, so
+we don't know if we're right. The next steps are boring and important. We'll test every feature on
+a real phone, lock down voice and set a retention limit, then open a small early access group and
+see if anyone actually comes back.
 
 If that sounds like your kind of thing, [join early access](/#join) or say hi in the
 [Telegram group](https://t.me/+u-YA6P_MISFjYWE0).
@@ -220,60 +222,59 @@ If that sounds like your kind of thing, [join early access](/#join) or say hi in
 
 ### What is Doddy?
 
-An AI companion app for iPhone. You talk to it (or type), it keeps the things you ask it to keep,
-and it helps with everyday jobs on your phone, like your calendar, reminders, timers and message
-drafts.
+It's an AI companion app for iPhone. You talk to it or type, it keeps the things you ask it to
+keep, and it helps with everyday jobs on your phone like your calendar, reminders, timers and
+message drafts.
 
 ### Can Doddy really do anything for me?
 
-Not yet. That's the goal, not the current state. Today it remembers, finds, and helps with a
-short list of phone jobs. New skills get added only when Doddy can ask first and check its own
+Not yet, though that's where we're heading. Today it remembers things, finds them again and helps
+with a short list of phone jobs. We add a new skill once Doddy can ask first and check its own
 work.
 
 ### Is Doddy a real person?
 
-No. Doddy is an AI, and it says so. The drawings and the personality are there to make it
-friendlier, not to make you think someone's on the other end.
+No. Doddy is an AI and it says so. The drawings and the personality are there to make it nicer to
+talk to.
 
 ### Is Doddy an AI girlfriend or boyfriend type of app?
 
-No. Doddy is a helpful mate, not a romantic or emotional stand-in. It won't guilt-trip you, say it
-misses you, or try to keep you chatting.
+No. Doddy is a mate who helps you with stuff. It won't guilt-trip you, say it misses you or try to
+keep you chatting.
 
 ### Does Doddy listen all the time?
 
-No. It only hears you while a conversation is open. There's no always-on microphone.
+No. It only hears you while a conversation is open, and there's no always-on microphone.
 
 ### Where are my notes stored?
 
-On your iPhone, and there's no account. The exception is voice: conversations run through our
-voice provider, ElevenLabs, and in the current test build your saved notes and recent
-conversations are sent along when a conversation starts, so Doddy has context.
+On your iPhone, and you don't need an account. Voice is the exception. Conversations run through
+our voice provider, ElevenLabs, and in the current test build your saved notes and recent
+conversations are sent along when a conversation starts so Doddy has some context.
 
 ### Can I delete everything?
 
-Your notes, yes: delete one, or delete all of them in Settings. You can also export them first,
-as JSON or plain text. How long the voice provider keeps conversation recordings is something we
-still have to settle before anyone outside the team uses voice.
+Your notes, yes. You can delete one at a time or all of them at once in Settings, and you can
+export them first as JSON or plain text. We still have to decide how long the voice provider keeps
+conversation recordings, and we'll do that before anyone outside the team uses voice.
 
 ### Will Doddy do things without asking?
 
-No. Saving a note, adding an event, starting a timer, opening a message draft: each one is a card
-you tap. Doddy never sends, buys or deletes anything in other apps.
+No. Saving a note, adding an event, starting a timer and opening a message draft are all cards you
+tap. Doddy never sends, buys or deletes anything in your other apps.
 
 ### What if Doddy gets something wrong?
 
-If it can't find something, it says so instead of guessing. You can edit any note, and the
-original wording is kept. And because every action needs your tap, a mistake gets caught before
-it happens.
+If it can't find something, it tells you. You can edit any note and the original
+wording is kept. And since every action needs your tap, you can catch a mistake before it happens.
 
 ### Which languages does Doddy speak?
 
-English and Polish. It switches when you do.
+English and Polish, and it switches when you do.
 
 ### Is there an Android version?
 
-Not yet. Doddy starts on iPhone.
+Not yet. Doddy is starting on iPhone.
 
 ### How much does it cost?
 
@@ -281,13 +282,13 @@ We haven't decided on pricing yet.
 
 ### When can I try it?
 
-Doddy is in early testing. [Join early access](/#join) and we'll tell you when it opens. There's
-no date yet.
+Doddy is still in early testing. [Join early access](/#join) and we'll let you know when it opens.
+There's no date yet.
 
 ## Sources
 
-- Pew Research Center, *Americans and AI 2026: chatbots, smart devices and views on impact*,
-  17 June 2026 (survey of 5,119 US adults, 17–23 February 2026).
+- Pew Research Center, *Americans and AI 2026*, 17 June 2026 (survey of 5,119 US adults, 17 to 23
+  February 2026).
   [pewresearch.org](https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/)
 - Eurostat, *32.7% of EU people used generative AI tools in 2025*, 16 December 2025.
   [ec.europa.eu](https://ec.europa.eu/eurostat/web/products-eurostat-news/w/ddn-20251216-3)
@@ -295,7 +296,7 @@ no date yet.
   [nber.org](https://www.nber.org/papers/w34255)
 - Accenture, *Consumer Pulse Research 2026* (25,590 consumers in 16 countries, January 2026).
   [accenture.com](https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent)
-- OWASP, *LLM06:2025 Excessive Agency*, OWASP Top 10 for LLM Applications 2025.
+- OWASP, *LLM06 2025 Excessive Agency*, OWASP Top 10 for LLM Applications 2025.
   [genai.owasp.org](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/)
 - Zhang, Zhao, Hancock, Kraut and Yang, *Interaction with AI companions and psychological
   well-being*, Nature Human Behaviour, 4 August 2026.
