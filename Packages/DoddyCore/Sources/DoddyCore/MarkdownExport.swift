@@ -3,9 +3,11 @@ import Foundation
 /// Markdown export of the saved notes, for pasting into Notes, Obsidian and similar apps (ADR-203).
 /// Every note's words go in verbatim as a block quote (one `> ` per line); nothing is escaped,
 /// trimmed or cut, so what is in the file is exactly what was saved. A note that was corrected
-/// also carries its original wording. Same data as `MemoryExport.plainText`, newest first as given.
+/// also carries every earlier wording (ADR-214) and its original. Same data as
+/// `MemoryExport.plainText`, newest first as given.
 public enum MarkdownExport {
-    public static func markdown(_ records: [MemoryRecord], exportedAt: Date) -> String {
+    public static func markdown(_ records: [MemoryRecord], corrections: [MemoryCorrection] = [], exportedAt: Date) -> String {
+        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
         let count = records.count == 1 ? "1 note" : "\(records.count) notes"
         var lines = ["# Doddy memories", "", "Exported \(iso.string(from: exportedAt)) · \(count)", ""]
@@ -21,6 +23,12 @@ public enum MarkdownExport {
             }
             details.append("ID: `\(record.id.uuidString)`")
             lines.append(details.joined(separator: " · "))
+            for version in MemoryExport.inBetween(record, byNote).reversed() {
+                lines.append("")
+                lines.append("Earlier wording (\(version.savedAt.map(iso.string(from:)) ?? "date unavailable")):")
+                lines.append("")
+                lines += quote(version.text)
+            }
             if record.userEdited {
                 lines.append("")
                 lines.append("Original wording:")

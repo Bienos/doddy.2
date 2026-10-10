@@ -37,6 +37,8 @@ public enum MemoryValidationError: Error, Equatable, Sendable {
     case sourceNotCapturable(MemorySource)
     case missingCaptureDate(MemorySource)
     case unexpectedCaptureDate(MemorySource)
+    /// A stored correction must be numbered from 1 (ADR-214).
+    case invalidCorrectionNumber(Int)
 }
 
 public enum MemoryTextValidator {

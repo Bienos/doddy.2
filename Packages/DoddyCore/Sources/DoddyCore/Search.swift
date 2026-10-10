@@ -77,18 +77,30 @@ public enum MemoryExport {
         let formatVersion: Int
         let exportedAtMs: Int64
         let memories: [MemoryRecord]
+        /// Every correction of the exported notes (ADR-214). Added within format 1: older
+        /// readers ignore it, so an older Doddy restores the notes without their history.
+        let corrections: [MemoryCorrection]
     }
 
-    public static func json(_ records: [MemoryRecord], exportedAt: Date) throws -> Data {
+    public static func json(_ records: [MemoryRecord], corrections: [MemoryCorrection] = [], exportedAt: Date) throws -> Data {
+        let ids = Set(records.map(\.id))
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(
             formatVersion: formatVersion,
             exportedAtMs: Int64((exportedAt.timeIntervalSince1970 * 1000).rounded()),
-            memories: records))
+            memories: records,
+            corrections: corrections.filter { ids.contains($0.memoryID) }
+                .sorted { ($0.memoryID.uuidString, $0.number) < ($1.memoryID.uuidString, $1.number) }))
     }
 
-    public static func plainText(_ records: [MemoryRecord], exportedAt: Date) -> String {
+    /// Wordings between the original and the current one, oldest first (ADR-214).
+    static func inBetween(_ record: MemoryRecord, _ byNote: [UUID: [MemoryCorrection]]) -> [MemoryVersion] {
+        MemoryHistory(record: record, corrections: byNote[record.id] ?? []).versions.filter { !$0.isOriginal && !$0.isCurrent }
+    }
+
+    public static func plainText(_ records: [MemoryRecord], corrections: [MemoryCorrection] = [], exportedAt: Date) -> String {
+        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
         var lines = ["DODDY memories — exported \(iso.string(from: exportedAt))", "\(records.count) memories", ""]
         for record in records {
@@ -97,6 +109,9 @@ public enum MemoryExport {
             lines.append("Source: \(record.source.rawValue) · Category: \(record.category.rawValue)")
             if record.userEdited {
                 lines.append("Corrected: \(record.updatedAt.map(iso.string(from:)) ?? "date unavailable")")
+                for version in inBetween(record, byNote).reversed() {
+                    lines.append("Earlier (\(version.savedAt.map(iso.string(from:)) ?? "date unavailable")): \(version.text)")
+                }
                 lines.append("Original: \(record.rawText)")
             }
             lines.append("ID: \(record.id.uuidString)")

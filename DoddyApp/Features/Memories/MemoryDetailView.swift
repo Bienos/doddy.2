@@ -2,7 +2,8 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// Current and immutable original wording remain attached to the same stored ID.
+/// Current and immutable original wording remain attached to the same stored ID, with every
+/// wording in between (ADR-214).
 struct MemoryDetailView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(NoteReminderStore.self) private var noteReminders
@@ -22,7 +23,30 @@ struct MemoryDetailView: View {
                     JourneyHeading(eyebrow: "Straight from your note", title: "The original\nis right here.")
                     MemoryPaperCard(record: record, textIdentifier: "detail.currentText")
                     if record.userEdited {
+                        let history = store.history(of: record)
+                        let between = history.earlier.filter { !$0.isOriginal }
                         Text("Edited \(DateText.full(record.updatedAt))").font(.caption).foregroundStyle(Theme.secondaryText)
+                        if !between.isEmpty {
+                            DisclosureGroup("Earlier versions (\(between.count))") {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    ForEach(between, id: \.number) { version in
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Version \(version.number) · \(DateText.full(version.savedAt))")
+                                                .font(.caption).foregroundStyle(Theme.secondaryText)
+                                            Text(version.text).frame(maxWidth: .infinity, alignment: .leading)
+                                                .textSelection(.enabled)
+                                        }
+                                        .accessibilityElement(children: .combine)
+                                    }
+                                }
+                                .padding(.top, 12)
+                                .accessibilityIdentifier("detail.earlierVersions")
+                            }.tint(Theme.ink)
+                        }
+                        if !history.isComplete {
+                            Text("Changes made before Doddy kept every version weren't stored, so only the original and the current wording are shown.")
+                                .font(.caption).foregroundStyle(Theme.secondaryText)
+                        }
                         DisclosureGroup("Original capture") {
                             Text(record.rawText).frame(maxWidth: .infinity, alignment: .leading)
                                 .textSelection(.enabled).padding(.top, 12)
@@ -86,7 +110,7 @@ struct MemoryDetailView: View {
 
     /// Undo (ADR-183) brings the note back, not its reminder, so the message says so.
     private var deleteMessage: String {
-        let base = "Both current and original text are removed from this iPhone. You can undo for a few seconds afterwards."
+        let base = "Every version of this note, original and current, is removed from this iPhone. You can undo for a few seconds afterwards."
         guard let reminder = noteReminders.reminder(forMemory: memoryID) else {
             return base + " Exports and older backups aren't affected."
         }

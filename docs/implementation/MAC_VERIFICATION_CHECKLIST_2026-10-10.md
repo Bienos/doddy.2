@@ -39,6 +39,8 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | M9 | Copy some text elsewhere, open the capture screen, tap Paste | No permission prompt. The text goes in exactly as copied, replacing a blank editor or going on a new line after existing text. Nothing is saved until Save (ADR-189) |
 | M10 | Open a voice-saved or "Other" note → Type menu → pick "Place" | The type changes at once and the type filter chips update. The text, dates and "Edited" label stay as they were (ADR-192) |
 | M11 | Search for a word used by notes of two or more types | The same chips above the matches. A chip narrows them and says "Showing N of M matches". The "may disagree" banner still counts every match (ADR-199) |
+| M12 | Correct one note three times (A → B → C → D), then open it | "Earlier versions (2)" lists C then B, each with its time. "Original capture" shows A. Relaunch: the same. Delete and Undo: the same. Search for a word only in B: no match (ADR-214) |
+| M13 | Search "netflix password" with a wifi password note saved; then ask the same by voice | Find: "1 PARTIAL MATCH" and "No saved note mentions “netflix”…" above the wifi note. Voice: Doddy says no note mentions Netflix and does not read the wifi password out as the answer (ADR-213) |
 
 ## 2b. Accessibility (PRD item 7, acceptance test A-13)
 | # | Do this | Expect |
@@ -54,6 +56,7 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | E3 | Restore a text file, an empty file and a hand-edited file with one note broken | A plain message each time and nothing added |
 | E4 | Settings → What Doddy knows → Remembered conversations | The list, a full conversation, "Brought up next time" marks, delete one with confirmation, export as text (ADR-177). Delete from inside a conversation: it goes back one screen, not two |
 | E5 | Settings → Your memories → Export as Markdown, then open the file in Notes or Files | A file named doddy-memories.md (check it is not .md.txt) with one heading per note, the words in a block quote, and the original for a corrected note (ADR-203) |
+| E6 | With the M12 note: export as JSON, text and Markdown; delete everything; restore the JSON | Each file has B and C as earlier wordings. After restore the note shows "Earlier versions (2)" again (ADR-214) |
 
 ## 4. Shortcuts, Siri and controls
 | # | Do this | Expect |

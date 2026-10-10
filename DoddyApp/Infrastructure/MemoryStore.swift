@@ -9,6 +9,8 @@ import Observation
 final class MemoryStore {
     let environment: AppEnvironment
     private(set) var memories: [MemoryRecord] = []
+    /// Every stored correction (ADR-214), reloaded with the memories, for history and exports.
+    private(set) var corrections: [MemoryCorrection] = []
     private(set) var hasLoaded = false
     private(set) var loadError: String?
     /// Bumped on every reload so searches re-run after edits and deletes.
@@ -26,9 +28,17 @@ final class MemoryStore {
 
     func record(id: UUID) -> MemoryRecord? { memories.first { $0.id == id } }
 
+    /// Every wording the note has had, from what is stored (ADR-214).
+    func history(of record: MemoryRecord) -> MemoryHistory {
+        MemoryHistory(record: record, corrections: corrections.filter { $0.memoryID == record.id })
+    }
+
     func reload() async {
         do {
-            memories = try await environment.memoryRepository.list(limit: nil)
+            let records = try await environment.memoryRepository.list(limit: nil)
+            let corrections = try await environment.memoryRepository.allCorrections()
+            memories = records
+            self.corrections = corrections
             loadError = nil
         } catch {
             loadError = UserFacingError.message(for: error)
@@ -65,11 +75,12 @@ final class MemoryStore {
     /// The memory's note reminder row is deleted with it (same database); its notification after.
     func delete(id: UUID) async throws {
         let copy = self.record(id: id)
+        let history = corrections.filter { $0.memoryID == id }
         let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
         if let reminderID { await environment.noteReminders?.memoryDeleted(reminderID: reminderID) }
         noteReminders?.clearReceipt(memoryID: id)
-        recentlyDeleted = copy.map { DeletedNote(record: $0, deletedAt: .now) }
+        recentlyDeleted = copy.map { DeletedNote(record: $0, corrections: history, deletedAt: .now) }
         await reload()
     }
 
@@ -80,7 +91,7 @@ final class MemoryStore {
             recentlyDeleted = nil
             return
         }
-        _ = try await environment.memoryRepository.restore([deleted.record])
+        _ = try await environment.memoryRepository.restore([deleted.record], corrections: deleted.corrections)
         if recentlyDeleted == deleted { recentlyDeleted = nil }
         await reload()
     }
@@ -91,8 +102,8 @@ final class MemoryStore {
     }
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
-    func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
-        let added = try await environment.memoryRepository.restore(records)
+    func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection] = []) async throws -> [MemoryRecord] {
+        let added = try await environment.memoryRepository.restore(records, corrections: corrections)
         await reload()
         return added
     }

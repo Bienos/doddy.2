@@ -120,6 +120,8 @@ public enum DataFlow {
     public static func staysOnPhone(_ state: DataFlowState) -> [String] {
         [
             "Your saved notes, except as listed above.",
+            // ADR-214: the corrections table is read only by the note screen and exports.
+            "Earlier wordings of notes you corrected, except in files you export.",
             "What Doddy did (the activity list).",
             state.rememberConversations
                 ? "Remembered conversations, except the last few at the start of a conversation."

@@ -107,11 +107,31 @@ public final class SQLiteMemoryRepository: MemoryRepository {
             .prefix(limit))
     }
 
+    /// Changes the wording and keeps it as the note's next correction (ADR-214), in one
+    /// transaction: both are read back before success, or neither is kept.
     public func update(id: UUID, currentText: String) async throws -> MemoryRecord {
         let date = Self.truncatedToMilliseconds(now())
         return try await dbQueue.write { db in
             guard let existing = try Self.fetch(id, db) else { throw MemoryStoreError.notFound(id) }
             let corrected = try existing.correcting(to: currentText, at: date)
+            var earlier = try Self.corrections(id, db)
+            if !existing.userEdited, !earlier.isEmpty {
+                // Never corrected, so these rows can't be its history.
+                try db.execute(sql: "DELETE FROM memory_corrections WHERE memory_id = ?", arguments: [id.uuidString])
+                earlier = []
+            } else if existing.userEdited, !MemoryHistory.consistent(existing, earlier) {
+                // Corrected before history was kept, or restored from an export without it: keep
+                // the wording it has now as its first correction, so no wording is lost. Rows that
+                // don't end at the current wording are not its history and are replaced.
+                try db.execute(sql: "DELETE FROM memory_corrections WHERE memory_id = ?", arguments: [id.uuidString])
+                let seed = try MemoryCorrection(
+                    memoryID: id, number: 1, text: existing.currentText, correctedAt: existing.updatedAt ?? date)
+                try Self.insert(seed, db)
+                earlier = [seed]
+            }
+            let correction = try MemoryCorrection(
+                memoryID: id, number: earlier.count + 1, text: currentText, correctedAt: date)
+            try Self.insert(correction, db)
             try db.execute(
                 sql: """
                     UPDATE memories SET current_text = ?, updated_at_ms = ?, user_edited = 1, search_text = ?
@@ -121,8 +141,24 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                     corrected.currentText, Self.milliseconds(date), SearchFolding.fold(corrected.currentText),
                     id.uuidString,
                 ])
-            guard try Self.fetch(id, db) == corrected else { throw MemoryStoreError.verificationFailed }
+            guard try Self.fetch(id, db) == corrected, try Self.corrections(id, db).last == correction else {
+                throw MemoryStoreError.verificationFailed
+            }
             return corrected
+        }
+    }
+
+    public func corrections(of id: UUID) async throws -> [MemoryCorrection] {
+        try await dbQueue.read { db in
+            guard try Self.fetch(id, db) != nil else { throw MemoryStoreError.notFound(id) }
+            return try Self.corrections(id, db)
+        }
+    }
+
+    public func allCorrections() async throws -> [MemoryCorrection] {
+        try await dbQueue.read { db in
+            try Row.fetchAll(db, sql: "SELECT * FROM memory_corrections ORDER BY memory_id, number")
+                .map(Self.correction(from:))
         }
     }
 
@@ -151,11 +187,19 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     }
 
     public func export() async throws -> Data {
-        try MemoryExport.json(try await list(limit: nil), exportedAt: now())
+        try MemoryExport.json(try await list(limit: nil), corrections: try await allCorrections(), exportedAt: now())
     }
 
     public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
-        try await dbQueue.write { db in
+        try await restore(records, corrections: [])
+    }
+
+    /// Also adds each added note's corrections, when they form its whole history
+    /// (`MemoryHistory.consistent`); otherwise the note is added without them. Notes already
+    /// here keep their own history.
+    public func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord] {
+        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
+        return try await dbQueue.write { db in
             var added: [MemoryRecord] = []
             for record in records where record.source != .sampleFixture {
                 try db.execute(
@@ -174,6 +218,13 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                 guard db.changesCount > 0 else { continue }
                 // Throwing here rolls the whole transaction back: nothing from the file is kept.
                 guard try Self.fetch(record.id, db) == record else { throw MemoryStoreError.verificationFailed }
+                let history = byNote[record.id] ?? []
+                if MemoryHistory.consistent(record, history) {
+                    for correction in history { try Self.insert(correction, db) }
+                    guard try Self.corrections(record.id, db) == history.sorted(by: { $0.number < $1.number }) else {
+                        throw MemoryStoreError.verificationFailed
+                    }
+                }
                 added.append(record)
             }
             return added
@@ -186,6 +237,31 @@ public final class SQLiteMemoryRepository: MemoryRepository {
 
     private static func hit(_ row: Row) throws -> Hit {
         (try record(from: row), row["search_text"])
+    }
+
+    private static func corrections(_ id: UUID, _ db: Database) throws -> [MemoryCorrection] {
+        try Row.fetchAll(
+            db, sql: "SELECT * FROM memory_corrections WHERE memory_id = ? ORDER BY number", arguments: [id.uuidString]
+        ).map(correction(from:))
+    }
+
+    private static func insert(_ correction: MemoryCorrection, _ db: Database) throws {
+        try db.execute(
+            sql: "INSERT INTO memory_corrections (memory_id, number, text, corrected_at_ms) VALUES (?, ?, ?, ?)",
+            arguments: [correction.memoryID.uuidString, correction.number, correction.text,
+                        exportedMilliseconds(correction.correctedAt)])
+    }
+
+    private static func correction(from row: Row) throws -> MemoryCorrection {
+        let idString: String = row["memory_id"]
+        guard let id = UUID(uuidString: idString) else { throw MemoryStoreError.corruptRecord(idString) }
+        do {
+            return try MemoryCorrection(
+                memoryID: id, number: row["number"], text: row["text"],
+                correctedAt: DoddyDatabase.date(milliseconds: row["corrected_at_ms"]))
+        } catch {
+            throw MemoryStoreError.corruptRecord(idString)
+        }
     }
 
     private static func fetch(_ id: UUID, _ db: Database) throws -> MemoryRecord? {

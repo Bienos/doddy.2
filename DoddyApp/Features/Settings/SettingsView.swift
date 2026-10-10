@@ -140,21 +140,21 @@ struct SettingsView: View {
                 Section("Your memories") {
                     StatusRow(title: "Saved on this iPhone", value: "\(store.memories.count)")
                     ShareLink(
-                        item: JSONExport(records: store.memories),
+                        item: JSONExport(records: store.memories, corrections: store.corrections),
                         preview: SharePreview("Doddy memories (JSON)")
                     ) {
                         Label("Export as JSON", systemImage: "square.and.arrow.up")
                     }
                     .disabled(store.memories.isEmpty)
                     ShareLink(
-                        item: MemoryExport.plainText(store.memories, exportedAt: .now),
+                        item: MemoryExport.plainText(store.memories, corrections: store.corrections, exportedAt: .now),
                         preview: SharePreview("Doddy memories (text)")
                     ) {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
                     .disabled(store.memories.isEmpty)
                     ShareLink(
-                        item: MarkdownFileExport(records: store.memories),
+                        item: MarkdownFileExport(records: store.memories, corrections: store.corrections),
                         preview: SharePreview("Doddy memories (Markdown)")
                     ) {
                         Label("Export as Markdown", systemImage: "doc.richtext")
@@ -630,7 +630,8 @@ struct SettingsView: View {
                 throw MemoryRestoreError.tooLarge(bytes: size, maximum: MemoryRestore.maxFileBytes)
             }
             let file = try MemoryRestore.read(try Data(contentsOf: url))
-            let plan = MemoryRestore.plan(file.records, existing: store.memories, exportedAt: file.exportedAt)
+            let plan = MemoryRestore.plan(
+                file.records, corrections: file.corrections, existing: store.memories, exportedAt: file.exportedAt)
             if plan.isEmpty {
                 restoreFailed = false
                 restoreMessage = RestoreCopy.nothingToAdd(plan)
@@ -646,7 +647,7 @@ struct SettingsView: View {
     private func restore(_ plan: MemoryRestorePlan) async {
         restorePlan = nil
         do {
-            let added = try await store.restore(plan.toAdd)
+            let added = try await store.restore(plan.toAdd, corrections: plan.corrections)
             restoreFailed = false
             restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."
         } catch {
@@ -797,6 +798,8 @@ enum RestoreCopy {
             return "Note \(position) in that file is damaged, so nothing from it was added."
         case .conflictingDuplicate(let position):
             return "Note \(position) in that file repeats another one with different text, so nothing from it was added."
+        case .unreadableCorrection(let position):
+            return "Correction \(position) in that file is damaged, so nothing from it was added."
         }
     }
 }
@@ -829,10 +832,11 @@ struct ProfileTextExport: Transferable {
 /// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
 struct MarkdownFileExport: Transferable {
     let records: [MemoryRecord]
+    let corrections: [MemoryCorrection]
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
-            Data(MarkdownExport.markdown(export.records, exportedAt: Date()).utf8)
+            Data(MarkdownExport.markdown(export.records, corrections: export.corrections, exportedAt: Date()).utf8)
         }
         .suggestedFileName("doddy-memories.md")
     }
@@ -841,10 +845,11 @@ struct MarkdownFileExport: Transferable {
 /// JSON export file for the share sheet (format: `MemoryExport.json`).
 struct JSONExport: Transferable {
     let records: [MemoryRecord]
+    let corrections: [MemoryCorrection]
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .json) { export in
-            try MemoryExport.json(export.records, exportedAt: Date())
+            try MemoryExport.json(export.records, corrections: export.corrections, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
     }
