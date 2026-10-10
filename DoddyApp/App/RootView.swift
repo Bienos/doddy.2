@@ -80,6 +80,8 @@ struct RootView: View {
             }
             .preferredColorScheme(colorScheme)
             .task { await store.reload() }
+            // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
+            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)

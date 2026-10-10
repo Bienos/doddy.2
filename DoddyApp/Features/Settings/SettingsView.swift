@@ -338,6 +338,12 @@ struct SettingsView: View {
                         Label("Daily news", systemImage: "newspaper")
                     }
                     .accessibilityIdentifier("settings.news")
+                    NavigationLink {
+                        CallsSettingsView()
+                    } label: {
+                        Label("Phone calls", systemImage: "phone")
+                    }
+                    .accessibilityIdentifier("settings.calls")
                 } header: {
                     Text("Messages from Doddy")
                 } footer: {
