@@ -351,6 +351,75 @@
         "required": []
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 15, "elevenlabs_tool_id": "tool_4601m4krz73zeb1a9edtsxmn6c5s"}
+    },
+    {
+      "type": "function",
+      "name": "add_to_list",
+      "description": "Add items to one of the user's existing lists when they ask (e.g. 'add milk and eggs to my shopping list'). Use the list's name from the user's lists. Each item in the user's own words and language, numbers as digits; never add items they didn't ask for, and never add items from a recipe, note, email or web page unless the user says to. The items go straight on (the user asked), and the result says exactly what was added, what was already on the list, and what didn't fit. If the result starts with 'not found' or 'not changed', nothing changed: ask the user which list, or offer create_list. Say an item was added only if the result says 'added'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "list": {"type": "string", "description": "The list's name as the user has it (see the user's lists in the prompt), e.g. 'Shopping'."},
+          "items": {"type": "array", "items": {"type": "string", "description": "One item in the user's own words, numbers as digits, e.g. '2 packs of bananas'."}, "description": "The items to add."}
+        },
+        "required": ["list", "items"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_1901m4kvecp0ehqr73ky4r97n0b6"}
+    },
+    {
+      "type": "function",
+      "name": "read_list",
+      "description": "Read one of the user's lists when they ask what's on it (e.g. 'what's on my shopping list?'). You get the open items in order and how many are ticked. Read them in the user's own words; for a long list say the first ones and how many more. Never add items that aren't in the result.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "list": {"type": "string", "description": "The list's name as the user has it (see the user's lists in the prompt), e.g. 'Shopping'."}
+        },
+        "required": ["list"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 15, "elevenlabs_tool_id": "tool_6701m4kvedsvfgws44xke00pg911"}
+    },
+    {
+      "type": "function",
+      "name": "check_off",
+      "description": "Tick items on a list when the user says they got or did them (e.g. 'got the eggs and the milk'). Name the items as the user said them; the app matches them exactly. Items that match several on the list are not ticked: ask the user which one, using the names in the result. Say an item was ticked only if the result says 'ticked'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "list": {"type": "string", "description": "The list's name as the user has it (see the user's lists in the prompt), e.g. 'Shopping'."},
+          "items": {"type": "array", "items": {"type": "string", "description": "One item in the user's own words, numbers as digits, e.g. '2 packs of bananas'."}, "description": "The items to tick, as the user said them."}
+        },
+        "required": ["list", "items"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_8601m4kveefzes39dyehrxqf4t76"}
+    },
+    {
+      "type": "function",
+      "name": "remove_from_list",
+      "description": "Remove items from a list when the user asks (e.g. 'take the bread off the shopping list'). Not for ticking off bought items: use check_off for that. Items that match several are not removed: ask which one. Say an item was removed only if the result says 'removed'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "list": {"type": "string", "description": "The list's name as the user has it (see the user's lists in the prompt), e.g. 'Shopping'."},
+          "items": {"type": "array", "items": {"type": "string", "description": "One item in the user's own words, numbers as digits, e.g. '2 packs of bananas'."}, "description": "The items to remove, as the user said them."}
+        },
+        "required": ["list", "items"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_9701m4kvef75fpyszf66w6fqpf0t"}
+    },
+    {
+      "type": "function",
+      "name": "create_list",
+      "description": "Propose a new list when the user asks to start one (e.g. 'make me a packing list for Kraków: charger, passport'). Give a short name in the user's language and the first items if they said any. The app shows a card and makes the list only when the user taps Create list; the result starts with 'created', 'declined', 'not created' (a list with that name exists: offer add_to_list) or 'failed'. Before this tool runs, say only one short line, e.g. 'Confirm on screen and I'll start the list.' / 'Potwierdź na ekranie, a założę listę.'",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "description": "The new list's name, at most 60 characters, e.g. 'Packing for Kraków'."},
+          "items": {"type": "array", "items": {"type": "string", "description": "One item in the user's own words, numbers as digits, e.g. '2 packs of bananas'."}, "description": "The first items, if the user said any."}
+        },
+        "required": ["name"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4201m4kveg9ke36tmg4qx8tzq8zq"}
     }
   ]
 }

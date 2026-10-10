@@ -34,7 +34,7 @@ struct MemoryDetailView: View {
                         get: { record.category },
                         set: { newType in Task { await setType(newType, for: record) } })
                     ) {
-                        ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                        ForEach(MemoryCategory.noteCategories, id: \.self) { Text($0.displayName).tag($0) }
                     }
                     .pickerStyle(.menu)
                     .frame(minHeight: 44)

@@ -48,7 +48,7 @@
     "saved_notes_truncated": "'yes' when the list was cut short, else 'no'",
     "recent_conversations": "Recent conversations, oldest first, bounded (VoiceContext.recentConversations)",
     "doddy_personality": "Style settings from Settings, Doddy's personality (PersonalityPrompt.render); default = Doddy's default",
-    "user_profile": "Approved introduction answers (ProfilePrompt.render), sent only when Settings, About you, 'Use in voice conversations' is on; otherwise the not-shared line", "translator_start": "'none', or translator mode when the conversation was opened from Home, Translate (TranslatorPrompt.render, ADR-209); then saved_notes, recent_conversations and user_profile carry a not-shared line instead"
+    "user_profile": "Approved introduction answers (ProfilePrompt.render), sent only when Settings, About you, 'Use in voice conversations' is on; otherwise the not-shared line", "saved_lists": "List names with open and ticked counts (ListsPrompt.render, ADR-210), no items; the not-shared line when opened from Home, Translate", "translator_start": "'none', or translator mode when the conversation was opened from Home, Translate (TranslatorPrompt.render, ADR-209); then saved_notes, recent_conversations and user_profile carry a not-shared line instead"
   },
   "turn_taking": {
     "eagerness": "high",

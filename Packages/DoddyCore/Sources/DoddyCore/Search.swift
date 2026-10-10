@@ -52,7 +52,7 @@ public struct RepositoryRecallService: RecallService {
 
     public func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
         let candidates = try await repository.query(question, limit: limit)
-            .filter { $0.record.source.isEligibleForPersonalRecall && !$0.matchedTerms.isEmpty }
+            .filter { $0.record.source.isEligibleForPersonalRecall && !$0.matchedTerms.isEmpty && $0.record.category != .list }
         return candidates.isEmpty ? .noMatch : .matches(candidates)
     }
 }
@@ -65,18 +65,21 @@ public enum MemoryExport {
         let formatVersion: Int
         let exportedAtMs: Int64
         let memories: [MemoryRecord]
+        /// Items of the `list` records (ADR-210); left out when there are none.
+        let listItems: [ListItem]?
     }
 
-    public static func json(_ records: [MemoryRecord], exportedAt: Date) throws -> Data {
+    public static func json(_ records: [MemoryRecord], listItems: [ListItem] = [], exportedAt: Date) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(
             formatVersion: formatVersion,
             exportedAtMs: Int64((exportedAt.timeIntervalSince1970 * 1000).rounded()),
-            memories: records))
+            memories: records,
+            listItems: listItems.isEmpty ? nil : listItems))
     }
 
-    public static func plainText(_ records: [MemoryRecord], exportedAt: Date) -> String {
+    public static func plainText(_ records: [MemoryRecord], lists: [DoddyList] = [], exportedAt: Date) -> String {
         let iso = ISO8601DateFormatter()
         var lines = ["DODDY memories — exported \(iso.string(from: exportedAt))", "\(records.count) memories", ""]
         for record in records {
@@ -89,6 +92,17 @@ public enum MemoryExport {
             }
             lines.append("ID: \(record.id.uuidString)")
             lines.append("")
+        }
+        if !lists.isEmpty {
+            lines.append("# Lists (\(lists.count))")
+            lines.append("")
+            for list in lists {
+                lines.append("## \(list.name)")
+                lines.append(contentsOf: list.open.map { "[ ] \($0.text)" })
+                lines.append(contentsOf: list.done.map { "[x] \($0.text)" })
+                lines.append("ID: \(list.id.uuidString)")
+                lines.append("")
+            }
         }
         return lines.joined(separator: "\n")
     }

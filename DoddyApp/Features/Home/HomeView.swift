@@ -100,7 +100,7 @@ struct HomeView: View {
             }
             .background(Theme.canvas)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
-            .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
+            .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
             // The conversation opens once the start sheet has gone away.

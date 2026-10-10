@@ -189,6 +189,7 @@ extension MemoryCategory {
         case .place: "Place"
         case .intention: "Intention"
         case .other: "Other"
+        case .list: "List"
         }
     }
 }

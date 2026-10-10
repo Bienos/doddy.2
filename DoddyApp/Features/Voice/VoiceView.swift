@@ -148,6 +148,11 @@ struct VoiceView: View {
                                 .id("reminderStatus")
                         }
 
+                        if let receipt = controller.listReceipt {
+                            listReceiptCard(receipt, controller: controller)
+                                .id("listReceipt")
+                        }
+
                         if let status = controller.noteReminderStatus {
                             noteReminderStatusCard(status, controller: controller)
                                 .id("noteReminderStatus")
@@ -168,7 +173,7 @@ struct VoiceView: View {
                                 .id("contactCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your last few conversations and any calendar entries, contact names or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
+                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -181,6 +186,9 @@ struct VoiceView: View {
                 .onChange(of: controller.pendingAction?.toolCallID) { _, id in
                     editingNoteReminderTime = false
                     if id != nil { withAnimation { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                }
+                .onChange(of: controller.listReceipt) { _, receipt in
+                    if receipt != nil { withAnimation { proxy.scrollTo("listReceipt", anchor: .bottom) } }
                 }
                 .onChange(of: controller.noteReminderStatus) { _, status in
                     if status != nil { withAnimation { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
@@ -315,6 +323,20 @@ struct VoiceView: View {
                 .foregroundStyle(Theme.secondaryText)
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
+        case .createList(_, let name, let items):
+            Text("Start a new list?")
+                .font(.headline)
+            TextField("Name", text: Binding(get: { name }, set: { controller.changeNewListName($0) }))
+                .textFieldStyle(.roundedBorder)
+                .font(.headline)
+                .accessibilityLabel("List name")
+                .accessibilityIdentifier("voice.newList.name")
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                Label(item, systemImage: "square")
+            }
+            Text("Fix the name if Doddy misheard. Nothing is made until you tap Create list.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .noteReminder(_, _, let noteText, let savedAt, let target):
             noteReminderContent(noteText: noteText, savedAt: savedAt, target: target, controller: controller)
         case .cloud(_, _, let preview, _, let mode):
@@ -342,6 +364,7 @@ struct VoiceView: View {
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
         case .noteReminder: ("Set reminder", "Don't set")
         case .translator: ("Start", "Not now")
+        case .createList: ("Create list", "Not now")
         }
     }
 
@@ -605,6 +628,53 @@ struct VoiceView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(SecondaryButtonStyle())
+    }
+
+    /// What a list change by voice did (ADR-210), with Undo and, when "milk" matched two items,
+    /// the items to tap. Read back from the store before it is shown.
+    private func listReceiptCard(_ receipt: ListReceipt, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(receipt.title).font(.headline)
+                Spacer()
+                Button { controller.dismissListReceipt() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            ForEach(Array(receipt.lines.enumerated()), id: \.offset) { _, line in
+                switch line {
+                case .added(let text): Label(text, systemImage: "plus")
+                case .ticked(let text): Label(text, systemImage: "checkmark.square.fill").foregroundStyle(Theme.confirmed)
+                case .removed(let text): Label(text, systemImage: "minus").foregroundStyle(Theme.secondaryText)
+                case .open(let text): Label(text, systemImage: "square")
+                case .note(let text): Text(text).font(.footnote).foregroundStyle(Theme.secondaryText)
+                }
+            }
+            if let choices = receipt.choices {
+                Text("“\(choices.said)” matches more than one. \(choices.tick ? "Tick" : "Remove") which?")
+                    .font(.subheadline.weight(.semibold))
+                ForEach(choices.options) { item in
+                    Button(item.text) { Task { await controller.pickListChoice(item) } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            if let problem = receipt.problem {
+                ProblemView(message: problem)
+            }
+            if receipt.undo != nil {
+                Button("Undo") { Task { await controller.undoListReceipt() } }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.list.undo")
+            }
+            Text("Saved on this iPhone. Open Memories › Lists to see the whole list.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.listReceipt")
     }
 
     /// "Start translating?" (canvas 2): the pair, what changes, and Change languages.

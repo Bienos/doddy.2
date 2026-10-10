@@ -140,6 +140,21 @@ public final class DoddyDatabase: Sendable {
                     CHECK (first_set_for_ms IS NULL OR (kind = 'time' AND repeat_rule IS NULL));
                 """)
         }
+        // Lists (ADR-210): a list is a `memories` row with category 'list'; its items go with it.
+        migrator.registerMigration("v6_list_items") { db in
+            try db.execute(sql: """
+                CREATE TABLE list_items (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    list_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    text TEXT NOT NULL CHECK (length(trim(text)) BETWEEN 1 AND \(ListLimits.itemLength)),
+                    source TEXT NOT NULL CHECK (source IN (\(sqlList(ListItemSource.allCases.map(\.rawValue))))),
+                    added_at_ms INTEGER NOT NULL,
+                    done_at_ms INTEGER,
+                    position INTEGER NOT NULL CHECK (position >= 0)
+                );
+                CREATE INDEX list_items_list ON list_items(list_id, position);
+                """)
+        }
         return migrator
     }
 
