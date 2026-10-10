@@ -12,6 +12,7 @@ struct MemoryDetailView: View {
     @State private var isDeleting = false
     @State private var errorMessage: String?
     @State private var copied = false
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
 
     var body: some View {
         ScrollView {
@@ -34,6 +35,12 @@ struct MemoryDetailView: View {
                         HStack { Text("Edit this note"); Spacer(); Image(systemName: "pencil") }
                     }
                     .buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("detail.edit")
+                    Button { togglePin(record) } label: {
+                        let pinned = PinnedNotes(stored: pinnedRaw).isPinned(record.id)
+                        HStack { Text(pinned ? "Unpin from the top" : "Pin to the top"); Spacer(); Image(systemName: pinned ? "pin.slash" : "pin") }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("detail.pin")
                     Button { copy(record) } label: {
                         HStack { Text(copied ? "Copied" : "Copy text"); Spacer(); Image(systemName: copied ? "checkmark" : "doc.on.doc") }
                     }.buttonStyle(SecondaryButtonStyle())
@@ -62,6 +69,16 @@ struct MemoryDetailView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Both current and original text are removed from this iPhone. You can undo for a few seconds afterwards. Exports and older backups aren't affected.")
+        }
+    }
+
+    private func togglePin(_ record: MemoryRecord) {
+        var pins = PinnedNotes(stored: pinnedRaw)
+        if pins.toggle(record.id, existing: store.memories) == .full {
+            errorMessage = "You can pin up to \(PinnedNotes.maxPins) notes. Unpin one first."
+        } else {
+            errorMessage = nil
+            pinnedRaw = pins.stored
         }
     }
 

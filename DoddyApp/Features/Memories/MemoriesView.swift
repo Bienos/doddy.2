@@ -10,6 +10,7 @@ struct MemoriesView: View {
     /// Type filter (ADR-139). Ignored once no note of that type is left.
     @State private var category: MemoryCategory?
     @AppStorage(PreferenceKey.memorySort) private var sortRaw = MemorySort.newestFirst.rawValue
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -47,9 +48,11 @@ struct MemoriesView: View {
                         if !choices.isEmpty {
                             MemoryTypeFilterRow(choices: choices, total: store.memories.count, selection: $category, active: active)
                         }
+                        let pins = PinnedNotes(stored: pinnedRaw)
                         LazyVStack(spacing: 12) {
-                            ForEach(MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories))) {
-                                MemoryLinkCard(record: $0)
+                            // Pinned notes first (ADR-144), then the chosen order.
+                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories)))) {
+                                MemoryLinkCard(record: $0, isPinned: pins.isPinned($0.id))
                             }
                         }
                     }

@@ -524,6 +524,7 @@ struct SettingsView: View {
     private func deleteAll() async {
         do {
             try await store.deleteAll()
+            UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
             deleteError = nil
         } catch {
             deleteError = UserFacingError.message(for: error)
