@@ -14,6 +14,9 @@ struct CaptureView: View {
     @State private var errorMessage: String?
     @State private var saved: MemoryRecord?
     @State private var confirmDiscard = false
+    /// A saved note with the same words (ADR-141). Shown instead of saving until the user picks.
+    @State private var duplicate: MemoryRecord?
+    @State private var allowDuplicate = false
     @FocusState private var editorFocused: Bool
 
     init(sharedText: String? = nil) {
@@ -61,6 +64,12 @@ struct CaptureView: View {
                         if let errorMessage {
                             ProblemView(message: errorMessage).accessibilityIdentifier("capture.error")
                         }
+                        if let duplicate {
+                            DuplicateNoticeView(record: duplicate) {
+                                allowDuplicate = true
+                                beginSave()
+                            }
+                        }
                         Button(action: beginSave) {
                             HStack { Text(isSaving ? "Saving…" : "Save this detail"); Spacer(); Image(systemName: "arrow.right") }
                         }
@@ -84,6 +93,7 @@ struct CaptureView: View {
                 }
             }
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
+            .onChange(of: text) { duplicate = nil; allowDuplicate = false }
             .confirmationDialog("Discard this note?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) { dismiss() }
                 Button("Keep editing", role: .cancel) {}
@@ -101,10 +111,17 @@ struct CaptureView: View {
 
     private func startAnother() {
         text = ""; category = .other; saved = nil; errorMessage = nil; isShared = false
+        duplicate = nil; allowDuplicate = false
     }
 
     private func beginSave() {
         guard !isSaving else { return }
+        if !allowDuplicate, let match = DuplicateNote.existing(for: text, in: store.memories) {
+            duplicate = match
+            editorFocused = false
+            return
+        }
+        duplicate = nil
         editorFocused = false
         isSaving = true
         Task { await save() }
@@ -115,6 +132,31 @@ struct CaptureView: View {
         defer { isSaving = false }
         do { saved = try await store.save(text: text, category: category, source: isShared ? .sharedContent : .explicitText) }
         catch { errorMessage = UserFacingError.message(for: error) }
+    }
+}
+
+/// "You saved this already" with the date, a link to that note and "Save anyway".
+private struct DuplicateNoticeView: View {
+    let record: MemoryRecord
+    let onSaveAnyway: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("You saved this already, \(DateText.full(record.capturedAt)).", systemImage: "doc.on.doc")
+                .font(.subheadline.weight(.medium))
+            Text(record.currentText).font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(3)
+            NavigationLink(value: record.id) {
+                HStack { Text("View the saved note"); Spacer(); Image(systemName: "arrow.up.right") }
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("capture.viewDuplicate")
+            Button("Save it again anyway", action: onSaveAnyway)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("capture.saveDuplicate")
+        }
+        .padding(14)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityIdentifier("capture.duplicate")
     }
 }
 
