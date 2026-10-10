@@ -18,6 +18,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Memory on calls (opt-in) | `PUT /v1/memory-copy` `{enabled}` (off deletes every copy) · `PUT /v1/memory-copy/snapshot` (replaces the copy) |
 | Notes from calls | `GET /v1/call-notes` · `DELETE /v1/call-notes/:id` (after the user confirms or discards) |
 | ElevenLabs (S2) | `POST /webhooks/elevenlabs/call-start` · `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`; all need `X-Doddy-Tool-Secret`, tools also `X-Doddy-Session` |
+| News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` |
 | Health | `GET /healthz` |
 
 All `/v1` routes except account creation need `Authorization: Bearer <deviceToken>`.
@@ -45,6 +46,17 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
   1. Run `node scripts/setup-phone-agent.mjs --dry-run` to see the requests, then run it for real after deploy.
   2. In ElevenLabs, import the Twilio number and assign it to the new agent.
   3. Set the call-start webhook (or use `--set-workspace-webhook`).
+
+## News digests
+Once a day at the user's local time, the worker builds a short news message:
+1. **Gather:** curated RSS feeds per topic, the user's own feeds, and GNews keyword search for their own topics. Fetches are cached 30–60 minutes and shared across users.
+2. **Shortlist:** deterministic. Stories from the last 36 hours, not sent in the past 14 days, deduplicated by URL (tracking parameters ignored) and title, scored by topic fit and freshness, at most 3 per source.
+3. **Write:** Claude Haiku (`claude-haiku-5-5`, structured output) picks up to 5 stories and writes one line each, using only the headline and feed summary.
+   - Links and sources always come from the shortlist; lines pointing at unknown stories are dropped.
+   - If Claude is unavailable, refuses, or returns nothing usable, the digest falls back to plain headlines.
+4. **Send:** push (short list; links are in the app) and/or SMS (up to 3 stories with links, ≤640 characters), through the outbox. One scheduled digest per local day, guaranteed by a unique index.
+- **Custom feed URLs** are fetched with protections against reaching the server's own network: private and reserved addresses are blocked, the address is checked at connect time (so a DNS change can't swap one in), redirects are re-checked, and size and time are capped.
+- **Sent to Anthropic:** topic labels plus public headlines and summaries. Never memories, phone numbers or account IDs.
 
 ## Run locally
 ```sh

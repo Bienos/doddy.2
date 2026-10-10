@@ -1,6 +1,7 @@
 import { loadConfig } from "./config.js";
 import { createPool, migrate } from "./db.js";
 import { purgeExpiredSessions } from "./calls.js";
+import { runDueDigests } from "./news/digest.js";
 import { dispatchDue } from "./outbox.js";
 import { providersFrom } from "./providers/index.js";
 
@@ -8,7 +9,7 @@ import { providersFrom } from "./providers/index.js";
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrate(db);
-const { push, sms } = providersFrom(config);
+const { push, sms, news } = providersFrom(config);
 const log = (msg: string, extra: object = {}) => console.log(JSON.stringify({ time: new Date().toISOString(), msg, ...extra }));
 log("worker started", { push: !!push, sms: !!sms });
 
@@ -20,6 +21,8 @@ while (!stopping) {
   try {
     const r = await dispatchDue(db, { push, sms });
     await purgeExpiredSessions(db);
+    const digests = await runDueDigests(db, news);
+    if (digests) log("news digests built", { count: digests });
     if (r.processed || r.reaped) log("dispatch pass", r);
     if (r.processed) continue; // more may be due
   } catch (err) {

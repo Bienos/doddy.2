@@ -28,6 +28,9 @@ const schema = z.object({
   ELEVENLABS_TOOL_SECRET: optional, // shared with ElevenLabs as a workspace secret
   ELEVENLABS_PHONE_AGENT_ID: optional,
   ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
+  // News digests
+  ANTHROPIC_API_KEY: optional, // Claude writes the one-line summaries
+  GNEWS_API_KEY: optional, // keyword search across news sources (paid plan for commercial use)
   DODDY_PHONE_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
 });
 
@@ -49,6 +52,8 @@ export interface Config {
   toolSecret?: string;
   phoneAgent?: PhoneAgentConfig;
   doddyPhoneNumber?: string;
+  anthropicApiKey?: string;
+  gnewsApiKey?: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -75,5 +80,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID, phoneNumberId: e.ELEVENLABS_PHONE_NUMBER_ID,
     }),
     doddyPhoneNumber: e.DODDY_PHONE_NUMBER,
+    anthropicApiKey: e.ANTHROPIC_API_KEY,
+    gnewsApiKey: e.GNEWS_API_KEY,
   };
 }

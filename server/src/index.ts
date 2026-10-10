@@ -14,6 +14,7 @@ const app = await buildApp({
 app.log.info({
   push: !!providers.push, sms: !!providers.sms, voice: !!providers.voice, webhooks: !!config.publicBaseUrl,
   calls: !!(config.toolSecret && providers.cipher), outboundCalls: !!providers.outbound,
+  newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
 }, "configured features");
 
 const shutdown = async () => {

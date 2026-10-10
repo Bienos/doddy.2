@@ -36,6 +36,11 @@ envVarGroups:
         sync: false
       - key: DODDY_PHONE_NUMBER
         sync: false
+      # News digests
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GNEWS_API_KEY
+        sync: false
 
 services:
   - type: web
