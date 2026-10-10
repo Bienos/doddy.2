@@ -114,8 +114,16 @@ the default".
 Left out on purpose: `busy-galileo` (same social links as `clever-ritchie`), and the older variant
 branches `busy-hawking`, `friendly-sagan`, `busy-mendel`, `vibrant-pasteur`, `upbeat-brown`,
 `eloquent-hawking` (their features are on the main line in later form; `explicit_voice` is
-already used for voice notes). Other sessions were still pushing while this was done: anything
-pushed to those branches after 2026-10-10 12:15 UTC is not included and needs one more merge.
+already used for voice notes). Other sessions were still pushing while this was done.
+
+**Second merge (2026-10-10, ~13:05 UTC, owner: "merge them"):** brought in what those branches
+pushed after the first merge: `compassionate-darwin` (gateway hosting notes), `blissful-curie`
+("What Doddy did" survives a crash), `brave-wright` (private conversations, notes that may
+disagree) and `eager-johnson` (blog published on the site, which already contains `busy-galileo`).
+Their new ADR numbers collided again (128, 131, 132; the blog moved to 131 on its branch): they
+are now 169, 170, 171, and the blog stays 138. The was/now table in `DECISIONS.md` lists them.
+To stop this repeating, new sessions should start from this branch (or the default branch once
+PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit.
 
 **Follow-ups:**
 - Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the
