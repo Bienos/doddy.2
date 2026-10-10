@@ -73,13 +73,8 @@ struct MemoryDetailView: View {
     }
 
     private func togglePin(_ record: MemoryRecord) {
-        var pins = PinnedNotes(stored: pinnedRaw)
-        if pins.toggle(record.id, existing: store.memories) == .full {
-            errorMessage = "You can pin up to \(PinnedNotes.maxPins) notes. Unpin one first."
-        } else {
-            errorMessage = nil
-            pinnedRaw = pins.stored
-        }
+        let change = PinnedNotes.toggle(record.id, stored: &pinnedRaw, existing: store.memories)
+        errorMessage = change == .full ? PinnedNotes.fullMessage : nil
     }
 
     private func copy(_ record: MemoryRecord) {

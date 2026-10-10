@@ -1,5 +1,6 @@
 import DoddyCore
 import SwiftUI
+import UIKit
 
 /// Real repository records only. No seeded examples or generated personal facts.
 struct MemoriesView: View {
@@ -11,6 +12,7 @@ struct MemoriesView: View {
     @State private var category: MemoryCategory?
     @AppStorage(PreferenceKey.memorySort) private var sortRaw = MemorySort.newestFirst.rawValue
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
+    @State private var pinMessage: String?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -49,10 +51,29 @@ struct MemoriesView: View {
                             MemoryTypeFilterRow(choices: choices, total: store.memories.count, selection: $category, active: active)
                         }
                         let pins = PinnedNotes(stored: pinnedRaw)
+                        if let pinMessage {
+                            Label(pinMessage, systemImage: "pin.slash").font(.footnote).foregroundStyle(Theme.error)
+                        }
                         LazyVStack(spacing: 12) {
                             // Pinned notes first (ADR-144), then the chosen order.
-                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories)))) {
-                                MemoryLinkCard(record: $0, isPinned: pins.isPinned($0.id))
+                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories)))) { record in
+                                let isPinned = pins.isPinned(record.id)
+                                MemoryLinkCard(record: record, isPinned: isPinned)
+                                    .contextMenu {
+                                        // The same actions as on the note's screen, without opening it (ADR-145).
+                                        Button {
+                                            let change = PinnedNotes.toggle(record.id, stored: &pinnedRaw, existing: store.memories)
+                                            pinMessage = change == .full ? PinnedNotes.fullMessage : nil
+                                        } label: {
+                                            Label(isPinned ? "Unpin from the top" : "Pin to the top", systemImage: isPinned ? "pin.slash" : "pin")
+                                        }
+                                        Button { UIPasteboard.general.string = record.currentText } label: {
+                                            Label("Copy text", systemImage: "doc.on.doc")
+                                        }
+                                        ShareLink(item: record.currentText) {
+                                            Label("Share text", systemImage: "square.and.arrow.up")
+                                        }
+                                    }
                             }
                         }
                     }
