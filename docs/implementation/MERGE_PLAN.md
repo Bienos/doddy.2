@@ -126,7 +126,10 @@ are now 169, 170, 171, and the blog stays 138. The was/now table in `DECISIONS.m
 - `brave-wright`: memories and capture work (profile export, read/delete remembered
   conversations, restore from export, Save/Find shortcuts and New note control, type filter,
   undo delete, duplicate warning, share, list order, pins, press-and-hold menu, Paste button).
-  Its ADR-133–146 collided with this branch's numbers and are now **176–189**.
+  Its ADR-133–146 collided with this branch's numbers and are now **176–189**; its later
+  "change a note's type" (ADR-147) is **192**.
+- PR #7 (`hopeful-fermat` into this branch, merged on GitHub meanwhile) carried the same note
+  reminders with ADR-176/177; those numbers are `brave-wright`'s here, so they stay **190/191**.
 - `hopeful-fermat`: note reminders (local notifications about a saved note, separate from Apple
   Reminders) and the voice prompt's AI disclosure restored; ADR-173/174 → **190/191**. Its
   "cancel the reminder on delete" met `brave-wright`'s undo: the delete message now says undo
@@ -140,7 +143,7 @@ are now 169, 170, 171, and the blog stays 138. The was/now table in `DECISIONS.m
   Reminders implementation, which would replace ADR-126's working one).
 
 To stop this repeating, new sessions should start from this branch (or the default branch once
-PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit (192 after the third merge).
+PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit (193 after the third merge).
 
 **Follow-ups:**
 - ~~Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the
