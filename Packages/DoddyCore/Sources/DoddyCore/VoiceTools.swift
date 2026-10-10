@@ -165,6 +165,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case draftMessage(MessageDraft)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
+    /// Translator mode (ADR-209): proposed on a card; the conversation switches on Start.
+    case startTranslator(TranslatorProposal)
+    case stopTranslator
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -198,6 +201,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.startTranslator:
+            return parseStartTranslator(args, name: name)
+        case VoiceToolName.stopTranslator:
+            return .stopTranslator
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }

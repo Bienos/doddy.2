@@ -124,8 +124,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .messages, title: "Draft a \(kind)", detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             return describe(cloud: call.name)
-        case .unsupported, .invalid, .needsClarification:
-            // A clarification goes straight back to the agent; no app is used.
+        case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:
+            // A clarification goes straight back to the agent; no app is used. Translator mode
+            // uses no app either, and leaves no trace of the conversation (ADR-209).
             return nil
         }
     }

@@ -80,6 +80,11 @@ public enum DataFlow {
                 when: "Only while a conversation is open.", isActive: true,
                 note: "ElevenLabs keeps a recording and transcript of each conversation."),
             DataFlowRow(
+                id: "translator", destination: "ElevenLabs (translator mode)",
+                what: "The other person's voice too, and everything said while translating. Opened from Translate on Home, your notes, conversations and profile aren't sent. Started in a conversation, what Doddy already had in it stays there, and he is told never to repeat it to them.",
+                when: "Only while translator mode is on.", isActive: true,
+                note: "Listen only hears whoever is near you. Nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes of the end."),
+            DataFlowRow(
                 id: "lookups", destination: "Open-Meteo and Wikipedia",
                 what: "A place name and its coordinates; search words.",
                 when: "Only when you ask about the weather or a fact.", isActive: true,

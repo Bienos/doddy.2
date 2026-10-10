@@ -17,6 +17,8 @@ struct VoiceView: View {
     @State private var openConnection: VoiceConnection?
     /// The time picker on a note-reminder card is open (closed again for each new card).
     @State private var editingNoteReminderTime = false
+    /// "Change languages" on the "Start translating?" card.
+    @State private var changingTranslator = false
 
     /// Read when a conversation starts, so a changed setting or access code applies next time.
     private var mode: VoiceConnectionMode {
@@ -54,7 +56,10 @@ struct VoiceView: View {
                             Label("Private", systemImage: controller.isPrivate ? "eye.slash.fill" : "eye.slash")
                         }
                         .accessibilityValue(controller.isPrivate ? "On" : "Off")
-                        .accessibilityHint("When on, this conversation isn't kept on your iPhone.")
+                        .accessibilityHint(controller.privacyLocked
+                            ? "This conversation was used for translating, so it stays private."
+                            : "When on, this conversation isn't kept on your iPhone.")
+                        .disabled(controller.privacyLocked)
                         .accessibilityIdentifier("voice.private")
                     }
                 }
@@ -64,7 +69,7 @@ struct VoiceView: View {
         .task {
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
-            await controller.start(mode, profile: profiles.profile)
+            await controller.start(mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset())
         }
         .onDisappear {
             Task { await controller?.stop() }
@@ -79,7 +84,16 @@ struct VoiceView: View {
         }
     }
 
+    @ViewBuilder
     private func session(_ controller: VoiceSessionController) -> some View {
+        if let translator = controller.translator {
+            TranslatorScreen(controller: controller, session: translator)
+        } else {
+            conversation(controller)
+        }
+    }
+
+    private func conversation(_ controller: VoiceSessionController) -> some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -113,6 +127,11 @@ struct VoiceView: View {
                         }
 
                         problem(controller)
+
+                        if let summary = controller.translatorSummary {
+                            TranslatorEndCard(controller: controller, summary: summary)
+                                .id("translatorSummary")
+                        }
 
                         ForEach(controller.lines) { line in
                             transcriptLine(line)
@@ -294,6 +313,8 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .translator(_, let setup):
+            translatorProposal(setup, controller: controller)
         case .noteReminder(_, _, let noteText, let savedAt, let target):
             noteReminderContent(noteText: noteText, savedAt: savedAt, target: target, controller: controller)
         case .cloud(_, _, let preview, _, let mode):
@@ -320,6 +341,7 @@ struct VoiceView: View {
         case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
         case .noteReminder: ("Set reminder", "Don't set")
+        case .translator: ("Start", "Not now")
         }
     }
 
@@ -583,6 +605,40 @@ struct VoiceView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(SecondaryButtonStyle())
+    }
+
+    /// "Start translating?" (canvas 2): the pair, what changes, and Change languages.
+    @ViewBuilder
+    private func translatorProposal(_ setup: TranslatorSetup, controller: VoiceSessionController) -> some View {
+        Text("Start translating?")
+            .font(.headline)
+        HStack(spacing: 8) {
+            languageChip("You", setup.owner.nativeName)
+            Image(systemName: setup.kind == .faceToFace ? "arrow.left.arrow.right" : "arrow.left")
+                .accessibilityLabel(setup.kind == .faceToFace ? "translated both ways" : "translated into your language")
+            languageChip(setup.kind == .faceToFace ? "Them" : "Around you", setup.other?.nativeName ?? "Detect")
+        }
+        Text(setup.kind == .faceToFace
+             ? "While translating, Doddy only translates: no notes, reminders or other tools, and this conversation isn't kept on this iPhone. Their voice goes to ElevenLabs too. Doddy first tells them, in their language, that he's an AI translator."
+             : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        Button("Change languages") { changingTranslator = true }
+            .buttonStyle(SecondaryButtonStyle())
+            .sheet(isPresented: $changingTranslator) {
+                TranslatorChangeSheet(controller: controller, setup: setup)
+            }
+    }
+
+    private func languageChip(_ who: String, _ name: String) -> some View {
+        VStack(spacing: 2) {
+            Text(who).font(.caption).foregroundStyle(Theme.secondaryText)
+            Text(name).font(.headline)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(10)
+        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
     }
 
     private func eventWhen(_ draft: CalendarEventDraft) -> String {

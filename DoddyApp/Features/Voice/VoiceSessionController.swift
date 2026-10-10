@@ -44,12 +44,14 @@ final class VoiceSessionController {
         /// agent's quote matched, shown exactly with when it was saved; nothing is set until the
         /// user taps Set reminder. The user can change the time, or arrive/leave, on the card.
         case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, savedAt: Date?, target: NoteReminderCardTarget)
+        /// "Start translating?" (ADR-209). The user can change either language on the card.
+        case translator(toolCallID: String, setup: TranslatorSetup)
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
-                 .noteReminder(let id, _, _, _, _):
+                 .noteReminder(let id, _, _, _, _), .translator(let id, _):
                 id
             }
         }
@@ -111,6 +113,19 @@ final class VoiceSessionController {
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false { didSet { syncIsland() } }
+    /// Translator mode (ADR-209), in memory only. While it is set the app runs no tool and the
+    /// conversation is private.
+    private(set) var translator: TranslatorSession?
+    /// The end screen after translating: the text stays in memory for five minutes for Copy or
+    /// "Save the facts as a note", then it is dropped (T3).
+    private(set) var translatorSummary: TranslatorSummary?
+    /// What happened when the user tapped "Save the facts as a note".
+    private(set) var translatorFactsSaved: Result<String, TranslatorSaveError>?
+    /// Noisy place: the microphone is muted except while a hold-to-talk button is held (T4).
+    private(set) var holdToTalk = false
+    private(set) var heldSide: TranslatorDirection?
+    /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
+    private var translatorNeedsHello = false
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
@@ -125,7 +140,11 @@ final class VoiceSessionController {
     private var startedAt: Date?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
-    var isPrivate = false
+    var isPrivate = false {
+        didSet { if privacyLocked { isPrivate = true } }
+    }
+    /// Set once translator mode is on (ADR-209): the conversation stays private to the end.
+    private(set) var privacyLocked = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
 
@@ -144,9 +163,16 @@ final class VoiceSessionController {
 
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
     /// Settings → About you → "Use in voice conversations" is on.
-    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile) async {
+    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil) async {
         guard !isLive else { return }
         lines = []
+        translator = nil
+        translatorSummary = nil
+        translatorFactsSaved = nil
+        holdToTalk = false
+        heldSide = nil
+        translatorNeedsHello = false
+        privacyLocked = false
         pendingAction = nil
         contactCard = nil
         reminderStatus = nil
@@ -178,10 +204,23 @@ final class VoiceSessionController {
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
-        let notes = VoiceContext.savedNotes(store.memories)
-        let recent = logs.isEnabled
+        var notes = VoiceContext.savedNotes(store.memories)
+        var recent = logs.isEnabled
             ? VoiceContext.recentConversations(logs.logs)
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
+        var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
+        // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
+        // so it has nothing of the owner's to repeat to the other person.
+        if let preset {
+            let none = "(not shared: this conversation is only for translating)"
+            notes = VoiceContext.Rendered(text: none, includedCount: 0, truncated: false)
+            recent = VoiceContext.Rendered(text: none, includedCount: 0, truncated: false)
+            profileText = none
+            isPrivate = true
+            privacyLocked = true
+            translator = TranslatorSession(setup: preset, startedAt: Date())
+            translatorNeedsHello = true
+        }
 
         let ref = WeakRef(self)
         var config = ConversationConfig(
@@ -193,8 +232,8 @@ final class VoiceSessionController {
                 // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
                 // placeholder defaults to the persona defaults, so a build that sends nothing still works.
                 PersonalityPrompt.variableName: PersonalityPrompt.render(.stored(), nickname: Nickname.stored()),
-                ProfilePrompt.variableName: ProfilePrompt.render(
-                    profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice)),
+                ProfilePrompt.variableName: profileText,
+                TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
             ],
             userId: Self.userID())
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
@@ -271,6 +310,7 @@ final class VoiceSessionController {
     }
 
     func stop() async {
+        endTranslator()
         let active = conversation
         conversation = nil
         pendingAction = nil
@@ -379,6 +419,9 @@ final class VoiceSessionController {
             }
             let receipt = await setNoteReminder(confirmed)
             await reply(id, Self.noteReminderReply(receipt, note: noteText))
+        case .translator(let id, let setup):
+            beginTranslator(setup)
+            await reply(id, VoiceToolReply.translatorStarted(setup))
         }
     }
 
@@ -477,6 +520,148 @@ final class VoiceSessionController {
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
+        case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
+        }
+    }
+
+    // MARK: Translator mode (ADR-209)
+
+    /// The owner's language when the agent didn't say: Settings' starting language, else the iPhone's.
+    static var ownerLanguage: TranslatorLanguage {
+        TranslatorLanguages.ownerDefault(
+            settingCode: ConversationLanguage.stored().overrideCode,
+            deviceCode: Locale.current.language.languageCode?.identifier)
+    }
+
+    /// The user changed a language on the "Start translating?" card.
+    func changeTranslatorProposal(owner: TranslatorLanguage, other: TranslatorLanguage?, kind: TranslatorKind) {
+        guard case .translator(let id, _) = pendingAction,
+              let setup = TranslatorSetup(kind: kind, owner: owner, other: other) else { return }
+        pendingAction = .translator(toolCallID: id, setup: setup)
+    }
+
+    private func beginTranslator(_ setup: TranslatorSetup) {
+        // Private from here on: nothing of this conversation is kept on the iPhone.
+        isPrivate = true
+        privacyLocked = true
+        translatorSummary = nil
+        translatorFactsSaved = nil
+        translator = TranslatorSession(setup: setup, startedAt: Date())
+    }
+
+    /// Ends the mode (the conversation may go on) and keeps the text in memory for five minutes.
+    private func endTranslator() {
+        guard let session = translator else { return }
+        translator = nil
+        translatorNeedsHello = false
+        if holdToTalk {
+            holdToTalk = false
+            heldSide = nil
+            if isMuted { Task { await setMicrophone(muted: false) } }
+        }
+        let summary = session.summary(endedAt: Date())
+        translatorSummary = summary
+        translatorFactsSaved = nil
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(TranslatorSummary.keepFor))
+            self?.dropTranslatorSummary(endedAt: summary.endedAt)
+        }
+    }
+
+    private func dropTranslatorSummary(endedAt: Date) {
+        guard translatorSummary?.endedAt == endedAt else { return }
+        translatorSummary = nil
+        translatorFactsSaved = nil
+    }
+
+    /// Done on the end screen: the text is gone now.
+    func dismissTranslatorSummary() {
+        translatorSummary = nil
+        translatorFactsSaved = nil
+    }
+
+    /// End on the translator screen: the conversation ends too.
+    func endTranslating() async {
+        await stop()
+    }
+
+    /// Copy the text, only while the five minutes last. Returns false when it is already gone.
+    func copyTranslatorText() -> Bool {
+        guard let summary = translatorSummary, summary.isAvailable(at: Date()) else {
+            translatorSummary = nil
+            return false
+        }
+        UIPasteboard.general.string = summary.transcript
+        return true
+    }
+
+    /// "Save the facts as a note": the exact facts, saved only on this tap and read back from the store.
+    func saveTranslatorFacts() async {
+        guard let summary = translatorSummary, summary.isAvailable(at: Date()) else {
+            translatorSummary = nil
+            return
+        }
+        guard let text = summary.factsNote(calendar: .current) else {
+            translatorFactsSaved = .failure(.nothingToSave)
+            return
+        }
+        do {
+            let record = try await store.save(text: text, category: .other, source: .explicitText)
+            translatorFactsSaved = .success(record.currentText)
+        } catch {
+            translatorFactsSaved = .failure(.failed(UserFacingError.message(for: error)))
+        }
+    }
+
+    /// Noisy place: mute the microphone except while a hold-to-talk button is held.
+    func setHoldToTalk(_ on: Bool) async {
+        guard translator?.setup.kind == .faceToFace, conversation != nil else { return }
+        holdToTalk = on
+        heldSide = nil
+        await setMicrophone(muted: on)
+    }
+
+    /// `side` is whose button is held: `.toOwner` for the owner's half, `.toOther` for theirs.
+    func beginHold(_ side: TranslatorDirection) async {
+        guard holdToTalk, let setup = translator?.setup else { return }
+        heldSide = side
+        translator?.held = side
+        let who = side == .toOwner
+            ? "the user, in \(setup.owner.englishName)"
+            : "the other person\(setup.other.map { ", in \($0.englishName)" } ?? "")"
+        try? await conversation?.updateContext("\(TranslatorSession.appMessagePrefix) The next words are from \(who). Translate them for the other side.")
+        await setMicrophone(muted: false)
+    }
+
+    func endHold() async {
+        guard holdToTalk else { return }
+        heldSide = nil
+        await setMicrophone(muted: true)
+    }
+
+    /// Say it again: Doddy repeats his last translation to them.
+    func sayTranslationAgain() async {
+        await sendToAgent("Say your last translation to them again, word for word.")
+    }
+
+    /// "Say it to them" on a quiet word: Doddy says his suggestion to them, in their language.
+    func sayAsideToThem() async {
+        guard let other = translator?.setup.other else { return }
+        await sendToAgent("Say the sentence you suggested to them now, in \(other.englishName), exactly as you wrote it. Then go on translating.")
+    }
+
+    /// Messages from the app (never shown as something said; see `TranslatorSession.heard`).
+    private func sendToAgent(_ text: String) async {
+        try? await conversation?.sendMessage("\(TranslatorSession.appMessagePrefix) \(text)")
+    }
+
+    private func setMicrophone(muted: Bool) async {
+        guard let conversation else { return }
+        do {
+            try await conversation.setMuted(muted)
+            isMuted = muted
+        } catch {
+            // Keep the previous state; the UI shows what is actually set.
         }
     }
 
@@ -527,10 +712,27 @@ final class VoiceSessionController {
 
     private func append(_ text: String, fromUser: Bool) {
         guard !text.allSatisfy(\.isWhitespace) else { return }
+        // Translating: the lines belong to the translator screen, never to the conversation log.
+        if translator != nil {
+            if fromUser {
+                translator?.heard(text)
+            } else {
+                translator?.said(text)
+                if translatorNeedsHello {
+                    translatorNeedsHello = false
+                    Task { await sendToAgent("Translator mode is on. Do what the translator_start section says now.") }
+                }
+            }
+            return
+        }
         lines.append(Line(fromUser: fromUser, text: text))
     }
 
     private func correct(_ original: String, to corrected: String) {
+        if translator != nil {
+            translator?.correct(original, to: corrected)
+            return
+        }
         guard let index = lines.lastIndex(where: { !$0.fromUser && $0.text == original }) else { return }
         lines[index].text = corrected
     }
@@ -541,6 +743,7 @@ final class VoiceSessionController {
     }
 
     private func disconnected() {
+        endTranslator()
         conversation = nil
         pendingAction = nil
         keepLog()
@@ -550,6 +753,11 @@ final class VoiceSessionController {
 
     private func handle(_ call: ClientToolCallEvent) async {
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
+        // Translating: no tool runs at all (ADR-209). Checked before anything is looked up or logged.
+        if translator != nil, !TranslatorPolicy.allows(request) {
+            await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))
+            return
+        }
         asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
         // Settings → Pause all: no other app or account is used; notes still work.
         if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
@@ -635,6 +843,19 @@ final class VoiceSessionController {
             }
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
+        case .startTranslator(let proposal):
+            guard let setup = proposal.setup(ownerDefault: Self.ownerLanguage) else {
+                await reply(call.toolCallId, VoiceToolReply.failed("Both languages are the same. Ask the user which language the other person speaks."), isError: true)
+                return
+            }
+            propose(.translator(toolCallID: call.toolCallId, setup: setup), toolCallID: call.toolCallId)
+        case .stopTranslator:
+            guard translator != nil else {
+                await reply(call.toolCallId, VoiceToolReply.translatorNotOn)
+                return
+            }
+            endTranslator()
+            await reply(call.toolCallId, VoiceToolReply.translatorStopped)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
@@ -821,6 +1042,12 @@ final class VoiceSessionController {
     }
 }
 
+/// Why "Save the facts as a note" saved nothing.
+enum TranslatorSaveError: Error, Equatable {
+    case nothingToSave
+    case failed(String)
+}
+
 /// Lets SDK callbacks (which must be `@Sendable`) reach the controller without a retain cycle.
 private final class WeakRef<T: AnyObject>: @unchecked Sendable {
     weak var value: T?
@@ -832,7 +1059,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .cloud, .noteReminder: true
-        case .map, .shortcut, .message: false
+        case .map, .shortcut, .message, .translator: false
         }
     }
 }
