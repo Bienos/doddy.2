@@ -141,6 +141,7 @@ public enum DataFlow {
             "Find by meaning: Apple's language model works it out from your notes on this iPhone.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
             "Morning brief: put together and read aloud on this iPhone. Daily news, Todoist and Gmail come through your Doddy servers only if you add them to it.",
+            "Widgets: up to 3 pinned notes and your next note reminders, in a file only Doddy's widgets on this iPhone can read.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }

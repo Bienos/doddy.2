@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- ADR-215: App Group for the widgets plus Push (as DoddyApp/Doddy.entitlements). See project.yml (DODDY_APP_GROUP). -->
+<plist version="1.0">
+<dict>
+	<key>aps-environment</key>
+	<string>development</string>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>$(DODDY_APP_GROUP)</string>
+	</array>
+</dict>
+</plist>

@@ -28,6 +28,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.findByMeaning) private var findByMeaning = true
     @AppStorage(PreferenceKey.suggestSavesAfterConversation) private var suggestSaves = true
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
+    @AppStorage(PreferenceKey.widgetNoteWords) private var widgetNoteWords = true
     @State private var meaningError: String?
     @State private var editingProfile = false
     @State private var confirmForget = false
@@ -385,6 +386,17 @@ struct SettingsView: View {
                     Toggle("Siri can read my notes aloud", isOn: $siriReadsNotes)
                         .accessibilityIdentifier("settings.siriReadsNotes")
                     Text("Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
+                // ADR-215: Home Screen and Lock Screen widgets.
+                Section("Widgets") {
+                    StatusRow(title: "Note widgets", value: WidgetSnapshotFile.appGroup == nil ? "Not set up in this build" : "Ready")
+                        .accessibilityIdentifier("settings.widgets.status")
+                    Toggle("Show note words in widgets", isOn: $widgetNoteWords)
+                        .accessibilityIdentifier("settings.widgetNoteWords")
+                    Text("Add Doddy's widgets from the Home Screen or Lock Screen (press and hold, then Edit, then Add Widget): Talk to Doddy, Pinned notes and Next note reminder. For the note widgets, Doddy keeps a copy of up to 3 pinned notes and your next few note reminders in a file only Doddy's widgets can read, on this iPhone. Note words are hidden on a locked Lock Screen. Turning words off removes them from that file; the widgets then show only that a note is pinned or when a reminder is due.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

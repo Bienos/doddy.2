@@ -10,6 +10,9 @@
 -->
 <plist version="1.0">
 <dict>
+	<!-- ADR-215: the App Group shared with Doddy's widgets, from DODDY_APP_GROUP (empty = not set up). -->
+	<key>DoddyAppGroup</key>
+	<string>$(DODDY_APP_GROUP)</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

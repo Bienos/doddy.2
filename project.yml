@@ -31,6 +31,14 @@ settings:
     # free Apple ID can still build to a device (free teams can't use Push). With a paid team that
     # has Push enabled, set this to DoddyApp/Doddy.entitlements (here or on the xcodebuild line).
     DODDY_PUSH_ENTITLEMENTS: ""
+    # Widgets that show notes (ADR-215) read a file the app shares through an App Group. Off by
+    # default so a free Apple ID can still build. To turn on: set DODDY_APP_GROUP to a group your
+    # team owns (e.g. group.com.bienos.doddy2.dev), DODDY_WIDGET_ENTITLEMENTS to
+    # Config/DoddyWidgets-AppGroup.entitlements, and DODDY_PUSH_ENTITLEMENTS to
+    # Config/Doddy-AppGroup.entitlements (or Config/Doddy-AppGroup-Push.entitlements with Push).
+    # Without it the Talk and New note widgets work and the note widgets say they aren't set up.
+    DODDY_APP_GROUP: ""
+    DODDY_WIDGET_ENTITLEMENTS: ""
 targets:
   Doddy:
     type: application
@@ -73,16 +81,20 @@ targets:
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyWidgets:
-    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen)
-    # and, on iOS 18+, the "Talk to Doddy" control (Control Center, Lock Screen, Action Button).
-    # No networking, no data of its own.
+    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen),
+    # on iOS 18+ the "Talk to Doddy" and "New note" controls, and the Home Screen and Lock Screen
+    # widgets (ADR-215). No networking; it reads only the app's widget snapshot (App Group).
     type: app-extension
     platform: iOS
     sources:
       - path: DoddyWidgets
       - path: Shared
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
     settings:
       base:
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WIDGET_ENTITLEMENTS)
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).widgets
         PRODUCT_NAME: DoddyWidgets
         MARKETING_VERSION: "0.0.1"

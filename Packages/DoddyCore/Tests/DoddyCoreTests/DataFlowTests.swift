@@ -22,6 +22,7 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Find by meaning:") }, "meaning search is on-device")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Notes suggested after a conversation:") }, "save suggestions are on-device")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Morning brief:") }, "the brief is on-device")
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Widgets:") }, "the widget snapshot stays on the iPhone")
         let siriOff = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "siri" })
         XCTAssertFalse(siriOff.isActive, "off unless the app says the switch is on")
         var siriState = base

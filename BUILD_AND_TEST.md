@@ -103,6 +103,21 @@ manager — `backend/.env.example` lists names with empty values. No signing tea
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
 `com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
 
+### Note widgets need an App Group (ADR-215, optional)
+
+The Talk to Doddy widget works in every build. The Pinned notes and Next note reminder widgets read a file the app
+shares through an App Group, which is off by default so a free Apple ID can still build. To turn it on, register a
+group your team owns (e.g. `group.com.bienos.doddy2.dev`) for both bundle ids, then build with:
+
+```sh
+xcodebuild … DODDY_APP_GROUP=group.com.bienos.doddy2.dev \
+  DODDY_PUSH_ENTITLEMENTS=Config/Doddy-AppGroup.entitlements \
+  DODDY_WIDGET_ENTITLEMENTS=Config/DoddyWidgets-AppGroup.entitlements
+```
+
+With Push as well, use `Config/Doddy-AppGroup-Push.entitlements` for the app instead. Without these, Settings →
+Widgets says "Not set up in this build" and the note widgets say the same instead of showing anything.
+
 ## Connected Apps — Google Calendar, read-only (2026-10-09)
 
 **Status: mock milestone complete; live integration unverified/blocked; iOS app not compiled for this change.**

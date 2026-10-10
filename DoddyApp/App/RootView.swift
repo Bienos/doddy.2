@@ -67,6 +67,8 @@ enum PreferenceKey {
     static let morningBriefGmailImportant = "morningBrief.gmailImportant"
     /// Siri may read saved notes aloud (ADR-214). On unless turned off; the phone must be unlocked.
     static let siriReadsNotes = "siriReadsNotes"
+    /// Widgets show note words (ADR-215). On unless turned off; off keeps them out of the file.
+    static let widgetNoteWords = "widgetNoteWords"
 }
 
 enum AppTab: Hashable {
@@ -79,6 +81,8 @@ struct RootView: View {
     @Environment(ProfileStore.self) private var profiles
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
+    @AppStorage(PreferenceKey.widgetNoteWords) private var widgetNoteWords = true
     @State private var homePath: [UUID] = []
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
@@ -129,6 +133,12 @@ struct RootView: View {
                 homePath = []
                 MorningBriefRouter.shared.openRequested = false
             }
+            // Widgets (ADR-215): the snapshot follows notes, pins, note reminders and the words setting.
+            .task { syncWidgets() }
+            .onChange(of: store.revision) { syncWidgets() }
+            .onChange(of: noteReminders.reminders) { syncWidgets() }
+            .onChange(of: pinnedRaw) { syncWidgets() }
+            .onChange(of: widgetNoteWords) { syncWidgets() }
             // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
             .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
@@ -140,6 +150,10 @@ struct RootView: View {
             Theme.canvas.ignoresSafeArea()
                 .task { await profiles.load() }
         }
+    }
+
+    private func syncWidgets() {
+        WidgetSync.update(memories: store.memories, reminders: noteReminders.reminders)
     }
 
     private var tabs: some View {
@@ -185,6 +199,13 @@ struct RootView: View {
             router.isOnboardingShown = !atHome
         }
         .onOpenURL { url in
+            // doddy://note/<id> from a widget (ADR-215): opens that note on Home, like a note reminder.
+            // A deleted note shows "This memory no longer exists" there.
+            if let memoryID = NoteLink.id(from: url) {
+                selectedTab = .home
+                homePath = [memoryID]
+                return
+            }
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
             guard let link = DeepLink(url: url) else { return }
             switch link {

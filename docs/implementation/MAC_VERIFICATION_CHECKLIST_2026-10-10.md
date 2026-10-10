@@ -90,7 +90,17 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | B10 | Add Todoist to the brief with "List my tasks" switched off; turn off Wi-Fi and tap Refresh | "Todoist isn't in this brief: … Check Settings, Online accounts." Offline: "Couldn't … just now." Nothing invented, local lines still there |
 | B11 | Add Today's daily news with a digest from today (Daily news → Send now) | "From your daily news:" and up to 3 stories with their source; tapping one opens Safari. With no digest today: "No daily news digest yet today." Yesterday's digest is never shown |
 
-## 5. Voice (needs a real conversation)
+## 4c. Widgets (ADR-215, `WIDGETS_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Default build (no App Group). Add Talk to Doddy (small, medium) and the Lock Screen circle; tap each | Talk opens Doddy and starts a conversation; New note opens an empty capture screen. Settings → Widgets says "Not set up in this build"; Pinned notes says "This Doddy build isn't set up to share notes with widgets." |
+| W2 | Build with the App Group (`BUILD_AND_TEST.md`). Pin 3 notes, set a note reminder in 10 minutes, add Pinned notes (small, medium) and Next note reminder (small, Lock Screen rectangular and inline) | Pinned shows the newest pin first; Next reminder shows the time and "in 10 minutes". Tapping a note opens it in Doddy |
+| W3 | Lock the iPhone and look at the Lock Screen widgets | The time shows; the note's words are hidden until unlocked |
+| W4 | Wait until the reminder time passes without opening Doddy | The widget moves on to the next reminder (or "No note reminders coming up") by itself |
+| W5 | Unpin a note, edit a pinned note, delete a pinned note, delete all notes | Each change reaches the widgets within moments of leaving the screen; after delete all they're empty. A widget tap on a deleted note shows "This memory no longer exists." |
+| W6 | Settings → Widgets → turn off note words | Widgets show "Pinned note" / "Open Doddy to see it". The shared file no longer contains the words (check in Xcode's device container download if possible) |
+| W7 | First install with the App Group, add a note widget before opening Doddy | "Open Doddy once to show this here." |
+
 | # | Do this | Expect |
 |---|---|---|
 | V1 | Settings → Voice and personality: play each voice sample, change speed and expressiveness | Samples play at the chosen speed. They refuse to play during a conversation (ADR-105, ADR-122) |
