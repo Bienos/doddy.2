@@ -57,4 +57,4 @@ All app Swift files pass `swiftc -parse` (syntax only). A separate code review o
 - Existing installs: the old `hasSeenFirstHello` flag is no longer read, so an updated dev build shows the new first-use flow once. Memories are kept (migration test).
 
 ## Not built (by design or pending approval)
-Voice setup guide, background audio, Dynamic Island/Live Activity controls (guided-setup phases 3–4); AI-driven introduction; profile sent to the voice agent; profile in the memory export (export format unchanged); translated UI.
+Voice setup guide, background audio, Dynamic Island/Live Activity controls (guided-setup phases 3–4); AI-driven introduction; translated UI. (Since built: profile sent to the voice agent behind "Use in voice conversations"; the profile has its own export with the style settings, ADR-176, and the memory export format is unchanged.)

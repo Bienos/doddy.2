@@ -7,7 +7,8 @@ enum MemoryModal: String, Identifiable {
 }
 
 enum MemoryNavigationRoute: Hashable {
-    case find
+    /// `query` pre-fills the search (the "Find in Doddy" shortcut); empty otherwise.
+    case find(query: String)
     case note(UUID)
 }
 
@@ -89,6 +90,7 @@ struct MemoryPaperCard: View {
 struct MemoryLinkCard: View {
     let record: MemoryRecord
     var matchedTerms: [String] = []
+    var isPinned = false
 
     var body: some View {
         NavigationLink(value: MemoryNavigationRoute.note(record.id)) {
@@ -98,6 +100,10 @@ struct MemoryLinkCard: View {
                     Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · Edited" : "")")
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                     Spacer(minLength: 8)
+                    if isPinned {
+                        Image(systemName: "pin.fill").font(.caption).foregroundStyle(Theme.accentText)
+                            .accessibilityLabel("Pinned")
+                    }
                     Image(systemName: "arrow.up.right").font(.caption).accessibilityHidden(true)
                 }
                 if !matchedTerms.isEmpty {

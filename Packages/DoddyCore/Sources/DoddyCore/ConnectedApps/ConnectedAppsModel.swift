@@ -84,7 +84,9 @@ public final class ConnectedAppsModel {
 
     /// Deliberate user action. Duplicate taps are ignored while work is in flight.
     public func connect() async {
-        guard isConfigured, !isWorking else { return }
+        // A second tap can land after a demo attempt already returned and is waiting for
+        // approval; that must not start another attempt.
+        guard isConfigured, !isWorking, phase != .awaitingDemoApproval else { return }
         isWorking = true
         message = nil
         phase = .connecting

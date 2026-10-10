@@ -26,6 +26,16 @@ public protocol MemoryRepository: Sendable {
     func delete(id: UUID) async throws
     func deleteAll() async throws
     func export() async throws -> Data
+    /// Adds exported records exactly as they were (id, both texts, source, category, dates).
+    /// A record whose id is already stored is left untouched. One transaction: every added
+    /// record is read back before success, otherwise nothing is added. Returns what was added.
+    func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord]
+}
+
+extension MemoryRepository {
+    public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
 }
 
 public enum MemoryStoreError: Error, Equatable, Sendable {

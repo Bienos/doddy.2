@@ -12,6 +12,7 @@ struct MemoryDetailView: View {
     @State private var isDeleting = false
     @State private var errorMessage: String?
     @State private var copied = false
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
 
     var body: some View {
         ScrollView {
@@ -34,9 +35,21 @@ struct MemoryDetailView: View {
                         HStack { Text("Edit this note"); Spacer(); Image(systemName: "pencil") }
                     }
                     .buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("detail.edit")
+                    Button { togglePin(record) } label: {
+                        let pinned = PinnedNotes(stored: pinnedRaw).isPinned(record.id)
+                        HStack { Text(pinned ? "Unpin from the top" : "Pin to the top"); Spacer(); Image(systemName: pinned ? "pin.slash" : "pin") }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("detail.pin")
                     Button { copy(record) } label: {
                         HStack { Text(copied ? "Copied" : "Copy text"); Spacer(); Image(systemName: copied ? "checkmark" : "doc.on.doc") }
                     }.buttonStyle(SecondaryButtonStyle())
+                    // Only the note's current words, nothing about when or how it was saved (ADR-185).
+                    ShareLink(item: record.currentText, preview: SharePreview("Doddy note")) {
+                        HStack { Text("Share text"); Spacer(); Image(systemName: "square.and.arrow.up") }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("detail.share")
                     Button(role: .destructive) { confirmDelete = true } label: {
                         Text(isDeleting ? "Deleting…" : "Delete this memory").frame(maxWidth: .infinity, minHeight: 44)
                     }
@@ -55,8 +68,13 @@ struct MemoryDetailView: View {
             Button("Delete", role: .destructive, action: beginDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Both current and original text are removed from this iPhone. Exports and older backups aren't affected.")
+            Text("Both current and original text are removed from this iPhone. You can undo for a few seconds afterwards. Exports and older backups aren't affected.")
         }
+    }
+
+    private func togglePin(_ record: MemoryRecord) {
+        let change = PinnedNotes.toggle(record.id, stored: &pinnedRaw, existing: store.memories)
+        errorMessage = change == .full ? PinnedNotes.fullMessage : nil
     }
 
     private func copy(_ record: MemoryRecord) {

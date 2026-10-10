@@ -13,6 +13,8 @@ final class MemoryStore {
     private(set) var loadError: String?
     /// Bumped on every reload so searches re-run after edits and deletes.
     private(set) var revision = 0
+    /// The note deleted a moment ago, for the Undo bar (ADR-183). Memory only, never stored.
+    private(set) var recentlyDeleted: DeletedNote?
 
     init(environment: AppEnvironment) {
         self.environment = environment
@@ -51,11 +53,39 @@ final class MemoryStore {
     }
 
     func delete(id: UUID) async throws {
+        let copy = self.record(id: id)
         try await environment.memoryRepository.delete(id: id)
+        recentlyDeleted = copy.map { DeletedNote(record: $0, deletedAt: .now) }
         await reload()
     }
 
+    /// Adds the just-deleted note back exactly as it was (ADR-183). Does nothing once the
+    /// undo window has passed. On failure the copy stays until the bar times out.
+    func undoDelete(now: Date = .now) async throws {
+        guard let deleted = recentlyDeleted, deleted.canUndo(at: now) else {
+            recentlyDeleted = nil
+            return
+        }
+        _ = try await environment.memoryRepository.restore([deleted.record])
+        if recentlyDeleted == deleted { recentlyDeleted = nil }
+        await reload()
+    }
+
+    /// The Undo bar timed out: forget the copy.
+    func forgetDeleted(_ deleted: DeletedNote) {
+        if recentlyDeleted == deleted { recentlyDeleted = nil }
+    }
+
+    /// Adds notes from an export; returns only what was committed and read back (ADR-178).
+    func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
+        let added = try await environment.memoryRepository.restore(records)
+        await reload()
+        return added
+    }
+
+    /// No undo: deleting everything is final.
     func deleteAll() async throws {
+        recentlyDeleted = nil
         try await environment.memoryRepository.deleteAll()
         await reload()
     }

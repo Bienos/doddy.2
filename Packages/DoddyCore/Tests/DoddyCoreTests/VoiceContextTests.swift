@@ -84,4 +84,32 @@ final class VoiceContextTests: XCTestCase {
         XCTAssertFalse(ConversationRetention.shouldKeep(rememberRecent: false, isPrivate: false, lineCount: 3))
         XCTAssertFalse(ConversationRetention.shouldKeep(rememberRecent: true, isPrivate: false, lineCount: 0))
     }
+
+    func testSettingsShowsExactlyTheConversationsSentNextTime() {
+        func log(_ offset: TimeInterval, _ text: String) -> ConversationLog {
+            ConversationLog(startedAt: t0.addingTimeInterval(offset), endedAt: t0.addingTimeInterval(offset + 60),
+                            lines: [.init(fromUser: true, text: text), .init(fromUser: false, text: "Reply to \(text)")])
+        }
+        let first = log(0, "first"), second = log(3600, "second"), third = log(7200, "third")
+        let logs = [first, third, second]
+        XCTAssertEqual(VoiceContext.conversationsSentNextTime(logs, timeZone: warsaw), [first.id, second.id, third.id])
+
+        let sent = VoiceContext.conversationsSentNextTime(logs, maxCharacters: 120, timeZone: warsaw)
+        XCTAssertEqual(sent, [third.id])
+        XCTAssertEqual(sent.count, VoiceContext.recentConversations(logs, maxCharacters: 120, timeZone: warsaw).includedCount)
+        XCTAssertTrue(VoiceContext.conversationsSentNextTime([], timeZone: warsaw).isEmpty)
+    }
+
+    func testConversationExportIsOldestFirstAndUnclipped() {
+        let long = String(repeating: "a", count: VoiceContext.maxLineLength + 50)
+        let later = ConversationLog(startedAt: t0.addingTimeInterval(3600), endedAt: t0.addingTimeInterval(3700),
+                                    lines: [.init(fromUser: true, text: "Second chat")])
+        let earlier = ConversationLog(startedAt: t0, endedAt: t0.addingTimeInterval(90),
+                                      lines: [.init(fromUser: true, text: long), .init(fromUser: false, text: "Okay.")])
+        let text = ConversationLogExport.plainText([later, earlier], exportedAt: t0.addingTimeInterval(7200), timeZone: warsaw)
+        XCTAssertTrue(text.hasPrefix("DODDY remembered conversations — exported 2026-10-09T02:05:06Z\n2 conversations."))
+        XCTAssertTrue(text.contains("## 2026-10-09 02:05 – 2026-10-09 02:06\nYou: \(long)\nDoddy: Okay."), "full text, not clipped")
+        XCTAssertLessThan(text.range(of: "Okay.")!.lowerBound, text.range(of: "Second chat")!.lowerBound)
+        XCTAssertTrue(ConversationLogExport.plainText([], exportedAt: t0).contains("0 conversations."))
+    }
 }

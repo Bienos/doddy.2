@@ -20,6 +20,10 @@ struct SettingsView: View {
     @State private var hasSessionToken = KeychainSessionStore.read() != nil
     @State private var tokenMessage: String?
     @State private var confirmDeleteAll = false
+    @State private var choosingRestoreFile = false
+    @State private var restorePlan: MemoryRestorePlan?
+    @State private var restoreMessage: String?
+    @State private var restoreFailed = false
     @State private var deleteError: String?
     @State private var editingProfile = false
     @State private var confirmForget = false
@@ -112,6 +116,20 @@ struct SettingsView: View {
                         Label(forgetError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
+                    ShareLink(
+                        item: ProfileJSONExport(profile: profiles.profile),
+                        preview: SharePreview("Doddy profile and settings (JSON)")
+                    ) {
+                        Label("Export with your settings as JSON", systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityIdentifier("settings.exportProfileJSON")
+                    ShareLink(
+                        item: ProfileTextExport(profile: profiles.profile),
+                        preview: SharePreview("Doddy profile and settings (text)")
+                    ) {
+                        Label("Export with your settings as text", systemImage: "doc.plaintext")
+                    }
+                    .accessibilityIdentifier("settings.exportProfileText")
                     Text("Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs at the start of each conversation so Doddy knows them; off, they stay on this iPhone.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -133,6 +151,18 @@ struct SettingsView: View {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
                     .disabled(store.memories.isEmpty)
+                    Button {
+                        restoreMessage = nil
+                        choosingRestoreFile = true
+                    } label: {
+                        Label("Restore from a JSON export", systemImage: "square.and.arrow.down")
+                    }
+                    .disabled(!store.isStorageAvailable)
+                    .accessibilityIdentifier("settings.restoreMemories")
+                    if let restoreMessage {
+                        Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
+                            .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
+                    }
                     Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
                         .disabled(store.memories.isEmpty)
                         .accessibilityIdentifier("settings.deleteAll")
@@ -140,7 +170,7 @@ struct SettingsView: View {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Deleting here does not remove files you exported or older backups.")
+                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -234,7 +264,12 @@ struct SettingsView: View {
                 Section("What Doddy knows") {
                     Toggle("Remember recent conversations", isOn: $rememberConversations)
                         .accessibilityIdentifier("settings.rememberConversations")
-                    StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
+                    NavigationLink {
+                        RememberedConversationsView(store: conversationLogs)
+                    } label: {
+                        StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
+                    }
+                    .accessibilityIdentifier("settings.rememberedConversations")
                     Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
                         .disabled(conversationLogs.logs.isEmpty)
                     if let problem = conversationLogs.problem {
@@ -434,6 +469,20 @@ struct SettingsView: View {
             } message: {
                 Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
             }
+            .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
+                prepareRestore(result)
+            }
+            .confirmationDialog(
+                restorePlan.map(RestoreCopy.title) ?? "",
+                isPresented: Binding(get: { restorePlan != nil }, set: { if !$0 { restorePlan = nil } }),
+                titleVisibility: .visible,
+                presenting: restorePlan
+            ) { plan in
+                Button(RestoreCopy.action(plan)) { Task { await restore(plan) } }
+                Button("Cancel", role: .cancel) { restorePlan = nil }
+            } message: { plan in
+                Text(RestoreCopy.details(plan))
+            }
             .confirmationDialog(
                 "Forget your name and preferences?",
                 isPresented: $confirmForget, titleVisibility: .visible
@@ -525,9 +574,47 @@ struct SettingsView: View {
     private func deleteAll() async {
         do {
             try await store.deleteAll()
+            UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
             deleteError = nil
         } catch {
             deleteError = UserFacingError.message(for: error)
+        }
+    }
+
+    /// Reads and checks the chosen file and works out what it would add. Nothing is written
+    /// until the user confirms (ADR-178).
+    private func prepareRestore(_ result: Result<URL, any Error>) {
+        do {
+            let url = try result.get()
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            guard size <= MemoryRestore.maxFileBytes else {
+                throw MemoryRestoreError.tooLarge(bytes: size, maximum: MemoryRestore.maxFileBytes)
+            }
+            let file = try MemoryRestore.read(try Data(contentsOf: url))
+            let plan = MemoryRestore.plan(file.records, existing: store.memories, exportedAt: file.exportedAt)
+            if plan.isEmpty {
+                restoreFailed = false
+                restoreMessage = RestoreCopy.nothingToAdd(plan)
+            } else {
+                restorePlan = plan
+            }
+        } catch {
+            restoreFailed = true
+            restoreMessage = RestoreCopy.failure(error)
+        }
+    }
+
+    private func restore(_ plan: MemoryRestorePlan) async {
+        restorePlan = nil
+        do {
+            let added = try await store.restore(plan.toAdd)
+            restoreFailed = false
+            restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."
+        } catch {
+            restoreFailed = true
+            restoreMessage = RestoreCopy.failure(error)
         }
     }
 
@@ -620,6 +707,85 @@ private struct ProfileEditSheet: View {
         } catch {
             errorText = ProfileErrorText.message(for: error)
         }
+    }
+}
+
+/// Wording for restoring memories from an export (ADR-178).
+enum RestoreCopy {
+    static func title(_ plan: MemoryRestorePlan) -> String {
+        plan.toAdd.count == 1 ? "Add 1 note from this export?" : "Add \(plan.toAdd.count) notes from this export?"
+    }
+
+    static func action(_ plan: MemoryRestorePlan) -> String {
+        plan.toAdd.count == 1 ? "Add 1 note" : "Add \(plan.toAdd.count) notes"
+    }
+
+    static func details(_ plan: MemoryRestorePlan) -> String {
+        var parts: [String] = []
+        if let exportedAt = plan.exportedAt {
+            parts.append("Exported \(exportedAt.formatted(date: .abbreviated, time: .shortened)).")
+        }
+        parts.append("Notes come back exactly as exported, with their original dates and corrections.")
+        if plan.alreadyHere > 0 { parts.append("\(plan.alreadyHere) already on this iPhone.") }
+        if plan.keptOnPhone > 0 {
+            parts.append("\(plan.keptOnPhone) changed on this iPhone since the export; those stay as they are here.")
+        }
+        if plan.skippedSamples > 0 { parts.append("\(plan.skippedSamples) sample notes are left out.") }
+        parts.append("Nothing on this iPhone is changed or removed.")
+        return parts.joined(separator: " ")
+    }
+
+    static func nothingToAdd(_ plan: MemoryRestorePlan) -> String {
+        plan.keptOnPhone > 0
+            ? "Nothing to add: every note in this export is already here, and the ones changed since stay as they are here."
+            : "Nothing to add: every note in this export is already on this iPhone."
+    }
+
+    static func failure(_ error: any Error) -> String {
+        guard let error = error as? MemoryRestoreError else {
+            if error is CocoaError { return "That file couldn't be opened. Nothing was added." }
+            if (error as? MemoryStoreError) == .verificationFailed {
+                return "The restored notes couldn't be confirmed, so nothing from the file was added."
+            }
+            return UserFacingError.message(for: error)
+        }
+        switch error {
+        case .tooLarge:
+            return "That file is too large to be a Doddy export. Nothing was added."
+        case .notADoddyExport:
+            return "That isn't a Doddy memory export (Settings › Export as JSON). Nothing was added."
+        case .newerFormat:
+            return "That export was made by a newer version of Doddy. Update the app, then try again. Nothing was added."
+        case .unreadableNote(let position):
+            return "Note \(position) in that file is damaged, so nothing from it was added."
+        case .conflictingDuplicate(let position):
+            return "Note \(position) in that file repeats another one with different text, so nothing from it was added."
+        }
+    }
+}
+
+/// Profile and style settings for the share sheet (format: `ProfileExport.json`, ADR-176).
+/// The settings are read when the file is made, so the export matches what is stored then.
+struct ProfileJSONExport: Transferable {
+    let profile: ApprovedProfile
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: .json) { export in
+            try ProfileExport.json(export.profile, style: .stored(), exportedAt: Date())
+        }
+        .suggestedFileName("doddy-profile.json")
+    }
+}
+
+/// The same as text. Built when shared, not when Settings last drew, so voice and personality
+/// changes made a moment ago are included.
+struct ProfileTextExport: Transferable {
+    let profile: ApprovedProfile
+
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation(exporting: { (export: ProfileTextExport) in
+            ProfileExport.plainText(export.profile, style: .stored(), exportedAt: Date())
+        })
     }
 }
 

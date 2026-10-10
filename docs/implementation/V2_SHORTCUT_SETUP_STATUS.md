@@ -56,3 +56,47 @@ everything under "Not verified" needs the Mac and a real iPhone.
 - The user adds it: Control Center → edit → Add a Control → Doddy; Lock Screen → customise → controls; Action Button → Controls → Doddy. Settings → Back Tap and Siri says so. Doddy can't add it or detect it.
 - **Not verified:** compile (no Xcode here; `if #available` inside `WidgetBundle` and the shared intent in two targets are the risky parts), that the control shows in the gallery, and that a tap from the Lock Screen unlocks into the conversation.
 
+
+## "Save to Doddy" shortcut (added 2026-10-10, ADR-179)
+- **What it does:** `SaveToDoddyIntent` (app target, `DoddyApp/Intents/`) takes a text and opens Doddy's capture screen with it filled in, marked "Shared into Doddy from a shortcut". Nothing is saved until the user taps Save. The note is then saved with source `shared_content` ("Shared into Doddy").
+- **Where it appears:** an App Shortcut with no setup, in Siri ("Save a note in Doddy", "Save to Doddy", "Keep this in Doddy"; Siri then asks "What should Doddy keep?"), the Shortcuts app and the Action Button picker. A user can build a personal shortcut that receives Share Sheet input and runs this action, which puts Doddy in the Share Sheet. No share extension, App Group or new permission was added.
+- **When something is already open:** the draft waits while a voice conversation or another capture screen is open, and appears when it closes (`SharedDraftQueue`, tested). Only the newest waiting draft is kept. A draft already on screen is never swapped.
+- **Text:** kept exactly, not trimmed or cut. An over-long text gets the usual "That's N characters; the limit is 5,000" message on Save. Whitespace-only text opens an empty editor.
+- **Privacy:** the text goes from Shortcuts to the app on the phone. When it is dictated to Siri, Apple's speech recognition handles that part, as with any Siri request.
+- **Not verified (needs the Mac and an iPhone):**
+  - The app compiles with the new intent; check the `@Parameter` input options in particular.
+  - The shortcut is listed in Shortcuts and Siri.
+  - Siri asks for the text.
+  - Share Sheet input reaches the action.
+  - The sheet appears over Home, and after a conversation ends.
+  - What happens if the Back Tap setup sheet was open.
+
+## "New note" control and shortcut (added 2026-10-10, ADR-180)
+- **What it does:** `NewNoteIntent` (`Shared/Shortcuts/`, in the app and the widget extension) opens Doddy's capture screen, empty, the same as tapping "Save a detail". The note is saved as a typed note (`explicit_text`), and only when the user taps Save.
+- **Where it appears:**
+  - `NewNoteControl` (kind `com.bienos.doddy2.newnote`, iOS 18+) for Control Center, the Lock Screen and the Action Button. The user adds it there themselves.
+  - An App Shortcut: Siri "New note in Doddy" / "Write a note in Doddy", and the Shortcuts app.
+- **When something is already open:**
+  - A capture screen is open: nothing else opens.
+  - A voice conversation is open: the empty screen appears when the conversation closes.
+  - Shared text from "Save to Doddy" is waiting: "New note" never replaces it.
+- **Not verified (needs the Mac and an iPhone):**
+  - The widget extension and app compile with the new intent and control.
+  - The control can be added and a tap opens the capture screen.
+  - The Siri phrases work.
+
+## "Find in Doddy" shortcut (added 2026-10-10, ADR-181)
+- **What it does:** `FindInDoddyIntent` (app target) opens Memories → Find with the words filled in. The search runs straight away. It is the same local lookup as typing (FTS, Polish/English counterparts, spoken numbers, "may disagree" flags), and it only searches.
+- **How to start it:** Siri ("Find in Doddy", "Search Doddy", "Look it up in Doddy"; Siri asks "What are you looking for?"), the Shortcuts app and the Action Button.
+- **The query:** one line, trimmed, at most 200 characters, cut at a word break (`FindRequest`, tested).
+- **When something is already open:** the Back Tap setup sheet closes. An open conversation or capture screen stays, and Find is ready underneath it.
+- **Known gap:** running it again with exactly the same words while that Find screen is open doesn't replace text the user has since edited there.
+- **Not verified (needs the Mac and an iPhone):** compile, the Siri phrases and dialog, the switch to Memories → Find, and the search running on arrival.
+
+## Review fixes (2026-10-10, from a read-through of the uncompiled app code)
+- **"Find in Doddy" from a closed app:** it now opens Find. The router change is observed with `initial: true`, because the shortcut runs before the tabs exist. A new request with the same words resets the Find screen.
+- **Drafts can no longer get stuck behind a presentation:**
+  - Onboarding and the Back Tap setup sheet count as blockers.
+  - Waiting drafts appear from the conversation cover's and the setup sheet's `onDismiss`, not while they are still closing.
+  - "Talk to Doddy" is ignored while a shared draft's capture sheet is up. That sheet and the conversation cover hang off the same view.
+- **Whitespace-only shared text:** it now opens a plain new note, saved as typed rather than `shared_content`.

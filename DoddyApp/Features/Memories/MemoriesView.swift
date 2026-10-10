@@ -1,5 +1,6 @@
 import DoddyCore
 import SwiftUI
+import UIKit
 
 /// Real repository records only. No seeded examples or generated personal facts.
 struct MemoriesView: View {
@@ -7,6 +8,11 @@ struct MemoriesView: View {
     @Binding var showFind: Bool
     @State private var modal: MemoryModal?
     @State private var path: [MemoryNavigationRoute] = []
+    /// Type filter (ADR-182). Ignored once no note of that type is left.
+    @State private var category: MemoryCategory?
+    @AppStorage(PreferenceKey.memorySort) private var sortRaw = MemorySort.newestFirst.rawValue
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
+    @State private var pinMessage: String?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -32,9 +38,43 @@ struct MemoriesView: View {
                     } else if store.memories.isEmpty {
                         EmptyMemoriesView { modal = .capture }
                     } else {
-                        Text("YOUR SAVED NOTES").font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                        let choices = MemoryFilter.choices(store.memories)
+                        let active = choices.contains { $0.category == category } ? category : nil
+                        HStack {
+                            Text("YOUR SAVED NOTES").font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                            Spacer()
+                            if store.memories.count > 1 {
+                                MemorySortMenu(sortRaw: $sortRaw)
+                            }
+                        }
+                        if !choices.isEmpty {
+                            MemoryTypeFilterRow(choices: choices, total: store.memories.count, selection: $category, active: active)
+                        }
+                        let pins = PinnedNotes(stored: pinnedRaw)
+                        if let pinMessage {
+                            Label(pinMessage, systemImage: "pin.slash").font(.footnote).foregroundStyle(Theme.error)
+                        }
                         LazyVStack(spacing: 12) {
-                            ForEach(store.memories) { MemoryLinkCard(record: $0) }
+                            // Pinned notes first (ADR-187), then the chosen order.
+                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories)))) { record in
+                                let isPinned = pins.isPinned(record.id)
+                                MemoryLinkCard(record: record, isPinned: isPinned)
+                                    .contextMenu {
+                                        // The same actions as on the note's screen, without opening it (ADR-188).
+                                        Button {
+                                            let change = PinnedNotes.toggle(record.id, stored: &pinnedRaw, existing: store.memories)
+                                            pinMessage = change == .full ? PinnedNotes.fullMessage : nil
+                                        } label: {
+                                            Label(isPinned ? "Unpin from the top" : "Pin to the top", systemImage: isPinned ? "pin.slash" : "pin")
+                                        }
+                                        Button { UIPasteboard.general.string = record.currentText } label: {
+                                            Label("Copy text", systemImage: "doc.on.doc")
+                                        }
+                                        ShareLink(item: record.currentText) {
+                                            Label("Share text", systemImage: "square.and.arrow.up")
+                                        }
+                                    }
+                            }
                         }
                     }
                 }
@@ -44,7 +84,9 @@ struct MemoriesView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: MemoryNavigationRoute.self) { route in
                 switch route {
-                case .find: FindMemoriesView()
+                case .find(let query):
+                    // A new "Find in Doddy" request resets the screen even with the same words.
+                    FindMemoriesView(initialQuery: query).id(ShortcutRouter.shared.findRequest?.id)
                 case .note(let id): MemoryDetailView(memoryID: id)
                 }
             }
@@ -54,9 +96,75 @@ struct MemoriesView: View {
             guard requested else { return }
             // One typed path owns both search and source detail. Mixing a boolean
             // search destination with value pushes reset the search on iOS 27.
-            path = [.find]
+            path = [.find(query: ShortcutRouter.shared.takeFindQuery())]
             showFind = false
         }
+    }
+}
+
+/// "Newest first / Oldest first / Recently changed". Display only; it remembers the choice.
+private struct MemorySortMenu: View {
+    @Binding var sortRaw: String
+
+    private static func title(_ sort: MemorySort) -> String {
+        switch sort {
+        case .newestFirst: "Newest first"
+        case .oldestFirst: "Oldest first"
+        case .recentlyChanged: "Recently changed"
+        }
+    }
+
+    var body: some View {
+        Menu {
+            Picker("Order", selection: $sortRaw) {
+                ForEach(MemorySort.allCases, id: \.self) { Text(Self.title($0)).tag($0.rawValue) }
+            }
+        } label: {
+            Label(Self.title(MemorySort(stored: sortRaw)), systemImage: "arrow.up.arrow.down")
+                .font(.caption)
+                .frame(minHeight: 44)
+        }
+        .accessibilityLabel("Order, \(Self.title(MemorySort(stored: sortRaw)))")
+        .accessibilityIdentifier("memories.sort")
+    }
+}
+
+/// "All" plus one chip per type in use, with counts. Selecting the active chip again clears it.
+private struct MemoryTypeFilterRow: View {
+    let choices: [(category: MemoryCategory, count: Int)]
+    let total: Int
+    @Binding var selection: MemoryCategory?
+    let active: MemoryCategory?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                chip("All", count: total, isOn: active == nil) { selection = nil }
+                    .accessibilityIdentifier("memories.filter.all")
+                ForEach(choices, id: \.category) { choice in
+                    chip(choice.category.displayName, count: choice.count, isOn: active == choice.category) {
+                        selection = active == choice.category ? nil : choice.category
+                    }
+                    .accessibilityIdentifier("memories.filter.\(choice.category.rawValue)")
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Show notes of one type")
+    }
+
+    private func chip(_ title: String, count: Int, isOn: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text("\(title) \(count)")
+                .font(.subheadline)
+                .padding(.horizontal, 14)
+                .frame(minHeight: 44)
+                .background(isOn ? Theme.ink : Theme.quietSurface, in: Capsule())
+                .foregroundStyle(isOn ? Theme.canvas : Theme.ink)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(title), \(count) \(count == 1 ? "note" : "notes")")
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
