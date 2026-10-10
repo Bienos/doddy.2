@@ -220,3 +220,9 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 120 | Gmail, Google Calendar and EventKit were a proposal on the M2 branch (`docs/architecture/CONNECTED_APPS_PROPOSAL.md`). | **Superseded**: the main line built Connections (EventKit, contacts) and Connected Apps (ADR-073–082, 096–105); the proposal is kept for reference only |
 | 121 | Consolidation (owner chose this M2 branch over `busy-hawking` and `friendly-sagan`, 2026-10-10): the shipping capability catalog is `v2WithAssistant` = V2 with Connected Apps plus `textAssistant`; privacy flags stay `v1Voice` (same flags as M2's). Home gets an **Ask Doddy** button under Talk to Doddy in the Codex layout; Settings gets the Ask Doddy section with copy that names the gateway as a separate server from the Connected Apps server. The other two M2 branches are not merged. | Applied — unbuilt |
 
+
+## Social links (2026-10-10)
+
+| # | Decision | Status |
+|---|---|---|
+| 128 | Doddy's own accounts, TikTok `@doddy_mate` and Instagram `@doddy_mate` (owner request), are linked from the site footer next to the Telegram group and from a **Follow Doddy** section in Settings, under About this build. In the app they are plain SwiftUI `Link`s: iOS opens the TikTok/Instagram app or Safari, and Doddy sends nothing itself, so the privacy copy and the networking guard are unchanged. | Applied — app NOT BUILT here (no Xcode on Linux) |
