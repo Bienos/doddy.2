@@ -51,6 +51,7 @@ EventKit) has still never been compiled.
 | E2 | Export memories as JSON, delete one note, then Restore from a JSON export and pick the file | A preview with counts, then "Added 1 note". Notes already on the phone are not replaced (ADR-135) |
 | E3 | Restore a text file, an empty file and a hand-edited file with one note broken | A plain message each time and nothing added |
 | E4 | Settings → What Doddy knows → Remembered conversations | The list, a full conversation, "Brought up next time" marks, delete one with confirmation, export as text (ADR-134). Delete from inside a conversation: it goes back one screen, not two |
+| E5 | Settings → Your memories → Export as Markdown, then open the file in Notes or Files | A file named doddy-memories.md (check it is not .md.txt) with one heading per note, the words in a block quote, and the original for a corrected note (ADR-152) |
 
 ## 4. Shortcuts, Siri and controls
 | # | Do this | Expect |
