@@ -147,6 +147,22 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testWhatLeavesThisIPhoneFollowsSettings() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
+        app.buttons["tab.settings"].tap()
+        let link = app.buttons["settings.dataFlow"]
+        for _ in 0..<6 {
+            if link.exists && link.isHittable { break }
+            app.swipeUp()
+        }
+        link.tap()
+        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
+        // Ask Doddy starts off, so it is listed under "Not sent right now".
+        XCTAssertTrue(app.staticTexts["Ask Doddy is off, so nothing goes there."].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testWhatDoddyDidOpensFromSettings() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))

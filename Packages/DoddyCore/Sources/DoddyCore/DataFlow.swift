@@ -1,0 +1,112 @@
+import Foundation
+
+/// Settings → What leaves this iPhone (docs/design/SETTINGS_AND_CONNECTIONS.md §6): one row per
+/// place data can go, built from the user's current settings, so the screen changes when a
+/// switch does. The wording restates the Privacy paragraph in SettingsView row by row; change
+/// both together.
+public struct DataFlowState: Equatable, Sendable {
+    public var rememberConversations: Bool
+    public var shareProfileWithVoice: Bool
+    public var tokenServerSet: Bool
+    /// Device connections switched on in Settings → Connections.
+    public var connectionsOn: Set<VoiceConnection>
+    public var pauseAll: Bool
+    /// A Doddy server address is set for Connected Apps and online accounts.
+    public var doddyServerSet: Bool
+    public var askDoddyOn: Bool
+    public var askDoddyUsesNotes: Bool
+
+    public init(
+        rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
+        connectionsOn: Set<VoiceConnection>, pauseAll: Bool, doddyServerSet: Bool,
+        askDoddyOn: Bool, askDoddyUsesNotes: Bool
+    ) {
+        self.rememberConversations = rememberConversations
+        self.shareProfileWithVoice = shareProfileWithVoice
+        self.tokenServerSet = tokenServerSet
+        self.connectionsOn = connectionsOn
+        self.pauseAll = pauseAll
+        self.doddyServerSet = doddyServerSet
+        self.askDoddyOn = askDoddyOn
+        self.askDoddyUsesNotes = askDoddyUsesNotes
+    }
+}
+
+public struct DataFlowRow: Equatable, Identifiable, Sendable {
+    public let id: String
+    /// Where it goes, e.g. "ElevenLabs (Doddy's voice)".
+    public let destination: String
+    /// What goes there, in plain words.
+    public let what: String
+    public let when: String
+    /// True when the current settings let data go there.
+    public let isActive: Bool
+    /// Extra fact, or why it is off right now.
+    public let note: String?
+}
+
+public enum DataFlow {
+    public static func rows(_ state: DataFlowState) -> [DataFlowRow] {
+        let apps = state.pauseAll ? [] : state.connectionsOn
+        var voice = ["your voice", "the conversation", "your saved notes", "your personality settings"]
+        if state.rememberConversations { voice.append("your last few conversations") }
+        if state.shareProfileWithVoice { voice.append("your introduction answers") }
+        if !apps.isEmpty { voice.append("calendar entries, reminders, contact names or drafts Doddy uses (\(names(apps)))") }
+        if state.doddyServerSet && !state.pauseAll { voice.append("results from your online accounts that Doddy uses") }
+
+        var ask = "Typed questions"
+        if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
+
+        return [
+            DataFlowRow(
+                id: "elevenlabs", destination: "ElevenLabs (Doddy's voice)",
+                what: sentence(voice),
+                when: "Only while a conversation is open.", isActive: true,
+                note: "ElevenLabs keeps a recording and transcript of each conversation."),
+            DataFlowRow(
+                id: "lookups", destination: "Open-Meteo and Wikipedia",
+                what: "A place name and its coordinates; search words.",
+                when: "Only when you ask about the weather or a fact.", isActive: true,
+                note: "ElevenLabs makes these requests for Doddy; this app doesn't contact them."),
+            DataFlowRow(
+                id: "tokenServer", destination: "Voice token server",
+                what: "Your access code.", when: "When a conversation starts.", isActive: state.tokenServerSet,
+                note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
+            DataFlowRow(
+                id: "doddyServer", destination: "Your Doddy server (Google, Notion, Todoist via Composio)",
+                what: "What you ask for: a date, a search word, or the text of a draft or task you confirm. Never your saved notes.",
+                when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
+                isActive: state.doddyServerSet,
+                note: !state.doddyServerSet
+                    ? "No Doddy server is set, so nothing goes there."
+                    : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
+            DataFlowRow(
+                id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
+                what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
+                note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
+        ]
+    }
+
+    /// What never leaves, apart from the uses listed above.
+    public static func staysOnPhone(_ state: DataFlowState) -> [String] {
+        [
+            "Your saved notes, except as listed above.",
+            "What Doddy did (the activity list).",
+            state.rememberConversations
+                ? "Remembered conversations, except the last few at the start of a conversation."
+                : "Conversations: none are remembered.",
+            "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
+            "Access codes and tokens, in this iPhone's Keychain.",
+        ]
+    }
+
+    private static func names(_ connections: Set<VoiceConnection>) -> String {
+        VoiceConnection.allCases.filter(connections.contains).map(\.title).joined(separator: ", ")
+    }
+
+    private static func sentence(_ parts: [String]) -> String {
+        guard let last = parts.last else { return "" }
+        let text = parts.count == 1 ? last : parts.dropLast().joined(separator: ", ") + " and " + last
+        return text.prefix(1).uppercased() + text.dropFirst() + "."
+    }
+}
