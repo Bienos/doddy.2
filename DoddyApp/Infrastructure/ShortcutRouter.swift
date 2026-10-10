@@ -48,6 +48,14 @@ final class ShortcutRouter {
         }
     }
 
+    /// Called by the opening when Settings → "Start listening when I open Doddy" is on (ADR-207).
+    /// Opens the conversation unless one is already open or something else is on screen; it
+    /// never starts a second conversation and never pushes a sheet aside.
+    func startListeningOnOpen() {
+        guard !isVoicePresented, !isSetupPresented, !isOnboardingShown, drafts.shown == nil else { return }
+        isVoicePresented = true
+    }
+
     /// Called from `SaveToDoddyIntent.perform()`. Shows the text on the capture screen, or keeps
     /// it until the conversation or another capture screen closes. Never saves anything.
     func saveToDoddyInvoked(text: String) {

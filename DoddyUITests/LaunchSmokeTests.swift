@@ -8,12 +8,14 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false) -> XCUIApplication {
+    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         // Overrides UserDefaults for this launch only.
         app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
         if onboardingDone { app.launchArguments += ["-onboardingDone", "YES"] }
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
+        // The opening (ADR-207) is on by default; most tests start straight on Home.
+        if !opening { app.launchArguments += ["-openingScene", "NO"] }
         app.launch()
         return app
     }
@@ -198,6 +200,59 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(results.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Nothing was done.")).firstMatch.exists)
         XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Unticked")).firstMatch.exists)
+    }
+
+    @MainActor
+    func testOpeningPlaysOnLaunchCanBeSkippedAndNeverListensByItself() {
+        let app = launch(onboardingDone: true, opening: true)
+        let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
+        XCTAssertTrue(scene.waitForExistence(timeout: 5))
+        XCTAssertTrue(scene.label.contains("Doddy"), scene.label)
+        scene.tap()
+        XCTAssertTrue(scene.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.save"].isHittable, "the app is usable as soon as the opening is gone")
+        // "Start listening when I open Doddy" is off by default: no conversation, no microphone.
+        XCTAssertFalse(app.navigationBars["Talk to Doddy"].exists)
+        XCTAssertFalse(app.staticTexts["Listening"].exists)
+        XCTAssertFalse(app.staticTexts["Connecting…"].exists)
+    }
+
+    @MainActor
+    func testOpeningEndsByItselfAndIsNotRepeatedOnAQuickReturn() {
+        let app = launch(onboardingDone: true, opening: true)
+        let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
+        XCTAssertTrue(scene.waitForExistence(timeout: 5))
+        // Just over the timeline's length: it fades out on its own.
+        XCTAssertTrue(scene.waitForNonExistence(timeout: 4))
+        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+
+        XCUIDevice.shared.press(.home)
+        app.activate()
+        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+        XCTAssertFalse(scene.exists, "a quick switch away and back is not an opening")
+    }
+
+    @MainActor
+    func testOpeningOffShowsHomeStraightAway() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any)["opening.scene"].exists)
+    }
+
+    @MainActor
+    func testListeningOnOpenIsOffByDefaultAndSaysSo() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
+        app.buttons["tab.settings"].tap()
+        let toggle = app.switches["settings.listenOnOpen"]
+        for _ in 0..<10 {
+            if toggle.exists && toggle.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(toggle.exists)
+        XCTAssertEqual(toggle.value as? String, "0")
+        XCTAssertTrue(app.staticTexts["Off: nothing listens until you tap Talk to Doddy."].exists)
     }
 
     @MainActor

@@ -9,6 +9,11 @@ struct HomeView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Right after the opening (ADR-207) Doddy is ready to talk: the hello is the heading, the
+    /// listening pose is up, and the buttons slide in. Absent in previews and tests.
+    @Environment(OpeningModel.self) private var opening: OpeningModel?
+    @State private var buttonsIn = true
     @State private var modal: MemoryModal?
     @State private var showAsk = false
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
@@ -27,17 +32,21 @@ struct HomeView: View {
                             .font(.caption2).multilineTextAlignment(.trailing)
                             .foregroundStyle(Theme.secondaryText)
                     }
-                    // JourneyHeading's look, with the approved name when there is one.
+                    // JourneyHeading's look, with the approved name when there is one; right after
+                    // the opening, Doddy's hello.
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(greeting)
+                        Text(ready?.greeting.headline ?? greeting)
                             .font(.largeTitle.weight(.medium)).tracking(-1)
                             .accessibilityAddTraits(.isHeader)
                             .accessibilityIdentifier("home.greeting")
-                        Text("Save a detail.\nFind it when you need it.")
+                        Text(ready?.greeting.question ?? "Save a detail.\nFind it when you need it.")
                             .font(.subheadline).foregroundStyle(Theme.secondaryText)
                     }
-                    UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: 210)
+                    UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
                         .frame(maxWidth: .infinity)
+                        .id(ready != nil)
+                        .transition(reduceMotion ? .opacity : .scale(scale: 0.6, anchor: .bottom).combined(with: .opacity))
+                        .animation(reduceMotion ? nil : .spring(duration: 0.45, bounce: 0.35), value: ready != nil)
 
                     if let problem = store.environment.storageProblem {
                         ProblemView(message: problem)
@@ -50,6 +59,7 @@ struct HomeView: View {
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
                         .accessibilityIdentifier("home.talk")
+                        .modifier(SlideIn(shown: buttonsIn, delay: 0))
 
                         Button { showAsk = true } label: {
                             HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
@@ -57,13 +67,26 @@ struct HomeView: View {
                         .buttonStyle(SecondaryButtonStyle())
                         .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
                         .accessibilityIdentifier("home.ask")
+                        .modifier(SlideIn(shown: buttonsIn, delay: 0.07))
 
                         // Choose one layout rather than keeping off-screen copies
                         // of the same actions in ViewThatFits' accessibility tree.
-                        if textSize.isAccessibilitySize {
-                            VStack(spacing: 10) { saveAction; findAction }
-                        } else {
-                            HStack(spacing: 10) { saveAction; findAction }
+                        Group {
+                            if textSize.isAccessibilitySize {
+                                VStack(spacing: 10) { saveAction; findAction }
+                            } else {
+                                HStack(spacing: 10) { saveAction; findAction }
+                            }
+                        }
+                        .modifier(SlideIn(shown: buttonsIn, delay: 0.14))
+                    }
+                    // The opening hands over: the buttons slide in under the ready Doddy.
+                    .onChange(of: ready != nil) { _, isReady in
+                        guard isReady, !reduceMotion else { return }
+                        buttonsIn = false
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(40))
+                            buttonsIn = true
                         }
                     }
                     Text("Only the things you choose to save.")
@@ -95,6 +118,8 @@ struct HomeView: View {
         }
         .foregroundStyle(Theme.ink)
     }
+
+    private var ready: OpeningReady? { opening?.ready }
 
     private var saveAction: some View {
         Button { modal = .capture } label: { HomeActionTile(title: "Save a detail", icon: "plus") }
@@ -181,6 +206,20 @@ struct HomeView: View {
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
+    }
+}
+
+/// A button's entrance after the opening: up from just below, with a little bounce, each a
+/// beat after the one before. Instant (never hidden) under Reduce Motion, where `shown` stays true.
+private struct SlideIn: ViewModifier {
+    let shown: Bool
+    let delay: Double
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 28)
+            .animation(.spring(duration: 0.5, bounce: 0.3).delay(delay), value: shown)
     }
 }
 
