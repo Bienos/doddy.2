@@ -142,8 +142,14 @@ are now 169, 170, 171, and the blog stays 138. The was/now table in `DECISIONS.m
   owner decision), and its code (an action ledger, simulated approvals and a third Apple
   Reminders implementation, which would replace ADR-126's working one).
 
+**Fourth merge (2026-10-10, ~15:20 UTC, owner: "yes, merge them"):** `hopeful-fermat`'s adoption
+of the DODDY AI Constitution V1 (rules appended to `CLAUDE.md` / `AGENTS.md`, rules registry at
+`docs/trust/config/doddy_rules.yaml`, which replaces the earlier `config/` copy because `Config/`
+exists; voice spec check for "AI, not a person"), ADR-178 → **194**; and `elegant-dijkstra`'s
+business docs (`docs/business/`: monetization model v2 and a unit-economics script).
+
 To stop this repeating, new sessions should start from this branch (or the default branch once
-PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit (193 after the third merge).
+PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit (195 after the constitution merge).
 
 **Follow-ups:**
 - ~~Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the
