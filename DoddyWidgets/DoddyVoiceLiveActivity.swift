@@ -10,9 +10,8 @@ import WidgetKit
 /// it in the background), iOS marks it stale and this view says so instead of "Listening".
 ///
 /// The Lock Screen card follows the phone's light/dark setting (paper card in light, Night card
-/// in dark, colours from this target's asset catalog). The Dynamic Island is always black, so it
-/// always uses the dark character art. Character art is the approved `Doddy_listening` and
-/// `Doddy_waving` imagesets from `design/ios-ready-asset-catalog`, the same files the app uses.
+/// in dark, colours from this target's asset catalog). The Dynamic Island is always black.
+/// Character art: see `DoddyArt`.
 /// No words from the conversation appear here: the Lock Screen is visible to anyone.
 struct DoddyVoiceLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -95,27 +94,36 @@ private enum Palette {
     /// On the always-black Dynamic Island.
     static let onIslandSecondary = Color(red: 0xC5 / 255, green: 0xBC / 255, blue: 0xAD / 255)
     static let onIslandAccent = Color(red: 0xFF / 255, green: 0xB5 / 255, blue: 0x6B / 255)
+    /// Same paper as `UploadedCharacterView`'s dark-mode backing.
+    static let paperBacking = Color(red: 245 / 255, green: 239 / 255, blue: 226 / 255)
 }
 
-/// Doddy himself: listening while the conversation runs, waving once it has ended.
+/// Doddy himself, from the owner's approved numbered pack (`UploadedDoddy_*`, byte-identical to
+/// the ZIP; see docs/design/UPLOADED_MEMORY_ASSETS.md): listening while the conversation runs;
+/// once it has ended, the fist-pump "kept" pose if a note was saved, else sitting.
+/// The drawings are cream and black with no dark variant, so on the black island and on the
+/// dark Lock Screen they sit on a light paper backing, as `UploadedCharacterView` does in the app.
 private struct DoddyArt: View {
     let shown: Shown
     let size: CGFloat
-    /// The island is black in light and dark mode, so it always takes the dark art.
+    /// The island is black in light and dark mode, so it always takes the paper backing.
     var onIsland = false
+    @Environment(\.colorScheme) private var colorScheme
 
-    @ViewBuilder
+    private var assetName: String {
+        guard shown.state.isEnded else { return "UploadedDoddy_Listening" }
+        return shown.state.savedCount > 0 ? "UploadedDoddy_Kept" : "UploadedDoddy_Sitting"
+    }
+
     var body: some View {
-        let art = Image(shown.state.isEnded ? "Doddy_waving" : "Doddy_listening")
+        let backed = onIsland || colorScheme == .dark
+        Image(decorative: assetName)
             .resizable()
             .scaledToFit()
+            .padding(backed ? size * 0.08 : 0)
             .frame(width: size, height: size)
+            .background(backed ? Palette.paperBacking : .clear, in: RoundedRectangle(cornerRadius: size * 0.28))
             .accessibilityHidden(true)
-        if onIsland {
-            art.environment(\.colorScheme, .dark)
-        } else {
-            art
-        }
     }
 }
 
