@@ -73,3 +73,9 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 8. **Identity & signing** — bundle identifier, Apple developer team, and whether to commit the generated `Doddy.xcodeproj` after a first good Mac build (ADR-013).
 9. **CI** — accept local-script CI only, or approve a hosted macOS runner and its cost (ADR-022).
 10. **Run the Mac verification** listed in `docs/implementation/M0_REPORT.md` and record results; **M1 should not start until M0's iOS build/tests are confirmed on a Mac** (M0 exit criteria are not met without it).
+
+## Blog
+
+| ADR | Decision | Status |
+|---|---|---|
+| 036 | Blog lives in `blog/` as Markdown + YAML front matter; posts start as `status: draft`. Editorial rules in `blog/README.md` mirror the honesty contract (evidence for every claim, candidate art labelled, no identifiers or secrets). No site, hosting or accounts set up. | Applied — **owner to choose publishing venue and approve first post** |
