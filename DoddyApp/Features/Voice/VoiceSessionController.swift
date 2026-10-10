@@ -57,14 +57,14 @@ final class VoiceSessionController {
 
     /// What a note-reminder card offers: the checked moment, or Apple Maps results to pick from.
     enum NoteReminderCardTarget: Equatable {
-        case time(Date, timeZoneID: String)
+        case time(Date, timeZoneID: String, repeats: ReminderRepeat? = nil)
         case place(results: [PlaceSearchResult], onArrival: Bool)
     }
 
     /// The reminder the user confirmed on a note-reminder card, exactly as it was shown.
     struct ConfirmedNoteReminder: Equatable {
         enum When: Equatable {
-            case time(Date, timeZoneID: String)
+            case time(Date, timeZoneID: String, repeats: ReminderRepeat? = nil)
             case place(ReminderPlace)
         }
         let memoryID: UUID
@@ -389,8 +389,9 @@ final class VoiceSessionController {
 
     /// The user changed the time on the card. The card shows it, and Set reminder uses it.
     func changeNoteReminderTime(_ date: Date) {
-        guard case .noteReminder(let id, let memoryID, let text, let savedAt, .time(_, let zone)) = pendingAction else { return }
-        pendingAction = .noteReminder(toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone))
+        guard case .noteReminder(let id, let memoryID, let text, let savedAt, .time(_, let zone, let repeats)) = pendingAction else { return }
+        pendingAction = .noteReminder(
+            toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone, repeats: repeats))
     }
 
     /// The user switched arriving/leaving on the card (the agent may have misheard).
@@ -402,8 +403,8 @@ final class VoiceSessionController {
     /// The card's current content, as the reminder to set.
     private func confirmedNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) -> ConfirmedNoteReminder? {
         switch target {
-        case .time(let date, let zone):
-            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone))
+        case .time(let date, let zone, let repeats):
+            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats))
         case .place(let results, let onArrival):
             guard !results.isEmpty else { return nil }
             let choice = results[min(selectedPlaceIndex, results.count - 1)]
@@ -428,8 +429,9 @@ final class VoiceSessionController {
         // The user just tapped Set reminder, so this is the moment to ask iOS, once.
         if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
         switch confirmed.when {
-        case .time(let date, let zone):
-            await reminders.set(memoryID: confirmed.memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent)
+        case .time(let date, let zone, let repeats):
+            await reminders.set(
+                memoryID: confirmed.memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent, repeats: repeats)
         case .place(let place):
             if reminders.locationReadiness == .notDetermined { await reminders.requestLocation() }
             await reminders.set(memoryID: confirmed.memoryID, place: place)
@@ -689,7 +691,8 @@ final class VoiceSessionController {
         switch draft.target {
         case .time(let date, let zone):
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
-                                  savedAt: record.capturedAt, target: .time(date, timeZoneID: zone)), toolCallID: toolCallID)
+                                  savedAt: record.capturedAt, target: .time(date, timeZoneID: zone, repeats: draft.repeats)),
+                    toolCallID: toolCallID)
         case .place(let query, let onArrival):
             let results: [PlaceSearchResult]
             do {

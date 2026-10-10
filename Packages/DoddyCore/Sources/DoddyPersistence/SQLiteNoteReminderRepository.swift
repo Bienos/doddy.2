@@ -58,12 +58,17 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
                     "place", nil, nil, place.name, place.latitude, place.longitude, place.radiusMeters, place.onArrival,
                 ]
             }
-            arguments += [DoddyDatabase.milliseconds(reminder.createdAt)]
+            arguments += [
+                DoddyDatabase.milliseconds(reminder.createdAt), reminder.repeats?.rawValue,
+                reminder.lastDoneAt.map(DoddyDatabase.milliseconds), reminder.snoozedUntil.map(DoddyDatabase.milliseconds),
+                reminder.firstSetFor.map(DoddyDatabase.milliseconds),
+            ]
             try db.execute(
                 sql: """
                     INSERT INTO note_reminders (id, memory_id, kind, fire_at_ms, time_zone_id, place_name,
-                                                latitude, longitude, radius_m, on_arrival, created_at_ms)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                                latitude, longitude, radius_m, on_arrival, created_at_ms,
+                                                repeat_rule, last_done_at_ms, snoozed_until_ms, first_set_for_ms)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                 arguments: arguments)
             guard try Self.fetchReminder(id: reminder.id, db) == reminder else {
@@ -110,7 +115,17 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
         default:
             throw MemoryStoreError.corruptRecord(idString)
         }
+        let repeats: ReminderRepeat?
+        if let raw = row["repeat_rule"] as String? {
+            guard let rule = ReminderRepeat(rawValue: raw) else { throw MemoryStoreError.corruptRecord(idString) }
+            repeats = rule
+        } else {
+            repeats = nil
+        }
+        let date = { (column: String) in (row[column] as Int64?).map(DoddyDatabase.date(milliseconds:)) }
         return MemoryReminder(
-            id: id, memoryID: memoryID, trigger: trigger, createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]))
+            id: id, memoryID: memoryID, trigger: trigger, createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]),
+            repeats: repeats, lastDoneAt: date("last_done_at_ms"), snoozedUntil: date("snoozed_until_ms"),
+            firstSetFor: date("first_set_for_ms"))
     }
 }

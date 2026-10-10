@@ -99,7 +99,13 @@ public struct ActivityRequest: Equatable, Sendable {
         case .remindAboutNote(let draft):
             let target: String
             switch draft.target {
-            case .time(let date, _): target = when(date, hasTime: true)
+            case .time(let date, let zone):
+                if let rule = draft.repeats {
+                    let phrase = ReminderFormat.repeatPhrase(rule, anchor: date, timeZoneID: zone)
+                    target = phrase.prefix(1).lowercased() + phrase.dropFirst()
+                } else {
+                    target = when(date, hasTime: true)
+                }
             case .place(let query, let onArrival): target = "\(onArrival ? "arriving at" : "leaving") “\(query)”"
             }
             return ActivityRequest(app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", isLookup: false)

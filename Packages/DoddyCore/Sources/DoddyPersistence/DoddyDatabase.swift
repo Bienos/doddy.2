@@ -127,6 +127,19 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
                 """)
         }
+        // Repeating reminders and snooze (ADR-200). New columns only; existing rows stay one-offs.
+        migrator.registerMigration("v5_note_reminder_repeat") { db in
+            try db.execute(sql: """
+                ALTER TABLE note_reminders ADD COLUMN repeat_rule TEXT
+                    CHECK (repeat_rule IS NULL OR (kind = 'time' AND repeat_rule IN ('daily', 'weekdays', 'weekly', 'monthly')));
+                ALTER TABLE note_reminders ADD COLUMN last_done_at_ms INTEGER
+                    CHECK (last_done_at_ms IS NULL OR repeat_rule IS NOT NULL);
+                ALTER TABLE note_reminders ADD COLUMN snoozed_until_ms INTEGER
+                    CHECK (snoozed_until_ms IS NULL OR repeat_rule IS NOT NULL);
+                ALTER TABLE note_reminders ADD COLUMN first_set_for_ms INTEGER
+                    CHECK (first_set_for_ms IS NULL OR (kind = 'time' AND repeat_rule IS NULL));
+                """)
+        }
         return migrator
     }
 
