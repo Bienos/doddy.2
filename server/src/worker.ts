@@ -1,5 +1,6 @@
 import { loadConfig } from "./config.js";
 import { createPool, migrate } from "./db.js";
+import { purgeExpiredSessions } from "./calls.js";
 import { dispatchDue } from "./outbox.js";
 import { providersFrom } from "./providers/index.js";
 
@@ -18,6 +19,7 @@ process.on("SIGINT", () => { stopping = true; });
 while (!stopping) {
   try {
     const r = await dispatchDue(db, { push, sms });
+    await purgeExpiredSessions(db);
     if (r.processed || r.reaped) log("dispatch pass", r);
     if (r.processed) continue; // more may be due
   } catch (err) {

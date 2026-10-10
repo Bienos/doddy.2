@@ -25,6 +25,17 @@ envVarGroups:
         sync: false
       - key: PUBLIC_BASE_URL
         sync: false
+      # S2 phone calls
+      - key: MEMORY_ENCRYPTION_KEY
+        sync: false
+      - key: ELEVENLABS_TOOL_SECRET
+        sync: false
+      - key: ELEVENLABS_PHONE_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_PHONE_NUMBER_ID
+        sync: false
+      - key: DODDY_PHONE_NUMBER
+        sync: false
 
 services:
   - type: web

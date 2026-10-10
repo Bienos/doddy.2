@@ -3,7 +3,10 @@ import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
 import type { Db } from "./db.js";
-import type { PhoneVerifier, PushSender, SmsSender, VoiceTokenIssuer } from "./providers/types.js";
+import type { TextCipher } from "./crypto.js";
+import type { OutboundCaller, PhoneVerifier, PushSender, SmsSender, VoiceTokenIssuer } from "./providers/types.js";
+import { callRoutes } from "./routes/calls.js";
+import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { accountRoutes } from "./routes/account.js";
 import { phoneRoutes } from "./routes/phone.js";
 import { updateRoutes } from "./routes/updates.js";
@@ -19,6 +22,12 @@ export interface Deps {
   /** Needed (with publicBaseUrl) to verify Twilio webhook signatures. */
   twilioAuthToken?: string;
   publicBaseUrl?: string;
+  /** S2: phone calls. */
+  outbound?: OutboundCaller;
+  cipher?: TextCipher;
+  /** Shared with ElevenLabs; authenticates the call-start webhook and tool requests. */
+  toolSecret?: string;
+  doddyPhoneNumber?: string;
   logger?: boolean;
 }
 
@@ -30,7 +39,8 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     logger: deps.logger === false ? false : {
       level: "info",
       // Never log bearer tokens or signatures. Request bodies are not logged at all.
-      redact: ["req.headers.authorization", 'req.headers["x-twilio-signature"]'],
+      redact: ["req.headers.authorization", 'req.headers["x-twilio-signature"]',
+        'req.headers["x-doddy-tool-secret"]', 'req.headers["x-doddy-session"]'],
     },
   });
   await app.register(formbody);
@@ -61,6 +71,8 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(updateRoutes(deps));
   await app.register(voiceRoutes(deps));
   await app.register(twilioWebhookRoutes(deps));
+  await app.register(callRoutes(deps));
+  await app.register(elevenLabsRoutes(deps));
   return app;
 }
 

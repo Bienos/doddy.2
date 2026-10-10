@@ -22,6 +22,13 @@ const schema = z.object({
 
   ELEVENLABS_API_KEY: optional,
   ELEVENLABS_AGENT_ID: optional,
+
+  // S2 phone calls
+  MEMORY_ENCRYPTION_KEY: optional, // base64 of 32 random bytes
+  ELEVENLABS_TOOL_SECRET: optional, // shared with ElevenLabs as a workspace secret
+  ELEVENLABS_PHONE_AGENT_ID: optional,
+  ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
+  DODDY_PHONE_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -29,6 +36,7 @@ export interface TwilioConfig {
   accountSid: string; authToken: string; messagingServiceSid: string; verifyServiceSid: string;
 }
 export interface ElevenLabsConfig { apiKey: string; agentId: string }
+export interface PhoneAgentConfig { apiKey: string; agentId: string; phoneNumberId: string }
 
 export interface Config {
   databaseUrl: string;
@@ -37,6 +45,10 @@ export interface Config {
   apns?: ApnsConfig;
   twilio?: TwilioConfig;
   elevenLabs?: ElevenLabsConfig;
+  memoryEncryptionKey?: string;
+  toolSecret?: string;
+  phoneAgent?: PhoneAgentConfig;
+  doddyPhoneNumber?: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -57,5 +69,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       messagingServiceSid: e.TWILIO_MESSAGING_SERVICE_SID, verifyServiceSid: e.TWILIO_VERIFY_SERVICE_SID,
     }),
     elevenLabs: all<ElevenLabsConfig>({ apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_AGENT_ID }),
+    memoryEncryptionKey: e.MEMORY_ENCRYPTION_KEY,
+    toolSecret: e.ELEVENLABS_TOOL_SECRET,
+    phoneAgent: all<PhoneAgentConfig>({
+      apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID, phoneNumberId: e.ELEVENLABS_PHONE_NUMBER_ID,
+    }),
+    doddyPhoneNumber: e.DODDY_PHONE_NUMBER,
   };
 }

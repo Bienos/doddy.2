@@ -1,6 +1,9 @@
 import { buildApp, type Deps } from "../src/app.js";
 import { createPool, migrate, type Db } from "../src/db.js";
-import type { PhoneVerifier, PushSender, PushTarget, SendOutcome, SmsSender, VerifyCheck } from "../src/providers/types.js";
+import { TextCipher } from "../src/crypto.js";
+import type {
+  CallOutcome, OutboundCaller, PhoneVerifier, PushSender, PushTarget, SendOutcome, SmsSender, VerifyCheck,
+} from "../src/providers/types.js";
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
 export const dbSkip = TEST_DATABASE_URL ? false : "TEST_DATABASE_URL not set (needs a disposable Postgres database)";
@@ -40,6 +43,18 @@ export class FakeVerifier implements PhoneVerifier {
   }
 }
 
+export class FakeOutbound implements OutboundCaller {
+  calls: { to: string; variables: Record<string, string> }[] = [];
+  next: CallOutcome[] = [];
+  async placeCall(to: string, variables: Record<string, string>): Promise<CallOutcome> {
+    this.calls.push({ to, variables });
+    return this.next.shift() ?? { kind: "accepted", conversationId: `conv_${this.calls.length}`, callSid: "CA1" };
+  }
+}
+
+export const TOOL_SECRET = "test-tool-secret-0123456789";
+export const testCipher = new TextCipher(Buffer.alloc(32, 7));
+
 export const TWILIO_TOKEN = "test-auth-token";
 export const BASE_URL = "https://doddy.example.test";
 
@@ -47,8 +62,10 @@ export async function testApp(db: Db, extra: Partial<Deps> = {}) {
   const push = new FakePush();
   const sms = new FakeSms();
   const verifier = new FakeVerifier();
+  const outbound = new FakeOutbound();
   const app = await buildApp({
-    db, push, sms, verifier, twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false, ...extra,
+    db, push, sms, verifier, outbound, cipher: testCipher, toolSecret: TOOL_SECRET, doddyPhoneNumber: "+48221234567",
+    twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false, ...extra,
   });
-  return { app, push, sms, verifier };
+  return { app, push, sms, verifier, outbound };
 }

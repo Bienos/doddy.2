@@ -9,9 +9,11 @@ await migrate(db);
 const providers = providersFrom(config);
 const app = await buildApp({
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
+  toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
 });
 app.log.info({
   push: !!providers.push, sms: !!providers.sms, voice: !!providers.voice, webhooks: !!config.publicBaseUrl,
+  calls: !!(config.toolSecret && providers.cipher), outboundCalls: !!providers.outbound,
 }, "configured features");
 
 const shutdown = async () => {

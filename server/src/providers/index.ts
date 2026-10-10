@@ -1,6 +1,7 @@
 import type { Config } from "../config.js";
 import { ApnsPushSender } from "./apns.js";
-import { ElevenLabsTokenIssuer } from "./elevenlabs.js";
+import { TextCipher } from "../crypto.js";
+import { ElevenLabsOutboundCaller, ElevenLabsTokenIssuer } from "./elevenlabs.js";
 import { TwilioClient } from "./twilio.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
@@ -13,5 +14,7 @@ export function providersFrom(config: Config) {
     sms: twilio,
     verifier: twilio,
     voice: config.elevenLabs ? new ElevenLabsTokenIssuer(config.elevenLabs) : undefined,
+    outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
+    cipher: config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined,
   };
 }

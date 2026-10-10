@@ -29,6 +29,16 @@ export interface PhoneVerifier {
   check(toE164: string, code: string): Promise<VerifyCheck>;
 }
 
+export type CallOutcome =
+  | { kind: "accepted"; conversationId?: string; callSid?: string }
+  | { kind: "rejected"; code: string }
+  | { kind: "unknown"; code: string };
+
+/** Asks the phone agent to ring a number, passing the call's dynamic variables. */
+export interface OutboundCaller {
+  placeCall(toE164: string, dynamicVariables: Record<string, string>): Promise<CallOutcome>;
+}
+
 export interface VoiceTokenIssuer {
   conversationToken(): Promise<string>;
 }
