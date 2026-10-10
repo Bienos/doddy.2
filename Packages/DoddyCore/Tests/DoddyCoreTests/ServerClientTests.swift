@@ -100,6 +100,26 @@ final class ServerClientTests: XCTestCase {
         XCTAssertTrue(UpdateStatus(id: id, channel: .push, state: "unknown").userFacingText.contains("won't resend"))
     }
 
+    func testVoiceUsesServerTokensWheneverAServerIsConnected() {
+        XCTAssertEqual(VoiceAuthPolicy.choose(serverConfigured: true, publicAgentID: "agent_x", allowPublicAgent: true), .serverToken)
+        XCTAssertEqual(VoiceAuthPolicy.choose(serverConfigured: false, publicAgentID: " agent_x ", allowPublicAgent: true), .publicAgent(id: "agent_x"))
+        guard case .unavailable = VoiceAuthPolicy.choose(serverConfigured: false, publicAgentID: "agent_x", allowPublicAgent: false) else {
+            return XCTFail("release builds must not fall back to the public agent")
+        }
+        guard case .unavailable = VoiceAuthPolicy.choose(serverConfigured: false, publicAgentID: "  ", allowPublicAgent: true) else {
+            return XCTFail("empty agent ID")
+        }
+    }
+
+    func testVoiceTokenIsReadFromTheServer() async throws {
+        let transport = ScriptedTransport([ServerResponse(status: 200, body: json(#"{"token":"lk-jwt"}"#))])
+        let client = DoddyServerClient(transport: transport, credentials: MemoryCredentials(token: "t"))
+        let token = try await client.voiceConversationToken()
+        XCTAssertEqual(token, "lk-jwt")
+        let sent = await transport.sent
+        XCTAssertEqual(sent.first?.path, "/v1/voice/token")
+    }
+
     func testUpdatesAreOnlyAvailableWithAServer() {
         XCTAssertEqual(CapabilityCatalog.s1Updates(serverConfigured: false).status(of: .pushUpdates), .needsSetup("Doddy server not connected"))
         XCTAssertTrue(CapabilityCatalog.s1Updates(serverConfigured: true).isAvailable(.textUpdates))

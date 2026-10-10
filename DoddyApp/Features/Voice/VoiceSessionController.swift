@@ -46,8 +46,13 @@ final class VoiceSessionController {
         }
     }
 
-    func start(agentID: String) async {
+    /// `auth` comes from `VoiceAuthPolicy`; `server` is needed for `.serverToken`.
+    func start(auth: VoiceAuthChoice, server: DoddyServerClient?) async {
         guard !isLive else { return }
+        if case .unavailable(let reason) = auth {
+            phase = .failed(reason)
+            return
+        }
         lines = []
         pendingSave = nil
         isMuted = false
@@ -79,18 +84,38 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
         }
 
+        let onAgentReady: @Sendable () -> Void = {
+            Task { @MainActor in
+                if ref.value?.phase == .connecting { ref.value?.phase = .listening }
+            }
+        }
+        let onDisconnect: @Sendable (DisconnectionReason) -> Void = { _ in
+            Task { @MainActor in ref.value?.disconnected() }
+        }
+
         do {
-            conversation = try await ElevenLabs.startConversation(
-                agentId: agentID,
-                config: config,
-                onAgentReady: {
-                    Task { @MainActor in
-                        if ref.value?.phase == .connecting { ref.value?.phase = .listening }
-                    }
-                },
-                onDisconnect: { _ in
-                    Task { @MainActor in ref.value?.disconnected() }
-                })
+            switch auth {
+            case .serverToken:
+                // Short-lived token from the Doddy server; the ElevenLabs key never reaches the app.
+                guard let server else {
+                    return fail("Voice needs the Doddy server, which isn't connected.")
+                }
+                let token: String
+                do {
+                    token = try await server.voiceConversationToken()
+                } catch {
+                    return fail("Couldn't start voice. \(UpdatesModel.text(for: error))")
+                }
+                conversation = try await ElevenLabs.startConversation(
+                    conversationToken: token, config: config,
+                    onAgentReady: onAgentReady, onDisconnect: onDisconnect)
+            case .publicAgent(let id):
+                conversation = try await ElevenLabs.startConversation(
+                    agentId: id, config: config,
+                    onAgentReady: onAgentReady, onDisconnect: onDisconnect)
+            case .unavailable:
+                return
+            }
         } catch {
             fail("Couldn't connect to Doddy's voice. Check your internet connection and try again. (\(error.localizedDescription))")
         }

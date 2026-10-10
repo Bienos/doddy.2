@@ -21,6 +21,16 @@ enum ServerConfig {
         return url
     }
 
+    /// The public development agent may be used only in debug builds, and only when no Doddy
+    /// server is connected (VoiceAuthPolicy). Release builds always need server tokens.
+    static var allowsPublicVoiceAgent: Bool {
+        #if DEBUG
+        true
+        #else
+        false
+        #endif
+    }
+
     static var pushEnvironment: PushEnvironment {
         #if DEBUG
         .sandbox

@@ -72,6 +72,11 @@ struct SettingsView: View {
                 }
 
                 Section("Voice") {
+                    StatusRow(
+                        title: "Voice sign-in",
+                        value: ServerConfig.baseURL() != nil
+                            ? "Short-lived token from the Doddy server"
+                            : ServerConfig.allowsPublicVoiceAgent ? "Public development agent" : "Needs the Doddy server")
                     TextField("ElevenLabs agent ID", text: $voiceAgentID)
                         .font(.body.monospaced())
                         .textInputAutocapitalization(.never)
@@ -80,7 +85,7 @@ struct SettingsView: View {
                     if voiceAgentID != VoiceConfig.developmentAgentID {
                         Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
                     }
-                    Text("Development prototype: Doddy's voice runs on an ElevenLabs agent. Conversations count toward the owner's ElevenLabs minutes.")
+                    Text("Doddy's voice runs on an ElevenLabs agent, and conversations count toward the owner's ElevenLabs minutes. With a Doddy server connected, the server picks the agent and hands out short-lived tokens; the agent ID above is used only in development builds without a server.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

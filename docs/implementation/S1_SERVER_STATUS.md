@@ -71,4 +71,16 @@ Date: 2026-10-10. Owner decisions on that date:
 
 **Known limits:**
 - "What's built" re-reads the server address only at launch.
-- The voice screen still uses the public agent ID; switching it to `/v1/voice/token` is the next step before anyone else uses voice.
+- Voice now uses `/v1/voice/token` whenever a server is connected (third unit, below).
+
+## Voice tokens (2026-10-10, third unit)
+- `VoiceAuthPolicy` (DoddyCore):
+  - a connected server → always a short-lived token from `/v1/voice/token`, then `ElevenLabs.startConversation(conversationToken:)` (SDK 3.3.1 API, checked in the SDK source);
+  - no server → the public agent ID, **debug builds only**;
+  - release builds without a server show "Voice needs the Doddy server".
+- A failing server is never silently replaced by the public agent.
+- The SDK's own token URL is the same ElevenLabs endpoint the server calls (`/v1/convai/conversation/token`).
+- Settings → Voice shows which sign-in is in use.
+- **Executed:** 41 core tests (2 new); app files parse; guard PASS.
+- **Not run:** a token-based conversation on an iPhone. That needs the deployed server with `ELEVENLABS_API_KEY` and `ELEVENLABS_AGENT_ID`.
+- **Owner action once the server is live:** turn on authentication for the Doddy agent in ElevenLabs. Until then the public agent ID still works for anyone who has it.

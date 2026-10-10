@@ -1,3 +1,4 @@
+import DoddyCore
 import SwiftUI
 import UIKit
 
@@ -10,14 +11,19 @@ struct VoiceView: View {
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @State private var controller: VoiceSessionController?
 
-    private var trimmedAgentID: String { agentID.trimmingCharacters(in: .whitespacesAndNewlines) }
+    /// Server token when a Doddy server is connected; the public agent only in debug builds.
+    private var auth: VoiceAuthChoice {
+        VoiceAuthPolicy.choose(
+            serverConfigured: ServerConfig.baseURL() != nil, publicAgentID: agentID,
+            allowPublicAgent: ServerConfig.allowsPublicVoiceAgent)
+    }
 
     var body: some View {
         NavigationStack {
             Group {
-                if trimmedAgentID.isEmpty {
+                if case .unavailable(let reason) = auth {
                     ScrollView {
-                        ProblemView(message: "Voice isn't set up. Add an ElevenLabs agent ID in Settings → Voice.")
+                        ProblemView(message: reason)
                             .padding(24)
                     }
                 } else if let controller {
@@ -43,10 +49,11 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
-            guard !trimmedAgentID.isEmpty else { return }
+            let auth = self.auth
+            if case .unavailable = auth { return }
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
-            await controller.start(agentID: trimmedAgentID)
+            await controller.start(auth: auth, server: ServerConfig.client())
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {
@@ -180,7 +187,7 @@ struct VoiceView: View {
                 .accessibilityIdentifier("voice.end")
             } else {
                 Button {
-                    Task { await controller.start(agentID: trimmedAgentID) }
+                    Task { await controller.start(auth: auth, server: ServerConfig.client()) }
                 } label: {
                     Label("Talk again", systemImage: "waveform")
                 }

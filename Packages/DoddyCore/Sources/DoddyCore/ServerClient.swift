@@ -296,3 +296,28 @@ private struct UpdateBody: Encodable { let text: String; let channels: [UpdateCh
 private struct QueuedList: Decodable { let messages: [QueuedUpdate] }
 private struct VoiceToken: Decodable { let token: String }
 private struct ErrorBody: Decodable { let error: String?; let fields: [String]? }
+
+/// How a voice conversation authenticates with ElevenLabs (ADR-034, ADR-048).
+public enum VoiceAuthChoice: Equatable, Sendable {
+    /// Fetch a short-lived conversation token from the Doddy server. The API key stays there.
+    case serverToken
+    /// Development only: connect to a public agent by ID. Anyone with the ID can use it.
+    case publicAgent(id: String)
+    case unavailable(String)
+}
+
+public enum VoiceAuthPolicy {
+    /// A connected server always wins; the public agent is allowed only where the caller says
+    /// so (debug builds), and never silently replaces a failing server.
+    public static func choose(serverConfigured: Bool, publicAgentID: String, allowPublicAgent: Bool) -> VoiceAuthChoice {
+        if serverConfigured { return .serverToken }
+        guard allowPublicAgent else {
+            return .unavailable("Voice needs the Doddy server, which isn't connected in this build.")
+        }
+        let id = publicAgentID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !id.isEmpty else {
+            return .unavailable("Voice isn't set up. Add an ElevenLabs agent ID in Settings → Voice.")
+        }
+        return .publicAgent(id: id)
+    }
+}

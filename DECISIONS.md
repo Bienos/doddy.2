@@ -56,7 +56,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | ADR | Decision | Status |
 |---|---|---|
 | 033 | Voice runs on **ElevenLabs Agents** (owner has Creator plan), behind app-side tool handling; provider bake-off vs OpenAI Realtime still recommended | Applied (owner instruction) |
-| 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Applied for dev — **must change before TestFlight** |
+| 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Token server built and used by the app (ADR-048); **agent authentication still to switch on** after deploy |
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
@@ -90,3 +90,4 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 045 | App networking of its own is allowed **only** in `DoddyApp/Infrastructure/Server` and only to the Doddy server over https; the guard enforces the folder. | Applied |
 | 046 | Server token in the Keychain with `AfterFirstUnlockThisDeviceOnly`: not backed up or synced, so a restored iPhone starts a new anonymous account. | Applied — owner may prefer restore-with-backup |
 | 047 | New capability status `needsSetup`: built features that need an external piece (a deployed server) are shown as "Built · needs setup", never "Available". | Applied |
+| 048 | Voice auth: a connected Doddy server always provides a short-lived ElevenLabs token; the public agent ID is a debug-only fallback when no server exists; no silent fallback from a failing server. | Applied |
