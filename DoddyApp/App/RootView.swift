@@ -14,6 +14,8 @@ enum PreferenceKey {
     static let pinnedNotes = "pinnedNotes"
     /// Widgets show pinned notes, reminders and lists (ADR-219); on unless turned off.
     static let widgetsShowContent = "widgetsShowContent"
+    /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
+    static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"

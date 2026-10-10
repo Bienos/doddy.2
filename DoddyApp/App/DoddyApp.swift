@@ -24,6 +24,9 @@ struct DoddyApp: App {
         // Siri and Shortcuts list actions (ADR-226) use the same store.
         IntentStores.store = store
         WidgetSync.shared.reminders = noteReminders
+        // The Apple Watch app asks through the same store (ADR-232).
+        PhoneWatchLink.shared.store = store
+        PhoneWatchLink.shared.activate()
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
         _profiles = State(initialValue: ProfileStore(environment: environment))

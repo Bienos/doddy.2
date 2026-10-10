@@ -15,6 +15,8 @@
 #  - on-device meaning search (NaturalLanguage) only inside DoddyApp/Features/Meaning (ADR-227),
 #  - photo text reading (Vision) and the photo picker only inside DoddyApp/Features/Photos, never the
 #    camera or the whole photo library (ADR-218),
+#  - WatchConnectivity only in DoddyApp/Features/Watch and the watch app (DoddyWatch), which has no
+#    database or networking of its own (ADR-232),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
 #  - permission keys only for the microphone, speech recognition (on-device, voice memos), calendar,
@@ -27,7 +29,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyWatch Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import CloudKit|import FirebaseCore|import Sentry|import Analytics'
@@ -42,6 +44,9 @@ voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
 speech_only='import Speech|SFSpeech'
+watch_link_dir=DoddyApp/Features/Watch
+watch_app_dir=DoddyWatch
+watch_only='import WatchConnectivity|WCSession'
 connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger'
 meaning_dir=DoddyApp/Features/Meaning
 meaning_only='import NaturalLanguage|NLContextualEmbedding|NLEmbedding'
@@ -81,6 +86,13 @@ if grep -RInE --include='*.swift' "$audio_only" "${dirs[@]}" | grep -v -e "^$voi
 fi
 if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v "^$memos_dir/"; then
   echo "FAIL: speech recognition outside $memos_dir (ADR-230)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$watch_only" "${dirs[@]}" | grep -v -e "^$watch_link_dir/" -e "^$watch_app_dir/"; then
+  echo "FAIL: WatchConnectivity outside $watch_link_dir and $watch_app_dir (ADR-232)." >&2; status=1
+fi
+# The watch app keeps no database and makes no network calls of its own.
+if grep -RInE --include='*.swift' 'import GRDB|DoddyPersistence|URLSession|import Network' "$watch_app_dir"; then
+  echo "FAIL: the watch app may only show the iPhone's snapshot and ask the iPhone (ADR-232)." >&2; status=1
 fi
 if [ -d "$memos_dir" ]; then
   for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$memos_dir"); do
