@@ -62,7 +62,7 @@ Cloud tokens live on the server (`server/`), never in the app.
 ## E. Calls (owner decision: **Twilio + ElevenLabs**)
 | Option | Status |
 |---|---|
-| Doddy phone number: Twilio number imported into the ElevenLabs agent (native integration) for inbound and outbound calls | Next server unit (S2) |
+| Doddy phone number: Twilio number imported into the ElevenLabs agent (native integration) for inbound and outbound calls | **Built (S2)**: server + app + agent setup script; not yet run with real Twilio/ElevenLabs (see `docs/implementation/S2_CALLS_STATUS.md`) |
 | In-app call screen (CallKit + VoIP push) | Later |
 | Siri "ask Doddy" | Later |
 

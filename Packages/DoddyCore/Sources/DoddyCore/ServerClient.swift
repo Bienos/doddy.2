@@ -46,6 +46,8 @@ public enum ServerError: Error, Equatable, Sendable {
     case wrongCode
     case codeExpired
     case phoneRejected
+    /// The PIN was too easy to guess (all one digit or a straight run like 1234).
+    case weakPIN
     case invalidRequest(fields: [String])
     case rateLimited
     case providerUnavailable
@@ -234,17 +236,17 @@ public actor DoddyServerClient {
 
     // MARK: Plumbing
 
-    private func expect(_ status: Int, _ method: HTTPMethod, _ path: String) async throws {
+    func expect(_ status: Int, _ method: HTTPMethod, _ path: String) async throws {
         let response = try await authorized(method, path, body: nil)
         guard response.status == status else { throw Self.error(from: response) }
     }
 
-    private func expect(_ status: Int, _ method: HTTPMethod, _ path: String, _ body: some Encodable) async throws {
+    func expect(_ status: Int, _ method: HTTPMethod, _ path: String, _ body: some Encodable) async throws {
         let response = try await authorized(method, path, body: try Self.json(body))
         guard response.status == status else { throw Self.error(from: response) }
     }
 
-    private func authorized(_ method: HTTPMethod, _ path: String, body: Data?) async throws -> ServerResponse {
+    func authorized(_ method: HTTPMethod, _ path: String, body: Data?) async throws -> ServerResponse {
         let token = try await ensureAccount()
         let response = try await send(method, path, body: body, token: token)
         if response.status == 401 {
@@ -272,6 +274,7 @@ public actor DoddyServerClient {
         case (400, "wrong_code"): return .wrongCode
         case (400, "code_expired"): return .codeExpired
         case (400, "phone_rejected"): return .phoneRejected
+        case (400, "weak_pin"): return .weakPIN
         case (400, _): return .invalidRequest(fields: body?.fields ?? [])
         case (401, _): return .accountMissing
         case (404, "no_verified_phone"), (409, _): return .notEnabled(code)
@@ -282,7 +285,7 @@ public actor DoddyServerClient {
         }
     }
 
-    private static func json(_ value: some Encodable) throws -> Data {
+    static func json(_ value: some Encodable) throws -> Data {
         try JSONEncoder().encode(value)
     }
 }

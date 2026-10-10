@@ -8,6 +8,7 @@ enum PreferenceKey {
     static let voiceAgentID = "voiceAgentID"
     static let serverURL = "serverURL"
     static let pushUpdatesOn = "pushUpdatesOn"
+    static let memoryCopyOn = "memoryCopyOn"
 }
 
 enum AppTab: Hashable {
@@ -43,6 +44,8 @@ struct RootView: View {
         .tint(Theme.accentText)
         .preferredColorScheme(colorScheme)
         .task { await store.reload() }
+        // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
+        .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
         .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {
             FirstHelloView { hasSeenFirstHello = true }
                 .preferredColorScheme(colorScheme)

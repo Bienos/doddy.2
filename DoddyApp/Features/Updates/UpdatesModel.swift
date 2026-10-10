@@ -151,6 +151,8 @@ final class UpdatesModel {
         await run {
             try await client.deleteAccount()
             self.defaults.set(false, forKey: PreferenceKey.pushUpdatesOn)
+            self.defaults.set(false, forKey: PreferenceKey.memoryCopyOn)
+            MemoryCopySync.shared.stop()
             self.pushState = .off
             self.phone = .none
             self.phoneStep = .enterNumber
@@ -183,6 +185,7 @@ final class UpdatesModel {
         case .wrongCode: return "That code isn't right. Check the text and try again."
         case .codeExpired: return "That code has expired. Ask for a new one."
         case .phoneRejected: return "That number can't receive codes. Check it and try again."
+        case .weakPIN: return "Choose a PIN that's harder to guess: not one repeated digit or a run like 1234."
         case .invalidRequest: return "Something in that request wasn't accepted. Nothing was changed."
         case .rateLimited: return "Too many tries. Wait a while and try again."
         case .providerUnavailable: return "The text service didn't answer. Try again in a moment."

@@ -26,7 +26,7 @@ struct UpdatesSettingsView: View {
                 }
                 Section {
                     Button("Delete my Doddy server data", role: .destructive) { confirmDelete = true }
-                    Text("Removes your anonymous server account, this iPhone's notification token, your phone number and any queued updates. Memories on this iPhone are not affected.")
+                    Text("Removes your anonymous server account, this iPhone's notification token, your phone number, queued updates, call settings, notes from calls and any memory copy for calls. Memories on this iPhone are not affected.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

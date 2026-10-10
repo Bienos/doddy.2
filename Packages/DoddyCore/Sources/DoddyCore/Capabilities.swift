@@ -11,6 +11,7 @@ public enum Capability: String, CaseIterable, Sendable {
     case reminders
     case pushUpdates
     case textUpdates
+    case phoneCalls
     case connectedAccounts
     case cloudSync
 }
@@ -45,6 +46,7 @@ public struct CapabilityCatalog: Sendable {
         .reminders: .notImplemented(plannedMilestone: "M4"),
         .pushUpdates: .notImplemented(plannedMilestone: "S1"),
         .textUpdates: .notImplemented(plannedMilestone: "S1"),
+        .phoneCalls: .notImplemented(plannedMilestone: "S2"),
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
     ])
@@ -66,9 +68,13 @@ public struct CapabilityCatalog: Sendable {
     /// address the updates are reported as needing setup, never as available.
     public static func s1Updates(serverConfigured: Bool) -> CapabilityCatalog {
         let updates: CapabilityStatus = serverConfigured ? .available : .needsSetup("Doddy server not connected")
+        // Whether the phone line is set up is only known by asking the server (Settings → Phone
+        // calls), so the catalog never calls it available.
+        let calls: CapabilityStatus = .needsSetup(serverConfigured ? "check Settings → Phone calls" : "Doddy server not connected")
         return CapabilityCatalog(statuses: v1Voice.statuses.merging([
             .pushUpdates: updates,
             .textUpdates: updates,
+            .phoneCalls: calls,
         ]) { _, new in new })
     }
 }

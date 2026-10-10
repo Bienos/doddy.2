@@ -16,7 +16,9 @@ const settingsBody = z.object({
 const pinBody = z.object({ pin: z.string() });
 const snapshotBody = z.object({
   items: z.array(z.object({
-    id: z.uuid(),
+    // Postgres returns uuids in lowercase; the encryption binding must use the same spelling
+    // (iOS sends uppercase).
+    id: z.uuid().transform((id) => id.toLowerCase()),
     text: z.string().min(1).max(5000),
     capturedAt: z.iso.datetime({ offset: true }).nullable().optional(),
   })).max(5000),

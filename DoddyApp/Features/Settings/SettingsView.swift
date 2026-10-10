@@ -56,7 +56,7 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. If you turn on notifications or texts, the Doddy server keeps what it needs to send them (see Updates). Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. If you turn on notifications or texts, the Doddy server keeps what it needs to send them (see Updates). If you turn on memory on calls, an encrypted copy of your memories is kept on the Doddy server (see Phone calls). Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -69,6 +69,12 @@ struct SettingsView: View {
                         Label("Notifications and texts", systemImage: "bell")
                     }
                     .accessibilityIdentifier("settings.updates")
+                    NavigationLink {
+                        CallsSettingsView()
+                    } label: {
+                        Label("Phone calls", systemImage: "phone")
+                    }
+                    .accessibilityIdentifier("settings.calls")
                 }
 
                 Section("Voice") {

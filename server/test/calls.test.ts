@@ -57,7 +57,8 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     if (opts.inbound) assert.equal((await call("PUT", "/v1/calls/settings", h, { inboundEnabled: true })).statusCode, 204);
     if (opts.memories) {
       assert.equal((await call("PUT", "/v1/memory-copy", h, { enabled: true })).statusCode, 204);
-      const items = opts.memories.map((text) => ({ id: randomUUID(), text, capturedAt: "2026-09-01T10:00:00Z" }));
+      // Uppercase ids, as iOS's UUID.uuidString sends them.
+      const items = opts.memories.map((text) => ({ id: randomUUID().toUpperCase(), text, capturedAt: "2026-09-01T10:00:00Z" }));
       assert.equal((await call("PUT", "/v1/memory-copy/snapshot", h, { items })).statusCode, 200);
     }
     return { accountId, h };

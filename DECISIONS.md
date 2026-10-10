@@ -91,3 +91,15 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 046 | Server token in the Keychain with `AfterFirstUnlockThisDeviceOnly`: not backed up or synced, so a restored iPhone starts a new anonymous account. | Applied — owner may prefer restore-with-backup |
 | 047 | New capability status `needsSetup`: built features that need an external piece (a deployed server) are shown as "Built · needs setup", never "Available". | Applied |
 | 048 | Voice auth: a connected Doddy server always provides a short-lived ElevenLabs token; the public agent ID is a debug-only fallback when no server exists; no silent fallback from a failing server. | Applied |
+
+## S2 decisions (phone calls) — owner decisions 2026-10-10
+
+| ADR | Decision | Status |
+|---|---|---|
+| 049 | Calls in both directions via the Twilio number imported into a separate ElevenLabs agent "Doddy (phone)" with server webhook tools (the in-app voice agent keeps its local client tools). | Owner-approved; built, not run live |
+| 050 | **Opt-in memory copy on the server** for calls (supersedes "memories never leave the phone" only when the user turns it on). Current text only, AES-256-GCM at rest bound to account+row, **not end-to-end**; off deletes it; full-snapshot sync from the app. | Owner-approved; built |
+| 051 | PIN required on every call before any memory read or note (caller ID can be spoofed); scrypt hash; 5 tries → 15-minute lock per account. | Applied |
+| 052 | Per-call session as an ElevenLabs `secret__` dynamic variable in a header + shared tool secret; unknown or calls-off callers get no session. | Applied |
+| 053 | Notes from calls are an inbox; they become memories only after the user saves them in the app (source "Your voice note", time said). Push never contains the note. | Applied |
+| 054 | Outbound: verified number only, consent `calls-v1`, 3/hour and 10/day, `unknown` outcomes never redialled. Scheduled calls not built. | Applied |
+| 055 | Phone agent privacy defaults: no audio recording, transcripts kept 30 days at ElevenLabs. | Applied in setup script — owner may change |
