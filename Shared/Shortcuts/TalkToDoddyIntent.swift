@@ -7,7 +7,7 @@ import AppIntents
 ///
 /// Compiled into the app and the widget extension, because the control needs the type. It
 /// opens the app, so iOS runs `perform()` in the app's process; in the extension it does nothing.
-/// iOS 27 may otherwise pick "any available target", so the app is pinned there (ADR-123).
+/// iOS 27 may otherwise pick "any available target", so the app is pinned there (ADR-128).
 struct TalkToDoddyIntent: AppIntent {
     static let title: LocalizedStringResource = "Talk to Doddy"
     static var description: IntentDescription {

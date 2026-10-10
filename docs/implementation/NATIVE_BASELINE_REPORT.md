@@ -123,7 +123,7 @@ bundle was used for this run.
   setup and release signing remain device/release gates.
 - No TestFlight, App Store deployment, production signing or cloud service creation.
 
-## Fix attempt for the red Island handoff (ADR-123, not yet re-run)
+## Fix attempt for the red Island handoff (ADR-128, not yet re-run)
 
 Written on Linux without Xcode; nothing below has been compiled or run on a simulator or device.
 
