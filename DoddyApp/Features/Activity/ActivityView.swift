@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Settings → What Doddy did. Newest first, grouped by day. Each row says what was asked and
 /// what actually happened; a reminder Doddy wasn't sure about can be checked in Reminders.
-/// The steps of one plan card are shown together under one heading (ADR-207).
+/// The steps of one plan card are shown together under one heading (ADR-208).
 struct ActivityView: View {
     @State private var activity = ActivityLogStore.shared
     @State private var devices = DeviceConnections()

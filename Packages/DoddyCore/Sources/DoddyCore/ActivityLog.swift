@@ -282,7 +282,7 @@ public enum ActivityLog {
 }
 
 /// One row in "What Doddy did": a single entry, or every step of one plan card together
-/// (ADR-207), in step order under one heading.
+/// (ADR-208), in step order under one heading.
 public enum ActivityItem: Equatable, Identifiable, Sendable {
     case single(ActivityEntry)
     case plan(id: UUID, steps: [ActivityEntry])

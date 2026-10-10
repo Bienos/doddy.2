@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// "What Doddy did" shows each plan card as one item with its steps in order (ADR-207).
+/// "What Doddy did" shows each plan card as one item with its steps in order (ADR-208).
 final class ActivityPlanGroupingTests: XCTestCase {
     private let base = Date(timeIntervalSince1970: 1_800_000_000)
 
