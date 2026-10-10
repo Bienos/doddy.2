@@ -72,6 +72,24 @@ final class ActivityLogTests: XCTestCase {
         XCTAssertEqual(ActivityLog.checked(unsure, found: false, at: now).outcome, .notDone)
     }
 
+    func testChangeCutOffMidWayBecomesNotSureNeverDone() {
+        let request = ActivityRequest.describe(.createReminder(reminder), calendar: calendar)!
+        let started = ActivityEntry.started(request, at: now)
+        XCTAssertEqual(started.outcome, .inProgress)
+        let lookup = entry(.searchMemories(query: "x"), reply: VoiceToolReply.search(.noMatch))
+
+        let recovered = ActivityLog.recoverInterrupted([started, lookup])
+        XCTAssertEqual(recovered[0].outcome, .notSure)
+        XCTAssertEqual(recovered[0].note, ActivityLog.interruptedNote)
+        XCTAssertTrue(recovered[0].canCheckInReminders, "an interrupted reminder can be checked")
+        XCTAssertEqual(recovered[1], lookup, "finished entries are untouched")
+
+        // A result that does arrive replaces the started entry under the same id.
+        let finished = ActivityEntry(id: started.id, request: request, reply: VoiceToolReply.addUnconfirmed, at: now)
+        XCTAssertEqual(finished.id, started.id)
+        XCTAssertEqual(finished.outcome, .notSure)
+    }
+
     func testLogIsNewestFirstAndBounded() {
         let old = ActivityEntry(at: now.addingTimeInterval(-31 * 86_400), app: .maps, title: "Old", detail: nil, outcome: .opened)
         var log = [old]

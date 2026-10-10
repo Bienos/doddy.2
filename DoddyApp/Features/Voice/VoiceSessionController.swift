@@ -85,6 +85,8 @@ final class VoiceSessionController {
     private let activity: ActivityLogStore
     /// What each open tool call asked for, until its reply is sent and logged.
     private var asked: [String: ActivityRequest] = [:]
+    /// Changes the user confirmed that are running now, logged "in progress" before they ran.
+    private var started: [String: ActivityEntry] = [:]
     private let island = VoiceLiveActivity()
     private let devices = DeviceConnections()
     private var conversation: Conversation?
@@ -278,6 +280,13 @@ final class VoiceSessionController {
     func confirmPendingAction() async {
         guard let action = pendingAction else { return }
         pendingAction = nil
+        // On disk before the change runs: if Doddy is closed mid-way, the next launch shows it
+        // as "Not sure" instead of nothing (ActivityLog.recoverInterrupted).
+        if action.changesSomething, let request = asked[action.toolCallID] {
+            let entry = ActivityEntry.started(request, at: Date())
+            activity.append(entry)
+            started[action.toolCallID] = entry
+        }
         switch action {
         case .memory(let id, let text):
             do {
@@ -618,20 +627,25 @@ final class VoiceSessionController {
 
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false) async {
         if let request = asked.removeValue(forKey: toolCallID) {
-            activity.append(ActivityEntry(request: request, reply: text, at: Date()))
+            if let entry = started.removeValue(forKey: toolCallID) {
+                activity.replace(ActivityEntry(id: entry.id, request: request, reply: text, at: entry.at))
+            } else {
+                activity.append(ActivityEntry(request: request, reply: text, at: Date()))
+            }
         }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
     }
 
     /// Requests still waiting on a card when the conversation ends: nothing happened.
     private func logUnanswered() {
-        for request in asked.values {
+        // Confirmed changes still running keep their entry; their result replaces it when it arrives.
+        for (toolCallID, request) in asked where started[toolCallID] == nil {
             var entry = ActivityEntry(request: request, reply: "", at: Date())
             entry.outcome = .notDone
             entry.note = "The conversation ended before you answered."
             activity.append(entry)
+            asked[toolCallID] = nil
         }
-        asked = [:]
     }
 
     private static func microphoneAllowed() async -> Bool {
@@ -648,4 +662,14 @@ final class VoiceSessionController {
 private final class WeakRef<T: AnyObject>: @unchecked Sendable {
     weak var value: T?
     init(_ value: T) { self.value = value }
+}
+
+private extension VoiceSessionController.PendingAction {
+    /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
+    var changesSomething: Bool {
+        switch self {
+        case .memory, .event, .reminder, .timer, .cloud: true
+        case .map, .shortcut, .message: false
+        }
+    }
 }
