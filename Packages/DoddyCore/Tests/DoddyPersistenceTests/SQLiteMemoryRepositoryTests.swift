@@ -139,4 +139,18 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         let afterAgain = try await target.list(limit: nil)
         XCTAssertEqual(afterAgain.first { $0.id == keys.id }, changedHere)
     }
+
+    func testUndoAfterDeleteBringsTheExactNoteBack() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let saved = try await repo.save(NewMemory(text: "Locker 12, code 4821", capturedAt: t0))
+        let corrected = try await repo.update(id: saved.id, currentText: "Locker 14, code 4821")
+        try await repo.delete(id: saved.id)
+        let afterDelete = try await repo.list(limit: nil)
+        XCTAssertTrue(afterDelete.isEmpty)
+
+        let restored = try await repo.restore([corrected])
+        XCTAssertEqual(restored, [corrected])
+        let listed = try await repo.list(limit: nil)
+        XCTAssertEqual(listed, [corrected], "same id, original and corrected text, dates")
+    }
 }

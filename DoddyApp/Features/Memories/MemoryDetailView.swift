@@ -55,7 +55,7 @@ struct MemoryDetailView: View {
             Button("Delete", role: .destructive, action: beginDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Both current and original text are removed from this iPhone. Exports and older backups aren't affected.")
+            Text("Both current and original text are removed from this iPhone. You can undo for a few seconds afterwards. Exports and older backups aren't affected.")
         }
     }
 

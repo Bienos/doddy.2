@@ -99,6 +99,9 @@ struct RootView: View {
                     .tag(AppTab.settings)
             }
             .toolbar(.hidden, for: .tabBar)
+            if let deleted = store.recentlyDeleted {
+                UndoDeleteBar(deleted: deleted)
+            }
             // A sibling reserves real viewport space. A TabView-level safeAreaInset
             // left nested NavigationStack's final action behind the bar on iOS 27.
             DoddyTabBar(selectedTab: $selectedTab)
@@ -128,6 +131,47 @@ struct RootView: View {
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
             }
+        }
+    }
+}
+
+/// "Note deleted · Undo" for `DeletedNote.undoWindow` seconds after a single delete (ADR-140).
+/// Undo adds the note back exactly as it was; if that fails, the bar says so until it times out.
+private struct UndoDeleteBar: View {
+    @Environment(MemoryStore.self) private var store
+    let deleted: DeletedNote
+    @State private var isUndoing = false
+    @State private var failed = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: failed ? "exclamationmark.triangle" : "trash")
+                .foregroundStyle(failed ? Theme.error : Theme.secondaryText)
+            Text(failed ? "Couldn't bring the note back." : "Note deleted.")
+                .font(.subheadline)
+            Spacer(minLength: 8)
+            if !failed {
+                Button(isUndoing ? "Undoing…" : "Undo") {
+                    isUndoing = true
+                    Task {
+                        do { try await store.undoDelete() } catch { failed = true }
+                        isUndoing = false
+                    }
+                }
+                .font(.subheadline.weight(.semibold))
+                .frame(minHeight: 44)
+                .disabled(isUndoing)
+                .accessibilityIdentifier("undoDelete")
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(minHeight: 52)
+        .background(Theme.quietSurface)
+        .foregroundStyle(Theme.ink)
+        .accessibilityElement(children: .contain)
+        .task(id: deleted.deletedAt) {
+            try? await Task.sleep(for: .seconds(DeletedNote.undoWindow))
+            store.forgetDeleted(deleted)
         }
     }
 }
