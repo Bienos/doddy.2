@@ -10,7 +10,8 @@ final class IslandBaselineTests: XCTestCase {
         XCTAssertEqual(state.symbolName, "hand.tap.fill")
         let data = try JSONEncoder().encode(state)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        XCTAssertEqual(Set(json.keys), ["status", "isMuted"])
+        // savedCount is a number of notes the user tapped Save on, never their text.
+        XCTAssertEqual(Set(json.keys), ["status", "isMuted", "savedCount"])
         XCTAssertEqual(json["status"] as? String, "needsConfirmation")
     }
 

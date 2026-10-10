@@ -7,7 +7,10 @@ struct NativeIslandBaselineView: View {
     @State private var isRunning = false
     @State private var isMuted = false
     @State private var nativeActivityCount = 0
-    private let island = VoiceLiveActivity()
+    /// @State so a redraw of this view keeps the controller that holds the running activity;
+    /// a plain `let` made a new one per redraw, so the system Mute/End buttons reached a copy
+    /// with no activity (the failing "system Island Unmute" check in NATIVE_BASELINE_REPORT.md).
+    @State private var island = VoiceLiveActivity()
 
     var body: some View {
         NavigationStack {

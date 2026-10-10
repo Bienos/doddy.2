@@ -34,6 +34,17 @@ struct DoddyVoiceAttributes: ActivityAttributes {
 }
 
 extension DoddyVoiceAttributes.ContentState {
+    private enum CodingKeys: String, CodingKey { case status, isMuted, savedCount, endedAt }
+
+    /// Content written by a build from before `savedCount`/`endedAt` existed still decodes.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        status = try container.decode(Status.self, forKey: .status)
+        isMuted = try container.decode(Bool.self, forKey: .isMuted)
+        savedCount = try container.decodeIfPresent(Int.self, forKey: .savedCount) ?? 0
+        endedAt = try container.decodeIfPresent(Date.self, forKey: .endedAt)
+    }
+
     var isEnded: Bool { status == .ended }
 
     /// Muted only means something while the conversation runs and nothing waits in the app.

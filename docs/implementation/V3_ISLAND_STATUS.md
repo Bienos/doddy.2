@@ -15,7 +15,7 @@ Date: 2026-10-09. Owner request: "it opens app [with] double back tap, now live 
 |---|---|
 | Activity type + labels/symbols | `Shared/VoiceActivity/DoddyVoiceAttributes.swift` (app + extension) |
 | Mute / End buttons | `Shared/VoiceActivity/VoiceActivityIntents.swift`: `LiveActivityIntent`s; the app registers handlers in `VoiceSessionController.start` |
-| Island + Lock Screen UI | `DoddyWidgets/` widget extension (target `com.bienos.doddy2.dev.widgets`); art = owner-approved `UploadedDoddy_Listening` / `_Kept` / `_Sitting` (numbered ZIP, byte-identical); light/dark colour sets in `DoddyWidgets/Assets.xcassets` (ADR-106) |
+| Island + Lock Screen UI | `DoddyWidgets/` widget extension (target `com.bienos.doddy2.dev.widgets`); art = owner-approved `UploadedDoddy_Listening` / `_Kept` / `_Sitting` (numbered ZIP poses, downscaled for the widget); light/dark colour sets in `DoddyWidgets/Assets.xcassets` (ADR-106) |
 | Start / update / end | `DoddyApp/Features/Voice/VoiceLiveActivity.swift`, driven by `didSet` on phase, mute and pending save in `VoiceSessionController` |
 | Background audio + Live Activities | `Config/Doddy-Info.plist` (`UIBackgroundModes: audio`, `NSSupportsLiveActivities`) |
 | Keep running in background | `VoiceView` no longer ends the conversation on `scenePhase == .background` |
@@ -38,7 +38,7 @@ Linux only: capability guard passes (now also scans `DoddyWidgets/`, `Shared/`, 
 11. **Light and dark (ADR-106).** Lock the phone mid-conversation in Light mode: paper card, dark text, orange waveform. Switch to Dark mode (Control Centre): Night card, light text, Doddy on a small paper backing. The island looks the same in both: Doddy on a paper backing on black.
 12. **Muted.** Mute from the Lock Screen: orange disappears, "Muted · Doddy can't hear you", Unmute is the filled button.
 13. **Ended card.** Save one note, then tap End on the Lock Screen: the card changes to fist-pump Doddy (sitting Doddy if nothing was saved), "Conversation ended", "Doddy isn't listening · 1 note saved · m:ss total", Open Doddy. It disappears after about 2 minutes; the island is gone at once. A failed connection instead removes the card at once.
-14. **Art.** At compact island size (26 pt) the full-body listening pose is small; judge whether it still reads as Doddy. If not, the fix is an approved head-only asset from design, not a crop made in code. The pack images are 1024×1536 (~1 MB): if the Live Activity fails to appear or the widget extension is killed for memory, ask design for a small export of the same poses rather than resizing in code.
+14. **Art.** At compact island size (26 pt) the full-body listening pose is small; judge whether it still reads as Doddy. If not, the fix is an approved head-only asset from design, not a crop made in code. The widget uses 160/240 px-tall downscales of the pack images (~12–23 KB each; the 1024×1536 originals are too large for a Live Activity). If the art looks soft, ask design for a native small export of the same poses.
 
 ## Verified on Linux — 2026-10-09 (second session, after ADR-055)
 | Step | Result |
