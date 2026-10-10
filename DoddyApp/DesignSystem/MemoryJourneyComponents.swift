@@ -23,6 +23,7 @@ struct DoddyWordmark: View {
 }
 
 struct JourneyHeading: View {
+    /// Looked up in Localizable.xcstrings like a Text literal (ADR-223).
     let eyebrow: String
     let title: String
     var subtitle: String?
@@ -30,13 +31,13 @@ struct JourneyHeading: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !eyebrow.isEmpty {
-                Text(eyebrow.uppercased())
+                Text(LocalizedStringKey(eyebrow)).textCase(.uppercase)
                     .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
             }
-            Text(title).font(.largeTitle.weight(.medium)).tracking(-1)
+            Text(LocalizedStringKey(title)).font(.largeTitle.weight(.medium)).tracking(-1)
                 .accessibilityAddTraits(.isHeader)
             if let subtitle {
-                Text(subtitle).font(.subheadline).foregroundStyle(Theme.secondaryText)
+                Text(LocalizedStringKey(subtitle)).font(.subheadline).foregroundStyle(Theme.secondaryText)
             }
         }
     }
