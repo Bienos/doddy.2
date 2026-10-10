@@ -186,4 +186,5 @@ private struct EmptyMemoriesView: View {
 
 #Preview("Empty local notebook") {
     MemoriesView(showFind: .constant(false)).environment(MemoryStore(environment: .unavailable))
+        .environment(NoteReminderStore(coordinator: nil))
 }

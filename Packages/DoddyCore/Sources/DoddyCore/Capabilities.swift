@@ -19,6 +19,8 @@ public enum Capability: String, CaseIterable, Sendable {
     case textUpdates
     case phoneCalls
     case newsDigests
+    /// M4a: reminders on a saved note, as local notifications that open the note (ADR-190).
+    case noteReminders
 }
 
 public enum CapabilityStatus: Equatable, Sendable {
@@ -59,6 +61,7 @@ public struct CapabilityCatalog: Sendable {
         .textUpdates: .notImplemented(plannedMilestone: "S1"),
         .phoneCalls: .notImplemented(plannedMilestone: "S2"),
         .newsDigests: .notImplemented(plannedMilestone: "N1"),
+        .noteReminders: .notImplemented(plannedMilestone: "M4a"),
     ])
 
     /// M1: local text memory (save, list, correct, delete, export, lexical recall).
@@ -116,6 +119,14 @@ public struct CapabilityCatalog: Sendable {
             .textUpdates: updates,
             .phoneCalls: calls,
             .newsDigests: updates,
+        ]) { _, new in new })
+    }
+
+    /// What the app ships (ADR-190): `withMessaging` plus reminders on notes, which are local
+    /// notifications and need no server.
+    public static func shipping(serverConfigured: Bool) -> CapabilityCatalog {
+        CapabilityCatalog(statuses: withMessaging(serverConfigured: serverConfigured).statuses.merging([
+            .noteReminders: .available,
         ]) { _, new in new })
     }
 }

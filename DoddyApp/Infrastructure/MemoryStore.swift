@@ -15,6 +15,8 @@ final class MemoryStore {
     private(set) var revision = 0
     /// The note deleted a moment ago, for the Undo bar (ADR-183). Memory only, never stored.
     private(set) var recentlyDeleted: DeletedNote?
+    /// Reloaded with the memories: a deleted memory takes its note reminder with it.
+    var noteReminders: NoteReminderStore?
 
     init(environment: AppEnvironment) {
         self.environment = environment
@@ -33,6 +35,7 @@ final class MemoryStore {
         }
         hasLoaded = true
         revision += 1
+        await noteReminders?.reload()
     }
 
     /// Returns only after the repository confirmed a committed, read-back write.
@@ -48,13 +51,18 @@ final class MemoryStore {
 
     func correct(id: UUID, text: String) async throws -> MemoryRecord {
         let record = try await environment.memoryRepository.update(id: id, currentText: text)
+        await environment.noteReminders?.refreshContent(forMemory: id)
         await reload()
         return record
     }
 
+    /// The memory's note reminder row is deleted with it (same database); its notification after.
     func delete(id: UUID) async throws {
         let copy = self.record(id: id)
+        let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
+        if let reminderID { await environment.noteReminders?.memoryDeleted(reminderID: reminderID) }
+        noteReminders?.clearReceipt(memoryID: id)
         recentlyDeleted = copy.map { DeletedNote(record: $0, deletedAt: .now) }
         await reload()
     }
@@ -87,6 +95,7 @@ final class MemoryStore {
     func deleteAll() async throws {
         recentlyDeleted = nil
         try await environment.memoryRepository.deleteAll()
+        await environment.noteReminders?.allMemoriesDeleted()
         await reload()
     }
 

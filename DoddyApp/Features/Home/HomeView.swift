@@ -4,6 +4,7 @@ import SwiftUI
 struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Binding var showFind: Bool
+    @Binding var path: [UUID]
 
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
@@ -14,9 +15,11 @@ struct HomeView: View {
     private var router: ShortcutRouter { .shared }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    DueRemindersView()
+
                     HStack(alignment: .center) {
                         DoddyWordmark()
                         Spacer()

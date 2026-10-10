@@ -160,6 +160,7 @@ extension Capability {
         case .textUpdates: "Updates by text message"
         case .phoneCalls: "Phone calls with Doddy"
         case .newsDigests: "Daily news message"
+        case .noteReminders: "Reminders on notes"
         }
     }
 }

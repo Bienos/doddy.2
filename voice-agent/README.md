@@ -27,6 +27,13 @@ step catches it. Last synced 2026-10-10 (agent version `agtvrsn_3401m4k47e2revvv
 date rules (ADR-127, ADR-128) in `create_reminder`, `create_calendar_event` and the prompt. The opening line
 of `instructions.md` is the owner's dashboard edit, copied back so the spec matches the live prompt.
 
+**Applied to the live agent 2026-10-10 (ADR-191):** the opening line again says plainly that Doddy is an AI
+when asked (the dashboard edit had told it to give a "vague answer"). Only that line was changed, on live
+version `agtvrsn_3401m4k47e2revvv01sk7xv1tb26` → `agtvrsn_5801m4k5544wevk9bz7wezwneh88`; tools untouched.
+That live version also carries a `web_search` tool and four prompt lines about it, added from another
+branch; they are not in this branch's `instructions.md`/`tools.json` yet, so `compare` will report them
+until that branch merges.
+
 ## App side (DoddyCore `RealtimeVoice.swift`)
 
 - `RealtimeEvent`: what any provider reports, named after Realtime server events

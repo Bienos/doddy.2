@@ -176,6 +176,9 @@ private struct SaveReceiptView: View {
     let onDone: () -> Void
     let onAnother: () -> Void
 
+    @Environment(NoteReminderStore.self) private var noteReminders
+    @State private var showReminder = false
+
     var body: some View {
         VStack(spacing: 20) {
             UploadedCharacterView(assetName: "UploadedDoddy_Kept", height: 170)
@@ -183,15 +186,27 @@ private struct SaveReceiptView: View {
             Label("Saved on this iPhone", systemImage: "checkmark.circle")
                 .font(.subheadline).foregroundStyle(Theme.confirmed).accessibilityIdentifier("capture.saved")
             MemoryPaperCard(record: record)
+            // Remind me while saving (M4a): the same sheet and receipts as on the note itself.
+            if let receipt = noteReminders.receipts[record.id] {
+                NoteReminderReceiptView(receipt: receipt) { showReminder = true }
+            } else if noteReminders.isAvailable {
+                Button { showReminder = true } label: {
+                    HStack { Text("Remind me about this"); Spacer(); Image(systemName: "bell") }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("capture.remind")
+            }
             NavigationLink(value: record.id) {
                 HStack { Text("View the note"); Spacer(); Image(systemName: "arrow.up.right") }
             }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("capture.viewNote")
             Button("Save another detail", action: onAnother).frame(minHeight: 44)
             Button("Done", action: onDone).buttonStyle(SecondaryButtonStyle()).accessibilityIdentifier("capture.done")
         }.frame(maxWidth: .infinity)
+        .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: record.id) }
     }
 }
 
 #Preview("Local capture") {
     CaptureView().environment(MemoryStore(environment: .unavailable))
+        .environment(NoteReminderStore(coordinator: nil))
 }

@@ -2,6 +2,9 @@ import DoddyCore
 import SwiftUI
 
 enum PreferenceKey {
+    /// Off by default (owner decision D4): note reminders never carry the note text unless turned on.
+    static let showNoteTextInNotifications = "showNoteTextInNotifications"
+    static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
     /// Memories list order (`MemorySort` raw value); display only (ADR-186).
     static let memorySort = "memorySort"
@@ -57,6 +60,9 @@ struct RootView: View {
     @Environment(ProfileStore.self) private var profiles
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
+    @State private var homePath: [UUID] = []
+    @Environment(NoteReminderStore.self) private var noteReminders
+    @Environment(\.scenePhase) private var scenePhase
     @Bindable private var router = ShortcutRouter.shared
 
     private var colorScheme: ColorScheme? {
@@ -83,7 +89,20 @@ struct RootView: View {
                 #endif
             }
             .preferredColorScheme(colorScheme)
-            .task { await store.reload() }
+            .task {
+                await store.reload()
+                await noteReminders.refreshOnForeground()
+            }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { Task { await noteReminders.refreshOnForeground() } }
+            }
+            // A tapped note reminder opens its exact memory on Home.
+            .task(id: noteReminders.pendingOpenMemoryID) {
+                guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
+                selectedTab = .home
+                homePath = [memoryID]
+                noteReminders.pendingOpenMemoryID = nil
+            }
             // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
             .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
@@ -100,7 +119,7 @@ struct RootView: View {
     private var tabs: some View {
         VStack(spacing: 0) {
             TabView(selection: $selectedTab) {
-                HomeView(selectedTab: $selectedTab, showFind: $showFind)
+                HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
                     .tabItem { Label("Home", systemImage: "house") }
                     .tag(AppTab.home)
                 MemoriesView(showFind: $showFind)
