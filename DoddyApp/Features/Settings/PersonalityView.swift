@@ -13,6 +13,9 @@ struct PersonalityView: View {
     @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
     @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
 
+    @AppStorage(PreferenceKey.voiceLanguage) private var languageRaw = ConversationLanguage.auto.rawValue
+    @AppStorage(PreferenceKey.nickname) private var nickname = ""
+
     @State private var preview = VoicePreviewPlayer()
 
     private var voiceStyle: VoiceStyle {
@@ -43,6 +46,10 @@ struct PersonalityView: View {
                 Picker("Expressiveness", selection: $expressivenessRaw) {
                     ForEach(Expressiveness.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
                 }
+                Picker("Starts in", selection: $languageRaw) {
+                    ForEach(ConversationLanguage.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
+                }
+                .accessibilityIdentifier("settings.voice.language")
                 Button {
                     preview.toggle(voiceStyle)
                 } label: {
@@ -65,7 +72,22 @@ struct PersonalityView: View {
             } header: {
                 Text("Voice")
             } footer: {
-                Text("Applies from your next voice conversation. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak both languages; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.")
+                Text("Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English and follows whichever language you speak. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak both languages; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.")
+            }
+
+            Section {
+                TextField("Your name or nickname", text: $nickname)
+                    .textContentType(.nickname)
+                    .autocorrectionDisabled()
+                    .accessibilityIdentifier("settings.nickname")
+                if !nickname.trimmingCharacters(in: .whitespaces).isEmpty && Nickname.clean(nickname) == nil {
+                    Label("Use letters only, up to \(Nickname.maxLength) characters. Doddy won't use this until it's a plain name.", systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(Theme.error)
+                }
+            } header: {
+                Text("What Doddy calls you")
+            } footer: {
+                Text("Optional. When set, it's sent to ElevenLabs with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.")
             }
 
             Section("Quick picks") {
@@ -157,6 +179,14 @@ struct PersonalityView: View {
         case .river: "Relaxed and neutral"
         case .jessica: "Bright and warm"
         case .will: "Laid-back and easy-going"
+        }
+    }
+
+    static func label(_ value: ConversationLanguage) -> String {
+        switch value {
+        case .auto: "Automatic"
+        case .english: "English"
+        case .polish: "Polish"
         }
     }
 

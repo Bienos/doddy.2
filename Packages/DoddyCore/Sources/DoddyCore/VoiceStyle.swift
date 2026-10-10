@@ -100,3 +100,24 @@ public struct VoiceStyle: Equatable, Sendable, Codable {
         return result == VoiceOverride() ? nil : result
     }
 }
+
+/// Which language a voice conversation starts in. `auto` keeps the agent's language detection
+/// (it starts in English and follows the user); a fixed language is sent as the ElevenLabs
+/// `agent.language` override, which also picks that language's greeting (ADR-127).
+public enum ConversationLanguage: String, CaseIterable, Sendable, Codable {
+    case auto, english, polish
+
+    /// ISO 639-1 code for the override, or nil to send nothing.
+    public var overrideCode: String? {
+        switch self {
+        case .auto: nil
+        case .english: "en"
+        case .polish: "pl"
+        }
+    }
+
+    /// Unknown or missing stored values mean `auto`.
+    public init(stored: String?) {
+        self = stored.flatMap(ConversationLanguage.init(rawValue:)) ?? .auto
+    }
+}

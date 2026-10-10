@@ -140,7 +140,7 @@ final class VoiceSessionController {
                 "recent_conversations": recent.text,
                 // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
                 // placeholder defaults to the persona defaults, so a build that sends nothing still works.
-                PersonalityPrompt.variableName: PersonalityPrompt.render(.stored()),
+                PersonalityPrompt.variableName: PersonalityPrompt.render(.stored(), nickname: Nickname.stored()),
                 ProfilePrompt.variableName: ProfilePrompt.render(
                     profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice)),
             ],
@@ -149,6 +149,11 @@ final class VoiceSessionController {
         // are sent; the agent must allow these TTS overrides (ADR-105).
         if let tts = VoiceStyle.stored().override {
             config.ttsOverrides = TTSOverrides(voiceId: tts.voiceID, stability: tts.stability, speed: tts.speed)
+        }
+        // Starting language (ADR-127): only sent when the user picked one; needs the agent to
+        // allow the `agent.language` override. Auto keeps the agent's own language detection.
+        if let code = ConversationLanguage.stored().overrideCode, let language = Language(rawValue: code) {
+            config.agentOverrides = AgentOverrides(language: language)
         }
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
@@ -206,7 +211,9 @@ final class VoiceSessionController {
             conversation = started
         } catch {
             // An agent that doesn't allow the voice overrides refuses the conversation.
-            let voiceHint = config.ttsOverrides == nil ? "" : " If it keeps failing, choose \"Use Doddy's own voice\" in Settings → Voice and personality."
+            let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
+                ? ""
+                : " If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality."
             fail("Couldn't connect to Doddy's voice. Check your internet connection and try again.\(voiceHint) (\(error.localizedDescription))")
         }
     }

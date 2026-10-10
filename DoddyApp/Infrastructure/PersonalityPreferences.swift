@@ -22,3 +22,16 @@ extension VoiceStyle {
             expressiveness: defaults.string(forKey: PreferenceKey.voiceExpressiveness))
     }
 }
+
+extension ConversationLanguage {
+    static func stored(in defaults: UserDefaults = .standard) -> ConversationLanguage {
+        ConversationLanguage(stored: defaults.string(forKey: PreferenceKey.voiceLanguage))
+    }
+}
+
+extension Nickname {
+    /// The cleaned nickname from Settings, or nil when unset or not a plain name.
+    static func stored(in defaults: UserDefaults = .standard) -> String? {
+        clean(defaults.string(forKey: PreferenceKey.nickname))
+    }
+}
