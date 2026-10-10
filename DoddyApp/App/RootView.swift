@@ -17,6 +17,9 @@ enum PreferenceKey {
     static let personalityLength = "personality.length"
     static let personalityFormality = "personality.formality"
     static let personalityMood = "personality.mood"
+    static let voiceChoice = "voice.choice"
+    static let voiceSpeed = "voice.speed"
+    static let voiceExpressiveness = "voice.expressiveness"
     /// Settings → About you: send the approved introduction answers to voice conversations.
     /// Off by default; nothing about the user leaves the phone until they switch it on.
     static let shareProfileWithVoice = "shareProfileWithVoice"

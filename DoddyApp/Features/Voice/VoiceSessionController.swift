@@ -131,6 +131,11 @@ final class VoiceSessionController {
                     profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice)),
             ],
             userId: Self.userID())
+        // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
+        // are sent; the agent must allow these TTS overrides (ADR-105).
+        if let tts = VoiceStyle.stored().override {
+            config.ttsOverrides = TTSOverrides(voiceId: tts.voiceID, stability: tts.stability, speed: tts.speed)
+        }
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
@@ -186,7 +191,9 @@ final class VoiceSessionController {
             }
             conversation = started
         } catch {
-            fail("Couldn't connect to Doddy's voice. Check your internet connection and try again. (\(error.localizedDescription))")
+            // An agent that doesn't allow the voice overrides refuses the conversation.
+            let voiceHint = config.ttsOverrides == nil ? "" : " If it keeps failing, choose \"Use Doddy's own voice\" in Settings → Voice and personality."
+            fail("Couldn't connect to Doddy's voice. Check your internet connection and try again.\(voiceHint) (\(error.localizedDescription))")
         }
     }
 

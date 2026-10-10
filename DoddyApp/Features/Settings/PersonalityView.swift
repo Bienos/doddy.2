@@ -1,13 +1,21 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Doddy's personality. Four style dials and three quick picks. They change how
-/// Doddy talks in voice conversations, from the next conversation on; the rules stay fixed.
+/// Settings → Doddy's voice and personality. How he sounds (voice, speed, expressiveness), four
+/// style dials and three quick picks. They apply from the next voice conversation; the rules stay
+/// fixed.
 struct PersonalityView: View {
+    @AppStorage(PreferenceKey.voiceChoice) private var voiceRaw = VoiceStyle.doddyDefault.voice.rawValue
+    @AppStorage(PreferenceKey.voiceSpeed) private var speedRaw = VoiceStyle.doddyDefault.speed.rawValue
+    @AppStorage(PreferenceKey.voiceExpressiveness) private var expressivenessRaw = VoiceStyle.doddyDefault.expressiveness.rawValue
     @AppStorage(PreferenceKey.personalityHumour) private var humourRaw = PersonalitySettings.doddyDefault.humour.rawValue
     @AppStorage(PreferenceKey.personalityLength) private var lengthRaw = PersonalitySettings.doddyDefault.length.rawValue
     @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
     @AppStorage(PreferenceKey.personalityMood) private var moodRaw = PersonalitySettings.doddyDefault.mood.rawValue
+
+    private var voiceStyle: VoiceStyle {
+        VoiceStyle(voice: voiceRaw, speed: speedRaw, expressiveness: expressivenessRaw)
+    }
 
     private var current: PersonalitySettings {
         PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw)
@@ -18,6 +26,37 @@ struct PersonalityView: View {
             Section {
                 Text("Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.")
                     .foregroundStyle(Theme.secondaryText)
+            }
+
+            Section {
+                Picker("Voice", selection: $voiceRaw) {
+                    ForEach(VoiceChoice.allCases, id: \.self) { choice in
+                        VStack(alignment: .leading) {
+                            Text(Self.label(choice))
+                            Text(Self.detail(choice)).font(.footnote).foregroundStyle(Theme.secondaryText)
+                        }
+                        .tag(choice.rawValue)
+                    }
+                }
+                .pickerStyle(.navigationLink)
+                .accessibilityIdentifier("settings.voice.choice")
+                Picker("Speed", selection: $speedRaw) {
+                    ForEach(SpeakingSpeed.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
+                }
+                Picker("Expressiveness", selection: $expressivenessRaw) {
+                    ForEach(Expressiveness.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
+                }
+                if voiceStyle != .doddyDefault {
+                    Button("Use Doddy's own voice") {
+                        voiceRaw = VoiceStyle.doddyDefault.voice.rawValue
+                        speedRaw = VoiceStyle.doddyDefault.speed.rawValue
+                        expressivenessRaw = VoiceStyle.doddyDefault.expressiveness.rawValue
+                    }
+                }
+            } header: {
+                Text("Voice")
+            } footer: {
+                Text("Applies from your next voice conversation. All voices speak English and Polish; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.")
             }
 
             Section("Quick picks") {
@@ -54,7 +93,7 @@ struct PersonalityView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
-        .navigationTitle("Doddy's personality")
+        .navigationTitle("Voice and personality")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -85,6 +124,48 @@ struct PersonalityView: View {
         case .focused: "Focused"
         case .playful: "Playful"
         default: "Custom"
+        }
+    }
+
+    static func label(_ value: VoiceChoice) -> String {
+        value == .doddy ? "Doddy (default)" : name(value)
+    }
+
+    static func name(_ value: VoiceChoice) -> String {
+        switch value {
+        case .doddy: "Doddy"
+        case .josh: "Josh"
+        case .wiktor: "Wiktor"
+        case .river: "River"
+        case .jessica: "Jessica"
+        case .will: "Will"
+        }
+    }
+
+    static func detail(_ value: VoiceChoice) -> String {
+        switch value {
+        case .doddy: "The voice Doddy was given"
+        case .josh: "Warm, smooth and steady"
+        case .wiktor: "Warm, native Polish"
+        case .river: "Relaxed and neutral"
+        case .jessica: "Bright and warm"
+        case .will: "Laid-back and easy-going"
+        }
+    }
+
+    static func label(_ value: SpeakingSpeed) -> String {
+        switch value {
+        case .slower: "Slower"
+        case .normal: "Normal"
+        case .faster: "Faster"
+        }
+    }
+
+    static func label(_ value: Expressiveness) -> String {
+        switch value {
+        case .steady: "Steady"
+        case .natural: "Natural"
+        case .expressive: "Expressive"
         }
     }
 
@@ -121,8 +202,9 @@ struct PersonalityView: View {
     }
 }
 
-/// The Settings row that opens `PersonalityView`, showing the current pick.
+/// The Settings row that opens `PersonalityView`, showing the current voice and style.
 struct PersonalityLinkRow: View {
+    @AppStorage(PreferenceKey.voiceChoice) private var voiceRaw = VoiceStyle.doddyDefault.voice.rawValue
     @AppStorage(PreferenceKey.personalityHumour) private var humourRaw = PersonalitySettings.doddyDefault.humour.rawValue
     @AppStorage(PreferenceKey.personalityLength) private var lengthRaw = PersonalitySettings.doddyDefault.length.rawValue
     @AppStorage(PreferenceKey.personalityFormality) private var formalityRaw = PersonalitySettings.doddyDefault.formality.rawValue
@@ -133,8 +215,10 @@ struct PersonalityLinkRow: View {
             PersonalityView()
         } label: {
             StatusRow(
-                title: "Doddy's personality",
-                value: PersonalityView.summary(PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw)))
+                title: "Voice and personality",
+                value: PersonalityView.name(VoiceChoice(rawValue: voiceRaw) ?? .doddy)
+                    + " · "
+                    + PersonalityView.summary(PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw)))
         }
         .accessibilityIdentifier("settings.personality")
     }

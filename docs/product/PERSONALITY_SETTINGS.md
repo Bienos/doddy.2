@@ -13,7 +13,7 @@ Sources: `reference/character_evals/doddy_persona_v1.yaml`, `character_quick_ref
 - **Honest.** An AI, not a person; no claimed feelings or exclusive bond. Only repeats memories that were actually saved; only says something was done with a receipt.
 - **Defaults:** humour subtle, replies brief, tone casual, energy grounded ("grounded with contextual bursts"). Bilingual English/Polish, no forced slang.
 
-## What the user can change (Settings → Voice → Doddy's personality)
+## What the user can change (Settings → Voice → Voice and personality)
 | Dial | Options (default in bold) | Source |
 |---|---|---|
 | Humour | Off, **Subtle**, Playful | persona `settings.humor_level` |
@@ -22,6 +22,17 @@ Sources: `reference/character_evals/doddy_persona_v1.yaml`, `character_quick_ref
 | Mood (energy) | Calm, **Grounded**, Lively | persona trait `energy`; delivery only, Doddy does not claim moods |
 
 Quick picks: **Doddy's default**, **Focused** (no jokes, brief, neutral, calm; persona `interaction_styles.focused`), **Playful** (playful, balanced, casual, lively; persona `interaction_styles.playful`). Any other mix shows as "Custom".
+
+### How Doddy sounds (ADR-105)
+| Setting | Options (default in bold) | Sent as |
+|---|---|---|
+| Voice | **Doddy** (agent voice `oDULUm0GMltHA6mVZkWh`), Josh `ZoiZ8fuDWInAcwPXaVeq`, Wiktor `Mmjvne5i15kUnfr4fQF3` (native Polish), River `SAz9YHcvj6GT2YYXdXww`, Jessica `cgSgspJ2msm6clMCkdW9`, Will `bIHbv24MWmeRgasZH58o` | `tts.voice_id` |
+| Speed | Slower 0.85, **Normal 1.0**, Faster 1.15 | `tts.speed` |
+| Expressiveness | Steady 0.75, **Natural 0.5**, Expressive 0.3 | `tts.stability` |
+
+All six voices are already in the owner's account (built-in or My Voices), so no library voice needs adding. Library-only voices (for example a Polish female voice) must be added to My Voices before they can be offered. Only changed values are sent; the default sends no override at all. These settings never reach the prompt.
+
+**Agent change still needed:** in the agent's Security tab (client overrides), allow `tts.voice_id`, `tts.speed` and `tts.stability`. Leave prompt, LLM, tools and first message off. Without it, a non-default voice, speed or expressiveness makes ElevenLabs refuse the conversation; the app then says to choose "Use Doddy's own voice".
 
 Not included: language (the agent already detects it), proactivity (nothing proactive is built), reduced motion (no character animation yet).
 
