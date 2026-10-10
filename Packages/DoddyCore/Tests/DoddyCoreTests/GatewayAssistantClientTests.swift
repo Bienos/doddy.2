@@ -62,6 +62,11 @@ final class GatewayAssistantClientTests: XCTestCase {
         let failure = GatewayHTTPResponse(status: 429, body: try Fixtures.data("assist_error_v1.json"))
         XCTAssertEqual(GatewayAssistantClient.error(from: failure), .rateLimited(retryAfterSeconds: 30))
 
+        let dailyLimit = GatewayHTTPResponse(status: 429, body: try Fixtures.data("assist_error_daily_limit_v1.json"))
+        XCTAssertEqual(GatewayAssistantClient.error(from: dailyLimit), .dailyLimitReached)
+        XCTAssertFalse(AssistantError.dailyLimitReached.isTransient)
+        XCTAssertTrue(AssistantError.dailyLimitReached.userMessage.contains("tomorrow"))
+
         let register = try JSONDecoder().decode(RegisterWireResponse.self, from: Fixtures.data("register_response_v1.json"))
         XCTAssertEqual(register.schemaVersion, 1)
         let registerRequest = try JSONDecoder().decode(RegisterWireRequest.self, from: Fixtures.data("register_request_v1.json"))

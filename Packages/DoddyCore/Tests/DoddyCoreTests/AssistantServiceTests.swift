@@ -117,7 +117,7 @@ final class AssistantServiceTests: XCTestCase {
     }
 
     func testOfflineRateLimitRefusalAndAuthFailuresAreNotRetried() async {
-        let cases: [AssistantError] = [.offline, .rateLimited(retryAfterSeconds: 12), .refused, .notAuthorized, .notConfigured]
+        let cases: [AssistantError] = [.offline, .rateLimited(retryAfterSeconds: 12), .dailyLimitReached, .refused, .notAuthorized, .notConfigured]
         for expected in cases {
             let client = FakeAssistantClient([.failure(expected)])
             do {

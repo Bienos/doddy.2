@@ -33,7 +33,7 @@ swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT 
 ### Gateway (Node, no Xcode, no network, no keys)
 
 ```sh
-cd gateway && npm install && npm test && npm run typecheck   # 42 tests; see gateway/README.md
+cd gateway && npm install && npm test && npm run typecheck   # 63 tests; see gateway/README.md
 ```
 Needs Node 22+. `ci.sh` runs these when `node` is on the PATH (typecheck only if `npm install` was done).
 The gateway has never been deployed or called against the real OpenAI API.
