@@ -1,5 +1,5 @@
 # Translator: native-voice shortlist (T6, for a listening pass)
-Date: 2026-10-10. Status: **a shortlist only. None of these voices has been heard, added to the workspace or used by the agent.**
+Date: 2026-10-10. Status: **reference only. Owner decision (ADR-224): keep Doddy's own voice for both sides, speaking each language natively with correct spelling and accents. None of these voices is used.**
 
 Found with the ElevenLabs voice library search: language, use case "conversational", descriptive "calm". Library voices must be added to the workspace before an agent can use them, and some professional voices are billed differently. Check the price before choosing.
 

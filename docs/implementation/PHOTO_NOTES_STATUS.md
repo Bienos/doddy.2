@@ -29,7 +29,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 3 of the proposed list).
 - Data Protection on the photo files and their presence in an iPhone backup not checked on a device.
 
 ## Decisions for the owner
-- **Camera capture** ("Take a photo"): needs `NSCameraUsageDescription`, which the capability guard refuses today. Approve to add it.
+- **Camera capture:** owner said no (ADR-224). Photo notes stay picker-only.
 - **Photos in the encrypted backup file** (ADR-219 work): included by default there, since that file is the user's own.
 
 ## Constitution evidence log (docs/trust/config/doddy_rules.yaml)

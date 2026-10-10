@@ -57,7 +57,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 9), and "A file you keep (Recomm
 - The restore receipt's reminder count depends on iOS notification permission. Without it, reminders are kept in the app only, as usual.
 
 ## Decisions for the owner
-- Personality, voice and language settings could also go in the file. They are left out for now; the profile export already has them.
+- Personality, voice and language settings in the file: owner undecided (ADR-224); left out, the profile export already has them.
 - A passphrase hint, or a "check my passphrase" step, would need careful wording (DOD-11). Not built.
 
 ## Constitution evidence log (docs/trust/config/doddy_rules.yaml)

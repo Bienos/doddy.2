@@ -70,8 +70,8 @@ Date: 2026-10-10. Owner: "do all of them" (item 4) and "Yes, tick from widget (R
 - The gallery preview content is made up and shown only in the widget gallery.
 
 ## Decisions for the owner
-- Keep "Show notes and lists in widgets" **on** by default (as built), or make it opt-in.
-- If the tick path fails on a device, the fallback is to move the notes database into the App Group, so the extension can write itself. That is a larger change (a database move and cross-process locking) and needs approval.
+- "Show notes and lists in widgets" stays **on** by default (owner, ADR-224).
+- Moving the notes database into the App Group: **not now** (owner, ADR-224). Revisit only if the tick path fails on a device.
 
 ## Constitution evidence log (docs/trust/config/doddy_rules.yaml)
 | Rule | What enforces it here | Tests run | Gaps / claims to limit |
