@@ -65,6 +65,21 @@ struct SettingsView: View {
                     Text("Development build. DODDY is an AI assistant, not a person. This memory interface uses your approved numbered-asset design; physical-device and release checks remain outstanding.")
                 }
 
+                Section {
+                    Link(destination: Self.tiktokURL) {
+                        Label("TikTok · doddy_mate", systemImage: "play.rectangle")
+                    }
+                    .accessibilityIdentifier("settings.tiktok")
+                    Link(destination: Self.instagramURL) {
+                        Label("Instagram · doddy_mate", systemImage: "camera")
+                    }
+                    .accessibilityIdentifier("settings.instagram")
+                } header: {
+                    Text("Follow Doddy")
+                } footer: {
+                    Text("Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.")
+                }
+
                 Section("About you") {
                     if profiles.profile.isEmpty {
                         Text("Nothing saved. Doddy only keeps what you review and save.")
@@ -474,6 +489,10 @@ struct SettingsView: View {
             forgetError = ProfileErrorText.message(for: error)
         }
     }
+
+    // Doddy's own social accounts (ADR-130). Opening one hands off to the system; the app sends nothing.
+    private static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
+    private static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
 
     private static var versionText: String {
         let info = Bundle.main.infoDictionary
