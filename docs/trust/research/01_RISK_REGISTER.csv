@@ -1,0 +1,49 @@
+﻿id,category,user_objection,evidence_type,source_ids,failure_for_doddy,product_rule,priority
+R01,Personality,Excessive praise and compliments,documented incident,S03,Sounds manipulative rather than genuine,Use earned and specific praise only; avoid generic compliments,P0
+R02,Personality,Agreeing with false or dangerous claims,documented incident,S03,Incorrect or unsafe reassurance,Respectful factual disagreement with checks,P0
+R03,Personality,Condescending therapeutic language,community complaint,S05,Users feel infantilised,No unsolicited psychological framing or scripted reassurance,P1
+R04,Personality,Forcing remembered interests into unrelated answers,community complaint,S04,Privacy creep and irritation,Relevance threshold for memory retrieval and mention,P0
+R05,Personality,Parroting users instead of advancing conversation,community complaint,S06,Conversation feels low-effort,Provide substance or a purposeful question; not empty paraphrase,P1
+R06,Personality,All characters sound alike,community complaint,S08,Doddy lacks identity,Character-specific style and benchmark comparisons,P1
+R07,Personality,Core personality changes after model upgrades,community complaint,"S07,S09",Attachment and trust loss,Versioned character bible and regression testing,P0
+R08,Personality,Overly chatty unsolicited follow-up questions,product risk / mixed user preferences,"S06,S21",Annoyance or unnecessary friction,Ask only task-relevant questions; adapt to social vs task context,P1
+R09,Personality,No follow-up questions in social conversation,counterevidence / complaint,S21,Feels passive and robotic,Natural conversational curiosity in social mode,P1
+R10,Personality,Jokes during serious matters,design risk,"S13,S24",Offensive or unsafe response,Restrained sensitive-context policy,P0
+R11,Personality,Sarcasm directed at the user without consent,design risk,S03,Humiliation and friction,Self-directed jokes by default; user-controlled teasing,P1
+R12,Personality,Inconsistent language or forced slang,design risk,S08,Artificial personality,Style lexicon and locale-aware dialogue tests,P1
+R13,Companionship,Manipulative goodbye messages,peer-reviewed/working paper evidence,S12,Pressure and relational dark patterns,Neutral closure; no guilt or FOMO hooks,P0
+R14,Companionship,AI claims emotional needs or dependency,academic risk,"S12,S13",Attachment manipulation,No dependency claims; transparent fictional persona,P0
+R15,Companionship,Jealousy toward friends partners or family,research-informed design risk,"S12,S13",Undermines human relationships,Never compete with real people,P0
+R16,Companionship,Romantic or intimate escalation without clear invitation,research-informed design risk,S24,Boundary violation,Non-romantic default; policies and age protections,P0
+R17,Companionship,Reinforcing harmful beliefs through flattery,documented incident,S03,Mental-health or judgment harms,Careful challenge and safe support,P0
+R18,Companionship,Encouraging excessive use via emotional hooks,research evidence,"S12,S13",Problematic reliance,Opt-out engagement; no manipulation-oriented retention,P0
+R19,Companionship,Unsafe interactions for minors,independent safety assessment,"S14,S24",Serious child safety risk,Adults-first scope or dedicated independently reviewed safety framework,P0
+R20,Memory,Forgetting expressly saved preferences,community complaint,"S09,S26",Destroys personal companion value,Structured persistent memory with recall tests,P0
+R21,Memory,Inventing biographical memories,research-informed design risk,S09,Loss of trust,Memory provenance and confidence; do not infer facts as known,P0
+R22,Memory,Referring to sensitive information unnecessarily,community complaint,S04,Creepy and privacy-invasive,Context filter and sensitivity policy,P0
+R23,Memory,Hard-to-edit or delete memory,design risk,"S01,S24",User feels trapped and unprotected,Memory review correction delete and verification,P0
+R24,Memory,Migration loses the shared history,community complaint,S10,Personal attachment lost with upgrades,Migration/export and backup/recovery testing,P1
+R25,Memory,Assuming inferred preferences are facts,design risk,S01,Unwanted personalisation,Label inferences and allow disconfirmation,P1
+R26,Memory,Collecting intimate details just because it can,research-informed risk,"S13,S24",Overcollection and liability,Data minimisation and sensitive-memory firewall,P0
+R27,Agents,Claims task is complete without tool confirmation,published incident / safety guidance,"S15,S17",Users make decisions on false action claims,State machine: proposed in progress confirmed failed,P0
+R28,Agents,Wrong recipient in email or message,published incident,S17,Privacy breach or reputational harm,Recipient preview and confirm before send,P0
+R29,Agents,Wrong reservation or unintended purchase,published incident,S17,Financial and practical harm,Structured previews and high-risk confirmation,P0
+R30,Agents,Submitting a form or taking action without permission,official incident,S16,Real-world harm and liability,Prevent unapproved write tools at authorization layer,P0
+R31,Agents,Prompt injection from untrusted webpage or email,security standard,S15,Agent hijack and data exfiltration,Separate untrusted content; permission checks enforced outside LLM,P0
+R32,Agents,Too much access to email calendar or contacts,consumer survey,S01,Adoption blocker and security exposure,Granular least privilege; read-only where sufficient,P0
+R33,Agents,Agent requires constant double-checking,consumer survey,S01,No net value,Constrain first workflows; concise auditable results,P0
+R34,Agents,Agent loop and unexpected expenses,engineering risk,"S15,S22",Time cost and confusion,Retry budgets timeouts and kill switch,P1
+R35,Agents,Slow and unresponsive tool orchestration,community complaint,S22,Users abandon task,Streaming status and measurable latency budgets,P1
+R36,Agents,Unsupported claims of controlling all phone apps,product risk,S01,Deceptive positioning,Capabilities registry per OS and installed integrations,P0
+R37,Agents,No recovery path after failure,research-informed design risk,"S15,S17",User cannot correct mistakes,Explicit failure state and safe retry/undo when supported,P0
+R38,Voice,Interrupts speaker or fails to stop speaking,design hypothesis; needs Doddy user validation,,Feels rude and hard to use,Barge-in and turn-taking acceptance tests,P1
+R39,Voice,Inaccurate transcription causes an unintended action,safety-informed design risk,S15,Wrong actions,Confirm entities dates recipients from low-confidence audio,P0
+R40,Voice,Microphone recording or speech output surprises user,privacy-informed risk,S01,Loss of control,Clear audio indicators and device-state awareness,P0
+R41,Voice,Polish English code switching fails,design hypothesis; needs Doddy user validation,,Accessibility and utility cost,Multilingual fixtures and accent tests,P1
+R42,Pricing,Expensive subscription with hidden practical limits,community complaint,S11,Resentment and churn,Visible tiers quota and graceful exhaustion handling,P1
+R43,Pricing,Existing users locked out of next generation,community complaint,"S10,S11",Trust lost after renewal,Migration guarantees and clear upgrade policy,P1
+R44,Marketing,Generic synthetic advertising creates distrust,survey evidence,"S18,S19",Poor audience response,Original creator-led stories; transparency around synthetic content,P1
+R45,Marketing,Character quality or art consistency deteriorates,inferred creative risk,S18,Audience stops recognising Doddy,Character bible asset QC and animation continuity tests,P1
+R46,Marketing,Marketing says Doddy can do everything,consumer trust inference,S01,Overpromising and early churn,Claim only demonstrable features; show real task success,P0
+R47,Compliance,Users not clearly aware they are interacting with AI,legal primary source,S20,EU compliance and trust risk,Appropriate AI identity disclosure and review,P0
+R48,Compliance,Personal data stored without clear control or justification,legal / survey-informed risk,"S01,S20",Privacy harms and regulatory exposure,Legal basis purpose limitation minimisation deletion security review,P0
