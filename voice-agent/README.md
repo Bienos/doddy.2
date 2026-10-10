@@ -42,6 +42,12 @@ tools, and one prompt line (its tool bullet). Version `agtvrsn_1601m4k85xy5ew7aw
 `agtvrsn_2801m4knwd04fxfbj25wat868jtp`. For rollback, the previous version has 22 tools. An installed app
 without the plan card answers it as unsupported, and the prompt tells Doddy to say so in one sentence.
 
+**Applied to the live agent 2026-10-10 (ADR-209):** `propose_plan` description and its prompt line now include
+`draft_email`, `add_todoist_task` and the "drafted" prefix. Version `agtvrsn_6601m4ks1cwmfqfs30v2cpsgg6c0` →
+`agtvrsn_1701m4kv8t8jfqka415br02e8sfh`. The live agent also carries `start_translator`, `stop_translator` and a
+Translator mode prompt section from another branch that were not in this spec yet; they were left as they were.
+Until that branch is merged, the compare step will report them as drift.
+
 ## App side (DoddyCore `RealtimeVoice.swift`)
 
 - `RealtimeEvent`: what any provider reports, named after Realtime server events
