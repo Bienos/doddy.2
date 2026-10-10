@@ -391,9 +391,14 @@ public enum VoiceToolReply {
             return "No saved note matched. Tell the user you couldn't find it in their saved memories. Do not guess."
         }
         let shown = candidates.prefix(limit)
+        let mayDisagree = RecallConflicts.flagged(Array(shown))
         var lines = ["Found \(candidates.count) saved note\(candidates.count == 1 ? "" : "s") (exact text, newest wording):"]
         for candidate in shown {
-            lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))")
+            let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
+            lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")
+        }
+        if !mayDisagree.isEmpty {
+            lines.append("Notes marked [may disagree] give different numbers for the same thing. Mention each one with when it was saved and let the user decide which is current. Do not pick one.")
         }
         if candidates.count > shown.count {
             lines.append("…and \(candidates.count - shown.count) more. Ask the user to narrow it down if needed.")
