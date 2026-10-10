@@ -20,7 +20,7 @@ command -v swift >/dev/null 2>&1 || { echo "NOT RUN: swift not found on PATH"; e
 
 package=Packages/DoddyCore
 flags=()
-[ "$(uname)" = "Linux" ] && flags=(-Xswiftc -DSQLITE_DISABLE_SNAPSHOT)
+[ "$(uname)" = "Linux" ] && flags=(-Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined)
 
 # Builds the DoddyCore module (a no-op when `swift test` already did).
 swift build --package-path "$package" ${flags[@]+"${flags[@]}"} >/dev/null

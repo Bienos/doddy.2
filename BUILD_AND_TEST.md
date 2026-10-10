@@ -27,7 +27,7 @@ scripts/ci.sh --core-only      # pack integrity + forbidden-capability guard + S
 # or individually:
 python3 -I scripts/verify_imported_pack.py
 scripts/check_forbidden_capabilities.sh
-swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT   # flag needed on Linux only
+swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined   # both flags on Linux only
 ```
 
 ### Gateway (Node, no Xcode, no network, no keys)
@@ -139,7 +139,7 @@ npm test                  # 73 offline tests (mock + fake Composio client); no s
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 
 # Swift package (from repo root)
-swift test --package-path Packages/DoddyCore            # add -Xswiftc -DSQLITE_DISABLE_SNAPSHOT on Linux
+swift test --package-path Packages/DoddyCore            # on Linux add -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
 
 # everything that runs without Xcode
 scripts/ci.sh --core-only

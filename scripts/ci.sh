@@ -34,7 +34,9 @@ if command -v swift >/dev/null 2>&1; then
   # Ubuntu's system SQLite lacks the snapshot API GRDB enables by default; Doddy does not use it.
   # (No arrays: macOS ships bash 3.2, where an empty "${arr[@]}" fails under `set -u`.)
   if [ "$(uname)" = "Linux" ]; then
-    run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT
+    # --allow-shlib-undefined: once swift-crypto's C code is in the test link (ADR-222), the Swift
+    # 6.2 Linux linker checks libswiftObservation.so's own undefined symbols and fails; Linux only.
+    run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
     # A real compile of the app files that need no Apple UI framework (ADR-200). On a Mac the
     # full xcodebuild below compiles everything, so this step is Linux-only.
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
