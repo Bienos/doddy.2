@@ -21,6 +21,9 @@ final class NewsClientTests: XCTestCase {
         let s = try JSONDecoder().decode(NewsSettings.self, from: Data(json.utf8))
         XCTAssertEqual(s.channels, [.push, .sms])
         XCTAssertTrue(s.feeds[0].failing)
+        XCTAssertEqual(s.available.writerName, "Claude, by Anthropic", "servers before ADR-197 only had Claude")
+        let openAI = #"{"writer":true,"writerProvider":"openai","keywordSearch":false}"#
+        XCTAssertEqual(try JSONDecoder().decode(NewsSettings.Available.self, from: Data(openAI.utf8)).writerName, "GPT, by OpenAI")
         let map = { (status: Int, body: String) in DoddyServerClient.error(from: ServerResponse(status: status, body: Data(body.utf8))) }
         XCTAssertEqual(map(400, #"{"error":"unsafe_url"}"#), .unsafeURL)
         XCTAssertEqual(map(422, #"{"error":"not_a_feed"}"#), .notAFeed)

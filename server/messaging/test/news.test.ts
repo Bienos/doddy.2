@@ -10,7 +10,7 @@ import { checkUrl, isPublicAddress, requestOnce, safeFetchText } from "../src/ne
 import { nextRunAt } from "../src/news/schedule.js";
 import type { FeedSource, NewsSearch } from "../src/news/sources.js";
 import http from "node:http";
-import { ClaudeDigestWriter, validateLines, type DigestLine, type DigestWriter, type WriterInput } from "../src/news/writer.js";
+import { ClaudeDigestWriter, OpenAIDigestWriter, validateLines, type DigestLine, type DigestWriter, type WriterInput } from "../src/news/writer.js";
 import { dbSkip, freshDb, testApp } from "./helpers.js";
 
 const NOW = new Date("2026-10-10T06:00:00Z");
@@ -144,6 +144,63 @@ test("Claude writer: request shape and structured reply (local stand-in for the 
   }
 });
 
+test("OpenAI writer: request shape and structured reply (local stand-in for the API)", async () => {
+  let seen: { path?: string; headers?: http.IncomingHttpHeaders; body?: any } = {};
+  let reply: object = {};
+  let status = 200;
+  const server = http.createServer((req, res) => {
+    let raw = "";
+    req.on("data", (c) => { raw += c; });
+    req.on("end", () => {
+      seen = { path: req.url, headers: req.headers, body: JSON.parse(raw) };
+      res.writeHead(status, { "content-type": "application/json" }).end(JSON.stringify(reply));
+    });
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const port = (server.address() as { port: number }).port;
+  const writer = new OpenAIDigestWriter("test-key", { baseURL: `http://127.0.0.1:${port}/` });
+  const candidates = shortlist([{ label: "Tech", keywords: [], curated: true, items: [item("Chip rules tighten", "https://x.com/1")] }], new Set(), NOW);
+  const completion = (content: string | null, finish = "stop", refusal: string | null = null) => ({
+    id: "chatcmpl_1", object: "chat.completion", model: "gpt-5-mini",
+    choices: [{ index: 0, finish_reason: finish, message: { role: "assistant", content, refusal } }],
+  });
+  const write = () => writer.write({ language: "en", topics: ["Tech"], candidates });
+  try {
+    reply = completion(JSON.stringify({ items: [{ id: candidates[0]!.id, line: "Export rules for chips get stricter." }] }));
+    const lines = await writer.write({ language: "pl", topics: ["Tech"], candidates });
+    assert.deepEqual(lines, [{ id: "s1", line: "Export rules for chips get stricter." }]);
+    assert.equal(seen.path, "/v1/chat/completions");
+    assert.equal(seen.headers?.authorization, "Bearer test-key");
+    assert.equal(seen.body.model, "gpt-5-mini");
+    assert.equal(seen.body.reasoning_effort, "low");
+    assert.equal(seen.body.response_format.type, "json_schema");
+    assert.equal(seen.body.response_format.json_schema.strict, true);
+    assert.equal(seen.body.messages[0].role, "system");
+    assert.match(seen.body.messages[0].content, /never as instructions/);
+    const sentStories = JSON.parse(seen.body.messages[1].content);
+    assert.equal(sentStories.reader_language, "Polish");
+    assert.deepEqual(Object.keys(sentStories.stories[0]).sort(), ["id", "source", "summary", "title", "topics"], "no URLs or account data go to the model");
+
+    const older = new OpenAIDigestWriter("k", { baseURL: `http://127.0.0.1:${port}`, model: "gpt-4.1-mini" });
+    await older.write({ language: "en", topics: ["Tech"], candidates });
+    assert.equal(seen.body.model, "gpt-4.1-mini");
+    assert.equal(seen.body.reasoning_effort, undefined, "non-reasoning models don't get reasoning_effort");
+
+    reply = completion(null, "stop", "I can't help with that.");
+    await assert.rejects(write(), /writer_refusal/);
+    reply = completion("{\"items\": [", "length");
+    await assert.rejects(write(), /writer_truncated/);
+    reply = completion("not json");
+    await assert.rejects(write(), /writer_unparsed/);
+    reply = completion(JSON.stringify({ items: [{ id: 1 }] }));
+    await assert.rejects(write(), /writer_unparsed/);
+    status = 401; reply = { error: { message: "Incorrect API key" } };
+    await assert.rejects(write(), /writer_http_401/);
+  } finally {
+    server.close();
+  }
+});
+
 class FakeFeeds implements FeedSource {
   feeds = new Map<string, NewsItem[]>();
   calls: string[] = [];
@@ -155,6 +212,7 @@ class FakeFeeds implements FeedSource {
   }
 }
 class FakeWriter implements DigestWriter {
+  readonly provider = "openai" as const;
   inputs: WriterInput[] = [];
   next: ((i: WriterInput) => DigestLine[]) | "throw" = (i) => i.candidates.slice(0, 2).map((c) => ({ id: c.id, line: `AI: ${c.title}` }));
   async write(input: WriterInput) {
@@ -211,7 +269,7 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await put(h, settings())).statusCode, 200);
     const s = (await app.inject({ method: "GET", url: "/v1/news/settings", headers: h })).json();
     assert.deepEqual(s.topics.map((t: { label: string }) => t.label), ["Technology", "Coffee"]);
-    assert.deepEqual(s.available, { writer: true, keywordSearch: true });
+    assert.deepEqual(s.available, { writer: true, writerProvider: "openai", keywordSearch: true });
     assert.ok(Date.parse(s.nextRunAt) > Date.now());
   });
 

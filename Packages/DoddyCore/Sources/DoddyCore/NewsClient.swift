@@ -47,8 +47,19 @@ public struct NewsFeed: Equatable, Sendable, Decodable {
 
 public struct NewsSettings: Equatable, Sendable, Decodable {
     public struct Available: Equatable, Sendable, Decodable {
-        /// Claude writes the lines; otherwise digests are plain headlines.
+        /// An AI writes the lines; otherwise digests are plain headlines.
         public let writer: Bool
+        /// "anthropic" or "openai": who gets the topics and headlines. Older servers omit it (ADR-197).
+        public let writerProvider: String?
+
+        /// Who writes the lines, as the privacy text names it. Servers before ADR-197 could only use Claude.
+        public var writerName: String {
+            switch writerProvider {
+            case nil, "anthropic": "Claude, by Anthropic"
+            case "openai": "GPT, by OpenAI"
+            default: "the server's AI provider"
+            }
+        }
         /// Own keywords are searched across news sources; otherwise only matched in feeds.
         public let keywordSearch: Bool
     }

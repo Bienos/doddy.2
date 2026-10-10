@@ -55,7 +55,7 @@ Once a day at the user's local time, the worker builds a short news message:
    - If Claude is unavailable, refuses, or returns nothing usable, the digest falls back to plain headlines.
 4. **Send:** push (short list; links are in the app) and/or SMS (up to 3 stories with links, ≤640 characters), through the outbox. One scheduled digest per local day, guaranteed by a unique index.
 - **Custom feed URLs** are fetched with protections against reaching the server's own network: private and reserved addresses are blocked, the address is checked at connect time (so a DNS change can't swap one in), redirects are re-checked, and size and time are capped.
-- **Sent to Anthropic:** topic labels plus public headlines and summaries. Never memories, phone numbers or account IDs.
+- **Sent to Anthropic or OpenAI (whichever key is set, ADR-197):** topic labels plus public headlines and summaries. Never memories, phone numbers or account IDs.
 
 ## Run locally
 ```sh

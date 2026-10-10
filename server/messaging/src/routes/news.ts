@@ -51,7 +51,7 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       `SELECT f.url, c.ok, c.title FROM news_feeds f LEFT JOIN news_cache c ON c.key = encode(sha256(convert_to('feed:' || f.url, 'UTF8')), 'hex')
        WHERE f.account_id = $1 ORDER BY f.url`, [accountId]);
     return {
-      available: { writer: !!news?.writer, keywordSearch: !!news?.search },
+      available: { writer: !!news?.writer, writerProvider: news?.writer?.provider ?? null, keywordSearch: !!news?.search },
       enabled: s?.enabled ?? false,
       sendTime: s?.send_time ?? "08:00",
       timezone: s?.timezone ?? "Europe/Warsaw",

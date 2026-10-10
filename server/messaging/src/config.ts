@@ -37,6 +37,8 @@ const schema = z.object({
   ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
   // News digests
   ANTHROPIC_API_KEY: optional, // Claude writes the one-line summaries
+  OPENAI_API_KEY: optional, // or OpenAI, when there is no Anthropic key (ADR-197)
+  OPENAI_MODEL: optional, // default gpt-5-mini
   GNEWS_API_KEY: optional, // keyword search across news sources (paid plan for commercial use)
   DODDY_PHONE_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
 });
@@ -61,6 +63,8 @@ export interface Config {
   phoneAgent?: PhoneAgentConfig;
   doddyPhoneNumber?: string;
   anthropicApiKey?: string;
+  openaiApiKey?: string;
+  openaiModel?: string;
   gnewsApiKey?: string;
 }
 
@@ -91,6 +95,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     }),
     doddyPhoneNumber: e.DODDY_PHONE_NUMBER,
     anthropicApiKey: e.ANTHROPIC_API_KEY,
+    openaiApiKey: e.OPENAI_API_KEY,
+    openaiModel: e.OPENAI_MODEL,
     gnewsApiKey: e.GNEWS_API_KEY,
   };
 }

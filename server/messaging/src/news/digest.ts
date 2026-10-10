@@ -70,7 +70,11 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
           language: settings.language, topics: topics.map((t) => t.label), candidates,
         }), candidates);
         aiWritten = picks.length > 0;
-      } catch {
+      } catch (err) {
+        // A code only (writer_*, or the HTTP status), never story text or keys.
+        const code = err instanceof Error && /^writer_[a-z0-9_]+$/.test(err.message) ? err.message
+          : `writer_error${typeof (err as { status?: unknown })?.status === "number" ? `_${(err as { status: number }).status}` : ""}`;
+        console.log(JSON.stringify({ time: new Date().toISOString(), msg: "news writer failed, plain headlines used", code }));
         picks = []; // fall back to plain headlines below
       }
     }

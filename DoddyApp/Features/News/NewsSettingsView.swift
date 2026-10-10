@@ -123,7 +123,7 @@ struct NewsSettingsView: View {
                 .disabled(model.loaded?.topics.isEmpty != false && model.loaded?.feeds.isEmpty != false)
         } footer: {
             Text(available?.writer == true
-                 ? "An AI (Claude, by Anthropic) picks the stories and writes each line from the headline and the publisher's summary. It can get things wrong: the link always goes to the full story. Only your topics and public headlines are sent to it."
+                 ? "An AI (\(available?.writerName ?? "")) picks the stories and writes each line from the headline and the publisher's summary. It can get things wrong: the link always goes to the full story. Only your topics and public headlines are sent to it."
                  : "AI summaries aren't set up on the server, so you'll get the top headlines.")
         }
 

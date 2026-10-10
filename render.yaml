@@ -45,6 +45,8 @@ envVarGroups:
       # Daily news (N1)
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
+        sync: false
       - key: GNEWS_API_KEY
         sync: false
 

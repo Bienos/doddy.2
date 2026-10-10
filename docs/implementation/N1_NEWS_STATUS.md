@@ -25,7 +25,7 @@ Worker (every ~2 s) runDueDigests ── claims due accounts (FOR UPDATE SKIP LO
 
 ## How to connect it (owner)
 Step-by-step guide: `GO_LIVE_DAILY_NEWS.md`. Since ADR-174 every digest is kept for the app; notifications (Apple Developer Program + APNs key) and texts (Twilio) are optional. With neither, Daily news works "in the app only".
-1. **Anthropic:** create an API key and set `ANTHROPIC_API_KEY` on the server (Render env group). Without it, digests are plain headlines.
+1. **Anthropic or OpenAI:** create an API key and set `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` on the server (ADR-197). Without one, digests are plain headlines.
 2. **GNews:** sign up at gnews.io and pick a **paid plan**. The free plan has a 12-hour delay and limits commercial use. Set `GNEWS_API_KEY`. Without it, own-keyword topics match only stories in the RSS feeds.
 3. Nothing else: RSS feeds need no account. The worker already runs the scheduler.
 4. **In the app:** Settings → Notifications and texts (turn on notifications and/or texts), then Settings → Daily news (topics, own keywords, own feeds, time, language) → Save.
@@ -57,7 +57,7 @@ Step-by-step guide: `GO_LIVE_DAILY_NEWS.md`. Since ADR-174 every digest is kept 
 - **App not compiled in Xcode.** No real push or SMS was delivered.
 
 ## Privacy and cost
-- **Sent to Anthropic:** topic labels and public headlines and summaries. **Sent to GNews:** the user's own keywords. Never memories, phone numbers or account IDs. The privacy policy needs these two lines.
+- **Sent to Anthropic or OpenAI (whichever key is set):** topic labels and public headlines and summaries. **Sent to GNews:** the user's own keywords. Never memories, phone numbers or account IDs. The privacy policy needs these two lines.
 - **Cost:** about one small Haiku call per user per day. SMS costs per segment; Polish characters use the more expensive encoding, so a 640-character text is up to 10 segments. Push is free.
 - **Content:** only headline, a one-line description and the publisher's link are sent, which is what RSS is meant for. A full-text republishing feature would need licences.
 
