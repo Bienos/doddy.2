@@ -8,11 +8,12 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred") -> XCUIApplication {
+    private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         // Overrides UserDefaults for this launch only.
         app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
         if onboardingDone { app.launchArguments += ["-onboardingDone", "YES"] }
+        if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launch()
         return app
     }
@@ -132,6 +133,14 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(status.exists)
         XCTAssertTrue(status.label.contains("Set up later"))
         XCTAssertFalse(status.label.localizedCaseInsensitiveContains("verified"))
+    }
+
+    @MainActor
+    func testPauseAllStopsTodayReadingCalendarAndReminders() {
+        let app = launch(onboardingDone: true, pauseAll: true)
+        XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["today.openSettings.paused"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["today.openSettings"].exists)
     }
 
     @MainActor

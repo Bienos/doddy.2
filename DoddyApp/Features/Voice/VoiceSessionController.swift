@@ -383,6 +383,11 @@ final class VoiceSessionController {
     private func handle(_ call: ClientToolCallEvent) async {
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
+        // Settings → Pause all: no other app or account is used; notes still work.
+        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
+            await reply(call.toolCallId, ConnectionPause.reply)
+            return
+        }
         if let connection = VoiceConnection.serving(call.toolName), !isOn(connection) {
             await notConnected(call.toolCallId, connection)
             return

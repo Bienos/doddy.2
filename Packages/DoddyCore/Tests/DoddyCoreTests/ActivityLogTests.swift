@@ -83,3 +83,31 @@ final class ActivityLogTests: XCTestCase {
         XCTAssertEqual(log.first?.title, "\(ActivityLog.maxEntries + 4)")
     }
 }
+
+final class ConnectionPauseTests: XCTestCase {
+    func testPauseStopsEveryAppButLeavesNotes() {
+        let draft = ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil)
+        let paused: [VoiceToolRequest] = [
+            .readCalendar(VoiceTimeRange(start: Date(), end: Date().addingTimeInterval(3600))),
+            .createReminder(draft), .lookupContact(name: "Marta"), .openMap(place: "Koszyki"),
+            .runShortcut(name: "Home"), .setTimer(TimerDraft(seconds: 60, label: nil)),
+            .draftMessage(MessageDraft(recipientName: "Marta", channel: .text, body: "Hi")),
+            .cloudTool(CloudToolCall(name: CloudToolName.checkEmail, arguments: [:])),
+        ]
+        for request in paused { XCTAssertTrue(ConnectionPause.applies(to: request), "\(request)") }
+        XCTAssertFalse(ConnectionPause.applies(to: .searchMemories(query: "klucze")))
+        XCTAssertFalse(ConnectionPause.applies(to: .saveMemory(text: "x")))
+    }
+
+    func testPausedRequestsShowAsNotDoneInWhatDoddyDid() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Warsaw")!
+        let draft = ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil)
+        for request in [VoiceToolRequest.createReminder(draft), .lookupContact(name: "Marta")] {
+            let entry = ActivityEntry(
+                request: ActivityRequest.describe(request, calendar: calendar)!, reply: ConnectionPause.reply, at: Date())
+            XCTAssertEqual(entry.outcome, .notDone)
+            XCTAssertEqual(entry.note, "Connections were paused.")
+        }
+    }
+}

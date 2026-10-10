@@ -37,6 +37,7 @@ struct SettingsView: View {
     private var router: ShortcutRouter { .shared }
     private var conversationLogs: ConversationLogStore { .shared }
     private var activityLog: ActivityLogStore { .shared }
+    @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
 
     private var activitySummary: String {
         let today = activityLog.entries.filter { Calendar.current.isDateInToday($0.at) }.count
@@ -278,6 +279,8 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    Toggle("Pause all connections", isOn: $pauseAllConnections)
+                        .accessibilityIdentifier("settings.pauseAll")
                     NavigationLink {
                         ConnectionsView()
                     } label: {
@@ -295,7 +298,9 @@ struct SettingsView: View {
                 } header: {
                     Text("Connections")
                 } footer: {
-                    Text("Each one starts off. Turning one on asks iPhone for permission first.")
+                    Text(pauseAllConnections
+                        ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
+                        : "Each one starts off. Turning one on asks iPhone for permission first.")
                 }
 
                 Section("Ask Doddy (typed questions)") {
@@ -397,6 +402,7 @@ struct SettingsView: View {
     }
 
     private var connectionSummary: String {
+        if pauseAllConnections { return "Paused" }
         let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
         return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
     }

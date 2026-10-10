@@ -174,6 +174,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
             return (outcome, note ?? "Demo data from a test server, not your account.")
         }
         if text.hasPrefix("failed:") { return (.notDone, reason(in: text)) }
+        if text.hasPrefix("paused:") { return (.notDone, "Connections were paused.") }
         if text.contains("isn't connected") {
             return (.notDone, text.components(separatedBy: ". ").first.map { $0 + "." })
         }
