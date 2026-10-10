@@ -37,6 +37,12 @@ struct MemoryDetailView: View {
                     Button { copy(record) } label: {
                         HStack { Text(copied ? "Copied" : "Copy text"); Spacer(); Image(systemName: copied ? "checkmark" : "doc.on.doc") }
                     }.buttonStyle(SecondaryButtonStyle())
+                    // Only the note's current words, nothing about when or how it was saved (ADR-142).
+                    ShareLink(item: record.currentText, preview: SharePreview("Doddy note")) {
+                        HStack { Text("Share text"); Spacer(); Image(systemName: "square.and.arrow.up") }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("detail.share")
                     Button(role: .destructive) { confirmDelete = true } label: {
                         Text(isDeleting ? "Deleting…" : "Delete this memory").frame(maxWidth: .infinity, minHeight: 44)
                     }
