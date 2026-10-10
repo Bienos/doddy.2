@@ -50,7 +50,7 @@ final" in the UI. Rights review is an open owner decision (see `DECISIONS.md`).
 
 ## Voice samples
 
-`DoddyApp/Resources/VoicePreviews/voice-preview-*.mp3` (six clips, ~570 KB) are speech generated on 2026-10-10 with
+`DoddyApp/Resources/VoicePreviews/voice-preview-*.mp3` (six clips, ~540 KB) are speech generated on 2026-10-10 with
 ElevenLabs `eleven_v4` on the owner's ElevenLabs account, one per voice offered in Settings (ADR-122). They are
 **development candidates**: check ElevenLabs' output terms for the owner's plan and the Voice Library terms of the
 library voices (Josh, Wiktor) before any release.
