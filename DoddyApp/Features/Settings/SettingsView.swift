@@ -75,6 +75,12 @@ struct SettingsView: View {
                         Label("Phone calls", systemImage: "phone")
                     }
                     .accessibilityIdentifier("settings.calls")
+                    NavigationLink {
+                        NewsSettingsView()
+                    } label: {
+                        Label("Daily news", systemImage: "newspaper")
+                    }
+                    .accessibilityIdentifier("settings.news")
                 }
 
                 Section("Voice") {

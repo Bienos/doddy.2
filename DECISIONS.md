@@ -103,3 +103,13 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 053 | Notes from calls are an inbox; they become memories only after the user saves them in the app (source "Your voice note", time said). Push never contains the note. | Applied |
 | 054 | Outbound: verified number only, consent `calls-v1`, 3/hour and 10/day, `unknown` outcomes never redialled. Scheduled calls not built. | Applied |
 | 055 | Phone agent privacy defaults: no audio recording, transcripts kept 30 days at ElevenLabs. | Applied in setup script — owner may change |
+
+## N1 decisions (daily news) — owner decisions 2026-10-10
+
+| ADR | Decision | Status |
+|---|---|---|
+| 056 | News sources: curated publisher RSS + the user's own feeds, plus **GNews** search for own keyword topics (paid plan required for commercial use). Provider behind a `NewsSearch` interface. | Owner-approved; built |
+| 057 | **Claude Haiku (`claude-haiku-5-5`)** writes the one-liners via structured output, effort `low`; it only picks and phrases from a deterministic shortlist; links/sources always from fetched data; falls back to headlines on any failure. | Owner-approved; built, not run against the live API |
+| 058 | One digest per local day at the user's time (unique index per day); stories not repeated for 14 days; push = short list, SMS = ≤3 stories with links ≤640 chars. Breaking alerts not built. | Owner-approved; built |
+| 059 | User-supplied feed URLs are fetched with connect-time private-address blocking, re-checked redirects, 2 MB / 10 s caps. | Applied |
+| 060 | Data to third parties for news: topics + public headlines to Anthropic; own keywords to GNews; never memories, phone or account ids. | Applied — privacy policy text pending |

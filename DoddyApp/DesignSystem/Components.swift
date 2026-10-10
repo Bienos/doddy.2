@@ -162,6 +162,7 @@ extension Capability {
         case .pushUpdates: "Notifications from Doddy"
         case .textUpdates: "Texts from Doddy"
         case .phoneCalls: "Phone calls with Doddy"
+        case .newsDigests: "Daily news from Doddy"
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
         }

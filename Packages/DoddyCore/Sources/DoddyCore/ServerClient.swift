@@ -48,6 +48,10 @@ public enum ServerError: Error, Equatable, Sendable {
     case phoneRejected
     /// The PIN was too easy to guess (all one digit or a straight run like 1234).
     case weakPIN
+    /// A feed address that points at a private network, a non-web scheme or similar.
+    case unsafeURL
+    /// The address answered, but not with an RSS or Atom feed.
+    case notAFeed
     case invalidRequest(fields: [String])
     case rateLimited
     case providerUnavailable
@@ -275,6 +279,9 @@ public actor DoddyServerClient {
         case (400, "code_expired"): return .codeExpired
         case (400, "phone_rejected"): return .phoneRejected
         case (400, "weak_pin"): return .weakPIN
+        case (400, "unsafe_url"): return .unsafeURL
+        case (400, "no_topics"): return .notEnabled("no_topics")
+        case (422, "not_a_feed"): return .notAFeed
         case (400, _): return .invalidRequest(fields: body?.fields ?? [])
         case (401, _): return .accountMissing
         case (404, "no_verified_phone"), (409, _): return .notEnabled(code)

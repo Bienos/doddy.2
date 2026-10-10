@@ -185,6 +185,8 @@ final class UpdatesModel {
         case .wrongCode: return "That code isn't right. Check the text and try again."
         case .codeExpired: return "That code has expired. Ask for a new one."
         case .phoneRejected: return "That number can't receive codes. Check it and try again."
+        case .unsafeURL: return "Doddy can't use that address. Use a public web address (https://…)."
+        case .notAFeed: return "That address didn't return a news feed. Look for an RSS or Atom link on the site."
         case .weakPIN: return "Choose a PIN that's harder to guess: not one repeated digit or a run like 1234."
         case .invalidRequest: return "Something in that request wasn't accepted. Nothing was changed."
         case .rateLimited: return "Too many tries. Wait a while and try again."

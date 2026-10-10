@@ -59,6 +59,13 @@ Cloud tokens live on the server (`server/`), never in the app.
 | Telegram / WhatsApp | Not chosen |
 | Mac-relay iMessage services | **Rejected**: against Apple's terms, numbers get blocked |
 
+## D2. News (owner decision 2026-10-10: **RSS + GNews, Claude Haiku one-liners, daily digest**)
+| Source | Status |
+|---|---|
+| Curated RSS (10 topics, 28 publisher feeds) + the user's own RSS/Atom feeds | **Built (N1)**; feeds verified live |
+| GNews keyword search for the user's own topics | **Built (N1)**; needs `GNEWS_API_KEY` (paid plan) |
+| Claude Haiku writes the daily DM | **Built (N1)**; needs `ANTHROPIC_API_KEY`; falls back to headlines |
+
 ## E. Calls (owner decision: **Twilio + ElevenLabs**)
 | Option | Status |
 |---|---|

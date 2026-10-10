@@ -12,6 +12,7 @@ public enum Capability: String, CaseIterable, Sendable {
     case pushUpdates
     case textUpdates
     case phoneCalls
+    case newsDigests
     case connectedAccounts
     case cloudSync
 }
@@ -47,6 +48,7 @@ public struct CapabilityCatalog: Sendable {
         .pushUpdates: .notImplemented(plannedMilestone: "S1"),
         .textUpdates: .notImplemented(plannedMilestone: "S1"),
         .phoneCalls: .notImplemented(plannedMilestone: "S2"),
+        .newsDigests: .notImplemented(plannedMilestone: "N1"),
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
     ])
@@ -75,6 +77,7 @@ public struct CapabilityCatalog: Sendable {
             .pushUpdates: updates,
             .textUpdates: updates,
             .phoneCalls: calls,
+            .newsDigests: updates,
         ]) { _, new in new })
     }
 }
