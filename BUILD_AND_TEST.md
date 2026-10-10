@@ -27,7 +27,7 @@ scripts/ci.sh --core-only      # pack integrity + forbidden-capability guard + S
 # or individually:
 python3 -I scripts/verify_imported_pack.py
 scripts/check_forbidden_capabilities.sh
-swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT   # flag needed on Linux only
+swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined   # both flags on Linux only
 ```
 
 ### Gateway (Node, no Xcode, no network, no keys)
@@ -103,6 +103,13 @@ manager — `backend/.env.example` lists names with empty values. No signing tea
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
 `com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
 
+**Widgets (ADR-219)** need an App Group shared by the app and the widget extension, named
+`group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default). It is off by default, like push. To turn it on,
+register the group for your team and set `DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements` (or
+`Config/Doddy-Push-AppGroup.entitlements` if you also use push) and `DODDY_WIDGET_ENTITLEMENTS = Config/DoddyWidgets.entitlements`,
+in `project.yml` or on the `xcodebuild` line. Without it the widgets only say "Open Doddy to set up widgets".
+Whether a free personal team can sign App Groups is not verified here.
+
 ## Connected Apps — Google Calendar, read-only (2026-10-09)
 
 **Status: mock milestone complete; live integration unverified/blocked; iOS app not compiled for this change.**
@@ -132,7 +139,7 @@ npm test                  # 73 offline tests (mock + fake Composio client); no s
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 
 # Swift package (from repo root)
-swift test --package-path Packages/DoddyCore            # add -Xswiftc -DSQLITE_DISABLE_SNAPSHOT on Linux
+swift test --package-path Packages/DoddyCore            # on Linux add -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
 
 # everything that runs without Xcode
 scripts/ci.sh --core-only

@@ -1,6 +1,6 @@
 import Foundation
 
-// The character drawings for the opening (ADR-210), read from the supplied v1.3-r1 SVGs
+// The character drawings for the opening (ADR-225), read from the supplied v1.3-r1 SVGs
 // (`design/interface-v1.2/assets/doddy-pose-basketball-*-light-v1.3-r1.svg`, copied into the
 // app bundle). They are line art: a few dozen stroked paths, circles and ellipses in nested
 // groups with translate/scale/rotate transforms, in three colours. Reading them as paths lets

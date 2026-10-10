@@ -44,8 +44,16 @@ final class NoteReminderStore {
         locationReadiness = await coordinator.locationReadiness()
     }
 
-    /// On launch and every return to the foreground: repair iOS requests, refresh status.
+    /// On launch and every return to the foreground: repair iOS requests, refresh status. If the
+    /// iPhone's language changed, waiting notifications and their buttons are rewritten in it.
     func refreshOnForeground() async {
+        let language = NotificationLanguage.current.rawValue
+        let key = "noteReminders.notificationLanguage"
+        if UserDefaults.standard.string(forKey: key) != language {
+            await SystemNoteNotifications.registerCategory()
+            await coordinator?.refreshContent()
+            UserDefaults.standard.set(language, forKey: key)
+        }
         await coordinator?.reconcile()
         await reload()
     }
@@ -58,10 +66,13 @@ final class NoteReminderStore {
         return authorization
     }
 
-    func set(memoryID: UUID, at date: Date, timeZone: TimeZone = .autoupdatingCurrent) async {
+    /// iOS slots in use (a weekdays repeat uses five), out of `NoteReminderLimits.maxActive`.
+    var slotsUsed: Int { reminders.reduce(0) { $0 + $1.requestSlots } }
+
+    func set(memoryID: UUID, at date: Date, timeZone: TimeZone = .autoupdatingCurrent, repeats: ReminderRepeat? = nil) async {
         guard let coordinator else { return }
         do {
-            switch try await coordinator.schedule(memoryID: memoryID, at: date, timeZone: timeZone) {
+            switch try await coordinator.schedule(memoryID: memoryID, at: date, timeZone: timeZone, repeats: repeats) {
             case .scheduled(let reminder): receipts[memoryID] = .scheduled(reminder)
             case .savedInAppOnly(let reminder): receipts[memoryID] = .inAppOnly(reminder)
             }
@@ -104,15 +115,64 @@ final class NoteReminderStore {
         receipts[memoryID] = nil
     }
 
+    /// Done: a one-off or place reminder ends; a repeating one is done for this time only.
     func done(reminderID: UUID) async {
+        guard let coordinator else { return }
         await reload()
         guard let reminder = reminders.first(where: { $0.id == reminderID }) else { return }
-        await remove(reminder)
+        try? await coordinator.markDone(reminderID: reminderID)
+        receipts[reminder.memoryID] = nil
+        await reload()
     }
 
+    enum SnoozeChoice: Hashable {
+        case inAnHour, thisEvening, tomorrowMorning
+    }
+
+    struct SnoozeOption: Hashable {
+        let choice: SnoozeChoice
+        let date: Date
+    }
+
+    /// Snooze choices in the app, which knows the time: "This evening" (18:00) only before 17:00.
+    static func snoozeChoices(now: Date, calendar: Calendar = .autoupdatingCurrent) -> [SnoozeOption] {
+        var result = [SnoozeOption(choice: .inAnHour, date: now.addingTimeInterval(3_600))]
+        if calendar.component(.hour, from: now) < ReminderQuickPick.eveningHour - 1,
+           let evening = calendar.date(bySettingHour: ReminderQuickPick.eveningHour, minute: 0, second: 0, of: now) {
+            result.append(SnoozeOption(choice: .thisEvening, date: evening))
+        }
+        if let tomorrow = ReminderQuickPick.tomorrowMorning(after: now, calendar: calendar) {
+            result.append(SnoozeOption(choice: .tomorrowMorning, date: tomorrow))
+        }
+        return result
+    }
+
+    /// Lock Screen "Tomorrow 09:00".
     func later(reminderID: UUID) async {
+        guard let tomorrow = ReminderQuickPick.tomorrowMorning(after: .now, calendar: .autoupdatingCurrent) else { return }
+        await snooze(reminderID: reminderID, until: tomorrow)
+    }
+
+    /// Lock Screen or Home "In 1 hour".
+    func snoozeForAnHour(reminderID: UUID) async {
+        await snooze(reminderID: reminderID, until: .now.addingTimeInterval(3_600))
+    }
+
+    /// Brings a time reminder back at `date`. The receipt shows on the note: moved (read back from
+    /// iOS), kept in Doddy only, or "Couldn't move it" with the reminder unchanged.
+    func snooze(reminderID: UUID, until date: Date) async {
         guard let coordinator else { return }
-        _ = try? await coordinator.snoozeUntilTomorrowMorning(reminderID: reminderID)
+        await reload()
+        guard let reminder = reminders.first(where: { $0.id == reminderID }) else { return }
+        do {
+            switch try await coordinator.snooze(reminderID: reminderID, until: date) {
+            case .scheduled(let moved)?: receipts[reminder.memoryID] = .scheduled(moved)
+            case .savedInAppOnly(let moved)?: receipts[reminder.memoryID] = .inAppOnly(moved)
+            case nil: break
+            }
+        } catch {
+            receipts[reminder.memoryID] = .failed("Couldn't move it. Your reminder is unchanged.")
+        }
         await reload()
     }
 
@@ -138,8 +198,10 @@ final class NoteReminderStore {
         switch error as? NoteReminderError {
         case .timeInPast:
             return "That time has already passed. Pick a time at least a minute from now."
+        case .invalidRepeat:
+            return "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set."
         case .limitReached(let maximum):
-            return "You have \(maximum) reminders set, the most Doddy can schedule. Finish or cancel one to add another."
+            return "Doddy can keep \(maximum) reminders on this iPhone, and weekdays counts as 5. Finish or cancel one to add another."
         case .memoryNotFound:
             return "That memory no longer exists, so no reminder was set."
         case .invalidPlace:

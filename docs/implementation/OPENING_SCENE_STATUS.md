@@ -1,4 +1,4 @@
-# The opening and "Start listening when I open Doddy" (ADR-210)
+# The opening and "Start listening when I open Doddy" (ADR-225)
 Date: 2026-10-10. Owner requests: "a very cool app opening every time … Doddy is playing basketball … the camera zooming in on him … he scores … then the normal UI shows up … very quick … you can turn it off in settings … ideally he says hey it's Doddy what's up mate and already has the microphone open … czy mogę ci pomóc", then "it must be more cartoony … quick animation drawing Doddy, he shoots and then a new version that is ready to speak shows up with other buttons and you can interact".
 
 **Status: DoddyCore tested on Linux; the app is written but not built.** The timeline, the SVG reader, the policy and the greeting pass their unit tests (Swift 6.1, Linux), and `OpeningModel` compiles against DoddyCore in the Linux check. The SwiftUI scene, Home's ready state, the Settings rows and the UI tests have **not been compiled or tried on a device**: no Xcode here. The Mac checklist (§4b) lists what to look at first.

@@ -5,7 +5,8 @@ import Foundation
 /// trimmed or cut, so what is in the file is exactly what was saved. A note that was corrected
 /// also carries its original wording. Same data as `MemoryExport.plainText`, newest first as given.
 public enum MarkdownExport {
-    public static func markdown(_ records: [MemoryRecord], exportedAt: Date) -> String {
+    /// `lists` (ADR-216) follow the notes as Markdown task lists: open items, then ticked ones.
+    public static func markdown(_ records: [MemoryRecord], lists: [DoddyList] = [], exportedAt: Date) -> String {
         let iso = ISO8601DateFormatter()
         let count = records.count == 1 ? "1 note" : "\(records.count) notes"
         var lines = ["# Doddy memories", "", "Exported \(iso.string(from: exportedAt)) · \(count)", ""]
@@ -28,6 +29,17 @@ public enum MarkdownExport {
                 lines += quote(record.rawText)
             }
             lines.append("")
+        }
+        if !lists.isEmpty {
+            lines.append("# Lists")
+            lines.append("")
+            for list in lists {
+                lines.append("## \(list.name)")
+                lines.append("")
+                lines += list.open.map { "- [ ] \($0.text)" }
+                lines += list.done.map { "- [x] \($0.text)" }
+                lines.append("")
+            }
         }
         return lines.joined(separator: "\n")
     }

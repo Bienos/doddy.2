@@ -1280,8 +1280,8 @@
     },
     {
       "path": "schemas/memory.schema.json",
-      "sha256": "19a088468d2fd52d7b9ea6167c01c2f7e25fdebece105bb26ef849e9481c5fd2",
-      "bytes": 1427
+      "sha256": "f68482ce9882a21d493a9115bf225ca0a5c8848065c6847b5f8c35f61bb9ded4",
+      "bytes": 1443
     },
     {
       "path": "schemas/telemetry.schema.json",

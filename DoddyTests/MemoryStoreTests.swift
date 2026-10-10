@@ -52,4 +52,33 @@ final class MemoryStoreTests: XCTestCase {
             XCTAssertTrue(store.memories.isEmpty)
         }
     }
+
+    /// Photo notes (ADR-218): the file is written before the link, kept through Undo, and
+    /// deleted with the note or by Remove photo. In-memory launches use their own folder.
+    @MainActor
+    func testPhotoFollowsItsNoteThroughDeleteUndoAndRemove() async throws {
+        let environment = AppEnvironment.live(arguments: ["-inMemoryStore"])
+        let store = MemoryStore(environment: environment)
+        let note = try await store.save(text: "Parking: level -2, C 14", category: .place)
+        let jpeg = Data([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 0xFF, 0xD9])
+        let photo = try await store.attachPhoto(jpeg: jpeg, width: 1200, height: 900, to: note.id)
+        XCTAssertEqual(environment.photoFiles.data(photo.fileName), jpeg)
+        let stored = await store.photoData(photo)
+        XCTAssertEqual(stored, jpeg)
+        do {
+            _ = try await store.attachPhoto(jpeg: jpeg, width: 10, height: 10, to: note.id)
+            XCTFail("a second photo is refused, so the first file is never overwritten")
+        } catch PhotoError.alreadyAttached {}
+
+        try await store.delete(id: note.id)
+        XCTAssertNil(store.photo(for: note.id))
+        XCTAssertNotNil(environment.photoFiles.data(photo.fileName), "kept while Undo is offered")
+        try await store.undoDelete()
+        XCTAssertEqual(store.photo(for: note.id)?.fileName, photo.fileName)
+
+        try await store.removePhoto(from: note.id)
+        XCTAssertNil(store.photo(for: note.id))
+        XCTAssertNil(environment.photoFiles.data(photo.fileName))
+        XCTAssertNotNil(store.record(id: note.id), "the note's words stay")
+    }
 }
