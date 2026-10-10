@@ -81,3 +81,11 @@ refactor. Checklist B1–B7 in `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`.
 
 ### Not verified
 Card and Settings compile; real Todoist, Gmail and news against a deployed server. Checklist B8–B11.
+
+### Deployed (2026-10-10, owner: "do deploy")
+The backend part only (`RunResult.items`, its test and the email fixture) was put on `claude/elegant-knuth-hc1aql` as
+`de0cb8d`, the branch the Render service `doddy` (workspace SLIYD) builds from, after `scripts/ci.sh --core-only` passed
+there (backend 123, DoddyCore 450). Deploy `dep-db5c9l142hec738eudg0` is live: `/v1/health` returns `ok`, `mode: live`;
+the start-up log shows no errors; a tool run without a session is refused with 401. **Not checked:** a signed-in
+`check_email` or `list_todoist_tasks` call with items, because the live server has no Composio keys (web search only),
+so both answer "not set up" until the Gmail and Todoist keys are added in Render.
