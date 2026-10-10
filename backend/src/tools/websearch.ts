@@ -63,9 +63,9 @@ export function normalizeWebSearch(output: unknown, query: string): ToolOutcome 
   const results = (raw ?? []).flatMap((item: unknown) => {
     if (typeof item !== "object" || item === null) return [];
     const r = item as Record<string, unknown>;
-    const title = clip(r.title, 120);
+    const title = clip(decodeEntities(r.title), 120);
     if (!title) return [];
-    return [{ title, snippet: clip(r.snippet, 300), site: siteOf(r.link) }];
+    return [{ title, snippet: clip(decodeEntities(r.snippet), 300), site: siteOf(r.link) }];
   });
   const shown = results.slice(0, MONID_SEARCH.maxResults);
   if (shown.length === 0) {
@@ -79,6 +79,23 @@ export function normalizeWebSearch(output: unknown, query: string): ToolOutcome 
     truncated: results.length > shown.length,
     summary: `Searched the web: ${shown.length} result${shown.length === 1 ? "" : "s"}.`,
   };
+}
+
+const NAMED_ENTITIES: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: " ", middot: "·", ndash: "–", mdash: "—", hellip: "…", deg: "°", rsquo: "’", lsquo: "‘", rdquo: "”", ldquo: "“" };
+
+/**
+ * Search snippets arrive with HTML entities ("Cloudy &middot; 86%", seen in the first live run);
+ * the voice would read them out literally. Decodes the common named ones and numeric ones.
+ */
+export function decodeEntities(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  return value.replace(/&(#x[0-9a-f]{1,6}|#[0-9]{1,7}|[a-z]{2,8});/gi, (match, code: string) => {
+    if (code[0] === "#") {
+      const n = code[1] === "x" || code[1] === "X" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+      return Number.isFinite(n) && n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : match;
+    }
+    return NAMED_ENTITIES[code.toLowerCase()] ?? match;
+  });
 }
 
 function siteOf(link: unknown): string | null {

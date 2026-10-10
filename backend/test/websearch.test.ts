@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { ConfigError, loadConfig } from "../src/config.js";
 import { ProviderError } from "../src/errors.js";
-import { MONID_SEARCH, MonidWebSearchProvider, normalizeWebSearch } from "../src/tools/websearch.js";
+import { decodeEntities, MONID_SEARCH, MonidWebSearchProvider, normalizeWebSearch } from "../src/tools/websearch.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { on, type Rig, run, start } from "./toolsRig.js";
 
@@ -151,6 +151,16 @@ test("normalizer keeps five results, drops untitled ones and odd links, clips te
   assert.ok(out.text.split("\n").every((line) => line.length < 500));
   assert.throws(() => normalizeWebSearch("nope", "q"), (e: unknown) => e instanceof ProviderError && e.code === "malformed_provider_result");
   assert.equal(normalizeWebSearch({ results: null }, "q").count, 0);
+});
+
+test("HTML entities in titles and snippets are decoded before Doddy speaks them", () => {
+  const out = normalizeWebSearch(
+    { results: [{ title: "Warsaw &amp; Kraków", link: "https://a.example", snippet: "Cloudy &middot; Humidity 86%&nbsp;&#8211; 47 &deg;F &unknown; &#x1F600;" }] },
+    "q",
+  );
+  assert.match(out.text, /"Warsaw & Kraków"/);
+  assert.match(out.text, /"Cloudy · Humidity 86% – 47 °F &unknown; 😀"/);
+  assert.equal(decodeEntities(5), 5);
 });
 
 // ------------------------------------------------------------------ Monid REST client

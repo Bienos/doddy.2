@@ -74,9 +74,9 @@ Contract fixtures: `contracts/online-accounts/*.json` (written by `npm run fixtu
 
 ## Not verified — needs you
 
-0. **Web search live path**: one real search through the backend with a Monid key (the endpoint and its output shape
-   were checked with one real run through the Monid connector on 2026-10-10, not through `MonidWebSearchProvider`).
-   Monid's REST docs show `input` as the endpoint's body fields; this is what the server sends.
+0. ~~Web search live path~~ **verified 2026-10-10** on the Render service `doddy`: switch on, one real search
+   ("Warsaw weather tomorrow") returned 5 results in about 6 s with a live receipt. It showed HTML entities in
+   snippets (`&middot;`), now decoded by the server. Still untested: the app on a phone calling it.
 
 1. **Composio live path** for all four toolkits: creating auth configs (`npm run setup:tools -- --create`), the
    hosted connect link, completion mode, whether Composio reports granted scopes for Gmail/Drive (if not, they show

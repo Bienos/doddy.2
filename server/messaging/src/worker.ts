@@ -1,42 +1,21 @@
 import { loadConfig } from "./config.js";
 import { createPool, migrate } from "./db.js";
-import { purgeExpiredSessions } from "./calls.js";
-import { runDueDigests } from "./news/digest.js";
-import { pruneNewsCache } from "./news/sources.js";
-import { dispatchDue } from "./outbox.js";
 import { providersFrom } from "./providers/index.js";
+import { log, runWorkerLoop } from "./workerLoop.js";
 
-// Sends queued updates. Logs counts and ids only, never message text or phone numbers.
+// Stand-alone worker process (render.yaml: doddy-messaging-worker). A single web service can run
+// the same loop in-process instead with RUN_WORKER_IN_WEB=1 (src/index.ts).
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrate(db);
 const { push, sms, news } = providersFrom(config);
-const log = (msg: string, extra: object = {}) => console.log(JSON.stringify({ time: new Date().toISOString(), msg, ...extra }));
 log("worker started", { push: !!push, sms: !!sms });
 
 let stopping = false;
-let lastPrune = 0;
 process.on("SIGTERM", () => { stopping = true; });
 process.on("SIGINT", () => { stopping = true; });
 
-while (!stopping) {
-  try {
-    const r = await dispatchDue(db, { push, sms });
-    await purgeExpiredSessions(db);
-    if (Date.now() - lastPrune > 3_600_000) {
-      lastPrune = Date.now();
-      const pruned = await pruneNewsCache(db);
-      if (pruned) log("news cache pruned", { rows: pruned });
-    }
-    const digests = await runDueDigests(db, news);
-    if (digests) log("news digests built", { count: digests });
-    if (r.processed || r.reaped) log("dispatch pass", r);
-    if (r.processed) continue; // more may be due
-  } catch (err) {
-    log("dispatch pass failed", { error: (err as Error).message });
-  }
-  await new Promise((resolve) => setTimeout(resolve, 2000));
-}
+await runWorkerLoop(db, { push, sms, news }, () => stopping);
 push?.close();
 await db.end();
 log("worker stopped");
