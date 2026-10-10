@@ -38,6 +38,16 @@ else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
 
+# Server (server/, Node 22 + Postgres). Optional on machines without Node; DB tests need a
+# disposable database in TEST_DATABASE_URL. Skips are listed in the summary, never shown as PASS.
+if command -v npm >/dev/null 2>&1; then
+  run_step "Server install" npm --prefix server ci --no-audit --no-fund
+  run_step "Server typecheck + tests" npm --prefix server test
+  [ -z "${TEST_DATABASE_URL:-}" ] && record "Server DB tests" "SKIPPED" "TEST_DATABASE_URL not set"
+else
+  record "Server checks" "SKIPPED" "npm not found (needs Node 22)"
+fi
+
 if [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
 elif ! command -v xcodebuild >/dev/null 2>&1; then

@@ -1,0 +1,17 @@
+import type { Config } from "../config.js";
+import { ApnsPushSender } from "./apns.js";
+import { ElevenLabsTokenIssuer } from "./elevenlabs.js";
+import { TwilioClient } from "./twilio.js";
+
+/** Real provider adapters for whatever is configured; anything missing stays undefined. */
+export function providersFrom(config: Config) {
+  const twilio = config.twilio
+    ? new TwilioClient(config.twilio, config.publicBaseUrl && `${config.publicBaseUrl}/webhooks/twilio/status`)
+    : undefined;
+  return {
+    push: config.apns ? new ApnsPushSender(config.apns) : undefined,
+    sms: twilio,
+    verifier: twilio,
+    voice: config.elevenLabs ? new ElevenLabsTokenIssuer(config.elevenLabs) : undefined,
+  };
+}

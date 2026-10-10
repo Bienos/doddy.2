@@ -73,3 +73,16 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 8. **Identity & signing** — bundle identifier, Apple developer team, and whether to commit the generated `Doddy.xcodeproj` after a first good Mac build (ADR-013).
 9. **CI** — accept local-script CI only, or approve a hosted macOS runner and its cost (ADR-022).
 10. **Run the Mac verification** listed in `docs/implementation/M0_REPORT.md` and record results; **M1 should not start until M0's iOS build/tests are confirmed on a Mac** (M0 exit criteria are not met without it).
+
+## S1 decisions (server) — owner decisions 2026-10-10
+
+| ADR | Decision | Status |
+|---|---|---|
+| 036 | Add a Doddy server (supersedes ADR-008 for accounts/messaging only; **memories stay on the phone**). Render, Frankfurt, web + worker + Postgres 16, `render.yaml`. | Owner-approved; built, **not deployed** (paid resources) |
+| 037 | Server language TypeScript / Node 22 (Fastify, pg, zod); plain-SQL migrations with advisory lock. | Owner-approved |
+| 038 | Phone/voice providers: **Twilio** (SMS, Verify, phone numbers) + **ElevenLabs** (voice agent, phone calls via native Twilio integration). | Owner-approved; calls not built (S2) |
+| 039 | Update channels: **push + SMS**. SMS only to a Verify-checked number with explicit, versioned in-app consent; STOP honoured; consent re-checked at send time. | Owner-approved; server side built |
+| 040 | Accounts are anonymous (device bearer token, SHA-256 stored); `DELETE /v1/account` cascades everything. App Attest before public release. | Applied — App Attest open |
+| 041 | Outbox never resends an `unknown` outcome; message text erased on final state; logs carry no text/numbers/tokens. | Applied |
+| 042 | Apply for **Apple Messages for Business** via an approved MSP. Apple requires live agents during business hours; custom-MSP route not recommended. | Owner decided; **owner must submit** — checklist in `docs/implementation/APPLE_MESSAGES_FOR_BUSINESS_APPLICATION.md` |
+| 043 | `check_forbidden_capabilities.sh` scans `server/` for key *values* only (header names like `xi-api-key` are allowed there, still forbidden in the app). | Applied |
