@@ -162,6 +162,10 @@ final class VoiceSessionController {
     private(set) var heldSide: TranslatorDirection?
     /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
     private var translatorNeedsHello = false
+    /// Listen only: "Read aloud" off sets Doddy's voice to silent on this iPhone (the lines still
+    /// show). `readAloudProblem` is set when the silence couldn't be checked.
+    private(set) var readsAloud = true
+    private(set) var readAloudProblem: String?
     /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
     private var checkInNeedsBriefing = false
 
@@ -227,6 +231,8 @@ final class VoiceSessionController {
         holdToTalk = false
         heldSide = nil
         translatorNeedsHello = false
+        readsAloud = true
+        readAloudProblem = nil
         privacyLocked = false
         pendingAction = nil
         contactCard = nil
@@ -818,6 +824,7 @@ final class VoiceSessionController {
         guard let session = translator else { return }
         translator = nil
         translatorNeedsHello = false
+        if !readsAloud { setReadAloud(true) }
         if holdToTalk {
             holdToTalk = false
             heldSide = nil
@@ -875,6 +882,26 @@ final class VoiceSessionController {
         } catch {
             translatorFactsSaved = .failure(.failed(UserFacingError.message(for: error)))
         }
+    }
+
+    /// Listen only: Doddy's spoken translation on or off. Only the playback on this iPhone changes
+    /// (LiveKit's local volume for the agent's track); ElevenLabs still makes the audio. Read back
+    /// from the track; if there is no track yet, it is applied when Doddy first speaks.
+    func setReadAloud(_ on: Bool) {
+        readsAloud = on
+        applyReadAloud()
+    }
+
+    private func applyReadAloud() {
+        guard let track = conversation?.agentAudioTrack else {
+            readAloudProblem = nil
+            return
+        }
+        let wanted: Double = readsAloud ? 1 : 0
+        track.volume = wanted
+        readAloudProblem = abs(track.volume - wanted) < 0.01
+            ? nil
+            : "Doddy's voice couldn't be turned off here. Turn the iPhone's volume down instead."
     }
 
     /// Noisy place: mute the microphone except while a hold-to-talk button is held.
@@ -992,7 +1019,9 @@ final class VoiceSessionController {
         guard isLive else { return }
         switch state {
         case .listening: phase = .listening
-        case .speaking: phase = .speaking
+        case .speaking:
+            phase = .speaking
+            if !readsAloud { applyReadAloud() }
         case .thinking: phase = .thinking
         }
     }

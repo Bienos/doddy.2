@@ -808,3 +808,34 @@ public struct TranslatorSummary: Equatable, Sendable {
         return "From a translated conversation (\(setup.pairText), \(when)): " + facts.joined(separator: "; ")
     }
 }
+
+/// The review sheet for native speakers (`docs/implementation/TRANSLATOR_LANGUAGE_REVIEW.md`),
+/// made from `TranslatorLanguages.all` so it can't drift from what ships; a test checks the file.
+public enum TranslatorReviewSheet {
+    public static func markdown() -> String {
+        var out = """
+        # Translator lines for native review
+
+        Generated from `TranslatorLanguages.all` (`Packages/DoddyCore/Sources/DoddyCore/Translator.swift`); \
+        `TranslatorTests.testReviewSheetMatchesTheCode` fails when they differ. None of these lines has had a \
+        native speaker's review yet. For each language, check that the four lines are natural, polite to a \
+        stranger, and say the same as the English: Doddy is an AI, on this phone, translating; mistakes are \
+        possible; important things should be in writing. Mark a row OK or write the corrected line.
+
+        English reference:
+        - AI label: "AI translation · may contain mistakes"
+        - Disclosure: "Hi, I'm Doddy, an AI translator on this phone. I'll translate between you two. Please speak normally."
+        - Hold to talk: "Hold while you speak"
+        - Careful: "AI translation. For anything important, please also get it in writing."
+
+        | Code | Language | AI label | Disclosure (said first) | Hold to talk | Careful | Reviewed |
+        |---|---|---|---|---|---|---|
+
+        """
+        for language in TranslatorLanguages.all where language.code != "en" {
+            let cells = [language.code, language.label, language.aiLabel, language.hello, language.holdToTalk, language.careful, ""]
+            out += "| " + cells.map { $0.replacingOccurrences(of: "|", with: "\\|") }.joined(separator: " | ") + " |\n"
+        }
+        return out
+    }
+}

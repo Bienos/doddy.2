@@ -205,6 +205,15 @@ struct TranslatorScreen: View {
             if let careful = session.careful {
                 Label(careful.banner, systemImage: "exclamationmark.shield").font(.footnote)
             }
+            Toggle("Read aloud", isOn: Binding(get: { controller.readsAloud }, set: { controller.setReadAloud($0) }))
+                .accessibilityIdentifier("translator.readAloud")
+            Text(controller.readsAloud
+                 ? "Doddy says each translation to you. Earphones keep it to you."
+                 : "Silent: read the lines below. Doddy's voice is off on this iPhone only.")
+                .font(.caption).foregroundStyle(Theme.secondaryText)
+            if let problem = controller.readAloudProblem {
+                Label(problem, systemImage: "speaker.slash").font(.footnote).foregroundStyle(Theme.error)
+            }
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 10) {
