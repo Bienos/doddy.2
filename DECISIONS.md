@@ -225,4 +225,4 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 
 | # | Decision | Status |
 |---|---|---|
-| 128 | Doddy's own accounts, TikTok `@doddy_mate` and Instagram `@doddy_mate` (owner request), are linked from the site footer next to the Telegram group and from a **Follow Doddy** section in Settings, under About this build. In the app they are plain SwiftUI `Link`s: iOS opens the TikTok/Instagram app or Safari, and Doddy sends nothing itself, so the privacy copy and the networking guard are unchanged. | Applied — app NOT BUILT here (no Xcode on Linux) |
+| 130 | Doddy's own accounts, TikTok `@doddy_mate` and Instagram `@doddy_mate` (owner request), are linked from the site footer next to the Telegram group and from a **Follow Doddy** section in Settings, under About this build. In the app they are plain SwiftUI `Link`s: iOS opens the TikTok/Instagram app or Safari, and Doddy sends nothing itself, so the privacy copy and the networking guard are unchanged. | Applied — app NOT BUILT here (no Xcode on Linux) |

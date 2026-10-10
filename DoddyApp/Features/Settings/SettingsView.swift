@@ -490,7 +490,7 @@ struct SettingsView: View {
         }
     }
 
-    // Doddy's own social accounts (ADR-128). Opening one hands off to the system; the app sends nothing.
+    // Doddy's own social accounts (ADR-130). Opening one hands off to the system; the app sends nothing.
     private static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
     private static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
 
