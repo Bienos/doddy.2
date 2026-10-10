@@ -80,6 +80,9 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | V5 | Island: start a conversation, tap Mute and Unmute on the Live Activity | The Unmute fix works and the app keeps running (ADR-128; `NATIVE_BASELINE_REPORT.md`) |
 | V6 | Reminders by voice (ADR-126, `M4_REMINDERS_STATUS.md`) | The device checks listed there |
 | V7 | Ask Doddy to save a note by voice, pick "Place" on the card, tap Save | The note is saved with that type (see the type filter chips). Declining and a second proposal start at "Other" again (ADR-202) |
+| V8 | In a conversation say "By the way, Marta's birthday is on the 12th of May" and "The plumber Adam comes on Tuesday", ask the weather, then tap End | A "Worth keeping?" card with those two sentences in your words, **none ticked**, Save disabled. Tick one, change the other's words, tap Save: both saved (check Memories), the card says "What was saved". Ask-the-weather and Doddy's own lines are never offered (ADR-211) |
+| V9 | Same, but say "My Netflix password is …" and "Remind me to call Adam at 5" | Neither is offered. Also: a Private conversation shows no card; Settings → What Doddy knows → Suggest notes after a conversation off shows no card; a note Doddy already put on a save card (saved or declined) is not offered again |
+| V10 | Tap "Not now", then leave and come back to the Talk screen | The card stays gone for that conversation. Note how ElevenLabs' transcript splits sentences and whether names come capitalised (affects which sentences are offered); record in the result log |
 
 ## 6. Ask and server
 - Ask: after the daily limit is reached, "Try again" is hidden. This needs a deployed gateway with limits set (ADR-124, ADR-125). The Redis store and real OpenAI prices are still owner tasks.

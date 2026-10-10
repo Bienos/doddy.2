@@ -26,6 +26,7 @@ struct SettingsView: View {
     @State private var restoreFailed = false
     @State private var deleteError: String?
     @AppStorage(PreferenceKey.findByMeaning) private var findByMeaning = true
+    @AppStorage(PreferenceKey.suggestSavesAfterConversation) private var suggestSaves = true
     @State private var meaningError: String?
     @State private var editingProfile = false
     @State private var confirmForget = false
@@ -306,6 +307,12 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.rememberedConversations")
                     Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
                         .disabled(conversationLogs.logs.isEmpty)
+                    // ADR-211: "Worth keeping?" after a voice conversation.
+                    Toggle("Suggest notes after a conversation", isOn: $suggestSaves)
+                        .accessibilityIdentifier("settings.suggestSaves")
+                    Text("When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
                     if let problem = conversationLogs.problem {
                         Label(problem, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)

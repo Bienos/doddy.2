@@ -50,6 +50,8 @@ enum PreferenceKey {
     static let memoryCopyOn = "memoryCopyOn"
     /// Find by meaning (ADR-210). On unless turned off; on-device only. Off deletes the vectors.
     static let findByMeaning = "findByMeaning"
+    /// "Worth keeping?" after a voice conversation (ADR-211). On unless turned off; on-device rules.
+    static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
 }
 
 enum AppTab: Hashable {
