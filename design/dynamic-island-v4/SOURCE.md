@@ -25,9 +25,11 @@ checks that every path parses and every state maps to the expected island.
 
 | Board | Used for | Decision |
 |---|---|---|
-| 01 Lean In, A Orbit, B Ink Ripple, C Negative Space, E Editorial, F Abstract Horizon, 04 Here With You | Voice conversation, chosen in Settings → Voice → Dynamic Island style | ADR-210, ADR-211 |
-| G Thought Pocket, J Step Stones, I Reminder Knot | A note, plan or reminder inside a conversation | ADR-212 |
-| 02 Tiny Promise, 03 Pocket Radio, D Kinetic Ribbon, H Language Bridge, K Story Spool, L Calm Tide, and the focus states of A–F | Features the app does not have yet (focus timer, music, read-aloud, translation, breathing) | Not used yet |
+| 01 Lean In, A Orbit, B Ink Ripple, C Negative Space, E Editorial, F Abstract Horizon, 04 Here With You | Voice conversation, chosen in Settings → Voice → Dynamic Island style | ADR-211, ADR-212 |
+| G Thought Pocket, J Step Stones, I Reminder Knot | A note, plan or reminder inside a conversation | ADR-213 |
+| 02 Tiny Promise, L Calm Tide, K Story Spool | Focus timer, breathing, reading a note aloud | ADR-214, ADR-215, ADR-216 |
+| H Language Bridge | Translator mode, once it reaches the default branch | Waiting |
+| 03 Pocket Radio, D Kinetic Ribbon, and the focus states of A–F | Music (owner: later); Kinetic Ribbon has no voice state of its own | Not used |
 
 The pack says it is static design mockups: motion, actions and native rendering are not
 demonstrated. Nothing here is proof the native island looks like this on a phone.

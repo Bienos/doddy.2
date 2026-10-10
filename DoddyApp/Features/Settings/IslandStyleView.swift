@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Voice → Dynamic Island style (ADR-211): the owner's V4 boards that have a voice
+/// Settings → Voice → Dynamic Island style (ADR-212): the owner's V4 boards that have a voice
 /// conversation state. Each row shows the island drawn by the same views the widget uses, for a
 /// state picked at the top. It is a preview: nothing here is a running conversation, and the
 /// real island also depends on the phone (size, other apps' activities, text size).

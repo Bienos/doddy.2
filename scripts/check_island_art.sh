@@ -32,6 +32,7 @@ swiftc -swift-version 6 -parse-as-library -I "$work" -o "$work/island-check" \
     Shared/IslandArt/IslandBoardArt.generated.swift \
     Shared/IslandArt/IslandScene.swift \
     Shared/VoiceActivity/DoddyVoiceAttributes.swift \
+    Shared/ToolActivity/DoddyToolAttributes.swift \
     tools/island_boards/IslandSceneChecks.swift \
     tools/island_boards/IslandArtCheck.swift
 "$work/island-check" "$@"

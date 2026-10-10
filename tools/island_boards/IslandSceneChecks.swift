@@ -72,6 +72,42 @@ enum IslandSceneChecks {
         } else {
             expect(false, "encode")
         }
+        failures += tools()
+        return failures
+    }
+
+    static func tools() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: tool scene: \(message)"); failures += 1 }
+        }
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let end = now.addingTimeInterval(600)
+        let focus = DoddyToolAttributes(kind: .focus, startedAt: now, duration: 1500)
+
+        let running = focus.islandScene(.init(isPaused: false, endsAt: end, label: "Write"), isStale: false, now: now)
+        expect(running.board == .tinyPromise && running.scenario == 0 && running.live, "focus running")
+        expect(running.bigTitle == .countdown(end) && running.subtitle == "Write", "focus countdown and label")
+        expect(running.time == .text("25 min"), "focus length")
+
+        let paused = focus.islandScene(.init(isPaused: true, endsAt: nil, remaining: 768), isStale: false, now: now)
+        expect(paused.scenario == 1 && !paused.live && paused.bigTitle == .bigText("12:48"), "focus paused 12:48")
+        expect(paused.minimalSign == .text("13m"), "focus paused minimal rounds up")
+
+        // Its stale date is the end time, so stale means the time is up, never "still running".
+        let due = focus.islandScene(.init(isPaused: false, endsAt: end), isStale: true, now: now)
+        expect(due.title == "Time's up" && !due.live, "focus time up")
+
+        let breathing = DoddyToolAttributes(kind: .breathing, startedAt: now, duration: 120)
+        let b = breathing.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now)
+        expect(b.board == .calmTide && b.time == .countdown(end), "breathing")
+        expect(!b.title.contains("in") || b.title == "Breathing", "breathing shows no phase")
+
+        let read = DoddyToolAttributes(kind: .readAloud, startedAt: now, duration: 0)
+        expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).compactSign == .bars, "reading")
+        let lost = read.islandScene(.init(isPaused: false), isStale: true, now: now)
+        expect(!lost.live && lost.subtitleIsWarning, "read aloud lost")
+        expect(DoddyToolAttributes.clock(3725) == "1:02:05" && DoddyToolAttributes.clock(59.2) == "1:00", "clock")
         return failures
     }
 }

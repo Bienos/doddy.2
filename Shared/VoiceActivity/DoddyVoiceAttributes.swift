@@ -27,10 +27,10 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         var savedCount: Int = 0
         /// Set with `.ended`, for the "2:31 total" line.
         var endedAt: Date?
-        /// Something happening inside the conversation that has its own island (ADR-212).
+        /// Something happening inside the conversation that has its own island (ADR-213).
         /// Only its kind and counts, never what a note or reminder says.
         var moment: Moment?
-        /// The look the user picked in Settings (ADR-211).
+        /// The look the user picked in Settings (ADR-212).
         var islandStyle: IslandStyle = .leanIn
 
         enum Moment: Codable, Hashable {

@@ -15,6 +15,7 @@ struct HomeView: View {
     @Environment(OpeningModel.self) private var opening: OpeningModel?
     @State private var modal: MemoryModal?
     @State private var showAsk = false
+    @State private var tool: HomeTool?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     private var router: ShortcutRouter { .shared }
 
@@ -80,9 +81,12 @@ struct HomeView: View {
                         // of the same actions in ViewThatFits' accessibility tree.
                         Group {
                             if textSize.isAccessibilitySize {
-                                VStack(spacing: 10) { saveAction; findAction }
+                                VStack(spacing: 10) { saveAction; findAction; focusAction; breatheAction }
                             } else {
-                                HStack(spacing: 10) { saveAction; findAction }
+                                VStack(spacing: 10) {
+                                    HStack(spacing: 10) { saveAction; findAction }
+                                    HStack(spacing: 10) { focusAction; breatheAction }
+                                }
                             }
                         }
                         .modifier(SlideIn(shown: buttonsShown, delay: 0.14))
@@ -112,6 +116,12 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
+            .sheet(item: $tool) { tool in
+                switch tool {
+                case .focus: FocusView()
+                case .breathe: BreathingView()
+                }
+            }
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
         }
         .foregroundStyle(Theme.ink)
@@ -129,6 +139,20 @@ struct HomeView: View {
     private var saveAction: some View {
         Button { modal = .capture } label: { HomeActionTile(title: "Save a detail", icon: "plus") }
             .buttonStyle(.plain).disabled(!store.isStorageAvailable).accessibilityIdentifier("home.save")
+    }
+
+    /// Focus timer and breathing (ADR-214, ADR-215); both show on the Dynamic Island.
+    private var focusAction: some View {
+        Button { tool = .focus } label: {
+            HomeActionTile(title: FocusController.shared.session.map { $0.isOver ? "Focus" : "Focus · on" } ?? "Focus",
+                           icon: "timer")
+        }
+        .buttonStyle(.plain).accessibilityIdentifier("home.focus")
+    }
+
+    private var breatheAction: some View {
+        Button { tool = .breathe } label: { HomeActionTile(title: "Breathe", icon: "wind") }
+            .buttonStyle(.plain).accessibilityIdentifier("home.breathe")
     }
 
     private var findAction: some View {
@@ -226,6 +250,11 @@ private struct SlideIn: ViewModifier {
             .offset(y: shown ? 0 : 28)
             .animation(.spring(duration: 0.5, bounce: 0.3).delay(delay), value: shown)
     }
+}
+
+private enum HomeTool: String, Identifiable {
+    case focus, breathe
+    var id: String { rawValue }
 }
 
 private struct HomeActionTile: View {

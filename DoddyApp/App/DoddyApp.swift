@@ -24,6 +24,10 @@ struct DoddyApp: App {
         _profiles = State(initialValue: ProfileStore(environment: environment))
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
+        // A focus timer does survive one (it is saved); this also lets its island's buttons work
+        // when iOS starts the app just to run them (ADR-214). Breathing and read-aloud don't.
+        FocusController.shared.refresh()
+        ToolLiveActivity.endLeftovers(keeping: [.focus])
     }
 
     var body: some Scene {

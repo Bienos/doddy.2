@@ -1,6 +1,6 @@
 import Foundation
 
-/// The looks the voice island can take (ADR-211): the owner's V4 boards that have a voice
+/// The looks the voice island can take (ADR-212): the owner's V4 boards that have a voice
 /// conversation state. Chosen in Settings → Voice → Dynamic Island style; Lean In by default.
 enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
     case leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou
@@ -55,6 +55,8 @@ enum IslandSign: Equatable, Sendable {
     case text(String)
     /// The running conversation time.
     case elapsed
+    /// Time left until this moment, ticking without app updates.
+    case countdown(Date)
     case check
 }
 
@@ -65,7 +67,16 @@ enum IslandTint: Equatable, Sendable {
 /// The top-right slot of the expanded island.
 enum IslandTime: Equatable, Sendable {
     case elapsed
+    case countdown(Date)
     case text(String)
+}
+
+/// The status line: words, or a countdown in the focus board's 32 pt numerals.
+enum IslandTitle: Equatable, Sendable {
+    case text(String)
+    case countdown(Date)
+    /// A fixed time left (paused), in the same big numerals.
+    case bigText(String)
 }
 
 /// Everything the island draws, as plain data, so the widget and the Settings preview show
@@ -81,12 +92,16 @@ struct IslandScene: Equatable, Sendable {
     var label: String
     var time: IslandTime
     var title: String
+    /// When set, drawn instead of `title` (which stays as its spoken form).
+    var bigTitle: IslandTitle?
     var subtitle: String
     var subtitleIsWarning: Bool
     /// Beside the buttons in the expanded view (only Lean In has one on the board).
     var expandedSign: IslandSign
     var compactSign: IslandSign
     var minimalSign: IslandSign
+    /// Minimal boards without a face (Tiny Promise) put the sign in the middle.
+    var minimalSignCentred = false
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
@@ -145,6 +160,7 @@ extension DoddyVoiceAttributes.ContentState {
             label: "VOICE",
             time: .elapsed,
             title: stale ? "Lost Doddy — open the app" : title,
+            bigTitle: nil,
             subtitle: stale ? "The app stopped in the background" : islandLine,
             subtitleIsWarning: stale,
             expandedSign: style == .leanIn ? sign : .none,
@@ -164,13 +180,13 @@ extension DoddyVoiceAttributes.ContentState {
         }
     }
 
-    /// Thought Pocket, Step Stones and Reminder Knot for moments in a conversation (ADR-212).
+    /// Thought Pocket, Step Stones and Reminder Knot for moments in a conversation (ADR-213).
     /// Only the kind of moment and counts are shown, never what the note or reminder says.
     private func momentScene(_ moment: Moment, live: Bool) -> IslandScene? {
         func scene(_ board: IslandBoard, _ scenario: Int, label: String, time: IslandTime, title: String,
                    subtitle: String, compact: IslandSign, minimal: IslandSign) -> IslandScene {
             IslandScene(board: board, scenario: scenario, face: nil, live: live, showsHands: true, label: label,
-                        time: time, title: title, subtitle: subtitle, subtitleIsWarning: false,
+                        time: time, title: title, bigTitle: nil, subtitle: subtitle, subtitleIsWarning: false,
                         expandedSign: .none, compactSign: compact, minimalSign: minimal)
         }
         let waiting = IslandSign.symbol("hand.tap.fill", .accent)
@@ -197,5 +213,73 @@ extension DoddyVoiceAttributes.ContentState {
             return scene(.reminderKnot, 1, label: "REMINDER", time: .text("Set"), title: "Reminder set",
                          subtitle: "Reminders confirmed it", compact: .check, minimal: .none)
         }
+    }
+}
+
+extension DoddyToolAttributes {
+    /// The island for the focus timer (Tiny Promise, ADR-214), breathing (Calm Tide, ADR-215)
+    /// and reading a note aloud (Story Spool, ADR-216). `isStale`: iOS says the app has not
+    /// updated it; a focus or breathing activity is given its end time as its stale date, so
+    /// stale there means the time is up.
+    func islandScene(_ state: ContentState, isStale: Bool, now: Date = Date()) -> IslandScene {
+        let over = state.isFinished || (isStale && kind != .readAloud)
+        let lost = isStale && kind == .readAloud
+        let running = !over && !lost && !state.isPaused
+        func scene(_ board: IslandBoard, _ scenario: Int, label: String, time: IslandTime, title: String,
+                   bigTitle: IslandTitle? = nil, subtitle: String, warning: Bool = false,
+                   compact: IslandSign, minimal: IslandSign, centred: Bool = false) -> IslandScene {
+            IslandScene(board: board, scenario: scenario, face: nil, live: running, showsHands: true, label: label,
+                        time: time, title: title, bigTitle: bigTitle, subtitle: subtitle, subtitleIsWarning: warning,
+                        expandedSign: .none, compactSign: compact, minimalSign: minimal, minimalSignCentred: centred)
+        }
+        switch kind {
+        case .focus:
+            let minutes = "\(Int((duration / 60).rounded())) min"
+            if over {
+                return scene(.tinyPromise, 0, label: "FOCUS", time: .text("Done"), title: "Time's up",
+                             subtitle: state.label ?? "Focus finished", compact: .check, minimal: .check, centred: true)
+            }
+            if state.isPaused {
+                let left = Self.clock(state.remaining)
+                return scene(.tinyPromise, 1, label: "FOCUS", time: .text("Paused"), title: "Paused, \(left) left",
+                             bigTitle: .bigText(left), subtitle: state.label ?? "Ready when you are",
+                             compact: .text(left), minimal: .text("\(Int((state.remaining / 60).rounded(.up)))m"), centred: true)
+            }
+            let end = state.endsAt ?? now
+            return scene(.tinyPromise, 0, label: "FOCUS", time: .text(minutes), title: "Focusing",
+                         bigTitle: .countdown(end), subtitle: state.label ?? "One thing at a time",
+                         compact: .countdown(end), minimal: .countdown(end), centred: true)
+        case .breathing:
+            if over {
+                return scene(.calmTide, 1, label: "BREATHE", time: .text("Done"), title: "Breathing done",
+                             subtitle: "Nicely done", compact: .check, minimal: .none)
+            }
+            let end = state.endsAt ?? now
+            return scene(.calmTide, 0, label: "BREATHE", time: .countdown(end), title: "Breathing",
+                         subtitle: "Open Doddy to follow along", compact: .countdown(end), minimal: .none)
+        case .readAloud:
+            if lost {
+                return scene(.storySpool, 1, label: "READ ALOUD", time: .text(""), title: "Stopped",
+                             subtitle: "Open Doddy to read it again", warning: true,
+                             compact: .symbol("exclamationmark.triangle.fill", .warning), minimal: .none)
+            }
+            if over {
+                return scene(.storySpool, 1, label: "READ ALOUD", time: .text("Done"), title: "Finished reading",
+                             subtitle: "Your note", compact: .check, minimal: .none)
+            }
+            if state.isPaused {
+                return scene(.storySpool, 1, label: "READ ALOUD", time: .text("Paused"), title: "Paused",
+                             subtitle: "Pick up where you left off", compact: .symbol("pause.fill", .secondary), minimal: .none)
+            }
+            return scene(.storySpool, 0, label: "READ ALOUD", time: .text("Note"), title: "Reading aloud",
+                         subtitle: "Your note", compact: .bars, minimal: .bars)
+        }
+    }
+
+    /// "12:48" for a time left.
+    static func clock(_ seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds.rounded(.up)))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
     }
 }

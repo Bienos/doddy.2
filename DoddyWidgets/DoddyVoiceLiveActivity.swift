@@ -24,7 +24,7 @@ struct DoddyVoiceLiveActivity: Widget {
             let scene = context.state.islandScene(isStale: context.isStale)
             let startedAt = context.attributes.startedAt
             // The owner's V4 boards (design/dynamic-island-v4): the style picked in Settings
-            // (ADR-211), or Thought Pocket / Step Stones / Reminder Knot for a moment (ADR-212).
+            // (ADR-212), or Thought Pocket / Step Stones / Reminder Knot for a moment (ADR-213).
             // Label and time beside the camera; drawing, status, buttons and sign below it.
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {

@@ -110,7 +110,7 @@ final class VoiceSessionController {
     private(set) var contactCard: ContactCard?
     private(set) var reminderStatus: ReminderStatus? {
         didSet {
-            // Reminders confirmed it (added, or already there): the island says so briefly (ADR-212).
+            // Reminders confirmed it (added, or already there): the island says so briefly (ADR-213).
             // An unknown result is never shown as set.
             if case .done(_, let outcome) = reminderStatus {
                 switch outcome {
@@ -186,6 +186,8 @@ final class VoiceSessionController {
     /// Settings → About you → "Use in voice conversations" is on.
     func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile) async {
         guard !isLive else { return }
+        // A note being read aloud would fight the conversation for the speaker (ADR-216).
+        ReadAloudController.shared.stop()
         lines = []
         pendingAction = nil
         contactCard = nil
@@ -433,7 +435,7 @@ final class VoiceSessionController {
                 let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
                 pendingMemoryCategory = .other
                 savedThisConversation += 1
-                // Only after the store returned the saved record (ADR-212).
+                // Only after the store returned the saved record (ADR-213).
                 flashIsland(.noteSaved)
                 await reply(id, VoiceToolReply.saved(record))
             } catch {
@@ -594,7 +596,7 @@ final class VoiceSessionController {
         return state
     }
 
-    /// What is happening inside the conversation that has its own island (ADR-212): a card
+    /// What is happening inside the conversation that has its own island (ADR-213): a card
     /// waiting for the user, a plan running, a reminder being added, or a few seconds of
     /// "saved" / "set" after the store or Reminders confirmed it. Kinds and counts only.
     private var islandMoment: DoddyVoiceAttributes.ContentState.Moment? {

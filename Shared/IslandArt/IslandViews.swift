@@ -1,6 +1,6 @@
 import SwiftUI
 
-// SwiftUI for the owner's V4 island boards (ADR-210, ADR-211). Shared by the widget extension,
+// SwiftUI for the owner's V4 island boards (ADR-211, ADR-212). Shared by the widget extension,
 // which puts these pieces into the Dynamic Island's regions, and the app's Settings preview,
 // which lays the same pieces out in a black capsule. Sizes and colours are the boards'
 // (Design-notes.md, "Shared visual system"); text is the system font, not the boards' Arial.
@@ -89,6 +89,16 @@ struct IslandShape: Shape {
     }
 }
 
+/// Time left until `end`, ticking without app updates; stops at 0:00.
+struct IslandCountdownText: View {
+    let end: Date
+
+    var body: some View {
+        Text(timerInterval: Date()...max(end, Date()), countsDown: true)
+            .monospacedDigit()
+    }
+}
+
 /// The running conversation time, ticking without app updates.
 struct IslandElapsedText: View {
     let startedAt: Date
@@ -132,6 +142,7 @@ struct IslandTimeView: View {
         Group {
             switch scene.time {
             case .elapsed: IslandElapsedText(startedAt: startedAt)
+            case .countdown(let end): IslandCountdownText(end: end)
             case .text(let text): Text(text)
             }
         }
@@ -178,6 +189,12 @@ struct IslandSignView: View {
                 .font(.system(size: 12.5, weight: .bold))
                 .foregroundStyle(Color.islandCream)
                 .frame(maxWidth: 44)
+        case .countdown(let end):
+            IslandCountdownText(end: end)
+                .font(.system(size: presentation == .minimal ? 10 : 12.5, weight: .bold))
+                .foregroundStyle(Color.islandCream)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: presentation == .minimal ? 36 : 44)
         case .check:
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .bold))
@@ -253,11 +270,32 @@ struct IslandBottomView<Controls: View>: View {
         }
     }
 
+    @ViewBuilder
     private var title: some View {
-        Text(scene.title)
-            .foregroundStyle(Color.islandCream)
-            .lineLimit(1)
-            .minimumScaleFactor(0.6)
+        switch scene.bigTitle {
+        case .countdown(let end):
+            // Tiny Promise: the time left is the status, in 32 pt numerals.
+            IslandCountdownText(end: end)
+                .font(.system(size: 32, weight: .medium))
+                .foregroundStyle(Color.islandCream)
+                .lineLimit(1)
+                .accessibilityLabel(scene.title)
+        case .bigText(let text):
+            Text(text)
+                .font(.system(size: 32, weight: .medium))
+                .monospacedDigit()
+                .foregroundStyle(Color.islandCream)
+                .lineLimit(1)
+                .accessibilityLabel(scene.title)
+        case .text(let text):
+            Text(text).font(.system(size: 21, weight: .medium)).foregroundStyle(Color.islandCream).lineLimit(1)
+        case nil:
+            Text(scene.title)
+                .font(.system(size: 21, weight: .medium))
+                .foregroundStyle(Color.islandCream)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
     }
 
     private var subtitle: some View {
@@ -275,7 +313,7 @@ struct IslandBottomView<Controls: View>: View {
                 .frame(width: 82)
             VStack(alignment: .leading, spacing: 4) {
                 VStack(alignment: .leading, spacing: 2) {
-                    title.font(.system(size: 21, weight: .medium))
+                    title
                     subtitle
                 }
                 .accessibilityElement(children: .combine)
@@ -293,7 +331,12 @@ struct IslandBottomView<Controls: View>: View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 VStack(alignment: .leading, spacing: 2) {
-                    title.font(.system(size: 29, weight: .medium)).tracking(-1.2)
+                    Text(scene.title)
+                        .font(.system(size: 29, weight: .medium))
+                        .tracking(-1.2)
+                        .foregroundStyle(Color.islandCream)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                     subtitle
                 }
                 .accessibilityElement(children: .combine)
@@ -346,11 +389,11 @@ struct IslandMinimalView: View {
     let startedAt: Date
 
     var body: some View {
-        ZStack(alignment: .trailing) {
+        ZStack(alignment: scene.minimalSignCentred ? .center : .trailing) {
             IslandArtView(art: scene.art(.minimal), face: scene.face, live: scene.live, showsHands: false)
             IslandSignView(sign: scene.minimalSign, presentation: .minimal, live: scene.live, startedAt: startedAt)
-                .frame(width: 16)
-                .padding(.trailing, 2)
+                .frame(width: scene.minimalSignCentred ? 36 : 16)
+                .padding(.trailing, scene.minimalSignCentred ? 0 : 2)
         }
     }
 }
