@@ -61,6 +61,12 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
 
+## Trust and behaviour decisions
+
+| ADR | Decision | Status |
+|---|---|---|
+| 038 | **DODDY AI Constitution V1** (2026-10-10) adopted as the governing behaviour, memory, action, privacy and character spec: `docs/trust/`, `config/doddy_rules.yaml`; mapping and gaps in `docs/trust/REPO_ALIGNMENT.md`. Repo milestones stay the build order; the constitution's "M1–M5" are mapped, not renamed. Its rules are appended to `AGENTS.md` and `CLAUDE.md`; `scripts/verify_imported_pack.py` treats those two files as append-only (imported bytes must remain an exact prefix) | Applied (owner approved option A) — constitution text itself still marked "owner approval pending" in its header |
+
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
 1. **Narrow MVP job** — confirm capture → later retrieval (text) as the first utility, and whether first beta needs real text AI (M2) or can wait.
