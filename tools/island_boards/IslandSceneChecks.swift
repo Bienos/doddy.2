@@ -72,7 +72,98 @@ enum IslandSceneChecks {
         } else {
             expect(false, "encode")
         }
+        failures += translating()
         failures += tools()
+        return failures
+    }
+
+    /// Every word the island can draw for a scene: label, time, status, signs and art labels.
+    static func words(_ scene: IslandScene) -> [String] {
+        func sign(_ s: IslandSign) -> String? {
+            if case .text(let t) = s { return t }
+            if case .symbol(let name, _) = s { return name }
+            return nil
+        }
+        var out = [scene.label, scene.title, scene.subtitle]
+        if case .text(let t) = scene.time { out.append(t) }
+        if case .text(let t)? = scene.bigTitle { out.append(t) }
+        if case .bigText(let t)? = scene.bigTitle { out.append(t) }
+        out += [scene.expandedSign, scene.compactSign, scene.minimalSign].compactMap(sign)
+        out += scene.artLabels.map(\.text)
+        return out
+    }
+
+    /// Translator mode on Language Bridge (ADR-220). Private: the pair only, as codes.
+    static func translating() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: translating scene: \(message)"); failures += 1 }
+        }
+
+        // Face to face, English and French: both ways.
+        var both = State(status: .listening, isMuted: false)
+        both.moment = .translating(from: "en", to: "fr", bothWays: true)
+        let b = both.islandScene(isStale: false)
+        expect(b.board == .languageBridge && b.scenario == 0, "language bridge, first board")
+        expect(b.label == "TRANSLATE" && b.title == "Translating", "label and title")
+        expect(b.subtitle == "EN ⇄ FR", "face to face pair, got \(b.subtitle)")
+        expect(b.artLabels.map(\.text) == ["EN", "FR"], "bubbles EN and FR")
+        expect(b.compactSign == .text("⇄ FR") && b.minimalSign == .text("FR"), "compact and minimal")
+        expect(b.live, "listening while translating is live")
+
+        // Listen only: one way, as on the board ("EN → FR").
+        var listen = State(status: .speaking, isMuted: false)
+        listen.moment = .translating(from: "en", to: "fr", bothWays: false)
+        let l = listen.islandScene(isStale: false)
+        expect(l.subtitle == "EN → FR" && l.compactSign == .text("→ FR"), "listen only pair")
+
+        // Their language not known yet.
+        var unknown = State(status: .listening, isMuted: false)
+        unknown.moment = .translating(from: "pl", to: "?", bothWays: true)
+        expect(unknown.islandScene(isStale: false).subtitle == "PL ⇄ ?", "unknown language")
+
+        // Never the second board ("Translation ready / Hear it"), whatever the state.
+        for status in [State.Status.connecting, .listening, .thinking, .speaking, .needsConfirmation] {
+            for muted in [false, true] {
+                var s = State(status: status, isMuted: muted)
+                s.moment = .translating(from: "de", to: "it", bothWays: true)
+                let scene = s.islandScene(isStale: false)
+                expect(scene.board == .languageBridge && scene.scenario == 0, "\(status) muted \(muted): board 0")
+                expect(!words(scene).contains { $0.contains("ready") || $0.contains("Hear it") }, "no ready step")
+            }
+        }
+
+        // Muted (hold-to-talk between turns): not live, so the orange line turns grey.
+        var muted = State(status: .listening, isMuted: true)
+        muted.moment = .translating(from: "en", to: "fr", bothWays: true)
+        expect(!muted.islandScene(isStale: false).live, "muted translating not live")
+
+        // Private: a phrase in place of a code is never drawn, anywhere on the island.
+        let phrase = "Where is the station"
+        var leak = State(status: .listening, isMuted: false)
+        leak.moment = .translating(from: phrase, to: "Il treno parte alle otto", bothWays: true)
+        let leaked = leak.islandScene(isStale: false)
+        expect(leaked.subtitle == "? ⇄ ?" && leaked.artLabels.map(\.text) == ["?", "?"], "phrase shown as ?")
+        for word in ["Where", "station", "treno", "otto"] {
+            expect(!words(leaked).contains { $0.lowercased().contains(word.lowercased()) }, "\"\(word)\" never on the island")
+        }
+        for code in ["e", "engl", "e1", "é", "en fr", ""] {
+            expect(IslandLanguageCode.shown(code) == "?", "\"\(code)\" is not a code")
+        }
+        expect(IslandLanguageCode.shown("pl") == "PL" && IslandLanguageCode.shown("ast") == "AST", "codes")
+
+        // Stale: the warning, not the translator board.
+        expect(both.islandScene(isStale: true).board == .leanIn, "stale hides translating")
+
+        // Round trip; an older build without the case drops the moment, not the island.
+        if let data = try? JSONEncoder().encode(both) {
+            expect((try? JSONDecoder().decode(State.self, from: data)) == both, "round trip")
+        } else {
+            expect(false, "encode")
+        }
+        let newer = #"{"status":"listening","isMuted":false,"moment":{"somethingNew":{}}}"#
+        let decoded = try? JSONDecoder().decode(State.self, from: Data(newer.utf8))
+        expect(decoded != nil && decoded?.moment == nil, "unknown moment dropped")
         return failures
     }
 

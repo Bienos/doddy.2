@@ -163,7 +163,10 @@ final class VoiceSessionController {
     private(set) var listReceipt: ListReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
-    private(set) var translator: TranslatorSession?
+    private(set) var translator: TranslatorSession? {
+        // The island follows the mode and its languages (ADR-220), not each line heard.
+        didSet { if oldValue?.setup != translator?.setup { syncIsland() } }
+    }
     /// The end screen after translating: the text stays in memory for five minutes for Copy or
     /// "Save the facts as a note", then it is dropped (T3).
     private(set) var translatorSummary: TranslatorSummary?
@@ -995,8 +998,9 @@ final class VoiceSessionController {
     }
 
     /// What is happening inside the conversation that has its own island (ADR-213): a card
-    /// waiting for the user, a plan running, a reminder being added, or a few seconds of
-    /// "saved" / "set" after the store or Reminders confirmed it. Kinds and counts only.
+    /// waiting for the user, translator mode (ADR-220), a plan running, a reminder being added,
+    /// or a few seconds of "saved" / "set" after the store or Reminders confirmed it. Kinds,
+    /// counts and language codes only.
     private var islandMoment: DoddyVoiceAttributes.ContentState.Moment? {
         switch pendingAction {
         case .memory: return .noteWaiting
@@ -1004,6 +1008,15 @@ final class VoiceSessionController {
         case .reminder, .noteReminder: return .reminderWaiting
         case .some: return nil
         case nil: break
+        }
+        // Translating (ADR-220): the language codes only, never a phrase. No tool runs in this
+        // mode, so no plan, reminder or "saved" moment can be hidden by it.
+        if let setup = translator?.setup {
+            let theirs = setup.other?.code ?? "?"
+            switch setup.kind {
+            case .faceToFace: return .translating(from: setup.owner.code, to: theirs, bothWays: true)
+            case .listen: return .translating(from: theirs, to: setup.owner.code, bothWays: false)
+            }
         }
         if let plan = planStatus, plan.isRunning, !plan.steps.isEmpty {
             return .planRunning(step: min(plan.results.count + 1, plan.steps.count), of: plan.steps.count)

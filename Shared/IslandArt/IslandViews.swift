@@ -27,6 +27,8 @@ struct IslandArtView: View {
     let live: Bool
     var showsHands = true
     var maxSize: CGSize?
+    /// Words the board draws on its shapes (Language Bridge's bubbles), in its own units.
+    var labels: [IslandArtLabel] = []
 
     private var scale: CGFloat {
         guard let maxSize else { return 1 }
@@ -47,6 +49,16 @@ struct IslandArtView: View {
                     shape.stroke(Color(islandHex: stroke), style: StrokeStyle(
                         lineWidth: CGFloat(p.paint.width * p.scale) * k, lineCap: .round, lineJoin: .round))
                 }
+            }
+            ForEach(labels.indices, id: \.self) { i in
+                let label = labels[i]
+                Text(label.text)
+                    .font(.system(size: CGFloat(label.size) * k, weight: .bold))
+                    .foregroundStyle(Color.islandBlack)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+                    .frame(width: 26 * k)
+                    .position(x: CGFloat(label.x - art.viewBox.x) * k, y: CGFloat(label.y - art.viewBox.y) * k)
             }
         }
         .frame(width: CGFloat(art.viewBox.width) * k, height: CGFloat(art.viewBox.height) * k)
@@ -309,7 +321,8 @@ struct IslandBottomView<Controls: View>: View {
     private var standard: some View {
         HStack(alignment: .center, spacing: 12) {
             IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
-                          showsHands: scene.showsHands, maxSize: CGSize(width: 82, height: 92))
+                          showsHands: scene.showsHands, maxSize: CGSize(width: 82, height: 92),
+                          labels: scene.artLabels)
                 .frame(width: 82)
             VStack(alignment: .leading, spacing: 4) {
                 VStack(alignment: .leading, spacing: 2) {

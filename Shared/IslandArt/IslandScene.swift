@@ -79,6 +79,15 @@ enum IslandTitle: Equatable, Sendable {
     case bigText(String)
 }
 
+/// A short word drawn on the art itself, where the board has text the generator leaves out
+/// (Language Bridge's two speech bubbles). Board units; `x`, `y` is the word's centre.
+struct IslandArtLabel: Equatable, Sendable {
+    var text: String
+    var x: Double
+    var y: Double
+    var size: Double
+}
+
 /// Everything the island draws, as plain data, so the widget and the Settings preview show
 /// exactly the same thing. Built only from real state (`DoddyVoiceAttributes.ContentState`).
 struct IslandScene: Equatable, Sendable {
@@ -102,6 +111,8 @@ struct IslandScene: Equatable, Sendable {
     var minimalSign: IslandSign
     /// Minimal boards without a face (Tiny Promise) put the sign in the middle.
     var minimalSignCentred = false
+    /// Words on the expanded drawing, in black on its cream shapes.
+    var artLabels: [IslandArtLabel] = []
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
@@ -212,7 +223,31 @@ extension DoddyVoiceAttributes.ContentState {
         case .reminderSet:
             return scene(.reminderKnot, 1, label: "REMINDER", time: .text("Set"), title: "Reminder set",
                          subtitle: "Reminders confirmed it", compact: .check, minimal: .none)
+        case .translating(let from, let to, let bothWays):
+            // Language Bridge, first board only (ADR-220): the board's second one, "Translation
+            // ready / Hear it", has no step in a live conversation. Translator mode is private,
+            // so only the pair is drawn, and only as codes (`IslandLanguageCode`).
+            let a = IslandLanguageCode.shown(from), b = IslandLanguageCode.shown(to)
+            var s = scene(.languageBridge, 0, label: "TRANSLATE", time: .elapsed, title: "Translating",
+                          subtitle: "\(a) \(bothWays ? "⇄" : "→") \(b)",
+                          compact: .text(bothWays ? "⇄ \(b)" : "→ \(b)"), minimal: .text(b))
+            // The two bubbles' centres on board H (language-bridge-0-expanded.svg).
+            s.artLabels = [IslandArtLabel(text: a, x: 34, y: 96, size: 10),
+                           IslandArtLabel(text: b, x: 71.5, y: 96, size: 10)]
+            return s
         }
+    }
+}
+
+/// Language codes as the island shows them. Translator mode is private (lists line's ADR-215,
+/// ADR-220 here): the island may show which languages, never what was said, so anything that is
+/// not a 2–3 letter code is drawn as "?" rather than shown.
+enum IslandLanguageCode {
+    static func shown(_ code: String) -> String {
+        let letters = code.unicodeScalars
+        guard (2...3).contains(letters.count),
+              letters.allSatisfy({ ("a"..."z").contains($0) || ("A"..."Z").contains($0) }) else { return "?" }
+        return code.uppercased()
     }
 }
 

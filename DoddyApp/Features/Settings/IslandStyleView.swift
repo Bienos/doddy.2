@@ -65,7 +65,7 @@ struct IslandStyleView: View {
                 }
             }
             Section {
-                Text("Designs: the owner's Dynamic Island pack (V4). While a note, plan or reminder waits for you, the island switches to its own design whatever you pick here.")
+                Text("Designs: the owner's Dynamic Island pack (V4). While a note, plan or reminder waits for you, or while Doddy translates, the island switches to its own design whatever you pick here.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }

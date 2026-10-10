@@ -48,6 +48,10 @@ struct DoddyVoiceAttributes: ActivityAttributes {
             case reminderAdding
             /// Reminders confirmed it (added, or already there). Never shown for an unknown result.
             case reminderSet
+            /// Translator mode is on (ADR-220): the language pair as codes ("en", "fr", or "?" while
+            /// their language is not known yet), never anything said. `bothWays` is face to face;
+            /// listen only translates one way, `from` the room `to` the owner.
+            case translating(from: String, to: String, bothWays: Bool)
         }
     }
 
