@@ -13,7 +13,7 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
 
         var repo = try SQLiteMemoryRepository(path: path)
         let keys = try await repo.save(NewMemory(text: "The spare keys are in the blue tin above the fridge.", capturedAt: t0))
-        let book = try await repo.save(NewMemory(text: "Marta poleciła książkę „Lalka” — Łódź, środa.", category: .recommendation, capturedAt: t0))
+        let book = try await repo.save(NewMemory(text: "Marta poleciła książkę „Lalka” — Łódź, środa.", category: .recommendation, source: .explicitVoice, capturedAt: t0))
         XCTAssertEqual(keys.rawText, "The spare keys are in the blue tin above the fridge.")
 
         let corrected = try await repo.update(id: keys.id, currentText: "The spare keys are in the red tin.")
@@ -36,6 +36,7 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         repo = try SQLiteMemoryRepository(path: path)
         let reloaded = try await repo.list(limit: nil)
         XCTAssertEqual(Set(reloaded), [corrected, book])
+        XCTAssertEqual(reloaded.first { $0.id == book.id }?.source, .explicitVoice, "voice provenance survives reopen")
 
         // Delete removes record and index entry, also after reopen (A-08).
         try await repo.delete(id: book.id)

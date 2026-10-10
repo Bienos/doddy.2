@@ -100,7 +100,7 @@ struct CaptureView: View {
         errorMessage = nil
         defer { isSaving = false }
         do {
-            saved = try await store.save(text: text, category: category)
+            saved = try await store.save(text: text, category: category, source: .explicitText)
         } catch {
             errorMessage = UserFacingError.message(for: error)
         }

@@ -119,7 +119,7 @@ final class VoiceSessionController {
         guard let pending = pendingSave else { return }
         pendingSave = nil
         do {
-            let record = try await store.save(text: pending.text, category: .other)
+            let record = try await store.save(text: pending.text, category: .other, source: .explicitVoice)
             await reply(pending.toolCallID, VoiceToolReply.saved(record))
         } catch {
             await reply(pending.toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)

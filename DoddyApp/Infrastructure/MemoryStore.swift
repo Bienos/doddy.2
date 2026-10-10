@@ -34,8 +34,9 @@ final class MemoryStore {
     }
 
     /// Returns only after the repository confirmed a committed, read-back write.
-    func save(text: String, category: MemoryCategory) async throws -> MemoryRecord {
-        let draft = try NewMemory(text: text, category: category, capturedAt: Date())
+    /// `source` has no default so every capture path states its own provenance.
+    func save(text: String, category: MemoryCategory, source: MemorySource) async throws -> MemoryRecord {
+        let draft = try NewMemory(text: text, category: category, source: source, capturedAt: Date())
         let record = try await environment.memoryRepository.save(draft)
         await reload()
         return record
