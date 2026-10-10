@@ -14,7 +14,7 @@ public enum PlanTool {
     public static let allowed: [String] = [
         VoiceToolName.saveMemory, VoiceToolName.createCalendarEvent, VoiceToolName.createReminder, VoiceToolName.setTimer,
         CloudToolName.draftEmail, CloudToolName.addTodoistTask,
-        // Adding to one of the user's lists (ADR-216): matched and read back when the step runs.
+        // Adding to one of the user's lists (ADR-223): matched and read back when the step runs.
         VoiceToolName.addToList,
     ]
 }

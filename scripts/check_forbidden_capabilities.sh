@@ -10,7 +10,7 @@
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - photo text reading (Vision) and the photo picker only inside DoddyApp/Features/Photos, never the
-#    camera or the whole photo library (ADR-218),
+#    camera or the whole photo library (ADR-225),
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
 #  - permission keys only for the microphone, calendar, reminders, contacts and "While Using" location,
@@ -73,7 +73,7 @@ if grep -RInE --include='*.swift' "$photos_only" "${dirs[@]}" | grep -v "^$photo
   echo "FAIL: photo reading or the photo picker outside $photos_dir." >&2; status=1
 fi
 if grep -RInE "$photo_library" "${dirs[@]}" project.yml Config | code_only; then
-  echo "FAIL: camera or photo library access; photo notes use Apple's picker only (ADR-218)." >&2; status=1
+  echo "FAIL: camera or photo library access; photo notes use Apple's picker only (ADR-225)." >&2; status=1
 fi
 if grep -RInE "$location_tracking" "${dirs[@]}" project.yml | code_only; then
   echo "FAIL: \"Always\" or background location is not allowed; place reminders use \"While Using\" only." >&2; status=1

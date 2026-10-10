@@ -2,7 +2,7 @@ import DoddyCore
 import UIKit
 import Vision
 
-/// Prepares a picked photo for a photo note (ADR-218): scaled down to `PhotoLimits.maxPixels`,
+/// Prepares a picked photo for a photo note (ADR-225): scaled down to `PhotoLimits.maxPixels`,
 /// stored as JPEG, and its text read on this iPhone with Vision. Nothing leaves the phone.
 /// Language correction is off, so codes and passwords come back as printed, not "corrected".
 enum PhotoTextReader {

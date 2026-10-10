@@ -18,7 +18,7 @@ struct CaptureView: View {
     /// A saved note with the same words (ADR-184). Shown instead of saving until the user picks.
     @State private var duplicate: MemoryRecord?
     @State private var allowDuplicate = false
-    /// A picked photo, prepared and read (ADR-218). Linked to the note only after the note saves.
+    /// A picked photo, prepared and read (ADR-225). Linked to the note only after the note saves.
     @State private var photo: PhotoTextReader.Prepared?
     @State private var photoProblem: String?
     @FocusState private var editorFocused: Bool

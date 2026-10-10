@@ -25,7 +25,7 @@ struct SettingsView: View {
     @State private var confirmDeleteAll = false
     @State private var choosingRestoreFile = false
     @State private var restorePlan: MemoryRestorePlan?
-    /// List items from the same file (ADR-216), put back after their lists.
+    /// List items from the same file (ADR-223), put back after their lists.
     @State private var restoreItems: [ListItem] = []
     @State private var restoreMessage: String?
     @State private var restoreFailed = false
@@ -188,7 +188,7 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
-                // Widgets (ADR-219): what they show, and the switch that empties the shared file.
+                // Widgets (ADR-226): what they show, and the switch that empties the shared file.
                 Section("Widgets") {
                     if WidgetSync.shared.isAvailable {
                         Toggle("Show notes and lists in widgets", isOn: $widgetsOn)
@@ -867,7 +867,7 @@ struct MarkdownFileExport: Transferable {
 /// JSON export file for the share sheet (format: `MemoryExport.json`).
 struct JSONExport: Transferable {
     let records: [MemoryRecord]
-    /// List items (ADR-216); their lists are among `records`.
+    /// List items (ADR-223); their lists are among `records`.
     let listItems: [ListItem]
 
     static var transferRepresentation: some TransferRepresentation {

@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import WidgetKit
 
-/// Keeps the widgets' snapshot (ADR-219) equal to what is in Doddy: rewritten after notes, lists,
+/// Keeps the widgets' snapshot (ADR-226) equal to what is in Doddy: rewritten after notes, lists,
 /// pins or reminders change, and read back. Ticks from a widget arrive here, in the app's process
 /// (`ToggleListItemIntent`), and go through the same store as a tick in the app.
 @MainActor

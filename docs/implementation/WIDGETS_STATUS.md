@@ -1,4 +1,4 @@
-# Home and Lock Screen widgets status (ADR-219)
+# Home and Lock Screen widgets status (ADR-226)
 Date: 2026-10-10. Owner: "do all of them" (item 4) and "Yes, tick from widget (Recommended)": tap an item on the Lock or Home Screen widget to tick it; saved and read back like in the app, and Undo is in the app.
 
 ## What ships

@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// One list change that can be taken back exactly (ADR-216). Undo reverses only this change:
+/// One list change that can be taken back exactly (ADR-223). Undo reverses only this change:
 /// added items are removed if still open, ticks are unticked, removed items are put back.
 struct ListUndo: Equatable, Identifiable {
     enum Change: Equatable {
@@ -118,7 +118,7 @@ extension UserFacingError {
     }
 }
 
-/// Photo notes (ADR-218): the file is written and read back first, then linked to its note.
+/// Photo notes (ADR-225): the file is written and read back first, then linked to its note.
 extension MemoryStore {
     func photo(for memoryID: UUID) -> MemoryPhoto? { photos[memoryID] }
 

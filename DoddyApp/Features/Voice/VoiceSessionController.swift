@@ -46,9 +46,9 @@ final class VoiceSessionController {
         /// agent's quote matched, shown exactly with when it was saved; nothing is set until the
         /// user taps Set reminder. The user can change the time, or arrive/leave, on the card.
         case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, savedAt: Date?, target: NoteReminderCardTarget)
-        /// "Start translating?" (ADR-215). The user can change either language on the card.
+        /// "Start translating?" (ADR-222). The user can change either language on the card.
         case translator(toolCallID: String, setup: TranslatorSetup)
-        /// "Start a new list?" (ADR-216, L2). The user can fix the name on the card.
+        /// "Start a new list?" (ADR-223, L2). The user can fix the name on the card.
         case createList(toolCallID: String, name: String, items: [String])
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
@@ -158,13 +158,13 @@ final class VoiceSessionController {
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false { didSet { syncIsland() } }
-    /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
+    /// The last list change made by voice (ADR-223): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
-    /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
+    /// Translator mode (ADR-222), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession? {
-        // The island follows the mode and its languages (ADR-220), not each line heard.
+        // The island follows the mode and its languages (ADR-227), not each line heard.
         didSet { if oldValue?.setup != translator?.setup { syncIsland() } }
     }
     /// The end screen after translating: the text stays in memory for five minutes for Copy or
@@ -204,7 +204,7 @@ final class VoiceSessionController {
     var isPrivate = false {
         didSet { if privacyLocked { isPrivate = true } }
     }
-    /// Set once translator mode is on (ADR-215): the conversation stays private to the end.
+    /// Set once translator mode is on (ADR-222): the conversation stays private to the end.
     private(set) var privacyLocked = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
@@ -686,7 +686,7 @@ final class VoiceSessionController {
         }
     }
 
-    // MARK: Lists (ADR-216)
+    // MARK: Lists (ADR-223)
 
     /// The list the agent named, matched exactly; on no match or several, the agent gets the
     /// list names and asks. Nothing changes in either case.
@@ -806,7 +806,7 @@ final class VoiceSessionController {
         pendingAction = .createList(toolCallID: id, name: name, items: items)
     }
 
-    // MARK: Translator mode (ADR-215)
+    // MARK: Translator mode (ADR-222)
 
     /// The owner's language when the agent didn't say: Settings' starting language, else the iPhone's.
     static var ownerLanguage: TranslatorLanguage {
@@ -998,7 +998,7 @@ final class VoiceSessionController {
     }
 
     /// What is happening inside the conversation that has its own island (ADR-213): a card
-    /// waiting for the user, translator mode (ADR-220), a plan running, a reminder being added,
+    /// waiting for the user, translator mode (ADR-227), a plan running, a reminder being added,
     /// or a few seconds of "saved" / "set" after the store or Reminders confirmed it. Kinds,
     /// counts and language codes only.
     private var islandMoment: DoddyVoiceAttributes.ContentState.Moment? {
@@ -1009,7 +1009,7 @@ final class VoiceSessionController {
         case .some: return nil
         case nil: break
         }
-        // Translating (ADR-220): the language codes only, never a phrase. No tool runs in this
+        // Translating (ADR-227): the language codes only, never a phrase. No tool runs in this
         // mode, so no plan, reminder or "saved" moment can be hidden by it.
         if let setup = translator?.setup {
             let theirs = setup.other?.code ?? "?"
@@ -1102,7 +1102,7 @@ final class VoiceSessionController {
 
     private func handle(_ call: ClientToolCallEvent) async {
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
-        // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
+        // Translating: no tool runs at all, a plan card included (ADR-222). Checked before anything
         // is looked up or logged.
         if translator != nil, !TranslatorPolicy.allows(request) {
             await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))

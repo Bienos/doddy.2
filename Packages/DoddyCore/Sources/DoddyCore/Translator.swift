@@ -1,6 +1,6 @@
 import Foundation
 
-// Translator mode (ADR-214 design, ADR-215 build). A mode of Doddy's own conversation (T2), not a
+// Translator mode (ADR-221 design, ADR-222 build). A mode of Doddy's own conversation (T2), not a
 // separate agent: face to face, both ways, or listen only, one way into the owner's language (T1).
 // While it is on, the app refuses every tool call, the conversation is private, and nothing of it
 // is kept on the iPhone; the owner may copy the text or save the facts as a note on a tap within
@@ -15,7 +15,7 @@ public enum TranslatorKind: String, Equatable, Sendable, CaseIterable {
     case listen
 }
 
-/// One of the 37 European languages Doddy speaks (ADR-212), with the lines shown or said to the
+/// One of the 37 European languages Doddy speaks (ADR-219), with the lines shown or said to the
 /// other person in that language. These lines were written for this build and still need a native
 /// speaker's review before release (docs/implementation/TRANSLATOR_STATUS.md).
 public struct TranslatorLanguage: Equatable, Hashable, Sendable, Identifiable {
@@ -321,7 +321,7 @@ public struct TranslatorProposal: Equatable, Sendable {
 }
 
 extension VoiceToolName {
-    /// Proposes translator mode (ADR-215). Shown as a card; the conversation switches on Start.
+    /// Proposes translator mode (ADR-222). Shown as a card; the conversation switches on Start.
     public static let startTranslator = "start_translator"
     /// Ends translator mode. Harmless, so it runs without a card.
     public static let stopTranslator = "stop_translator"

@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Polish notification text (ADR-213): what iOS shows outside Doddy follows the iPhone's language.
+/// Polish notification text (ADR-220): what iOS shows outside Doddy follows the iPhone's language.
 final class NotificationLanguageTests: XCTestCase {
     private let zone = "Europe/Warsaw"
     // Mon 12 Oct 2026, 20:00 Warsaw; the following days add 86 400 s (no clock change that week).

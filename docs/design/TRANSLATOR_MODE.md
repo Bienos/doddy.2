@@ -1,5 +1,5 @@
-# Translator mode: design (ADR-214; all decisions made)
-Owner, 2026-10-10: "we should design translator mode where he starts translating and talking in someone's language — suggest design". Canvas: **Doddy Translator** (screens 1–9, 6b and a rules board). Owner answers, 2026-10-10: "1. both 2 mode 3. what 4 yes 5. yes 6 native". **First build: ADR-215**, see `docs/implementation/TRANSLATOR_STATUS.md` (T6 native voices not built yet; not compiled with Xcode, no live conversation run).
+# Translator mode: design (ADR-221; all decisions made)
+Owner, 2026-10-10: "we should design translator mode where he starts translating and talking in someone's language — suggest design". Canvas: **Doddy Translator** (screens 1–9, 6b and a rules board). Owner answers, 2026-10-10: "1. both 2 mode 3. what 4 yes 5. yes 6 native". **First build: ADR-222**, see `docs/implementation/TRANSLATOR_STATUS.md` (T6 native voices not built yet; not compiled with Xcode, no live conversation run).
 
 ## The job
 You're with someone who doesn't speak your language: a taxi driver, a pharmacist, a neighbour. You put the phone on the table between you. Doddy translates each turn aloud in the other person's language, and writes it on their half of the screen.

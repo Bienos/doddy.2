@@ -8,12 +8,12 @@ import Observation
 @Observable
 final class MemoryStore {
     let environment: AppEnvironment
-    /// Notes only. Lists (ADR-216) are `memories` rows too, but live in `lists` with their items.
+    /// Notes only. Lists (ADR-223) are `memories` rows too, but live in `lists` with their items.
     private(set) var memories: [MemoryRecord] = []
     private(set) var lists: [DoddyList] = []
     /// Items of the list deleted a moment ago, put back together with it on Undo.
     private var recentlyDeletedItems: [ListItem] = []
-    /// Photo notes (ADR-218): which note carries which photo file.
+    /// Photo notes (ADR-225): which note carries which photo file.
     private(set) var photos: [UUID: MemoryPhoto] = [:]
     /// The photo of the note deleted a moment ago: its file is kept until Undo is no longer offered.
     private var recentlyDeletedPhoto: MemoryPhoto?

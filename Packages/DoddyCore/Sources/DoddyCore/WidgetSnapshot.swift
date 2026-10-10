@@ -1,6 +1,6 @@
 import Foundation
 
-// Home and Lock Screen widgets (ADR-219). Widgets can't open the notes database, so the app
+// Home and Lock Screen widgets (ADR-226). Widgets can't open the notes database, so the app
 // writes this small snapshot to the App Group folder that only Doddy and its widget extension can
 // read: pinned notes, the next time reminders and the lists, each shortened. The app writes it
 // after every change and reads it back; the widget only reads it. "Show in widgets" off writes an
@@ -162,7 +162,7 @@ public enum WidgetLink {
     }
 }
 
-/// What a tick from a widget did, checked against the read-back list (ADR-219).
+/// What a tick from a widget did, checked against the read-back list (ADR-226).
 public enum WidgetTick: Equatable, Sendable {
     case ticked, unticked
     /// The item or list is gone, or changed in the app since the widget drew it; nothing changed.

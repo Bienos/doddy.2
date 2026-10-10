@@ -93,7 +93,7 @@ enum IslandSceneChecks {
         return out
     }
 
-    /// Translator mode on Language Bridge (ADR-220). Private: the pair only, as codes.
+    /// Translator mode on Language Bridge (ADR-227). Private: the pair only, as codes.
     static func translating() -> Int {
         var failures = 0
         func expect(_ ok: Bool, _ message: String) {

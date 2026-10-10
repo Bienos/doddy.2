@@ -224,7 +224,7 @@ extension DoddyVoiceAttributes.ContentState {
             return scene(.reminderKnot, 1, label: "REMINDER", time: .text("Set"), title: "Reminder set",
                          subtitle: "Reminders confirmed it", compact: .check, minimal: .none)
         case .translating(let from, let to, let bothWays):
-            // Language Bridge, first board only (ADR-220): the board's second one, "Translation
+            // Language Bridge, first board only (ADR-227): the board's second one, "Translation
             // ready / Hear it", has no step in a live conversation. Translator mode is private,
             // so only the pair is drawn, and only as codes (`IslandLanguageCode`).
             let a = IslandLanguageCode.shown(from), b = IslandLanguageCode.shown(to)
@@ -239,9 +239,9 @@ extension DoddyVoiceAttributes.ContentState {
     }
 }
 
-/// Language codes as the island shows them. Translator mode is private (lists line's ADR-215,
-/// ADR-220 here): the island may show which languages, never what was said, so anything that is
-/// not a 2–3 letter code is drawn as "?" rather than shown.
+/// Language codes as the island shows them. Translator mode is private (ADR-222, ADR-227): the
+/// island may show which languages, never what was said, so anything that is not a 2–3 letter
+/// code is drawn as "?" rather than shown.
 enum IslandLanguageCode {
     static func shown(_ code: String) -> String {
         let letters = code.unicodeScalars

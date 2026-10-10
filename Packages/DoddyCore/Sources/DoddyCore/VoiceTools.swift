@@ -167,10 +167,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case draftMessage(MessageDraft)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
-    /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
+    /// Translator mode (ADR-222): proposed on a card; the conversation switches on Start.
     case startTranslator(TranslatorProposal)
     case stopTranslator
-    /// Lists (ADR-216). Adding, ticking and removing run on the user's spoken request with a
+    /// Lists (ADR-223). Adding, ticking and removing run on the user's spoken request with a
     /// receipt and Undo (L1); a new list is a card (L2); reading is a lookup.
     case addToList(ListVoiceRequest)
     case readList(name: String)

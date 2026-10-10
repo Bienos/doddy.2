@@ -739,7 +739,7 @@ struct VoiceView: View {
         .buttonStyle(SecondaryButtonStyle())
     }
 
-    /// What a list change by voice did (ADR-216), with Undo and, when "milk" matched two items,
+    /// What a list change by voice did (ADR-223), with Undo and, when "milk" matched two items,
     /// the items to tap. Read back from the store before it is shown.
     private func listReceiptCard(_ receipt: ListReceipt, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 10) {

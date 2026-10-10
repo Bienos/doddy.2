@@ -32,7 +32,7 @@ final class NicknameTests: XCTestCase {
         XCTAssertEqual(ConversationLanguage.polish.overrideCode, "pl")
         XCTAssertEqual(ConversationLanguage(stored: "klingon"), .auto)
         XCTAssertEqual(ConversationLanguage(stored: "english"), .english)
-        XCTAssertEqual(ConversationLanguage(stored: "polish"), .polish, "values stored before ADR-212 still read")
+        XCTAssertEqual(ConversationLanguage(stored: "polish"), .polish, "values stored before ADR-219 still read")
     }
 
     /// Every fixed starting language has a two-letter code, both names, and a matching agent preset.

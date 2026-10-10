@@ -76,7 +76,7 @@ public enum MemoryRestore {
         return (records, envelope.exportedAtMs.map { Date(timeIntervalSince1970: Double($0) / 1000) })
     }
 
-    /// The list items in the file (ADR-216); empty for files without lists. A damaged item list
+    /// The list items in the file (ADR-223); empty for files without lists. A damaged item list
     /// is refused, so no list comes back half-filled.
     public static func listItems(_ data: Data) throws(MemoryRestoreError) -> [ListItem] {
         struct Items: Decodable { let listItems: [ListItem]? }

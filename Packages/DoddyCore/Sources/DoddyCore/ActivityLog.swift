@@ -136,7 +136,7 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", isLookup: false)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:
             // A clarification goes straight back to the agent; no app is used. Translator mode
-            // uses no app either, and leaves no trace of the conversation (ADR-215).
+            // uses no app either, and leaves no trace of the conversation (ADR-222).
             return nil
         }
     }

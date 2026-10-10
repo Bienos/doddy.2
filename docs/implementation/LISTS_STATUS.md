@@ -1,4 +1,4 @@
-# Lists by voice status (ADR-216)
+# Lists by voice status (ADR-223)
 Date: 2026-10-10. Owner: "design lists by voice", then "approved, build it" (L1â€“L6 as proposed). Design: `docs/design/LISTS.md`, canvas "Doddy Lists".
 
 ## What ships
@@ -89,7 +89,7 @@ Date: 2026-10-10. Owner: "design lists by voice", then "approved, build it" (L1â
 ## NOT RUN / UNVERIFIED
 - **App:** not compiled or run (no Xcode here), and no screen has been seen. Untested on a device: the swipe actions in a `List` inside the Memories `NavigationStack`, the Undo timing, and the menu inside the toolbar.
 - **Live conversation:** none run. Unchecked: whether the agent uses list names from `{{saved_lists}}`, sends items as an array, skips the confirm-on-screen line for adds, and asks on "not found".
-- **Find and restore (ADR-217):** Find now shows lists that match by name or item, and restoring a JSON export puts list items back. The Markdown export lists them as task lists.
+- **Find and restore (ADR-224):** Find now shows lists that match by name or item, and restoring a JSON export puts list items back. The Markdown export lists them as task lists.
 - **Notification wording:** the private body is the general "A note you asked to see again.", the title is "Reminder" and the button is "Open note". The canvas was updated to match. A list-specific wording is not built.
 - **Server copy for phone calls** (opt-in): sends notes only, not lists.
 

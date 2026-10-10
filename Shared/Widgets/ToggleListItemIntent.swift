@@ -1,7 +1,7 @@
 import AppIntents
 import Foundation
 
-/// A tap on a list item in a widget (ADR-219, owner: "Yes, tick from widget"). It runs in the
+/// A tap on a list item in a widget (ADR-226, owner: "Yes, tick from widget"). It runs in the
 /// Doddy app's process, never in the widget extension: like the Dynamic Island buttons
 /// (ADR-131) it is a `LiveActivityIntent`, which iOS performs in the app, starting it in the
 /// background when needed. There the tick goes through the same store as in the app and is read

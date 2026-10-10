@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// Photo files of photo notes (ADR-218), in a `NotePhotos` folder next to the notes database it
+/// Photo files of photo notes (ADR-225), in a `NotePhotos` folder next to the notes database it
 /// belongs to, so a test fixture or an in-memory launch never sees, or cleans up, the user's real
 /// photos. Protected until the iPhone is first unlocked and, like the notes database (ADR-028),
 /// included in iPhone backups. Names come only from `MemoryPhoto.fileName(for:)`. Never shared,

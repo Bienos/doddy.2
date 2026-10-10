@@ -65,7 +65,7 @@ public enum MemoryExport {
         let formatVersion: Int
         let exportedAtMs: Int64
         let memories: [MemoryRecord]
-        /// Items of the `list` records (ADR-216); left out when there are none.
+        /// Items of the `list` records (ADR-223); left out when there are none.
         let listItems: [ListItem]?
     }
 

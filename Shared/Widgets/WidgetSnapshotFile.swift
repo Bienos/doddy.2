@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// The widgets' snapshot file (ADR-219) in the App Group folder that only Doddy and its widget
+/// The widgets' snapshot file (ADR-226) in the App Group folder that only Doddy and its widget
 /// extension can open. The group's name is in both Info.plists as `DoddyAppGroup`. A build signed
 /// without the App Group has no folder: the app then writes nothing and the widgets say so.
 enum WidgetSnapshotFile {

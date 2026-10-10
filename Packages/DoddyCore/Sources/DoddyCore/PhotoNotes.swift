@@ -1,6 +1,6 @@
 import Foundation
 
-// Photo notes (ADR-218). A note can carry one photo: a receipt, a parking spot, a label. The
+// Photo notes (ADR-225). A note can carry one photo: a receipt, a parking spot, a label. The
 // photo's text is read on this iPhone (Apple's Vision framework, no network) and offered in the
 // editor, where the user checks it before saving; the saved note's words are what they accepted,
 // so search, Doddy and export work on them like any note. The photo file stays on this iPhone,

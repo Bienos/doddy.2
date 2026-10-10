@@ -1,5 +1,5 @@
-# Translator mode status (ADR-215)
-Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/TRANSLATOR_MODE.md`, canvas "Doddy Translator". Decisions T1–T6 as the owner answered them.
+# Translator mode status (ADR-222)
+Date: 2026-10-10. Owner: "build translator mode". Design: ADR-221, `docs/design/TRANSLATOR_MODE.md`, canvas "Doddy Translator". Decisions T1–T6 as the owner answered them.
 
 ## What ships
 **Two ways in**
@@ -9,7 +9,7 @@ Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/
 **While it is on**
 - **No tools:** the app answers every tool call except `stop_translator` with "refused: …" before anything is looked up, logged or changed (`TranslatorPolicy`).
 - **Private:** the conversation is private and stays private (the Private switch is locked). Lines go to an in-memory `TranslatorSession`, never to the conversation log or "What Doddy did".
-- **Dynamic Island (ADR-220):** Language Bridge with "Translating" and the language codes only ("EN ⇄ FR"), never a line; see `docs/implementation/V3_ISLAND_STATUS.md` check 21.
+- **Dynamic Island (ADR-227):** Language Bridge with "Translating" and the language codes only ("EN ⇄ FR"), never a line; see `docs/implementation/V3_ISLAND_STATUS.md` check 21.
 - **Face to face (T1):**
   - their half is rotated 180°;
   - the AI label is always on their half, in their language;

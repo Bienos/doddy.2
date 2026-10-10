@@ -4,7 +4,7 @@ import Foundation
 import GRDB
 import XCTest
 
-/// Repeating note reminders and snooze (ADR-211, owner-approved design screens 15–21) against real
+/// Repeating note reminders and snooze (ADR-218, owner-approved design screens 15–21) against real
 /// SQLite and a fake iOS notification center. Times are in Warsaw; 25 Oct 2026 is a clock change.
 final class NoteReminderRepeatTests: XCTestCase {
     // Sat 10 Oct 2026, 13:02 in Warsaw.

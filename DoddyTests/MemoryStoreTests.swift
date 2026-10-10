@@ -53,7 +53,7 @@ final class MemoryStoreTests: XCTestCase {
         }
     }
 
-    /// Photo notes (ADR-218): the file is written before the link, kept through Undo, and
+    /// Photo notes (ADR-225): the file is written before the link, kept through Undo, and
     /// deleted with the note or by Remove photo. In-memory launches use their own folder.
     @MainActor
     func testPhotoFollowsItsNoteThroughDeleteUndoAndRemove() async throws {

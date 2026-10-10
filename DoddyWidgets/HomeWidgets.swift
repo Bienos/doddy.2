@@ -3,7 +3,7 @@ import DoddyCore
 import SwiftUI
 import WidgetKit
 
-// Home and Lock Screen widgets (ADR-219). They only read the snapshot the app writes to the App
+// Home and Lock Screen widgets (ADR-226). They only read the snapshot the app writes to the App
 // Group (`WidgetSnapshotFile`); they never open the notes database. Note text is marked
 // privacy-sensitive, so iOS hides it on the Lock Screen while the iPhone is locked. A tap on a
 // note opens it in Doddy; a tap on a list item runs `ToggleListItemIntent` in the app.

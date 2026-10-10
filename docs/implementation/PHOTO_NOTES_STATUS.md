@@ -1,4 +1,4 @@
-# Photo notes status (ADR-218)
+# Photo notes status (ADR-225)
 Date: 2026-10-10. Owner: "do all of them" (item 3 of the proposed list).
 
 ## What ships
@@ -30,7 +30,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 3 of the proposed list).
 
 ## Decisions for the owner
 - **Camera capture** ("Take a photo"): needs `NSCameraUsageDescription`, which the capability guard refuses today. Approve to add it.
-- **Photos in the encrypted backup file** (ADR-219 work): included by default there, since that file is the user's own.
+- **Photos in the encrypted backup file** (ADR-226 work): included by default there, since that file is the user's own.
 
 ## Constitution evidence log (docs/trust/config/doddy_rules.yaml)
 | Rule | What enforces it here | Tests run | Gaps / claims to limit |

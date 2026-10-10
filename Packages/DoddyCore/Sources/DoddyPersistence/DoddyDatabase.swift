@@ -127,7 +127,7 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
                 """)
         }
-        // Repeating reminders and snooze (ADR-211). New columns only; existing rows stay one-offs.
+        // Repeating reminders and snooze (ADR-218). New columns only; existing rows stay one-offs.
         migrator.registerMigration("v5_note_reminder_repeat") { db in
             try db.execute(sql: """
                 ALTER TABLE note_reminders ADD COLUMN repeat_rule TEXT
@@ -140,7 +140,7 @@ public final class DoddyDatabase: Sendable {
                     CHECK (first_set_for_ms IS NULL OR (kind = 'time' AND repeat_rule IS NULL));
                 """)
         }
-        // Lists (ADR-216): a list is a `memories` row with category 'list'; its items go with it.
+        // Lists (ADR-223): a list is a `memories` row with category 'list'; its items go with it.
         migrator.registerMigration("v6_list_items") { db in
             try db.execute(sql: """
                 CREATE TABLE list_items (
@@ -155,7 +155,7 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX list_items_list ON list_items(list_id, position);
                 """)
         }
-        // Photo notes (ADR-218): one photo per note, deleted with it. The file name is checked.
+        // Photo notes (ADR-225): one photo per note, deleted with it. The file name is checked.
         migrator.registerMigration("v7_memory_photos") { db in
             try db.execute(sql: """
                 CREATE TABLE memory_photos (

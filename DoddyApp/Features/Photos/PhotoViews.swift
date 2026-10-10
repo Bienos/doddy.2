@@ -3,7 +3,7 @@ import PhotosUI
 import SwiftUI
 import UIKit
 
-/// "Add a photo" while writing a note (ADR-218). Apple's photo picker runs outside Doddy, so no
+/// "Add a photo" while writing a note (ADR-225). Apple's photo picker runs outside Doddy, so no
 /// photo library permission is asked and Doddy sees only the one photo the user picks. Its text
 /// is read on this iPhone and added to the editor for the user to check before saving.
 struct CapturePhotoPicker: View {

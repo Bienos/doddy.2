@@ -1,4 +1,4 @@
-# Repeating reminders and snooze status (ADR-211)
+# Repeating reminders and snooze status (ADR-218)
 Date: 2026-10-10. Owner instructions:
 - "yes design repeating reminders and snooze";
 - then "approved, build it", which approves decisions R1–R4 as proposed.

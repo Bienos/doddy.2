@@ -3,11 +3,11 @@
 <!--
   Partial Info.plist for the DoddyWidgets extension (merged with the generated keys).
   The extension draws the voice conversation's Live Activity, the controls, and the Home and
-  Lock Screen widgets, which only read the snapshot the app writes (ADR-219).
+  Lock Screen widgets, which only read the snapshot the app writes (ADR-226).
 -->
 <plist version="1.0">
 <dict>
-	<!-- Widgets' shared folder (ADR-219); only works when the build is signed with the App Group. -->
+	<!-- Widgets' shared folder (ADR-226); only works when the build is signed with the App Group. -->
 	<key>DoddyAppGroup</key>
 	<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
 	<key>NSExtension</key>

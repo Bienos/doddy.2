@@ -3,7 +3,7 @@ import DoddyPersistence
 import Foundation
 import XCTest
 
-/// Photo notes (ADR-218): the read text, the size limit, and the photo link on real SQLite.
+/// Photo notes (ADR-225): the read text, the size limit, and the photo link on real SQLite.
 final class PhotoNotesTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
 

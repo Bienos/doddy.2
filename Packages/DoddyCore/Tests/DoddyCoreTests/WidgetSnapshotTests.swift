@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Widgets (ADR-219): what the shared snapshot holds, and how a widget tick is checked.
+/// Widgets (ADR-226): what the shared snapshot holds, and how a widget tick is checked.
 final class WidgetSnapshotTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 

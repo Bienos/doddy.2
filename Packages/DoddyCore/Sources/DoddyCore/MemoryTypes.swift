@@ -23,7 +23,7 @@ public enum MemorySource: String, Codable, CaseIterable, Sendable {
 /// Raw values match `schemas/memory.schema.json`.
 public enum MemoryCategory: String, Codable, CaseIterable, Sendable {
     case fact, preference, commitment, recommendation, decision, item, place, intention, other
-    /// A list (ADR-216): the text is its name; the items are in `list_items`. Never offered as a
+    /// A list (ADR-223): the text is its name; the items are in `list_items`. Never offered as a
     /// note type, and never returned by recall.
     case list
 

@@ -10,7 +10,7 @@
 -->
 <plist version="1.0">
 <dict>
-	<!-- Widgets' shared folder (ADR-219); only works when the build is signed with the App Group. -->
+	<!-- Widgets' shared folder (ADR-226); only works when the build is signed with the App Group. -->
 	<key>DoddyAppGroup</key>
 	<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
 	<key>UIBackgroundModes</key>

@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Which note carries which photo file (ADR-218). The row is deleted with its note; the app
+/// Which note carries which photo file (ADR-225). The row is deleted with its note; the app
 /// deletes the file. Every write is read back before success.
 public final class SQLitePhotoRepository: PhotoRepository {
     private let dbQueue: DatabaseQueue

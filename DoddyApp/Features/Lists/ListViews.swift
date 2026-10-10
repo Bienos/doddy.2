@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// Lists (ADR-216), after the "Doddy Lists" canvas: overview (1), a list (2), its menu (3).
+// Lists (ADR-223), after the "Doddy Lists" canvas: overview (1), a list (2), its menu (3).
 // Everything shown is what the store read back; every change has an Undo.
 
 /// Memories › Lists: one card per list, and New list.

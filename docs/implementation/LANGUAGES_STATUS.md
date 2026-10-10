@@ -1,8 +1,8 @@
-# European languages and Polish notifications status (ADR-212, ADR-213)
+# European languages and Polish notifications status (ADR-219, ADR-220)
 Date: 2026-10-10. Owner: "make sure doddy can talk with all european language and change between them freerly", together with "1." (Polish wording for notification text).
 
 ## What ships
-**Languages (ADR-212)**
+**Languages (ADR-219)**
 - The live voice agent has 36 language presets plus English, 37 in total:
 
   pl de fr es it pt nl sv da no fi cs sk hu ro bg el hr sl lv lt uk ru tr et ca sr is ga mt mk bs be cy gl lb
@@ -19,7 +19,7 @@ Date: 2026-10-10. Owner: "make sure doddy can talk with all european language an
   - Stored values from before (`english`, `polish`) still read.
 - **Copy:** Settings text now says Doddy follows any European language and that all voices speak them, each with its own accent.
 
-**Polish notification text (ADR-213)**
+**Polish notification text (ADR-220)**
 - When the iPhone's first language is Polish, the Lock Screen notification is Polish:
   - title "Przypomnienie", and for a repeat "Przypomnienie · w każdy poniedziałek" (also "codziennie", "w dni robocze", "co miesiąc, 12. dnia");
   - private body "Notatka, którą chcesz zobaczyć ponownie." (second person, gender-neutral);

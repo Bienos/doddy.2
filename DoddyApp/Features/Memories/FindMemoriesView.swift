@@ -38,7 +38,7 @@ struct FindMemoriesView: View {
                 } else if isRunning {
                     ProgressView("Finding saved words")
                 } else {
-                    // Lists (ADR-216) are found by their name or items, apart from the notes.
+                    // Lists (ADR-223) are found by their name or items, apart from the notes.
                     let listHits = ListSearch.hits(query, in: store.lists)
                     if !listHits.isEmpty {
                         ListHitsView(hits: listHits)

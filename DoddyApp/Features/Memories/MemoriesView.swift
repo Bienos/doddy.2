@@ -13,7 +13,7 @@ struct MemoriesView: View {
     @AppStorage(PreferenceKey.memorySort) private var sortRaw = MemorySort.newestFirst.rawValue
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
     @State private var pinMessage: String?
-    /// Notes or Lists (ADR-216).
+    /// Notes or Lists (ADR-223).
     @AppStorage(PreferenceKey.memoriesShowsLists) private var showsLists = false
 
     /// The filter in effect: the chosen type, but only while a filter is offered and a note of

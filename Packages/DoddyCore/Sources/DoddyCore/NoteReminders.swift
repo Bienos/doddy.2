@@ -48,7 +48,7 @@ public enum ReminderTrigger: Hashable, Sendable {
     case place(ReminderPlace)
 }
 
-/// How a time reminder repeats (ADR-211). The weekday, day of the month and clock time come from
+/// How a time reminder repeats (ADR-218). The weekday, day of the month and clock time come from
 /// the reminder's first occurrence, in the zone it was set in.
 public enum ReminderRepeat: String, CaseIterable, Hashable, Sendable {
     case daily, weekdays, weekly, monthly
@@ -315,7 +315,7 @@ public enum NoteReminderOutcome: Equatable, Sendable {
     }
 }
 
-/// The language of what iOS shows outside Doddy: notification title, body and buttons (ADR-213).
+/// The language of what iOS shows outside Doddy: notification title, body and buttons (ADR-220).
 /// Polish when the iPhone's first language is Polish; English otherwise, until other languages
 /// have reviewed copy.
 public enum NotificationLanguage: String, Sendable {
@@ -350,7 +350,7 @@ public enum NoteReminderCopy {
         language == .polish ? "Notatka, którą chcesz zobaczyć ponownie." : privateBody
     }
 
-    /// The private body for a list's reminder (ADR-216): it never names the list or its items.
+    /// The private body for a list's reminder (ADR-223): it never names the list or its items.
     public static func privateListBody(_ language: NotificationLanguage) -> String {
         language == .polish ? "Lista, którą chcesz zobaczyć ponownie." : "A list you asked to see again."
     }
@@ -505,7 +505,7 @@ public protocol NoteReminderRepository: Sendable {
     func reminder(forMemory memoryID: UUID) async throws -> MemoryReminder?
     func reminderCount() async throws -> Int
     func currentText(ofMemory memoryID: UUID) async throws -> String?
-    /// True when the memory is a list (ADR-216), so its private notification says "a list".
+    /// True when the memory is a list (ADR-223), so its private notification says "a list".
     func isList(memoryID: UUID) async -> Bool
     /// Stores the memory's one reminder, replacing any earlier one; returns it read back.
     /// Throws `NoteReminderError.memoryNotFound` if the memory does not exist.

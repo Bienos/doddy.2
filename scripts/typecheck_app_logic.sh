@@ -47,7 +47,7 @@ struct AppEnvironment {
 }
 SWIFT
 # SystemNoteNotifications imports UserNotifications; NoteReminderStore only calls its static
-# registerCategory() when the iPhone's language changes (ADR-213).
+# registerCategory() when the iPhone's language changes (ADR-220).
 cat > "$work/SystemNoteNotificationsStub.swift" <<'SWIFT'
 struct SystemNoteNotifications {
     static func registerCategory() async {}

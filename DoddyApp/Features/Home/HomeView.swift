@@ -16,7 +16,7 @@ struct HomeView: View {
     @State private var modal: MemoryModal?
     @State private var showAsk = false
     @State private var tool: HomeTool?
-    /// Translate (ADR-215): the start sheet, and what the user chose on it.
+    /// Translate (ADR-222): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false

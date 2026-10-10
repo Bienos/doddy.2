@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Widget extension: reads the snapshot in the App Group (ADR-219). Nothing else. -->
+<!-- Widget extension: reads the snapshot in the App Group (ADR-226). Nothing else. -->
 <plist version="1.0">
 <dict>
 	<key>com.apple.security.application-groups</key>
