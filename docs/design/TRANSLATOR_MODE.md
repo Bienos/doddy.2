@@ -1,5 +1,5 @@
-# Translator mode: design proposal (ADR-208, awaiting owner decisions)
-Owner, 2026-10-10: "we should design translator mode where he starts translating and talking in someone's language — suggest design". Canvas: **Doddy Translator** (screens 1–9 and a rules board). **Nothing here is built.**
+# Translator mode: design (ADR-208; T1, T2, T4–T6 decided, T3 open)
+Owner, 2026-10-10: "we should design translator mode where he starts translating and talking in someone's language — suggest design". Canvas: **Doddy Translator** (screens 1–9, 6b and a rules board). Owner answers, 2026-10-10: "1. both 2 mode 3. what 4 yes 5. yes 6 native". **Nothing here is built.**
 
 ## The job
 You're with someone who doesn't speak your language: a taxi driver, a pharmacist, a neighbour. You put the phone on the table between you. Doddy translates each turn aloud in the other person's language, and writes it on their half of the screen.
@@ -18,6 +18,10 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
    - A middle bar shows who's being listened to, the pair, and End.
 5. **Numbers stay exact:** prices, times, numbers, addresses and names are copied, never translated or rounded, and shown as cards on both halves.
 6. **Noisy place:** "Mówię ja" / "Hablo yo" hold-to-talk buttons. Used when Doddy can't tell who is talking, or when you turn it on.
+6b. **Listen only (T1):** one way, into your language, for a guide, a talk or an announcement.
+   - Each line appears as text with the original underneath; with earphones it is also read aloud quietly.
+   - Doddy never speaks to the people around you.
+   - It's only for things said to a group or in public, not someone's private conversation.
 7. **A quiet word:** "Doddy, …" in your language pauses translation. The answer is text on your half only; it is said to them only if you tap "Say it to them".
 8. **Careful mode** (health, law, police, money):
    - Doddy translates word for word, marks doubt, and keeps exact cards.
@@ -33,40 +37,54 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
 - **Same meaning:** no additions, no softening, no omissions; say "not sure: …" rather than guess.
 - **AI disclosure to the other person,** before anything else, in their language. Their half always says "AI translation, may contain mistakes".
 - **Their consent:** their voice is processed by ElevenLabs. The start screen says so, and the disclosure gives them the chance to say no.
-- **A separate session:**
-  - no tools, no saved notes, no memory of you (`{{user_profile}}` and notes are not sent) and none of them;
-  - not added to "recent conversations".
+- **A mode inside Doddy's conversation (T2):**
+  - The app refuses every tool call while the mode is on.
+  - Doddy never tells the other person anything from your notes or profile.
+  - The conversation is treated as private: not added to "recent conversations" and not kept on the iPhone.
 - **Not for emergencies:** say "call 112".
 
 ## How it would be built (for the implementing milestone)
-- **Agent:** a separate ElevenLabs agent, "Doddy (translator)".
-  - Its own prompt and the same voice; the 37 language presets and `language_detection`; **no tools**.
-  - Dynamic variables `owner_language` and `other_language`.
-  - Its own spec in `voice-agent/translator/`, like `voice-agent/phone/`.
+- **Agent:** a **mode of the main agent (T2)**, not a separate agent.
+  - `start_translator` (pair and mode: `face_to_face` or `listen`) switches the conversation into the mode once the user taps Start; `stop_translator` switches it back.
+  - The prompt gains a "Translator mode" section: translate, never answer, exact numbers, careful mode, the disclosure line, the quiet word.
+  - Without a restart, your notes and profile are still in the model's context. "Never share them" is therefore a prompt rule, and the risk is listed below.
+- **Native voices (T6):** one native ElevenLabs voice per language, picked and listened to before release.
+  - They are set on the agent as `supported_voices` with a label per language, and the model tags each translated line with that label. Doddy's own voice stays for the quiet word and normal talk.
+  - The 36 language presets can also set a `voice_id` per language.
+  - Whether voices switch per line, and how much that adds to the delay, has to be checked in a live test.
 - **App:**
-  - a `TranslatorSession` next to `VoiceSessionController`, with a face-to-face view where the top half is rotated 180°;
-  - exact-fact cards extracted from the transcript in the app, with tests;
-  - the 5-minute window kept in memory only;
-  - the hold-to-talk fallback mutes the microphone between turns.
-- **Main agent:** a `start_translator` tool that proposes only the language pair. The app ends the current conversation and opens the translator after the user taps Start.
-- **Privacy text:** the translator joins "What leaves this iPhone", with a line saying the other person's voice is sent too.
+  - **Translator state:** a translator state in `VoiceSessionController` makes every tool call fail with "translator mode: no tools" and marks the conversation private.
+  - **Screens:**
+    - the face-to-face view, where the top half is rotated 180°;
+    - the listen-only view;
+    - exact-fact cards extracted in the app from the transcript, with tests.
+  - **Noisy places:** hold-to-talk mutes the microphone between turns.
+- **Privacy text:** the translator joins "What leaves this iPhone", with a line saying the other person's voice is sent too, and that listen-only hears whoever is nearby.
 - **Tests:**
-  - parsing the pair;
+  - parsing the pair and the mode;
+  - tools refused in translator mode;
   - the exact-fact extractor (numbers, times, prices, addresses);
-  - nothing is written to the database or the conversation log;
+  - nothing written to the conversation log;
   - the disclosure line exists for all 37 languages.
 
-## Decisions for the owner
-| ID | Question | Proposed |
+## Decisions
+| ID | Question | Owner's answer |
 |---|---|---|
-| T1 | Scope of the first version | Face to face only. Later: listen-only (a guide, an announcement) and "speak for me" |
-| T2 | Separate agent or a mode of the main one | Separate "Doddy (translator)" with no tools |
-| T3 | Saving | Nothing by default; copy, or save the facts as a note, within 5 minutes on a tap |
-| T4 | Who's talking | By language, with hold-to-talk as a fallback |
-| T5 | Quiet word with Doddy during translation | Yes, as text on your half only |
-| T6 | Voice | Doddy's voice in both directions (a native voice per language would be clearer but less "Doddy") |
+| T1 | Scope of the first version | **Both**: face to face and listen only |
+| T2 | Separate agent or a mode | **A mode of Doddy** |
+| T3 | What is kept after translating | **Open**; the owner asked what this means (see below) |
+| T4 | Who's talking | **Yes**: by language, with hold-to-talk as a fallback |
+| T5 | Quiet word with Doddy | **Yes**, as text on your half |
+| T6 | Voice | **A native voice per language** |
+
+**T3 options:**
+- **(a) Nothing kept, copy within 5 minutes** (proposed): the text disappears when you leave the end screen, unless you tap Copy or "Save the facts as a note".
+- **(b) Nothing ever:** no copy, no save; the text is gone when the session ends.
+- **(c) Kept like a normal conversation:** it shows in your conversation history, and Doddy can bring it up later.
 
 ## Risks to check before building
+- **T2:** your notes and profile are in the model's context during translation, so not sharing them is a prompt rule, not something the code enforces. Mitigation: careful wording, plus testing with "what do you know about him?" asked by the other person.
+- **T6:** switching voice per line may add delay or occasionally use the wrong voice.
 - **Latency:** each turn passes through speech recognition, the model and speech synthesis, so expect 1–2 s. Check it's acceptable face to face.
 - **Who's talking:** detection by language fails when both people use the same language, or mix languages.
 - **Accuracy:** in careful mode, accuracy can't be guaranteed; the design says so on both halves.
