@@ -144,22 +144,66 @@ final class DeviceConnections {
         return .verified
     }
 
-    // MARK: Reminders
+    // MARK: Reminders (M4, ADR-126)
 
-    func addReminder(_ draft: ReminderDraft, calendar: Calendar) throws -> AddOutcome {
+    /// A read of Reminders that takes longer than this counts as failed, and nothing is written.
+    private static let reminderReadTimeout: Duration = .seconds(10)
+
+    /// Every incomplete reminder in every list: title, due, list name and Doddy's marker URL.
+    /// Used on the phone only, to look before writing and to read back after. Notes are not read.
+    func incompleteReminders() async throws -> [ReminderSnapshot] {
+        guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }
+        let predicate = eventStore.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: nil)
+        let once = OnceContinuation<[ReminderSnapshot]>()
+        let timeout = Self.reminderReadTimeout
+        return try await withCheckedThrowingContinuation { continuation in
+            once.set(continuation)
+            // EventKit calls back on its own queue: @Sendable so the closure isn't main-actor code.
+            _ = eventStore.fetchReminders(matching: predicate) { @Sendable reminders in
+                once.resume(.success((reminders ?? []).map(DeviceConnections.snapshot)))
+            }
+            Task {
+                try? await Task.sleep(for: timeout)
+                once.resume(.failure(ReminderStoreError.timedOut))
+            }
+        }
+    }
+
+    /// Saves exactly what the card showed in the default list, with Doddy's marker in the URL
+    /// field. A timed due carries the user's time zone explicitly; a day without a time stays
+    /// floating, as the Reminders app does for whole-day reminders.
+    func save(_ write: ReminderWrite) throws -> String {
+        guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }
         guard let list = eventStore.defaultCalendarForNewReminders() else { throw Failure.noDefaultReminderList }
         let reminder = EKReminder(eventStore: eventStore)
         reminder.calendar = list
-        reminder.title = draft.title
-        reminder.notes = draft.notes
-        if let due = draft.due {
-            let units: Set<Calendar.Component> = draft.dueHasTime ? [.year, .month, .day, .hour, .minute] : [.year, .month, .day]
-            var components = calendar.dateComponents(units, from: due)
-            components.calendar = calendar
+        reminder.title = write.title
+        reminder.notes = write.notes
+        reminder.url = URL(string: write.markerURL)
+        if let due = write.due {
+            var components = DateComponents(year: due.year, month: due.month, day: due.day, hour: due.hour, minute: due.minute)
+            components.calendar = due.calendar
+            if due.hasTime { components.timeZone = due.calendar.timeZone }
             reminder.dueDateComponents = components
         }
         try eventStore.save(reminder, commit: true)
-        return eventStore.calendarItem(withIdentifier: reminder.calendarItemIdentifier) != nil ? .verified : .unconfirmed
+        return reminder.calendarItemIdentifier
+    }
+
+    nonisolated private static func snapshot(_ reminder: EKReminder) -> ReminderSnapshot {
+        let due = reminder.dueDateComponents.flatMap { components -> ReminderDue? in
+            guard let year = components.year, let month = components.month, let day = components.day else { return nil }
+            return ReminderDue(
+                year: year, month: month, day: day, hour: components.hour, minute: components.minute,
+                timeZoneID: components.timeZone?.identifier)
+        }
+        return ReminderSnapshot(
+            id: reminder.calendarItemIdentifier,
+            title: reminder.title ?? "",
+            listTitle: reminder.calendar?.title ?? "Reminders",
+            due: due,
+            markerURL: reminder.url?.absoluteString,
+            isCompleted: reminder.isCompleted)
     }
 
     /// Incomplete reminders due by `end` (overdue included), for Home → Today. Title and due
@@ -246,6 +290,27 @@ final class DeviceConnections {
                 phoneNumbers: contact.phoneNumbers.map { $0.value.stringValue },
                 emailAddresses: contact.emailAddresses.map { $0.value as String })
         }
+    }
+}
+
+/// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).
+extension DeviceConnections: ReminderStore {}
+
+/// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.
+private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Value, Error>?
+
+    func set(_ continuation: CheckedContinuation<Value, Error>) {
+        lock.withLock { self.continuation = continuation }
+    }
+
+    func resume(_ result: Result<Value, Error>) {
+        let pending: CheckedContinuation<Value, Error>? = lock.withLock {
+            defer { continuation = nil }
+            return continuation
+        }
+        pending?.resume(with: result)
     }
 }
 

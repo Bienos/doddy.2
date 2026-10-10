@@ -55,6 +55,13 @@ final class VoiceSessionController {
         let matches: [DeviceConnections.ContactMatch]
     }
 
+    /// The receipt after the user tapped Add on a reminder card (M4). It stays on screen after
+    /// the conversation ends, because the agent may never hear the answer (its wait can time out).
+    enum ReminderStatus: Equatable {
+        case adding(ReminderDraft)
+        case done(ReminderDraft, ReminderOutcome)
+    }
+
     private(set) var phase: Phase = .idle {
         didSet {
             Self.conversationInProgress = isLive
@@ -67,6 +74,7 @@ final class VoiceSessionController {
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     private(set) var contactCard: ContactCard?
+    private(set) var reminderStatus: ReminderStatus?
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false { didSet { syncIsland() } }
@@ -99,6 +107,7 @@ final class VoiceSessionController {
         lines = []
         pendingAction = nil
         contactCard = nil
+        reminderStatus = nil
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
@@ -269,7 +278,11 @@ final class VoiceSessionController {
         case .event(let id, let draft):
             await reply(id, addEvent(draft))
         case .reminder(let id, let draft):
-            await reply(id, addReminder(draft))
+            // The card is already gone (pendingAction is nil), so a second tap does nothing.
+            reminderStatus = .adding(draft)
+            let outcome = await addReminder(draft)
+            reminderStatus = .done(draft, outcome)
+            await reply(id, VoiceToolReply.reminder(outcome))
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
         case .map(let id, let place):
@@ -321,6 +334,11 @@ final class VoiceSessionController {
 
     func dismissContactCard() {
         contactCard = nil
+    }
+
+    func dismissReminderStatus() {
+        guard case .done = reminderStatus else { return }
+        reminderStatus = nil
     }
 
     // MARK: Dynamic Island
@@ -408,7 +426,15 @@ final class VoiceSessionController {
         case .createCalendarEvent(let draft):
             propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .createReminder(let draft):
+            // Blocked by iOS: say so now instead of showing a card that can only fail.
+            guard devices.access(for: .reminders) == .granted else {
+                await notConnected(call.toolCallId, .reminders)
+                return
+            }
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .needsClarification(_, let clarification):
+            // Unclear, past or clock-change time: the agent asks the user; no card, nothing added.
+            await reply(call.toolCallId, VoiceToolReply.reminderClarification(clarification))
         case .lookupContact(let name):
             guard devices.access(for: .contacts) == .granted else {
                 await notConnected(call.toolCallId, .contacts)
@@ -518,18 +544,16 @@ final class VoiceSessionController {
         }
     }
 
-    private func addReminder(_ draft: ReminderDraft) -> String {
-        guard devices.access(for: .reminders) == .granted else {
-            return VoiceToolReply.notAdded("Reminders isn't connected.")
+    /// Look first, write once, read back (DoddyCore `ReminderAction`). Permission is checked again
+    /// at the tap, since the user may have changed it while the card waited.
+    private func addReminder(_ draft: ReminderDraft) async -> ReminderOutcome {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return .notAdded(.notAllowed)
         }
-        do {
-            switch try devices.addReminder(draft, calendar: .current) {
-            case .verified: return VoiceToolReply.reminderAdded(draft, calendar: .current)
-            case .unconfirmed: return VoiceToolReply.addUnconfirmed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
-        }
+        let outcome = await ReminderAction.add(draft, to: devices, now: Date())
+        if outcome == .notAdded(.notAllowed) { connectionNeeded = .reminders }
+        return outcome
     }
 
     private func startTimer(_ draft: TimerDraft) async -> String {

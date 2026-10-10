@@ -95,14 +95,18 @@ final class VoiceToolsTests: XCTestCase {
     // MARK: Reminders and contacts
 
     func testCreateReminderWithAndWithoutTime() {
+        let warsaw = "Europe/Warsaw"
         XCTAssertEqual(parse("create_reminder", #"{"title":"Call Marta","due":"2026-10-12T18:00"}"#),
-                       .createReminder(ReminderDraft(title: "Call Marta", due: date(2026, 10, 12, 18, 0), dueHasTime: true, notes: nil)))
+                       .createReminder(ReminderDraft(title: "Call Marta", due: ReminderDue(year: 2026, month: 10, day: 12, hour: 18, minute: 0, timeZoneID: warsaw), notes: nil)))
         XCTAssertEqual(parse("create_reminder", #"{"title":"Pay rent","due":"2026-10-31"}"#),
-                       .createReminder(ReminderDraft(title: "Pay rent", due: date(2026, 10, 31, 0, 0), dueHasTime: false, notes: nil)))
-        XCTAssertEqual(parse("create_reminder", #"{"title":"Buy milk"}"#),
-                       .createReminder(ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil)))
-        XCTAssertEqual(parse("create_reminder", #"{"title":"Buy milk","due":"tomorrow"}"#),
-                       .invalid(name: "create_reminder", reason: "due is not a date"))
+                       .createReminder(ReminderDraft(title: "Pay rent", due: ReminderDue(year: 2026, month: 10, day: 31, timeZoneID: warsaw), notes: nil)))
+        XCTAssertEqual(parse("create_reminder", #"{"title":"  Buy milk "}"#),
+                       .createReminder(ReminderDraft(title: "Buy milk", due: nil, notes: nil)))
+        guard case .needsClarification(let name, let clarification) = parse("create_reminder", #"{"title":"Buy milk","due":"tomorrow"}"#) else {
+            return XCTFail("a word instead of a date must be sent back as a question")
+        }
+        XCTAssertEqual(name, "create_reminder")
+        XCTAssertEqual(clarification.kind, .unreadable)
     }
 
     func testLookupContactNeedsName() {
@@ -178,7 +182,7 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertTrue(added.hasPrefix("added: "))
         XCTAssertTrue(added.contains("2026-10-12 15:00 to 2026-10-12 16:00"))
 
-        XCTAssertTrue(VoiceToolReply.reminderAdded(ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil), calendar: calendar).hasPrefix("added: reminder"))
+        XCTAssertTrue(VoiceToolReply.reminder(.added(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: nil))).hasPrefix("added: reminder"))
         XCTAssertTrue(VoiceToolReply.declinedEvent.hasPrefix("declined: "))
         XCTAssertTrue(VoiceToolReply.notAdded("Calendar is read-only.").hasPrefix("failed: "))
         XCTAssertTrue(VoiceToolReply.addUnconfirmed.hasPrefix("unknown: "))

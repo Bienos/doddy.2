@@ -64,12 +64,12 @@
     {
       "type": "function",
       "name": "create_reminder",
-      "description": "Propose adding one reminder to the user's iPhone Reminders app. Use it only when the user clearly asks to be reminded or to add a reminder or to-do. Turn relative dates into a date using the current date and time you were given; if the time is unclear, ask one short question first. The app shows the reminder on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added.",
+      "description": "Propose adding one reminder to the user's iPhone Reminders app. Use it only when the user clearly asks to be reminded or to add a reminder or to-do. Turn relative dates into a date using the current date and time you were given; if the time is unclear, ask one short question first. The app shows the reminder on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added. If the result says it was already in Reminders, say it is already there; never call this tool again for the same reminder. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
       "parameters": {
         "type": "object",
         "properties": {
           "title": {"type": "string", "description": "The reminder in the user's words and language, e.g. 'Call Marta' or 'Zapłacić czynsz'."},
-          "due": {"type": "string", "description": "When it is due, in the user's local time as YYYY-MM-DDTHH:MM, or YYYY-MM-DD for a day without a time. Leave out if the user gave no time."},
+          "due": {"type": "string", "description": "When it is due, in the user's local time as YYYY-MM-DDTHH:MM, or YYYY-MM-DD for a day without a time. Always write the full day, never a time alone, and no time zone or offset. It must be later than now. Leave out if the user gave no time."},
           "notes": {"type": "string", "description": "Extra details, only if the user gave some."}
         },
         "required": ["title"]
