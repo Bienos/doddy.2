@@ -55,13 +55,13 @@ final class TodayModel {
         do {
             plan = try EventNudgePlan(event: event, leadMinutes: leadMinutes, now: .now)
         } catch {
-            notice = "That time has already passed, so no nudge was set."
+            notice = NSLocalizedString("That time has already passed, so no nudge was set.", comment: "")
             return
         }
         var access = await devices.notificationAccess()
         if access == .notDetermined { access = await devices.request(.timers) }
         guard access == .granted else {
-            notice = "Notifications are off for Doddy. Turn them on in iPhone Settings, Notifications, Doddy."
+            notice = NSLocalizedString("Notifications are off for Doddy. Turn them on in iPhone Settings, Notifications, Doddy.", comment: "")
             return
         }
         // Setting a different lead time replaces the earlier nudge for this event.

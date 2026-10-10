@@ -121,10 +121,14 @@ struct WatchSettingsSection: View {
                 Toggle("Show notes and lists on Apple Watch", isOn: $watchOn)
                     .onChange(of: watchOn) { WidgetSync.shared.refresh() }
                     .accessibilityIdentifier("settings.watchOn")
-                Text(watchOn
-                     ? "The watch shows your pinned notes, next note reminders and lists, and can tick items and save new notes. It does that through your iPhone, which must be nearby; nothing is saved on the watch."
-                     : "The watch shows nothing from your notes or lists.")
-                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                Group {
+                    if watchOn {
+                        Text("The watch shows your pinned notes, next note reminders and lists, and can tick items and save new notes. It does that through your iPhone, which must be nearby; nothing is saved on the watch.")
+                    } else {
+                        Text("The watch shows nothing from your notes or lists.")
+                    }
+                }
+                .font(.footnote).foregroundStyle(Theme.secondaryText)
             }
         }
     }

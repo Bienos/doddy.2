@@ -185,25 +185,25 @@ enum UserFacingError {
         if let error = error as? MemoryValidationError {
             switch error {
             case .empty:
-                return "Write something first. Empty notes aren't saved."
+                return NSLocalizedString("Write something first. Empty notes aren't saved.", comment: "")
             case .tooLong(let length, let maximum):
                 return "That's \(length) characters; the limit is \(maximum). Nothing was cut and nothing was saved."
             default:
-                return "This note can't be saved as it is."
+                return NSLocalizedString("This note can't be saved as it is.", comment: "")
             }
         }
         if let error = error as? MemoryStoreError {
             switch error {
             case .notFound:
-                return "That memory no longer exists."
+                return NSLocalizedString("That memory no longer exists.", comment: "")
             case .verificationFailed:
-                return "The save couldn't be confirmed, so it wasn't counted as saved. Your text is still here."
+                return NSLocalizedString("The save couldn't be confirmed, so it wasn't counted as saved. Your text is still here.", comment: "")
             case .corruptRecord:
-                return "A stored memory couldn't be read. Nothing was deleted."
+                return NSLocalizedString("A stored memory couldn't be read. Nothing was deleted.", comment: "")
             }
         }
         if error is DoddyError {
-            return "The memory store isn't available on this iPhone right now."
+            return NSLocalizedString("The memory store isn't available on this iPhone right now.", comment: "")
         }
         return "Something went wrong and nothing was changed. (\(error.localizedDescription))"
     }

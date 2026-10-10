@@ -91,10 +91,10 @@ struct PlanStepEditor: View {
 
     private var title: String {
         switch form.kind {
-        case .note: "Change note"
-        case .reminder: "Change reminder"
-        case .event: "Change event"
-        case .timer: "Change timer"
+        case .note: NSLocalizedString("Change note", comment: "")
+        case .reminder: NSLocalizedString("Change reminder", comment: "")
+        case .event: NSLocalizedString("Change event", comment: "")
+        case .timer: NSLocalizedString("Change timer", comment: "")
         }
     }
 

@@ -30,3 +30,24 @@ Edit `l10n/pl.json`, then run `python3 -I tools/build_strings_catalog.py` and co
 | DOD-11 observable_privacy | Privacy paragraphs not machine-paraphrased: the longest stay English until reviewed | — | Mixed-language Privacy screen in Polish |
 
 Don't claim "Doddy is fully in Polish": screens built at run time, long privacy texts and permission prompts are still English.
+
+## Finishing Polish (ADR-233, 2026-10-10, owner: "do all of them", item 2)
+- **Messages made in code:** 247 on-screen messages that were plain Swift strings now go through `NSLocalizedString`. These cover errors, receipts, status words, note types, voice and personality labels, card buttons, import, backup, tidy-up, check-in and voice-memo notices. (`String(localized:)` isn't in Linux Foundation, which would break the app-logic type-check.) Two kinds were left alone on purpose:
+  - **Text sent to the voice agent:** `VoiceSessionController` tool replies and `DeviceConnections` errors. These stay English for the model.
+  - **The voice names.**
+- **The generator** (`tools/build_strings_catalog.py`) now also finds `NSLocalizedString("…")`, App Intent titles and descriptions (`LocalizedStringResource`, `IntentDescription`) and App Shortcut short titles. Besides the app's catalog it writes four more:
+  - `DoddyWidgets/Localizable.xcstrings` and `DoddyWatch/Localizable.xcstrings`: only the lines each target uses.
+  - `DoddyApp/Resources/InfoPlist.xcstrings`: the 6 permission prompts, from `l10n/pl_infoplist.json`, which records the English each translation was made from. If a prompt changes in `project.yml`, `--check` fails until its Polish is reviewed.
+  - `DoddyApp/Resources/AppShortcuts.xcstrings`: the 19 Siri phrases, from `l10n/pl_shortcuts.json`. Every Polish phrase must name the app once and keep `${list}` where the English has it. They use "w aplikacji ${applicationName}" so the app name needn't be declined.
+- **Coverage:** 901 of 922 UI strings, 6 of 6 permission prompts and 19 of 19 Siri phrases. The privacy paragraphs are now Polish too, except the longest one (Settings › What leaves this iPhone › details), which waits for a native reviewer.
+- **Still English:**
+  - strings with a value inside (`"\(count) notes"`);
+  - developer and test-fixture screens;
+  - the watch's iPhone replies (made in DoddyCore);
+  - the longest privacy paragraph.
+- **Whether Siri accepts Polish phrases** depends on Siri supporting Polish on the device. That is not verified here. The short titles show in Polish in Shortcuts and Spotlight either way.
+- **Verified (Linux):** `--check` passes. `scripts/ci.sh --core-only` passes. `swiftc -parse` passes on every changed Swift file.
+- **NOT RUN:**
+  - no Xcode build, so not checked whether Xcode accepts the generated InfoPlist/AppShortcuts catalogs or whether XcodeGen adds the widget and watch catalogs as resources;
+  - never seen on a Polish iPhone or watch;
+  - the translations need a native read-through, the privacy ones first.

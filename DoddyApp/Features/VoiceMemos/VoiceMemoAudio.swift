@@ -136,7 +136,7 @@ final class VoiceMemoPlayer {
                 }
             }
         } catch {
-            problem = "This recording couldn't be played."
+            problem = NSLocalizedString("This recording couldn't be played.", comment: "")
             isPlaying = false
         }
     }

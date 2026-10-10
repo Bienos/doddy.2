@@ -486,19 +486,19 @@ struct VoiceView: View {
 
     private func actionLabels(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> (confirm: String, decline: String) {
         switch pending {
-        case .memory: ("Save", "Don't save")
-        case .event, .reminder: ("Add", "Don't add")
-        case .timer: ("Start", "Don't start")
-        case .map: ("Open in Maps", "Don't open")
-        case .shortcut: ("Run", "Don't run")
-        case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
-        case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
-        case .noteReminder: ("Set reminder", "Don't set")
-        case .translator: ("Start", "Not now")
-        case .createList: ("Create list", "Not now")
-        case .changeEvent: ("Change", "Don't change")
-        case .changeReminder(_, _, let draft): (draft.markDone ? "Mark done" : "Change", "Don't change")
-        case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), "Not now")
+        case .memory: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
+        case .event, .reminder: (NSLocalizedString("Add", comment: ""), NSLocalizedString("Don't add", comment: ""))
+        case .timer: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Don't start", comment: ""))
+        case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
+        case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
+        case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
+        case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
+        case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
+        case .translator: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Not now", comment: ""))
+        case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
+        case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
+        case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
+        case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         }
     }
 
@@ -911,13 +911,13 @@ struct VoiceView: View {
 
     private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {
         switch phase {
-        case .idle, .connecting: "Connecting…"
-        case .listening: "Listening"
-        case .thinking: "Thinking…"
-        case .speaking: "Speaking"
-        case .ended: "Conversation ended"
-        case .microphoneDenied: "Microphone is off"
-        case .failed: "Couldn't connect"
+        case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
+        case .listening: NSLocalizedString("Listening", comment: "")
+        case .thinking: NSLocalizedString("Thinking…", comment: "")
+        case .speaking: NSLocalizedString("Speaking", comment: "")
+        case .ended: NSLocalizedString("Conversation ended", comment: "")
+        case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
+        case .failed: NSLocalizedString("Couldn't connect", comment: "")
         }
     }
 }

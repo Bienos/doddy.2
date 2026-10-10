@@ -135,9 +135,9 @@ private struct MemorySortMenu: View {
 
     private static func title(_ sort: MemorySort) -> String {
         switch sort {
-        case .newestFirst: "Newest first"
-        case .oldestFirst: "Oldest first"
-        case .recentlyChanged: "Recently changed"
+        case .newestFirst: NSLocalizedString("Newest first", comment: "")
+        case .oldestFirst: NSLocalizedString("Oldest first", comment: "")
+        case .recentlyChanged: NSLocalizedString("Recently changed", comment: "")
         }
     }
 

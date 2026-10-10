@@ -29,11 +29,11 @@ final class VoicePreviewPlayer {
         stop()
         problem = nil
         guard !VoiceSessionController.conversationInProgress else {
-            problem = "Samples don't play while you're talking to Doddy."
+            problem = NSLocalizedString("Samples don't play while you're talking to Doddy.", comment: "")
             return
         }
         guard let url = Bundle.main.url(forResource: style.voice.previewResourceName, withExtension: "mp3") else {
-            problem = "This sample is missing from the app."
+            problem = NSLocalizedString("This sample is missing from the app.", comment: "")
             return
         }
         do {
@@ -47,7 +47,7 @@ final class VoicePreviewPlayer {
             let delegate = FinishDelegate { Task { @MainActor in ref.value?.finished() } }
             player.delegate = delegate
             guard player.play() else {
-                problem = "Couldn't play the sample."
+                problem = NSLocalizedString("Couldn't play the sample.", comment: "")
                 deactivateSession()
                 return
             }
@@ -55,7 +55,7 @@ final class VoicePreviewPlayer {
             self.delegate = delegate
             playing = style.voice
         } catch {
-            problem = "Couldn't play the sample."
+            problem = NSLocalizedString("Couldn't play the sample.", comment: "")
             deactivateSession()
         }
     }

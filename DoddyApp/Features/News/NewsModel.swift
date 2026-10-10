@@ -97,7 +97,7 @@ final class NewsModel {
             case "ready": result.errorCode == "no_channel"
                 ? "It's below. Nothing was sent: notifications or texts aren't on for this iPhone."
                 : "It's below\(result.aiWritten ? "" : " (headlines only)")."
-            case "empty": "Nothing new for your topics right now."
+            case "empty": NSLocalizedString("Nothing new for your topics right now.", comment: "")
             default: "Couldn't build your news right now. Try again later."
             }
             self.digests = (try? await client.newsDigests()) ?? self.digests
@@ -129,11 +129,11 @@ final class NewsModel {
         do {
             try await work()
         } catch ServerError.notEnabled("push_not_enabled") {
-            message = "Turn on notifications first, in Notifications and texts."
+            message = NSLocalizedString("Turn on notifications first, in Notifications and texts.", comment: "")
         } catch ServerError.notEnabled("sms_not_enabled") {
-            message = "Turn on texts first, in Notifications and texts."
+            message = NSLocalizedString("Turn on texts first, in Notifications and texts.", comment: "")
         } catch ServerError.notEnabled("no_topics") {
-            message = "Pick at least one topic or feed."
+            message = NSLocalizedString("Pick at least one topic or feed.", comment: "")
         } catch {
             message = UpdatesModel.text(for: error)
         }

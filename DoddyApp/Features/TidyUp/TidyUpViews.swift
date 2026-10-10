@@ -150,7 +150,7 @@ struct TidyUpView: View {
     private func markDone(_ reminder: MemoryReminder) async {
         await noteReminders.done(reminderID: reminder.id)
         if noteReminders.reminders.contains(where: { $0.id == reminder.id }) {
-            problem = "That reminder couldn't be marked done. It's unchanged."
+            problem = NSLocalizedString("That reminder couldn't be marked done. It's unchanged.", comment: "")
         } else {
             problem = nil
             lastDone = "Reminder marked done."
@@ -223,10 +223,10 @@ struct TidyUpSettingsSection: View {
 
     private func message(_ outcome: TidyUpScheduler.Outcome) -> String {
         switch outcome {
-        case .scheduled: return "Set. The tidy-up notification comes once a week."
-        case .off: return "Off. Nothing is scheduled."
-        case .needsPermission: return "Notifications are off for Doddy, so the tidy-up can't ring. Turn them on in iOS Settings."
-        case .failed: return "The tidy-up couldn't be set. Try again."
+        case .scheduled: return NSLocalizedString("Set. The tidy-up notification comes once a week.", comment: "")
+        case .off: return NSLocalizedString("Off. Nothing is scheduled.", comment: "")
+        case .needsPermission: return NSLocalizedString("Notifications are off for Doddy, so the tidy-up can't ring. Turn them on in iOS Settings.", comment: "")
+        case .failed: return NSLocalizedString("The tidy-up couldn't be set. Try again.", comment: "")
         }
     }
 }

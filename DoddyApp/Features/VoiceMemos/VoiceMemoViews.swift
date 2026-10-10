@@ -116,14 +116,14 @@ struct CaptureVoiceMemo: View {
     private func finishRecording() {
         problem = nil
         guard let recording = recorder.stop() else {
-            problem = "That was too short to keep. Tap Record and speak, then Stop."
+            problem = NSLocalizedString("That was too short to keep. Tap Record and speak, then Stop.", comment: "")
             return
         }
         draft = VoiceMemoDraft(recording: recording, language: nil, transcript: nil)
         if let first = languages.first {
             Task { await writeOut(in: first) }
         } else {
-            notice = "This iPhone can't write out speech without sending it, so Doddy didn't. Type a few words so you can find the note later."
+            notice = NSLocalizedString("This iPhone can't write out speech without sending it, so Doddy didn't. Type a few words so you can find the note later.", comment: "")
         }
     }
 
@@ -138,16 +138,16 @@ struct CaptureVoiceMemo: View {
             text = VoiceMemoText.replacing(current.transcript, with: result.text, in: text)
             draft?.transcript = result.text
             draft?.language = locale
-            let check = "Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving."
-            notice = result.wasCut ? check + " It was long, so only the first part was added." : check
+            let check = NSLocalizedString("Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving.", comment: "")
+            notice = result.wasCut ? check + " " + NSLocalizedString("It was long, so only the first part was added.", comment: "") : check
         case .noSpeech:
-            notice = "No words were heard. Add a few words so you can find the note later."
+            notice = NSLocalizedString("No words were heard. Add a few words so you can find the note later.", comment: "")
         case .notOnDevice:
             notice = "This iPhone can't write out \(Self.name(of: locale)) without sending it, so Doddy didn't. Type a few words so you can find the note later."
         case .notAllowed:
-            notice = "Speech recognition is off for Doddy, so nothing was written out. You can turn it on in the Settings app, or type a few words."
+            notice = NSLocalizedString("Speech recognition is off for Doddy, so nothing was written out. You can turn it on in the Settings app, or type a few words.", comment: "")
         case .failed:
-            notice = "It couldn't be written out. The recording is still here; type a few words so you can find the note later."
+            notice = NSLocalizedString("It couldn't be written out. The recording is still here; type a few words so you can find the note later.", comment: "")
         }
         if let notice { UIAccessibility.post(notification: .announcement, argument: notice) }
     }

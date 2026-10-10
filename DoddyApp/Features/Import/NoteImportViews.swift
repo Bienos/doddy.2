@@ -128,7 +128,7 @@ struct NoteImportView: View {
     private func read(_ result: Result<[URL], any Error>) {
         problem = nil
         guard case .success(let urls) = result else {
-            problem = "Those files couldn't be opened."
+            problem = NSLocalizedString("Those files couldn't be opened.", comment: "")
             return
         }
         guard urls.count <= NoteImport.maxFiles else {
@@ -184,17 +184,17 @@ struct NoteImportView: View {
 
     static func reason(_ problem: NoteImport.Problem?) -> String {
         switch problem {
-        case .unreadable, .none: "This file couldn't be read."
-        case .notAKeepNote: "This isn't a Google Keep note."
-        case .notText: "This file isn't plain text Doddy can read."
-        case .fileTooLarge: "This file is too large."
-        case .empty: "There are no words in it."
-        case .inTrash: "It was in Keep's trash."
+        case .unreadable, .none: NSLocalizedString("This file couldn't be read.", comment: "")
+        case .notAKeepNote: NSLocalizedString("This isn't a Google Keep note.", comment: "")
+        case .notText: NSLocalizedString("This file isn't plain text Doddy can read.", comment: "")
+        case .fileTooLarge: NSLocalizedString("This file is too large.", comment: "")
+        case .empty: NSLocalizedString("There are no words in it.", comment: "")
+        case .inTrash: NSLocalizedString("It was in Keep's trash.", comment: "")
         case .tooLong(let length): "It's \(length) characters; a note can be up to \(MemoryLimits.maxTextLength). Nothing is cut."
         case .listNameTooLong: "The list's name is longer than \(ListLimits.nameLength) characters."
         case .tooManyItems: "The list has more than \(ListLimits.itemsPerList) items, or an item longer than \(ListLimits.itemLength) characters."
         case .listNameTaken(let name): "You already have a list called “\(name)”."
-        case .alreadySaved: "Already in Doddy."
+        case .alreadySaved: NSLocalizedString("Already in Doddy.", comment: "")
         }
     }
 }

@@ -214,14 +214,14 @@ struct OnlineAccountsView: View {
 
     private func statusText(_ toolkit: ToolkitView) -> String {
         switch toolkit.status {
-        case .unavailable: "Not set up"
-        case .disconnected: "Not connected"
-        case .connecting: "Connecting…"
+        case .unavailable: NSLocalizedString("Not set up", comment: "")
+        case .disconnected: NSLocalizedString("Not connected", comment: "")
+        case .connecting: NSLocalizedString("Connecting…", comment: "")
         case .connected where !toolkit.hasAccount: model.isDemo ? "Ready (demo)" : "Ready, no sign-in"
         case .connected: model.isDemo ? "Connected (demo)" : "Connected"
-        case .permissionInsufficient: "Needs attention"
-        case .expired: "Expired"
-        case .error: "Couldn't check"
+        case .permissionInsufficient: NSLocalizedString("Needs attention", comment: "")
+        case .expired: NSLocalizedString("Expired", comment: "")
+        case .error: NSLocalizedString("Couldn't check", comment: "")
         }
     }
 
@@ -252,11 +252,11 @@ private struct OnlineReceiptRow: View {
 
     static func statusText(_ status: ReceiptStatus) -> String {
         switch status {
-        case .succeeded: "Done"
-        case .failed: "Failed"
-        case .canceled: "Canceled"
-        case .blocked: "Blocked"
-        case .outcomeUnknown: "Not confirmed"
+        case .succeeded: NSLocalizedString("Done", comment: "")
+        case .failed: NSLocalizedString("Failed", comment: "")
+        case .canceled: NSLocalizedString("Canceled", comment: "")
+        case .blocked: NSLocalizedString("Blocked", comment: "")
+        case .outcomeUnknown: NSLocalizedString("Not confirmed", comment: "")
         }
     }
 }

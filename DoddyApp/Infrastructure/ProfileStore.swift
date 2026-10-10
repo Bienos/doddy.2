@@ -111,15 +111,15 @@ enum ProfileErrorText {
         if let error = error as? ProfileStoreError {
             switch error {
             case .revisionConflict:
-                return "Your preferences changed somewhere else while you were editing. Nothing was saved; your edits are still here. Check them and save again."
+                return NSLocalizedString("Your preferences changed somewhere else while you were editing. Nothing was saved; your edits are still here. Check them and save again.", comment: "")
             case .verificationFailed:
-                return "The save couldn't be confirmed, so it wasn't counted as saved. Your answers are still here."
+                return NSLocalizedString("The save couldn't be confirmed, so it wasn't counted as saved. Your answers are still here.", comment: "")
             case .corruptRecord:
-                return "A saved preference couldn't be read. Nothing was deleted."
+                return NSLocalizedString("A saved preference couldn't be read. Nothing was deleted.", comment: "")
             }
         }
         if error is DoddyError {
-            return "Preferences can't be saved on this iPhone right now."
+            return NSLocalizedString("Preferences can't be saved on this iPhone right now.", comment: "")
         }
         return "Something went wrong and nothing was saved. (\(error.localizedDescription))"
     }
@@ -128,23 +128,23 @@ enum ProfileErrorText {
 extension ProfileKey {
     var question: String {
         switch self {
-        case .name: "First things first. What should I call you?"
-        case .help: "What would make me useful in your day?"
-        case .style: "And how do you like your answers?"
-        case .language: "Which language feels natural to you?"
-        case .humor: "A little dry humor, or straight to the useful bit?"
-        case .context: "Anything you'd like a hand with these days?"
+        case .name: NSLocalizedString("First things first. What should I call you?", comment: "")
+        case .help: NSLocalizedString("What would make me useful in your day?", comment: "")
+        case .style: NSLocalizedString("And how do you like your answers?", comment: "")
+        case .language: NSLocalizedString("Which language feels natural to you?", comment: "")
+        case .humor: NSLocalizedString("A little dry humor, or straight to the useful bit?", comment: "")
+        case .context: NSLocalizedString("Anything you'd like a hand with these days?", comment: "")
         }
     }
 
     var hint: String {
         switch self {
-        case .name: "A name or nickname is enough. It doesn't verify who you are."
-        case .help: "Pick a starting point, or say it in your own words."
-        case .style: "You can change this whenever you want."
-        case .language: "Doddy's screens are in English for now. This is for replies later on."
-        case .humor: "No jokes when something matters."
-        case .context: "A project, hobby or routine. Share only what would help."
+        case .name: NSLocalizedString("A name or nickname is enough. It doesn't verify who you are.", comment: "")
+        case .help: NSLocalizedString("Pick a starting point, or say it in your own words.", comment: "")
+        case .style: NSLocalizedString("You can change this whenever you want.", comment: "")
+        case .language: NSLocalizedString("Doddy's screens follow your iPhone's language. This is for Doddy's replies.", comment: "")
+        case .humor: NSLocalizedString("No jokes when something matters.", comment: "")
+        case .context: NSLocalizedString("A project, hobby or routine. Share only what would help.", comment: "")
         }
     }
 }

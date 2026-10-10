@@ -101,7 +101,7 @@ struct AppEnvironment: Sendable {
 
     private static func storageProblem(for error: any Error) -> String {
         if error as? DoddyDatabaseError == .newerSchema {
-            return "Your memories were saved by a newer version of Doddy, so this version can't open them. Nothing was deleted or reset. Install the latest version of Doddy."
+            return NSLocalizedString("Your memories were saved by a newer version of Doddy, so this version can't open them. Nothing was deleted or reset. Install the latest version of Doddy.", comment: "")
         }
         return "Doddy couldn't open its memory store, so saving is switched off. Nothing was deleted or reset. Try closing and reopening the app. (\(error.localizedDescription))"
     }

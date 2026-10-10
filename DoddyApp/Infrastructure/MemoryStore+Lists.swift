@@ -108,12 +108,12 @@ extension UserFacingError {
     static func listMessage(for error: any Error) -> String {
         guard let error = error as? ListError else { return message(for: error) }
         switch error {
-        case .emptyName: return "Give the list a name."
+        case .emptyName: return NSLocalizedString("Give the list a name.", comment: "")
         case .nameTooLong(let maximum): return "A list name can be up to \(maximum) characters."
         case .nameTaken(let name): return "You already have a list called “\(name)”."
         case .tooManyLists(let maximum): return "You can have up to \(maximum) lists. Delete one to make another."
-        case .notFound: return "That list no longer exists."
-        case .notANote: return "Lists and notes can't be turned into each other."
+        case .notFound: return NSLocalizedString("That list no longer exists.", comment: "")
+        case .notANote: return NSLocalizedString("Lists and notes can't be turned into each other.", comment: "")
         }
     }
 }

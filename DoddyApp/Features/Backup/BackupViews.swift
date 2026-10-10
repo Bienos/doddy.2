@@ -31,15 +31,15 @@ enum BackupCopy {
         case .passphraseTooShort(let minimum)?:
             return "Use at least \(minimum) characters. A few words you'll remember works well."
         case .tooLarge?:
-            return "This backup would be too large for one file. Make one without photos."
+            return NSLocalizedString("This backup would be too large for one file. Make one without photos.", comment: "")
         case .notABackup?:
-            return "That file isn't a Doddy backup. Nothing was added."
+            return NSLocalizedString("That file isn't a Doddy backup. Nothing was added.", comment: "")
         case .newerFormat?:
-            return "That backup was made by a newer Doddy. Update Doddy, then try again. Nothing was added."
+            return NSLocalizedString("That backup was made by a newer Doddy. Update Doddy, then try again. Nothing was added.", comment: "")
         case .wrongPassphraseOrDamaged?:
-            return "That passphrase doesn't open this backup, or the file was changed. Nothing was added."
+            return NSLocalizedString("That passphrase doesn't open this backup, or the file was changed. Nothing was added.", comment: "")
         case .weakFile?:
-            return "This file isn't protected the way Doddy's backups are, so it wasn't opened. Nothing was added."
+            return NSLocalizedString("This file isn't protected the way Doddy's backups are, so it wasn't opened. Nothing was added.", comment: "")
         case nil:
             if let restore = error as? MemoryRestoreError { return RestoreCopy.failure(restore) }
             return UserFacingError.message(for: error)
@@ -124,7 +124,7 @@ struct MakeBackupView: View {
                 case .success(let url):
                     receipt = "Saved as \"\(url.lastPathComponent)\". Keep the passphrase safe; Doddy doesn't keep it."
                 case .failure:
-                    problem = "The backup wasn't saved. Nothing was changed on this iPhone."
+                    problem = NSLocalizedString("The backup wasn't saved. Nothing was changed on this iPhone.", comment: "")
                 }
                 document = nil
             }
@@ -234,7 +234,7 @@ struct RestoreBackupView: View {
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
         let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         guard size <= BackupLimits.maxFileBytes, let data = try? Data(contentsOf: url) else {
-            problem = "That file couldn't be read, or is too large. Nothing was added."
+            problem = NSLocalizedString("That file couldn't be read, or is too large. Nothing was added.", comment: "")
             return
         }
         fileData = data
@@ -255,7 +255,7 @@ struct RestoreBackupView: View {
             plan = try BackupRestorePlan.make(
                 contents, existing: store.memories + store.lists.map(\.record),
                 profileIsEmpty: profiles.profile.isEmpty, now: .now)
-            if plan?.isEmpty == true { problem = "Everything in this backup is already on this iPhone. Nothing to add." }
+            if plan?.isEmpty == true { problem = NSLocalizedString("Everything in this backup is already on this iPhone. Nothing to add.", comment: "") }
         } catch {
             problem = BackupCopy.message(error)
         }

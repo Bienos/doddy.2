@@ -203,7 +203,7 @@ struct NotePlacePicker: View {
         busy = true
         defer { busy = false }
         guard let here = await PlaceLocation.shared.currentCoordinate() else {
-            problem = "Couldn't find where you are right now. Try again in a moment, or search for the place."
+            problem = NSLocalizedString("Couldn't find where you are right now. Try again in a moment, or search for the place.", comment: "")
             return
         }
         lastHere = here
@@ -223,7 +223,7 @@ struct NotePlacePicker: View {
             if results.isEmpty { problem = "Apple Maps found nothing for \u{201C}\(text)\u{201D}. Try other words." }
         } catch {
             results = []
-            problem = "Couldn't search Apple Maps. Check your internet connection and try again."
+            problem = NSLocalizedString("Couldn't search Apple Maps. Check your internet connection and try again.", comment: "")
         }
     }
 

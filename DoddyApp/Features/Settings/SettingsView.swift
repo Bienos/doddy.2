@@ -55,10 +55,10 @@ struct SettingsView: View {
 
     private var backTapStatus: String {
         switch router.setup.phase {
-        case .notStarted: "Not set up"
-        case .deferred: "Set up later"
+        case .notStarted: NSLocalizedString("Not set up", comment: "")
+        case .deferred: NSLocalizedString("Set up later", comment: "")
         case .userReportedTested(let at): "Tested by you · \(DateText.full(at))"
-        case .shortcutPreparation, .guiding, .testing, .receiptReceived: "In progress"
+        case .shortcutPreparation, .guiding, .testing, .receiptReceived: NSLocalizedString("In progress", comment: "")
         }
     }
 
@@ -566,7 +566,7 @@ struct SettingsView: View {
     }
 
     private var connectionSummary: String {
-        if pauseAllConnections { return "Paused" }
+        if pauseAllConnections { return NSLocalizedString("Paused", comment: "") }
         let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
         return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
     }
@@ -575,9 +575,9 @@ struct SettingsView: View {
         switch VoiceConnectionMode.resolve(
             serverAddress: voiceTokenServer, accessCode: hasAccessCode ? VoiceAccessCodeStore.read() : nil,
             publicAgentID: voiceAgentID) {
-        case .tokenServer: "Private (token server)"
-        case .publicAgent: "Development (public agent)"
-        case .notSetUp: "Not set up"
+        case .tokenServer: NSLocalizedString("Private (token server)", comment: "")
+        case .publicAgent: NSLocalizedString("Development (public agent)", comment: "")
+        case .notSetUp: NSLocalizedString("Not set up", comment: "")
         }
     }
 
@@ -596,10 +596,10 @@ struct SettingsView: View {
 
     private var assistantStatus: String {
         if !assistantConsent { return "Off" }
-        if environment.assistant == nil { return "Not available (storage problem)" }
-        if GatewayConfiguration(string: gatewayAddress) == nil { return "Needs a gateway address" }
-        if !hasInviteCode { return "Needs an invite code" }
-        return "Ready (not yet tested with a real server)"
+        if environment.assistant == nil { return NSLocalizedString("Not available (storage problem)", comment: "") }
+        if GatewayConfiguration(string: gatewayAddress) == nil { return NSLocalizedString("Needs a gateway address", comment: "") }
+        if !hasInviteCode { return NSLocalizedString("Needs an invite code", comment: "") }
+        return NSLocalizedString("Ready (not yet tested with a real server)", comment: "")
     }
 
     private func refreshInviteState() async {
@@ -814,19 +814,19 @@ enum RestoreCopy {
 
     static func failure(_ error: any Error) -> String {
         guard let error = error as? MemoryRestoreError else {
-            if error is CocoaError { return "That file couldn't be opened. Nothing was added." }
+            if error is CocoaError { return NSLocalizedString("That file couldn't be opened. Nothing was added.", comment: "") }
             if (error as? MemoryStoreError) == .verificationFailed {
-                return "The restored notes couldn't be confirmed, so nothing from the file was added."
+                return NSLocalizedString("The restored notes couldn't be confirmed, so nothing from the file was added.", comment: "")
             }
             return UserFacingError.message(for: error)
         }
         switch error {
         case .tooLarge:
-            return "That file is too large to be a Doddy export. Nothing was added."
+            return NSLocalizedString("That file is too large to be a Doddy export. Nothing was added.", comment: "")
         case .notADoddyExport:
-            return "That isn't a Doddy memory export (Settings › Export as JSON). Nothing was added."
+            return NSLocalizedString("That isn't a Doddy memory export (Settings › Export as JSON). Nothing was added.", comment: "")
         case .newerFormat:
-            return "That export was made by a newer version of Doddy. Update the app, then try again. Nothing was added."
+            return NSLocalizedString("That export was made by a newer version of Doddy. Update the app, then try again. Nothing was added.", comment: "")
         case .unreadableNote(let position):
             return "Note \(position) in that file is damaged, so nothing from it was added."
         case .conflictingDuplicate(let position):
