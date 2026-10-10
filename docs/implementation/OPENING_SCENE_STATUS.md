@@ -49,7 +49,7 @@ Third request: "the animation must align with him when he finishes then when he 
 | `swiftc -parse` on every changed app and UI-test file | PASS (syntax only; SwiftUI is not type-checked on Linux) |
 | `scripts/check_forbidden_capabilities.sh`, `verify_imported_pack.py`, `voice_agent_spec.py check` | PASS |
 | Preview in headless Chromium 1194, frames from 0.25 to 2.4 s, light and dark | Rendered as intended. Fixes made: the SWISH burst was clipped at the right edge (moved left of the hoop); the preview's own Home picture overflowed (preview CSS only). The last frame and Home after the opening were compared pixel by pixel in light and dark: same place and size; the remaining differences are image smoothing between canvas and `<img>` |
-| `xcodebuild test` (app, `LaunchSmokeTests`) | **NOT RUN**: no Xcode |
+| `xcodebuild test` (app, `LaunchSmokeTests`) | **NOT RUN**: no Xcode here. The hosted macOS workflow (`.github/workflows/ios.yml`) was started on this branch (run 64, commit `044858a`) and failed in 8 seconds with no runner and no logs, like all 64 runs of that workflow so far, the Linux job included. That points to GitHub Actions being blocked for the account (billing or a spending limit), not to this code |
 
 The Swift toolchain was downloaded into the session for these runs (`swift-6.1-RELEASE-ubuntu24.04`).
 
