@@ -5,6 +5,13 @@ Date: 2026-10-10. Everything below was written and tested only on Linux (`script
 run on a device.** Nothing here is verified until a person ticks it. Record the Xcode version, the device
 and the result for each item in the table at the end.
 
+## 0. What is already compiled
+Since ADR-149, `scripts/typecheck_app_logic.sh` compiles seven non-UI app files (`MemoryStore`,
+`ShortcutRouter`, `ProfileStore`, `ConversationLogStore`, `AskController`, `PersonalityPreferences`,
+`PinnedNotesStorage`) against the real DoddyCore module on Linux, and they pass. Everything else in
+the app (SwiftUI views, the App Intents, the widget control, anything using UIKit, AVFoundation or
+EventKit) has still never been compiled.
+
 ## 1. Build first
 1. `xcodegen generate`, then `scripts/ci.sh` (the full run, not `--core-only`). Note the output.
 2. If the app does not compile, these are the places most likely to need a one-line fix:

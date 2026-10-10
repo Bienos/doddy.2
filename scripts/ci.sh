@@ -3,7 +3,8 @@
 # makes the script exit non-zero, so "green" always means everything ran and passed.
 #
 #   scripts/ci.sh              full run (needs Swift AND Xcode/xcodebuild)
-#   scripts/ci.sh --core-only  pack integrity + guards + Swift package tests + backend only;
+#   scripts/ci.sh --core-only  pack integrity + guards + Swift package tests + backend only
+#                              (on Linux also a type-check of the non-UI app files);
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 set -uo pipefail
@@ -32,6 +33,9 @@ if command -v swift >/dev/null 2>&1; then
   # (No arrays: macOS ships bash 3.2, where an empty "${arr[@]}" fails under `set -u`.)
   if [ "$(uname)" = "Linux" ]; then
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT
+    # A real compile of the app files that need no Apple UI framework (ADR-149). On a Mac the
+    # full xcodebuild below compiles everything, so this step is Linux-only.
+    run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
