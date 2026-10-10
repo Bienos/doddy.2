@@ -352,7 +352,7 @@ struct VoiceView: View {
             .font(.headline)
         PlanStepList(
             steps: steps, blocked: blocked, ticked: controller.planTicked, idPrefix: "voice.plan",
-            onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
+            cloud: controller.planCloud, onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
         Text("Untick anything you don't want, or tap Change to fix a step. The rest run in this order, and each one gets its own result.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)

@@ -5,13 +5,15 @@ import Foundation
 // on its own, shows them together with a tick box each, and runs only the ticked ones, in order,
 // after one tap. Look-ups are not steps: the agent runs them first with the usual tools.
 
-/// The tools a plan may contain: changes that finish inside Doddy. Opening Maps, Shortcuts or a
-/// draft would leave the app half-way through, and online-account writes need their own approval
-/// from Doddy's server, so those stay one card each.
+/// The tools a plan may contain: changes that finish without leaving Doddy. Opening Maps,
+/// Shortcuts or a Messages draft would leave the app half-way through, so those stay one card
+/// each. A Gmail draft or Todoist task (ADR-209) gets its own approval from Doddy's server for its
+/// exact arguments when the card is shown, as a single card would.
 public enum PlanTool {
     public static let maxSteps = 5
     public static let allowed: [String] = [
         VoiceToolName.saveMemory, VoiceToolName.createCalendarEvent, VoiceToolName.createReminder, VoiceToolName.setTimer,
+        CloudToolName.draftEmail, CloudToolName.addTodoistTask,
     ]
 }
 
@@ -30,17 +32,28 @@ public struct PlanStep: Equatable, Sendable, Identifiable {
         ActivityRequest.describe(request, calendar: calendar)
     }
 
+    /// A Gmail draft or Todoist task, run through Doddy's server (ADR-209).
+    public var cloudCall: CloudToolCall? {
+        if case .cloudTool(let call) = request { return call }
+        return nil
+    }
+
+    /// "Change" edits the step in the app (ADR-205). Online-account steps can't be changed there:
+    /// their preview and approval come from the server for the exact arguments.
+    public var canChange: Bool { cloudCall == nil }
+
     /// What the step does, for the confirm button ("Add 2 reminders").
     var kind: Kind {
         switch request {
         case .saveMemory: .note
         case .createCalendarEvent: .event
         case .setTimer: .timer
+        case .cloudTool(let call): call.name == CloudToolName.draftEmail ? .email : .task
         default: .reminder
         }
     }
 
-    enum Kind { case note, event, reminder, timer }
+    enum Kind { case note, event, reminder, timer, email, task }
 }
 
 /// Why a step can't run, decided by the app when the card is shown and again at the tap.
@@ -49,11 +62,15 @@ public enum PlanBlock: Equatable, Sendable {
     case paused
     /// Switched off in Settings → Connections, or not allowed in iOS Settings.
     case notConnected(VoiceConnection)
+    /// Doddy's server didn't prepare a Gmail or Todoist step (not set up, switched off, not
+    /// connected, unreachable). `screen` is for the card; `reply` is the agent's line.
+    case onlineAccount(screen: String, reply: String)
 
     public var screenText: String {
         switch self {
         case .paused: "Skipped: connections are paused"
         case .notConnected(let connection): "\(connection.title) isn't connected"
+        case .onlineAccount(let screen, _): screen
         }
     }
 
@@ -62,6 +79,7 @@ public enum PlanBlock: Equatable, Sendable {
         switch self {
         case .paused: ConnectionPause.reply
         case .notConnected(let connection): "failed: \(connection.title) isn't connected. Nothing was done."
+        case .onlineAccount(_, let reply): reply
         }
     }
 }
@@ -105,6 +123,9 @@ public enum PlanProposal {
             switch request {
             case .saveMemory, .createCalendarEvent, .createReminder, .setTimer:
                 steps.append(PlanStep(number: number, toolName: tool, request: request))
+            case .cloudTool(let call) where call.isWrite:
+                // The server validates the arguments when it prepares the step.
+                steps.append(PlanStep(number: number, toolName: tool, request: request))
             case .needsClarification(_, let clarification):
                 // The whole plan waits for the answer, so no step runs on a guessed time.
                 return .refused("failed: not added yet: step \(number) (\(tool)): \(clarification.problem). Ask the user \(clarification.question), then call \(VoiceToolName.proposePlan) again with their answer. Nothing was done.")
@@ -128,6 +149,8 @@ public enum PlanProposal {
         case .event: return "Add \(counted("event"))"
         case .reminder: return "Add \(counted("reminder"))"
         case .timer: return "Start \(counted("timer"))"
+        case .email: return "Draft \(counted("email"))"
+        case .task: return "Add \(counted("task"))"
         }
     }
 }
@@ -141,7 +164,7 @@ public enum PlanReply {
     /// `changed` are the steps the user edited on the card (ADR-205): the agent is told, so it
     /// repeats what was actually done rather than what it first proposed.
     public static func summary(_ results: [(step: PlanStep, reply: String)], changed: Set<Int> = []) -> String {
-        var lines = ["plan: one result per step, in order. Tell the user each one. Only say a step was done if its line starts with \"added:\" or \"saved:\"."]
+        var lines = ["plan: one result per step, in order. Tell the user each one. Only say a step was done if its line starts with \"added:\", \"saved:\" or \"drafted:\"."]
         for result in results {
             let text = result.reply.replacingOccurrences(of: "\n", with: " ")
             let note = changed.contains(result.step.number) ? " (The user changed this step on screen before it ran; use these details, not your proposal.)" : ""
