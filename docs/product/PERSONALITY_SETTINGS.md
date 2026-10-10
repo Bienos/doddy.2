@@ -34,6 +34,8 @@ All six voices are already in the owner's account (built-in or My Voices), so no
 
 **Agent change (applied 2026-10-10, version `agtvrsn_5301m4jk5fz1edx8vz0r04hh2mcc`):** client overrides allowed for `tts.voice_id`, `tts.speed` and `tts.stability` only; prompt, LLM, tools and first message stay off. If an agent without these is used, a non-default pick makes ElevenLabs refuse the conversation and the app says to choose "Use Doddy's own voice".
 
+**Hear a sample (ADR-122):** Settings → Voice opens a list where every voice row has a play button (tap the face) and tapping the rest of the row selects it; a "Hear <voice>" button under the voice settings also plays the chosen one. Each plays a short clip bundled in the app: Doddy's hello in English and Polish in that voice, at the chosen speed. Expressiveness is only heard in a real conversation. Samples don't play while a conversation is running, and stop when the voice or speed changes or the screen closes. Clips live in `DoddyApp/Resources/VoicePreviews/`; `VoiceStyleTests.testEveryVoiceHasABundledSample` fails if a voice has none.
+
 Not included: language (the agent already detects it), proactivity (nothing proactive is built), reduced motion (no character animation yet).
 
 **Never changeable:** the persona immutables (answer first, say when unsure, memory and receipt rules, AI disclosure, no humour in sensitive moments, no shame, guilt or clinginess). The text sent to the agent always ends with a fixed sentence saying so.
