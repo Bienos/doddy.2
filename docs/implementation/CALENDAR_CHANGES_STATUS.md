@@ -56,7 +56,10 @@ Date: 2026-10-10. Owner: "do all of them" (item 5).
   - whether a detached occurrence keeps its `calendarItemIdentifier` (the read-back also accepts the same `eventIdentifier`);
   - how moving an alarm behaves for reminders created in the Reminders app;
   - all-day multi-day moves across a daylight-saving change.
-- The two tools are not yet on the live ElevenLabs agent (see the final report of this round).
+- **Live agent (2026-10-10):**
+  - Both tools were created on agent `agent_0501m4et27vyeawrwqfdxxfszfa6` (`tool_3801m4m3zx3kfh8bzrf55j0qh541`, `tool_8901m4m3zy2verh9ssjb9kyrv2rc`). The prompt was updated (version `agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm`, 32 tools) and its stored text was read back from the update.
+  - The live prompt also keeps `said_time` guidance for `create_calendar_event`, `create_reminder` and `remind_me_about_note`. Another branch added it to the live agent; it isn't in this branch's `instructions.md` or `tools.json`, and this branch's app ignores that argument. Reconcile it when the lines are joined.
+  - Not yet tried in a real conversation.
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests | Gaps |
@@ -64,4 +67,5 @@ Date: 2026-10-10. Owner: "do all of them" (item 5).
 | DOD-07 scoped_action_approval | A card with exactly what changes; the write runs only on the tap; checked again at the tap that the item still looks as shown | `testMatchesExactlyOneEventAndNeverGuesses`, `testTheCardCanGoStaleAndReadBackComparesWallClock` | UI not compiled |
 | DOD-08 verified_status_and_receipts | "changed"/"completed" only after the read-back; otherwise "unknown" | `testRemindersMatchOpenOnesOnly` (reply prefix) | EventKit read-back is untested on a device |
 | DOD-09 correction_and_recovery | No deletes; the old time is on the card; the user can change it back the same way | — | No one-tap Undo for a change |
+| DOD-08 (agent) | Prompt rule: say "changed"/"completed" only from the result | live prompt read back | Not tried in a conversation |
 | DOD-02 honesty_over_agreeableness | No match or several matches: nothing is guessed, the agent asks | `testMatchesExactlyOneEventAndNeverGuesses` | — |
