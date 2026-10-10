@@ -85,13 +85,15 @@ private struct RecallResultsView: View {
                 Text(candidates.count == 1 ? "ONE POSSIBLE MATCH" : "\(candidates.count) POSSIBLE MATCHES")
                     .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
                 // Types among these matches. The "may disagree" check below always looks at every
-                // match, so a filter can never hide the note that disagrees.
+                // match, so the banner counts them all; if the filter hides some of those notes,
+                // the banner says how many (ADR-148).
                 let choices = MemoryFilter.choices(candidates.map(\.record))
                 let active = choices.contains { $0.category == category } ? category : nil
                 let shown = active.map { type in candidates.filter { $0.record.category == type } } ?? candidates
                 let mayDisagree = RecallConflicts.flagged(candidates)
                 if !mayDisagree.isEmpty {
-                    Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.", systemImage: "exclamationmark.2")
+                    let hiddenDisagreeing = mayDisagree.subtracting(shown.map(\.memoryID)).count
+                    Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.\(hiddenDisagreeing > 0 ? " \(hiddenDisagreeing) of them \(hiddenDisagreeing == 1 ? "is" : "are") hidden by the filter." : "")", systemImage: "exclamationmark.2")
                         .font(.footnote)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,5 +135,7 @@ private struct RecallResultsView: View {
                 Text("Nothing guessed. Just what you kept.").font(.subheadline).foregroundStyle(Theme.secondaryText)
             }
         }
+        // A type chosen for one search is not carried into the next one.
+        .onChange(of: query) { category = nil }
     }
 }

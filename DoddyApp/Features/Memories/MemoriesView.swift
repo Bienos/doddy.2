@@ -14,6 +14,13 @@ struct MemoriesView: View {
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
     @State private var pinMessage: String?
 
+    /// The filter in effect: the chosen type, but only while a filter is offered and a note of
+    /// that type exists. When it stops applying the choice is cleared (see `onChange` below),
+    /// so it can't spring back later when a note of that type shows up again.
+    private var activeCategory: MemoryCategory? {
+        MemoryFilter.choices(store.memories).contains { $0.category == category } ? category : nil
+    }
+
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
@@ -51,9 +58,6 @@ struct MemoriesView: View {
                             MemoryTypeFilterRow(choices: choices, total: store.memories.count, selection: $category, active: active)
                         }
                         let pins = PinnedNotes(stored: pinnedRaw)
-                        if let pinMessage {
-                            Label(pinMessage, systemImage: "pin.slash").font(.footnote).foregroundStyle(Theme.error)
-                        }
                         LazyVStack(spacing: 12) {
                             // Pinned notes first (ADR-144), then the chosen order.
                             ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories)))) { record in
@@ -89,6 +93,19 @@ struct MemoriesView: View {
                     FindMemoriesView(initialQuery: query).id(ShortcutRouter.shared.findRequest?.id)
                 case .note(let id): MemoryDetailView(memoryID: id)
                 }
+            }
+            .onChange(of: activeCategory) { _, active in
+                if active == nil { category = nil }
+            }
+            // An alert, not a label above the list: a long press low in the list would otherwise
+            // look like it did nothing.
+            .alert(
+                "Pin limit reached",
+                isPresented: Binding(get: { pinMessage != nil }, set: { if !$0 { pinMessage = nil } })
+            ) {
+                Button("OK", role: .cancel) { pinMessage = nil }
+            } message: {
+                Text(pinMessage ?? "")
             }
             .sheet(item: $modal) { _ in CaptureView() }
         }
