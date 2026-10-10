@@ -9,7 +9,7 @@ cd site && python3 -m http.server 8765
 # open http://localhost:8765
 ```
 
-There's no build step: plain HTML, CSS and a small vanilla script. No cookies, no storage. Visits are counted with Vercel Web Analytics (see [Analytics](#analytics)).
+There's no build step: plain HTML, CSS and a small vanilla script. Visits are counted with Vercel Web Analytics (no cookies) and, only for visitors who allow it, Google Analytics 4 (cookies); see [Analytics](#analytics).
 
 ## How it connects to the app
 
@@ -65,6 +65,28 @@ sent before the script has loaded. No npm dependency, no build step.
 - **Custom events** (for example a waitlist signup) are possible with
   `window.va('event', { name: '...' })`; none are sent yet.
 
+### Google Analytics 4 (ADR-211)
+
+`analytics.js`, loaded on `index.html` and every blog page (`tools/build_blog.py` adds it), not on `/admin/`.
+
+- **Turn it on:** Google Analytics → Admin → Data streams → Web → copy the measurement ID
+  (`G-…`) into `GA_MEASUREMENT_ID` at the top of `analytics.js`, then deploy. While it is empty
+  the file does nothing: no banner, no footer sentence, no request to Google.
+- **Consent first:** GA sets cookies, so on a first visit a banner asks "Can we use Google
+  Analytics?". Only **Allow** loads `https://www.googletagmanager.com/gtag/js`; **No thanks**
+  sends nothing. The choice is stored in `localStorage` (`doddy-analytics-consent`) on that
+  device. The footer's "Analytics choices" reopens the banner; switching to No thanks sets GA
+  consent to denied and deletes the `_ga` / `_ga_*` cookies. If storage is blocked (private
+  mode) the visitor is asked again next visit.
+- **Settings:** ads storage, ad user data, ad personalisation and Google signals are off.
+  No custom events yet (a waitlist signup event would be `gtag('event', 'sign_up')` after the
+  visitor allowed GA).
+- **CSP:** `vercel.json` allows `https://www.googletagmanager.com` in `script-src` and the GA
+  collection hosts (`*.google-analytics.com`, `*.analytics.google.com`, `*.googletagmanager.com`)
+  in `img-src` and `connect-src`, as Google's CSP guide lists. No inline script was added.
+- **Privacy:** the footer says GA is used only if the visitor allows it. A privacy policy naming
+  Google Analytics is still needed (see Needs the owner).
+
 ## Film
 
 "One morning in Warsaw" sits directly after the hero (`#film`); the hero's second link reads "Watch the film (1:15)" and jumps to it. Design: concept A from `design/landing-film-mockup/` (owner-picked).
@@ -97,6 +119,7 @@ A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards,
 - Optional questions: browser flow at 1280 and 390 px (focus moves to the questions, chips work by keyboard, answers sent with id and key, Skip sends nothing, Android note); `api/waitlist-answers.js` against the Blob stand-in (wrong key, unknown id, foreign origin, unknown choices dropped, wish capped and formula-stripped, admin never sees the key hash, CSV has the new columns).
 - "Take a shot" (`court.js`): auto shots and a dragged slingshot throw at 1440 and 390 px; "Shoot for me" lands about 60% of the time.
 - Analytics (2026-10-09, headless Chromium 1194 via Playwright, local server sending the `vercel.json` headers, `/_vercel/insights/script.js` stubbed): under the production CSP the inline queue runs (`window.va` is a function), the script is requested and runs, queued calls land in `window.vaq`, no CSP violations, page or console errors; an unhashed inline script is still blocked; with the script answering 404 (analytics not enabled yet) the page works with no errors; 390 px has no horizontal scroll; `/admin/` carries no analytics. Not checked: the real Vercel script and that the dashboard shows data; that needs the deploy described under Analytics.
+- Google Analytics (2026-10-10, same setup, test ID `G-TEST123`, Google's script stubbed): first visit shows the banner and requests nothing from Google; Allow loads `gtag/js` once, pushes consent/js/config to `dataLayer` and stores the choice; No thanks loads nothing; returning visitors (allowed or declined) are not asked again; Analytics choices reopens the banner with focus on Allow, and switching to No thanks clears `_ga` cookies; banner on blog index and post; none on `/admin/`; 390 and 1440 px no horizontal scroll; no console errors or CSP violations. With the real empty ID: no banner, no footer sentence, no request. Not checked: real GA collection and the GA dashboard.
 
 - Film (2026-10-09, headless Chromium 1194 via Playwright, local server sending the `vercel.json` headers): at 1440, 390 and 320 px no horizontal scroll, no console errors, no CSP violations; JS takes over (muted, no controls, play button and chapters shown); tapping play turns on sound and controls and stops the loop; chapter buttons respond; reduced motion leaves the film paused with the poster; with JavaScript off the native controls show and the play button and chapters are hidden. At 1440×900 the film starts 93 px below the first screen. Screenshots: `VISUAL_REVIEW/landing/v3-film-1440.png`, `v3-film-390.png`. Not checked: actual playback, seeking and sound (Playwright's Chromium has no H.264 decoder), iPhone Safari inline autoplay, Low Power Mode.
 
