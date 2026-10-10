@@ -42,6 +42,8 @@ struct AppEnvironment {
     let capabilities: CapabilityCatalog
     let storageProblem: String?
     let listRepository: any ListRepository
+    let photoRepository: any PhotoRepository
+    let photoFiles: PhotoFiles
 }
 SWIFT
 # SystemNoteNotifications imports UserNotifications; NoteReminderStore only calls its static
@@ -71,6 +73,7 @@ files=(
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Features/Ask/AskController.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
+  DoddyApp/Features/Photos/PhotoFiles.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

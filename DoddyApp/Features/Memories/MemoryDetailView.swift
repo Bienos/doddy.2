@@ -21,6 +21,7 @@ struct MemoryDetailView: View {
                 if let record = store.record(id: memoryID) {
                     JourneyHeading(eyebrow: "Straight from your note", title: "The original\nis right here.")
                     MemoryPaperCard(record: record, textIdentifier: "detail.currentText")
+                    NotePhotoSection(memoryID: memoryID)
                     if record.userEdited {
                         Text("Edited \(DateText.full(record.updatedAt))").font(.caption).foregroundStyle(Theme.secondaryText)
                         DisclosureGroup("Original capture") {

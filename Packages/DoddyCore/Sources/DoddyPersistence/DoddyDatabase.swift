@@ -155,6 +155,18 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX list_items_list ON list_items(list_id, position);
                 """)
         }
+        // Photo notes (ADR-218): one photo per note, deleted with it. The file name is checked.
+        migrator.registerMigration("v7_memory_photos") { db in
+            try db.execute(sql: """
+                CREATE TABLE memory_photos (
+                    memory_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    file_name TEXT NOT NULL CHECK (length(file_name) = 40 AND file_name LIKE '%.jpg'),
+                    width INTEGER NOT NULL CHECK (width BETWEEN 1 AND \(PhotoLimits.maxPixels)),
+                    height INTEGER NOT NULL CHECK (height BETWEEN 1 AND \(PhotoLimits.maxPixels)),
+                    added_at_ms INTEGER NOT NULL
+                );
+                """)
+        }
         return migrator
     }
 
