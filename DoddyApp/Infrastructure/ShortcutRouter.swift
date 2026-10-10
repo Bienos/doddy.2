@@ -43,6 +43,15 @@ final class ShortcutRouter {
         drafts.receive(SharedDraft(text: text), blocked: isCaptureBlocked)
     }
 
+    /// Called from `NewNoteIntent.perform()` (control, Siri, Action Button). If a capture screen
+    /// is already open the user is already where they asked to be, so nothing else opens; and an
+    /// empty screen never takes the place of shared text that is waiting to be shown.
+    func newNoteInvoked() {
+        isSetupPresented = false
+        guard openCaptureScreens == 0, drafts.shown == nil, drafts.waiting == nil else { return }
+        drafts.receive(.newNote(), blocked: isCaptureBlocked)
+    }
+
     /// The shared-draft sheet's binding: setting nil (dismissal) closes the shown draft.
     var shownDraft: SharedDraft? {
         get { drafts.shown }

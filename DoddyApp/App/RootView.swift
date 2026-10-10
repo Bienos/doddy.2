@@ -110,7 +110,7 @@ struct RootView: View {
         .fullScreenCover(isPresented: $router.isVoicePresented) { VoiceView() }
         .sheet(isPresented: $router.isSetupPresented) { BackTapSetupView(model: router.setup) }
         .sheet(item: $router.shownDraft, onDismiss: { router.showWaitingDraft() }) { draft in
-            CaptureView(sharedText: draft.text)
+            CaptureView(sharedText: draft.isSharedText ? draft.text : nil)
         }
         .onChange(of: router.isVoicePresented) { _, isOpen in
             if !isOpen { router.showWaitingDraft() }

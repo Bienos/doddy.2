@@ -43,4 +43,11 @@ final class SharedDraftTests: XCTestCase {
         queue.unblocked(stillBlocked: false)
         XCTAssertEqual(queue.shown, third)
     }
+
+    func testNewNoteIsAnEmptyTypedNoteNotSharedText() {
+        let blank = SharedDraft.newNote()
+        XCTAssertEqual(blank.text, "")
+        XCTAssertFalse(blank.isSharedText)
+        XCTAssertTrue(SharedDraft(text: "").isSharedText, "empty shared text is still from a shortcut")
+    }
 }

@@ -70,3 +70,17 @@ everything under "Not verified" needs the Mac and a real iPhone.
   - Share Sheet input reaches the action.
   - The sheet appears over Home, and after a conversation ends.
   - What happens if the Back Tap setup sheet was open.
+
+## "New note" control and shortcut (added 2026-10-10, ADR-137)
+- **What it does:** `NewNoteIntent` (`Shared/Shortcuts/`, in the app and the widget extension) opens Doddy's capture screen, empty, the same as tapping "Save a detail". The note is saved as a typed note (`explicit_text`), and only when the user taps Save.
+- **Where it appears:**
+  - `NewNoteControl` (kind `com.bienos.doddy2.newnote`, iOS 18+) for Control Center, the Lock Screen and the Action Button. The user adds it there themselves.
+  - An App Shortcut: Siri "New note in Doddy" / "Write a note in Doddy", and the Shortcuts app.
+- **When something is already open:**
+  - A capture screen is open: nothing else opens.
+  - A voice conversation is open: the empty screen appears when the conversation closes.
+  - Shared text from "Save to Doddy" is waiting: "New note" never replaces it.
+- **Not verified (needs the Mac and an iPhone):**
+  - The widget extension and app compile with the new intent and control.
+  - The control can be added and a tap opens the capture screen.
+  - The Siri phrases work.
