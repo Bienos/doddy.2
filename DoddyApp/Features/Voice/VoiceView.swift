@@ -16,6 +16,8 @@ struct VoiceView: View {
     @State private var controller: VoiceSessionController?
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
+    /// The plan step whose "Change" sheet is open (ADR-205).
+    @State private var editingPlanStep: PlanStep?
 
     /// Read when a conversation starts, so a changed setting or access code applies next time.
     private var mode: VoiceConnectionMode {
@@ -242,6 +244,12 @@ struct VoiceView: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        // One sheet for the whole card, not one per step (ADR-205).
+        .sheet(item: $editingPlanStep) { step in
+            PlanStepEditor(step: step) { changed in
+                controller.replacePlanStep(changed)
+            }
+        }
     }
 
     @ViewBuilder
@@ -342,42 +350,10 @@ struct VoiceView: View {
     private func planContent(steps: [PlanStep], blocked: [Int: PlanBlock], controller: VoiceSessionController) -> some View {
         Text("Here's what I'd do")
             .font(.headline)
-        ForEach(steps) { step in
-            let request = step.activity(calendar: .current)
-            let block = blocked[step.number]
-            let ticked = controller.planTicked.contains(step.number)
-            Button {
-                controller.togglePlanStep(step.number)
-            } label: {
-                HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Image(systemName: block != nil ? "minus.circle" : ticked ? "checkmark.square.fill" : "square")
-                        .foregroundStyle(block != nil ? Theme.secondaryText : Theme.ink)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
-                            .font(.body)
-                            .foregroundStyle(Theme.ink)
-                        if let detail = request?.detail {
-                            Text(detail)
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.secondaryText)
-                        }
-                        if let block {
-                            Text(block.screenText)
-                                .font(.footnote)
-                                .foregroundStyle(Theme.error)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                }
-                .frame(minHeight: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(block != nil)
-            .accessibilityValue(block?.screenText ?? (ticked ? "Ticked" : "Not ticked"))
-            .accessibilityIdentifier("voice.plan.step\(step.number)")
-        }
-        Text("Untick anything you don't want. The rest run in this order, and each one gets its own result.")
+        PlanStepList(
+            steps: steps, blocked: blocked, ticked: controller.planTicked, idPrefix: "voice.plan",
+            onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
+        Text("Untick anything you don't want, or tap Change to fix a step. The rest run in this order, and each one gets its own result.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
     }

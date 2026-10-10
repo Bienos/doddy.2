@@ -14,7 +14,7 @@ packages:
   ElevenLabs:
     url: https://github.com/elevenlabs/elevenlabs-swift-sdk
     exactVersion: 3.3.1
-  # Already pulled in by ElevenLabs; listed so the app can set the call's audio session (ADR-205).
+  # Already pulled in by ElevenLabs; listed so the app can set the call's audio session (ADR-207).
   LiveKit:
     url: https://github.com/livekit/client-sdk-swift
     from: 2.10.0

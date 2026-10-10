@@ -103,6 +103,8 @@ final class VoiceSessionController {
     private(set) var reminderStatus: ReminderStatus?
     /// Which steps of the plan card are ticked. Every step that can run starts ticked.
     private(set) var planTicked: Set<Int> = []
+    /// Steps the user changed on the card (ADR-205); the agent is told when it gets the results.
+    private(set) var planChanged: Set<Int> = []
     private(set) var planStatus: PlanStatus?
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
@@ -284,7 +286,7 @@ final class VoiceSessionController {
     }
 
     /// Keeps the conversation going when the user opens another app that plays or records sound
-    /// (ADR-205). The SDK's default call session is not mixable, so another app starting its own
+    /// (ADR-207). The SDK's default call session is not mixable, so another app starting its own
     /// audio session pauses Doddy at once and nothing brings him back. A mixable session is not
     /// paused that way. Cost: the other app's sound plays along with Doddy's, and the microphone
     /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
@@ -516,6 +518,17 @@ final class VoiceSessionController {
         if planTicked.contains(number) { planTicked.remove(number) } else { planTicked.insert(number) }
     }
 
+    /// "Change" on a step: the edit was already checked by `PlanStepForm.apply`. The kind of step,
+    /// and so its app and its block, stay the same.
+    func replacePlanStep(_ step: PlanStep) {
+        guard case .plan(let id, var steps, let blocked) = pendingAction,
+              let index = steps.firstIndex(where: { $0.number == step.number }),
+              steps[index].toolName == step.toolName, blocked[step.number] == nil else { return }
+        steps[index] = step
+        planChanged.insert(step.number)
+        pendingAction = .plan(toolCallID: id, steps: steps, blocked: blocked)
+    }
+
     func dismissPlanStatus() {
         guard planStatus?.isRunning == false else { return }
         planStatus = nil
@@ -727,6 +740,7 @@ final class VoiceSessionController {
             return
         }
         planTicked = Set(steps.map(\.number)).subtracting(blocked.keys)
+        planChanged = []
         askedPlans[call.toolCallId] = steps
         propose(.plan(toolCallID: call.toolCallId, steps: steps, blocked: blocked), toolCallID: call.toolCallId)
     }
@@ -736,6 +750,7 @@ final class VoiceSessionController {
     private func runPlan(_ toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock]) async {
         askedPlans[toolCallID] = nil
         let ticked = planTicked
+        let changed = planChanged
         let planID = UUID()
         planStatus = PlanStatus(steps: steps)
         var results: [(step: PlanStep, reply: String)] = []
@@ -760,7 +775,7 @@ final class VoiceSessionController {
             results.append((step, text))
         }
         planStatus?.isRunning = false
-        await reply(toolCallID, PlanReply.summary(results))
+        await reply(toolCallID, PlanReply.summary(results, changed: changed))
     }
 
     /// Checked again at the tap: the user may have paused or switched off the app while the card waited.

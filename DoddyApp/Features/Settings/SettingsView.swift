@@ -364,6 +364,12 @@ struct SettingsView: View {
                         StatusRow(title: "What Doddy did", value: activitySummary)
                     }
                     .accessibilityIdentifier("settings.activity")
+                    NavigationLink {
+                        PlanPracticeView()
+                    } label: {
+                        Label("Try a plan card", systemImage: "checklist")
+                    }
+                    .accessibilityIdentifier("settings.planPractice")
                 } header: {
                     Text("Connections")
                 } footer: {
