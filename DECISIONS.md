@@ -35,7 +35,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 020 | Honesty by construction: `CapabilityCatalog.m0` (every capability "not built"), `Unavailable*` adapters that throw, UI copy derived from the catalog, and `scripts/check_forbidden_capabilities.sh` (no networking/audio/speech/EventKit/account code, no secrets, no permission keys). | Makes "no fake capability" testable instead of a promise. | Applied — approval pending |
 | 021 | "Accessibility toggle" is **Hide character artwork** (real effect), not a reduce-motion switch. | M0 has no animation, so a motion toggle would do nothing (a fake). System Reduce Motion stays authoritative later. | Applied — approval pending |
 | 022 | No GitHub Actions workflow; checks run via `scripts/ci.sh`. | Hosted macOS runners are billable; M0 forbids paid services without approval. | Open — owner to decide |
-| 023 | Dev bundle id `com.bienos.doddy2.dev`, version 0.0.1, no signing team, no app icon. | Production identifier/team/icon are owner decisions; placeholders are clearly development-only. | Open |
+| 023 | Dev bundle id `com.bienos.doddy2.dev`, version 0.0.1, no signing team, no app icon (icon: superseded by ADR-050). | Production identifier/team/icon are owner decisions; placeholders are clearly development-only. | Open |
 | 024 | Imported pack files unmodified; a second checker `scripts/verify_imported_pack.py` was added because `tools/verify_pack.py` rejects any file the V2 repo adds (it also hashes itself, so it was not edited). | Keep provenance intact. | Applied |
 
 ## M1 decisions (local memory loop)
@@ -44,8 +44,8 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 |---|---|---|
 | 025 | Owner instruction 2026-10-08: build M1 now, **no unnecessary tests**. M1 adds 2 storage tests only; UI flows are untested beyond the existing smoke tests. | Applied |
 | 026 | `MemoryRepository` gains `list(limit:)` and `deleteAll()`; new `MemoryStoreError`. Every write is one transaction plus read-back before success. | Applied |
-| 027 | Search indexes a folded copy of `current_text` (`search_text`: case + diacritics folded, plus ł→l, ß→ss, etc.). Query = non-stopword terms as FTS5 prefix terms joined with OR. No typo tolerance beyond prefixes. | Applied — owner may want fuzzier search later |
-| 028 | `PRAGMA secure_delete = ON`; delete-all also rebuilds the FTS index. DB in Application Support/Memories with `completeUntilFirstUserAuthentication`; **included in device backups** (disclosed in Settings). | Applied — **owner to confirm backup inclusion** |
+| 027 | Search indexes a folded copy of `current_text` (`search_text`: case + diacritics folded, plus ł→l, ß→ss, etc.). Query = non-stopword terms as FTS5 prefix terms joined with OR. No typo tolerance beyond prefixes. | Applied — owner may want fuzzier search later — **extended by ADR-093** |
+| 028 | `PRAGMA secure_delete = ON`; delete-all also rebuilds the FTS index. DB in Application Support/Memories with `completeUntilFirstUserAuthentication`; **included in device backups** (disclosed in Settings). | Applied — **owner confirmed 2026-10-09** |
 | 029 | If the store cannot open, the app switches saving off and shows the error; it never resets or deletes the file. | Applied |
 | 030 | Export: JSON (`formatVersion` 1 envelope of schema records) and plain text, both via the share sheet. | Applied |
 | 031 | On Linux, package tests need `-Xswiftc -DSQLITE_DISABLE_SNAPSHOT` (Ubuntu SQLite lacks the snapshot API); `ci.sh`/`Makefile` add it automatically. Apple builds unaffected. | Applied |
@@ -58,8 +58,101 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 033 | Voice runs on **ElevenLabs Agents** (owner has Creator plan), behind app-side tool handling; provider bake-off vs OpenAI Realtime still recommended | Applied (owner instruction) |
 | 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Applied for dev — **must change before TestFlight** |
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
-| 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
-| 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
+| 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Superseded by ADR-053 (V3) |
+| 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied; the permission rule is superseded by 063 |
+| 038 | Doddy speaks with the ElevenLabs Voice Library voice **Josh – Conversational Agent** `ZoiZ8fuDWInAcwPXaVeq` for both languages (added to My Voices and set on the dev agent 2026-10-08, version `agtvrsn_2401m4eyzmrwepct8ftekgsqtv3z`); no per-language voice override | Applied (owner instruction) — Polish pronunciation to be judged on device; library licence terms to be checked before release |
+| 039 | Before `save_memory` runs, the agent says only "Confirm on screen if I should save this." / "Potwierdź na ekranie, jeśli mam to zapisać." (prompt + tool description, agent version `agtvrsn_1401m4f01rzheztb1sp89ek1wy14`, 2026-10-09) instead of "I'm saving this for you" | Applied (owner approved) — not yet heard on a device |
+| 045 | Recall mismatch seen in the device log (English question, Polish note; code saved as number words): the agent now searches with key words in **both** Polish and English, numbers as digits, retries once, and saves numbers/codes/dates as digits (tool descriptions + prompt, agent version `agtvrsn_2701m4f1e2krfnysbc5w01agz5d2`, 2026-10-09). The app's lexical search is unchanged | Applied — to be exercised on a device |
+| 046 | **Personal single-user build** (owner instruction 2026-10-09: "design it for me only, it must have knowledge"). Doddy's knowledge = the owner's saved notes and recent conversations, sent by the app at conversation start as dynamic variables; the multi-user privacy posture (minimal egress) is relaxed for the owner's own phone and stated in the UI | Applied — reverses the "only looked-up notes leave the device" rule for this build |
+| 047 | Cross-conversation memory is kept **on the phone**: last 10 transcripts as JSON (`ConversationLogStore`), toggle + forget in Settings, never memory records. ElevenLabs user memory was refused on the Creator plan | Applied |
+| 048 | Weather (Open-Meteo) and facts (Wikipedia pl/en) as keyless ElevenLabs webhook tools, executed from ElevenLabs servers. No general web search until a search key is approved | Applied — owner may add a search provider |
+| 049 | A random stable per-install id is sent as the ElevenLabs conversation `user_id`; agent `trust_context` set to high (serves its owner) | Applied |
+| 050 | **Candidate app icon** (owner request 2026-10-09): Doddy waving, cropped to head and hand from `design/interface-v1.2/assets/doddy-pose-waving-*-v1.3-r1.svg`; light = ink on orange `#F58A24` (spark recoloured to ink), dark = cream on `#171F29`. 1024 px, no alpha, light + dark appearances; `ASSETCATALOG_COMPILER_APPICON_NAME` back to `AppIcon` | Applied — candidate, not a brand master; tinted variant not made |
+| 051 | Agent voice set to `oDULUm0GMltHA6mVZkWh` (owner instruction 2026-10-09), replacing Josh `ZoiZ8fuDWInAcwPXaVeq` (ADR-038); one voice for EN and PL | Applied — agent version `agtvrsn_2701m4fymws8f6wama5zd3zxn1w5` |
+| 052 | "Not smart" fix (owner report 2026-10-09): LLM `gemini-2.5-flash` → `gemini-3.5-flash`, temperature 0.3 → 0.5; prompt answers general questions from own knowledge, allows up to 6 sentences when asked to explain, natural small talk; weather (`geocode_place`, `get_weather`) and Wikipedia (`wikipedia_search`, `wikipedia_summary`) webhook tools **re-attached** (a parallel calendar edit had replaced the tool list and dropped them, so Doddy told the owner it couldn't do weather). Calendar/reminder/contact tools and strict honesty rules kept; `{{saved_notes}}`/`{{recent_conversations}}` sections kept with their placeholders | Applied — agent version `agtvrsn_0901m4fynwpdfv0agh5qqn1ytyxd`; not yet heard on a device; per-minute LLM cost may rise |
+
+## V3 decisions (Dynamic Island, 2026-10-09)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 053 | Owner request "now live island": a conversation keeps running when the user leaves the app (background audio mode, `Config/Doddy-Info.plist`) and shows a **Live Activity** (new `DoddyWidgets` widget extension): Doddy's head, status mirrored from SDK events (connecting / listening / thinking / speaking / "Confirm in Doddy" while a save waits / muted), elapsed time, **Mute** and **End** buttons (`LiveActivityIntent`s that run in the app). Reverses ADR-036's "ends on background". The activity ends immediately with the conversation and stale ones are cleared at launch. A conversation still has to start in the foreground (iOS rule) | Applied — unbuilt; needs device testing (background audio kill reports on recent iOS, see research §3) |
+| 054 | Live Activities are optional: if the user disables them for Doddy the conversation still runs in the background and iOS shows its own microphone indicator. No push updates, no App Group, no data in the extension beyond the status it is given | Applied |
+| 055 | The island may never outlive the app's knowledge of the conversation. Every activity update carries a **stale date** (90 s) and a heartbeat (every 40 s, `VoiceLiveActivity`) pushes it forward while the conversation is alive; the status itself still changes only on SDK events. Once stale (iOS ended the app in the background, a crash) the widget shows "Lost Doddy — open the app" with only a Dismiss button, and the End/Dismiss intent ends any remaining activity even when no conversation handler exists in the process. Follows the research rule "must stop claiming listening the moment audio stops" (`docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` §3) | Applied — unbuilt; needs device testing |
+
+## V2 decisions (shortcut and guided Back Tap setup, 2026-10-09)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 040 | "Talk to Doddy" ships as an App Intent + App Shortcut (`openAppWhenRun`, iOS 17 target). The guided Back Tap setup is **optional**, reachable from a Home card and Settings, not inserted before First Hello as design v1.2 proposes; `CANONICAL_DESIGN_DIRECTION.md` and the build-order doc say skippable/deferred and "do not force the wizard" | Applied — owner may move it first-first later |
+| 041 | Setup completion is `userReportedTested` only: an intent receipt inside a 120 s test window plus the user's own "I used Double Back Tap". No `verified` state exists because iOS exposes no Back Tap API; stale, early, duplicate and out-of-test receipts are refused; "confirm" without a receipt is refused (unit-tested in `BackTapSetupTests`) | Applied |
+| 042 | `ShortcutRouter` is the single owner of the voice and setup presentations (moved out of `HomeView`), so a second invocation focuses the open conversation rather than starting another | Applied |
+| 043 | Setup state persisted in UserDefaults as JSON (`backTapSetup`): outcome + active test window only, never transcripts or reported pages. Extends ADR-019's "UI preferences only" rule; an unexpired window is restored after a relaunch so a background-killed app still accepts the tap-test receipt | Applied — owner to confirm |
+| 044 | `LaunchSmokeTests` corrected: since V1 the Settings microphone row reads "Only while talking", not "Not used" (the old assertion would have failed on the first Mac run of `scripts/ci.sh`) | Applied |
+
+## Brand guideline decisions (2026-10-09, renumbered from 038–039 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 071 | `docs/design/BRAND_GUIDELINES.md` consolidates voice, product-copy, typography, colour-summary and mark rules from interface v1.2, the Character Bible and the two v1.3 brand archives. Precedence: owner-approved guidelines → `CANONICAL_DESIGN_DIRECTION.md` → this guideline for copy and type → `DESIGN-SYSTEM.md` for tokens. It records eight owner decisions (display typeface Caveat vs Lobster Two vs bespoke lettering; bundling a font; wordmark outlines; brand master palette; memory/detail/note terminology; Polish register and tagline; app icon; humour default) and recommends Caveat, informal Polish, "memory" for the record and "detail" for the content. | Proposed — **owner to review section 10** |
+| 072 | Pack files (`README.md`, `CLAUDE.md`, `docs/design/*` from the handoff) stay unmodified so `verify_imported_pack.py` keeps passing (ADR-024); the guideline is linked from the repo-authored `docs/design/README.md` and this log instead of from the pack's README and `CLAUDE.md`. If the owner prefers in-place edits, the manifest hashes must be regenerated in the same change and ADR-024 revised. | Applied — owner may revise |
+
+## Brand pick and voice-agent spec decisions (2026-10-09, renumbered from 038–042 when branches were merged)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 056 | **Character master = C**: the v1.3-r1 redraw in `design/interface-v1.2/assets` (no backpack, white sneakers, `#F58A24` on warm paper). Both v1.3 packs (A = COMPLETE, B = non-COMPLETE) stay in `reference/` as history only. Comparison: `VISUAL_REVIEW/BRAND_PICK_A_B_C.jpg` | Owner decision 2026-10-09. Still missing in C: face/expression set, app icon, outlined wordmark; illustrator fidelity review and artwork rights still open |
+| 057 | ElevenLabs dev agent keeps its defaults: **voice recording on, no retention limit, transcripts not deleted**. Settings copy tells the user ElevenLabs keeps them | Owner decision 2026-10-09, dev only (owner's own phone). Revisit before any other user (with ADR-034) |
+| 058 | Voice stays on **ElevenLabs**, but Doddy's definition lives in the repo in **OpenAI Realtime shape**: `voice-agent/instructions.md`, `tools.json` (Realtime function tools + `x_doddy`), `session.json`; `scripts/voice_agent_spec.py` checks it, renders it for either provider and detects dashboard drift. DoddyCore `RealtimeVoice.swift` holds the provider-neutral session protocol, events and state | Owner decision 2026-10-09. Voice screen not yet moved onto the protocol: waits for the voice branches to be merged |
+| 059 | Agent speed: turn eagerness normal → **eager** (speculative turn already on). Reasoning budget not settable for gemini-3.5-flash; voice model left as eleven_v4_turbo | Applied 2026-10-09 with owner OK; revert = set turn_eagerness back to normal |
+| 060 | Agent **background voice detection on** after a background video kept the user's turn open and Doddy never answered | Applied 2026-10-09 to fix owner's report; revert = vad.background_voice_detection false |
+| 061 | A 2026-10-08 branch switched the colour tokens to `v1.3_COMPLETE` (`#FF7A00`). Not kept at merge time: ADR-056 (C, `#F58A24`) is the later owner decision and the app icon (ADR-050) uses `#F58A24`. The v1.3 readable extracts and `docs/design/BRAND_INDEX.md` were kept, with a superseded note | Applied at branch consolidation 2026-10-09 — owner to confirm |
+
+## Personality settings (2026-10-09, renumbered from 058 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 062 | Personality settings (humour, reply length, tone, mood) from the persona draft's fixed options, stored as UI preferences in `UserDefaults`, sent to the agent as the fixed-text dynamic variable `doddy_personality`; safety rules are not adjustable. See `docs/product/PERSONALITY_SETTINGS.md` | Applied — app and live agent (prompt `agtvrsn_8101m4gvnve7fdzsyqk5rjyqcfb8`, 2026-10-09); not yet heard on a device |
+
+## Connections decisions (2026-10-09, renumbered from 038–040 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 063 | Owner choice 2026-10-09: calendar (read, add with Add tap), reminders (add with Add tap) and contacts (name lookup, details on screen only) are built behind a Settings → Connections card screen (with in-call "Turn on" prompts), all **off by default**. Turning one on asks iOS for permission (calendar and reminders full access, contacts). Only `Infrastructure/Connections` imports EventKit or Contacts; the guard enforces this and allows only those four permission keys. Not compiled for iOS yet (no Xcode here). | Applied — verify on Mac |
+| 064 | Weather and Wikipedia are ElevenLabs webhook tools: ElevenLabs makes those requests, so they cannot be switched off from the phone. Alarms (AlarmKit, iOS 26+ and a new permission) are not added. | Applied |
+| 065 | Owner choice 2026-10-09: timers (local notification, notification permission), maps (opens Apple Maps after a tap), Shortcuts (asks to run a named shortcut after a tap) and messages and email (drafts a text or email, opened in Messages or Mail for the user to send; needs Contacts). Contact card gains Call, Text and Email buttons, each a tap. Doddy never sends a message or places a call. No new Info.plist usage strings. Live agent gained four client tools and a prompt update. | Applied — verify on Mac |
+
+## Voice token server decisions (2026-10-09, renumbered from 044–048 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 066 | `server/voice-token`: one stateless endpoint that swaps a tester access code for an ElevenLabs conversation token. Plain JS, web-standard handler, no dependencies; Vercel entry included | Applied (code); **not deployed** |
+| 067 | Testers authenticate with per-person access codes (`label:code`, ≥16 chars, revocable by removing the entry), not accounts. Codes kept in the iOS Keychain, this device only | Applied: owner may later want App Attest or accounts |
+| 068 | Spending cap = the ElevenLabs agent's own concurrency/daily call limits; the server keeps no counters | Open: **owner sets the limits** |
+| 069 | App: a token server address switches voice to private mode; an invalid address or missing code never falls back to the public agent. Public agent stays as the dev default until the owner enables agent authentication | Applied |
+| 070 | The app's only networking of its own is `VoiceTokenClient` (guard-enforced); it sends the access code, nothing about the user | Applied |
+
+## Onboarding decisions (2026-10-09, `docs/implementation/ONBOARDING_STATUS.md`; renumbered from 038–043 at branch consolidation)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 083 | First use = optional written Back Tap guide → optional introduction → Home, replacing First Hello. Skipping never blocks; both reopen from Settings. Voice-guided setup and Live Activities not built. | Applied — **Back Tap part superseded by ADR-089** |
+| 084 | Back Tap status is a **user report** (`userReportedDone` / `userReportedTestPassed`), never "verified". The Open Doddy App Intent receipt (in memory, 5-minute test window) only changes wording. | Applied — **Back Tap part superseded by ADR-089** |
+| 085 | Reviewed profile: six optional fields, stored only on explicit Save, in `profile_fields` (same SQLite file, separate table) via migration `v2_profile_onboarding`. Stale edits rejected; forget ≠ delete memories. | Applied |
+| 086 | `DoddyDatabase` owns the file and migrations; opening a database from a newer app version fails without touching it. | Applied |
+| 087 | The profile is **not** sent to the ElevenLabs voice agent. Doing so (name, style, language) is a new data flow to a third party. | Open — **owner to decide** — **superseded by ADR-092** |
+| 088 | Profile is not in the memory export; export format unchanged. | Open — owner to decide |
+
+## Branch consolidation (2026-10-09)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 089 | Onboarding and V2 each shipped a Back Tap guide and a shortcut intent. Kept **one**: V2's `BackTapSetupView` + `TalkToDoddyIntent` (the one tried on the owner's iPhone, ADR-040 to 043). Onboarding's `SetupGuideView`, `OpenDoddyIntent` and Settings "Getting started" were removed; first use is now the optional introduction only (`ProfileStore.route` skips the core's setup step, whose types and tests stay in DoddyCore unused by the app). | Applied — owner may want Back Tap back as a first-use step; that would mean showing V2's guide inside onboarding |
+| 090 | Calendar/Reminders/Contacts: kept the `determined-sagan` Connections (matches the 14 tools on the live agent), not `upbeat-brown` V4a (Today card, local nudges). Control Center control from `busy-mendel` and the OpenAI "Ask" tab with Supabase gateway from `busy-hawking` were not merged. | Applied — owner to decide whether any of those come back |
+| 091 | The 'keep the taps quiet' design step (`gifted-hypatia`, owner request) edited 8 files of the imported design prototype in `design/interface-v1.2/` (its manifest, README, setup guide doc, `setup.js`, `studio.css/js`, verification files), which made `verify_imported_pack.py` fail. `PACKAGE_MANIFEST.json` hashes were refreshed for exactly those 8 files, so the check passes again; every other pack file is still byte-identical. Partial exception to ADR-024 | Applied — owner to confirm; revert = restore the 16 manifest lines and the design commit |
+| 092 | The approved introduction answers can be sent to the voice agent as `{{user_profile}}` (`ProfilePrompt.render`: fixed labels, user's words on one line each, only saved fields). **Off by default**: Settings → About you → "Use in voice conversations"; when off the agent gets a fixed not-shared line. Home, About you and the Settings privacy note say which. Personality (ADR-062) and the profile sections were added to the live prompt the same day; the repo prompt (`voice-agent/instructions.md`) was also brought up to date with the live timers/maps/Shortcuts/drafts text | Applied 2026-10-09 (owner "build" on the recommendation) — owner switches it on; not yet heard on a device |
+| 093 | Recall word rules (`RecallMatching`, DoddyCore), same for the Memories search and the voice `search_memories` tool: besides prefix match, a query word also matches its Polish/English counterpart from a fixed list of ~50 everyday groups, spoken numbers EN/PL 0–100 as digits (and runs of single numbers joined, so "5678" finds "pięć sześć siedem osiem"), a dropped ending (1 letter for 6–8 letters, 2 from 9), and one typo from 5 letters / two from 8. FTS5 runs first with every form; if it finds fewer than asked, the newest 5,000 notes are checked with the same rules (each distinct word once per search). No schema change; deterministic; results are still only stored notes, shown verbatim with the query words that matched. Measured on Linux x86 release build: ~0.13 s per search over 3,000 notes with ~3,000 distinct words | Applied 2026-10-09 — typo and counterpart matches can surface a loosely related note; the agent still only repeats stored text. Not yet tried on a device |
+| 094 | "Talk to Doddy" control for Control Center, Lock Screen and the Action Button (iOS 18+, `ControlWidget` in the existing `DoddyWidgets` extension, behind `#available`). It runs the existing `TalkToDoddyIntent`, moved to `Shared/` so both targets compile it; app-only code is behind `DODDY_WIDGET_EXTENSION`. Replaces the separate `DoddyControls` extension idea from the unmerged `busy-mendel` branch: one extension, one intent | Applied 2026-10-09 — not compiled or tried on a device |
+| 095 | **Today card + event nudges** on Home (`TODAY_STATUS.md`): rest of today from iPhone Calendar and due/overdue Reminders, only when the existing Connections switches are on and iOS allows; local nudges 10/30/60 min before a timed event, shown as set only after read-back from iOS, one per event (a new lead time replaces), moved events flagged. Everything stays on the phone; event/reminder notes are not read. Rebuilt on the merged Connections code instead of merging `upbeat-brown` | Applied 2026-10-09 — not compiled or tried on a device |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 
@@ -74,8 +167,23 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 9. **CI** — accept local-script CI only, or approve a hosted macOS runner and its cost (ADR-022).
 10. **Run the Mac verification** listed in `docs/implementation/M0_REPORT.md` and record results; **M1 should not start until M0's iOS build/tests are confirmed on a Mac** (M0 exit criteria are not met without it).
 
-## Blog
+## Connected Apps decisions (2026-10-09, owner prompt "Composio integration"; renumbered from 038–047 at branch consolidation)
 
 | ADR | Decision | Status |
 |---|---|---|
-| 036 | Blog lives in `blog/` as Markdown + YAML front matter; posts start as `status: draft`. Editorial rules in `blog/README.md` mirror the honesty contract (evidence for every claim, candidate art labelled, no identifiers or secrets). No site, hosting or accounts set up. | Applied — **owner to choose publishing venue and approve first post** |
+| 073 | Add a minimal backend `backend/` (Node 22, TypeScript, `node:http`, `node:sqlite`, zod, `@composio/core` 0.22.0 exact). No framework, no microservices, no vector store, no generic tool proxy. | Applied — approval pending |
+| 074 | Doddy-owned API v1 and capability registry (`calendar.listEvents` only enabled; `calendar.createEvent` listed but disabled). Composio tool slugs appear only in `backend/src/providers/composio.ts` (guard-enforced). | Applied |
+| 075 | Read-only is enforced twice: requested scope `calendar.events.readonly` on the auth config, and a server-side allowlist on the **granted** scopes; write-capable or unverifiable grants block reads. | Applied — needs live confirmation that Composio exposes granted scopes |
+| 076 | Completion: `verifier` (Composio OAuth callback verifier + `completeAuth`) by default; `callback` mode only in `DODDY_ENV=development`. Attempts are single-use, 10-minute, nonce-bound, and re-verified server-side (status, toolkit, auth config, ownership via `userIds` filter). | Applied — verifier availability Plausible |
+| 077 | App sessions: loopback dev identities (mock only) or owner-minted HMAC tokens; production live mode refused until real sign-in exists. | Applied — **owner decision needed on sign-in** |
+| 078 | Calendar results are transient (15-minute expiry, cleared on disconnect/failure), never stored by app or backend; saving is one explicit tap per event, stored as `shared_content` naming Google Calendar. | Applied |
+| 079 | App networking only in `DoddyApp/Infrastructure/URLSessionTransport.swift`; system auth browser only in `Features/ConnectedApps/SystemWebAuthenticator.swift`; session token in Keychain (`AfterFirstUnlockThisDeviceOnly`). | Applied |
+| 080 | `CapabilityStatus.limited(note)` added; `connectedAccounts` is "Limited · Google Calendar read-only, needs a Doddy server", never "Available". | Applied |
+| 081 | Composio SDK start-up npm version check disabled and API base URL pinned (constructor otherwise contacted registry.npmjs.org). | Applied |
+| 082 | Usage ceilings are Doddy policies in SQLite (UTC day/month), reserved before every provider call including pages and retries; concurrency per process (single instance). Monetary cost estimated only. | Applied — owner to set real ceilings |
+
+## Blog (2026-10-10)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 131 | Blog sources live in `blog/posts/` as Markdown + YAML front matter; `tools/build_blog.py` (Python stdlib only, no dependencies) renders posts with `status: published` into static pages under `site/blog/`, styled with the site's own CSS. Editorial rules in `blog/README.md` mirror the honesty contract (evidence for every claim, candidate art labelled, no identifiers or secrets). | Applied — **owner approves each post before it goes live** |

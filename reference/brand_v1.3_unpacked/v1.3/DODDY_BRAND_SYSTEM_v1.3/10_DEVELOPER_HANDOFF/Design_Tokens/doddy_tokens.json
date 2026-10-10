@@ -1,0 +1,89 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "brand": "Doddy",
+  "version": "1.3",
+  "color": {
+    "doddy-orange": {
+      "$type": "color",
+      "$value": "#FF6A00"
+    },
+    "ink-black": {
+      "$type": "color",
+      "$value": "#111115"
+    },
+    "warm-paper": {
+      "$type": "color",
+      "$value": "#F8F4EB"
+    },
+    "cream": {
+      "$type": "color",
+      "$value": "#FFF9F1"
+    },
+    "white": {
+      "$type": "color",
+      "$value": "#FFFFFF"
+    },
+    "night-charcoal": {
+      "$type": "color",
+      "$value": "#16171C"
+    },
+    "grey": {
+      "$type": "color",
+      "$value": "#67676B"
+    },
+    "soft-orange": {
+      "$type": "color",
+      "$value": "#FFE0C0"
+    },
+    "accessible-orange": {
+      "$type": "color",
+      "$value": "#A44200"
+    },
+    "companion-blue": {
+      "$type": "color",
+      "$value": "#3178C6"
+    }
+  },
+  "typography": {
+    "ui": {
+      "$type": "fontFamily",
+      "$value": "Inter"
+    },
+    "display": {
+      "$type": "fontFamily",
+      "$value": "Lobster Two"
+    },
+    "accent": {
+      "$type": "fontFamily",
+      "$value": "Comic Neue"
+    }
+  },
+  "radius": {
+    "card": {
+      "$type": "dimension",
+      "$value": "24px"
+    },
+    "pill": {
+      "$type": "dimension",
+      "$value": "999px"
+    }
+  },
+  "motion": {
+    "fast": {
+      "$type": "duration",
+      "$value": "120ms"
+    },
+    "standard": {
+      "$type": "duration",
+      "$value": "240ms"
+    },
+    "character": {
+      "$type": "duration",
+      "$value": "420ms"
+    },
+    "settle": {
+      "$type": "duration",
+      "$value": "680ms"
+    }
+  }
+}

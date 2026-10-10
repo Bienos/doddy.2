@@ -1,0 +1,489 @@
+<title>Doddy Landing Film</title>
+<meta name="color-scheme" content="light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+<style>
+/* Mockup of doddy-eight.vercel.app with the brand film added directly after the hero.
+   Site is light-only by owner request, so this page is too. Tokens, type and components
+   are copied from the live site's tokens.css and styles.css; film styles reuse the same vocabulary. */
+:root{
+  color-scheme:light;
+  --reading-ink:#171715; --canvas:#FFF7E9; --orange-cue:#F58A24; --secondary-text:#655F56;
+  --quiet-surface:#F5EAD8; --separator:#DFD5C6; --accent-text:#A64B00; --confirmed:#326746;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --hand:"Caveat","Bradley Hand","Segoe Print",cursive;
+  --text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  --gutter:clamp(16px,4vw,40px);
+  --paper:color-mix(in srgb,var(--canvas) 35%,#fff);
+  --rule:color-mix(in srgb,var(--separator) 60%,transparent);
+  --lift:0 1px 2px rgb(60 40 10 / 6%),0 16px 36px -20px rgb(60 40 10 / 28%);
+  --lift-strong:0 2px 4px rgb(60 40 10 / 8%),0 40px 80px -32px rgb(60 40 10 / 40%);
+  --film-black:#0f0f0e;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{margin:0;color:var(--reading-ink);background:var(--canvas);font:400 1.0625rem/1.6 var(--text);overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+h1,h2,h3{text-wrap:balance}
+p{margin:0 0 16px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent-text);outline-offset:3px;border-radius:8px}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding-inline:var(--gutter)}
+
+/* ---------- site type + controls (from the live site) ---------- */
+.display{font-family:var(--display);font-weight:760;font-variation-settings:"opsz" 96;font-size:clamp(3rem,1.6rem + 6vw,6.25rem);line-height:.94;letter-spacing:-.022em;margin:0 0 24px}
+.display-m{font-family:var(--display);font-weight:750;font-variation-settings:"opsz" 72;font-size:clamp(2.1rem,1.5rem + 2.6vw,3.5rem);line-height:1;letter-spacing:-.03em;margin:0 0 20px}
+.lede{font-size:clamp(1.125rem,1rem + .4vw,1.3125rem);line-height:1.55;max-width:32rem}
+.fineprint{font-size:.875rem;color:var(--secondary-text);max-width:34rem}
+.caption{font-size:.75rem;color:var(--secondary-text);text-align:center;margin:12px 0 0}
+.says{font-family:var(--hand);font-weight:700;color:var(--reading-ink);line-height:1}
+.scribble{position:absolute;left:0;bottom:-.18em;width:100%;height:.24em;overflow:visible}
+.scribble path{fill:none;stroke:var(--orange-cue);stroke-width:5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.js .scribble{clip-path:inset(-50% 100% -50% 0);transition:clip-path 650ms cubic-bezier(.3,.7,.2,1) 300ms}
+.js .loaded .scribble{clip-path:inset(-50% 0 -50% 0)}
+.pill{display:inline-flex;align-items:center;gap:8px;margin:0 0 22px;padding:5px 14px 6px;border:1px solid var(--separator);border-radius:999px;background:color-mix(in srgb,var(--quiet-surface) 70%,transparent);font-size:.875rem;font-weight:600;color:var(--secondary-text)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--orange-cue)}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px;border:0;border-radius:18px;background:var(--reading-ink);color:var(--canvas);font:650 1rem/1 var(--text);text-decoration:none;cursor:pointer;box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--orange-cue) 85%,transparent);transition:transform 150ms ease,box-shadow 150ms ease}
+.button:hover{transform:translateY(-1px);box-shadow:inset 0 -5px 0 var(--orange-cue)}
+.button.small{min-height:44px;padding:0 18px;border-radius:14px;font-size:.9375rem}
+.text-link{display:inline-flex;align-items:center;min-height:44px;font-weight:600;text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:var(--orange-cue)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;margin:32px 0 20px}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:color-mix(in srgb,var(--canvas) 86%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid color-mix(in srgb,var(--separator) 60%,transparent)}
+.nav-inner{display:flex;align-items:center;gap:24px;min-height:68px}
+.wordmark{font-family:var(--hand);font-weight:700;font-size:2.2rem;line-height:1;text-decoration:none;margin:0 auto 0 0}
+.nav-links{display:none;list-style:none;margin:0;padding:0;gap:28px}
+.nav-links a{text-decoration:none;font-size:.9375rem;font-weight:550;color:var(--secondary-text);display:inline-flex;min-height:44px;align-items:center}
+@media (min-width:820px){.nav-links{display:flex}}
+
+/* ---------- hero (replica) ---------- */
+.hero{position:relative;isolation:isolate;padding:clamp(40px,7vw,96px) 0 clamp(40px,5vw,72px);overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(to bottom,transparent 0 35px,var(--rule) 35px 36px);-webkit-mask:linear-gradient(to bottom,#000 30%,transparent 95%);mask:linear-gradient(to bottom,#000 30%,transparent 95%)}
+.hero-grid{display:grid;gap:56px;align-items:center}
+.hero-copy{min-width:0}
+@media (min-width:960px){.hero-grid{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}}
+.hero-stage{position:relative;display:grid;justify-items:center;padding-left:clamp(60px,14vw,140px)}
+.hero-glow{position:absolute;z-index:-1;left:50%;top:46%;width:130%;aspect-ratio:1;translate:-42% -50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--orange-cue) 22%,transparent),color-mix(in srgb,var(--orange-cue) 6%,transparent) 60%,transparent);pointer-events:none}
+.device{position:relative;width:min(100%,320px);aspect-ratio:390/845;border-radius:48px;padding:9px;background:var(--reading-ink);box-shadow:var(--lift-strong);transform:rotate(3deg)}
+.device img{width:100%;height:100%;object-fit:cover;border-radius:39px;background:var(--canvas)}
+.hero-doddy{position:absolute;z-index:2;left:0;bottom:4%;width:clamp(150px,22vw,230px)}
+.hero-doddy .says{position:absolute;right:62%;top:-6%;font-size:clamp(1.9rem,1.4rem + 1.4vw,2.6rem);white-space:nowrap;transform:rotate(-4deg);margin:0}
+.hero-chip{position:absolute;z-index:3;right:-6%;top:66%;display:flex;align-items:flex-start;gap:10px;width:min(250px,62%);padding:12px 14px;background:var(--paper);border:1px solid var(--separator);border-radius:16px;box-shadow:var(--lift);font-size:.8125rem;line-height:1.4;color:var(--secondary-text);transform:rotate(-2deg)}
+.hero-chip strong{color:var(--confirmed);font-size:.875rem}
+.chip-check{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--confirmed);color:var(--paper);font-size:.8125rem;font-weight:700}
+@media (max-width:959px){.hero-chip{right:0;top:64%}}
+
+/* ---------- problem (replica) ---------- */
+.problem{padding:clamp(56px,8vw,104px) 0}
+.problem-grid{display:grid;gap:24px 64px;align-items:start}
+@media (min-width:900px){.problem-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.problem .display-m{max-width:14ch;margin:0}
+.scraps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:12px;align-content:start}
+.scraps li{padding:10px 16px;background:var(--paper);border:1px solid var(--separator);border-radius:4px 14px 4px 14px;font-family:var(--hand);font-weight:600;font-size:1.5rem;line-height:1.1}
+.scraps li:nth-child(odd){transform:rotate(-1.5deg)} .scraps li:nth-child(even){transform:rotate(1.2deg)}
+.section-head{display:grid;gap:8px 64px;margin-bottom:clamp(32px,5vw,56px)}
+.section-head .display-m{margin:0}
+.section-head p{color:var(--secondary-text);max-width:34rem;margin:0;align-self:end}
+@media (min-width:900px){.section-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+
+/* ---------- shared film player ---------- */
+.player{position:relative;overflow:hidden;background:var(--film-black);border-radius:20px}
+.player video{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.player .cover{position:absolute;inset:0;display:grid;place-items:center;border:0;padding:0;background:linear-gradient(180deg,transparent 50%,rgb(15 15 14 / 55%))}
+.play-dot{width:clamp(68px,8vw,92px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:var(--reading-ink);box-shadow:inset 0 -5px 0 var(--orange-cue),0 12px 30px -8px rgb(0 0 0 / 50%);transition:transform 150ms ease,box-shadow 150ms ease}
+.play-dot svg{width:34%;margin-left:8%;fill:var(--canvas)}
+.player .cover:hover .play-dot{transform:translateY(-2px) scale(1.04);box-shadow:inset 0 -7px 0 var(--orange-cue),0 16px 34px -8px rgb(0 0 0 / 55%)}
+.cover-label{position:absolute;left:clamp(14px,2.4vw,26px);bottom:clamp(12px,2vw,22px);color:var(--canvas);text-align:left;font-size:.875rem;font-weight:600;line-height:1.25}
+.cover-label .h{display:block;font-family:var(--hand);font-weight:700;font-size:clamp(1.6rem,1.2rem + 1.2vw,2.3rem);line-height:1}
+.preview-tag{position:absolute;left:12px;top:12px;display:inline-flex;align-items:center;gap:7px;padding:4px 11px 5px;border-radius:999px;background:rgb(15 15 14 / 62%);color:var(--canvas);font-size:.75rem;font-weight:600;pointer-events:none}
+.preview-tag .dot{width:7px;height:7px;border-radius:50%;background:var(--orange-cue)}
+.player.playing .cover,.player.playing .preview-tag{display:none}
+
+/* ---------- A: notebook film ---------- */
+.film-a{position:relative;padding:clamp(24px,4vw,48px) 0 clamp(56px,8vw,104px)}
+.film-stage{position:relative;padding-left:clamp(0px,9vw,120px)}
+.film-card{position:relative;padding:12px;background:var(--paper);border:1px solid var(--separator);border-radius:30px;box-shadow:var(--lift-strong);transform:rotate(-1.2deg);transition:transform 900ms cubic-bezier(.2,.8,.2,1)}
+.film-card.settled{transform:rotate(0)}
+.tape{position:absolute;z-index:2;top:-13px;width:110px;height:28px;background:color-mix(in srgb,var(--quiet-surface) 75%,transparent);border:1px solid color-mix(in srgb,var(--separator) 70%,transparent);box-shadow:0 2px 6px rgb(60 40 10 / 8%)}
+.tape.t1{left:9%;transform:rotate(-5deg)} .tape.t2{right:9%;transform:rotate(4deg)}
+.film-doddy{position:absolute;z-index:3;left:0;bottom:-10px;width:clamp(120px,15vw,190px)}
+.film-doddy .says{position:absolute;right:58%;top:-30%;font-size:clamp(1.6rem,1.2rem + 1vw,2.2rem);white-space:nowrap;transform:rotate(-5deg);margin:0}
+.chapters{list-style:none;margin:28px 0 0;padding:0 0 0 clamp(0px,9vw,120px);display:flex;flex-wrap:wrap;gap:10px}
+.chapters button{display:inline-flex;align-items:baseline;gap:8px;padding:8px 14px 9px;background:var(--paper);border:1px solid var(--separator);border-radius:4px 14px 4px 14px;font-family:var(--hand);font-weight:600;font-size:1.35rem;line-height:1.1;transition:border-color 150ms,box-shadow 150ms,transform 150ms}
+.chapters li:nth-child(odd) button{transform:rotate(-1.2deg)} .chapters li:nth-child(even) button{transform:rotate(1deg)}
+.chapters button:hover{border-color:var(--orange-cue)}
+.chapters .t{font-family:var(--text);font-size:.75rem;font-weight:600;color:var(--secondary-text);font-variant-numeric:tabular-nums}
+.chapters button[aria-current="true"]{border-color:var(--orange-cue);box-shadow:inset 0 -3px 0 var(--orange-cue)}
+.film-a .caption{text-align:left;padding-left:clamp(0px,9vw,120px);margin-top:18px}
+
+/* ---------- B: cinema reveal ---------- */
+.film-b{position:relative;height:200vh;isolation:isolate}
+.film-b .stick{position:sticky;top:0;height:100svh;display:grid;place-items:center;overflow:hidden}
+.film-b .stick::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(to bottom,transparent 0 35px,var(--rule) 35px 36px);-webkit-mask:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);mask:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent)}
+.film-b .frame{--k:calc(1 - var(--p,0));width:100%;max-width:calc((100svh - 24px) * 16 / 9);clip-path:inset(calc(var(--k) * 14%) calc(var(--k) * 14%) round calc(var(--k) * 30px))}
+.film-b .player{border-radius:0}
+.film-b .over{position:absolute;left:0;right:0;top:calc(84px + env(safe-area-inset-top,0px));text-align:center;opacity:calc(1 - var(--p,0) * 2);pointer-events:none;padding-inline:var(--gutter)}
+.film-b .over .display-m{margin:0}
+.film-b .over .says{position:relative;display:inline-block;font-size:clamp(1.6rem,1.2rem + 1vw,2.2rem);margin-top:6px;transform:rotate(-2deg)}
+
+/* ---------- C: postcard ---------- */
+.film-c{padding:clamp(24px,4vw,48px) 0 clamp(56px,8vw,104px)}
+.postcard{position:relative;display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:clamp(20px,3vw,36px);padding:clamp(14px,2vw,22px);background:var(--paper);border:1px solid var(--separator);border-radius:10px;box-shadow:var(--lift-strong);transform:rotate(.8deg)}
+.postcard .back{position:relative;display:flex;flex-direction:column;min-width:0;padding:8px 6px 4px clamp(16px,2.4vw,30px);border-left:1px solid var(--separator)}
+.stamp{align-self:flex-end;width:92px;padding:6px;background:var(--canvas);border:2px dashed var(--orange-cue);border-radius:4px;transform:rotate(4deg)}
+.stamp img{width:100%}
+.postmark{position:absolute;right:76px;top:30px;width:96px;aspect-ratio:1;border:2px solid color-mix(in srgb,var(--reading-ink) 45%,transparent);border-radius:50%;display:grid;place-items:center;text-align:center;font:700 .625rem/1.25 var(--text);letter-spacing:.12em;color:color-mix(in srgb,var(--reading-ink) 55%,transparent);transform:rotate(-14deg)}
+.letter{margin:18px 0;font-family:var(--hand);font-weight:600;font-size:clamp(1.45rem,1.1rem + .8vw,1.85rem);line-height:36px;background:repeating-linear-gradient(to bottom,transparent 0 35px,var(--separator) 35px 36px);flex:1}
+.letter p{margin:0}
+.postcard .button{align-self:flex-start}
+
+/* ---------- rest of page stub ---------- */
+.rest{padding:clamp(40px,6vw,72px) 0;border-top:1px solid var(--separator)}
+.rest ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:10px}
+.rest li{padding:8px 14px;border:1.5px dashed var(--separator);border-radius:14px;font-size:.875rem;color:var(--secondary-text)}
+
+/* ---------- mockup chrome (not part of the site) ---------- */
+.switcher{position:fixed;z-index:30;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));translate:-50% 0;display:flex;align-items:center;gap:4px;padding:5px;background:var(--reading-ink);color:var(--canvas);border-radius:999px;box-shadow:0 12px 30px -10px rgb(0 0 0 / 45%);max-width:calc(100% - 32px)}
+.switcher .lbl{font-size:.75rem;font-weight:600;padding:0 8px 0 10px;white-space:nowrap;color:color-mix(in srgb,var(--canvas) 70%,transparent)}
+.switcher button{border:0;background:transparent;color:var(--canvas);border-radius:999px;padding:8px 13px;font-size:.8125rem;font-weight:600;min-height:38px;white-space:nowrap}
+.switcher button[aria-pressed="true"]{background:var(--canvas);color:var(--reading-ink);box-shadow:inset 0 -3px 0 var(--orange-cue)}
+.notes{background:var(--quiet-surface);border-top:1px solid var(--separator);padding:clamp(48px,6vw,80px) 0 120px}
+.notes .grid3{display:grid;gap:16px;margin-top:28px}
+@media (min-width:900px){.notes .grid3{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.note-card{background:var(--paper);border:1px solid var(--separator);border-radius:22px;padding:22px;display:grid;gap:8px;align-content:start}
+.note-card[data-rec]{box-shadow:inset 0 -4px 0 var(--orange-cue)}
+.note-card h3{font-family:var(--display);font-weight:700;font-size:1.25rem;letter-spacing:-.015em;margin:0}
+.note-card p{font-size:.9375rem;color:var(--secondary-text);margin:0}
+.note-card .pill{margin:0;justify-self:start}
+.specs{display:grid;gap:0 28px;margin:28px 0 0;font-size:.9375rem}
+@media (min-width:900px){.specs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.specs div{display:grid;grid-template-columns:6.5rem minmax(0,1fr);gap:12px;padding:12px 0;border-top:1px solid var(--separator)}
+.specs dt{color:var(--secondary-text)} .specs dd{margin:0}
+.notes .fineprint{margin-top:24px;max-width:46rem}
+
+@media (max-width:700px){
+  .film-stage,.chapters,.film-a .caption{padding-left:0}
+  .film-doddy{width:96px;left:-6px;bottom:-30px}
+  .film-doddy .says{font-size:1.4rem;top:-30%}
+  .film-card{padding:7px;border-radius:20px}
+  .film-card .player{border-radius:14px}
+  .chapters{margin-top:44px;flex-wrap:nowrap;overflow-x:auto;padding:6px 2px 10px;scroll-snap-type:x mandatory}
+  .chapters li{scroll-snap-align:start;flex:none}
+  .film-b{height:150vh}
+  .postcard{grid-template-columns:minmax(0,1fr);transform:none}
+  .postcard .back{border-left:0;border-top:1px solid var(--separator);padding:16px 4px 4px}
+  .postmark{right:70px;top:6px;width:80px}
+  .switcher .lbl{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .film-card,.button,.play-dot{transition:none}
+  .js .scribble{clip-path:none;transition:none}
+  .film-b{height:auto}.film-b .stick{position:static;height:auto;padding:24px 0 72px;display:block}
+  .film-b .frame{clip-path:none;margin:0 auto;max-width:1200px;padding-inline:var(--gutter)}
+  .film-b .player{border-radius:20px}
+  .film-b .over{position:static;opacity:1;margin-bottom:24px}
+}
+</style>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="wordmark" href="#top" aria-label="Doddy, back to top">Doddy</a>
+    <nav aria-label="Sections">
+      <ul class="nav-links">
+        <li><a href="#film">The film</a></li>
+        <li><a href="#rest">How it works</a></li>
+        <li><a href="#rest">Meet Doddy</a></li>
+        <li><a href="#rest">Privacy</a></li>
+      </ul>
+    </nav>
+    <a class="button small" href="#rest">Join early access</a>
+  </div>
+</header>
+
+<main id="main" data-concept="a">
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="pill"><span class="dot" aria-hidden="true"></span>iPhone app, in early testing</p>
+        <h1 id="hero-title" class="display">A little less to carry.</h1>
+        <p class="lede">Doddy is a pocket notebook with a mate inside. Tell it the small stuff you don't want to lose, and get your exact words back when you need them.</p>
+        <div class="actions">
+          <a class="button" href="#rest">Join early access</a>
+          <a class="text-link" href="#film">Watch the film (1:20)</a>
+        </div>
+        <p class="fineprint">Doddy is an AI, not a person. Your notes stay on your iPhone.</p>
+      </div>
+      <div class="hero-stage">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-chip" aria-hidden="true"><span class="chip-check">✓</span><span><strong>Saved</strong><br>The spare keys are in the blue tin above the fridge.</span></div>
+        <div class="device"><img src="media/home.png" width="390" height="845" alt="Doddy's Home screen: A little less to carry."></div>
+        <div class="hero-doddy">
+          <p class="says" aria-hidden="true">Hey. I'm Doddy.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          <img src="media/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt="">
+        </div>
+        <p class="caption">Design preview of the app</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== A · Notebook film ===== -->
+  <section class="film-a" id="film" data-variant="a" aria-labelledby="fa-title">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="fa-title" class="display-m">One morning in Warsaw.</h2>
+        <p>A short film about Doddy, a ball he never quite puts down, and one very determined pigeon. 1 minute 20, best with sound.</p>
+      </div>
+      <div class="film-stage">
+        <div class="film-card">
+          <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+          <div class="player" data-film>
+            <video muted playsinline loop preload="metadata" poster="media/poster.jpg" aria-label="Doddy brand film, 1 minute 20 seconds">
+              <source src="media/doddy-film.mp4" type="video/mp4">
+            </video>
+            <span class="preview-tag"><span class="dot"></span>Preview, muted</span>
+            <button class="cover" type="button" data-play aria-label="Play the film with sound">
+              <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
+              <span class="cover-label"><span class="h">Watch the film</span>1:20 · sound on</span>
+            </button>
+          </div>
+        </div>
+        <div class="film-doddy">
+          <p class="says" aria-hidden="true">That's me.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          <img src="media/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" alt="">
+        </div>
+      </div>
+      <ol class="chapters" aria-label="Jump to a moment">
+        <li><button type="button" data-seek="0"><span class="t">0:00</span>Castle Square</button></li>
+        <li><button type="button" data-seek="9.3"><span class="t">0:09</span>A big question</button></li>
+        <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Every language at once</button></li>
+        <li><button type="button" data-seek="28.3"><span class="t">0:28</span>Asking a local</button></li>
+        <li><button type="button" data-seek="47.3"><span class="t">0:47</span>The pigeon</button></li>
+        <li><button type="button" data-seek="56.8"><span class="t">0:57</span>Closed</button></li>
+        <li><button type="button" data-seek="69.6"><span class="t">1:09</span>A mate in your pocket</button></li>
+      </ol>
+      <p class="caption">Brand film. A story about Doddy, not a demo of the app.</p>
+    </div>
+  </section>
+
+  <!-- ===== B · Cinema reveal ===== -->
+  <section class="film-b" data-variant="b" aria-labelledby="fb-title" hidden>
+    <div class="stick">
+      <div class="over">
+        <h2 id="fb-title" class="display-m">One morning in Warsaw.</h2>
+        <p class="says">Keep scrolling.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+      </div>
+      <div class="frame">
+        <div class="player" data-film>
+          <video muted playsinline loop preload="metadata" poster="media/poster.jpg" aria-label="Doddy brand film, 1 minute 20 seconds">
+            <source src="media/doddy-film.mp4" type="video/mp4">
+          </video>
+          <span class="preview-tag"><span class="dot"></span>Preview, muted</span>
+          <button class="cover" type="button" data-play aria-label="Play the film with sound">
+            <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
+            <span class="cover-label"><span class="h">Watch the film</span>1:20 · sound on</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== C · Postcard ===== -->
+  <section class="film-c" data-variant="c" aria-labelledby="fc-title" hidden>
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="fc-title" class="display-m">A postcard from Doddy.</h2>
+        <p>He spent a morning in Warsaw so you could watch it in 80 seconds.</p>
+      </div>
+      <article class="postcard">
+        <div class="player" data-film>
+          <video muted playsinline loop preload="metadata" poster="media/poster.jpg" aria-label="Doddy brand film, 1 minute 20 seconds">
+            <source src="media/doddy-film.mp4" type="video/mp4">
+          </video>
+          <span class="preview-tag"><span class="dot"></span>Preview, muted</span>
+          <button class="cover" type="button" data-play aria-label="Play the film with sound">
+            <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
+            <span class="cover-label"><span class="h">Watch the film</span>1:20 · sound on</span>
+          </button>
+        </div>
+        <div class="back">
+          <span class="postmark" aria-hidden="true">WARSZAWA<br>09 · 10<br>2026</span>
+          <span class="stamp" aria-hidden="true"><img src="media/doddy-pose-pointing-light-v1.3-r1.svg" alt=""></span>
+          <div class="letter">
+            <p>Hey!</p>
+            <p>Spent the morning in Warsaw. Lost the ball twice, made a pigeon friend, found one closed door.</p>
+            <p>Wish you were here. D.</p>
+          </div>
+          <button class="button" type="button" data-play-target>Watch the film</button>
+        </div>
+      </article>
+      <p class="caption">Brand film. A story about Doddy, not a demo of the app.</p>
+    </div>
+  </section>
+
+  <section class="problem" aria-labelledby="problem-title">
+    <div class="wrap problem-grid">
+      <h2 id="problem-title" class="display-m">Small things vanish the moment you need them.</h2>
+      <ul class="scraps" aria-label="Examples">
+        <li>The parcel locker code</li>
+        <li>Which tin the spare keys went in</li>
+        <li>The book Marta recommended</li>
+        <li>Your kid's shoe size</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="rest" id="rest" aria-label="Rest of the page">
+    <div class="wrap">
+      <p class="fineprint">The rest of the live page continues unchanged:</p>
+      <ol><li>How it works</li><li>Every note keeps its receipt</li><li>Or just say it</li><li>Your notes, your call</li><li>Meet Doddy</li><li>Take a shot</li><li>Come say hey</li></ol>
+    </div>
+  </section>
+</main>
+
+<section class="notes" aria-labelledby="notes-title">
+  <div class="wrap">
+    <p class="pill"><span class="dot" aria-hidden="true"></span>Mockup notes, not part of the site</p>
+    <h2 id="notes-title" class="display-m">Three ways to put the film under the hero</h2>
+    <div class="grid3">
+      <article class="note-card" data-rec>
+        <span class="pill">Recommended</span>
+        <h3>A · Notebook film</h3>
+        <p>The film is taped onto a paper card that straightens as it scrolls in. Doddy dribbles in from the corner and says "That's me." in the same handwriting as the hero. The chapter stickers reuse the "small things" scraps from the next section, and each one jumps to its moment.</p>
+      </article>
+      <article class="note-card">
+        <span class="pill">Most cinematic</span>
+        <h3>B · Cinema reveal</h3>
+        <p>The film starts as an inset rounded card on ruled paper and opens to the full width of the screen as you scroll. It's the strongest launch moment, but it holds the page for about one extra screen. People who prefer reduced motion get a plain, static player.</p>
+      </article>
+      <article class="note-card">
+        <span class="pill">Most playful</span>
+        <h3>C · Postcard</h3>
+        <p>The film is the front of a postcard from Warsaw, with a handwritten note, a Doddy stamp and a postmark on the back. It's charming and on-brand, but the handwriting adds copy that has to stay short.</p>
+      </article>
+    </div>
+    <dl class="specs">
+      <div><dt>Where</dt><dd>Landing page only, the first section after the hero and before "Small things vanish".</dd></div>
+      <div><dt>Hero link</dt><dd>"See how it works" becomes "Watch the film (1:20)", or add it as a second text link.</dd></div>
+      <div><dt>Autoplay</dt><dd>Muted, 9-second loop while on screen, paused off screen, off for reduced motion.</dd></div>
+      <div><dt>Sound</dt><dd>Only after a tap. The film restarts from 0:00 with native controls.</dd></div>
+      <div><dt>File</dt><dd>Your .mov is HEVC, which most desktop Chrome and Firefox can't play. This mock uses a 5.6 MB H.264 MP4. Ship H.264 plus an AV1 WebM, with <code>preload="metadata"</code> and a poster.</dd></div>
+      <div><dt>Captions</dt><dd>Add a WebVTT captions track once the voice-over script is final.</dd></div>
+    </dl>
+    <p class="fineprint">The hero, nav and "Small things vanish" section are copied from doddy-eight.vercel.app so the film can be judged in place. Chapter names describe what's on screen and are placeholders. The film's end card says "A mate in your pocket." while the site headline says "A little less to carry."</p>
+  </div>
+</section>
+
+<div class="switcher" role="group" aria-label="Film treatment">
+  <span class="lbl">Film section</span>
+  <button type="button" id="pick-a" data-pick="a" aria-pressed="true">A · Notebook</button>
+  <button type="button" id="pick-b" data-pick="b" aria-pressed="false">B · Cinema</button>
+  <button type="button" id="pick-c" data-pick="c" aria-pressed="false">C · Postcard</button>
+</div>
+
+<script>
+(function(){
+  document.documentElement.classList.add('js');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var PREVIEW_END = 9;
+  var main = document.getElementById('main');
+  var films = Array.prototype.slice.call(document.querySelectorAll('[data-film]'));
+
+  function startFull(film, at){
+    var v = film.querySelector('video');
+    films.forEach(function(f){ if (f !== film) f.querySelector('video').pause(); });
+    film.classList.add('playing');
+    film.dataset.full = '1';
+    v.loop = false; v.muted = false; v.controls = true;
+    v.currentTime = at || 0;
+    var p = v.play(); if (p && p.catch) p.catch(function(){});
+  }
+
+  films.forEach(function(film){
+    var v = film.querySelector('video');
+    film.querySelector('[data-play]').addEventListener('click', function(){ startFull(film, 0); });
+    v.addEventListener('timeupdate', function(){
+      if (!film.dataset.full && v.currentTime > PREVIEW_END) v.currentTime = 0;
+    });
+  });
+  document.querySelector('[data-play-target]').addEventListener('click', function(){
+    startFull(document.querySelector('.postcard [data-film]'), 0);
+  });
+
+  // Underline Doddy's handwriting once it is on screen, like the live hero does.
+  var hero = document.querySelector('.hero');
+  requestAnimationFrame(function(){ hero.classList.add('loaded'); });
+
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        var film = e.target, v = film.querySelector('video');
+        var visible = e.isIntersecting && !film.closest('[hidden]');
+        if (visible && !film.dataset.full && !reduce){ var p = v.play(); if (p && p.catch) p.catch(function(){}); }
+        else if (!visible) v.pause();
+        if (e.isIntersecting){
+          var card = film.closest('.film-card'); if (card) card.classList.add('settled');
+          var sec = film.closest('section'); if (sec) sec.classList.add('loaded');
+        }
+      });
+    }, {threshold: 0.4});
+    films.forEach(function(f){ io.observe(f); });
+  } else {
+    document.querySelectorAll('section').forEach(function(s){ s.classList.add('loaded'); });
+  }
+
+  // Cinema reveal progress
+  var cinema = document.querySelector('.film-b');
+  var ticking = false;
+  function onScroll(){
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(function(){
+      ticking = false;
+      if (cinema.hidden || reduce) return;
+      var r = cinema.getBoundingClientRect();
+      var span = r.height - window.innerHeight;
+      var p = Math.min(1, Math.max(0, (-r.top + window.innerHeight * 0.3) / (span || 1)));
+      cinema.style.setProperty('--p', p.toFixed(3));
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll);
+
+  // Chapters
+  var aFilm = document.querySelector('.film-a [data-film]');
+  var aVideo = aFilm.querySelector('video');
+  var chapterBtns = Array.prototype.slice.call(document.querySelectorAll('[data-seek]'));
+  chapterBtns.forEach(function(b){ b.addEventListener('click', function(){ startFull(aFilm, parseFloat(b.dataset.seek)); }); });
+  aVideo.addEventListener('timeupdate', function(){
+    if (!aFilm.dataset.full) return;
+    var t = aVideo.currentTime, cur = chapterBtns[0];
+    chapterBtns.forEach(function(b){ if (t >= parseFloat(b.dataset.seek)) cur = b; });
+    chapterBtns.forEach(function(b){ b.setAttribute('aria-current', String(b === cur)); });
+  });
+
+  // Concept switcher
+  var picks = document.querySelectorAll('[data-pick]');
+  function show(c, scroll){
+    main.dataset.concept = c;
+    picks.forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.pick === c)); });
+    document.querySelectorAll('[data-variant]').forEach(function(s){
+      var on = s.dataset.variant === c;
+      s.hidden = !on;
+      if (on) s.id = 'film'; else s.removeAttribute('id');
+      if (!on) s.querySelectorAll('video').forEach(function(v){ v.pause(); });
+    });
+    try { localStorage.setItem('doddy-film-concept', c); } catch(e){}
+    onScroll();
+    if (scroll) document.getElementById('film').scrollIntoView({behavior: reduce ? 'auto' : 'smooth'});
+  }
+  picks.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.pick, true); }); });
+
+  var start = 'a', h = (location.hash || '').replace('#','');
+  if (h === 'a' || h === 'b' || h === 'c') start = h;
+  else { try { var s = localStorage.getItem('doddy-film-concept'); if (s === 'a' || s === 'b' || s === 'c') start = s; } catch(e){} }
+  show(start, false);
+})();
+</script>

@@ -1,0 +1,32 @@
+{
+  "connection": {
+    "provider": "google_calendar",
+    "mode": "mock",
+    "status": "disconnected",
+    "reason": null,
+    "accountLabel": null,
+    "connectedAt": null,
+    "lastCheckedAt": null,
+    "remoteCleanup": "none",
+    "access": {
+      "summary": "Doddy reads events on your primary Google Calendar (titles and times) when you ask, for example for tomorrow's plans. It can't create, change or delete events, and it doesn't keep your calendar.",
+      "canWrite": false,
+      "requestedScopes": [
+        "https://www.googleapis.com/auth/calendar.events.readonly"
+      ]
+    }
+  },
+  "receipt": {
+    "operationId": "304cfca3-bccb-441e-b2e7-b3db8a07eb6c",
+    "operation": "disconnect",
+    "capability": "connection.disconnect",
+    "provider": "google_calendar",
+    "accountLabel": null,
+    "timestamp": "2026-10-09T10:00:00.000Z",
+    "mode": "mock",
+    "status": "succeeded",
+    "summary": "Disconnected. Doddy's access at Google was removed.",
+    "errorCode": null,
+    "providerReference": null
+  }
+}

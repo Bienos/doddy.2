@@ -1,0 +1,32 @@
+{
+  "mode": "mock",
+  "source": {
+    "provider": "google_calendar",
+    "calendar": "primary",
+    "label": "d•••@e•••.com"
+  },
+  "window": {
+    "date": "2026-10-10",
+    "timeZone": "Europe/Warsaw",
+    "start": "2026-10-10T00:00:00+02:00",
+    "end": "2026-10-11T00:00:00+02:00"
+  },
+  "events": [],
+  "cancelledHidden": 0,
+  "truncated": false,
+  "retrievedAt": "2026-10-09T10:00:00.000Z",
+  "expiresAt": "2026-10-09T10:15:00.000Z",
+  "receipt": {
+    "operationId": "bcae66a3-e893-431e-afe0-d5577f103c27",
+    "operation": "read",
+    "capability": "calendar.listEvents",
+    "provider": "google_calendar",
+    "accountLabel": "d•••@e•••.com",
+    "timestamp": "2026-10-09T10:00:00.000Z",
+    "mode": "mock",
+    "status": "succeeded",
+    "summary": "0 events for 2026-10-10 (Europe/Warsaw)",
+    "errorCode": null,
+    "providerReference": null
+  }
+}

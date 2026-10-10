@@ -115,8 +115,8 @@
     },
     {
       "path": "design/interface-v1.2/MANIFEST.json",
-      "sha256": "08e67241ad82d8d720fa60ff62aab6b62d3151f43bab2ae505019cec6885dc17",
-      "bytes": 17367
+      "sha256": "9e7a6931507d087f7e9486456854921552dcc964dcd673521088a5c877dac92d",
+      "bytes": 18221
     },
     {
       "path": "design/interface-v1.2/MANIFEST_ORIGINAL.json",
@@ -125,8 +125,8 @@
     },
     {
       "path": "design/interface-v1.2/README.md",
-      "sha256": "90c2086c678f2f96e2e188afe87c80cde4d926fd68aa477a0d059db4b5774ddc",
-      "bytes": 6058
+      "sha256": "4741967fc90f16ba0a1d83ec12163607f7ec98b3c79533d17488af7e25e3a769",
+      "bytes": 6469
     },
     {
       "path": "design/interface-v1.2/assets/Caveat-OFL.txt",
@@ -340,8 +340,8 @@
     },
     {
       "path": "design/interface-v1.2/docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md",
-      "sha256": "32b3d254ca42786cc2f5a01ca0e9a23b74af4a93bebd7b25093201ed81be4115",
-      "bytes": 8187
+      "sha256": "76bebc61ed3833f24343a3d35da7aae40123887e8679b4a9f44247222262694b",
+      "bytes": 8625
     },
     {
       "path": "design/interface-v1.2/docs/IMPLEMENTATION-NOTES.md",
@@ -545,18 +545,18 @@
     },
     {
       "path": "design/interface-v1.2/setup.js",
-      "sha256": "6d4b24f113dd86ff7718448dd2dbaba1aa5182de8cfae568bc3181cd9ea34cba",
-      "bytes": 15515
+      "sha256": "5c2b21cb2bb38788832dfe34864fa5645b23c5207599b5f48e58b90088ccf9bb",
+      "bytes": 18320
     },
     {
       "path": "design/interface-v1.2/studio.css",
-      "sha256": "859fc1c290d64c350386f5ab3a3df99740fc4aea5e57077021826ae000ad7de9",
-      "bytes": 33440
+      "sha256": "3bd5f788fd89461602769b745d45116674751565e68a8fd4753edbb65f14d787",
+      "bytes": 35314
     },
     {
       "path": "design/interface-v1.2/studio.js",
-      "sha256": "9c7f64b493db09df945af4bae61e9b29e7fe0abfd6432c493424919797d764ec",
-      "bytes": 43250
+      "sha256": "ec79cb0c99ae6af4c7cc5aa0459991c80528710405cd661413c0de640a6b21b6",
+      "bytes": 43816
     },
     {
       "path": "design/interface-v1.2/verification/BASELINE-v1.0-REVIEW.md",
@@ -615,13 +615,13 @@
     },
     {
       "path": "design/interface-v1.2/verification/review-setup.cjs",
-      "sha256": "e02462e8d7de5de8bd92b4939f2b5ebe088f9da989bad5afd3924a32a0000575",
-      "bytes": 11280
+      "sha256": "1dc8d9ecf2e966bd079eb681efbd90503eb7e9bf652373fe9afed34b983bcb6b",
+      "bytes": 11956
     },
     {
       "path": "design/interface-v1.2/verification/setup-results.json",
-      "sha256": "6ee6c47f718672688f9e4e30cff676e5f6b856fd6f99564539093157f544d569",
-      "bytes": 5434
+      "sha256": "f0080b64157e1ef06d9a97f15df0e1563997dd5d9f3dc72430860f089b1974df",
+      "bytes": 5847
     },
     {
       "path": "design/interface-v1.2/verification/verify-bundle.py",
