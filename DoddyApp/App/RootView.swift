@@ -119,6 +119,8 @@ struct RootView: View {
             }
             // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
             .onChange(of: store.revision) { WidgetSync.shared.refresh() }
+            // Siri learns the list names for "Add to my shopping list in Doddy" (ADR-226).
+            .onChange(of: store.lists.map(\.name)) { DoddyShortcuts.updateAppShortcutParameters() }
             .onChange(of: noteReminders.reminders) { WidgetSync.shared.refresh() }
             .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
             .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }

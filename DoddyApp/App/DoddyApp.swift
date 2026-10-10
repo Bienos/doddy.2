@@ -21,6 +21,8 @@ struct DoddyApp: App {
         NoteReminderRouter.shared.reminders = noteReminders
         // A tick from a widget can also start the app in the background (ADR-219).
         WidgetSync.shared.store = store
+        // Siri and Shortcuts list actions (ADR-226) use the same store.
+        IntentStores.store = store
         WidgetSync.shared.reminders = noteReminders
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
