@@ -1,0 +1,309 @@
+{
+  "corpus_version" : 1,
+  "queries" : {
+    "e01" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e02" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e03" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e04" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e05" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e06" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e07" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e08" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e09" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e10" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e11" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e12" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e13" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e14" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e15" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e16" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e17" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e18" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e19" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e20" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e21" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e22" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e23" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e24" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e25" : {
+      "first" : false,
+      "passed" : true
+    },
+    "e26" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e27" : {
+      "first" : false,
+      "passed" : false
+    },
+    "e28" : {
+      "first" : false,
+      "passed" : true
+    },
+    "e29" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e30" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e31" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e32" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e33" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e34" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e35" : {
+      "first" : false,
+      "passed" : false
+    },
+    "e36" : {
+      "first" : false,
+      "passed" : false
+    },
+    "e37" : {
+      "first" : true,
+      "passed" : true
+    },
+    "e38" : {
+      "first" : false,
+      "passed" : false
+    },
+    "e39" : {
+      "first" : false,
+      "passed" : false
+    },
+    "e40" : {
+      "first" : false,
+      "passed" : false
+    },
+    "q01" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q02" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q03" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q04" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q05" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q06" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q07" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q08" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q09" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q10" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q11" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q12" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q13" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q14" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q15" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q16" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q17" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q18" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q19" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q20" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q21" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q22" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q23" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q24" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q25" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q26" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q27" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q28" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q29" : {
+      "first" : false,
+      "passed" : true
+    },
+    "q30" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q31" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q32" : {
+      "first" : false,
+      "passed" : true
+    },
+    "q33" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q34" : {
+      "first" : true,
+      "passed" : true
+    },
+    "q35" : {
+      "first" : false,
+      "passed" : false
+    },
+    "q36" : {
+      "first" : false,
+      "passed" : false
+    }
+  }
+}
