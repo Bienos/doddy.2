@@ -191,3 +191,17 @@ extension MemoryStore {
         await reload()
     }
 }
+
+/// Importing notes (ADR-231): notes go in through `restore` (one transaction, read back); a Keep
+/// checklist becomes a list with its ticked items ticked, each step read back by the repository.
+extension MemoryStore {
+    @discardableResult
+    func importList(_ part: NoteImport.ListPart) async throws -> DoddyList {
+        let created = try await environment.listRepository.create(name: part.name, items: part.open + part.ticked, source: .typed)
+        let ticked = Set(part.ticked)
+        let toTick = created.items.filter { ticked.contains($0.text) }
+        if !toTick.isEmpty { _ = try await environment.listRepository.setDone(toTick.map(\.id), done: true) }
+        await reload()
+        return list(id: created.id) ?? created
+    }
+}

@@ -578,5 +578,15 @@
  "Kept only on this iPhone, never sent anywhere. Not in exports or backup files.": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach ani w plikach kopii zapasowej.",
  "Remove recording": "Usuń nagranie",
  "Remove this recording?": "Usunąć to nagranie?",
- "The recording is deleted from this iPhone. The note's words stay.": "Nagranie zostanie usunięte z tego iPhone’a. Słowa notatki zostają."
+ "The recording is deleted from this iPhone. The note's words stay.": "Nagranie zostanie usunięte z tego iPhone’a. Słowa notatki zostają.",
+ "Import notes": "Importuj notatki",
+ "Import from Google Keep or text files": "Importuj z Google Keep lub plików tekstowych",
+ "You see every note before anything is saved. Files are read on this iPhone only.": "Zobaczysz każdą notatkę, zanim cokolwiek zostanie zapisane. Pliki są czytane tylko na tym iPhonie.",
+ "From Google Keep: in Google Takeout, export Keep. In the Files app, tap the .zip to unpack it, open the Keep folder and pick the .json files. You can also pick .txt and .md files.": "Z Google Keep: w Google Takeout wyeksportuj Keep. W aplikacji Pliki stuknij plik .zip, aby go rozpakować, otwórz folder Keep i wybierz pliki .json. Możesz też wybrać pliki .txt i .md.",
+ "One note per paragraph in text files": "Jedna notatka na akapit w plikach tekstowych",
+ "Words are kept exactly as in the file. Keep checklists become lists. Photos, recordings and labels from Keep aren't imported. Imported notes are marked “Imported from a file”.": "Słowa zostają dokładnie takie jak w pliku. Listy kontrolne z Keep stają się listami. Zdjęcia, nagrania i etykiety z Keep nie są importowane. Zaimportowane notatki są oznaczone „Zaimportowano z pliku”.",
+ "Check before importing": "Sprawdź przed importem",
+ "Notes already in Doddy start unticked.": "Notatki, które już są w Doddym, nie są zaznaczone.",
+ "Can't be imported": "Nie można zaimportować",
+ "Already in Doddy.": "Już jest w Doddym."
 }

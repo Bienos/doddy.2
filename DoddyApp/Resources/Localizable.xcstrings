@@ -254,6 +254,17 @@
         }
       }
     },
+    "Already in Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Już jest w Doddym."
+          }
+        }
+      }
+    },
     "Always linked to your original note.": {
       "extractionState": "manual",
       "localizations": {
@@ -573,6 +584,17 @@
         }
       }
     },
+    "Can't be imported": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można zaimportować"
+          }
+        }
+      }
+    },
     "Cancel": {
       "extractionState": "manual",
       "localizations": {
@@ -668,6 +690,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź i dodaj"
+          }
+        }
+      }
+    },
+    "Check before importing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź przed importem"
           }
         }
       }
@@ -2014,6 +2047,17 @@
         }
       }
     },
+    "From Google Keep: in Google Takeout, export Keep. In the Files app, tap the .zip to unpack it, open the Keep folder and pick the .json files. You can also pick .txt and .md files.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z Google Keep: w Google Takeout wyeksportuj Keep. W aplikacji Pliki stuknij plik .zip, aby go rozpakować, otwórz folder Keep i wybierz pliki .json. Możesz też wybrać pliki .txt i .md."
+          }
+        }
+      }
+    },
     "From your saved notes": {
       "extractionState": "manual",
       "localizations": {
@@ -2230,6 +2274,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jeśli Twój iPhone nie pokazuje tego w Stuknięciu w tył"
+          }
+        }
+      }
+    },
+    "Import from Google Keep or text files": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importuj z Google Keep lub plików tekstowych"
+          }
+        }
+      }
+    },
+    "Import notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importuj notatki"
           }
         }
       }
@@ -2982,6 +3048,17 @@
         }
       }
     },
+    "Notes already in Doddy start unticked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki, które już są w Doddym, nie są zaznaczone."
+          }
+        }
+      }
+    },
     "Notes from your calls": {
       "extractionState": "manual",
       "localizations": {
@@ -3220,6 +3297,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "O jedną rzecz\nmniej do pamiętania."
+          }
+        }
+      }
+    },
+    "One note per paragraph in text files": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedna notatka na akapit w plikach tekstowych"
           }
         }
       }
@@ -6073,6 +6161,17 @@
         }
       }
     },
+    "Words are kept exactly as in the file. Keep checklists become lists. Photos, recordings and labels from Keep aren't imported. Imported notes are marked “Imported from a file”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słowa zostają dokładnie takie jak w pliku. Listy kontrolne z Keep stają się listami. Zdjęcia, nagrania i etykiety z Keep nie są importowane. Zaimportowane notatki są oznaczone „Zaimportowano z pliku”."
+          }
+        }
+      }
+    },
     "Write it out in another language": {
       "extractionState": "manual",
       "localizations": {
@@ -6146,6 +6245,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odpowiedziałeś STOP, więc operator blokuje SMS-y. Wyślij START na numer Doddy’ego, aby znów je dopuścić."
+          }
+        }
+      }
+    },
+    "You see every note before anything is saved. Files are read on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobaczysz każdą notatkę, zanim cokolwiek zostanie zapisane. Pliki są czytane tylko na tym iPhonie."
           }
         }
       }
