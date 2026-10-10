@@ -32,7 +32,7 @@ Quick picks: **Doddy's default**, **Focused** (no jokes, brief, neutral, calm; p
 
 All six voices are already in the owner's account (built-in or My Voices), so no library voice needs adding. Library-only voices (for example a Polish female voice) must be added to My Voices before they can be offered. Only changed values are sent; the default sends no override at all. These settings never reach the prompt.
 
-**Agent change still needed:** in the agent's Security tab (client overrides), allow `tts.voice_id`, `tts.speed` and `tts.stability`. Leave prompt, LLM, tools and first message off. Without it, a non-default voice, speed or expressiveness makes ElevenLabs refuse the conversation; the app then says to choose "Use Doddy's own voice".
+**Agent change (applied 2026-10-10, version `agtvrsn_5301m4jk5fz1edx8vz0r04hh2mcc`):** client overrides allowed for `tts.voice_id`, `tts.speed` and `tts.stability` only; prompt, LLM, tools and first message stay off. If an agent without these is used, a non-default pick makes ElevenLabs refuse the conversation and the app says to choose "Use Doddy's own voice".
 
 Not included: language (the agent already detects it), proactivity (nothing proactive is built), reduced motion (no character animation yet).
 
