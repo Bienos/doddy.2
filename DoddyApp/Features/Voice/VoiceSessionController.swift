@@ -251,7 +251,8 @@ final class VoiceSessionController {
         switch action {
         case .memory(let id, let text):
             do {
-                let record = try await store.save(text: text, category: .other)
+                // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
                 savedThisConversation += 1
                 await reply(id, VoiceToolReply.saved(record))
             } catch {

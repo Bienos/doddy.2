@@ -1,8 +1,8 @@
 import DoddyCore
 import SwiftUI
 
-/// Decorative character art. Labelled as candidate art; hidden from VoiceOver; hidden
-/// entirely when the user turns on "Hide character artwork".
+/// Compatibility wrapper for existing onboarding/voice views. All visible drawings
+/// now use the owner's uploaded pack; original asset sets remain untouched.
 struct CandidateCharacterView: View {
     let assetName: String
     var size: CGFloat = 180
@@ -11,16 +11,8 @@ struct CandidateCharacterView: View {
 
     var body: some View {
         if !hideCharacterArt {
-            VStack(spacing: 4) {
-                Image(decorative: assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: size, maxHeight: size)
-                Text("Candidate art — not final")
-                    .font(.caption2)
-                    .foregroundStyle(Theme.secondaryText)
-            }
-            .accessibilityHidden(true)
+            UploadedCharacterView(assetName: assetName == "Doddy_listening" ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting",
+                                  height: size)
         }
     }
 }

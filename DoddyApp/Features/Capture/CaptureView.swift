@@ -1,8 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Explicit capture. "Saved" appears only after the repository confirmed the write;
-/// on any failure the draft stays in the editor.
+/// Success is backed by a committed repository record, never a simulated timer.
 struct CaptureView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -18,117 +17,113 @@ struct CaptureView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if let saved {
-                    SaveReceiptView(record: saved) { dismiss() }
-                } else {
-                    editor
-                }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    if let saved {
+                        if store.record(id: saved.id) != nil || store.loadError != nil {
+                            SaveReceiptView(record: store.record(id: saved.id) ?? saved, onDone: { dismiss() }, onAnother: startAnother)
+                            if let loadError = store.loadError {
+                                ProblemView(message: "The note was saved, but the list couldn't refresh. \(loadError)")
+                            }
+                        } else {
+                            Text("This note has been removed.")
+                            Button("Save another detail", action: startAnother).buttonStyle(PrimaryButtonStyle())
+                            Button("Done") { dismiss() }
+                        }
+                    } else {
+                        JourneyHeading(eyebrow: "Before it slips away", title: "One less thing\nto remember.",
+                                       subtitle: "A thought, a recommendation, where you put the spare keys.")
+                        Text("What would you like to keep?").font(.subheadline)
+                        MemoryTextEditor(text: $text, label: "The detail").focused($editorFocused)
+                            .accessibilityIdentifier("capture.text")
+                            .disabled(isSaving)
+                        Text("No folders. Your words, exactly.").font(.caption).foregroundStyle(Theme.secondaryText)
+                        DisclosureGroup("Optional note type") {
+                            Picker("Type", selection: $category) {
+                                ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                            }.pickerStyle(.menu)
+                        }.font(.subheadline).disabled(isSaving)
+                        Label("Only this detail is saved on this iPhone. You can edit or delete it later.", systemImage: "lock")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        if let errorMessage {
+                            ProblemView(message: errorMessage).accessibilityIdentifier("capture.error")
+                        }
+                        Button(action: beginSave) {
+                            HStack { Text(isSaving ? "Saving…" : "Save this detail"); Spacer(); Image(systemName: "arrow.right") }
+                        }
+                        .buttonStyle(PrimaryButtonStyle()).disabled(isSaving || !store.isStorageAvailable)
+                        .accessibilityIdentifier("capture.save")
+                    }
+                }.padding(24)
             }
-            .background(Theme.canvas)
-            .navigationTitle(saved == nil ? "New memory" : "Saved")
+            .scrollDismissesKeyboard(.interactively)
+            .background(Theme.canvas).foregroundStyle(Theme.ink)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if saved == nil {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") {
-                            if hasDraft { confirmDiscard = true } else { dismiss() }
-                        }
-                    }
+                ToolbarItem(placement: .principal) { DoddyWordmark() }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(saved == nil ? "Cancel" : "Done", action: close)
+                        .disabled(isSaving)
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { editorFocused = false }.accessibilityIdentifier("capture.keyboardDone")
                 }
             }
+            .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .confirmationDialog("Discard this note?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) { dismiss() }
                 Button("Keep editing", role: .cancel) {}
-            } message: {
-                Text("It hasn't been saved.")
-            }
+            } message: { Text("It hasn't been saved.") }
         }
-        .interactiveDismissDisabled(hasDraft && saved == nil)
-        .foregroundStyle(Theme.ink)
+        .interactiveDismissDisabled((hasDraft && saved == nil) || isSaving)
     }
 
-    private var editor: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("What shall we keep?")
-                    .font(.title.bold())
-                    .accessibilityAddTraits(.isHeader)
-                Text("Something useful, in your own words. Only what you save is kept.")
-                    .foregroundStyle(Theme.secondaryText)
+    private func close() {
+        guard !isSaving else { return }
+        if saved == nil && hasDraft { confirmDiscard = true } else { dismiss() }
+    }
 
-                MemoryTextEditor(text: $text, label: "The detail")
-                    .focused($editorFocused)
-                    .accessibilityIdentifier("capture.text")
+    private func startAnother() {
+        text = ""; category = .other; saved = nil; errorMessage = nil
+    }
 
-                Picker("Type", selection: $category) {
-                    ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                }
-                .pickerStyle(.menu)
-                .tint(Theme.ink)
-
-                if let errorMessage {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(Theme.error)
-                        .accessibilityIdentifier("capture.error")
-                }
-
-                Label("Written by you · stored on this iPhone only. You can correct or delete it later.", systemImage: "checkmark.shield")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-
-                Button {
-                    Task { await save() }
-                } label: {
-                    HStack {
-                        Text(isSaving ? "Saving…" : "Save this memory")
-                        Spacer()
-                        Image(systemName: "arrow.right")
-                    }
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(isSaving || !store.isStorageAvailable)
-                .accessibilityIdentifier("capture.save")
-            }
-            .padding(24)
-        }
-        .onAppear { editorFocused = true }
+    private func beginSave() {
+        guard !isSaving else { return }
+        editorFocused = false
+        isSaving = true
+        Task { await save() }
     }
 
     private func save() async {
-        isSaving = true
         errorMessage = nil
         defer { isSaving = false }
-        do {
-            saved = try await store.save(text: text, category: category)
-        } catch {
-            errorMessage = UserFacingError.message(for: error)
-        }
+        do { saved = try await store.save(text: text, category: category) }
+        catch { errorMessage = UserFacingError.message(for: error) }
     }
 }
 
-/// Shown only with a committed record.
-struct SaveReceiptView: View {
+private struct SaveReceiptView: View {
     let record: MemoryRecord
     let onDone: () -> Void
+    let onAnother: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                Label("Saved on this iPhone", systemImage: "checkmark.circle.fill")
-                    .font(.headline)
-                    .foregroundStyle(Theme.confirmed)
-                    .accessibilityIdentifier("capture.saved")
-                Text(record.currentText)
-                    .font(.title3)
-                Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                Button("Done", action: onDone)
-                    .buttonStyle(PrimaryButtonStyle())
-                    .padding(.top, 8)
-            }
-            .padding(24)
-        }
+        VStack(spacing: 20) {
+            UploadedCharacterView(assetName: "UploadedDoddy_Kept", height: 170)
+            Text("Got it.").font(.largeTitle.weight(.medium)).accessibilityAddTraits(.isHeader)
+            Label("Saved on this iPhone", systemImage: "checkmark.circle")
+                .font(.subheadline).foregroundStyle(Theme.confirmed).accessibilityIdentifier("capture.saved")
+            MemoryPaperCard(record: record)
+            NavigationLink(value: record.id) {
+                HStack { Text("View the note"); Spacer(); Image(systemName: "arrow.up.right") }
+            }.buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("capture.viewNote")
+            Button("Save another detail", action: onAnother).frame(minHeight: 44)
+            Button("Done", action: onDone).buttonStyle(SecondaryButtonStyle()).accessibilityIdentifier("capture.done")
+        }.frame(maxWidth: .infinity)
     }
+}
+
+#Preview("Local capture") {
+    CaptureView().environment(MemoryStore(environment: .unavailable))
 }

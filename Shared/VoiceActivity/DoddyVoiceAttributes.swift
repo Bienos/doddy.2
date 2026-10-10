@@ -15,6 +15,10 @@ struct DoddyVoiceAttributes: ActivityAttributes {
             /// The final state after End or a lost connection: shown briefly on the Lock Screen
             /// (the Dynamic Island drops ended activities at once). Doddy is not listening.
             case ended
+            #if DEBUG
+            /// Native lifecycle fixture only; never represents microphone or provider state.
+            case testFixture
+            #endif
         }
 
         var status: Status
@@ -37,6 +41,9 @@ extension DoddyVoiceAttributes.ContentState {
 
     /// Short label for the island and Lock Screen.
     var title: String {
+        #if DEBUG
+        if status == .testFixture { return isMuted ? "Test muted" : "Test activity" }
+        #endif
         if showsMuted { return "Muted" }
         switch status {
         case .connecting: return "Connecting…"
@@ -45,6 +52,9 @@ extension DoddyVoiceAttributes.ContentState {
         case .speaking: return "Speaking"
         case .needsConfirmation: return "Confirm in Doddy"
         case .ended: return "Conversation ended"
+        #if DEBUG
+        case .testFixture: return "Test activity"
+        #endif
         }
     }
 
@@ -72,9 +82,17 @@ extension DoddyVoiceAttributes.ContentState {
         case .speaking: return "speaker.wave.2.fill"
         case .needsConfirmation: return "hand.tap.fill"
         case .ended: return "checkmark.circle"
+        #if DEBUG
+        case .testFixture: return isMuted ? "mic.slash.fill" : "wrench.and.screwdriver"
+        #endif
         }
     }
 
     /// The orange cue means "Doddy is live and can hear you" and nothing else.
-    var isLiveCue: Bool { !showsMuted && !isEnded && status != .needsConfirmation }
+    var isLiveCue: Bool {
+        #if DEBUG
+        if status == .testFixture { return false }
+        #endif
+        return !showsMuted && !isEnded && status != .needsConfirmation
+    }
 }

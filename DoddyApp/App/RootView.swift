@@ -38,6 +38,7 @@ struct RootView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @Environment(ProfileStore.self) private var profiles
     @State private var selectedTab: AppTab = .home
+    @State private var showFind = false
     @Bindable private var router = ShortcutRouter.shared
 
     private var colorScheme: ColorScheme? {
@@ -53,7 +54,15 @@ struct RootView: View {
             // The VStack exists so the onboarding cover and the voice/setup presentations hang off
             // different views.
             VStack(spacing: 0) {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("-islandBaseline") {
+                    NativeIslandBaselineView()
+                } else {
+                    tabs
+                }
+                #else
                 tabs
+                #endif
             }
             .preferredColorScheme(colorScheme)
             .task { await store.reload() }
@@ -69,18 +78,25 @@ struct RootView: View {
     }
 
     private var tabs: some View {
-        TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab)
-                .tabItem { Label("Home", systemImage: "house") }
-                .tag(AppTab.home)
-            MemoriesView()
-                .tabItem { Label("Memories", systemImage: "note.text") }
-                .tag(AppTab.memories)
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape") }
-                .tag(AppTab.settings)
+        VStack(spacing: 0) {
+            TabView(selection: $selectedTab) {
+                HomeView(selectedTab: $selectedTab, showFind: $showFind)
+                    .tabItem { Label("Home", systemImage: "house") }
+                    .tag(AppTab.home)
+                MemoriesView(showFind: $showFind)
+                    .tabItem { Label("Memories", systemImage: "note.text") }
+                    .tag(AppTab.memories)
+                SettingsView()
+                    .tabItem { Label("Settings", systemImage: "gearshape") }
+                    .tag(AppTab.settings)
+            }
+            .toolbar(.hidden, for: .tabBar)
+            // A sibling reserves real viewport space. A TabView-level safeAreaInset
+            // left nested NavigationStack's final action behind the bar on iOS 27.
+            DoddyTabBar(selectedTab: $selectedTab)
         }
         .tint(Theme.accentText)
+        .background(Theme.canvas)
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         .fullScreenCover(isPresented: $router.isVoicePresented) { VoiceView() }
