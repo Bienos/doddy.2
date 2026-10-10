@@ -20,6 +20,10 @@ public struct PrivacyDefaults: Equatable, Sendable {
         accountRequired: false, networkRequestsMade: true, microphoneUsed: true,
         contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: true, syncEnabled: false)
 
+    /// M2: adds typed questions to the Doddy gateway and OpenAI, only after the user turns Ask Doddy on.
+    /// Same flags as V1; the difference is which services receive data (see Settings copy).
+    public static let m2 = v1Voice
+
     /// True when nothing leaves the device and nothing listens.
     public var isFullyLocal: Bool {
         !(accountRequired || networkRequestsMade || microphoneUsed || contentTelemetryEnabled

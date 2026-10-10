@@ -3,12 +3,29 @@ import DoddyPersistence
 import Foundation
 import SwiftUI
 
-/// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView);
-/// reminders and other actions stay explicit `Unavailable*` adapters.
+/// What the typed assistant (M2) needs from the app: where credentials live and how HTTP is sent.
+/// The gateway address comes from Settings at question time, so changing it needs no restart.
+struct AssistantWiring: Sendable {
+    let credentials: any DeviceCredentialStore
+    let transport: any HTTPTransport
+
+    func service(gatewayAddress: String, recall: any RecallService) -> AssistantService {
+        let client = GatewayAssistantClient(
+            configuration: GatewayConfiguration(string: gatewayAddress),
+            transport: transport,
+            credentials: credentials)
+        return AssistantService(recall: recall, client: client)
+    }
+}
+
+/// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView); typed
+/// questions go through the Doddy gateway (AskView); reminders and other actions stay explicit
+/// `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let recallService: any RecallService
-    let assistantClient: any AssistantClient
+    /// `nil` when the typed assistant is not wired (M0 fallback after a storage failure, previews).
+    let assistant: AssistantWiring?
     let toolExecutor: any ToolExecutor
     let capabilities: CapabilityCatalog
     let privacy: PrivacyDefaults
@@ -18,7 +35,7 @@ struct AppEnvironment: Sendable {
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
         recallService: UnavailableRecallService(),
-        assistantClient: UnavailableAssistantClient(),
+        assistant: nil,
         toolExecutor: UnavailableToolExecutor(),
         capabilities: .m0,
         privacy: .m0,
@@ -27,22 +44,24 @@ struct AppEnvironment: Sendable {
     /// `-inMemoryStore` (UI tests) keeps everything in memory and writes nothing to disk.
     static func live(arguments: [String] = ProcessInfo.processInfo.arguments) -> AppEnvironment {
         do {
-            let repository = arguments.contains("-inMemoryStore")
+            let isUITest = arguments.contains("-inMemoryStore")
+            let repository = isUITest
                 ? try SQLiteMemoryRepository.inMemory()
                 : try SQLiteMemoryRepository(path: try databaseURL().path)
+            let credentials: any DeviceCredentialStore = isUITest ? InMemoryCredentialStore() : KeychainCredentialStore()
             return AppEnvironment(
                 memoryRepository: repository,
                 recallService: RepositoryRecallService(repository: repository),
-                assistantClient: UnavailableAssistantClient(),
+                assistant: AssistantWiring(credentials: credentials, transport: AppHTTPTransport()),
                 toolExecutor: UnavailableToolExecutor(),
-                capabilities: .v1Voice,
-                privacy: .v1Voice,
+                capabilities: .m2,
+                privacy: .m2,
                 storageProblem: nil)
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),
                 recallService: UnavailableRecallService(),
-                assistantClient: UnavailableAssistantClient(),
+                assistant: nil,
                 toolExecutor: UnavailableToolExecutor(),
                 capabilities: .m0,
                 privacy: .m0,

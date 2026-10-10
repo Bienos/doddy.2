@@ -7,6 +7,7 @@ struct HomeView: View {
     @Environment(MemoryStore.self) private var store
     @State private var showCapture = false
     @State private var showVoice = false
+    @State private var showAsk = false
 
     var body: some View {
         NavigationStack {
@@ -35,6 +36,13 @@ struct HomeView: View {
                         .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
                         .accessibilityIdentifier("home.talk")
 
+                        Button { showAsk = true } label: {
+                            HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
+                        .accessibilityIdentifier("home.ask")
+
                         Button { showCapture = true } label: {
                             HStack { Text("Save a detail"); Spacer(); Image(systemName: "square.and.pencil") }
                         }
@@ -51,7 +59,7 @@ struct HomeView: View {
 
                     recent
 
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; talking uses ElevenLabs only while a conversation is open. Reminders and other apps aren't built yet.")
+                    Text("Doddy is an AI, not a person. Notes stay on this iPhone. Talking uses ElevenLabs only while a conversation is open. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Reminders and other apps aren't built yet.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")
@@ -65,6 +73,7 @@ struct HomeView: View {
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .sheet(isPresented: $showCapture) { CaptureView() }
             .fullScreenCover(isPresented: $showVoice) { VoiceView() }
+            .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
         }
         .foregroundStyle(Theme.ink)
     }

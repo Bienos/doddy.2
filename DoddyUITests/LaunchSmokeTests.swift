@@ -36,7 +36,31 @@ final class LaunchSmokeTests: XCTestCase {
 
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(app.staticTexts["Microphone"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Not used"].exists)
+        // Since the voice work the microphone is used, but only inside a conversation the user starts.
+        XCTAssertTrue(app.staticTexts["Only while talking"].exists)
+    }
+
+    @MainActor
+    func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
+        let app = launch(seenFirstHello: true)
+        XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
+        app.buttons["home.ask"].tap()
+
+        XCTAssertTrue(app.textFields["ask.input"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["ask.disclosure"].exists)
+        XCTAssertTrue(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
+        // Nothing to send yet, so Send stays disabled.
+        XCTAssertFalse(app.buttons["ask.send"].isEnabled)
+    }
+
+    @MainActor
+    func testSettingsShowsAskDoddyOffUntilTheUserTurnsItOn() {
+        let app = launch(seenFirstHello: true)
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.staticTexts["Ask Doddy (typed questions)"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["settings.assistantConsent"].exists)
+        XCTAssertEqual(app.switches["settings.assistantConsent"].value as? String, "0")
+        XCTAssertTrue(app.staticTexts["Off"].exists)
     }
 
     @MainActor

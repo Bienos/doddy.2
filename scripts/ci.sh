@@ -38,6 +38,17 @@ else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
 
+if command -v node >/dev/null 2>&1; then
+  run_step "Gateway tests (node)" npm test --prefix gateway
+  if [ -x gateway/node_modules/.bin/tsc ]; then
+    run_step "Gateway typecheck" npm run typecheck --prefix gateway
+  else
+    record "Gateway typecheck" "NOT RUN" "run npm install --prefix gateway first"
+  fi
+else
+  not_run "Gateway tests (node)" "node not found on PATH"
+fi
+
 if [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
 elif ! command -v xcodebuild >/dev/null 2>&1; then

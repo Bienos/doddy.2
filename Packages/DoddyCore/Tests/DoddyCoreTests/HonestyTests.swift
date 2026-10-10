@@ -20,6 +20,19 @@ final class HonestyTests: XCTestCase {
         XCTAssertEqual(CapabilityCatalog.m0.status(of: .reminders), .notImplemented(plannedMilestone: "M4"))
     }
 
+    func testTextAssistantIsClaimedOnlyFromM2() {
+        XCTAssertEqual(CapabilityCatalog.m0.status(of: .textAssistant), .notImplemented(plannedMilestone: "M2"))
+        XCTAssertFalse(CapabilityCatalog.m1.isAvailable(.textAssistant))
+        XCTAssertFalse(CapabilityCatalog.v1Voice.isAvailable(.textAssistant))
+        XCTAssertTrue(CapabilityCatalog.m2.isAvailable(.textAssistant))
+        // M2 adds exactly one claim on top of V1; reminders and connected accounts stay unbuilt.
+        for capability in Capability.allCases where capability != .textAssistant {
+            XCTAssertEqual(CapabilityCatalog.m2.status(of: capability), CapabilityCatalog.v1Voice.status(of: capability), "\(capability)")
+        }
+        XCTAssertFalse(CapabilityCatalog.m2.isAvailable(.reminders))
+        XCTAssertFalse(CapabilityCatalog.m2.isAvailable(.connectedAccounts))
+    }
+
     func testPrivacyDefaultsAreFullyLocal() {
         XCTAssertTrue(PrivacyDefaults.m0.isFullyLocal)
         XCTAssertFalse(PrivacyDefaults.m0.accountRequired)

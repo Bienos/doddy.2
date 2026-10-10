@@ -73,3 +73,22 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 8. **Identity & signing** — bundle identifier, Apple developer team, and whether to commit the generated `Doddy.xcodeproj` after a first good Mac build (ADR-013).
 9. **CI** — accept local-script CI only, or approve a hosted macOS runner and its cost (ADR-022).
 10. **Run the Mac verification** listed in `docs/implementation/M0_REPORT.md` and record results; **M1 should not start until M0's iOS build/tests are confirmed on a Mac** (M0 exit criteria are not met without it).
+
+## M2 decisions (typed assistant, 2026-10-10)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 038 | Provider is **OpenAI** (owner choice, 2026-10-10), behind the provider-neutral `AssistantClient`. The model id is read from `OPENAI_MODEL` and has **no default**: two sources disagreed on current ids and none was verifiable. | Applied — owner to set the model and confirm it supports Structured Outputs |
+| 039 | Gateway is **Vercel Functions** (owner choice), plain ESM JavaScript with JSDoc types, **zero runtime dependencies**, `node:test` tests. Written and tested; **not deployed** (deploying creates a billable resource and needs the owner). | Applied — deploy pending |
+| 040 | The app may use HTTP only in `DoddyApp/Infrastructure/Network/`. The package has no networking; transport and credential stores are ports with fakes. `check_forbidden_capabilities.sh` now enforces "URLSession/URLRequest only there" instead of "nowhere". | Applied |
+| 041 | Auth is **invite code → 24 h HMAC bearer token** bound to a random install id. No accounts, no profile. Removing an invite code revokes every token minted with it immediately. Not identity and not abuse-proof; App Attest/accounts are future work. | Applied — **owner to confirm for beta** |
+| 042 | Notes reach the model as aliases (`n1…`), never as real ids. The response schema is strict and its `sources` enum is exactly this request's aliases. Gateway re-checks, and the **device verifies again** (`CitationVerifier`) before showing anything. A failed check discards the whole answer. | Applied |
+| 043 | `store:false` is sent to OpenAI. Whether that is honoured, and OpenAI's retention/usage terms, are **not verified**. UI copy says "we ask OpenAI not to keep the reply, but we can't verify that". | Applied — legal review pending |
+| 044 | Rate limiting sits behind a `RateLimiter` port; the shipped adapter is per-instance memory. It is a brake, not a spend cap. Real cap = a hard budget on the OpenAI project + a shared store before any outside tester. | Applied — **blocker for inviting others** |
+| 045 | Ask Doddy is **off by default**. Turning it on shows what is sent and to whom. "Use relevant saved notes" is a separate switch. Only notes that matched the question, up to 5 / 12,000 characters, are sent, and the answer shows which ones. | Applied |
+| 046 | Chats live in memory only, are never saved as notes, and a failed ask leaves the question in the box and local memory untouched. "Save this answer as a note" is **not built**. | Applied |
+| 047 | Uncited answers are labelled "Not from your notes. This is a general answer." The system cannot detect a model making up a personal fact without citing, and does not claim to. | Applied — known residual risk |
+| 048 | The random install id is declared in `PrivacyInfo.xcprivacy` as Device ID (app functionality, not linked, no tracking). Over-declaring is the safe direction; the App Store privacy label is an owner/legal decision. | Applied — owner to review |
+| 049 | `LaunchSmokeTests` asserted Microphone = "Not used", which became false when voice shipped (it was never run on a Mac after that). Corrected to "Only while talking" and Ask smoke tests added. | Applied — NOT RUN |
+| 050 | Gmail, Google Calendar and EventKit are a **proposal only** (`docs/architecture/CONNECTED_APPS_PROPOSAL.md`). Nothing was built; `connectedAccounts` stays "not built". | Open — owner decisions listed there |
+

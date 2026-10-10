@@ -6,6 +6,10 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
+    /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
+    static let assistantConsent = "assistantConsent"
+    static let assistantUseNotes = "assistantUseNotes"
+    static let gatewayAddress = "gatewayAddress"
 }
 
 enum AppTab: Hashable {

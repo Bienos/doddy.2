@@ -8,7 +8,7 @@ final class AppEnvironmentTests: XCTestCase {
         let env = AppEnvironment.unavailable
         XCTAssertTrue(env.memoryRepository is UnavailableMemoryRepository)
         XCTAssertTrue(env.recallService is UnavailableRecallService)
-        XCTAssertTrue(env.assistantClient is UnavailableAssistantClient)
+        XCTAssertNil(env.assistant)
         XCTAssertTrue(env.toolExecutor is UnavailableToolExecutor)
     }
 

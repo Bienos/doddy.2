@@ -51,22 +51,48 @@ public protocol RecallService: Sendable {
     func recall(_ question: String, limit: Int) async throws -> RecallOutcome
 }
 
+/// One earlier turn of the current chat. Chats live in memory only and are never saved as notes.
+public struct ConversationTurn: Equatable, Sendable {
+    public enum Role: String, Sendable { case user, assistant }
+    public let role: Role
+    public let text: String
+
+    public init(role: Role, text: String) {
+        self.role = role
+        self.text = text
+    }
+}
+
 public struct AssistantRequest: Equatable, Sendable {
+    public let requestID: UUID
     public let sessionID: UUID
     public let userText: String
     /// The only stored memories the assistant may cite.
     public let groundingMemories: [MemoryCandidate]
+    public let recentTurns: [ConversationTurn]
+    /// BCP 47 language code of the app, e.g. "en" or "pl".
+    public let locale: String
 
-    public init(sessionID: UUID, userText: String, groundingMemories: [MemoryCandidate] = []) {
+    public init(
+        sessionID: UUID,
+        userText: String,
+        groundingMemories: [MemoryCandidate] = [],
+        recentTurns: [ConversationTurn] = [],
+        locale: String = "en",
+        requestID: UUID = UUID()
+    ) {
+        self.requestID = requestID
         self.sessionID = sessionID
         self.userText = userText
         self.groundingMemories = groundingMemories
+        self.recentTurns = recentTurns
+        self.locale = locale
     }
 }
 
 public struct AssistantReply: Equatable, Sendable {
     public let text: String
-    /// Must be a subset of the request's grounding memory IDs (verified in M2).
+    /// Must be a subset of the request's grounding memory IDs. `CitationVerifier` enforces this.
     public let citedMemoryIDs: [UUID]
 
     public init(text: String, citedMemoryIDs: [UUID] = []) {
@@ -75,7 +101,7 @@ public struct AssistantReply: Equatable, Sendable {
     }
 }
 
-/// Provider-neutral AI boundary. No implementation exists before M2.
+/// Provider-neutral AI boundary. The only real implementation is `GatewayAssistantClient` (M2).
 public protocol AssistantClient: Sendable {
     func respond(_ request: AssistantRequest) async throws -> AssistantReply
 }

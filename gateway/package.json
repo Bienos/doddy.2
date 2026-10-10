@@ -1,0 +1,16 @@
+{
+  "name": "doddy-gateway",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Doddy M2 assistant gateway: holds the provider key, authenticates invited devices, rate-limits, and calls the model. Not deployed.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "typescript": "5.7.2"
+  }
+}

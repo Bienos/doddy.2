@@ -1,4 +1,4 @@
-# Build and test — DODDY V2 (M0 shell + M1 local memory)
+# Build and test — DODDY V2 (M0 shell + M1 local memory + V1 voice + M2 typed assistant)
 
 **Status of this document: written without access to Xcode.** Everything under "Verified on Linux"
 was executed (results in [docs/implementation/M0_REPORT.md](docs/implementation/M0_REPORT.md)).
@@ -19,12 +19,20 @@ project uses Swift language mode 6 and needs Xcode 16 or newer at minimum.
 ## Verified on Linux (no Xcode needed)
 
 ```sh
-scripts/ci.sh --core-only      # pack integrity + forbidden-capability guard + Swift package tests
+scripts/ci.sh --core-only      # pack integrity + forbidden-capability guard + Swift package tests + gateway tests/typecheck
 # or individually:
 python3 -I scripts/verify_imported_pack.py
 scripts/check_forbidden_capabilities.sh
 swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT   # flag needed on Linux only
 ```
+
+### Gateway (Node, no Xcode, no network, no keys)
+
+```sh
+cd gateway && npm install && npm test && npm run typecheck   # 42 tests; see gateway/README.md
+```
+Needs Node 22+. `ci.sh` runs these when `node` is on the PATH (typecheck only if `npm install` was done).
+The gateway has never been deployed or called against the real OpenAI API.
 
 `scripts/ci.sh` **without** flags needs Xcode too; if it cannot run a step it prints `NOT RUN` and exits
 non-zero (exit 2 = blocked, 1 = failure, 0 = everything passed). `--core-only` exits 0 only for its own
@@ -59,9 +67,13 @@ Packages/DoddyCore/          platform-agnostic Swift package (tested on Linux)
   Sources/DoddyCore/           domain types, ports, Unavailable adapters, capability catalog, privacy defaults
   Sources/DoddyDesignTokens/   CANDIDATE colour tokens + WCAG contrast maths (no SwiftUI)
   Sources/DoddyPersistence/    SQLite memory store (GRDB 7.9.0, FTS5)
-  Tests/                       28 XCTest cases
-DoddyApp/                    SwiftUI app target (iPhone): App/, Features/{Home,Capture,Memories,Settings,Onboarding}/,
-                             DesignSystem/, Infrastructure/, Resources/ (asset catalog, PrivacyInfo.xcprivacy)
+  Sources/DoddyCore/Assistant/ M2: wire types, error taxonomy, citation verifier, grounding selector,
+                               assistant service (retry), gateway client + transport/credential ports
+  Tests/                       73 XCTest cases (incl. contract fixtures shared with the gateway)
+DoddyApp/                    SwiftUI app target (iPhone): App/, Features/{Home,Capture,Memories,Settings,Onboarding,Voice,Ask}/,
+                             DesignSystem/, Infrastructure/ (+ Network/: the only place HTTP is allowed), Resources/
+gateway/                     M2 assistant gateway (Vercel functions, plain JS, 42 node tests) - NOT deployed
+schemas/fixtures/            wire-contract examples read by both the Swift and the node tests
 DoddyTests/ DoddyUITests/    app-level unit and UI smoke tests (NOT RUN without Xcode)
 project.yml                  XcodeGen spec (source of truth for the Xcode project)
 scripts/                     ci.sh, check_forbidden_capabilities.sh, verify_imported_pack.py
