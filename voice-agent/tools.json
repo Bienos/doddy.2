@@ -198,7 +198,7 @@
         },
         "required": ["steps"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_3001m4knv27zfw09afmn7sjamfcp"}
     },
     {
       "type": "function",
