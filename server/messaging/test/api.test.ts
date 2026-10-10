@@ -173,10 +173,9 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("features without provider credentials answer 503, not a fake success", async () => {
-    const bare = await testApp(db, { push: undefined, sms: undefined, verifier: undefined, voice: undefined });
+    const bare = await testApp(db, { push: undefined, sms: undefined, verifier: undefined });
     const r = await bare.app.inject({ method: "POST", url: "/v1/accounts" });
     const h = { authorization: `Bearer ${r.json().deviceToken}` };
-    assert.equal((await bare.app.inject({ method: "GET", url: "/v1/voice/token", headers: h })).statusCode, 503);
     assert.equal((await bare.app.inject({ method: "POST", url: "/v1/phone/verification", headers: h, payload: { phone: PHONE } })).statusCode, 503);
     assert.equal((await bare.app.inject({ method: "POST", url: "/v1/updates", headers: h, payload: { text: "x", channels: ["sms"], idempotencyKey: "n" } })).statusCode, 503);
     await bare.app.close();

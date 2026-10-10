@@ -50,6 +50,19 @@ final class DataFlowTests: XCTestCase {
         XCTAssertEqual(row("askDoddy", state).what, "Typed questions.")
     }
 
+    func testMessagingServerRowListsNotesOnlyWhenTheCopyIsOn() {
+        XCTAssertFalse(row("messagingServer", base).isActive)
+        var state = base
+        state.messagingServerSet = true
+        XCTAssertTrue(row("messagingServer", state).isActive)
+        XCTAssertFalse(row("messagingServer", state).what.contains("saved notes"))
+        XCTAssertFalse(row("messagingServer", state).what.contains("notification token"))
+        state.pushOn = true
+        state.memoryCopyOn = true
+        XCTAssertTrue(row("messagingServer", state).what.contains("this iPhone's notification token"))
+        XCTAssertTrue(row("messagingServer", state).what.contains("a copy of your saved notes"))
+    }
+
     func testRememberedConversationsLineFollowsTheSwitch() {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains("Conversations: none are remembered."))
         var state = base

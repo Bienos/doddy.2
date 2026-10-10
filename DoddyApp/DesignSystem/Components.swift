@@ -136,6 +136,7 @@ enum StatusCopy {
         switch status {
         case .available: "Available"
         case .limited(let note): "Limited · \(note)"
+        case .needsSetup(let note): "Needs setup · \(note)"
         case .notImplemented(let milestone) where milestone == "unscheduled": "Not built · not scheduled"
         case .notImplemented(let milestone): "Not built yet · planned \(milestone)"
         }
@@ -155,6 +156,10 @@ extension Capability {
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
         case .systemShortcut: "Shortcut and Back Tap"
+        case .pushUpdates: "Updates as notifications"
+        case .textUpdates: "Updates by text message"
+        case .phoneCalls: "Phone calls with Doddy"
+        case .newsDigests: "Daily news message"
         }
     }
 }

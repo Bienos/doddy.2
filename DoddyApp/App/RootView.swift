@@ -35,6 +35,12 @@ enum PreferenceKey {
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
     static let gatewayAddress = "gatewayAddress"
+    /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
+    static let messagingServerURL = "messagingServerURL"
+    /// The user turned Doddy's notifications on (re-registers the APNs token at launch).
+    static let pushUpdatesOn = "pushUpdatesOn"
+    /// The user turned on the server copy of their notes for phone calls (S2).
+    static let memoryCopyOn = "memoryCopyOn"
 }
 
 enum AppTab: Hashable {

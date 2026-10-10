@@ -11,6 +11,9 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAll = false
+    @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
+    @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
+    @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
 
     private var state: DataFlowState {
         let defaults = UserDefaults.standard
@@ -24,7 +27,11 @@ struct DataFlowView: View {
             doddyServerSet: !connectedAppsServerURL.trimmingCharacters(in: .whitespaces).isEmpty
                 && KeychainSessionStore.read() != nil,
             askDoddyOn: assistantConsent,
-            askDoddyUsesNotes: assistantUseNotes)
+            askDoddyUsesNotes: assistantUseNotes,
+            // Same rule as ServerConfig: the built-in address, or a valid one entered in Settings.
+            messagingServerSet: ServerConfig.baseURL() != nil,
+            pushOn: pushOn,
+            memoryCopyOn: memoryCopyOn)
     }
 
     var body: some View {

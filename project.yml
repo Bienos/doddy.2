@@ -30,6 +30,12 @@ targets:
     sources:
       - path: DoddyApp
       - path: Shared
+    # Push notifications from the Doddy messaging server (S1, ADR-142). Release/TestFlight signing
+    # switches this to production; running on a device needs a signing team with the Push capability.
+    entitlements:
+      path: DoddyApp/Doddy.entitlements
+      properties:
+        aps-environment: development
     dependencies:
       - target: DoddyWidgets
       - package: DoddyCore

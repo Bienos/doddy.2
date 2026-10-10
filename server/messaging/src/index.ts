@@ -12,7 +12,7 @@ const app = await buildApp({
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
 });
 app.log.info({
-  push: !!providers.push, sms: !!providers.sms, voice: !!providers.voice, webhooks: !!config.publicBaseUrl,
+  push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
   calls: !!(config.toolSecret && providers.cipher), outboundCalls: !!providers.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
 }, "configured features");

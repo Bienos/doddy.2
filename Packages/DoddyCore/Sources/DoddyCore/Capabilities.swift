@@ -14,12 +14,19 @@ public enum Capability: String, CaseIterable, Sendable {
     case cloudSync
     /// "Talk to Doddy" App Shortcut (Siri, Shortcuts, Action Button) and the guided Back Tap setup.
     case systemShortcut
+    /// Messaging server (server/messaging, ADR-139): push and text updates, phone calls, daily news.
+    case pushUpdates
+    case textUpdates
+    case phoneCalls
+    case newsDigests
 }
 
 public enum CapabilityStatus: Equatable, Sendable {
     case notImplemented(plannedMilestone: String)
     /// Built, but narrower than the name suggests or not yet verified live. The note says how.
     case limited(String)
+    /// Built, but it can't work until something outside the app exists (e.g. a deployed server).
+    case needsSetup(String)
     case available
 }
 
@@ -48,6 +55,10 @@ public struct CapabilityCatalog: Sendable {
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
         .systemShortcut: .notImplemented(plannedMilestone: "V2"),
+        .pushUpdates: .notImplemented(plannedMilestone: "S1"),
+        .textUpdates: .notImplemented(plannedMilestone: "S1"),
+        .phoneCalls: .notImplemented(plannedMilestone: "S2"),
+        .newsDigests: .notImplemented(plannedMilestone: "N1"),
     ])
 
     /// M1: local text memory (save, list, correct, delete, export, lexical recall).
@@ -92,6 +103,21 @@ public struct CapabilityCatalog: Sendable {
     public static let v2WithAssistant = CapabilityCatalog(statuses: v2WithConnectedApps.statuses.merging([
         .textAssistant: .available,
     ]) { _, new in new })
+
+    /// What this build ships when the messaging server is part of it: `v2WithAssistant` plus push
+    /// and text updates and the daily news (available only with a server address), and phone calls,
+    /// which are never claimed here: whether the phone line is set up is only known by asking the
+    /// server (Settings → Phone calls).
+    public static func withMessaging(serverConfigured: Bool) -> CapabilityCatalog {
+        let updates: CapabilityStatus = serverConfigured ? .available : .needsSetup("Doddy messaging server not connected")
+        let calls: CapabilityStatus = .needsSetup(serverConfigured ? "check Settings → Phone calls" : "Doddy messaging server not connected")
+        return CapabilityCatalog(statuses: v2WithAssistant.statuses.merging([
+            .pushUpdates: updates,
+            .textUpdates: updates,
+            .phoneCalls: calls,
+            .newsDigests: updates,
+        ]) { _, new in new })
+    }
 }
 
 public enum DoddyError: Error, Equatable, Sendable {

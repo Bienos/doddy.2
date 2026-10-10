@@ -15,11 +15,18 @@ public struct DataFlowState: Equatable, Sendable {
     public var doddyServerSet: Bool
     public var askDoddyOn: Bool
     public var askDoddyUsesNotes: Bool
+    /// A Doddy messaging server address is set (notifications, texts, calls, news; ADR-139).
+    public var messagingServerSet: Bool
+    /// The user turned Doddy's notifications on.
+    public var pushOn: Bool
+    /// The user turned on the server copy of their notes for phone calls.
+    public var memoryCopyOn: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
         connectionsOn: Set<VoiceConnection>, pauseAll: Bool, doddyServerSet: Bool,
-        askDoddyOn: Bool, askDoddyUsesNotes: Bool
+        askDoddyOn: Bool, askDoddyUsesNotes: Bool,
+        messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false
     ) {
         self.rememberConversations = rememberConversations
         self.shareProfileWithVoice = shareProfileWithVoice
@@ -29,6 +36,9 @@ public struct DataFlowState: Equatable, Sendable {
         self.doddyServerSet = doddyServerSet
         self.askDoddyOn = askDoddyOn
         self.askDoddyUsesNotes = askDoddyUsesNotes
+        self.messagingServerSet = messagingServerSet
+        self.pushOn = pushOn
+        self.memoryCopyOn = memoryCopyOn
     }
 }
 
@@ -53,6 +63,12 @@ public enum DataFlow {
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
         if !apps.isEmpty { voice.append("calendar entries, reminders, contact names or drafts Doddy uses (\(names(apps)))") }
         if state.doddyServerSet && !state.pauseAll { voice.append("results from your online accounts that Doddy uses") }
+
+        var messaging = ["an anonymous account token"]
+        if state.pushOn { messaging.append("this iPhone's notification token") }
+        messaging.append("your phone number, only if you confirm it with a code for texts or calls")
+        messaging.append("the news topics and feeds you pick, if you turn on daily news")
+        if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
 
         var ask = "Typed questions"
         if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
@@ -80,6 +96,14 @@ public enum DataFlow {
                 note: !state.doddyServerSet
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
+            DataFlowRow(
+                id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, Anthropic, GNews)",
+                what: sentence(messaging),
+                when: "When you turn on notifications, texts, phone calls or daily news, and while they are on.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to Anthropic, and your own keywords to GNews."
+                    : "No messaging server is set, so nothing goes there."),
             DataFlowRow(
                 id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,

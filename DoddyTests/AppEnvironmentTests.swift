@@ -53,5 +53,6 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertEqual(StatusCopy.text(for: .available), "Available")
         XCTAssertEqual(StatusCopy.text(for: .notImplemented(plannedMilestone: "M1")), "Not built yet · planned M1")
         XCTAssertEqual(StatusCopy.text(for: .limited("read-only")), "Limited · read-only")
+        XCTAssertEqual(StatusCopy.text(for: .needsSetup("server")), "Needs setup · server")
     }
 }

@@ -54,13 +54,28 @@ jobs:
           retention-days: 7
 
   # Everything except the iOS build, on Linux (ADR-137): pack check, guards, agent spec, Swift
-  # package tests, token server, backend and gateway tests. Cheaper than the macOS job and gives
+  # package tests, token server, backend, gateway and messaging server tests (with Postgres). Cheaper than the macOS job and gives
   # every pull request a real signal even when no hosted Mac is available.
   core:
     runs-on: ubuntu-24.04
     # Official Swift image, same toolchain the Linux checks were run with (Swift 6.1).
     container: swift:6.1-noble
     timeout-minutes: 30
+    # Disposable database for the messaging server's tests (server/messaging, ADR-139).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: doddy
+          POSTGRES_PASSWORD: doddy
+          POSTGRES_DB: doddy_test
+        options: >-
+          --health-cmd "pg_isready -U doddy -d doddy_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://doddy:doddy@postgres:5432/doddy_test
     steps:
       - uses: actions/checkout@v4
 

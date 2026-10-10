@@ -59,7 +59,8 @@ struct AppEnvironment: Sendable {
                 recallService: RepositoryRecallService(repository: repository),
                 assistant: AssistantWiring(credentials: credentials, transport: AppHTTPTransport()),
                 toolExecutor: UnavailableToolExecutor(),
-                capabilities: .v2WithAssistant,
+                // Notifications, texts, calls and news say "needs setup" until a messaging server is set.
+                capabilities: .withMessaging(serverConfigured: ServerConfig.baseURL() != nil),
                 privacy: .v1Voice,
                 storageProblem: nil)
         } catch {

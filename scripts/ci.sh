@@ -3,7 +3,7 @@
 # makes the script exit non-zero, so "green" always means everything ran and passed.
 #
 #   scripts/ci.sh              full run (needs Swift AND Xcode/xcodebuild)
-#   scripts/ci.sh --core-only  pack integrity + guards + Swift package tests + backend only;
+#   scripts/ci.sh --core-only  pack integrity + guards + Swift package tests + Node services only;
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 set -uo pipefail
@@ -58,6 +58,16 @@ if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   run_step "Gateway tests (node)" npm test --prefix gateway
 else
   not_run "Gateway tests (node)" "node/npm not found on PATH"
+fi
+
+# Messaging server (server/messaging, Node 22 + Postgres). Its database tests need a disposable
+# database in TEST_DATABASE_URL; without one they are skipped and listed as SKIPPED, never PASS.
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  if [ ! -d server/messaging/node_modules ]; then run_step "Messaging server install (npm ci)" npm ci --prefix server/messaging --no-audit --no-fund; fi
+  run_step "Messaging server typecheck + tests" npm test --prefix server/messaging
+  [ -z "${TEST_DATABASE_URL:-}" ] && record "Messaging server database tests" "SKIPPED" "TEST_DATABASE_URL not set"
+else
+  not_run "Messaging server tests" "node/npm not found on PATH"
 fi
 
 if [ "$core_only" -eq 1 ]; then

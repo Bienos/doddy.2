@@ -39,10 +39,6 @@ export interface OutboundCaller {
   placeCall(toE164: string, dynamicVariables: Record<string, string>): Promise<CallOutcome>;
 }
 
-export interface VoiceTokenIssuer {
-  conversationToken(): Promise<string>;
-}
-
 export class ProviderError extends Error {
   constructor(readonly code: string, readonly status?: number) {
     super(`provider error ${code}${status ? ` (HTTP ${status})` : ""}`);
