@@ -27,6 +27,7 @@ and the result for each item in the table at the end.
 | M6 | Note screen → Share text | The share sheet holds only the note's current words (ADR-142) |
 | M7 | Delete one note | A "Note deleted. Undo" bar for about 10 seconds. Undo brings back the same text, corrections and dates. "Delete all" shows no bar (ADR-140) |
 | M8 | Search for something with two notes that give different numbers | A "may disagree" banner and labels (ADR-132) |
+| M9 | Copy some text elsewhere, open the capture screen, tap Paste | No permission prompt. The text goes in exactly as copied, replacing a blank editor or going on a new line after existing text. Nothing is saved until Save (ADR-146) |
 
 ## 3. Export, restore and settings
 | # | Do this | Expect |

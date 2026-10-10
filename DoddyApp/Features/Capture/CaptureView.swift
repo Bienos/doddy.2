@@ -53,6 +53,17 @@ struct CaptureView: View {
                         MemoryTextEditor(text: $text, label: "The detail").focused($editorFocused)
                             .accessibilityIdentifier("capture.text")
                             .disabled(isSaving)
+                        // Apple's own paste control: iOS asks nothing, and only a tap reads the clipboard.
+                        // The copied text goes in exactly as copied, after what is already there (ADR-146).
+                        PasteButton(payloadType: String.self) { items in
+                            text = DraftText.pasting(items, into: text)
+                        }
+                        .labelStyle(.titleAndIcon)
+                        .buttonBorderShape(.capsule)
+                        .tint(Theme.ink)
+                        .frame(minHeight: 44)
+                        .disabled(isSaving)
+                        .accessibilityIdentifier("capture.paste")
                         Text("No folders. Your words, exactly.").font(.caption).foregroundStyle(Theme.secondaryText)
                         DisclosureGroup("Optional note type") {
                             Picker("Type", selection: $category) {
