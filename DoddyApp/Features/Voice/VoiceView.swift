@@ -128,6 +128,11 @@ struct VoiceView: View {
                                 .id("reminderStatus")
                         }
 
+                        if let status = controller.planStatus {
+                            planStatusCard(status, controller: controller)
+                                .id("planStatus")
+                        }
+
                         if pauseAllConnections {
                             pausedCard
                                 .id("connectionsPaused")
@@ -161,6 +166,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.reminderStatus) { _, status in
                     if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("reminderStatus", anchor: .bottom) } }
+                }
+                .onChange(of: controller.planStatus == nil) { _, isNil in
+                    if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("planStatus", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -199,7 +207,7 @@ struct VoiceView: View {
 
     /// Card for anything that changes data or opens another app. Nothing happens until the user taps.
     private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
-        let labels = actionLabels(pending)
+        let labels = actionLabels(pending, controller: controller)
         return VStack(alignment: .leading, spacing: 12) {
             actionContent(pending, controller: controller)
             Button {
@@ -208,6 +216,8 @@ struct VoiceView: View {
                 HStack { Text(labels.confirm); Spacer(); Image(systemName: "checkmark") }
             }
             .buttonStyle(PrimaryButtonStyle())
+            // A plan with every step unticked has nothing to confirm; "Not now" declines it.
+            .disabled(isEmptyPlan(pending, controller: controller))
             .accessibilityIdentifier("voice.confirm")
             Button {
                 Task { await controller.declinePendingAction() }
@@ -307,10 +317,107 @@ struct VoiceView: View {
                 Text(line)
                     .font(.body)
             }
+        case .plan(_, let steps, let blocked):
+            planContent(steps: steps, blocked: blocked, controller: controller)
         }
     }
 
-    private func actionLabels(_ pending: VoiceSessionController.PendingAction) -> (confirm: String, decline: String) {
+    /// Plan card (ADR-204): every change with its full details and its own tick box. Blocked steps
+    /// say why and can't be ticked. Nothing runs until the button below is tapped.
+    @ViewBuilder
+    private func planContent(steps: [PlanStep], blocked: [Int: PlanBlock], controller: VoiceSessionController) -> some View {
+        Text("Here's what I'd do")
+            .font(.headline)
+        ForEach(steps) { step in
+            let request = step.activity(calendar: .current)
+            let block = blocked[step.number]
+            let ticked = controller.planTicked.contains(step.number)
+            Button {
+                controller.togglePlanStep(step.number)
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: 10) {
+                    Image(systemName: block != nil ? "minus.circle" : ticked ? "checkmark.square.fill" : "square")
+                        .foregroundStyle(block != nil ? Theme.secondaryText : Theme.ink)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
+                            .font(.body)
+                            .foregroundStyle(Theme.ink)
+                        if let detail = request?.detail {
+                            Text(detail)
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+                        if let block {
+                            Text(block.screenText)
+                                .font(.footnote)
+                                .foregroundStyle(Theme.error)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(block != nil)
+            .accessibilityValue(block?.screenText ?? (ticked ? "Ticked" : "Not ticked"))
+            .accessibilityIdentifier("voice.plan.step\(step.number)")
+        }
+        Text("Untick anything you don't want. The rest run in this order, and each one gets its own result.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+    }
+
+    /// After a plan's button: each step with its result, from the same entries as "What Doddy did".
+    private func planStatusCard(_ status: VoiceSessionController.PlanStatus, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                if status.isRunning { ProgressView() }
+                Text(status.isRunning ? "Working through the plan…" : "What happened")
+                    .font(.headline)
+            }
+            ForEach(status.steps) { step in
+                let request = step.activity(calendar: .current)
+                let result = status.results[step.number]
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(step.number). \(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
+                        .font(.body)
+                    if let detail = request?.detail {
+                        Text(detail)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    Text(result?.outcome.text ?? "Waiting")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(result.map { $0.outcome == .notDone || $0.outcome == .notSure } == true ? Theme.error : Theme.ink)
+                    if let note = result?.note {
+                        Text(note)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if !status.isRunning {
+                Button("OK") {
+                    controller.dismissPlanStatus()
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.planReceipt")
+    }
+
+    private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {
+        if case .plan = pending { return controller.planTicked.isEmpty }
+        return false
+    }
+
+    private func actionLabels(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> (confirm: String, decline: String) {
         switch pending {
         case .memory: ("Save", "Don't save")
         case .event, .reminder: ("Add", "Don't add")
@@ -320,6 +427,7 @@ struct VoiceView: View {
         case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
         case .noteReminder: ("Set reminder", "Don't set")
+        case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), "Not now")
         }
     }
 

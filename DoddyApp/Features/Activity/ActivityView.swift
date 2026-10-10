@@ -78,6 +78,11 @@ struct ActivityView: View {
             if let note = entry.note {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
             }
+            if let plan = entry.plan {
+                Label(plan.text, systemImage: "list.number")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             if entry.canCheckInReminders {
                 Button(checking.contains(entry.id) ? "Checking…" : "Check in Reminders") {
                     Task { await check(entry) }

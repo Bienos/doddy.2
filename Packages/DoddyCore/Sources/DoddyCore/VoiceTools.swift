@@ -15,6 +15,8 @@ public enum VoiceToolName {
     public static let openMap = "open_map"
     public static let runShortcut = "run_shortcut"
     public static let draftMessage = "draft_message"
+    /// Several changes on one card (`PlanProposal`, ADR-204).
+    public static let proposePlan = "propose_plan"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also

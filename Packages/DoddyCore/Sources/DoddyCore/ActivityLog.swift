@@ -139,6 +139,21 @@ public struct ActivityRequest: Equatable, Sendable {
     }
 }
 
+/// Marks an entry as one step of a plan card (ADR-204), so the list can show them together.
+public struct ActivityPlanRef: Codable, Equatable, Sendable {
+    public let id: UUID
+    public let step: Int
+    public let count: Int
+
+    public init(id: UUID, step: Int, count: Int) {
+        self.id = id
+        self.step = step
+        self.count = count
+    }
+
+    public var text: String { "Step \(step) of \(count) in one plan" }
+}
+
 public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public let id: UUID
     public let at: Date
@@ -151,10 +166,13 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public let reminderKey: String?
     /// When "Check" last looked in Reminders.
     public var checkedAt: Date?
+    /// Set when this was one step of a plan card. Older entries have none.
+    public let plan: ActivityPlanRef?
 
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
-        outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil
+        outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
+        plan: ActivityPlanRef? = nil
     ) {
         self.id = id
         self.at = at
@@ -165,22 +183,23 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.note = note
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
+        self.plan = plan
     }
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
     /// app's own verified result (VoiceToolReply), so the log can never claim more than the agent heard.
-    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date) {
+    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
-            note: note, reminderKey: request.reminderKey)
+            note: note, reminderKey: request.reminderKey, plan: plan)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
-    public static func started(_ request: ActivityRequest, at: Date) -> ActivityEntry {
+    public static func started(_ request: ActivityRequest, at: Date, plan: ActivityPlanRef? = nil) -> ActivityEntry {
         ActivityEntry(
             at: at, app: request.app, title: request.title, detail: request.detail, outcome: .inProgress,
-            reminderKey: request.reminderKey)
+            reminderKey: request.reminderKey, plan: plan)
     }
 
     /// "Check" is offered when Doddy wasn't sure a reminder went in.
@@ -212,7 +231,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     /// "failed: Reminders isn't connected. Nothing was added." → "Reminders isn't connected."
     private static func reason(in text: String) -> String? {
         var body = String(text.dropFirst("failed:".count)).trimmingCharacters(in: .whitespaces)
-        for tail in [" Nothing was added.", " Nothing was opened.", " Nothing was saved.", " Nothing was changed.", " Nothing was set.", " Nothing was run."] {
+        for tail in [" Nothing was added.", " Nothing was opened.", " Nothing was saved.", " Nothing was changed.", " Nothing was set.", " Nothing was run.", " Nothing was done."] {
             if body.hasSuffix(tail) { body.removeLast(tail.count) }
         }
         return body.isEmpty ? nil : body

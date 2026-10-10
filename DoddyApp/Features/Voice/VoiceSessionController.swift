@@ -43,12 +43,14 @@ final class VoiceSessionController {
         /// Doddy's own reminder about one saved note (ADR-198). `noteText` is the stored note the
         /// agent's quote matched, shown exactly; nothing is set until the user taps Set reminder.
         case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, target: NoteReminderCardTarget)
+        /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
+        case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
-                 .noteReminder(let id, _, _, _):
+                 .noteReminder(let id, _, _, _), .plan(let id, _, _):
                 id
             }
         }
@@ -64,6 +66,14 @@ final class VoiceSessionController {
     struct ContactCard: Equatable {
         let query: String
         let matches: [DeviceConnections.ContactMatch]
+    }
+
+    /// Each step of a confirmed plan with its own result, as logged in "What Doddy did". It stays
+    /// on screen after the conversation ends, like the reminder receipt.
+    struct PlanStatus: Equatable {
+        let steps: [PlanStep]
+        var results: [Int: ActivityEntry] = [:]
+        var isRunning = true
     }
 
     /// The receipt after the user tapped Add on a reminder card (M4). It stays on screen after
@@ -89,6 +99,9 @@ final class VoiceSessionController {
     var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
     private(set) var reminderStatus: ReminderStatus?
+    /// Which steps of the plan card are ticked. Every step that can run starts ticked.
+    private(set) var planTicked: Set<Int> = []
+    private(set) var planStatus: PlanStatus?
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
@@ -102,6 +115,8 @@ final class VoiceSessionController {
     private var asked: [String: ActivityRequest] = [:]
     /// Changes the user confirmed that are running now, logged "in progress" before they ran.
     private var started: [String: ActivityEntry] = [:]
+    /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
+    private var askedPlans: [String: [PlanStep]] = [:]
     private let island = VoiceLiveActivity()
     private let devices = DeviceConnections()
     private var conversation: Conversation?
@@ -133,6 +148,7 @@ final class VoiceSessionController {
         pendingAction = nil
         contactCard = nil
         reminderStatus = nil
+        planStatus = nil
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
@@ -357,6 +373,8 @@ final class VoiceSessionController {
             await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
         case .noteReminder(let id, let memoryID, let noteText, let target):
             await reply(id, await setNoteReminder(memoryID: memoryID, noteText: noteText, target: target))
+        case .plan(let id, let steps, let blocked):
+            await runPlan(id, steps: steps, blocked: blocked)
         }
     }
 
@@ -410,7 +428,26 @@ final class VoiceSessionController {
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .noteReminder(let id, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
+        case .plan(let id, let steps, _):
+            askedPlans[id] = nil
+            let planID = UUID()
+            for step in steps {
+                logPlanStep(step, reply: PlanReply.declined, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
+            }
+            await reply(id, PlanReply.declined)
         }
+    }
+
+    /// Ticks or unticks one step of the plan card. Blocked steps stay unticked.
+    func togglePlanStep(_ number: Int) {
+        guard case .plan(_, let steps, let blocked) = pendingAction,
+              steps.contains(where: { $0.number == number }), blocked[number] == nil else { return }
+        if planTicked.contains(number) { planTicked.remove(number) } else { planTicked.insert(number) }
+    }
+
+    func dismissPlanStatus() {
+        guard planStatus?.isRunning == false else { return }
+        planStatus = nil
     }
 
     func dismissContactCard() {
@@ -482,6 +519,10 @@ final class VoiceSessionController {
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
+        if call.toolName == VoiceToolName.proposePlan {
+            await handlePlan(call)
+            return
+        }
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
         // Settings → Pause all: no other app or account is used; notes still work.
@@ -574,6 +615,126 @@ final class VoiceSessionController {
         case .invalid(_, let reason):
             await reply(call.toolCallId, VoiceToolReply.failed("The request was incomplete (\(reason))."), isError: true)
         }
+    }
+
+    // MARK: Plan card (ADR-204)
+
+    /// Every step is parsed and checked as if asked on its own. A step the app can't run (paused,
+    /// switched off, no iOS permission) is shown with the reason instead of being dropped.
+    private func handlePlan(_ call: ClientToolCallEvent) async {
+        let steps: [PlanStep]
+        switch PlanProposal.parse(parametersJSON: call.parametersData) {
+        case .refused(let text):
+            await reply(call.toolCallId, text)
+            return
+        case .plan(let parsed):
+            steps = parsed
+        }
+        guard pendingAction == nil else {
+            // One card at a time, as in propose(_:toolCallID:).
+            await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
+            return
+        }
+        var blocked: [Int: PlanBlock] = [:]
+        for step in steps {
+            guard let block = await planBlock(for: step) else { continue }
+            blocked[step.number] = block
+            if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
+        }
+        // Nothing could run: answer now instead of showing a card with nothing to tick.
+        guard blocked.count < steps.count else {
+            let planID = UUID()
+            var results: [(step: PlanStep, reply: String)] = []
+            for step in steps {
+                let text = blocked[step.number]?.reply ?? PlanReply.unticked
+                logPlanStep(step, reply: text, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
+                results.append((step, text))
+            }
+            await reply(call.toolCallId, PlanReply.summary(results))
+            return
+        }
+        planTicked = Set(steps.map(\.number)).subtracting(blocked.keys)
+        askedPlans[call.toolCallId] = steps
+        propose(.plan(toolCallID: call.toolCallId, steps: steps, blocked: blocked), toolCallID: call.toolCallId)
+    }
+
+    /// Ticked steps run one after another, each through the same path as its single card, and each
+    /// gets its own result. A step that fails doesn't stop the others; none is retried.
+    private func runPlan(_ toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock]) async {
+        askedPlans[toolCallID] = nil
+        let ticked = planTicked
+        let planID = UUID()
+        planStatus = PlanStatus(steps: steps)
+        var results: [(step: PlanStep, reply: String)] = []
+        for step in steps {
+            let ref = ActivityPlanRef(id: planID, step: step.number, count: steps.count)
+            var startedEntry: ActivityEntry?
+            let text: String
+            if let block = blocked[step.number] {
+                text = block.reply
+            } else if !ticked.contains(step.number) {
+                text = PlanReply.unticked
+            } else {
+                // On disk before it runs, like a single card (ActivityLog.recoverInterrupted).
+                if let request = step.activity(calendar: .current) {
+                    let entry = ActivityEntry.started(request, at: Date(), plan: ref)
+                    activity.append(entry)
+                    startedEntry = entry
+                }
+                text = await runPlanStep(step)
+            }
+            planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry)
+            results.append((step, text))
+        }
+        planStatus?.isRunning = false
+        await reply(toolCallID, PlanReply.summary(results))
+    }
+
+    /// Checked again at the tap: the user may have paused or switched off the app while the card waited.
+    private func runPlanStep(_ step: PlanStep) async -> String {
+        if let block = await planBlock(for: step) { return block.reply }
+        switch step.request {
+        case .saveMemory(let text):
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                savedThisConversation += 1
+                return VoiceToolReply.saved(record)
+            } catch {
+                return VoiceToolReply.failed(UserFacingError.message(for: error))
+            }
+        case .createCalendarEvent(let draft):
+            return addEvent(draft)
+        case .createReminder(let draft):
+            return VoiceToolReply.reminder(await addReminder(draft))
+        case .setTimer(let draft):
+            return await startTimer(draft)
+        default:
+            // PlanProposal only makes the four kinds above.
+            return VoiceToolReply.notAdded("This step can't run in a plan.")
+        }
+    }
+
+    private func planBlock(for step: PlanStep) async -> PlanBlock? {
+        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: step.request) {
+            return .paused
+        }
+        guard let connection = step.connection else { return nil }
+        guard isOn(connection) else { return .notConnected(connection) }
+        let access: DeviceConnections.Access
+        if connection == .timers {
+            access = await devices.notificationAccess()
+        } else {
+            access = devices.access(for: connection)
+        }
+        return access == .granted ? nil : .notConnected(connection)
+    }
+
+    @discardableResult
+    private func logPlanStep(_ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil) -> ActivityEntry? {
+        guard let request = step.activity(calendar: .current) else { return nil }
+        let entry = ActivityEntry(id: started?.id ?? UUID(), request: request, reply: text, at: started?.at ?? Date(), plan: plan)
+        if started != nil { activity.replace(entry) } else { activity.append(entry) }
+        return entry
     }
 
     /// Gmail, Drive, Notion, Todoist and web search go through Doddy's server, which checks the tool's
@@ -741,6 +902,17 @@ final class VoiceSessionController {
             activity.append(entry)
             asked[toolCallID] = nil
         }
+        for (_, steps) in askedPlans {
+            let planID = UUID()
+            for step in steps {
+                guard let request = step.activity(calendar: .current) else { continue }
+                var entry = ActivityEntry(request: request, reply: "", at: Date(), plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
+                entry.outcome = .notDone
+                entry.note = "The conversation ended before you answered."
+                activity.append(entry)
+            }
+        }
+        askedPlans = [:]
     }
 
     private static func microphoneAllowed() async -> Bool {
@@ -764,7 +936,8 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .cloud, .noteReminder: true
-        case .map, .shortcut, .message: false
+        // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
+        case .map, .shortcut, .message, .plan: false
         }
     }
 }
