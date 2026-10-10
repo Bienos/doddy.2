@@ -21,7 +21,7 @@ Date: 2026-10-08. Updated 2026-10-09 after a read-only live check of the ElevenL
 | `save_memory` `tool_9401m4et17pfe598c1wmvdhpwhcv` | phone | Card with **Save**; nothing stored until the tap. Always on. |
 | `read_calendar` | phone, Calendar switch | Returns titles and times for today, tomorrow, the week, or a range. Nothing is added. |
 | `create_calendar_event` | phone, Calendar switch | Card with **Add**; added only after the tap, then read back to verify. |
-| `create_reminder` | phone, Reminders switch | Card with **Add**; added only after the tap, then read back to verify. |
+| `create_reminder` | phone, Reminders switch | Card with **Add**; unclear or past times go back to the agent as a question; after the tap Doddy checks it isn't already there, adds it once, reads it back and shows a receipt (M4, `M4_REMINDERS_STATUS.md`). |
 | `lookup_contact` | phone, Contacts switch | Agent gets names only; numbers and emails show on screen only, with Call, Text and Email buttons that each need a tap. |
 | `set_timer` `tool_8601m4gj35c6enz912e0zhax003f` | phone, Timers switch (+ notification permission) | Card with **Start**; scheduled as a local notification, read back to verify. Banner shows even while Doddy is open. |
 | `open_map` `tool_6101m4gj36nbe1tv5mpj73rzbqsa` | phone, Maps switch | Card with **Open in Maps**; opens Apple Maps, which leaves the app. |

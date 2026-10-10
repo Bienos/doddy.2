@@ -77,11 +77,19 @@ public struct CalendarEventDraft: Equatable, Sendable {
 }
 
 /// A reminder the agent proposed. Nothing is added until the user taps Add on the card.
+/// `due` is local wall-clock time in a named zone, already checked by `ReminderDueRules`.
 public struct ReminderDraft: Equatable, Sendable {
     public let title: String
-    public let due: Date?
-    public let dueHasTime: Bool
+    public let due: ReminderDue?
     public let notes: String?
+
+    public init(title: String, due: ReminderDue?, notes: String?) {
+        self.title = title
+        self.due = due
+        self.notes = notes
+    }
+
+    public var dueHasTime: Bool { due?.hasTime ?? false }
 }
 
 /// A countdown the agent proposed. Nothing starts until the user taps Start on the card.
@@ -129,6 +137,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Shown to the user for confirmation before anything is added.
     case createCalendarEvent(CalendarEventDraft)
     case createReminder(ReminderDraft)
+    /// The request can't be shown as a card yet (unclear, past or skipped time). The agent gets a
+    /// question to ask the user instead.
+    case needsClarification(name: String, ReminderClarification)
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
     case setTimer(TimerDraft)
@@ -154,7 +165,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.createCalendarEvent:
             return parseEvent(args, name: name, calendar: calendar)
         case VoiceToolName.createReminder:
-            return parseReminder(args, name: name, calendar: calendar)
+            return parseReminder(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)
@@ -227,18 +238,20 @@ public enum VoiceToolRequest: Equatable, Sendable {
             location: args.text("location"), notes: args.text("notes")))
     }
 
-    private static func parseReminder(_ args: Arguments, name: String, calendar: Calendar) -> VoiceToolRequest {
-        guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
-        var due: Date?
-        var dueHasTime = false
-        if let dueText = args.text("due") {
-            guard let parsed = VoiceLocalDate.parse(dueText, calendar: calendar) else {
-                return .invalid(name: name, reason: "due is not a date")
-            }
-            due = parsed.date
-            dueHasTime = parsed.hasTime
+    /// Strict (M4): the due is a day the agent wrote out, local time in the phone's zone, still
+    /// ahead and not skipped or repeated by a clock change. Otherwise the agent is asked to clarify.
+    private static func parseReminder(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
+        guard let title = args.text("title")?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return .invalid(name: name, reason: "missing title")
         }
-        return .createReminder(ReminderDraft(title: title, due: due, dueHasTime: dueHasTime, notes: args.text("notes")))
+        var due: ReminderDue?
+        if let dueText = args.text("due") {
+            switch ReminderDueRules.check(dueText, now: now, calendar: calendar) {
+            case .due(let checked): due = checked
+            case .clarify(let clarification): return .needsClarification(name: name, clarification)
+            }
+        }
+        return .createReminder(ReminderDraft(title: title, due: due, notes: args.text("notes")))
     }
 
     private static func parseTimer(_ args: Arguments, name: String) -> VoiceToolRequest {
@@ -428,11 +441,6 @@ public enum VoiceToolReply {
             return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day)."
         }
         return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar))."
-    }
-
-    public static func reminderAdded(_ draft: ReminderDraft, calendar: Calendar) -> String {
-        guard let due = draft.due else { return "added: reminder \"\(draft.title)\" with no due time." }
-        return "added: reminder \"\(draft.title)\" due \(localText(due, hasTime: draft.dueHasTime, calendar: calendar))."
     }
 
     /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`.
