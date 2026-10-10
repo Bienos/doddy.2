@@ -34,4 +34,4 @@ App: `Infrastructure/Connections/NoteReminderNotifications.swift`, `Features/Not
 ## Open
 1. Voice: keep Apple Reminders for "remind me" by voice (recommended), or add a note-linked voice tool (changes the shared live agent).
 2. D6 Polish copy; whether note reminders belong in the export.
-3. Separate from this work: the live agent prompt tells Doddy to give a "vague answer" when asked if it is human or an AI, against the AI-disclosure rule. Not changed here.
+3. Done separately (ADR-174): the voice agent prompt again says plainly that Doddy is an AI when asked.
