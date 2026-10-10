@@ -21,7 +21,7 @@ adding one adapter, not rewriting the app or the agent.
    `{"prompt": "...", "tools": [...]}` and run `voice_agent_spec.py compare EXPORT.json`.
 
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
-step catches it. Last synced 2026-10-10 (agent version `agtvrsn_5801m4k5544wevk9bz7wezwneh88`, ADR-177: AI disclosure line; before that `agtvrsn_3401m4k47e2revvv01sk7xv1tb26`, ADR-173: `web_search` added; before that `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 21 live tools (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_5801m4jtvazveprbj3znhn66j4tt` (before web search).
+step catches it. Last synced 2026-10-10 (agent version `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`, ADR-198: `remind_me_about_note`; before that `agtvrsn_5801m4k5544wevk9bz7wezwneh88`, ADR-177: AI disclosure line; before that `agtvrsn_3401m4k47e2revvv01sk7xv1tb26`, ADR-173: `web_search` added; before that `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 21 live tools (22 since ADR-198) (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_5801m4jtvazveprbj3znhn66j4tt` (before web search).
 
 **Applied to the live agent 2026-10-10 (ADR-129):** the M4 Reminders wording (ADR-126) and the calendar
 date rules (ADR-127, ADR-128) in `create_reminder`, `create_calendar_event` and the prompt. The opening line
@@ -30,6 +30,11 @@ of `instructions.md` is the owner's dashboard edit, copied back so the spec matc
 **Applied to the live agent 2026-10-10 (ADR-191):** the opening line again says plainly that Doddy is an AI
 when asked (the dashboard edit had told it to give a "vague answer"). Only that line was changed, on live
 version `agtvrsn_3401m4k47e2revvv01sk7xv1tb26` → `agtvrsn_5801m4k5544wevk9bz7wezwneh88`; tools untouched.
+
+**Applied to the live agent 2026-10-10 (ADR-198):** new client tool `remind_me_about_note`
+(`tool_7401m4k84jjgf1ctk26vj03kextq`) attached next to the 21 existing tools, and two prompt lines (its tool
+bullet and one reminder rule). Version `agtvrsn_1401m4k5nha9ffv81j7c6m6sze2n` → `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`;
+compare run against the new tool and the full prompt (no drift). For rollback, the previous version has 21 tools.
 
 ## App side (DoddyCore `RealtimeVoice.swift`)
 

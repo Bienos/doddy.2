@@ -200,7 +200,7 @@ struct VoiceView: View {
     private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
         let labels = actionLabels(pending)
         return VStack(alignment: .leading, spacing: 12) {
-            actionContent(pending)
+            actionContent(pending, controller: controller)
             Button {
                 Task { await controller.confirmPendingAction() }
             } label: {
@@ -220,7 +220,7 @@ struct VoiceView: View {
     }
 
     @ViewBuilder
-    private func actionContent(_ pending: VoiceSessionController.PendingAction) -> some View {
+    private func actionContent(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
         switch pending {
         case .memory(_, let text):
             Text("Save this note?")
@@ -283,6 +283,8 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .noteReminder(_, _, let noteText, let target):
+            noteReminderContent(noteText: noteText, target: target, controller: controller)
         case .cloud(_, _, let preview, _, let mode):
             if mode == .mock {
                 Label("Demo — nothing real will be created", systemImage: "theatermasks")
@@ -306,6 +308,52 @@ struct VoiceView: View {
         case .shortcut: ("Run", "Don't run")
         case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
+        case .noteReminder: ("Set reminder", "Don't set")
+        }
+    }
+
+    /// Note reminder card (ADR-198): the note exactly as saved, then the time with its zone, or the
+    /// Apple Maps results to pick from. Doddy's own reminder, not Apple Reminders.
+    @ViewBuilder
+    private func noteReminderContent(
+        noteText: String, target: VoiceSessionController.NoteReminderCardTarget, controller: VoiceSessionController
+    ) -> some View {
+        Text("Remind you about this note?")
+            .font(.headline)
+        Text("“\(noteText)”")
+            .font(.body)
+        switch target {
+        case .time(let date, let zone):
+            Text(ReminderFormat.full(date, timeZoneID: zone))
+                .foregroundStyle(Theme.secondaryText)
+            Text("A notification on this iPhone from Doddy, not Apple Reminders.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .place(let results, let onArrival):
+            Text(onArrival ? "When you arrive at (within 200 m):" : "When you leave (within 200 m):")
+                .foregroundStyle(Theme.secondaryText)
+            ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
+                let selected = index == controller.selectedPlaceIndex
+                Button { controller.selectPlace(index) } label: {
+                    HStack(alignment: .top) {
+                        Image(systemName: selected ? "largecircle.fill.circle" : "circle").accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(result.name).font(.subheadline.bold())
+                            if !result.address.isEmpty {
+                                Text(result.address).font(.footnote).foregroundStyle(Theme.secondaryText)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+            Text("Each time, until you mark it Done. Uses notifications and your location while you use Doddy; iOS watches the place, Doddy doesn't follow where you go.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         }
     }
 

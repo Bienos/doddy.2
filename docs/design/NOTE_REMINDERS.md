@@ -33,7 +33,7 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | Location-based ("when I get home") | **Built (ADR-196)** | See "Place reminders" below |
 | Time Sensitive interruption level | Deferred, opt-in only | Breaks through Focus; must be the user's choice per reminder |
 | Voice-session Live Activity / Dynamic Island | Separate track (V3) | Not a notification; see `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` |
-| Voice agent proposing a reminder | Later | Agent may *propose*; the same on-screen sheet confirms (tool contract in `docs/architecture/TOOLS_AND_ACTIONS.md`) |
+| Voice agent proposing a reminder | **Built (ADR-198)** | `remind_me_about_note`: the agent proposes, an on-screen card confirms; see `docs/implementation/VOICE_NOTE_REMINDERS_STATUS.md` |
 | Note reminders through remote push | **Never** | Note reminders are local; no note text or reminder time is sent to a server. (Updates and news are a separate opt-in server feature.) |
 | Re-engagement, streaks, "you haven't saved anything", tips, marketing | **Never** | Guilt/dependency patterns; persona rules forbid them |
 | Unprompted resurfacing ("a year ago you saved…") | **Never without a new decision** | Doddy would be deciding what to show the user; that breaks principle 1 |

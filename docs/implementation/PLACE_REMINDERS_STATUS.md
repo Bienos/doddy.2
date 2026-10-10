@@ -33,5 +33,5 @@ App: `Infrastructure/Connections/PlaceLocation.swift` (permission, one position,
 
 ## Open
 1. A map to see or drag the circle (loads map tiles from Apple; another privacy line).
-2. Voice ("remind me when I get to the shop"): needs an agent tool and the same on-screen confirmation.
+2. ~~Voice ("remind me when I get to the shop")~~: built, ADR-198 (`VOICE_NOTE_REMINDERS_STATUS.md`).
 3. Polish copy for the new strings.

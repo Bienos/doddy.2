@@ -8,6 +8,8 @@ public enum VoiceToolName {
     public static let readCalendar = "read_calendar"
     public static let createCalendarEvent = "create_calendar_event"
     public static let createReminder = "create_reminder"
+    /// Doddy's own reminder about a saved note, at a time or a place (ADR-198). Not Apple Reminders.
+    public static let remindAboutNote = "remind_me_about_note"
     public static let lookupContact = "lookup_contact"
     public static let setTimer = "set_timer"
     public static let openMap = "open_map"
@@ -150,6 +152,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Shown to the user for confirmation before anything is added.
     case createCalendarEvent(CalendarEventDraft)
     case createReminder(ReminderDraft)
+    /// A reminder about one saved note (Doddy's own, not Apple Reminders); shown as a card first.
+    case remindAboutNote(NoteReminderVoiceDraft)
     /// The request can't be shown as a card yet (unclear, past or skipped time). The agent gets a
     /// question to ask the user instead. `name` is the tool to call again (reminder or event).
     case needsClarification(name: String, ReminderClarification)
@@ -179,6 +183,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseEvent(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createReminder:
             return parseReminder(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.remindAboutNote:
+            return parseNoteReminder(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)
@@ -308,7 +314,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
 }
 
 /// Tool arguments as the model sent them. Missing or blank values read as nil.
-private struct Arguments {
+struct Arguments {
     private let values: [String: Any]
 
     init(_ data: Data) {

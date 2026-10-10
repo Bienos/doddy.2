@@ -40,14 +40,24 @@ final class VoiceSessionController {
         /// Gmail draft or Todoist task. `preview` and `approvalID` come from Doddy's server for exactly
         /// these arguments; the approval works once and expires after two minutes.
         case cloud(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
+        /// Doddy's own reminder about one saved note (ADR-198). `noteText` is the stored note the
+        /// agent's quote matched, shown exactly; nothing is set until the user taps Set reminder.
+        case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, target: NoteReminderCardTarget)
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
-                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _):
+                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
+                 .noteReminder(let id, _, _, _):
                 id
             }
         }
+    }
+
+    /// What a note-reminder card offers: the checked moment, or Apple Maps results to pick from.
+    enum NoteReminderCardTarget: Equatable {
+        case time(Date, timeZoneID: String)
+        case place(results: [PlaceSearchResult], onArrival: Bool)
     }
 
     /// Contacts found by a lookup. Shown on screen only; the agent receives names.
@@ -76,6 +86,8 @@ final class VoiceSessionController {
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     private(set) var contactCard: ContactCard?
     private(set) var reminderStatus: ReminderStatus?
+    /// Which Apple Maps result the user picked on a place card (the first until they tap another).
+    private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false { didSet { syncIsland() } }
@@ -339,6 +351,42 @@ final class VoiceSessionController {
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
         case .cloud(let id, let call, _, let approvalID, _):
             await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
+        case .noteReminder(let id, let memoryID, let noteText, let target):
+            await reply(id, await setNoteReminder(memoryID: memoryID, noteText: noteText, target: target))
+        }
+    }
+
+    func selectPlace(_ index: Int) {
+        guard case .noteReminder(_, _, _, .place(let results, _)) = pendingAction, results.indices.contains(index) else { return }
+        selectedPlaceIndex = index
+    }
+
+    /// Sets the reminder through the same store as the note screen, then tells the agent only what
+    /// the store verified (a scheduled request, Doddy-only, or why nothing was set).
+    private func setNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) async -> String {
+        guard let reminders = store.noteReminders, reminders.isAvailable else {
+            return VoiceToolReply.noteReminderFailed("Reminders on notes aren't available on this iPhone right now.")
+        }
+        // The user just tapped Set reminder, so this is the moment to ask iOS, once.
+        if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
+        switch target {
+        case .time(let date, let zone):
+            await reminders.set(memoryID: memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent)
+        case .place(let results, let onArrival):
+            let choice = results[min(selectedPlaceIndex, results.count - 1)]
+            guard let place = try? ReminderPlace(
+                name: String(choice.name.prefix(ReminderPlace.maxNameLength)),
+                latitude: choice.coordinate.latitude, longitude: choice.coordinate.longitude,
+                radiusMeters: ReminderPlace.defaultRadius, onArrival: onArrival)
+            else { return VoiceToolReply.noteReminderFailed("That place can't be used.") }
+            if reminders.locationReadiness == .notDetermined { await reminders.requestLocation() }
+            await reminders.set(memoryID: memoryID, place: place)
+        }
+        switch reminders.receipts[memoryID] {
+        case .scheduled(let reminder): return VoiceToolReply.noteReminderSet(reminder, note: noteText)
+        case .inAppOnly(let reminder): return VoiceToolReply.noteReminderInDoddyOnly(reminder, note: noteText)
+        case .failed(let message), .needsSettings(let message): return VoiceToolReply.noteReminderFailed(message)
+        case nil: return VoiceToolReply.noteReminderFailed("Doddy couldn't set the reminder.")
         }
     }
 
@@ -355,6 +403,7 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
+        case .noteReminder(let id, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         }
     }
 
@@ -465,6 +514,8 @@ final class VoiceSessionController {
                 return
             }
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .remindAboutNote(let draft):
+            await proposeNoteReminder(draft, toolCallID: call.toolCallId)
         case .needsClarification(let name, let clarification):
             // Unclear, past or clock-change time: the agent asks the user; no card, nothing added.
             await reply(call.toolCallId, VoiceToolReply.clarification(clarification, tool: name))
@@ -550,6 +601,39 @@ final class VoiceSessionController {
             return VoiceToolReply.cloudResult(result)
         } catch {
             return VoiceToolReply.cloudFailed(error, tool: cloud.name)
+        }
+    }
+
+    /// Finds the quoted note and, for a place, looks it up in Apple Maps before showing the card.
+    private func proposeNoteReminder(_ draft: NoteReminderVoiceDraft, toolCallID: String) async {
+        guard store.noteReminders?.isAvailable == true else {
+            await reply(toolCallID, VoiceToolReply.noteReminderFailed("Reminders on notes aren't available on this iPhone right now."), isError: true)
+            return
+        }
+        await store.reload()
+        guard let record = NoteQuoteMatch.find(draft.noteText, in: store.memories) else {
+            await reply(toolCallID, VoiceToolReply.noteNotFound())
+            return
+        }
+        switch draft.target {
+        case .time(let date, let zone):
+            propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
+                                  target: .time(date, timeZoneID: zone)), toolCallID: toolCallID)
+        case .place(let query, let onArrival):
+            let results: [PlaceSearchResult]
+            do {
+                results = try await PlaceLocation.shared.search(query, near: nil)
+            } catch {
+                await reply(toolCallID, VoiceToolReply.noteReminderFailed("Couldn't search Apple Maps. Check the internet connection."))
+                return
+            }
+            guard !results.isEmpty else {
+                await reply(toolCallID, VoiceToolReply.placeNotFound(query))
+                return
+            }
+            selectedPlaceIndex = 0
+            propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
+                                  target: .place(results: Array(results.prefix(5)), onArrival: onArrival)), toolCallID: toolCallID)
         }
     }
 
@@ -672,7 +756,7 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .cloud: true
+        case .memory, .event, .reminder, .timer, .cloud, .noteReminder: true
         case .map, .shortcut, .message: false
         }
     }
