@@ -35,3 +35,17 @@ extension Nickname {
         clean(defaults.string(forKey: PreferenceKey.nickname))
     }
 }
+
+extension StyleSnapshot {
+    /// All style choices for the profile export (ADR-133). Defaults match the Settings toggles:
+    /// profile sharing off, remembering conversations on.
+    static func stored(in defaults: UserDefaults = .standard) -> StyleSnapshot {
+        StyleSnapshot(
+            personality: .stored(in: defaults),
+            voice: .stored(in: defaults),
+            language: .stored(in: defaults),
+            nickname: Nickname.stored(in: defaults),
+            profileUsedInVoice: defaults.bool(forKey: PreferenceKey.shareProfileWithVoice),
+            rememberConversations: defaults.object(forKey: PreferenceKey.rememberConversations) as? Bool ?? true)
+    }
+}

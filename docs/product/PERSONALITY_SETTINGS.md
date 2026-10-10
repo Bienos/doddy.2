@@ -69,3 +69,4 @@ Done on the live agent as described above (the section sits right after `# How y
 ## Privacy and security
 - Nothing new leaves the phone except the four style choices, sent to ElevenLabs inside the conversation start.
 - The dev agent is public, so anyone with the agent ID can send any text in this variable, as with the existing ones. The authenticated agent and token server (ADR-034) are still required before anyone else uses the app.
+- **Export (ADR-133):** Settings → About you → "Export with your settings" puts every choice on this page (voice, speed, expressiveness, starting language, nickname, the four dials) in a JSON or text file with the reviewed profile. The file is made on the phone and goes only where the user sends it from the share sheet. It is separate from the memory export.

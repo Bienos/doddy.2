@@ -105,6 +105,20 @@ struct SettingsView: View {
                         Label(forgetError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
+                    ShareLink(
+                        item: ProfileJSONExport(profile: profiles.profile),
+                        preview: SharePreview("Doddy profile and settings (JSON)")
+                    ) {
+                        Label("Export with your settings as JSON", systemImage: "square.and.arrow.up")
+                    }
+                    .accessibilityIdentifier("settings.exportProfileJSON")
+                    ShareLink(
+                        item: ProfileExport.plainText(profiles.profile, style: .stored(), exportedAt: .now),
+                        preview: SharePreview("Doddy profile and settings (text)")
+                    ) {
+                        Label("Export with your settings as text", systemImage: "doc.plaintext")
+                    }
+                    .accessibilityIdentifier("settings.exportProfileText")
                     Text("Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs at the start of each conversation so Doddy knows them; off, they stay on this iPhone.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -133,7 +147,7 @@ struct SettingsView: View {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Deleting here does not remove files you exported or older backups.")
+                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -570,6 +584,19 @@ private struct ProfileEditSheet: View {
         } catch {
             errorText = ProfileErrorText.message(for: error)
         }
+    }
+}
+
+/// Profile and style settings for the share sheet (format: `ProfileExport.json`, ADR-133).
+/// The settings are read when the file is made, so the export matches what is stored then.
+struct ProfileJSONExport: Transferable {
+    let profile: ApprovedProfile
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: .json) { export in
+            try ProfileExport.json(export.profile, style: .stored(), exportedAt: Date())
+        }
+        .suggestedFileName("doddy-profile.json")
     }
 }
 
