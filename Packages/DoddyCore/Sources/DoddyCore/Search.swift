@@ -17,6 +17,13 @@ public enum SearchFolding {
         "w", "z", "na", "do", "co", "to", "jak", "gdzie", "sie", "ze", "jest", "byl", "byla", "mi", "mnie",
         "kiedy", "jaki", "jaka", "jakie", "jakiego", "mam", "moj", "moja", "moje", "mojej", "mojego",
         "czy", "ten", "ta", "tego", "o", "od", "po", "dla", "ile", "sa", "juz", "jeszcze", "pamietasz",
+        // Question filler: how people ask about a note, not what the note says (ADR-213).
+        // Left in, a note never contains them, so every answer would look partial.
+        "say", "said", "says", "told", "anything", "something", "put", "leave", "save", "saved",
+        "remember", "find",
+        "ma", "mial", "miala", "przez", "cos", "czegos", "gdzies", "ktory", "ktora", "ktore",
+        "powiedzial", "powiedziala", "mowil", "mowila", "zapisalem", "zapisalam",
+        "zostawilem", "zostawilam", "polozylem", "polozylam",
     ]
 
     public static func fold(_ text: String) -> String {

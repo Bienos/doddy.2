@@ -49,14 +49,15 @@ final class RecallBenchmarkTests: XCTestCase {
         let find = Query(id: "a", lang: "en", query: "x", relevant: ["n1", "n2"], tags: ["exact"])
         let miss = Query(id: "b", lang: "pl", query: "y", relevant: [], tags: ["should_miss"])
         let results = [
-            QueryResult(query: find, returned: ["n9", "n2", "n8"]),  // found, second, two wrong
-            QueryResult(query: find, returned: ["n1"]),              // found, first
-            QueryResult(query: find, returned: []),                  // not found
-            QueryResult(query: miss, returned: []),                  // honest miss
-            QueryResult(query: miss, returned: ["n3"]),              // false match
+            QueryResult(query: find, returned: ["n9", "n2", "n8"], partial: true),  // found, second, two wrong, flagged
+            QueryResult(query: find, returned: ["n1"], partial: false),             // found, first
+            QueryResult(query: find, returned: [], partial: false),                 // not found
+            QueryResult(query: miss, returned: [], partial: false),                 // honest no match
+            QueryResult(query: miss, returned: ["n3"], partial: false),             // shown as an answer
+            QueryResult(query: miss, returned: ["n4"], partial: true),              // shown, flagged partial
         ]
-        XCTAssertEqual(results.map(\.passed), [true, true, false, true, false])
-        XCTAssertEqual(results.map(\.first), [false, true, false, true, false])
+        XCTAssertEqual(results.map(\.passed), [true, true, false, true, false, true])
+        XCTAssertEqual(results.map(\.first), [false, true, false, true, false, true])
         XCTAssertEqual(results[0].rank, 2)
         XCTAssertEqual(results[0].wrong, 2)
 
@@ -67,8 +68,10 @@ final class RecallBenchmarkTests: XCTestCase {
         XCTAssertEqual(score.top3, 2)
         XCTAssertEqual(score.reciprocalRankSum, 1.5, accuracy: 1e-9)
         XCTAssertEqual(score.wrongShown, 2)
-        XCTAssertEqual(score.missCount, 2)
-        XCTAssertEqual(score.honestMisses, 1)
+        XCTAssertEqual(score.flaggedPartial, 1)
+        XCTAssertEqual(score.missCount, 3)
+        XCTAssertEqual(score.saidNoMatch, 1)
+        XCTAssertEqual(score.honestAnswers, 2)
     }
 
     func testRecallBenchmarkHasNoRegressions() async throws {
@@ -92,12 +95,16 @@ final class RecallBenchmarkTests: XCTestCase {
                 XCTFail("\(result.query.id) has no baseline; run scripts/recall_benchmark.sh --update-baseline")
                 continue
             }
+            if !result.shouldMiss, before.partial == false, result.partial {
+                XCTFail("\(result.query.id) \"\(result.query.query)\" is now flagged as a partial match: \(Report.describe(result))")
+            }
             if before.passed && !result.passed {
                 XCTFail("\(result.query.id) \"\(result.query.query)\" regressed: \(Report.describe(result))")
             } else if before.first && !result.first {
                 XCTFail("\(result.query.id) \"\(result.query.query)\" no longer puts a right note first: \(Report.describe(result))")
             }
-            if (!before.passed && result.passed) || (!before.first && result.first) { improved.append(result.query.id) }
+            if (!before.passed && result.passed) || (!before.first && result.first)
+                || (!result.shouldMiss && before.partial == true && !result.partial) { improved.append(result.query.id) }
         }
         if !improved.isEmpty {
             print("Recall benchmark: improved \(improved.joined(separator: ", ")); raise the baseline with scripts/recall_benchmark.sh --update-baseline")
@@ -118,12 +125,14 @@ final class RecallBenchmarkTests: XCTestCase {
         let recall = RepositoryRecallService(repository: repo)
         var results: [QueryResult] = []
         for query in corpus.queries {
-            let returned: [String]
             switch try await recall.recall(query.query, limit: appLimit) {
-            case .noMatch: returned = []
-            case .matches(let candidates): returned = candidates.map { noteIDByRecord[$0.memoryID] ?? "?" }
+            case .noMatch:
+                results.append(QueryResult(query: query, returned: [], partial: false))
+            case .matches(let candidates):
+                // Same check the Find screen and the voice reply make (ADR-213).
+                let partial = RecallCoverage(question: query.query, candidates: candidates).isPartial
+                results.append(QueryResult(query: query, returned: candidates.map { noteIDByRecord[$0.memoryID] ?? "?" }, partial: partial))
             }
-            results.append(QueryResult(query: query, returned: returned))
         }
         return results
     }
@@ -168,13 +177,16 @@ struct QueryResult {
     let query: Query
     /// Corpus note ids, in the order recall returned them; empty means no match.
     let returned: [String]
+    /// The answer says no note covers the whole question (`RecallCoverage`, ADR-213).
+    let partial: Bool
 
     var shouldMiss: Bool { query.relevant.isEmpty }
     /// 1-based position of the first right note, if any.
     var rank: Int? { returned.firstIndex(where: query.relevant.contains).map { $0 + 1 } }
-    /// A right note was among the results; for a question with no answer, nothing was returned.
-    var passed: Bool { shouldMiss ? returned.isEmpty : rank != nil }
-    var first: Bool { shouldMiss ? returned.isEmpty : rank == 1 }
+    /// A right note was among the results. For a question with no answer: an honest answer,
+    /// which is "no match" or notes clearly flagged as only a partial match.
+    var passed: Bool { shouldMiss ? returned.isEmpty || partial : rank != nil }
+    var first: Bool { shouldMiss ? passed : rank == 1 }
     /// Notes shown that are not an answer.
     var wrong: Int { returned.filter { !query.relevant.contains($0) }.count }
 }
@@ -182,18 +194,21 @@ struct QueryResult {
 struct Score {
     var findCount = 0, found = 0, top1 = 0, top3 = 0, wrongShown = 0
     var reciprocalRankSum = 0.0
-    var missCount = 0, honestMisses = 0, falseMatchNotes = 0
+    /// Answerable questions whose answer was flagged as partial.
+    var flaggedPartial = 0
+    var missCount = 0, saidNoMatch = 0, honestAnswers = 0
 
     init(_ results: [QueryResult]) {
         for result in results {
             if result.shouldMiss {
                 missCount += 1
-                if result.passed { honestMisses += 1 }
-                falseMatchNotes += result.returned.count
+                if result.returned.isEmpty { saidNoMatch += 1 }
+                if result.passed { honestAnswers += 1 }
                 continue
             }
             findCount += 1
             wrongShown += result.wrong
+            if result.partial { flaggedPartial += 1 }
             guard let rank = result.rank else { continue }
             found += 1
             if rank == 1 { top1 += 1 }
@@ -209,6 +224,8 @@ struct Baseline: Codable {
     struct Entry: Codable {
         let passed: Bool
         let first: Bool
+        /// Flagged as a partial match (ADR-213); absent in baselines from before that.
+        let partial: Bool?
     }
 
     let corpusVersion: Int
@@ -222,7 +239,7 @@ struct Baseline: Codable {
     init(corpusVersion: Int, results: [QueryResult]) {
         self.corpusVersion = corpusVersion
         self.queries = Dictionary(uniqueKeysWithValues: results.map {
-            ($0.query.id, Entry(passed: $0.passed, first: $0.first))
+            ($0.query.id, Entry(passed: $0.passed, first: $0.first, partial: $0.partial))
         })
     }
 
@@ -259,10 +276,10 @@ enum Report {
             let s = Score(group)
             let mrr = s.findCount == 0 ? "–" : String(format: "%.2f", s.reciprocalRankSum / Double(s.findCount))
             let wrong = s.findCount == 0 ? "–" : String(format: "%.1f", Double(s.wrongShown) / Double(s.findCount))
-            return "| \(label) | \(pct(s.found, s.findCount)) | \(pct(s.top1, s.findCount)) | \(pct(s.top3, s.findCount)) | \(mrr) | \(wrong) | \(pct(s.honestMisses, s.missCount)) |"
+            return "| \(label) | \(pct(s.found, s.findCount)) | \(pct(s.top1, s.findCount)) | \(pct(s.top3, s.findCount)) | \(mrr) | \(wrong) | \(pct(s.flaggedPartial, s.findCount)) | \(pct(s.saidNoMatch, s.missCount)) | \(pct(s.honestAnswers, s.missCount)) |"
         }
-        let header = "| | Found (any right note in the list) | Right note first | Right note in top 3 | MRR | Wrong notes shown per question | Honest \"no match\" |"
-        let divider = "|---|---|---|---|---|---|---|"
+        let header = "| | Found (any right note in the list) | Right note first | Right note in top 3 | MRR | Wrong notes shown per question | Answer flagged partial | Said \"no match\" | Honest answer (no match, or flagged partial) |"
+        let divider = "|---|---|---|---|---|---|---|---|---|"
 
         line("# Recall benchmark — generated report")
         line()
@@ -280,7 +297,7 @@ enum Report {
         line(row("English questions", results.filter { $0.query.lang == "en" }))
         line(row("Polish questions", results.filter { $0.query.lang == "pl" }))
         line()
-        line("Found, first, top 3, MRR and wrong notes count only questions that have an answer; \"honest no match\" counts only the \(Score(results).missCount) questions that have none.")
+        line("Found, first, top 3, MRR, wrong notes and \"flagged partial\" count only questions that have an answer; for those, a partial flag is a false alarm, since the note does answer. \"No match\" and \"honest answer\" count only the \(Score(results).missCount) questions that have none. A flagged partial answer still lists the notes, but says which words no note has (ADR-213).")
         line()
         line("## By kind of question")
         line()
@@ -307,15 +324,27 @@ enum Report {
             line("- **\(result.query.id)** \"\(result.query.query)\" — right note at \(result.rank.map(String.init) ?? "?"); \(describe(result))")
         }
         line()
+        line("## Answerable, but flagged as partial")
+        line()
+        line("The right notes are listed, but the answer says a word of the question is in no note. Usually a word the note doesn't use (\"say\", \"leave\").")
+        line()
+        let flagged = results.filter { !$0.shouldMiss && $0.partial }
+        if flagged.isEmpty { line("None.") }
+        for result in flagged {
+            line("- **\(result.query.id)** \"\(result.query.query)\" — \(describe(result))")
+        }
+        line()
         line("## Every question")
         line()
         line("| ID | Lang | Question | Wanted | Got (first 5) | Result |")
         line("|---|---|---|---|---|---|")
+        // "partial" marks an answer flagged as covering only part of the question.
         for result in results {
             let wanted = result.shouldMiss ? "no match" : result.query.relevant.joined(separator: ", ")
             let got = result.returned.isEmpty ? "no match" : result.returned.prefix(5).joined(separator: ", ")
                 + (result.returned.count > 5 ? " (+\(result.returned.count - 5))" : "")
-            let verdict = !result.passed ? "FAIL" : result.first ? "pass" : "pass (not first)"
+            var verdict = !result.passed ? "FAIL" : result.first ? "pass" : "pass (not first)"
+            if result.partial { verdict += ", partial" }
             line("| \(result.query.id) | \(result.query.lang) | \(result.query.query.replacingOccurrences(of: "|", with: "\\|")) | \(wanted) | \(got) | \(verdict) |")
         }
         line()

@@ -49,6 +49,24 @@ Owner: "fix causes 1 and 2".
   - A unit test caught the second version: "password" reached "passport" through its stem.
   - The rules were tuned on this same AI-written test set, so the improvement is measured on the test set only.
 
+## Weak point 3: partial answers are now said plainly (ADR-213, same day)
+Owner: "cause 3 should define it better and give better answer not ignore".
+- **Definition:** `RecallCoverage` decides when the listed notes cover only part of a question. Translations and number forms count as one idea.
+- **Find screen:** shows "N PARTIAL MATCHES" and "No saved note mentions “netflix”. The notes below match only “password”."
+- **Voice reply:** says the same and tells the agent not to present the notes as the answer.
+- **Notes stay listed:** they are never hidden.
+- **Search:** question filler words ("say", "leave", "przez", "zostawiłem") are no longer searched.
+
+| | Before | After |
+|---|---|---|
+| Unanswerable questions answered honestly | 5/10 (all "no match") | **10/10** (5 no match, 5 flagged partial) |
+| Answerable questions found / first | 65/66 / 61/66 | 65/66 / 61/66 |
+| Answerable questions wrongly flagged partial | n/a | 12/66 |
+
+- **False alarms:** each of the 12 is true but over-cautious. Example: "No saved note mentions “cheesecake”" while listing the "sernik" recipe. Fewer false alarms needs more translations and word endings, or a non-word method (OP-027).
+- **Not verified:** the Find box and the voice wording are not compiled (no Xcode) or tried on a device.
+- **Not covered:** "Ask Doddy" is not covered.
+
 ## Commands run
 - `scripts/recall_benchmark.sh --update-baseline`: 3 tests pass, and the baseline and report were written.
 - `scripts/recall_benchmark.sh`: 3 tests pass in check mode, and the report is byte-identical across runs.

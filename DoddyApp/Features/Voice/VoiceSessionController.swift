@@ -635,7 +635,7 @@ final class VoiceSessionController {
         case .searchMemories(let query):
             do {
                 let outcome = try await store.recall(query)
-                await reply(call.toolCallId, VoiceToolReply.search(outcome))
+                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
