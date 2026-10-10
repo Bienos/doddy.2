@@ -2,6 +2,7 @@ import { loadConfig } from "./config.js";
 import { createPool, migrate } from "./db.js";
 import { purgeExpiredSessions } from "./calls.js";
 import { runDueDigests } from "./news/digest.js";
+import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue } from "./outbox.js";
 import { providersFrom } from "./providers/index.js";
 
@@ -14,6 +15,7 @@ const log = (msg: string, extra: object = {}) => console.log(JSON.stringify({ ti
 log("worker started", { push: !!push, sms: !!sms });
 
 let stopping = false;
+let lastPrune = 0;
 process.on("SIGTERM", () => { stopping = true; });
 process.on("SIGINT", () => { stopping = true; });
 
@@ -21,6 +23,11 @@ while (!stopping) {
   try {
     const r = await dispatchDue(db, { push, sms });
     await purgeExpiredSessions(db);
+    if (Date.now() - lastPrune > 3_600_000) {
+      lastPrune = Date.now();
+      const pruned = await pruneNewsCache(db);
+      if (pruned) log("news cache pruned", { rows: pruned });
+    }
     const digests = await runDueDigests(db, news);
     if (digests) log("news digests built", { count: digests });
     if (r.processed || r.reaped) log("dispatch pass", r);

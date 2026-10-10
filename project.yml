@@ -23,6 +23,10 @@ settings:
     DEVELOPMENT_TEAM: ""
     # Override this at build time for an isolated simulator install; keep the owner's default.
     DODDY_APP_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
+    # Push notifications from the Doddy messaging server (ADR-142, ADR-174). Off by default so a
+    # free Apple ID can still build to a device (free teams can't use Push). With a paid team that
+    # has Push enabled, set this to DoddyApp/Doddy.entitlements (here or on the xcodebuild line).
+    DODDY_PUSH_ENTITLEMENTS: ""
 targets:
   Doddy:
     type: application
@@ -30,12 +34,6 @@ targets:
     sources:
       - path: DoddyApp
       - path: Shared
-    # Push notifications from the Doddy messaging server (S1, ADR-142). Release/TestFlight signing
-    # switches this to production; running on a device needs a signing team with the Push capability.
-    entitlements:
-      path: DoddyApp/Doddy.entitlements
-      properties:
-        aps-environment: development
     dependencies:
       - target: DoddyWidgets
       - package: DoddyCore
@@ -49,6 +47,7 @@ targets:
       base:
         # Development identifier only; the production identifier is an owner decision.
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER)
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
         PRODUCT_NAME: Doddy
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"

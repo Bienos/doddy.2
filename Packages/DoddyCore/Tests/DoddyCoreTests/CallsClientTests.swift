@@ -3,10 +3,10 @@ import XCTest
 
 final class CallsClientTests: XCTestCase {
     func testPINRulesMatchTheServer() {
-        for bad in ["123", "1111", "1234", "9876", "0123", "12a4", "123456789", "１２３４"] {
+        for bad in ["123", "2580", "11111", "111111", "123456", "987654", "012345", "12a456", "123456789", "１２３４５６"] {
             XCTAssertFalse(CallPIN.isAcceptable(bad), bad)
         }
-        for ok in ["2580", "1357", "904216"] { XCTAssertTrue(CallPIN.isAcceptable(ok), ok) }
+        for ok in ["258025", "135792", "904216", "90421688"] { XCTAssertTrue(CallPIN.isAcceptable(ok), ok) }
     }
 
     func testMemoryCopyUsesCorrectedTextAndSkipsSamples() throws {

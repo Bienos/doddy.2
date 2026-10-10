@@ -3,7 +3,7 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Deps } from "../app.js";
 import {
-  findSession, MAX_PENDING_NOTES, openSession, PIN_LOCK_MINUTES, PIN_MAX_ATTEMPTS, sameSecret, variablesFor,
+  findSession, MAX_PENDING_NOTES, openSession, PIN_MAX_ATTEMPTS, pinLockMinutes, sameSecret, variablesFor,
   type Session,
 } from "../calls.js";
 import { verifyPin } from "../crypto.js";
@@ -83,26 +83,34 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
     const pin = body.data.pin.replace(/\D/g, "");
 
     return inTransaction(db, async (c) => {
-      const { rows } = await c.query<{ pin_hash: string | null; attempts: number; locked: boolean; minutes: number | null }>(
-        `SELECT pin_hash, pin_failed_attempts AS attempts, pin_locked_until > now() AS locked,
+      const { rows } = await c.query<{ pin_hash: string | null; attempts: number; locks: number; locked: boolean; minutes: number | null }>(
+        `SELECT pin_hash, pin_failed_attempts AS attempts, pin_lock_count AS locks, pin_locked_until > now() AS locked,
                 ceil(extract(epoch FROM pin_locked_until - now()) / 60)::int AS minutes
          FROM call_settings WHERE account_id = $1 FOR UPDATE`, [s.accountId]);
       const st = rows[0];
       if (!st?.pin_hash) return { status: "no_pin_set" };
       if (st.locked) return { status: "locked", minutes: st.minutes };
       if (await verifyPin(pin, st.pin_hash)) {
-        await c.query("UPDATE call_settings SET pin_failed_attempts = 0, pin_locked_until = NULL WHERE account_id = $1", [s.accountId]);
+        await c.query("UPDATE call_settings SET pin_failed_attempts = 0, pin_lock_count = 0, pin_locked_until = NULL WHERE account_id = $1", [s.accountId]);
         await c.query("UPDATE call_sessions SET pin_verified_at = now() WHERE id = $1", [s.id]);
         return { status: "verified" };
       }
       const attempts = st.attempts + 1;
       const lock = attempts >= PIN_MAX_ATTEMPTS;
+      const minutes = pinLockMinutes(st.locks);
       await c.query(
         `UPDATE call_settings SET pin_failed_attempts = $2,
+           pin_lock_count = pin_lock_count + CASE WHEN $3 THEN 1 ELSE 0 END,
            pin_locked_until = CASE WHEN $3 THEN now() + make_interval(mins => $4) ELSE pin_locked_until END
          WHERE account_id = $1`,
-        [s.accountId, lock ? 0 : attempts, lock, PIN_LOCK_MINUTES]);
-      return lock ? { status: "locked", minutes: PIN_LOCK_MINUTES } : { status: "wrong_pin", attemptsLeft: PIN_MAX_ATTEMPTS - attempts };
+        [s.accountId, lock ? 0 : attempts, lock, minutes]);
+      if (lock && await canPush(c, s.accountId)) {
+        // Tell the owner: someone may be guessing their PIN. No caller number in the text.
+        await enqueue(c, s.accountId, ["push"],
+          `Someone entered a wrong Doddy PIN ${PIN_MAX_ATTEMPTS} times on a phone call. PIN entry is locked for ${minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`}. If it wasn't you, change your PIN in Doddy.`,
+          new Date(), `pin-lock:${s.accountId}:${st.locks + 1}:${Date.now()}`);
+      }
+      return lock ? { status: "locked", minutes } : { status: "wrong_pin", attemptsLeft: PIN_MAX_ATTEMPTS - attempts };
     });
   });
 
@@ -120,11 +128,14 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
     const cipher = deps.cipher;
     const { rows } = await db.query<{ memory_id: string; ciphertext: Buffer; captured_at: Date | null }>(
       "SELECT memory_id, ciphertext, captured_at FROM memory_copies WHERE account_id = $1", [s.accountId]);
-    const memories = rows.map((r) => ({
-      id: r.memory_id,
-      text: cipher.decrypt(r.ciphertext, `${s.accountId}:memory:${r.memory_id}`),
-      capturedAt: r.captured_at,
-    }));
+    // A row that won't decrypt (e.g. after a key change) is skipped, not a failed call.
+    const memories = rows.flatMap((r) => {
+      try {
+        return [{ id: r.memory_id, text: cipher.decrypt(r.ciphertext, `${s.accountId}:memory:${r.memory_id}`), capturedAt: r.captured_at }];
+      } catch {
+        return [];
+      }
+    });
     const hits = searchMemories(memories, body.data.query);
     if (hits.length === 0) return { status: "no_match" };
     return {

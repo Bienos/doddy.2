@@ -26,4 +26,17 @@ final class NewsClientTests: XCTestCase {
         XCTAssertEqual(map(422, #"{"error":"not_a_feed"}"#), .notAFeed)
         XCTAssertEqual(map(400, #"{"error":"no_topics"}"#), .notEnabled("no_topics"))
     }
+
+    func testDigestDeliveryTextNeverOverclaims() throws {
+        func digest(_ status: String, _ error: String? = nil) throws -> NewsDigest {
+            let errorJSON = error.map { "\"\($0)\"" } ?? "null"
+            let json = #"{"id":"6f1c2b1e-1d9a-4c55-9a51-0b1b6f5f1a01","status":"\#(status)","aiWritten":false,"errorCode":\#(errorJSON),"createdAt":"2026-10-10T08:00:00Z","items":[]}"#
+            return try JSONDecoder().decode(NewsDigest.self, from: Data(json.utf8))
+        }
+        XCTAssertEqual(try digest("queued").deliveryText, "Sent to you")
+        XCTAssertEqual(try digest("ready").deliveryText, "In the app only")
+        XCTAssertTrue(try digest("ready", "no_channel").deliveryText.contains("nothing was sent"))
+        XCTAssertEqual(try digest("empty", "no_topics").deliveryText, "Nothing new that day")
+        XCTAssertFalse(try digest("failed", "build_error").deliveryText.contains("Sent"))
+    }
 }

@@ -93,7 +93,8 @@ public struct NewsDigest: Equatable, Sendable, Decodable, Identifiable {
     }
 
     public let id: UUID
-    /// queued (handed to notifications/texts), empty (nothing new), failed, building.
+    /// queued (handed to notifications/texts), ready (kept for the app only, nothing sent),
+    /// empty (nothing new), failed, building.
     public let status: String
     public let aiWritten: Bool
     public let errorCode: String?
@@ -101,6 +102,19 @@ public struct NewsDigest: Equatable, Sendable, Decodable, Identifiable {
     public let items: [Item]
 
     public var createdDate: Date? { ServerDates.parse(createdAt) }
+
+    /// How this digest reached the user, never claiming more than the server recorded.
+    public var deliveryText: String {
+        switch status {
+        case "queued": "Sent to you"
+        case "ready": errorCode == "no_channel"
+            ? "Only here: notifications or texts weren't on, so nothing was sent"
+            : "In the app only"
+        case "empty": "Nothing new that day"
+        case "building": "Being put together"
+        default: "Couldn't be put together"
+        }
+    }
 }
 
 public struct FeedCheck: Equatable, Sendable, Decodable {

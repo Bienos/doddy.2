@@ -52,7 +52,7 @@ struct NewsSettingsView: View {
             Toggle("Notification", isOn: $model.push)
             Toggle("Text message", isOn: $model.sms)
             NavigationLink("Notifications and texts setup") { UpdatesSettingsView() }
-            Text("Notifications show a short list; tap it and the links are below. Texts include up to three links and may cost the usual SMS rate.")
+            Text("Notifications show a short list; tap it and the links are below. Texts include up to three links and may cost the usual SMS rate. With both off, your news is kept here in the app only and nothing is sent.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -131,13 +131,9 @@ struct NewsSettingsView: View {
             Section("Recent") {
                 ForEach(model.digests) { digest in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("\(DateText.full(digest.createdDate))\(digest.aiWritten ? " · written by AI" : "")")
+                        Text("\(DateText.full(digest.createdDate))\(digest.aiWritten ? " · written by AI" : "") · \(digest.deliveryText)")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
-                        if digest.items.isEmpty {
-                            Text(digest.status == "empty" ? "Nothing new that day." : "Not sent.")
-                                .foregroundStyle(Theme.secondaryText)
-                        }
                         ForEach(digest.items, id: \.url) { item in
                             if let url = URL(string: item.url) {
                                 Link(destination: url) {

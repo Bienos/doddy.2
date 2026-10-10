@@ -24,7 +24,13 @@ const schema = z.object({
 
   // S2 phone calls
   MEMORY_ENCRYPTION_KEY: optional, // base64 of 32 random bytes
-  ELEVENLABS_TOOL_SECRET: optional, // shared with ElevenLabs as a workspace secret
+  // Shared with ElevenLabs as a workspace secret; at least 32 characters (openssl rand -base64 32).
+  ELEVENLABS_TOOL_SECRET: z.string().min(32, "ELEVENLABS_TOOL_SECRET must be at least 32 characters").optional(),
+  // Proxies in front of the server that append to X-Forwarded-For (Render: 1). The client IP is
+  // read that many entries from the right, so a client can't pick its own rate-limit bucket.
+  TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
+  // Verify codes the whole server may start per UTC day (SMS cost cap).
+  VERIFY_DAILY_CAP: z.coerce.number().int().positive().default(200),
   ELEVENLABS_PHONE_AGENT_ID: optional,
   ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
   // News digests
@@ -42,6 +48,8 @@ export interface PhoneAgentConfig { apiKey: string; agentId: string; phoneNumber
 export interface Config {
   databaseUrl: string;
   port: number;
+  trustProxyHops: number;
+  verifyDailyCap: number;
   publicBaseUrl?: string;
   apns?: ApnsConfig;
   twilio?: TwilioConfig;
@@ -60,6 +68,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     databaseUrl: e.DATABASE_URL,
     port: e.PORT,
+    trustProxyHops: e.TRUST_PROXY_HOPS,
+    verifyDailyCap: e.VERIFY_DAILY_CAP,
     publicBaseUrl: e.PUBLIC_BASE_URL?.replace(/\/$/, ""),
     apns: all<ApnsConfig>({
       teamId: e.APNS_TEAM_ID, keyId: e.APNS_KEY_ID,

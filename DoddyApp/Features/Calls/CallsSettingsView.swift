@@ -76,18 +76,18 @@ struct CallsSettingsView: View {
 
         Section("Your PIN") {
             StatusRow(title: "PIN", value: s.pinLocked ? "Locked for a few minutes" : s.pinSet ? "Set" : "Not set")
-            SecureField(s.pinSet ? "New PIN (4–8 digits)" : "PIN (4–8 digits)", text: $pinInput)
+            SecureField(s.pinSet ? "New PIN (6–8 digits)" : "PIN (6–8 digits)", text: $pinInput)
                 .keyboardType(.numberPad)
                 .textContentType(.newPassword)
                 .accessibilityIdentifier("calls.pin")
             Button(s.pinSet ? "Change PIN" : "Set PIN") {
                 Task { await model.setPIN(pinInput); pinInput = "" }
             }
-            .disabled(pinInput.count < 4)
+            .disabled(pinInput.count < 6)
             if s.pinSet {
                 Button("Remove PIN", role: .destructive) { Task { await model.removePIN() } }
             }
-            Text("On every call, Doddy asks for this PIN before looking at your memories or taking a note, because a caller's number can be faked.")
+            Text("On every call, Doddy asks for this PIN before looking at your memories or taking a note, because a caller's number can be faked. After five wrong tries PIN entry locks, for longer each time, and you get a notification.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }

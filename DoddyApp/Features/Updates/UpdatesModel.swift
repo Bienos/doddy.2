@@ -71,6 +71,10 @@ final class UpdatesModel {
                 self.pushState = .on
             } catch PushRegistrationError.denied {
                 self.pushState = .deniedInSettings
+            } catch let error where !(error is ServerError) {
+                // iOS refused to register: usually a build signed without the Push capability
+                // (free Apple ID, DODDY_PUSH_ENTITLEMENTS empty). Say so instead of a raw error.
+                self.message = "This build of Doddy can't receive notifications (it needs an Apple developer team with Push Notifications). Daily news still works in the app."
             }
         }
     }
@@ -187,7 +191,7 @@ final class UpdatesModel {
         case .phoneRejected: return "That number can't receive codes. Check it and try again."
         case .unsafeURL: return "Doddy can't use that address. Use a public web address (https://…)."
         case .notAFeed: return "That address didn't return a news feed. Look for an RSS or Atom link on the site."
-        case .weakPIN: return "Choose a PIN that's harder to guess: not one repeated digit or a run like 1234."
+        case .weakPIN: return "Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456."
         case .invalidRequest: return "Something in that request wasn't accepted. Nothing was changed."
         case .rateLimited: return "Too many tries. Wait a while and try again."
         case .providerUnavailable: return "The text service didn't answer. Try again in a moment."

@@ -4,6 +4,15 @@ import type { Db } from "./db.js";
 export const SESSION_HOURS = 2;
 export const PIN_MAX_ATTEMPTS = 5;
 export const PIN_LOCK_MINUTES = 15;
+
+/**
+ * Lockouts escalate and the count only resets after a correct PIN or a new PIN (ADR-175):
+ * 15 min, 1 h, 4 h, 16 h, then 24 h each time. Five guesses per lockout, so a caller who keeps
+ * guessing gets about 25 tries in the first day and 5 a day after that.
+ */
+export function pinLockMinutes(previousLocks: number): number {
+  return Math.min(PIN_LOCK_MINUTES * 4 ** previousLocks, 24 * 60);
+}
 export const OUTBOUND_DAILY_LIMIT = 10;
 export const MAX_PENDING_NOTES = 20;
 

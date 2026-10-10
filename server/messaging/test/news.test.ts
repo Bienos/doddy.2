@@ -6,7 +6,7 @@ import { pushBody, smsBody } from "../src/news/compose.js";
 import { runDueDigests, buildDigest, type NewsDeps } from "../src/news/digest.js";
 import { parseFeed, type NewsItem } from "../src/news/feeds.js";
 import { shortlist } from "../src/news/rank.js";
-import { checkUrl, isPublicAddress, safeFetchText } from "../src/news/safeFetch.js";
+import { checkUrl, isPublicAddress, requestOnce, safeFetchText } from "../src/news/safeFetch.js";
 import { nextRunAt } from "../src/news/schedule.js";
 import type { FeedSource, NewsSearch } from "../src/news/sources.js";
 import http from "node:http";
@@ -50,6 +50,27 @@ test("custom feed URLs cannot reach private addresses", async () => {
     assert.throws(() => checkUrl(u), Error, u);
   }
   await assert.rejects(safeFetchText("http://127.0.0.1/feed.xml"));
+  // IPv6 forms that can carry an IPv4 address (IPv4-compatible, NAT64, 6to4, Teredo).
+  for (const a of ["::7f00:1", "64:ff9b:1::a00:1", "2002:7f00:1::1", "2001:0:4136:e378::1"]) assert.equal(isPublicAddress(a), false, a);
+  assert.equal(isPublicAddress("2606:4700:4700::1111"), true);
+});
+
+test("a feed that drips bytes is cut off at the overall deadline", { timeout: 5000 }, async () => {
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200, { "content-type": "application/rss+xml" });
+    const timer = setInterval(() => res.write("<"), 100); // never idle long enough for a socket timeout
+    res.on("close", () => clearInterval(timer));
+  });
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  const port = (server.address() as { port: number }).port;
+  const started = Date.now();
+  try {
+    await assert.rejects(requestOnce(new URL(`http://127.0.0.1:${port}/feed`), Date.now() + 600, 2 * 1024 * 1024), /timeout/);
+    assert.ok(Date.now() - started < 3000, "stopped near the deadline");
+  } finally {
+    server.closeAllConnections();
+    server.close();
+  }
 });
 
 test("shortlist: fresh, unsent, deduplicated, keyword-matched, max 3 per source", () => {
@@ -236,14 +257,41 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     writer.next = (i) => [{ id: "s99", line: "made up" }, ...i.candidates.slice(0, 1).map((c) => ({ id: c.id, line: "ok" }))];
   });
 
-  test("no usable channel at send time is recorded, not hidden", async () => {
+  test("the feed cache never stores a user's feed URL", async () => {
+    const { rows } = await db.query<{ key: string }>("SELECT key FROM news_cache");
+    assert.ok(rows.length > 0, "earlier tests filled the cache");
+    for (const r of rows) assert.match(r.key, /^[0-9a-f]{64}$/);
+  });
+
+  test("no usable channel at send time: kept for the app, recorded, nothing sent", async () => {
     const { accountId, h } = await user();
     await put(h, settings());
     await app.inject({ method: "DELETE", url: "/v1/device/push-token", headers: h });
     feeds.feeds.get("https://feeds.bbci.co.uk/news/technology/rss.xml")!.push(item("Another", "https://bbc.co.uk/t4", "BBC", 1));
     await db.query("DELETE FROM news_cache");
     const r = await buildDigest(db, news, accountId, "manual", NOW);
-    assert.deepEqual([r.status, r.errorCode], ["failed", "no_channel"]);
+    assert.deepEqual([r.status, r.errorCode], ["ready", "no_channel"]);
+    const { rows: queued } = await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [accountId]);
+    assert.equal(queued.length, 0, "nothing goes to the outbox");
+    const list = (await app.inject({ method: "GET", url: "/v1/news/digests", headers: h })).json();
+    assert.equal(list.digests[0].status, "ready");
+    assert.ok(list.digests[0].items.length > 0, "the app can read it");
+  });
+
+  test("in the app only: no channels needed, no push token needed, digest readable", async () => {
+    const { accountId, h } = await user(false);
+    assert.equal((await put(h, settings({ channels: [] }))).statusCode, 200);
+    const s = (await app.inject({ method: "GET", url: "/v1/news/settings", headers: h })).json();
+    assert.deepEqual(s.channels, []);
+    feeds.feeds.get("https://feeds.bbci.co.uk/news/technology/rss.xml")!.push(item("In-app story", "https://bbc.co.uk/t5", "BBC", 1));
+    await db.query("DELETE FROM news_cache");
+    const r = await buildDigest(db, news, accountId, "manual", NOW);
+    assert.deepEqual([r.status, r.errorCode], ["ready", undefined]);
+    const { rows: queued } = await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [accountId]);
+    assert.equal(queued.length, 0);
+    const list = (await app.inject({ method: "GET", url: "/v1/news/digests", headers: h })).json();
+    assert.deepEqual([list.digests[0].status, list.digests[0].errorCode], ["ready", null]);
+    assert.ok(list.digests[0].items.length > 0, "the app can read it");
   });
 
   test("feed check and send-now endpoints", async () => {

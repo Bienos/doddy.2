@@ -15,7 +15,10 @@ export const accountRoutes = (deps: Deps): FastifyPluginAsync => async (app) => 
   const auth = requireDevice(db);
 
   // Anonymous account: no email, no name. The app keeps the returned token in the Keychain.
-  app.post("/v1/accounts", { config: { rateLimit: { max: 10, timeWindow: "1 hour" } } }, async (_req, reply) => {
+  // Limited per client IP only: no Authorization header can buy a fresh bucket here (ADR-175).
+  app.post("/v1/accounts", {
+    config: { rateLimit: { max: 10, timeWindow: "1 hour", keyGenerator: (req) => "ip:" + req.ip } },
+  }, async (_req, reply) => {
     const accountId = randomUUID();
     const deviceId = randomUUID();
     const { token, hash } = newDeviceToken();

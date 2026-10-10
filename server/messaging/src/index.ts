@@ -10,6 +10,7 @@ const providers = providersFrom(config);
 const app = await buildApp({
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
+  trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap,
 });
 app.log.info({
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,

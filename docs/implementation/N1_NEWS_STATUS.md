@@ -24,7 +24,7 @@ Worker (every ~2 s) runDueDigests ── claims due accounts (FOR UPDATE SKIP LO
 ```
 
 ## How to connect it (owner)
-Step-by-step guide: `GO_LIVE_DAILY_NEWS.md`. The digest needs a way to reach the phone, either notifications (Apple Developer Program + APNs key) or texts (Twilio); with neither it is recorded as failed (`no_channel`).
+Step-by-step guide: `GO_LIVE_DAILY_NEWS.md`. Since ADR-174 every digest is kept for the app; notifications (Apple Developer Program + APNs key) and texts (Twilio) are optional. With neither, Daily news works "in the app only".
 1. **Anthropic:** create an API key and set `ANTHROPIC_API_KEY` on the server (Render env group). Without it, digests are plain headlines.
 2. **GNews:** sign up at gnews.io and pick a **paid plan**. The free plan has a 12-hour delay and limits commercial use. Set `GNEWS_API_KEY`. Without it, own-keyword topics match only stories in the RSS feeds.
 3. Nothing else: RSS feeds need no account. The worker already runs the scheduler.

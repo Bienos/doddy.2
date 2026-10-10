@@ -76,15 +76,15 @@ final class NewsModel {
             timezone: TimeZone.current.identifier,
             channels: (push ? [UpdateChannel.push] : []) + (sms ? [.sms] : []),
             language: language, topics: topics, feeds: feeds)
-        guard !update.channels.isEmpty else {
-            message = "Choose notifications, texts, or both."
-            return
-        }
         await run {
             try await client.saveNewsSettings(update)
             self.apply(try await client.newsSettings())
             self.catalog = try await client.newsCatalog(language: self.language)
-            self.message = self.enabled ? "Saved. Your next news is \(self.nextRunText ?? "scheduled")." : "Saved. Daily news is off."
+            // No channel chosen: the digest is kept here in the app and nothing is sent (ADR-174).
+            let whereText = update.channels.isEmpty ? " It will be here in the app; nothing is sent to you." : ""
+            self.message = self.enabled
+                ? "Saved. Your next news is \(self.nextRunText ?? "scheduled").\(whereText)"
+                : "Saved. Daily news is off."
         }
     }
 
@@ -94,10 +94,11 @@ final class NewsModel {
             let result = try await client.sendNewsNow()
             self.message = switch result.status {
             case "queued": "On its way\(result.aiWritten ? "" : " (headlines only)"). It appears below too."
+            case "ready": result.errorCode == "no_channel"
+                ? "It's below. Nothing was sent: notifications or texts aren't on for this iPhone."
+                : "It's below\(result.aiWritten ? "" : " (headlines only)")."
             case "empty": "Nothing new for your topics right now."
-            default: result.errorCode == "no_channel"
-                ? "Couldn't send: turn on notifications or texts in Notifications and texts."
-                : "Couldn't build your news right now. Try again later."
+            default: "Couldn't build your news right now. Try again later."
             }
             self.digests = (try? await client.newsDigests()) ?? self.digests
         }

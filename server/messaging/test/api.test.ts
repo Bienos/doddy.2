@@ -172,6 +172,48 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await call("GET", "/v1/phone", a.headers)).statusCode, 401);
   });
 
+  test("rate limits can't be dodged with a made-up Authorization or X-Forwarded-For header", async () => {
+    // Its own app, so its limiter starts empty. Behind one proxy hop the client IP is the
+    // right-most X-Forwarded-For entry, which here is the test client's own address.
+    const own = await testApp(db, { trustProxyHops: 1 });
+    try {
+      const statuses: number[] = [];
+      for (let i = 0; i < 12; i++) {
+        const r = await own.app.inject({
+          method: "POST", url: "/v1/accounts",
+          headers: { authorization: `Bearer made-up-${i}`, "x-forwarded-for": `203.0.113.${i}, 198.51.100.7` },
+        });
+        statuses.push(r.statusCode);
+      }
+      assert.deepEqual(statuses.slice(0, 10), Array(10).fill(201));
+      assert.deepEqual(statuses.slice(10), [429, 429]);
+    } finally {
+      await own.app.close();
+    }
+  });
+
+  test("verify codes are capped per destination number, whichever account asks", async () => {
+    const own = await testApp(db);
+    try {
+      const target = "+48500999001";
+      const statuses: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        const acc = (await own.app.inject({ method: "POST", url: "/v1/accounts" })).json() as { deviceToken: string };
+        const r = await own.app.inject({
+          method: "POST", url: "/v1/phone/verification",
+          headers: { authorization: `Bearer ${acc.deviceToken}` }, payload: { phone: target },
+        });
+        statuses.push(r.statusCode);
+      }
+      assert.deepEqual(statuses, [202, 202, 202, 429]);
+      assert.equal(own.verifier.started.filter((p: string) => p === target).length, 3);
+      const { rows } = await db.query("SELECT 1 FROM phone_verification_starts WHERE phone_hash::text LIKE '%48500999001%'");
+      assert.equal(rows.length, 0, "only a hash of the number is stored");
+    } finally {
+      await own.app.close();
+    }
+  });
+
   test("features without provider credentials answer 503, not a fake success", async () => {
     const bare = await testApp(db, { push: undefined, sms: undefined, verifier: undefined });
     const r = await bare.app.inject({ method: "POST", url: "/v1/accounts" });
