@@ -91,6 +91,9 @@ final class VoiceSessionController {
     private let devices = DeviceConnections()
     private var conversation: Conversation?
     private var startedAt: Date?
+    /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
+    /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
+    var isPrivate = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
 
@@ -246,12 +249,13 @@ final class VoiceSessionController {
     }
 
     /// Keeps the transcript lines of this conversation on the phone, once, so the next
-    /// conversation can continue from it. Nothing is kept when there were no lines or when the
-    /// user switched "Remember recent conversations" off.
+    /// conversation can continue from it. Nothing is kept when there were no lines, when the
+    /// user switched "Remember recent conversations" off, or when this conversation is private.
     private func keepLog() {
         logUnanswered()
         guard let startedAt else { return }
         self.startedAt = nil
+        guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
         logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept))
     }

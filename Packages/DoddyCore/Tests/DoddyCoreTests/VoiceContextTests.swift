@@ -77,4 +77,11 @@ final class VoiceContextTests: XCTestCase {
         let data = try JSONEncoder().encode([log])
         XCTAssertEqual(try JSONDecoder().decode([ConversationLog].self, from: data), [log])
     }
+
+    func testPrivateConversationsAreNeverKept() {
+        XCTAssertTrue(ConversationRetention.shouldKeep(rememberRecent: true, isPrivate: false, lineCount: 3))
+        XCTAssertFalse(ConversationRetention.shouldKeep(rememberRecent: true, isPrivate: true, lineCount: 3))
+        XCTAssertFalse(ConversationRetention.shouldKeep(rememberRecent: false, isPrivate: false, lineCount: 3))
+        XCTAssertFalse(ConversationRetention.shouldKeep(rememberRecent: true, isPrivate: false, lineCount: 0))
+    }
 }
