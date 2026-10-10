@@ -124,6 +124,16 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .messages, title: "Draft a \(kind)", detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             return describe(cloud: call.name)
+        case .addToList(let request):
+            return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .readList(let name):
+            return ActivityRequest(app: .memories, title: "Read a list", detail: "“\(name)”", isLookup: true)
+        case .checkOff(let request):
+            return ActivityRequest(app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .removeFromList(let request):
+            return ActivityRequest(app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .createList(let request):
+            return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", isLookup: false)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-209).

@@ -58,7 +58,7 @@ public struct DataFlowRow: Equatable, Identifiable, Sendable {
 public enum DataFlow {
     public static func rows(_ state: DataFlowState) -> [DataFlowRow] {
         let apps = state.pauseAll ? [] : state.connectionsOn
-        var voice = ["your voice", "the conversation", "your saved notes", "your personality settings"]
+        var voice = ["your voice", "the conversation", "your saved notes", "your list names (items only when Doddy reads or changes a list)", "your personality settings"]
         if state.rememberConversations { voice.append("your last few conversations") }
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
         if !apps.isEmpty { voice.append("calendar entries, reminders, contact names or drafts Doddy uses (\(names(apps)))") }

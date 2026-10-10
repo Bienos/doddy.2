@@ -4,6 +4,8 @@ import SwiftUI
 enum PreferenceKey {
     /// Off by default (owner decision D4): note reminders never carry the note text unless turned on.
     static let showNoteTextInNotifications = "showNoteTextInNotifications"
+    /// Memories shows Lists instead of Notes (ADR-210).
+    static let memoriesShowsLists = "memoriesShowsLists"
     static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
     /// Memories list order (`MemorySort` raw value); display only (ADR-186).
@@ -182,7 +184,9 @@ private struct UndoDeleteBar: View {
         HStack(spacing: 12) {
             Image(systemName: failed ? "exclamationmark.triangle" : "trash")
                 .foregroundStyle(failed ? Theme.error : Theme.secondaryText)
-            Text(failed ? "Couldn't bring the note back." : "Note deleted.")
+            Text(failed
+                 ? "Couldn't bring the \(deleted.record.category == .list ? "list" : "note") back."
+                 : deleted.record.category == .list ? "List deleted." : "Note deleted.")
                 .font(.subheadline)
             Spacer(minLength: 8)
             if !failed {

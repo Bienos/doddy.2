@@ -35,6 +35,8 @@ struct AppEnvironment: Sendable {
     let privacy: PrivacyDefaults
     /// Set when the memory store could not be opened. Nothing is reset or deleted in that case.
     let storageProblem: String?
+    /// Lists (ADR-210), in the same SQLite file as the notes.
+    var listRepository: any ListRepository = UnavailableListRepository()
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -72,7 +74,8 @@ struct AppEnvironment: Sendable {
                 // Notifications, texts, calls and news say "needs setup" until a messaging server is set.
                 capabilities: .shipping(serverConfigured: ServerConfig.baseURL() != nil),
                 privacy: .v1Voice,
-                storageProblem: nil)
+                storageProblem: nil,
+                listRepository: SQLiteListRepository(database: database))
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

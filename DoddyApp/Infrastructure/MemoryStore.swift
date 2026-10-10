@@ -8,7 +8,13 @@ import Observation
 @Observable
 final class MemoryStore {
     let environment: AppEnvironment
+    /// Notes only. Lists (ADR-210) are `memories` rows too, but live in `lists` with their items.
     private(set) var memories: [MemoryRecord] = []
+    private(set) var lists: [DoddyList] = []
+    /// Items of the list deleted a moment ago, put back together with it on Undo.
+    private var recentlyDeletedItems: [ListItem] = []
+    /// The last list change made on screen or by voice, for its Undo (memory only).
+    var listUndo: ListUndo?
     private(set) var hasLoaded = false
     private(set) var loadError: String?
     /// Bumped on every reload so searches re-run after edits and deletes.
@@ -24,11 +30,14 @@ final class MemoryStore {
 
     var isStorageAvailable: Bool { environment.capabilities.isAvailable(.memoryStorage) }
 
-    func record(id: UUID) -> MemoryRecord? { memories.first { $0.id == id } }
+    func record(id: UUID) -> MemoryRecord? { memories.first { $0.id == id } ?? list(id: id)?.record }
+
+    func list(id: UUID) -> DoddyList? { lists.first { $0.id == id } }
 
     func reload() async {
         do {
-            memories = try await environment.memoryRepository.list(limit: nil)
+            memories = try await environment.memoryRepository.list(limit: nil).filter { $0.category != .list }
+            lists = (try? await environment.listRepository.lists()) ?? []
             loadError = nil
         } catch {
             loadError = UserFacingError.message(for: error)
@@ -65,6 +74,7 @@ final class MemoryStore {
     /// The memory's note reminder row is deleted with it (same database); its notification after.
     func delete(id: UUID) async throws {
         let copy = self.record(id: id)
+        recentlyDeletedItems = list(id: id)?.items ?? []
         let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
         if let reminderID { await environment.noteReminders?.memoryDeleted(reminderID: reminderID) }
@@ -81,6 +91,10 @@ final class MemoryStore {
             return
         }
         _ = try await environment.memoryRepository.restore([deleted.record])
+        if !recentlyDeletedItems.isEmpty {
+            _ = try await environment.listRepository.restore(recentlyDeletedItems)
+            recentlyDeletedItems = []
+        }
         if recentlyDeleted == deleted { recentlyDeleted = nil }
         await reload()
     }

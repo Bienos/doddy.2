@@ -36,8 +36,16 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
 
     public func currentText(ofMemory memoryID: UUID) async throws -> String? {
         try await dbQueue.read { db in
-            try String.fetchOne(
-                db, sql: "SELECT current_text FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
+            guard let row = try Row.fetchOne(
+                db, sql: "SELECT current_text, category FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
+            else { return nil }
+            let text: String = row["current_text"]
+            // A list's reminder shows what is still open (ADR-210), rewritten when the list changes.
+            guard (row["category"] as String) == MemoryCategory.list.rawValue else { return text }
+            let open = try String.fetchAll(
+                db, sql: "SELECT text FROM list_items WHERE list_id = ? AND done_at_ms IS NULL ORDER BY position",
+                arguments: [memoryID.uuidString])
+            return open.isEmpty ? "\(text): nothing left" : "\(text): \(open.joined(separator: ", "))"
         }
     }
 

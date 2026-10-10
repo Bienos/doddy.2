@@ -1,5 +1,5 @@
-# Lists by voice: design (ADR-210, proposed)
-Owner, 2026-10-10: "design lists by voice". Canvas: **Doddy Lists** (screens 1–9 and a rules board). **Nothing here is built.** Decisions L1–L6 are open.
+# Lists by voice: design (ADR-210)
+Owner, 2026-10-10: "design lists by voice", then "approved, build it" (L1–L6 as proposed). Canvas: **Doddy Lists** (screens 1–9 and a rules board). **Built: see `docs/implementation/LISTS_STATUS.md`** (not compiled with Xcode; no live conversation run).
 
 ## The job
 "Add milk to my shopping list." "What's on my packing list?" "Got the eggs." Small lists you build up over days, mostly by voice, and check in a shop or before a trip.
@@ -71,7 +71,7 @@ Owner, 2026-10-10: "design lists by voice". Canvas: **Doddy Lists** (screens 1�
   - reminder text rewritten on change.
 
 ## Decisions
-| ID | Question | Proposed |
+| ID | Question | Owner: approved as proposed (a) |
 |---|---|---|
 | L1 | Adding by voice | **(a)** straight on when asked, with a receipt and Undo; (b) a card every time |
 | L2 | New list by voice | **(a)** a card to confirm the name; (b) made straight away |

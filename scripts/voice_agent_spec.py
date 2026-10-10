@@ -57,7 +57,12 @@ def check(tools, session, instructions):
             if req not in props:
                 errors.append(f"{where}: required '{req}' is not a property")
         for pname, prop in props.items():
-            if prop.get("type") not in {"string", "number", "integer", "boolean"}:
+            if prop.get("type") == "array":
+                # Only lists of strings (list items, ADR-210); each element needs a description.
+                items = prop.get("items", {})
+                if items.get("type") != "string" or not items.get("description", "").strip():
+                    errors.append(f"{where}.{pname}: an array must hold described strings")
+            elif prop.get("type") not in {"string", "number", "integer", "boolean"}:
                 errors.append(f"{where}.{pname}: unsupported type {prop.get('type')!r}")
             if not prop.get("description", "").strip():
                 errors.append(f"{where}.{pname}: missing description")
@@ -120,6 +125,8 @@ def _el_param(prop, constant=None):
     out = {"type": prop["type"] if prop else type_of(constant), "description": prop.get("description", "") if prop else ""}
     if prop and "enum" in prop:
         out["enum"] = prop["enum"]
+    if prop and prop.get("type") == "array":
+        out["items"] = {"type": "string", "description": prop["items"]["description"]}
     if constant is not None:
         out["constant_value"] = constant
     return out

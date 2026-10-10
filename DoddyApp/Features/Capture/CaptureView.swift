@@ -67,7 +67,7 @@ struct CaptureView: View {
                         Text("No folders. Your words, exactly.").font(.caption).foregroundStyle(Theme.secondaryText)
                         DisclosureGroup("Optional note type") {
                             Picker("Type", selection: $category) {
-                                ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                                ForEach(MemoryCategory.noteCategories, id: \.self) { Text($0.displayName).tag($0) }
                             }.pickerStyle(.menu)
                         }.font(.subheadline).disabled(isSaving)
                         Label("Only this detail is saved on this iPhone. You can edit or delete it later.", systemImage: "lock")
