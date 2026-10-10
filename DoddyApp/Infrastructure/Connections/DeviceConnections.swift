@@ -20,6 +20,14 @@ final class DeviceConnections {
         case unconfirmed
     }
 
+    enum ReminderOutcome: Equatable {
+        case added
+        /// Doddy had already added this reminder and it isn't done yet; nothing new was added.
+        case alreadyThere
+        /// Saved, but reading it back failed. The agent must tell the user to check.
+        case unconfirmed
+    }
+
     struct ContactMatch: Identifiable, Equatable {
         let id: String
         let name: String
@@ -146,12 +154,18 @@ final class DeviceConnections {
 
     // MARK: Reminders
 
-    func addReminder(_ draft: ReminderDraft, calendar: Calendar) throws -> AddOutcome {
+    /// Adds the reminder unless Doddy already added the same one (same text and due time, not yet
+    /// done), then reads it back by its marker. A repeated request or a "try again" after an
+    /// unconfirmed add therefore never creates a second copy (ReminderKey).
+    func addReminder(_ draft: ReminderDraft, calendar: Calendar) async throws -> ReminderOutcome {
+        let key = ReminderKey.key(for: draft, calendar: calendar)
+        if await hasIncompleteReminder(withKey: key) { return .alreadyThere }
         guard let list = eventStore.defaultCalendarForNewReminders() else { throw Failure.noDefaultReminderList }
         let reminder = EKReminder(eventStore: eventStore)
         reminder.calendar = list
         reminder.title = draft.title
         reminder.notes = draft.notes
+        reminder.url = ReminderKey.markerURL(for: draft, calendar: calendar)
         if let due = draft.due {
             let units: Set<Calendar.Component> = draft.dueHasTime ? [.year, .month, .day, .hour, .minute] : [.year, .month, .day]
             var components = calendar.dateComponents(units, from: due)
@@ -159,7 +173,20 @@ final class DeviceConnections {
             reminder.dueDateComponents = components
         }
         try eventStore.save(reminder, commit: true)
-        return eventStore.calendarItem(withIdentifier: reminder.calendarItemIdentifier) != nil ? .verified : .unconfirmed
+        return await hasIncompleteReminder(withKey: key) ? .added : .unconfirmed
+    }
+
+    private func hasIncompleteReminder(withKey key: String) async -> Bool {
+        // All reminders, filtered here: this includes ones with no due date.
+        let predicate = eventStore.predicateForReminders(in: nil)
+        return await withCheckedContinuation { continuation in
+            // EventKit calls back on its own queue: @Sendable so the closure isn't main-actor code.
+            eventStore.fetchReminders(matching: predicate) { @Sendable reminders in
+                continuation.resume(returning: (reminders ?? []).contains {
+                    !$0.isCompleted && ReminderKey.key(fromMarker: $0.url) == key
+                })
+            }
+        }
     }
 
     /// Incomplete reminders due by `end` (overdue included), for Home → Today. Title and due

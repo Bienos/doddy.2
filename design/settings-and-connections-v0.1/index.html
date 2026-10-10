@@ -1,0 +1,837 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Doddy Connections Study</title>
+<meta name="description" content="Design study: Doddy Settings, connecting iPhone apps, and using several apps in one request. Fictional data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap">
+<style>
+/* Layout: a review desk. Screen index | one phone (Pocket Notebook) | design notes + review controls. */
+:root{
+  /* Pocket Notebook semantic tokens (design/interface-v1.2/docs/DESIGN-SYSTEM.md), light */
+  --ink:#171715; --paper:#FFF7E9; --orange:#F58A24; --muted:#655F56; --surface:#F5EAD8;
+  --line:#DFD5C6; --accent-text:#A64B00; --ok:#326746; --err:#A3342E;
+  /* Review desk around the phone */
+  --desk:#E9E2D4; --desk-ink:#22201C; --desk-muted:#5E584E; --desk-line:#CFC6B6; --desk-card:#F4EEE3;
+  --hand:"Caveat","Bradley Hand","Segoe Print",cursive;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --ink:#FFF7E9; --paper:#171F29; --muted:#C5BCAD; --surface:#252E39; --line:#414953; --accent-text:#FFB56B; --ok:#97CEA6; --err:#FFAAA1;
+  --desk:#0F141B; --desk-ink:#EDE6D9; --desk-muted:#A99F90; --desk-line:#2C3540; --desk-card:#161D26; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --ink:#FFF7E9; --paper:#171F29; --muted:#C5BCAD; --surface:#252E39; --line:#414953; --accent-text:#FFB56B; --ok:#97CEA6; --err:#FFAAA1;
+  --desk:#0F141B; --desk-ink:#EDE6D9; --desk-muted:#A99F90; --desk-line:#2C3540; --desk-card:#161D26; color-scheme:dark}
+/* Phone appearance override from the review controls */
+.phone[data-look="light"]{--ink:#171715;--paper:#FFF7E9;--muted:#655F56;--surface:#F5EAD8;--line:#DFD5C6;--accent-text:#A64B00;--ok:#326746;--err:#A3342E;color-scheme:light}
+.phone[data-look="dark"]{--ink:#FFF7E9;--paper:#171F29;--muted:#C5BCAD;--surface:#252E39;--line:#414953;--accent-text:#FFB56B;--ok:#97CEA6;--err:#FFAAA1;color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--desk);color:var(--desk-ink);font-family:var(--ui);font-size:15px;line-height:1.5;padding-inline:16px;padding-block:0 48px}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent-text);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- desk ---------- */
+.desk-head{max-width:1280px;margin:0 auto;padding-block:36px 24px;display:grid;gap:10px;border-bottom:1px solid var(--desk-line)}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:650;color:var(--desk-muted)}
+.desk-head h1{font-family:var(--hand);font-weight:700;font-size:clamp(44px,7vw,68px);line-height:.95;margin:4px 0 0;text-wrap:balance}
+.desk-head p{max-width:64ch;margin:0;color:var(--desk-muted)}
+.truth{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.truth span{font-size:12px;border:1px solid var(--desk-line);border-radius:999px;padding:3px 10px;color:var(--desk-muted)}
+.desk{max-width:1280px;margin:0 auto;padding-block:28px 0;display:grid;grid-template-columns:200px 390px minmax(0,1fr);gap:32px;align-items:start}
+.index{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:grid;gap:2px}
+.index h2,.notes h2,.controls h2{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:650;color:var(--desk-muted);margin:0 0 8px}
+.index button{display:flex;gap:10px;align-items:baseline;text-align:left;border:0;background:none;padding:7px 10px;border-radius:10px;color:var(--desk-ink);font-size:14px}
+.index button small{font-variant-numeric:tabular-nums;color:var(--desk-muted);font-size:11px;min-width:2ch}
+.index button:hover{background:var(--desk-card)}
+.index button[aria-current="true"]{background:var(--desk-ink);color:var(--desk)}
+.index button[aria-current="true"] small{color:inherit}
+.index .grp{font-size:11px;color:var(--desk-muted);margin:12px 10px 2px}
+.side{display:grid;gap:24px;min-width:0}
+.notes{background:var(--desk-card);border:1px solid var(--desk-line);border-radius:16px;padding:20px 22px}
+.notes h3{font-size:20px;margin:0 0 4px;line-height:1.25}
+.notes .milestone{font-size:12px;color:var(--desk-muted);margin:0 0 12px}
+.notes ul{margin:0;padding-left:18px;display:grid;gap:8px;max-width:62ch}
+.notes li::marker{color:var(--orange)}
+.controls{display:grid;gap:14px;padding:0 4px}
+.ctl{display:grid;gap:6px}
+.ctl label,.ctl .lbl{font-size:13px;font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--desk-line);background:none;border-radius:999px;padding:6px 12px;font-size:13px;min-height:34px}
+.seg button[aria-pressed="true"]{background:var(--desk-ink);color:var(--desk);border-color:var(--desk-ink)}
+.reset{justify-self:start;border:1px solid var(--desk-line);background:none;border-radius:999px;padding:6px 14px;font-size:13px}
+.fine{font-size:12px;color:var(--desk-muted);max-width:62ch;margin:0}
+
+/* ---------- phone ---------- */
+.phone{--fs:15px;width:390px;max-width:100%;height:812px;border-radius:52px;border:10px solid #0E0E0D;background:var(--paper);color:var(--ink);position:relative;overflow:hidden;box-shadow:0 30px 60px -30px rgba(30,20,0,.45);display:flex;flex-direction:column;font-size:var(--fs)}
+.phone.large{--fs:19px}
+.statusbar{flex:none;height:46px;display:flex;align-items:center;justify-content:space-between;padding:6px 26px 0 30px;font-size:14px;font-weight:650}
+.statusbar .island{width:112px;height:30px;border-radius:20px;background:#0E0E0D}
+.statusbar .glyphs{display:flex;gap:5px;align-items:center}
+.statusbar .glyphs i{display:block;width:16px;height:10px;border:1.5px solid currentColor;border-radius:3px}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:6px 22px 28px;scrollbar-width:thin}
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);padding:8px 0 24px;background:var(--paper)}
+.tabbar span{display:grid;justify-items:center;gap:2px;font-size:11px;color:var(--muted)}
+.tabbar span.on{color:var(--ink);font-weight:650}
+.tabbar svg{width:24px;height:24px}
+
+.ic{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ic.sm{width:16px;height:16px}
+.back{display:inline-flex;align-items:center;gap:2px;border:0;background:none;padding:8px 8px 8px 0;margin-left:-4px;font-size:calc(var(--fs)*1.02);min-height:44px}
+.back .ic{width:20px;height:20px}
+.p-eyebrow{font-size:calc(var(--fs)*.72);letter-spacing:.13em;text-transform:uppercase;font-weight:650;color:var(--muted);margin:14px 0 4px}
+.p-hand{font-family:var(--hand);font-weight:700;font-size:calc(var(--fs)*2.9);line-height:1;margin:2px 0 6px}
+.p-title{font-size:calc(var(--fs)*1.75);line-height:1.15;font-weight:650;letter-spacing:-.01em;margin:4px 0 8px;text-wrap:balance}
+.p-body{color:var(--muted);margin:0 0 12px;line-height:1.55}
+.p-sub{font-size:calc(var(--fs)*.84);color:var(--muted);line-height:1.5}
+.p-section{font-size:calc(var(--fs)*.72);letter-spacing:.13em;text-transform:uppercase;font-weight:650;color:var(--muted);margin:26px 0 2px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.truthline{display:flex;gap:8px;align-items:baseline;font-size:calc(var(--fs)*.84);color:var(--muted);border-block:1px solid var(--line);padding:10px 0;margin:10px 0 0}
+.truthline::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok);flex:none;transform:translateY(-2px)}
+.truthline.paused::before{background:var(--orange)}
+
+.rows{display:grid}
+.row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;min-height:52px}
+button.row:hover .r-title{text-decoration:underline;text-decoration-color:var(--orange);text-underline-offset:4px}
+.row .tile{width:38px;height:38px;border-radius:11px;background:var(--surface);display:grid;place-items:center;flex:none}
+.row .r-main{flex:1;min-width:0;display:grid;gap:1px}
+.r-title{font-weight:600;line-height:1.3}
+.r-sub{font-size:calc(var(--fs)*.84);color:var(--muted);line-height:1.4}
+.r-val{font-size:calc(var(--fs)*.84);color:var(--muted);text-align:right;flex:none;max-width:45%}
+.r-stat{font-size:calc(var(--fs)*.84);font-weight:600;color:var(--muted);margin-top:3px}
+.r-stat.ok{color:var(--ok)} .r-stat.warn{color:var(--accent-text)} .r-stat.err{color:var(--err)}
+.r-val.ok{color:var(--ok)} .r-val.warn{color:var(--accent-text)} .r-val.err{color:var(--err)}
+.row .chev{color:var(--muted);width:18px;height:18px}
+.row.disabled{opacity:1}
+.row.disabled .r-title{color:var(--muted)}
+.vote{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 10px;font-size:calc(var(--fs)*.78);flex:none;min-height:32px}
+.vote[aria-pressed="true"]{background:var(--surface);border-color:var(--ink)}
+
+.switch{position:relative;width:50px;height:30px;border-radius:999px;border:1.5px solid var(--ink);background:none;flex:none;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:var(--ink);transition:transform .18s}
+.switch[aria-checked="true"]{background:var(--ink)}
+.switch[aria-checked="true"]::after{transform:translateX(20px);background:var(--paper)}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:54px;border-radius:18px;border:0;background:var(--ink);color:var(--paper);font-weight:650;font-size:calc(var(--fs)*1.02);padding:0 18px}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:none;color:var(--err);border:1px solid var(--line)}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btns{display:grid;gap:10px;margin-top:20px}
+.link{border:0;background:none;padding:6px 0;color:var(--ink);text-decoration:underline;text-decoration-color:var(--orange);text-underline-offset:4px;text-decoration-thickness:2px;font-weight:600;font-size:calc(var(--fs)*.92);min-height:36px}
+
+.list2{display:grid;gap:10px;margin:8px 0 0;padding:0;list-style:none}
+.list2 li{display:flex;gap:10px;align-items:flex-start;line-height:1.45}
+.list2 li .ic{margin-top:2px}
+.can .ic{color:var(--ok)} .wont .ic{color:var(--err)}
+.box{background:var(--surface);border-radius:16px;padding:14px 16px;margin-top:16px}
+.box .p-section{margin-top:0}
+.steps{display:flex;gap:6px;align-items:center;margin:4px 0 2px;font-size:calc(var(--fs)*.78);color:var(--muted)}
+.steps i{display:block;height:4px;flex:1;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--ink)}
+.sheet-top{display:flex;justify-content:space-between;align-items:center}
+.grabber{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 4px}
+
+.radio{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+.radio .dot{width:22px;height:22px;border-radius:50%;border:1.6px solid var(--ink);flex:none;margin-top:1px;display:grid;place-items:center}
+.radio[aria-checked="true"] .dot::after{content:"";width:11px;height:11px;border-radius:50%;background:var(--ink)}
+.chk{width:24px;height:24px;border-radius:7px;border:1.6px solid var(--ink);display:grid;place-items:center;flex:none;background:none;padding:0}
+.chk[aria-checked="true"]{background:var(--ink);color:var(--paper)}
+.chk .ic{width:16px;height:16px;stroke-width:2.4}
+
+.level{padding:12px 0;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.level .lh{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.pills{display:flex;gap:6px;flex-wrap:wrap}
+.pills button{border:1px solid var(--line);background:none;border-radius:999px;padding:6px 12px;font-size:calc(var(--fs)*.84);min-height:36px}
+.pills button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.locked{display:flex;gap:8px;align-items:center;font-size:calc(var(--fs)*.84);color:var(--muted)}
+
+.ios{margin:18px 6px 0;border-radius:16px;background:var(--surface);border:1px solid var(--line);text-align:center;overflow:hidden}
+.ios .ios-b{padding:18px 18px 14px}
+.ios .ios-t{font-weight:650;line-height:1.3}
+.ios .ios-m{font-size:calc(var(--fs)*.84);color:var(--muted);margin-top:6px}
+.ios .ios-a{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.ios .ios-a button{border:0;background:none;min-height:46px;color:var(--ink)}
+.ios .ios-a button+button{border-left:1px solid var(--line);font-weight:650}
+.tag{display:inline-block;font-size:calc(var(--fs)*.7);letter-spacing:.1em;text-transform:uppercase;font-weight:650;color:var(--accent-text);border:1px solid currentColor;border-radius:999px;padding:1px 8px}
+
+.result{border-left:3px solid var(--ok);padding:6px 0 6px 12px;margin-top:14px}
+.result.err{border-color:var(--err)}
+.result .rh{display:flex;gap:8px;align-items:center;font-weight:650}
+.result.ok .rh{color:var(--ok)} .result.err .rh{color:var(--err)}
+
+/* conversation + plan card */
+.bubble{background:var(--surface);border-radius:18px 18px 4px 18px;padding:11px 14px;margin:8px 0 14px auto;max-width:86%;line-height:1.45}
+.reply{line-height:1.5;margin:0 0 10px}
+.who{font-size:calc(var(--fs)*.72);letter-spacing:.13em;text-transform:uppercase;font-weight:650;color:var(--muted);margin:10px 0 4px}
+.plan{border:1.5px solid var(--ink);border-radius:18px;padding:4px 14px 14px;margin-top:6px}
+.plan-h{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0 6px}
+.plan-h strong{font-family:var(--hand);font-size:calc(var(--fs)*1.75);font-weight:700;line-height:1}
+.step{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+.step .mark{width:24px;height:24px;display:grid;place-items:center}
+.step .mark .ic{width:18px;height:18px;stroke-width:2.2}
+.step .k{font-size:calc(var(--fs)*.72);letter-spacing:.11em;text-transform:uppercase;font-weight:650;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.step .t{line-height:1.42;margin-top:2px}
+.step .m{font-size:calc(var(--fs)*.84);color:var(--muted);margin-top:2px}
+.step .acts{display:flex;gap:14px;flex-wrap:wrap;margin-top:2px}
+.step.ok .mark{color:var(--ok)} .step.err .mark{color:var(--err)} .step.unsure .mark{color:var(--accent-text)} .step.skip .mark{color:var(--muted)}
+.step .st{font-size:calc(var(--fs)*.84);font-weight:650;margin-top:4px}
+.step.ok .st{color:var(--ok)} .step.err .st{color:var(--err)} .step.unsure .st{color:var(--accent-text)} .step.skip .st{color:var(--muted)}
+.editor{display:grid;gap:8px;margin-top:8px;background:var(--surface);border-radius:12px;padding:10px 12px}
+.editor label{display:grid;gap:3px;font-size:calc(var(--fs)*.84);color:var(--muted)}
+.editor select{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--paper);min-height:40px}
+.composer{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 16px;margin-top:18px;color:var(--muted);font-size:calc(var(--fs)*.9)}
+.composer span{flex:1}
+.composer i{width:34px;height:34px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+.chips button{border:1px solid var(--line);background:none;border-radius:999px;padding:5px 12px;font-size:calc(var(--fs)*.84);min-height:34px}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.act{display:grid;grid-template-columns:44px minmax(0,1fr);gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.act time{font-size:calc(var(--fs)*.78);color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+.act .a-t{line-height:1.4}
+.act .a-m{font-size:calc(var(--fs)*.8);color:var(--muted);margin-top:2px}
+.act .a-r{font-size:calc(var(--fs)*.8);font-weight:650}
+.a-r.ok{color:var(--ok)} .a-r.err{color:var(--err)} .a-r.unsure{color:var(--accent-text)} .a-r.read,.a-r.skip{color:var(--muted)}
+
+.tbl{display:grid}
+.tbl div{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr);gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:calc(var(--fs)*.9)}
+.tbl div span:last-child{color:var(--muted)}
+
+.char{color:var(--ink);width:96px;height:96px;flex:none}
+.char svg{width:100%;height:100%}
+.hero{display:flex;gap:6px;align-items:flex-end;justify-content:space-between}
+.hero > div{min-width:0}
+.confirm{background:var(--surface);border-radius:16px;padding:14px 16px;margin-top:12px;display:grid;gap:10px}
+.toast{position:absolute;left:16px;right:16px;bottom:96px;background:var(--ink);color:var(--paper);border-radius:14px;padding:12px 14px;font-size:calc(var(--fs)*.9);display:flex;gap:8px;align-items:center;box-shadow:0 10px 30px -10px rgba(0,0,0,.4)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- responsive desk ---------- */
+@media (max-width:1100px){
+  .desk{grid-template-columns:390px minmax(0,1fr)}
+  .index{position:static;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px}
+  .index h2{width:100%}
+  .index .grp{display:none}
+}
+@media (max-width:760px){
+  .desk{grid-template-columns:minmax(0,1fr);gap:24px}
+  .phone{margin:0 auto;height:760px;border-width:8px;border-radius:44px}
+  .index button{font-size:13px;padding:6px 10px;border:1px solid var(--desk-line)}
+}
+@media (max-width:420px){
+  .phone{border:0;border-radius:24px;height:720px}
+  .statusbar{padding:6px 18px 0 22px}
+  .screen{padding:6px 18px 24px}
+}
+</style>
+
+</head>
+<body>
+<header class="desk-head">
+  <div class="eyebrow">Doddy · Design study v0.1 · 10 Oct 2026 · Pocket Notebook</div>
+  <h1>Settings &amp; Connections</h1>
+  <p>How people connect Doddy to the apps they already use, ask for help that needs several apps at once, and always see what Doddy did. Tap through the phone, or jump to a screen.</p>
+  <div class="truth"><span>Proposal, not built</span><span>Fictional data</span><span>No real permissions, accounts or writes</span><span>Spec: docs/design/SETTINGS_AND_CONNECTIONS.md</span></div>
+</header>
+
+<main class="desk">
+  <nav class="index" id="index" aria-label="Screens"></nav>
+  <div class="phone" id="phone" data-look="follow">
+    <div class="statusbar" aria-hidden="true"><span>9:41</span><span class="island"></span><span class="glyphs">●●● <i></i></span></div>
+    <div class="screen" id="screen" tabindex="-1"></div>
+    <div class="tabbar" id="tabbar" aria-hidden="true"></div>
+    <div id="toast" class="toast" role="status" hidden></div>
+  </div>
+  <div class="side">
+    <section class="notes" aria-live="polite" id="notes"></section>
+    <section class="controls" aria-label="Review controls">
+      <h2>Review controls</h2>
+      <div class="ctl"><span class="lbl">What happens when Doddy adds the reminder</span>
+        <div class="seg" data-ctl="writeResult">
+          <button data-v="done">Done</button><button data-v="couldnt">Couldn't</button><button data-v="notsure">Not sure (timeout)</button>
+        </div></div>
+      <div class="ctl"><span class="lbl">Phone appearance</span>
+        <div class="seg" data-ctl="look"><button data-v="follow">Follow page</button><button data-v="light">Light</button><button data-v="dark">Dark</button></div></div>
+      <div class="ctl"><span class="lbl">Text size</span>
+        <div class="seg" data-ctl="large"><button data-v="no">Default</button><button data-v="yes">Larger</button></div></div>
+      <button class="reset" id="reset">Reset the study</button>
+      <p class="fine">Starting state: Calendar and Weather connected, Reminders not connected. Connect Reminders from the plan card or from Apps &amp; tools, or tap "Don't Allow" in step 3 to see the denied path. Nothing here touches your device.</p>
+    </section>
+  </div>
+</main>
+
+<template id="pose-pointing"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><g id="doddy-pointing" data-version="1.3-r1"><g id="far-arm"><path d="M250,220 Q223.35,246.65 209,261 Q206.06,284.52 202,317" fill="none" stroke="currentColor" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="far-leg"><path d="M247,329 Q235.29999999999998,361.5 229,379 Q229.42,397.9 230,424" fill="none" stroke="currentColor" stroke-width="5.9" stroke-linecap="round" stroke-linejoin="round" /></g><g id="body-spine"><path d="M250,205 Q239,275 247,329" fill="none" stroke="currentColor" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-leg"><path d="M247,329 Q267.15,358.25 278,374 Q279.67999999999995,392.9 282,419" fill="none" stroke="currentColor" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-arm"><path d="M250,220 Q287.70000000000005,236.9 308,246 Q328.58,238.01999999999998 357,227" fill="none" stroke="currentColor" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="trainer-far"><g transform="translate(230 424) scale(1.04) rotate(0)"><g id="trainer-front"><path d="M-22 -29 Q-19 -42 0 -42 Q20 -42 23 -29 L29 -6 Q40 15 26 24 Q0 31 -28 23 Q-39 15 -29 -6 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-29 13 Q0 22 30 13 M-23 -4 Q0 -12 23 -4 M-13 -30 L13 -30 M-14 -23 L14 -23 M-14 -16 L15 -16 M-8 -37 L-10 -14 M8 -37 L10 -14" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="trainer-near"><g transform="translate(282 419) scale(0.82) rotate(0)"><g id="trainer-three-quarter"><path d="M-32 -11 L-26 -30 Q-19 -40 -6 -34 L8 -20 Q30 -22 46 -6 Q59 12 47 22 Q9 35 -33 21 Q-43 11 -32 -11 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-36 12 Q2 25 50 13 M4 -13 Q26 -19 39 -9 M-21 -27 L2 -20 M-23 -19 L9 -12 M-8 -32 L-15 -13 M-28 0 L-12 3" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-back"><g transform="translate(202 317) scale(0.84) rotate(97.12501634890181)"><g id="hand-relaxed-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-back"><g transform="translate(357 227) scale(0.96) rotate(-10)"><g id="hand-point-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L6 -8 Q9 -19 15 -16 L20 -7 L47 -10 Q55 -10 52 -4 L25 0 Q36 4 32 12 Q17 21 5 10 L-5 5 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M10 -5 Q21 -7 22 2 L18 9 M26 6 L29 7" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="prop"></g><g id="hand-far-front"><g transform="translate(202 317) scale(0.84) rotate(97.12501634890181)"><g id="hand-relaxed-front" data-origin="wrist" data-fingers="grouped"></g></g></g><g id="hand-near-front"><g transform="translate(357 227) scale(0.96) rotate(-10)"><g id="hand-point-front" data-origin="wrist" data-fingers="grouped"></g></g></g><g id="hand-far-visible"><g transform="translate(202 317) scale(0.84) rotate(97.12501634890181)"><g id="hand-relaxed-all" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-visible"><g transform="translate(357 227) scale(0.96) rotate(-10)"><g id="hand-point-all" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L6 -8 Q9 -19 15 -16 L20 -7 L47 -10 Q55 -10 52 -4 L25 0 Q36 4 32 12 Q17 21 5 10 L-5 5 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M10 -5 Q21 -7 22 2 L18 9 M26 6 L29 7" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="face-rig" transform="translate(-6 0) rotate(3 256 133)"><g transform="translate(256 133) scale(1) rotate(0)"><g id="head-and-face" data-yaw="0"><path d="M0 -72 C40 -74 72 -43 72 -3 C75 39 43 71 3 73 C-39 76 -72 44 -73 4 C-76 -36 -44 -70 0 -72 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" id="head-contour"/><g id="eyes"><ellipse cx="-22" cy="-6" rx="4.6" ry="12" fill="currentColor" transform="rotate(6 -22 -6)"/><ellipse cx="22" cy="-9" rx="4.6" ry="12" fill="currentColor" transform="rotate(6 22 -9)"/></g><g id="mouth-and-brows"><g transform="translate(0 0) scale(1 1)"><path d="M-14 28 Q3 32 21 23" fill="none" stroke="currentColor" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M-34 -31 L-12 -25 M12 -26 L32 -34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></g></g></g></g></g></g></svg></template>
+<template id="pose-card"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><g id="doddy-memory-card" data-version="1.3-r1"><g id="far-arm"><path d="M250,220 Q223.35,246.65 209,261 Q206.06,284.52 202,317" fill="none" stroke="currentColor" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="far-leg"><path d="M247,329 Q235.29999999999998,361.5 229,379 Q229.42,397.9 230,424" fill="none" stroke="currentColor" stroke-width="5.9" stroke-linecap="round" stroke-linejoin="round" /></g><g id="body-spine"><path d="M250,205 Q239,275 247,329" fill="none" stroke="currentColor" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-leg"><path d="M247,329 Q267.15,358.25 278,374 Q279.67999999999995,392.9 282,419" fill="none" stroke="currentColor" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-arm"><path d="M250,220 Q281.85,251.20000000000002 299,268 Q309.91999999999996,244.89999999999998 325,213" fill="none" stroke="currentColor" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="trainer-far"><g transform="translate(230 424) scale(1.04) rotate(0)"><g id="trainer-front"><path d="M-22 -29 Q-19 -42 0 -42 Q20 -42 23 -29 L29 -6 Q40 15 26 24 Q0 31 -28 23 Q-39 15 -29 -6 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-29 13 Q0 22 30 13 M-23 -4 Q0 -12 23 -4 M-13 -30 L13 -30 M-14 -23 L14 -23 M-14 -16 L15 -16 M-8 -37 L-10 -14 M8 -37 L10 -14" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="trainer-near"><g transform="translate(282 419) scale(0.82) rotate(0)"><g id="trainer-three-quarter"><path d="M-32 -11 L-26 -30 Q-19 -40 -6 -34 L8 -20 Q30 -22 46 -6 Q59 12 47 22 Q9 35 -33 21 Q-43 11 -32 -11 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-36 12 Q2 25 50 13 M4 -13 Q26 -19 39 -9 M-21 -27 L2 -20 M-23 -19 L9 -12 M-8 -32 L-15 -13 M-28 0 L-12 3" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-back"><g transform="translate(202 317) scale(0.84) rotate(97.12501634890181)"><g id="hand-relaxed-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-back"><g transform="translate(325 213) scale(0.96) rotate(-15)"><g id="hand-grip-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -16 20 -13 Q31 -13 31 -2 L28 12 Q17 20 5 10 L-5 5 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M11 -6 Q20 -7 26 -2" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="prop"><g transform="translate(344 185) scale(1) rotate(-8)"><rect x="-23" y="-34" width="46" height="63" rx="5" style="fill:var(--orange)" stroke="currentColor" stroke-width="3"/><path d="M-11 -3 Q-17 -14 -9 -18 Q-3 -21 1 -11 Q8 -23 17 -14 Q24 -4 1 12 Z" style="fill:var(--paper)" stroke="#FFF7E9" stroke-width="0" stroke-linecap="round" stroke-linejoin="round" /></g></g><g id="hand-far-front"><g transform="translate(202 317) scale(0.84) rotate(97.12501634890181)"><g id="hand-relaxed-front" data-origin="wrist" data-fingers="grouped"></g></g></g><g id="hand-near-front"><g transform="translate(325 213) scale(0.96) rotate(-15)"><g id="hand-grip-front" data-origin="wrist" data-fingers="grouped"><path d="M7 -7 Q12 -13 18 -8 L27 -1 Q31 3 27 7 Q24 10 19 6 L11 3 Q8 2 7 -7 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-visible"><g transform="translate(202 317) scale(0.84) rotate(97.12501634890181)"><g id="hand-relaxed-all" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="face-rig" transform="translate(-6 0) rotate(-5 256 133)"><g transform="translate(256 133) scale(1) rotate(0)"><g id="head-and-face" data-yaw="0"><path d="M0 -72 C40 -74 72 -43 72 -3 C75 39 43 71 3 73 C-39 76 -72 44 -73 4 C-76 -36 -44 -70 0 -72 Z" style="fill:var(--paper)" stroke="currentColor" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" id="head-contour"/><g id="eyes"><ellipse cx="-22" cy="-9" rx="4.6" ry="12" fill="currentColor" transform="rotate(6 -22 -9)"/><ellipse cx="22" cy="-12" rx="4.6" ry="12" fill="currentColor" transform="rotate(6 22 -12)"/></g><g id="mouth-and-brows"><g transform="translate(0 0) scale(1 1)"><path d="M-25 22 C-12 42 11 43 29 19" fill="none" stroke="currentColor" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M11 -35 Q25 -44 35 -32" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></g></g></g></g></g></g></svg></template>
+
+<script>
+(() => {
+const I = {
+  reminders:'<path d="M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17M11 6h9M11 12h9M11 18h9"/>',
+  calendar:'<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  weather:'<path d="M7 18.5h10a4 4 0 0 0 .3-8 5.5 5.5 0 0 0-10.7 1.4A3.3 3.3 0 0 0 7 18.5z"/>',
+  timers:'<circle cx="12" cy="13" r="7"/><path d="M12 9.5V13l2.5 1.5M4 5.5l3-2.2M20 5.5l-3-2.2"/>',
+  places:'<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  contacts:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-4 4-5.5 7-5.5s6 1.5 7 5.5"/>',
+  music:'<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+  home:'<path d="M4 11l8-6.5 8 6.5M6 9.5V20h12V9.5"/>',
+  shortcuts:'<path d="M12 3.5l8.5 4.5-8.5 4.5L3.5 8z"/><path d="M3.5 12.5l8.5 4.5 8.5-4.5"/><path d="M3.5 16.5l8.5 4.5 8.5-4.5"/>',
+  messages:'<path d="M4.5 5.5h15v10h-9l-4.5 3.5v-3.5h-1.5z"/>',
+  mail:'<rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/>',
+  globe:'<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/>',
+  memories:'<rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4"/>',
+  settings:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>',
+  chev:'<path d="M9 5l7 7-7 7"/>', back:'<path d="M15 5l-7 7 7 7"/>',
+  lock:'<rect x="5.5" y="10.5" width="13" height="9.5" rx="2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>',
+  pause:'<path d="M9 5.5v13M15 5.5v13"/>',
+  activity:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  shield:'<path d="M12 3.5l7 3v5.5c0 4.2-3 7.4-7 8.5-4-1.1-7-4.3-7-8.5V6.5z"/>',
+  phone:'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  share:'<path d="M12 15V4M8 7.5l4-4 4 4M5.5 12v7.5h13V12"/>',
+  control:'<rect x="3.5" y="8" width="17" height="8" rx="4"/><circle cx="16.5" cy="12" r="2.3"/>',
+  voice:'<path d="M4 12h1M8 8v8M12 5v14M16 8v8M20 12h-1"/>',
+  textsize:'<path d="M4 18L9 6l5 12M5.8 14h6.4M15 18l3-7 3 7M15.9 16h4.2"/>',
+  person:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1-4 4-5.5 7-5.5s6 1.5 7 5.5"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  q:'<circle cx="12" cy="12" r="8.5"/><path d="M9.7 9.5a2.4 2.4 0 1 1 3.3 2.2c-.7.3-1 .8-1 1.5v.6M12 16.8v.2"/>',
+  skip:'<path d="M5 12h12M13 7l5 5-5 5"/>', out:'<path d="M8 16L16 8M9.5 8H16v6.5"/>',
+  up:'<path d="M12 19V5M6 11l6-6 6 6"/>', dot:'<circle cx="12" cy="12" r="3"/>'
+};
+const ic = (n, cls='') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${I[n]||''}</svg>`;
+
+/* What can be connected. "study" = connectable inside this study's fictional future. */
+const CATALOG = [
+  {id:'reminders', g:'phone', name:'Reminders', can:'Read your lists. Add reminders after you say yes.', study:true,
+    wont:['Complete, change or delete reminders','Look at other apps'], leaves:'During a voice conversation, the reminders Doddy reads are sent to the voice service (today: ElevenLabs) for that conversation only.',
+    scopeLabel:'Lists', scopes:['All lists','Shopping','Personal','Family'], ios:'“Doddy” Would Like Full Access to Your Reminders', iosMsg:'Doddy reads your lists and adds reminders you approve.', trial:'What’s on my shopping list?', trialAnswer:'Shopping has 3 reminders: oat milk, AA batteries, a birthday card for Ola.', perm:'Reminders'},
+  {id:'calendar', g:'phone', name:'Calendar', can:'See what’s coming up. Read-only in this version.', study:true,
+    wont:['Create, move or delete events','Read event attachments'], leaves:'During a voice conversation, the events Doddy reads are sent to the voice service for that conversation only.',
+    scopeLabel:'Calendars', scopes:['All calendars','Home','Work'], ios:'“Doddy” Would Like Full Access to Your Calendar', iosMsg:'Doddy reads upcoming events when you ask.', trial:'What’s on tomorrow?', trialAnswer:'Tomorrow: 10:00 dentist, 18:30 football with Kuba.', perm:'Calendars'},
+  {id:'weather', g:'phone', name:'Weather', can:'Check the forecast where you are or for a place you name.', study:true,
+    wont:['Track where you go','Keep your location history'], leaves:'Your approximate location is sent to Apple Weather when Doddy checks the forecast.',
+    scopeLabel:'Location', scopes:['Approximate location','Only places I name'], ios:'Allow “Doddy” to use your location?', iosMsg:'Used for the forecast when you ask.', trial:'Will it rain tomorrow?', trialAnswer:'Tomorrow in Warsaw: dry until evening, 30% chance of rain after 19:00.', perm:'Location'},
+  {id:'timers', g:'phone', name:'Alarms and timers', can:'Start a timer or set an alarm after you say yes.'},
+  {id:'places', g:'phone', name:'Places and directions', can:'Find nearby places and how to get there.'},
+  {id:'contacts', g:'phone', name:'Contacts', can:'Look up a number or address you ask for.'},
+  {id:'shortcuts', g:'phone', name:'Your Shortcuts', can:'Run a shortcut you choose. Opens the Shortcuts app briefly.'},
+  {id:'music', g:'phone', name:'Music', can:'Play, pause and pick from your library.'},
+  {id:'home', g:'phone', name:'Home', can:'Lights and scenes you allow.'},
+  {id:'messages', g:'send', name:'Messages', can:'Draft a text. You always tap Send.'},
+  {id:'mail', g:'send', name:'Mail', can:'Draft an email. You always tap Send.'},
+  {id:'gcal', g:'online', name:'Google Calendar', can:'Needs a Doddy account and sign-in.', icon:'globe'},
+  {id:'gmail', g:'online', name:'Gmail', can:'Needs a Doddy account and sign-in.', icon:'globe'},
+  {id:'notion', g:'online', name:'Notion', can:'Needs a Doddy account and sign-in.', icon:'globe'},
+  {id:'todoist', g:'online', name:'Todoist', can:'Needs a Doddy account and sign-in.', icon:'globe'},
+  {id:'spotify', g:'online', name:'Spotify', can:'Needs a Doddy account and sign-in.', icon:'globe'},
+];
+const C = id => CATALOG.find(c => c.id === id);
+const iconFor = c => ic(c.icon || c.id);
+
+const SCREENS = [
+  {id:'settings', label:'Settings', grp:'Settings'},
+  {id:'hub', label:'Apps & tools'},
+  {id:'c1', label:'Connect · what Doddy will do', grp:'Connect Reminders'},
+  {id:'c2', label:'Connect · choose what to share'},
+  {id:'c3', label:'Connect · iOS asks'},
+  {id:'c4', label:'Connect · try it'},
+  {id:'denied', label:'iOS permission is off'},
+  {id:'detail', label:'Connection detail', grp:'Day to day'},
+  {id:'plan', label:'Several apps at once'},
+  {id:'activity', label:'What Doddy did'},
+  {id:'privacy', label:'What leaves this iPhone'},
+  {id:'ways', label:'Ways to open Doddy'},
+];
+
+const NOTES = {
+  settings:{t:'Settings, grouped by what people look for', m:'Regroups today’s development Settings. No new capability needed for the regrouping itself.', p:[
+    'The line under the title is built from real state (connected count, paused, where notes live). It is never decorative.',
+    '“Connections” is one section with three doors: apps, ways to open Doddy, and the activity log.',
+    'Developer-only rows (agent ID) move into About → Developer, shown in development builds only.',
+    '“What’s built” stays. It is the honesty contract between the app and the person.']},
+  hub:{t:'Apps & tools', m:'Reminders is M4. Every other app is its own owner decision.', p:[
+    'Four groups: on this iPhone (iOS permission, no account), messages and email (you always tap Send), online accounts (need a Doddy account and server), and Doddy in other places.',
+    'Status is a word, never a colour or a dot alone. It is re-read from iOS every time the screen appears, because people change permissions in iOS Settings.',
+    '“Not built yet” rows never open a fake connect flow. “I’d use this” is a local demand signal.',
+    '“Pause all” stops Doddy using any app at once, without touching iOS permissions.']},
+  c1:{t:'Step 1 · What Doddy will do', m:'One sheet, four steps. Steps are a real sequence, so they are numbered.', p:[
+    'Two short lists: what Doddy can do and what it won’t. People decide on these, not on framework names.',
+    '“What leaves this iPhone” is written per app and names the service it goes to.',
+    'Cancel is always available and leaves nothing half-connected.']},
+  c2:{t:'Step 2 · Choose what to share', m:'Defaults are the safest setting that still works.', p:[
+    'Scope first (which lists), then how much Doddy may do without asking.',
+    'Look-ups can run without asking. Adding or changing is locked to “Ask first”, with the reason written next to the lock.',
+    'Removing and sending are not allowed in this version. This is what makes “several apps at once” safe.']},
+  c3:{t:'Step 3 · iOS asks', m:'The study illustrates the iOS prompt. The real app never draws its own copy of it.', p:[
+    'Doddy shows one line of lead-in, then iOS takes over.',
+    'Tap “Don’t Allow” to see the denied path. Doddy keeps working without the app.',
+    'Doddy never counts a connection as done until iOS reports access granted.']},
+  c4:{t:'Step 4 · Try it', m:'Optional. Skipping still connects.', p:[
+    'One suggested phrase runs a real look-up and shows the actual result.',
+    'A successful try writes a local “tested” receipt, shown as “Connected · tested 10 Oct”.',
+    'If the try fails, the copy says why and the connection is still listed honestly.']},
+  denied:{t:'iOS permission is off', m:'Failure path, required for every connection.', p:[
+    'Says what happened and how to fix it, with the exact iOS Settings path.',
+    'Open iOS Settings is the only action that can fix it. Doddy cannot turn the permission on itself.',
+    'Memories and voice keep working. Nothing else is blocked.']},
+  detail:{t:'Connection detail', m:'Pause and Disconnect are different on purpose.', p:[
+    'The status line names its source: “iOS permission: on · checked just now”.',
+    'Pause keeps the iOS permission; Doddy stops using the app immediately.',
+    'Disconnect removes Doddy’s settings and receipts for the app. It tells the truth that only iOS Settings can remove the permission, and that reminders Doddy created stay in Reminders.',
+    '“Recently” shows the last three receipts for this app, including look-ups.']},
+  plan:{t:'Several apps at once: the plan card', m:'Needs an owner decision: TOOLS_AND_ACTIONS.md currently allows single-step actions only.', p:[
+    'One request, one card. Look-ups run first and show their source. Each change is a separate pre-ticked checkbox with full details.',
+    'The button counts what will happen (“Add 1 reminder”). One tap confirms all ticked changes.',
+    'A step for an app that isn’t connected appears as “isn’t connected” with Connect or Skip. Nothing is dropped silently.',
+    'Each step gets its own result: Done, Couldn’t, or Not sure. “Not sure” never retries automatically; Doddy checks first to avoid duplicates.',
+    'Text read from calendars or reminders is data. It can never add a step.']},
+  activity:{t:'What Doddy did', m:'On this iPhone only. Proposed retention: 30 days.', p:[
+    'One list across all apps. Look-ups are listed too, so people can see what Doddy looked at.',
+    'Plans are grouped under the request that started them.',
+    'Clearing the log never deletes reminders or events Doddy created.']},
+  privacy:{t:'What leaves this iPhone', m:'Built from real configuration, one row per data source.', p:[
+    'Answers “what is sent where” in one place, in plain words.',
+    '“Use connected apps while talking” off means voice can only use Memories.',
+    '“Pause all” is also reachable from the voice screen.']},
+  ways:{t:'Ways to open Doddy', m:'V2 guided setup (research doc section 5).', p:[
+    'Siri and Shortcuts work automatically once App Shortcuts ship.',
+    'Back Tap and the Action Button can’t be read by apps, so status says “tested by you”, never “verified”.',
+    'Each row opens the v1.2 guided setup.']},
+};
+
+const fresh = () => ({
+  stack:['settings'], toast:null,
+  conns:{
+    reminders:{status:'off', lookups:'auto', scope:'All lists', tested:null},
+    calendar:{status:'on', lookups:'auto', scope:'All calendars', tested:'8 Oct'},
+    weather:{status:'on', lookups:'auto', scope:'Approximate location', tested:null},
+  },
+  connect:{id:'reminders', step:1, scope:'All lists', lookups:'auto', trial:null, returnTo:null},
+  detailId:'calendar', confirmDisconnect:false,
+  pauseAll:false, voiceUse:true,
+  writeResult:'done', look:'follow', large:false,
+  votes:{},
+  plan:{ran:false, tick:{reminder:true}, skipped:{}, editing:false, when:'Sat 17 Oct, 12:00', list:'Personal', results:{}, busy:false},
+  filter:'all',
+  clock:[14,2],
+  activity:[
+    {day:'Today', time:'09:12', conn:'calendar', text:'Looked up today’s events (2) during a voice conversation', r:'read'},
+    {day:'Yesterday', time:'18:40', conn:'weather', text:'Looked up tomorrow’s forecast for Warsaw', r:'read'},
+    {day:'8 Oct', time:'20:15', conn:'calendar', text:'Connected and tested: “What’s on tomorrow?”', r:'done'},
+  ],
+});
+let S = fresh();
+
+const $ = s => document.querySelector(s);
+const screenEl = $('#screen');
+const cur = () => S.stack[S.stack.length-1];
+
+function now(){ const [h,m]=S.clock; S.clock=[h, m+1]; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
+function log(conn, text, r, group){ S.activity.unshift({day:'Today', time:now(), conn, text, r, group}); }
+function statusOf(id){
+  const c = C(id); if(!c.study) return {txt:'Not built yet', cls:''};
+  const st = S.conns[id];
+  if(S.pauseAll && st.status==='on') return {txt:'Paused (all)', cls:'warn'};
+  return {
+    on:{txt: st.tested ? `Connected · tested ${st.tested}` : 'Connected', cls:'ok'},
+    paused:{txt:'Paused', cls:'warn'},
+    denied:{txt:'iOS permission off', cls:'err'},
+    off:{txt:'Not connected', cls:''},
+  }[st.status];
+}
+const usable = id => id==='memories' || (S.conns[id] && S.conns[id].status==='on' && !S.pauseAll);
+const connectedCount = () => Object.values(S.conns).filter(c=>c.status==='on').length;
+
+function go(id, opts={}){
+  if(opts.reset) S.stack = [id]; else S.stack.push(id);
+  S.confirmDisconnect = false;
+  render(true);
+}
+function back(){ if(S.stack.length>1) S.stack.pop(); S.confirmDisconnect=false; render(true); }
+function jump(id){
+  const parents = {settings:['settings'], hub:['settings','hub'], c1:['settings','hub','c1'], c2:['settings','hub','c2'], c3:['settings','hub','c3'], c4:['settings','hub','c4'],
+    denied:['settings','hub','denied'], detail:['settings','hub','detail'], plan:['plan'], activity:['settings','activity'], privacy:['settings','privacy'], ways:['settings','ways']};
+  if(id.startsWith('c') && id.length===2){ S.connect = {id:'reminders', step:+id[1], scope:'All lists', lookups:'auto', trial:null, returnTo:null}; }
+  if(id==='denied') S.connect.id = 'reminders';
+  if(id==='c4' && S.conns.reminders.status!=='on'){ S.conns.reminders.status='on'; }
+  S.stack = parents[id].slice(); S.confirmDisconnect=false; S.toast=null;
+  render(true);
+}
+function toast(msg){ S.toast = msg; renderToast(); clearTimeout(toast.t); toast.t = setTimeout(()=>{S.toast=null; renderToast();}, 2600); }
+function renderToast(){ const t=$('#toast'); t.hidden = !S.toast; if(S.toast) t.innerHTML = ic('check','sm')+`<span>${S.toast}</span>`; }
+
+const LABELS = {settings:'Settings', hub:'Apps & tools', plan:'Doddy', activity:'What Doddy did', privacy:'Privacy', ways:'Ways to open'};
+const backBtn = () => { const prev = S.stack[S.stack.length-2]; const label = prev==='detail' ? C(S.detailId).name : (LABELS[prev] || 'Back'); return `<button class="back" data-a="back">${ic('back')}${label}</button>`; };
+const sw = (on, act, label) => `<button class="switch" role="switch" aria-checked="${on}" data-a="${act}" aria-label="${label}"></button>`;
+const pose = id => `<div class="char" aria-hidden="true">${document.getElementById(id).innerHTML}</div>`;
+const row = ({icon, title, sub, val, cls='', act, attrs='', chev=true, status}) => {
+  const tag = act ? 'button' : 'div';
+  return `<${tag} class="row" ${act?`data-a="${act}"`:''} ${attrs}>
+    ${icon?`<span class="tile">${ic(icon)}</span>`:''}
+    <span class="r-main"><span class="r-title">${title}</span>${sub?`<span class="r-sub">${sub}</span>`:''}${status?`<span class="r-stat ${status.cls}">${status.txt}</span>`:''}</span>
+    ${val?`<span class="r-val ${cls}">${val}</span>`:''}${act&&chev?ic('chev','chev'):''}</${tag}>`;
+};
+
+/* ---------------- screens ---------------- */
+const V = {};
+V.settings = () => {
+  const n = connectedCount();
+  const paused = S.pauseAll;
+  return `
+  <div class="p-hand">Settings</div>
+  <div class="truthline ${paused?'paused':''}">${paused ? 'All connections paused. Doddy uses only your memories.' : `${n} app${n===1?'':'s'} connected. Your notes stay on this iPhone.`}</div>
+  <div class="p-section">You and Doddy</div>
+  <div class="rows">
+    ${row({icon:'person', title:'What I know about you', sub:'Name, language, what you’re focusing on', act:'noop'})}
+    ${row({icon:'voice', title:'How Doddy talks', sub:'English and Polish · short replies · a little humour', act:'noop'})}
+    ${row({icon:'textsize', title:'Appearance and accessibility', sub:'Follows iPhone · character art on', act:'noop'})}
+  </div>
+  <div class="p-section">Connections</div>
+  <div class="rows">
+    ${row({icon:'shortcuts', title:'Apps and tools', sub:'What Doddy can use when you ask', val: paused?'Paused':`${n} connected`, cls: paused?'warn':'', act:'go:hub'})}
+    ${row({icon:'phone', title:'Ways to open Doddy', sub:'Siri, Back Tap, Action Button, Share', val:'2 set up', act:'go:ways'})}
+    ${row({icon:'activity', title:'What Doddy did', sub:'Every look-up and change, on this iPhone', act:'go:activity'})}
+  </div>
+  <div class="p-section">Memories</div>
+  <div class="rows">
+    ${row({icon:'memories', title:'Saved on this iPhone', val:'24'})}
+    ${row({icon:'share', title:'Export', sub:'JSON or plain text', act:'noop'})}
+    <button class="row" data-a="noop"><span class="r-main"><span class="r-title" style="color:var(--err)">Delete all memories</span></span></button>
+  </div>
+  <div class="p-section">Privacy</div>
+  <div class="rows">
+    ${row({icon:'shield', title:'What leaves this iPhone', sub:'Per app, in plain words', act:'go:privacy'})}
+    <div class="row"><span class="tile">${ic('pause')}</span><span class="r-main"><span class="r-title">Pause all connections</span><span class="r-sub">Doddy stops using every app right away</span></span>${sw(S.pauseAll,'pauseAll','Pause all connections')}</div>
+  </div>
+  <div class="p-section">About</div>
+  <div class="rows">
+    ${row({title:'Version', val:'0.4 (12)'})}
+    ${row({title:'What’s built', sub:'What works today and what is planned', act:'noop'})}
+    ${row({title:'Developer', sub:'Voice agent ID · development builds only', act:'noop'})}
+  </div>`;
+};
+
+V.hub = () => {
+  const grp = (g, title, note) => {
+    const items = CATALOG.filter(c=>c.g===g);
+    return `<div class="p-section">${title}</div>${note?`<div class="p-sub">${note}</div>`:''}<div class="rows">${items.map(c=>{
+      const s = statusOf(c.id);
+      if(!c.study){
+        const voted = !!S.votes[c.id];
+        return `<div class="row disabled"><span class="tile">${iconFor(c)}</span><span class="r-main"><span class="r-title">${c.name}</span><span class="r-sub">${c.can}</span><span class="r-stat">Not built yet</span></span><button class="vote" aria-pressed="${voted}" data-a="vote:${c.id}">${voted?'Noted':'I’d use this'}</button></div>`;
+      }
+      return row({icon:c.id, title:c.name, sub:c.can, status:s, act: S.conns[c.id].status==='off' ? `connect:${c.id}` : S.conns[c.id].status==='denied' ? `denied:${c.id}` : `detail:${c.id}`});
+    }).join('')}</div>`;
+  };
+  return `${backBtn()}
+  <div class="hero"><div><div class="p-eyebrow">Connections</div><div class="p-title">Apps &amp; tools</div>
+  <p class="p-body">Doddy can use these when you ask, several at once. You’ll see every change before it happens.</p></div>${pose('pose-pointing')}</div>
+  <div class="row"><span class="tile">${ic('pause')}</span><span class="r-main"><span class="r-title">Pause all</span><span class="r-sub">${S.pauseAll?'Paused. Doddy uses only your memories.':`${connectedCount()} connected · nothing paused`}</span></span>${sw(S.pauseAll,'pauseAll','Pause all connections')}</div>
+  ${grp('phone','On this iPhone','No account. iOS asks you once for each app.')}
+  ${grp('send','Messages and email','Doddy writes the draft. You always tap Send.')}
+  ${grp('online','Online accounts','Later. These need a Doddy account and sign-in.')}
+  <div class="p-section">Doddy in other places</div>
+  <div class="rows">${row({icon:'phone', title:'Ways to open Doddy', sub:'Siri, Back Tap, Action Button, Share', act:'go:ways'})}</div>`;
+};
+
+function connectFrame(inner, step){
+  const c = C(S.connect.id);
+  return `<div class="grabber" aria-hidden="true"></div>
+  <div class="sheet-top">${step>1?`<button class="back" data-a="cstep:${step-1}">${ic('back')}Back</button>`:'<span></span>'}<button class="link" data-a="cancelConnect">Cancel</button></div>
+  <div class="steps" aria-label="Step ${step} of 4">${[1,2,3,4].map(i=>`<i class="${i<=step?'on':''}"></i>`).join('')}<span>&nbsp;${step} of 4</span></div>
+  <div class="p-eyebrow">Connect ${c.name}</div>${inner}`;
+}
+V.c1 = () => { const c=C(S.connect.id); return connectFrame(`
+  <div class="p-title">What Doddy will do with ${c.name}</div>
+  <div class="p-section">Doddy can</div>
+  <ul class="list2 can">${c.can.split('. ').filter(Boolean).map(t=>`<li>${ic('check')}<span>${t.replace(/\.$/,'')}</span></li>`).join('')}</ul>
+  <div class="p-section">Doddy won’t</div>
+  <ul class="list2 wont">${c.wont.map(t=>`<li>${ic('x')}<span>${t}</span></li>`).join('')}</ul>
+  <div class="box"><div class="p-section">What leaves this iPhone</div><div>${c.leaves}</div></div>
+  <div class="btns"><button class="btn" data-a="cstep:2">Continue</button></div>`,1); };
+
+V.c2 = () => { const c=C(S.connect.id); const k=S.connect; return connectFrame(`
+  <div class="p-title">Choose what to share</div>
+  <div class="p-section">${c.scopeLabel}</div>
+  <div role="radiogroup" aria-label="${c.scopeLabel}">${c.scopes.map(s=>`<button class="radio" role="radio" aria-checked="${k.scope===s}" data-a="cscope:${s}"><span class="dot"></span><span>${s}</span></button>`).join('')}</div>
+  <div class="p-section">How much Doddy does without asking</div>
+  <div class="level"><div class="lh"><span class="r-title">Look things up</span></div>
+    <div class="pills" role="group" aria-label="Look things up">
+      <button aria-pressed="${k.lookups==='auto'}" data-a="clook:auto">Without asking</button><button aria-pressed="${k.lookups==='ask'}" data-a="clook:ask">Ask first</button></div></div>
+  <div class="level"><div class="lh"><span class="r-title">Add or change</span><span class="p-sub">${c.id==='reminders'?'Ask first':'Not in this version'}</span></div>
+    <div class="locked">${ic('lock','sm')}${c.id==='reminders'?'Doddy always shows you a change before making it.':'Read-only for now.'}</div></div>
+  <div class="level"><div class="lh"><span class="r-title">Remove or send</span><span class="p-sub">Not allowed</span></div>
+    <div class="locked">${ic('lock','sm')}Not possible in this version.</div></div>
+  <div class="btns"><button class="btn" data-a="cstep:3">Continue</button></div>`,2); };
+
+V.c3 = () => { const c=C(S.connect.id); return connectFrame(`
+  <div class="p-title">iOS will ask you next</div>
+  <p class="p-body">Choose Allow so Doddy can ${c.id==='weather'?'check the forecast':'read your '+c.name.toLowerCase()}. You can change this any time in iOS Settings.</p>
+  <span class="tag">Illustration · iOS shows this, not Doddy</span>
+  <div class="ios" role="group" aria-label="Illustrated iOS permission prompt">
+    <div class="ios-b"><div class="ios-t">${c.ios}</div><div class="ios-m">${c.iosMsg}</div></div>
+    <div class="ios-a"><button data-a="ios:deny">Don’t Allow</button><button data-a="ios:allow">Allow</button></div>
+  </div>`,3); };
+
+V.c4 = () => { const c=C(S.connect.id); const k=S.connect; return connectFrame(`
+  <div class="p-title">${c.name} is connected</div>
+  <p class="p-body">Want to try it? Doddy will run one real look-up and show you exactly what it found.</p>
+  <div class="box"><div class="p-section">Say or type</div><div style="font-weight:600">“${c.trial}”</div></div>
+  ${k.trial ? `<div class="result ok"><div class="rh">${ic('check','sm')}It worked</div><div>${c.trialAnswer}</div><div class="p-sub">Example data in this study.</div></div>` : ''}
+  <div class="btns">${k.trial ? `<button class="btn" data-a="cfinish">Done</button>` : `<button class="btn" data-a="ctry">Try it</button><button class="btn ghost" data-a="cfinish">Skip</button>`}</div>`,4); };
+
+V.denied = () => { const c=C(S.connect.id); return `${backBtn()}
+  <div class="p-eyebrow">${c.name}</div>
+  <div class="p-title">iOS permission is off</div>
+  <p class="p-body">Doddy can’t see your ${c.name.toLowerCase()}, so it won’t look anything up there or add to it. Your memories and voice still work.</p>
+  <div class="box"><div class="p-section">To turn it on</div><div>iOS Settings → Doddy → ${c.perm} → ${c.id==='weather'?'While Using the App':'Full Access'}</div></div>
+  <div class="btns"><button class="btn" data-a="openios">Open iOS Settings</button><button class="btn ghost" data-a="back">Not now</button></div>
+  <p class="p-sub" style="margin-top:14px">Doddy can’t turn this on for you. Only you can, in iOS Settings.</p>`; };
+
+V.detail = () => {
+  const c = C(S.detailId), st = S.conns[S.detailId], s = statusOf(c.id);
+  const recent = S.activity.filter(a=>a.conn===c.id).slice(0,3);
+  return `${backBtn()}
+  <div class="p-eyebrow">Apps &amp; tools</div>
+  <div class="p-title">${c.name}</div>
+  <div class="truthline ${st.status!=='on'||S.pauseAll?'paused':''}">${s.txt} · iOS permission: on · checked just now</div>
+  <div class="p-section">How much Doddy does without asking</div>
+  <div class="level"><div class="lh"><span class="r-title">Look things up</span></div>
+    <div class="pills" role="group" aria-label="Look things up"><button aria-pressed="${st.lookups==='auto'}" data-a="dlook:auto">Without asking</button><button aria-pressed="${st.lookups==='ask'}" data-a="dlook:ask">Ask first</button></div></div>
+  <div class="level"><div class="lh"><span class="r-title">Add or change</span><span class="p-sub">${c.id==='reminders'?'Ask first':'Not in this version'}</span></div>
+    <div class="locked">${ic('lock','sm')}${c.id==='reminders'?'Doddy always shows you a change before making it.':c.id==='calendar'?'Calendar is read-only for now.':'Weather only looks things up.'}</div></div>
+  <div class="level"><div class="lh"><span class="r-title">Remove or send</span><span class="p-sub">Not allowed</span></div></div>
+  <div class="rows">${row({title:c.scopeLabel, val:st.scope})}</div>
+  <div class="p-section">Recently <button class="link" data-a="go:activity">See all</button></div>
+  ${recent.length ? recent.map(actRow).join('') : '<p class="p-sub">Nothing yet.</p>'}
+  <div class="row"><span class="r-main"><span class="r-title">Pause ${c.name}</span><span class="r-sub">Keeps the iOS permission. Doddy stops using it right away.</span></span>${sw(st.status==='paused','pauseOne','Pause '+c.name)}</div>
+  ${S.confirmDisconnect ? `<div class="confirm" role="group" aria-label="Confirm disconnect">
+     <div class="r-title">Disconnect ${c.name}?</div>
+     <div class="p-sub">Doddy forgets its ${c.name} settings and activity. ${c.id==='reminders'?'Reminders Doddy added stay in Reminders. ':''}To remove the permission itself, go to iOS Settings → Doddy → ${c.perm}.</div>
+     <button class="btn danger" data-a="disconnect">Disconnect</button><button class="btn ghost" data-a="cancelDisconnect">Keep connected</button></div>`
+   : `<div class="btns"><button class="btn danger" data-a="askDisconnect">Disconnect</button></div>`}`;
+};
+
+function planSteps(){
+  const p = S.plan;
+  const lk = (conn, label, text) => {
+    if(p.skipped[conn]) return {conn, kind:'lookup', state:'skip', label, text:'Skipped'};
+    if(S.pauseAll && conn!=='memories') return {conn, kind:'lookup', state:'skip', label, text:'Skipped: connections paused'};
+    if(!usable(conn)){
+      const st = S.conns[conn] && S.conns[conn].status;
+      return {conn, kind:'lookup', state:'missing', label, text: st==='paused' ? `${label} is paused` : st==='denied' ? `iOS permission for ${label} is off` : `${label} isn’t connected`};
+    }
+    if(conn!=='memories' && S.conns[conn].lookups==='ask' && !p.ran) return {conn, kind:'lookup', state:'pending', label, text:`Look up ${label==='Weather'?'Saturday’s forecast':'Saturday'}`};
+    return {conn, kind:'lookup', state:'done', label, text};
+  };
+  const steps = [
+    lk('memories','Memories','Spare key: blue tin above the fridge'),
+    lk('calendar','Calendar','Sat 17 Oct, 14:00 · “Mom’s”'),
+    lk('weather','Weather','Sat in Warsaw: rain likely (60%), 11°'),
+  ];
+  const rain = steps[2].state==='done';
+  const title = `Bring the spare key (blue tin above the fridge)${rain?' and an umbrella':''}`;
+  let r;
+  if(p.skipped.reminders) r = {state:'skip', text:'Skipped'};
+  else if(S.pauseAll) r = {state:'skip', text:'Skipped: connections paused'};
+  else if(!usable('reminders')){
+    const st = S.conns.reminders.status;
+    r = {state:'missing', text: st==='paused'?'Reminders is paused': st==='denied'?'iOS permission for Reminders is off':'Reminders isn’t connected'};
+  } else r = {state: p.results.reminders || 'pending'};
+  steps.push({conn:'reminders', kind:'change', label:'Reminders', title, ...r});
+  return steps;
+}
+
+V.plan = () => {
+  const p = S.plan, steps = planSteps();
+  const lookSkipped = steps.filter(s=>s.kind==='lookup' && s.state!=='done');
+  const ticked = steps.filter(s=>s.state==='pending' && (s.kind==='lookup' || p.tick.reminder));
+  const changes = ticked.filter(s=>s.kind==='change').length;
+  const btnLabel = ticked.length===0 ? 'Nothing to do' : (ticked.length===1 && changes===1) ? 'Add 1 reminder' : `Do ${ticked.length} things`;
+  const stepHtml = s => {
+    const kindTxt = s.kind==='lookup' ? (s.state==='done'?'Looked up':'Look up') : 'Add';
+    let mark, st='', acts='', cls='';
+    if(s.state==='done' && s.kind==='lookup'){ mark=ic('check'); cls='ok'; }
+    else if(s.state==='skip'){ mark=ic('skip'); cls='skip'; st=s.text; }
+    else if(s.state==='missing'){ mark=ic('q'); cls='unsure'; if(s.kind==='change') st=s.text;
+      const id=s.conn, stt=S.conns[id].status;
+      acts = stt==='paused'||S.pauseAll ? `<button class="link" data-a="detail:${id}">Open ${s.label}</button><button class="link" data-a="pskip:${id}">Skip</button>`
+           : stt==='denied' ? `<button class="link" data-a="denied:${id}">How to fix</button><button class="link" data-a="pskip:${id}">Skip</button>`
+           : `<button class="link" data-a="pconnect:${id}">Connect ${s.label}</button><button class="link" data-a="pskip:${id}">Skip</button>`; }
+    else if(s.state==='pending'){
+      const on = s.kind==='change' ? p.tick.reminder : true;
+      mark = s.kind==='change' ? `<button class="chk" role="checkbox" aria-checked="${on}" aria-label="Add this reminder" data-a="ptick">${on?ic('check'):''}</button>` : ic('dot');
+      if(s.kind==='change') acts = `<button class="link" data-a="pedit">${p.editing?'Done changing':'Change'}</button>`;
+    }
+    else if(s.state==='busy'){ mark=ic('dot'); st='Adding…'; }
+    else if(s.state==='done'){ mark=ic('check'); cls='ok'; st='Done · checked in Reminders'; acts=`<button class="link" data-a="noop">Open in Reminders ${ic('out','sm')}</button>`; }
+    else if(s.state==='couldnt'){ mark=ic('x'); cls='err'; st='Couldn’t add it. Reminders didn’t accept the write.'; acts=`<button class="link" data-a="pretry">Try again</button>`; }
+    else if(s.state==='notsure'){ mark=ic('q'); cls='unsure'; st='Not sure it was added. The connection dropped before Reminders answered.'; acts=`<button class="link" data-a="pcheck">Check Reminders first</button>`; }
+    const body = s.kind==='change'
+      ? `<div class="t">“${s.title}”</div><div class="m">${p.when} · list: ${p.list}</div>
+         ${p.editing && s.state==='pending' ? `<div class="editor"><label for="pwhen">When<select id="pwhen" data-a="pwhen">${['Sat 17 Oct, 09:00','Sat 17 Oct, 12:00','Fri 16 Oct, 20:00'].map(o=>`<option ${o===p.when?'selected':''}>${o}</option>`).join('')}</select></label>
+         <label for="plist">List<select id="plist" data-a="plist">${['Personal','Shopping','Family'].map(o=>`<option ${o===p.list?'selected':''}>${o}</option>`).join('')}</select></label><div class="p-sub">Time zone: Europe/Warsaw</div></div>`:''}`
+      : `<div class="t">${s.state==='done'||s.state==='pending'?s.text:''}</div>${s.state==='missing'?`<div class="t">${s.text}</div>`:''}`;
+    return `<div class="step ${cls}"><div class="mark">${mark}</div><div><div class="k">${kindTxt} · ${s.label}</div>${body}${st?`<div class="st">${st}</div>`:''}${acts?`<div class="acts">${acts}</div>`:''}</div></div>`;
+  };
+  const allDone = p.ran;
+  const weatherKnown = steps[2].state==='done';
+  return `<div class="p-hand">Doddy</div>
+  <div class="who">You</div>
+  <div class="bubble">I’m at Mom’s on Saturday. Remind me to bring the spare key, and tell me if it’ll rain.</div>
+  <div class="who">Doddy</div>
+  <p class="reply">${weatherKnown ? 'Rain is likely on Saturday afternoon, so I added an umbrella to the reminder.' : 'I can’t check the weather right now, so the reminder only mentions the key.'} ${allDone?'':'Here’s what I’d do.'}</p>
+  <div class="plan" role="group" aria-label="Plan">
+    <div class="plan-h"><strong>${allDone?'What I did':'Here’s what I’d do'}</strong><span class="p-sub">${allDone?'Results':'Draft'}</span></div>
+    ${steps.map(stepHtml).join('')}
+    ${allDone ? `<div class="btns"><button class="btn ghost" data-a="go:activity">See it in What Doddy did</button></div>`
+      : `<div class="btns"><button class="btn" data-a="prun" ${ticked.length&&!p.busy?'':'disabled'}>${p.busy?'Working…':btnLabel}</button><button class="btn ghost" data-a="pnotnow">Not now</button></div>`}
+  </div>
+  <div class="composer" aria-hidden="true"><span>Type, or hold to talk</span><i>${ic('up','sm')}</i></div>`;
+};
+
+function actRow(a){
+  const c = a.conn==='memories' ? {name:'Memories'} : C(a.conn);
+  const rTxt = {read:'Looked up', done:'Done', couldnt:'Couldn’t', notsure:'Not sure', skip:'Skipped'}[a.r];
+  const cls = {read:'read', done:'ok', couldnt:'err', notsure:'unsure', skip:'skip'}[a.r];
+  return `<div class="act"><time>${a.time}</time><div><div class="a-t">${a.text}</div><div class="a-m">${c.name}${a.group?` · ${a.group}`:''} · <span class="a-r ${cls}">${rTxt}</span></div></div></div>`;
+}
+V.activity = () => {
+  const list = S.activity.filter(a=>S.filter==='all'||a.conn===S.filter);
+  const days = [...new Set(list.map(a=>a.day))];
+  return `${backBtn()}
+  <div class="hero"><div><div class="p-eyebrow">Connections</div><div class="p-title">What Doddy did</div>
+  <p class="p-body">Every look-up and change, kept on this iPhone for 30 days.</p></div>${pose('pose-card')}</div>
+  <div class="chips" role="group" aria-label="Filter">${[['all','All'],['reminders','Reminders'],['calendar','Calendar'],['weather','Weather'],['memories','Memories']].map(([v,l])=>`<button aria-pressed="${S.filter===v}" data-a="filter:${v}">${l}</button>`).join('')}</div>
+  ${days.length ? days.map(d=>`<div class="p-section">${d}</div>${list.filter(a=>a.day===d).map(actRow).join('')}`).join('') : '<p class="p-sub" style="margin-top:16px">Nothing here yet.</p>'}
+  <div class="btns"><button class="btn ghost" data-a="noop">Clear activity</button></div>
+  <p class="p-sub" style="margin-top:10px">Clearing removes this list only. Reminders Doddy added stay in Reminders.</p>`;
+};
+
+V.privacy = () => {
+  const rows = [['Your memories','Only the ones Doddy looks up during a voice conversation, sent to ElevenLabs.']];
+  if(S.conns.reminders.status==='on') rows.push(['Reminders','Only what Doddy reads during a voice conversation.']);
+  if(S.conns.calendar.status==='on') rows.push(['Calendar','Only the events Doddy reads during a voice conversation.']);
+  if(S.conns.weather.status==='on') rows.push(['Weather','Your approximate location, to Apple Weather.']);
+  rows.push(['Your voice','Sent to ElevenLabs while you talk to Doddy. Never in the background.']);
+  rows.push(['What Doddy did','Never. Stays on this iPhone.']);
+  return `${backBtn()}
+  <div class="p-eyebrow">Privacy</div><div class="p-title">What leaves this iPhone</div>
+  <p class="p-body">Built from what you have connected right now.</p>
+  <div class="tbl">${rows.map(r=>`<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div>
+  <div class="p-section">Controls</div>
+  <div class="row"><span class="r-main"><span class="r-title">Use connected apps while talking</span><span class="r-sub">Off: voice conversations use only your memories.</span></span>${sw(S.voiceUse,'voiceUse','Use connected apps while talking')}</div>
+  <div class="row"><span class="r-main"><span class="r-title">Pause all connections</span><span class="r-sub">Also on the voice screen.</span></span>${sw(S.pauseAll,'pauseAll','Pause all connections')}</div>`;
+};
+
+V.ways = () => `${backBtn()}
+  <div class="p-eyebrow">Connections</div><div class="p-title">Ways to open Doddy</div>
+  <p class="p-body">Doddy can’t see how your buttons are set up, so these say “tested by you”, not “verified”.</p>
+  <div class="rows">
+    ${row({icon:'voice', title:'Siri and Shortcuts', sub:'“Talk to Doddy”, “Save to Doddy”', val:'Ready', cls:'ok'})}
+    ${row({icon:'phone', title:'Back Tap', sub:'Double tap the back of your iPhone', val:'Tested by you · 9 Oct', act:'noop'})}
+    ${row({icon:'control', title:'Action Button', sub:'iPhone 15 Pro and later', val:'Set up', act:'noop'})}
+    ${row({icon:'control', title:'Control Center', sub:'Add the Doddy control once', val:'Not set up', act:'noop'})}
+    ${row({icon:'share', title:'Share sheet', sub:'Save a link or text to Doddy', val:'Ready', cls:'ok'})}
+  </div>`;
+
+/* ---------------- actions ---------------- */
+function act(a, el){
+  const [k, v] = a.split(':'); const p = S.plan;
+  switch(k){
+    case 'back': return back();
+    case 'go': return go(v);
+    case 'noop': return toast('Not part of this study');
+    case 'vote': S.votes[v] = !S.votes[v]; return render();
+    case 'pauseAll': S.pauseAll = !S.pauseAll; toast(S.pauseAll?'All connections paused':'Connections back on'); return render();
+    case 'voiceUse': S.voiceUse = !S.voiceUse; return render();
+    case 'connect': S.connect = {id:v, step:1, scope:C(v).scopes[0], lookups:'auto', trial:null, returnTo:null}; return go('c1');
+    case 'pconnect': S.connect = {id:v, step:1, scope:C(v).scopes[0], lookups:'auto', trial:null, returnTo:'plan'}; return go('c1');
+    case 'cstep': S.stack[S.stack.length-1] = 'c'+v; return render(true);
+    case 'cscope': S.connect.scope = v; return render();
+    case 'clook': S.connect.lookups = v; return render();
+    case 'cancelConnect': while(S.stack.length>1 && /^c\d$/.test(cur())) S.stack.pop(); return render(true);
+    case 'ios':
+      if(v==='allow'){ Object.assign(S.conns[S.connect.id], {status:'on', lookups:S.connect.lookups, scope:S.connect.scope}); log(S.connect.id, `Connected ${C(S.connect.id).name} (${S.connect.scope})`, 'done'); S.stack[S.stack.length-1]='c4'; }
+      else { S.conns[S.connect.id].status='denied'; while(/^c\d$/.test(cur())) S.stack.pop(); S.stack.push('denied'); }
+      return render(true);
+    case 'ctry': S.connect.trial = true; S.conns[S.connect.id].tested = '10 Oct'; log(S.connect.id, `Tested: “${C(S.connect.id).trial}”`, 'read'); return render();
+    case 'cfinish': { const r = S.connect.returnTo; while(/^c\d$/.test(cur())) S.stack.pop(); if(r && cur()!==r) S.stack.push(r); toast(`${C(S.connect.id).name} connected`); return render(true); }
+    case 'denied': S.connect.id = v; return go('denied');
+    case 'openios': return toast('Would open iOS Settings → Doddy');
+    case 'detail': S.detailId = v; return go('detail');
+    case 'dlook': S.conns[S.detailId].lookups = v; return render();
+    case 'pauseOne': { const st=S.conns[S.detailId]; st.status = st.status==='paused'?'on':'paused'; toast(st.status==='paused'?`${C(S.detailId).name} paused`:`${C(S.detailId).name} back on`); return render(); }
+    case 'askDisconnect': S.confirmDisconnect = true; return render();
+    case 'cancelDisconnect': S.confirmDisconnect = false; return render();
+    case 'disconnect': { const id=S.detailId; S.conns[id] = {status:'off', lookups:'auto', scope:C(id).scopes[0], tested:null}; S.activity = S.activity.filter(x=>x.conn!==id); toast(`${C(id).name} disconnected`); return back(); }
+    case 'filter': S.filter = v; return render();
+    case 'ptick': p.tick.reminder = !p.tick.reminder; return render();
+    case 'pedit': p.editing = !p.editing; return render();
+    case 'pskip': p.skipped[v] = true; return render();
+    case 'pnotnow': toast('Nothing changed. The draft is gone.'); S.plan = fresh().plan; return render();
+    case 'prun': return runPlan();
+    case 'pretry': p.results.reminders = 'pending'; p.ran=false; return runPlan();
+    case 'pcheck': p.results.reminders = 'done'; log('reminders','Checked Reminders: the reminder was there. Not added again.','done','Saturday at Mom’s'); toast('Found it in Reminders. Not added twice.'); return render();
+  }
+}
+function runPlan(){
+  const p = S.plan, steps = planSteps();
+  const g = 'Saturday at Mom’s';
+  p.busy = true; render();
+  setTimeout(()=>{
+    // Look-ups first, in order, each with its own receipt
+    steps.filter(s=>s.kind==='lookup').forEach(s=>{
+      if(s.state==='done' || s.state==='pending') log(s.conn, s.conn==='memories'?'Looked up: spare key':s.conn==='calendar'?'Looked up Saturday’s events':'Looked up Saturday’s forecast', 'read', g);
+      else if(s.state==='skip' || s.state==='missing') log(s.conn, `Skipped look-up (${s.text.replace(/^Skipped: /,'')})`, 'skip', g);
+    });
+    const r = steps[3];
+    if(r.state==='pending' && p.tick.reminder){
+      p.results.reminders = S.writeResult;
+      log('reminders', `Add reminder “${r.title}”, ${p.when}`, S.writeResult, g);
+    } else if(r.state==='pending'){ p.results.reminders = undefined; p.skipped.reminders = true; }
+    else if(r.state==='missing' || r.state==='skip'){ log('reminders','Skipped: add reminder','skip', g); }
+    p.ran = true; p.busy = false; p.editing = false;
+    render();
+  }, 650);
+}
+
+/* ---------------- render ---------------- */
+function render(focus){
+  const id = cur();
+  screenEl.innerHTML = V[id]();
+  if(focus){ screenEl.scrollTop = 0; screenEl.focus({preventScroll:true}); }
+  const top = ['settings','hub','activity','privacy','ways','detail','denied'].includes(id) ? 'settings' : id==='plan' ? 'home' : null;
+  const tb = $('#tabbar'); tb.hidden = !top;
+  tb.innerHTML = [['home','Home','home'],['memories','Memories','memories'],['settings','Settings','settings']].map(([k,l,icn])=>`<span class="${top===k?'on':''}">${ic(icn)}${l}</span>`).join('');
+  const n = NOTES[id];
+  $('#notes').innerHTML = `<h2>Design notes</h2><h3>${n.t}</h3><p class="milestone">${n.m}</p><ul>${n.p.map(x=>`<li>${x}</li>`).join('')}</ul>`;
+  $('#index').innerHTML = '<h2>Screens</h2>' + SCREENS.map((s,i)=>`${s.grp?`<div class="grp">${s.grp}</div>`:''}<button data-jump="${s.id}" aria-current="${s.id===id}"><small>${i+1}</small>${s.label}</button>`).join('');
+  document.querySelectorAll('.seg').forEach(seg=>{
+    const key = seg.dataset.ctl, val = key==='large' ? (S.large?'yes':'no') : S[key];
+    seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===val));
+  });
+  const ph = $('#phone'); ph.dataset.look = S.look; ph.classList.toggle('large', S.large);
+  renderToast();
+}
+
+document.addEventListener('click', e=>{
+  const j = e.target.closest('[data-jump]'); if(j){ jump(j.dataset.jump); return; }
+  const c = e.target.closest('.seg button');
+  if(c){ const key=c.parentElement.dataset.ctl; if(key==='large') S.large = c.dataset.v==='yes'; else S[key]=c.dataset.v; render(); return; }
+  const b = e.target.closest('#screen [data-a]');
+  if(b && b.tagName!=='SELECT') act(b.dataset.a, b);
+});
+document.addEventListener('change', e=>{
+  if(e.target.id==='pwhen'){ S.plan.when = e.target.value; render(); }
+  if(e.target.id==='plist'){ S.plan.list = e.target.value; render(); }
+});
+$('#reset').addEventListener('click', ()=>{ clearTimeout(toast.t); S = fresh(); render(true); });
+render();
+})();
+</script>
+</body>
+</html>

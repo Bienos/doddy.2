@@ -261,7 +261,7 @@ final class VoiceSessionController {
         case .event(let id, let draft):
             await reply(id, addEvent(draft))
         case .reminder(let id, let draft):
-            await reply(id, addReminder(draft))
+            await reply(id, await addReminder(draft))
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
         case .map(let id, let place):
@@ -510,13 +510,14 @@ final class VoiceSessionController {
         }
     }
 
-    private func addReminder(_ draft: ReminderDraft) -> String {
+    private func addReminder(_ draft: ReminderDraft) async -> String {
         guard devices.access(for: .reminders) == .granted else {
             return VoiceToolReply.notAdded("Reminders isn't connected.")
         }
         do {
-            switch try devices.addReminder(draft, calendar: .current) {
-            case .verified: return VoiceToolReply.reminderAdded(draft, calendar: .current)
+            switch try await devices.addReminder(draft, calendar: .current) {
+            case .added: return VoiceToolReply.reminderAdded(draft, calendar: .current)
+            case .alreadyThere: return VoiceToolReply.reminderAlreadyThere(draft, calendar: .current)
             case .unconfirmed: return VoiceToolReply.addUnconfirmed
             }
         } catch {

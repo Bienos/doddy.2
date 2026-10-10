@@ -154,7 +154,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.createCalendarEvent:
             return parseEvent(args, name: name, calendar: calendar)
         case VoiceToolName.createReminder:
-            return parseReminder(args, name: name, calendar: calendar)
+            return parseReminder(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)
@@ -227,7 +227,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
             location: args.text("location"), notes: args.text("notes")))
     }
 
-    private static func parseReminder(_ args: Arguments, name: String, calendar: Calendar) -> VoiceToolRequest {
+    private static func parseReminder(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
         guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
         var due: Date?
         var dueHasTime = false
@@ -235,6 +235,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
             guard let parsed = VoiceLocalDate.parse(dueText, calendar: calendar) else {
                 return .invalid(name: name, reason: "due is not a date")
             }
+            // A past due date is almost always a wrong day or year; ask instead of adding it overdue.
+            let earliest = parsed.hasTime ? now.addingTimeInterval(-60) : calendar.startOfDay(for: now)
+            guard parsed.date >= earliest else { return .invalid(name: name, reason: "due is in the past") }
             due = parsed.date
             dueHasTime = parsed.hasTime
         }
@@ -428,6 +431,12 @@ public enum VoiceToolReply {
             return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day)."
         }
         return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar))."
+    }
+
+    /// An incomplete reminder with the same text and due time was already in Reminders from Doddy.
+    public static func reminderAlreadyThere(_ draft: ReminderDraft, calendar: Calendar) -> String {
+        let when = draft.due.map { " due \(localText($0, hasTime: draft.dueHasTime, calendar: calendar))" } ?? ""
+        return "added: reminder \"\(draft.title)\"\(when) was already in Reminders, so nothing new was added. Tell the user it's there; don't add it again."
     }
 
     public static func reminderAdded(_ draft: ReminderDraft, calendar: Calendar) -> String {
