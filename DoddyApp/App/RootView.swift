@@ -11,6 +11,8 @@ enum PreferenceKey {
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).
     static let pinnedNotes = "pinnedNotes"
     static let hideCharacterArt = "hideCharacterArt"
+    /// Settings → Voice → Dynamic Island style (`IslandStyle` raw value); display only (ADR-211).
+    static let islandStyle = "islandStyle"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"

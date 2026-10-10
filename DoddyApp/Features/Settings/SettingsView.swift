@@ -295,6 +295,7 @@ struct SettingsView: View {
 
                 Section("Voice") {
                     PersonalityLinkRow()
+                    IslandStyleLinkRow()
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
                     TextField("Token server (https://…)", text: $voiceTokenServer)

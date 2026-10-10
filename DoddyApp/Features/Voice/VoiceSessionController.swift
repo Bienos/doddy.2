@@ -108,7 +108,19 @@ final class VoiceSessionController {
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
-    private(set) var reminderStatus: ReminderStatus?
+    private(set) var reminderStatus: ReminderStatus? {
+        didSet {
+            // Reminders confirmed it (added, or already there): the island says so briefly (ADR-212).
+            // An unknown result is never shown as set.
+            if case .done(_, let outcome) = reminderStatus {
+                switch outcome {
+                case .added, .alreadyThere: flashIsland(.reminderSet)
+                default: break
+                }
+            }
+            syncIsland()
+        }
+    }
     /// Which steps of the plan card are ticked. Every step that can run starts ticked.
     private(set) var planTicked: Set<Int> = []
     /// Steps the user changed on the card (ADR-205); the agent is told when it gets the results.
@@ -116,7 +128,7 @@ final class VoiceSessionController {
     /// Gmail and Todoist steps on the plan card: the server's preview and its one-time approval
     /// for exactly these arguments (ADR-209).
     private(set) var planCloud: [Int: PlanCloudApproval] = [:]
-    private(set) var planStatus: PlanStatus?
+    private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
@@ -149,6 +161,13 @@ final class VoiceSessionController {
     var isPrivate = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
+    /// A finished moment the island shows for a few seconds ("Note saved", "Reminder set").
+    private var islandFlash: (moment: DoddyVoiceAttributes.ContentState.Moment, until: Date)? {
+        didSet { syncIsland() }
+    }
+    @ObservationIgnored private var islandFlashClear: Task<Void, Never>?
+    /// How long "Note saved" and "Reminder set" stay on the island.
+    static let islandFlashSeconds: TimeInterval = 8
 
     init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
         self.store = store
@@ -175,6 +194,7 @@ final class VoiceSessionController {
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
+        islandFlash = nil
         audioPausedByOtherApp = false
         audioNote = nil
 
@@ -413,6 +433,8 @@ final class VoiceSessionController {
                 let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
                 pendingMemoryCategory = .other
                 savedThisConversation += 1
+                // Only after the store returned the saved record (ADR-212).
+                flashIsland(.noteSaved)
                 await reply(id, VoiceToolReply.saved(record))
             } catch {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
@@ -566,7 +588,39 @@ final class VoiceSessionController {
         case .speaking: status = .speaking
         case .idle, .ended, .microphoneDenied, .failed: return nil
         }
-        return .init(status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted)
+        var state = DoddyVoiceAttributes.ContentState(status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted)
+        state.moment = islandMoment
+        state.islandStyle = IslandStyle(rawValue: UserDefaults.standard.string(forKey: PreferenceKey.islandStyle) ?? "") ?? .leanIn
+        return state
+    }
+
+    /// What is happening inside the conversation that has its own island (ADR-212): a card
+    /// waiting for the user, a plan running, a reminder being added, or a few seconds of
+    /// "saved" / "set" after the store or Reminders confirmed it. Kinds and counts only.
+    private var islandMoment: DoddyVoiceAttributes.ContentState.Moment? {
+        switch pendingAction {
+        case .memory: return .noteWaiting
+        case .plan(_, let steps, _): return .planWaiting(steps: steps.count)
+        case .reminder, .noteReminder: return .reminderWaiting
+        case .some: return nil
+        case nil: break
+        }
+        if let plan = planStatus, plan.isRunning, !plan.steps.isEmpty {
+            return .planRunning(step: min(plan.results.count + 1, plan.steps.count), of: plan.steps.count)
+        }
+        if case .adding = reminderStatus { return .reminderAdding }
+        if let flash = islandFlash, flash.until > Date() { return flash.moment }
+        return nil
+    }
+
+    private func flashIsland(_ moment: DoddyVoiceAttributes.ContentState.Moment) {
+        islandFlash = (moment, Date().addingTimeInterval(Self.islandFlashSeconds))
+        islandFlashClear?.cancel()
+        islandFlashClear = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.islandFlashSeconds))
+            guard !Task.isCancelled else { return }
+            self?.islandFlash = nil
+        }
     }
 
     private func syncIsland() {
