@@ -123,6 +123,43 @@ bundle was used for this run.
   setup and release signing remain device/release gates.
 - No TestFlight, App Store deployment, production signing or cloud service creation.
 
+## Fix attempt for the red Island handoff (ADR-123, not yet re-run)
+
+Written on Linux without Xcode; nothing below has been compiled or run on a simulator or device.
+
+- **What the failure shows.** After the system Unmute tap the fixture label stayed "Fixture
+  muted". That label follows the fixture's `isMuted` `@State`, which the registered
+  `toggleMute` handler flips whichever `VoiceLiveActivity` it holds. So the handler in the app
+  process most likely never ran. The earlier `@State island` change (commit `9ebd4f8`) keeps
+  the fixture's controller stable but cannot explain the label.
+- **Likely cause.** `ToggleDoddyMuteIntent` and `EndDoddyConversationIntent` live in `Shared/`,
+  which `project.yml` compiles into both `Doddy` and `DoddyWidgets`. The widget extension has
+  its own, empty `VoiceActivityActions.shared`, so an intent performed there is a silent no-op.
+  Apple's iOS 27 App Intents docs say an intent is performed "using any available target" by
+  default, and that `allowedExecutionTargets` restricts it
+  ([IntentExecutionTargets](https://developer.apple.com/documentation/appintents/intentexecutiontargets),
+  [allowedExecutionTargets](https://developer.apple.com/documentation/appintents/appintent/allowedexecutiontargets)).
+  This run used the iOS 27 simulator. Older guidance says `LiveActivityIntent` runs in the app
+  process ([interactivity docs](https://developer.apple.com/documentation/widgetkit/adding-interactivity-to-widgets-and-live-activities)).
+  The two sources disagree, so the cause is inferred, not proven.
+- **Change.** Both Live Activity intents, and `TalkToDoddyIntent` for the same reason, declare
+  `allowedExecutionTargets` as `.main` on iOS 27 and later. The declaration is behind
+  `#if compiler(>=6.4)` so older Xcode versions still build; they keep the old behaviour.
+
+**The Mac re-run must check:**
+
+1. `make project`, then build `Doddy` + `DoddyWidgets` with Xcode 27. A compile error on
+   `allowedExecutionTargets` / `IntentExecutionTargets` means the API differs from the docs.
+2. `DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd` on the
+   iPhone 18 Pro / iOS 27 simulator. It must pass end to end: system **Unmute** reaches the app
+   ("Fixture active"), then system **End** reaches it ("Fixture ended", "0 native activities").
+   This is the only proof of the fix. If Unmute still fails, add a log in
+   `ToggleDoddyMuteIntent.perform()` that prints `Bundle.main.bundleIdentifier`. That shows
+   which process ran the intent, or whether any did.
+3. `DoddyTests/IslandBaselineTests`: all four tests still pass. They call `perform()` directly,
+   so they do not test routing.
+4. On a physical iPhone, later: TalkToDoddy control still opens Doddy and starts a conversation.
+
 ## Owner decisions needed / next task
 
 Review this local baseline before publishing or merging. First diagnose and fix the red

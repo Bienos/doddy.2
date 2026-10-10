@@ -8,8 +8,10 @@ struct NativeIslandBaselineView: View {
     @State private var isMuted = false
     @State private var nativeActivityCount = 0
     /// @State so a redraw of this view keeps the controller that holds the running activity;
-    /// a plain `let` made a new one per redraw, so the system Mute/End buttons reached a copy
-    /// with no activity (the failing "system Island Unmute" check in NATIVE_BASELINE_REPORT.md).
+    /// a plain `let` made a new one per redraw, so the system Mute/End buttons could reach a copy
+    /// with no activity. That alone does not explain the red "system Island Unmute" check: the
+    /// status label follows `isMuted`, which the handler toggles whichever controller it holds.
+    /// So the handler most likely never ran in this process; see ADR-123 (not yet re-run on a Mac).
     @State private var island = VoiceLiveActivity()
 
     var body: some View {
