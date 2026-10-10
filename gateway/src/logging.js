@@ -3,17 +3,18 @@
 
 const ALLOWED = new Set([
   'evt', 'requestId', 'deviceTag', 'status', 'code', 'ms', 'inputTokens', 'outputTokens',
-  'memoryCount', 'turnCount', 'providerStatus', 'configMissing',
+  'memoryCount', 'turnCount', 'providerStatus', 'configMissing', 'cause', 'costMicros',
 ]);
 
 // Values are constrained by shape too, so free text cannot ride in under an allowed key.
 const SHAPES = /** @type {Record<string, RegExp>} */ ({
-  evt: /^(assist|register)$/,
+  evt: /^(assist|register|startup)$/,
   requestId: /^[0-9a-f]{8}$/,
   deviceTag: /^[0-9a-f]{8}$/,
   code: /^[A-Za-z]{3,24}$/,
+  cause: /^[A-Za-z]{3,24}$/,
 });
-const NUMBERS = new Set(['status', 'ms', 'inputTokens', 'outputTokens', 'memoryCount', 'turnCount', 'providerStatus']);
+const NUMBERS = new Set(['status', 'ms', 'inputTokens', 'outputTokens', 'memoryCount', 'turnCount', 'providerStatus', 'costMicros']);
 
 /** @param {Record<string, unknown>} fields */
 export function sanitize(fields) {

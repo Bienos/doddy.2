@@ -4,10 +4,12 @@
 const ENDPOINT = 'https://api.openai.com/v1/responses';
 /** A retry is only worth starting if it has this long to finish. */
 const MIN_RETRY_BUDGET_MS = 10_000;
+/** Output allowance per call; the daily spend cap reserves this many output tokens up front. */
+export const MAX_OUTPUT_TOKENS = 800;
 
 /**
  * @typedef {{kind: 'ok', text: string, inputTokens?: number, outputTokens?: number}
- *   | {kind: 'refused'}
+ *   | {kind: 'refused', inputTokens?: number, outputTokens?: number}
  *   | {kind: 'error', code: 'rateLimited'|'providerUnavailable'|'timeout', providerStatus?: number, retryAfterSeconds?: number}} ProviderResult
  */
 
@@ -23,7 +25,7 @@ export async function callProvider(cfg, call) {
     instructions: call.instructions,
     input: call.input,
     store: false,
-    max_output_tokens: 800,
+    max_output_tokens: MAX_OUTPUT_TOKENS,
     text: { format: { type: 'json_schema', name: 'doddy_answer', strict: true, schema: call.schema } },
   };
 
@@ -73,7 +75,7 @@ async function once(cfg, body) {
     for (const item of items) {
       if (item?.type !== 'message' || !Array.isArray(item.content)) continue;
       for (const part of item.content) {
-        if (part?.type === 'refusal') return { kind: 'refused' };
+        if (part?.type === 'refusal') return { kind: 'refused', inputTokens: data?.usage?.input_tokens, outputTokens: data?.usage?.output_tokens };
         if (part?.type === 'output_text' && typeof part.text === 'string') {
           return { kind: 'ok', text: part.text, inputTokens: data?.usage?.input_tokens, outputTokens: data?.usage?.output_tokens };
         }

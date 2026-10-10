@@ -32,8 +32,9 @@ Errors: `{schemaVersion, requestId?, error:{code,message,retryAfterSeconds?}}`, 
 |---|---|---|
 | `notAuthorized` | 401 | `notAuthorized` (app re-registers once, then reports it) |
 | `rateLimited` | 429 (+`Retry-After`) | `rateLimited(retryAfterSeconds)`, not auto-retried |
+| `dailyLimitReached` | 429 (+`Retry-After` = seconds to next UTC midnight) | `dailyLimitReached` ("Doddy's daily limit is reached. Try again tomorrow."), not auto-retried. Daily spend cap, ADR-125 |
 | `timeout` | 504 | `timeout`, retried up to 2 more times with 0.5 s / 1.5 s backoff |
-| `providerUnavailable` | 503 | `providerUnavailable`, same retry |
+| `providerUnavailable` | 503 | `providerUnavailable`, same retry. Also returned when the shared limits store is configured but unreachable (fail closed, ADR-124) |
 | `invalidCitations` | 502 | `invalidCitations`, answer discarded |
 | `refused` | 422 | `refused` |
 | `invalidRequest`/`payloadTooLarge` | 400/413 | `invalidRequest` |
@@ -57,6 +58,9 @@ Errors: `{schemaVersion, requestId?, error:{code,message,retryAfterSeconds?}}`, 
 - **Residual risk:** the model can still say something about the user without citing a note. The app therefore labels every uncited answer "Not from your notes. This is a general answer." It does not claim to detect fabrication.
 - The model has **no tools**. It cannot save, delete, remind or send anything; the prompt tells it not to claim it did. Chats are never saved as notes.
 - Local memory never depends on the gateway: a failed ask changes nothing (covered by `testAFailureNeverTouchesLocalMemory`).
+
+## Limits (ADR-114, ADR-124, ADR-125)
+Rate limits and a daily spend cap (everyone / per install, per UTC day) are counted in a shared Redis-compatible store over its REST API when one is configured; store down → refuse. Without a store they are per instance (dev only; `REQUIRE_SHARED_LIMITS=1` turns that into `notConfigured`). Details and env vars: `gateway/README.md`. No real store exists yet.
 
 ## Not built (M2 scope boundary)
 Streaming, saving an answer as a note, private/no-history toggle beyond "chat is RAM-only", per-user quotas, App Attest/accounts, content-free metrics beyond gateway logs, voice. Gmail / Google Calendar / EventKit: see `CONNECTED_APPS_PROPOSAL.md`.

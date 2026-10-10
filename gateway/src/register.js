@@ -2,6 +2,7 @@ import { loadConfig } from './config.js';
 import { errorResponse, json, readJson, clientAddress } from './http.js';
 import { logEvent } from './logging.js';
 import { methodNotAllowed } from './assist.js';
+import { StoreUnavailableError } from './store.js';
 import { deviceTag, inviteTag, issueToken } from './token.js';
 import { validateRegisterRequest } from './validate.js';
 
@@ -30,7 +31,16 @@ async function register(request, deps) {
   const config = loaded.config;
 
   const nowMs = deps.now();
-  const perAddress = await deps.limiter.hit(`reg-ip:${clientAddress(request)}`, 20, 3600, nowMs);
+  /** Shared store configured but unreachable: refuse (fail closed). */
+  /** @param {string} key @param {number} limit @param {number} window */
+  const hit = async (key, limit, window) => {
+    try { return await deps.limiter.hit(key, limit, window, nowMs); } catch (err) {
+      if (err instanceof StoreUnavailableError) return null;
+      throw err;
+    }
+  };
+  const perAddress = await hit(`reg-ip:${clientAddress(request)}`, 20, 3600);
+  if (!perAddress) return fail('providerUnavailable', { cause: 'limitStore' });
   if (!perAddress.allowed) return fail('rateLimited', {}, { retryAfterSeconds: perAddress.retryAfterSeconds });
 
   const body = await readJson(request, 1024);
@@ -40,7 +50,8 @@ async function register(request, deps) {
 
   const tag = inviteTag(parsed.value.inviteCode, config.tokenSecret);
   if (!config.inviteTags.has(tag)) return fail('notAuthorized');
-  const perInvite = await deps.limiter.hit(`reg-inv:${tag}`, 300, 86_400, nowMs);
+  const perInvite = await hit(`reg-inv:${tag}`, 300, 86_400);
+  if (!perInvite) return fail('providerUnavailable', { cause: 'limitStore' });
   if (!perInvite.allowed) return fail('rateLimited', {}, { retryAfterSeconds: perInvite.retryAfterSeconds });
 
   const { token, expiresAtMs } = issueToken(

@@ -27,6 +27,13 @@ test('assist_error_v1.json is exactly what the gateway returns for a rate limit'
   assert.deepEqual(await res.json(), expected);
 });
 
+test('assist_error_daily_limit_v1.json is exactly what the gateway returns when the daily budget is spent', async () => {
+  const expected = fixture('assist_error_daily_limit_v1.json');
+  const res = errorResponse('dailyLimitReached', { requestId: expected.requestId, retryAfterSeconds: expected.error.retryAfterSeconds });
+  assert.equal(res.status, 429);
+  assert.deepEqual(await res.json(), expected);
+});
+
 test('register_response_v1.json has the same shape the gateway returns', async () => {
   const { deps } = makeDeps();
   const res = await handleRegister(new Request('https://g.test/api/register', {
