@@ -135,6 +135,20 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testWhatDoddyDidOpensFromSettings() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
+        app.buttons["tab.settings"].tap()
+        let row = app.buttons["settings.activity"]
+        for _ in 0..<8 {
+            if row.exists && row.isHittable { break }
+            app.swipeUp()
+        }
+        row.tap()
+        XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
     func testNoFakeListeningOrMicControls() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))

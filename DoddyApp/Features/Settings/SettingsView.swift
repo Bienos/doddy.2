@@ -36,6 +36,12 @@ struct SettingsView: View {
     private var privacy: PrivacyDefaults { environment.privacy }
     private var router: ShortcutRouter { .shared }
     private var conversationLogs: ConversationLogStore { .shared }
+    private var activityLog: ActivityLogStore { .shared }
+
+    private var activitySummary: String {
+        let today = activityLog.entries.filter { Calendar.current.isDateInToday($0.at) }.count
+        return activityLog.entries.isEmpty ? "Nothing yet" : "\(today) today"
+    }
 
     private var backTapStatus: String {
         switch router.setup.phase {
@@ -280,6 +286,12 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.connections")
                     // Connections uses its own controller; re-read when coming back from it.
                     .onAppear { Task { await connections.refresh() } }
+                    NavigationLink {
+                        ActivityView()
+                    } label: {
+                        StatusRow(title: "What Doddy did", value: activitySummary)
+                    }
+                    .accessibilityIdentifier("settings.activity")
                 } header: {
                     Text("Connections")
                 } footer: {

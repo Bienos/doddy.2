@@ -176,6 +176,13 @@ final class DeviceConnections {
         return await hasIncompleteReminder(withKey: key) ? .added : .unconfirmed
     }
 
+    /// For "What Doddy did" → Check: is the reminder Doddy wasn't sure about in Reminders now?
+    /// Nil when Reminders access is off, so the screen can say so instead of guessing.
+    func reminderIsThere(key: String) async -> Bool? {
+        guard access(for: .reminders) == .granted else { return nil }
+        return await hasIncompleteReminder(withKey: key)
+    }
+
     private func hasIncompleteReminder(withKey key: String) async -> Bool {
         // All reminders, filtered here: this includes ones with no due date.
         let predicate = eventStore.predicateForReminders(in: nil)
