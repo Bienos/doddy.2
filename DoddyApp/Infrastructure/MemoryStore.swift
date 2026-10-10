@@ -49,6 +49,12 @@ final class MemoryStore {
         return record
     }
 
+    /// Files a note under another type; the words and dates don't change (ADR-147).
+    func setCategory(id: UUID, to category: MemoryCategory) async throws {
+        _ = try await environment.memoryRepository.setCategory(id: id, to: category)
+        await reload()
+    }
+
     func delete(id: UUID) async throws {
         let copy = self.record(id: id)
         try await environment.memoryRepository.delete(id: id)

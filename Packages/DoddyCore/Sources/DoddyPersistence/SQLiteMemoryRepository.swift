@@ -123,6 +123,16 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         }
     }
 
+    public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
+        try await dbQueue.write { db in
+            guard let existing = try Self.fetch(id, db) else { throw MemoryStoreError.notFound(id) }
+            let changed = try existing.recategorized(to: category)
+            try db.execute(sql: "UPDATE memories SET category = ? WHERE id = ?", arguments: [category.rawValue, id.uuidString])
+            guard try Self.fetch(id, db) == changed else { throw MemoryStoreError.verificationFailed }
+            return changed
+        }
+    }
+
     public func delete(id: UUID) async throws {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM memories WHERE id = ?", arguments: [id.uuidString])

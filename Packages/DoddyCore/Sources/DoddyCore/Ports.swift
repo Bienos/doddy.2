@@ -23,6 +23,9 @@ public protocol MemoryRepository: Sendable {
     func list(limit: Int?) async throws -> [MemoryRecord]
     func query(_ query: String, limit: Int) async throws -> [MemoryCandidate]
     func update(id: UUID, currentText: String) async throws -> MemoryRecord
+    /// Changes only the note's type. Read back before success; the words, dates and "edited"
+    /// state stay as they are.
+    func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord
     func delete(id: UUID) async throws
     func deleteAll() async throws
     func export() async throws -> Data
@@ -34,6 +37,10 @@ public protocol MemoryRepository: Sendable {
 
 extension MemoryRepository {
     public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
+    public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
     }
 }
