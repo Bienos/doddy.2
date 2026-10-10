@@ -69,9 +69,9 @@ sent before the script has loaded. No npm dependency, no build step.
 
 `analytics.js`, loaded on `index.html` and every blog page (`tools/build_blog.py` adds it), not on `/admin/`.
 
-- **Turn it on:** Google Analytics → Admin → Data streams → Web → copy the measurement ID
-  (`G-…`) into `GA_MEASUREMENT_ID` at the top of `analytics.js`, then deploy. While it is empty
-  the file does nothing: no banner, no footer sentence, no request to Google.
+- **Measurement ID:** `G-WQXYVSGD4Q`, the `GA_MEASUREMENT_ID` constant at the top of `analytics.js`
+  (Google Analytics → Admin → Data streams → Web). Empty it to switch GA off: the file then does
+  nothing, with no banner, no footer sentence and no request to Google.
 - **Consent first:** GA sets cookies, so on a first visit a banner asks "Can we use Google
   Analytics?". Only **Allow** loads `https://www.googletagmanager.com/gtag/js`; **No thanks**
   sends nothing. The choice is stored in `localStorage` (`doddy-analytics-consent`) on that
