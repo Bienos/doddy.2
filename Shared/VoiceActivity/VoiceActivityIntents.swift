@@ -2,10 +2,11 @@ import ActivityKit
 import AppIntents
 import Foundation
 
-/// Lets the Live Activity buttons reach the running conversation. `LiveActivityIntent`s run in
-/// the app's process (the app is alive because it is in a conversation with background audio),
-/// where `VoiceSessionController` registers these handlers. In the widget extension they stay
-/// nil and are never called.
+/// Lets the Live Activity buttons reach the running conversation. These intents must run in the
+/// app's process (the app is alive because it is in a conversation with background audio),
+/// where `VoiceSessionController` registers these handlers. The widget extension has its own,
+/// separate copy of this object whose handlers stay nil, so an intent performed there does
+/// nothing (ADR-123). Both intents therefore pin `allowedExecutionTargets` to `.main`.
 @MainActor
 final class VoiceActivityActions {
     static let shared = VoiceActivityActions()
@@ -18,6 +19,13 @@ final class VoiceActivityActions {
 struct EndDoddyConversationIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "End conversation with Doddy"
     static let isDiscoverable = false
+
+    #if compiler(>=6.4)
+    /// iOS 27 performs an intent in "any available target" by default, and this type is compiled
+    /// into the widget extension too (the buttons need it). Only the app has the handlers (ADR-123).
+    @available(iOS 27.0, *)
+    static var allowedExecutionTargets: IntentExecutionTargets { .main }
+    #endif
 
     init() {}
 
@@ -40,6 +48,12 @@ struct EndDoddyConversationIntent: LiveActivityIntent {
 struct ToggleDoddyMuteIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Mute or unmute Doddy"
     static let isDiscoverable = false
+
+    #if compiler(>=6.4)
+    /// See `EndDoddyConversationIntent.allowedExecutionTargets` (ADR-123).
+    @available(iOS 27.0, *)
+    static var allowedExecutionTargets: IntentExecutionTargets { .main }
+    #endif
 
     init() {}
 
