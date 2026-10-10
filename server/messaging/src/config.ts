@@ -31,6 +31,8 @@ const schema = z.object({
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   // Verify codes the whole server may start per UTC day (SMS cost cap).
   VERIFY_DAILY_CAP: z.coerce.number().int().positive().default(200),
+  // "1": run the worker loop inside the web process (one service; e.g. Render free/starter).
+  RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
   ELEVENLABS_PHONE_AGENT_ID: optional,
   ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
   // News digests
@@ -50,6 +52,7 @@ export interface Config {
   port: number;
   trustProxyHops: number;
   verifyDailyCap: number;
+  runWorkerInWeb: boolean;
   publicBaseUrl?: string;
   apns?: ApnsConfig;
   twilio?: TwilioConfig;
@@ -70,6 +73,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port: e.PORT,
     trustProxyHops: e.TRUST_PROXY_HOPS,
     verifyDailyCap: e.VERIFY_DAILY_CAP,
+    runWorkerInWeb: e.RUN_WORKER_IN_WEB === "1",
     publicBaseUrl: e.PUBLIC_BASE_URL?.replace(/\/$/, ""),
     apns: all<ApnsConfig>({
       teamId: e.APNS_TEAM_ID, keyId: e.APNS_KEY_ID,
