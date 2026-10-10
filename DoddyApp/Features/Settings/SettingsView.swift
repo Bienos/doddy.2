@@ -20,6 +20,10 @@ struct SettingsView: View {
     @State private var hasSessionToken = KeychainSessionStore.read() != nil
     @State private var tokenMessage: String?
     @State private var confirmDeleteAll = false
+    @State private var choosingRestoreFile = false
+    @State private var restorePlan: MemoryRestorePlan?
+    @State private var restoreMessage: String?
+    @State private var restoreFailed = false
     @State private var deleteError: String?
     @State private var editingProfile = false
     @State private var confirmForget = false
@@ -140,6 +144,18 @@ struct SettingsView: View {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
                     .disabled(store.memories.isEmpty)
+                    Button {
+                        restoreMessage = nil
+                        choosingRestoreFile = true
+                    } label: {
+                        Label("Restore from a JSON export", systemImage: "square.and.arrow.down")
+                    }
+                    .disabled(!store.isStorageAvailable)
+                    .accessibilityIdentifier("settings.restoreMemories")
+                    if let restoreMessage {
+                        Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
+                            .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
+                    }
                     Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
                         .disabled(store.memories.isEmpty)
                         .accessibilityIdentifier("settings.deleteAll")
@@ -404,6 +420,20 @@ struct SettingsView: View {
             } message: {
                 Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
             }
+            .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
+                prepareRestore(result)
+            }
+            .confirmationDialog(
+                restorePlan.map(RestoreCopy.title) ?? "",
+                isPresented: Binding(get: { restorePlan != nil }, set: { if !$0 { restorePlan = nil } }),
+                titleVisibility: .visible,
+                presenting: restorePlan
+            ) { plan in
+                Button(RestoreCopy.action(plan)) { Task { await restore(plan) } }
+                Button("Cancel", role: .cancel) { restorePlan = nil }
+            } message: { plan in
+                Text(RestoreCopy.details(plan))
+            }
             .confirmationDialog(
                 "Forget your name and preferences?",
                 isPresented: $confirmForget, titleVisibility: .visible
@@ -500,6 +530,43 @@ struct SettingsView: View {
         }
     }
 
+    /// Reads and checks the chosen file and works out what it would add. Nothing is written
+    /// until the user confirms (ADR-135).
+    private func prepareRestore(_ result: Result<URL, any Error>) {
+        do {
+            let url = try result.get()
+            let scoped = url.startAccessingSecurityScopedResource()
+            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            guard size <= MemoryRestore.maxFileBytes else {
+                throw MemoryRestoreError.tooLarge(bytes: size, maximum: MemoryRestore.maxFileBytes)
+            }
+            let file = try MemoryRestore.read(try Data(contentsOf: url))
+            let plan = MemoryRestore.plan(file.records, existing: store.memories, exportedAt: file.exportedAt)
+            if plan.isEmpty {
+                restoreFailed = false
+                restoreMessage = RestoreCopy.nothingToAdd(plan)
+            } else {
+                restorePlan = plan
+            }
+        } catch {
+            restoreFailed = true
+            restoreMessage = RestoreCopy.failure(error)
+        }
+    }
+
+    private func restore(_ plan: MemoryRestorePlan) async {
+        restorePlan = nil
+        do {
+            let added = try await store.restore(plan.toAdd)
+            restoreFailed = false
+            restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."
+        } catch {
+            restoreFailed = true
+            restoreMessage = RestoreCopy.failure(error)
+        }
+    }
+
     private func forgetProfile() async {
         do {
             try await profiles.forget()
@@ -588,6 +655,57 @@ private struct ProfileEditSheet: View {
             dismiss()
         } catch {
             errorText = ProfileErrorText.message(for: error)
+        }
+    }
+}
+
+/// Wording for restoring memories from an export (ADR-135).
+enum RestoreCopy {
+    static func title(_ plan: MemoryRestorePlan) -> String {
+        plan.toAdd.count == 1 ? "Add 1 note from this export?" : "Add \(plan.toAdd.count) notes from this export?"
+    }
+
+    static func action(_ plan: MemoryRestorePlan) -> String {
+        plan.toAdd.count == 1 ? "Add 1 note" : "Add \(plan.toAdd.count) notes"
+    }
+
+    static func details(_ plan: MemoryRestorePlan) -> String {
+        var parts: [String] = []
+        if let exportedAt = plan.exportedAt {
+            parts.append("Exported \(exportedAt.formatted(date: .abbreviated, time: .shortened)).")
+        }
+        parts.append("Notes come back exactly as exported, with their original dates and corrections.")
+        if plan.alreadyHere > 0 { parts.append("\(plan.alreadyHere) already on this iPhone.") }
+        if plan.keptOnPhone > 0 {
+            parts.append("\(plan.keptOnPhone) changed on this iPhone since the export; those stay as they are here.")
+        }
+        if plan.skippedSamples > 0 { parts.append("\(plan.skippedSamples) sample notes are left out.") }
+        parts.append("Nothing on this iPhone is changed or removed.")
+        return parts.joined(separator: " ")
+    }
+
+    static func nothingToAdd(_ plan: MemoryRestorePlan) -> String {
+        plan.keptOnPhone > 0
+            ? "Nothing to add: every note in this export is already here, and the ones changed since stay as they are here."
+            : "Nothing to add: every note in this export is already on this iPhone."
+    }
+
+    static func failure(_ error: any Error) -> String {
+        guard let error = error as? MemoryRestoreError else {
+            if error is CocoaError { return "That file couldn't be opened. Nothing was added." }
+            return UserFacingError.message(for: error)
+        }
+        switch error {
+        case .tooLarge:
+            return "That file is too large to be a Doddy export. Nothing was added."
+        case .notADoddyExport:
+            return "That isn't a Doddy memory export (Settings › Export as JSON). Nothing was added."
+        case .newerFormat:
+            return "That export was made by a newer version of Doddy. Update the app, then try again. Nothing was added."
+        case .unreadableNote(let position):
+            return "Note \(position) in that file is damaged, so nothing from it was added."
+        case .conflictingDuplicate(let position):
+            return "Note \(position) in that file repeats another one with different text, so nothing from it was added."
         }
     }
 }

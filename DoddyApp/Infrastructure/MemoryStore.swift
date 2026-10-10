@@ -52,6 +52,13 @@ final class MemoryStore {
         await reload()
     }
 
+    /// Adds notes from an export; returns only what was committed and read back (ADR-135).
+    func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
+        let added = try await environment.memoryRepository.restore(records)
+        await reload()
+        return added
+    }
+
     func deleteAll() async throws {
         try await environment.memoryRepository.deleteAll()
         await reload()
