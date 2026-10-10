@@ -12,6 +12,8 @@ final class ShortcutRouter {
 
     /// Bound to the full-screen voice conversation in `RootView`.
     var isVoicePresented = false
+    /// Home › Translate (ADR-209): the conversation that opens next starts in translator mode.
+    private var translatorPreset: TranslatorSetup?
     /// Bound to the guided Back Tap setup sheet in `RootView`.
     var isSetupPresented = false
     let setup: BackTapSetupModel
@@ -46,6 +48,20 @@ final class ShortcutRouter {
             isSetupPresented = false
             isVoicePresented = true
         }
+    }
+
+    /// Opens the conversation in translator mode, unless one is already open.
+    func openTranslator(_ setup: TranslatorSetup) {
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        translatorPreset = setup
+        isVoicePresented = true
+    }
+
+    /// The translator setup for the conversation that is starting, once.
+    func takeTranslatorPreset() -> TranslatorSetup? {
+        defer { translatorPreset = nil }
+        return translatorPreset
     }
 
     /// Called from `SaveToDoddyIntent.perform()`. Shows the text on the capture screen, or keeps

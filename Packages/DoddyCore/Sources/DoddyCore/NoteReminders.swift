@@ -48,7 +48,7 @@ public enum ReminderTrigger: Hashable, Sendable {
     case place(ReminderPlace)
 }
 
-/// How a time reminder repeats (ADR-200). The weekday, day of the month and clock time come from
+/// How a time reminder repeats (ADR-205). The weekday, day of the month and clock time come from
 /// the reminder's first occurrence, in the zone it was set in.
 public enum ReminderRepeat: String, CaseIterable, Hashable, Sendable {
     case daily, weekdays, weekly, monthly
@@ -315,19 +315,63 @@ public enum NoteReminderOutcome: Equatable, Sendable {
     }
 }
 
+/// The language of what iOS shows outside Doddy: notification title, body and buttons (ADR-207).
+/// Polish when the iPhone's first language is Polish; English otherwise, until other languages
+/// have reviewed copy.
+public enum NotificationLanguage: String, Sendable {
+    case english, polish
+
+    public static func preferred(_ languages: [String]) -> NotificationLanguage {
+        languages.first.map { $0.lowercased().hasPrefix("pl") } == true ? .polish : .english
+    }
+
+    public static var current: NotificationLanguage { preferred(Locale.preferredLanguages) }
+}
+
 public enum NoteReminderCopy {
     public static let title = "Reminder"
 
+    public static func title(_ language: NotificationLanguage) -> String {
+        language == .polish ? "Przypomnienie" : title
+    }
+
     /// Repeating reminders say so in the title, never the note (owner decision R3):
-    /// "Reminder · every Monday".
-    public static func title(repeating rule: ReminderRepeat, anchor: Date, timeZoneID: String) -> String {
-        "\(title) · \(ReminderFormat.cadence(rule, anchor: anchor, timeZoneID: timeZoneID))"
+    /// "Reminder · every Monday" / "Przypomnienie · w każdy poniedziałek".
+    public static func title(
+        repeating rule: ReminderRepeat, anchor: Date, timeZoneID: String, language: NotificationLanguage = .english
+    ) -> String {
+        "\(title(language)) · \(ReminderFormat.cadence(rule, anchor: anchor, timeZoneID: timeZoneID, language: language))"
     }
     /// Default notification body: the note text never enters the iOS notification store.
     public static let privateBody = "A note you asked to see again."
 
-    public static func body(noteText: String, showNoteText: Bool) -> String {
-        guard showNoteText else { return privateBody }
+    public static func privateBody(_ language: NotificationLanguage) -> String {
+        // Second person, gender-neutral in Polish.
+        language == .polish ? "Notatka, którą chcesz zobaczyć ponownie." : privateBody
+    }
+
+    /// Long-press buttons, in the order the categories use them.
+    public enum Action: Sendable {
+        case openNote, inAnHour, tomorrowMorning, done, doneThisTime
+    }
+
+    public static func action(_ action: Action, _ language: NotificationLanguage) -> String {
+        switch (action, language) {
+        case (.openNote, .english): "Open note"
+        case (.openNote, .polish): "Otwórz notatkę"
+        case (.inAnHour, .english): "In 1 hour"
+        case (.inAnHour, .polish): "Za godzinę"
+        case (.tomorrowMorning, .english): "Tomorrow 09:00"
+        case (.tomorrowMorning, .polish): "Jutro 09:00"
+        case (.done, .english): "Done"
+        case (.done, .polish): "Gotowe"
+        case (.doneThisTime, .english): "Done this time"
+        case (.doneThisTime, .polish): "Gotowe tym razem"
+        }
+    }
+
+    public static func body(noteText: String, showNoteText: Bool, language: NotificationLanguage = .english) -> String {
+        guard showNoteText else { return privateBody(language) }
         let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > NoteReminderLimits.maxBodyLength else { return trimmed }
         return String(trimmed.prefix(NoteReminderLimits.maxBodyLength - 1)) + "…"
@@ -377,21 +421,25 @@ public struct NoteReminderNotification: Equatable, Sendable {
 
     /// Every iOS request the reminder needs at `date`: none for a one-off already past; one per
     /// match for a repeat (five for weekdays); plus a snooze still ahead.
-    public static func requests(for reminder: MemoryReminder, noteText: String, showNoteText: Bool, at date: Date) -> [NoteReminderNotification] {
-        let body = NoteReminderCopy.body(noteText: noteText, showNoteText: showNoteText)
+    public static func requests(
+        for reminder: MemoryReminder, noteText: String, showNoteText: Bool, at date: Date,
+        language: NotificationLanguage = .english
+    ) -> [NoteReminderNotification] {
+        let body = NoteReminderCopy.body(noteText: noteText, showNoteText: showNoteText, language: language)
+        let plainTitle = NoteReminderCopy.title(language)
         switch reminder.trigger {
         case .place:
             return [NoteReminderNotification(
-                identifier: reminder.notificationID, memoryID: reminder.memoryID, title: NoteReminderCopy.title, body: body,
+                identifier: reminder.notificationID, memoryID: reminder.memoryID, title: plainTitle, body: body,
                 trigger: reminder.trigger, repeatMatch: nil, category: .place)]
         case .time(let fireAt, let zone):
             guard let rule = reminder.repeats else {
                 guard fireAt > date else { return [] }
                 return [NoteReminderNotification(
-                    identifier: reminder.notificationID, memoryID: reminder.memoryID, title: NoteReminderCopy.title, body: body,
+                    identifier: reminder.notificationID, memoryID: reminder.memoryID, title: plainTitle, body: body,
                     trigger: reminder.trigger, repeatMatch: nil, category: .once)]
             }
-            let title = NoteReminderCopy.title(repeating: rule, anchor: fireAt, timeZoneID: zone)
+            let title = NoteReminderCopy.title(repeating: rule, anchor: fireAt, timeZoneID: zone, language: language)
             let matches = ReminderSchedule.matches(rule, anchor: fireAt, timeZoneID: zone)
             var result = matches.map { match in
                 NoteReminderNotification(
@@ -531,8 +579,22 @@ public enum ReminderFormat {
 
     /// "every day", "weekdays", "every Monday", "every month on the 12th". English for now; the
     /// Polish copy is open (owner decision D6).
-    public static func cadence(_ rule: ReminderRepeat, anchor: Date, timeZoneID: String) -> String {
+    public static func cadence(
+        _ rule: ReminderRepeat, anchor: Date, timeZoneID: String, language: NotificationLanguage = .english
+    ) -> String {
         let cal = ReminderSchedule.calendar(timeZoneID)
+        if language == .polish {
+            switch rule {
+            case .daily: return "codziennie"
+            case .weekdays: return "w dni robocze"
+            case .weekly:
+                // Accusative after "w każdy/każdą": Wednesday, Saturday and Sunday are feminine.
+                let names = ["", "w każdą niedzielę", "w każdy poniedziałek", "w każdy wtorek", "w każdą środę",
+                             "w każdy czwartek", "w każdy piątek", "w każdą sobotę"]
+                return names[cal.component(.weekday, from: anchor)]
+            case .monthly: return "co miesiąc, \(cal.component(.day, from: anchor)). dnia"
+            }
+        }
         switch rule {
         case .daily: return "every day"
         case .weekdays: return "weekdays"
@@ -599,19 +661,22 @@ public actor NoteReminderCoordinator {
     private let now: @Sendable () -> Date
     private let showNoteText: @Sendable () -> Bool
     private let calendar: @Sendable () -> Calendar
+    private let language: @Sendable () -> NotificationLanguage
 
     public init(
         repository: any NoteReminderRepository,
         center: any NoteNotificationScheduling,
         now: @escaping @Sendable () -> Date = Date.init,
         showNoteText: @escaping @Sendable () -> Bool,
-        calendar: @escaping @Sendable () -> Calendar = { Calendar.autoupdatingCurrent }
+        calendar: @escaping @Sendable () -> Calendar = { Calendar.autoupdatingCurrent },
+        language: @escaping @Sendable () -> NotificationLanguage = { .english }
     ) {
         self.repository = repository
         self.center = center
         self.now = now
         self.showNoteText = showNoteText
         self.calendar = calendar
+        self.language = language
     }
 
     public func reminders() async throws -> [MemoryReminder] { try await repository.allReminders() }
@@ -691,7 +756,7 @@ public actor NoteReminderCoordinator {
     /// Adds every request the reminder needs now and checks iOS lists each one as pending.
     private func addVerified(_ reminder: MemoryReminder, text: String) async throws {
         let requests = NoteReminderNotification.requests(
-            for: reminder, noteText: text, showNoteText: showNoteText(), at: now())
+            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language())
         for request in requests { try await center.add(request) }
         let pending = await center.pendingIdentifiers()
         guard requests.allSatisfy({ pending.contains($0.identifier) }) else { throw NoteReminderError.notScheduled }
@@ -802,7 +867,8 @@ public actor NoteReminderCoordinator {
 
     private func addIfPossible(_ reminder: MemoryReminder) async {
         guard let text = try? await repository.currentText(ofMemory: reminder.memoryID) else { return }
-        for request in NoteReminderNotification.requests(for: reminder, noteText: text, showNoteText: showNoteText(), at: now()) {
+        for request in NoteReminderNotification.requests(
+            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language()) {
             try? await center.add(request)
         }
     }

@@ -44,8 +44,16 @@ final class NoteReminderStore {
         locationReadiness = await coordinator.locationReadiness()
     }
 
-    /// On launch and every return to the foreground: repair iOS requests, refresh status.
+    /// On launch and every return to the foreground: repair iOS requests, refresh status. If the
+    /// iPhone's language changed, waiting notifications and their buttons are rewritten in it.
     func refreshOnForeground() async {
+        let language = NotificationLanguage.current.rawValue
+        let key = "noteReminders.notificationLanguage"
+        if UserDefaults.standard.string(forKey: key) != language {
+            await SystemNoteNotifications.registerCategory()
+            await coordinator?.refreshContent()
+            UserDefaults.standard.set(language, forKey: key)
+        }
         await coordinator?.reconcile()
         await reload()
     }

@@ -60,7 +60,8 @@ struct AppEnvironment: Sendable {
             let notifications: any NoteNotificationScheduling = isUITest ? DisabledNoteNotifications() : SystemNoteNotifications()
             let noteReminders = NoteReminderCoordinator(
                 repository: SQLiteNoteReminderRepository(database: database), center: notifications,
-                showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) })
+                showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) },
+                language: { .current })
             return AppEnvironment(
                 memoryRepository: repository,
                 profileRepository: SQLiteProfileRepository(database: database),

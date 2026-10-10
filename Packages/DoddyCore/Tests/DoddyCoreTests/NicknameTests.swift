@@ -32,5 +32,25 @@ final class NicknameTests: XCTestCase {
         XCTAssertEqual(ConversationLanguage.polish.overrideCode, "pl")
         XCTAssertEqual(ConversationLanguage(stored: "klingon"), .auto)
         XCTAssertEqual(ConversationLanguage(stored: "english"), .english)
+        XCTAssertEqual(ConversationLanguage(stored: "polish"), .polish, "values stored before ADR-206 still read")
+    }
+
+    /// Every fixed starting language has a two-letter code, both names, and a matching agent preset.
+    func testEveryStartingLanguageIsOnTheAgent() throws {
+        let session = try JSONSerialization.jsonObject(with: Data(contentsOf: URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("voice-agent/session.json"))) as? [String: Any]
+        let agentLanguages = Set(session?["languages"] as? [String] ?? [])
+        let fixed = ConversationLanguage.allCases.filter { $0 != .auto }
+        XCTAssertEqual(fixed.count, 25)
+        for language in fixed {
+            let code = try XCTUnwrap(language.overrideCode)
+            XCTAssertEqual(code.count, 2)
+            XCTAssertTrue(agentLanguages.contains(code), "\(code) needs a language preset on the agent")
+            XCTAssertNotNil(language.nativeName)
+            XCTAssertNotNil(language.englishName)
+        }
+        XCTAssertEqual(Set(fixed.compactMap(\.overrideCode)).count, fixed.count, "no duplicate codes")
     }
 }
