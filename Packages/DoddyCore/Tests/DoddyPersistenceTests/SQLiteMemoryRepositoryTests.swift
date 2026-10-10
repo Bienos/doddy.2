@@ -140,6 +140,38 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         XCTAssertEqual(afterAgain.first { $0.id == keys.id }, changedHere)
     }
 
+    func testChangingTheTypeKeepsTheWordsDatesAndEditedState() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let saved = try await repo.save(NewMemory(text: "Gate code 4821", source: .explicitVoice, capturedAt: t0))
+        XCTAssertEqual(saved.category, .other)
+        let corrected = try await repo.update(id: saved.id, currentText: "Gate code 4822")
+
+        let filed = try await repo.setCategory(id: saved.id, to: .place)
+        XCTAssertEqual(filed.category, .place)
+        XCTAssertEqual(filed.rawText, saved.rawText)
+        XCTAssertEqual(filed.currentText, "Gate code 4822")
+        XCTAssertEqual(filed.capturedAt, corrected.capturedAt)
+        XCTAssertEqual(filed.updatedAt, corrected.updatedAt, "filing is not a correction")
+        XCTAssertEqual(filed.source, .explicitVoice)
+        XCTAssertTrue(filed.userEdited)
+
+        let listed = try await repo.list(limit: nil)
+        XCTAssertEqual(listed, [filed], "stored, not just returned")
+
+        // A note that was never corrected stays "not edited".
+        let plain = try await repo.save(NewMemory(text: "Call Ania", capturedAt: t0))
+        let plainFiled = try await repo.setCategory(id: plain.id, to: .commitment)
+        XCTAssertFalse(plainFiled.userEdited)
+        XCTAssertNil(plainFiled.updatedAt)
+
+        do {
+            _ = try await repo.setCategory(id: UUID(), to: .fact)
+            XCTFail("a missing note can't be filed")
+        } catch {
+            XCTAssertTrue(error is MemoryStoreError)
+        }
+    }
+
     func testUndoAfterDeleteBringsTheExactNoteBack() async throws {
         let repo = try SQLiteMemoryRepository.inMemory()
         let saved = try await repo.save(NewMemory(text: "Locker 12, code 4821", capturedAt: t0))

@@ -56,6 +56,12 @@ final class MemoryStore {
         return record
     }
 
+    /// Files a note under another type; the words and dates don't change (ADR-192).
+    func setCategory(id: UUID, to category: MemoryCategory) async throws {
+        _ = try await environment.memoryRepository.setCategory(id: id, to: category)
+        await reload()
+    }
+
     /// The memory's note reminder row is deleted with it (same database); its notification after.
     func delete(id: UUID) async throws {
         let copy = self.record(id: id)

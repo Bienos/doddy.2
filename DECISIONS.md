@@ -265,6 +265,7 @@ Several sessions picked the same ADR numbers. Main-line (`magical-newton`) numbe
 | 131 (second use) | 170 | Private conversation | brave-wright |
 | 132 (second use) | 171 | Notes that may disagree | brave-wright |
 | 133–146 (brave-wright, third merge) | 176–189 | Profile export … Paste button (same order) | brave-wright |
+| 147 (brave-wright, third merge) | 192 | Change a note's type after saving | brave-wright |
 | 173, 174 (hopeful-fermat, third merge) | 190, 191 | Note reminders (M4a); AI disclosure restored in the voice prompt | hopeful-fermat |
 
 ADR-123 is hosted macOS CI; ADR-124–129 are the main line's rate limiter, spend cap, M4 reliable write, calendar time rules, calendar no-past-start and live-agent sync; ADR-130 is social links.
@@ -350,6 +351,7 @@ ADR-123 is hosted macOS CI; ADR-124–129 are the main line's rate limiter, spen
 | 187 | **Pin notes to the top**: "Pin to the top" on a note's screen keeps up to 10 notes above the rest of the Memories list (newest pin first), marked with a pin. Only the note ids are stored, in UserDefaults, as a display preference (`PinnedNotes`): the stored notes, the export format, restore, search and what voice sees are unchanged, and pins are not part of an export or restore. A pin for a deleted note is ignored and is dropped the next time something is pinned. "Delete all" clears the pins. Pins sit above the chosen sort order and inside the type filter | Applied 2026-10-10. Not tried on a device |
 | 188 | **Press-and-hold menu on a note in the list**: Pin to the top / Unpin, Copy text and Share text, the same actions as on the note's screen, using the same pin rules and the same text-only share (ADR-142, ADR-144). It never changes or deletes a note; Delete stays on the note's own screen with its confirmation and Undo | Applied 2026-10-10. Not tried on a device |
 | 189 | **Paste button on the capture screen**: the system `PasteButton` under the editor adds the clipboard text to the draft (`DraftText.pasting`). iOS shows no paste-permission prompt for it and Doddy reads the clipboard only when it is tapped. The text goes in exactly as copied (not trimmed or cut), replacing a blank editor or going on a new line after what is there. Too-long text is reported by the usual length check when saving. Nothing is saved by pasting | Applied 2026-10-10. Not tried on a device |
+| 192 | **Change a note's type after saving** (the "Type" menu on the note's screen). Voice saves are always "Other", so without this the type filter (ADR-139) could not sort them. `MemoryRepository.setCategory` changes only the type column, in one transaction, read back before success. The words, original text, dates, source and the "Edited" state are untouched, because filing a note is not correcting it; so it does not count for "Recently changed" either. Exports and restore already carry the type | Applied 2026-10-10. Not tried on a device |
 
 ## Note reminders and AI disclosure (hopeful-fermat, 2026-10-10; renumbered 173/174 → 190/191 at the third merge)
 

@@ -127,6 +127,14 @@ public struct MemoryRecord: Hashable, Sendable, Identifiable {
             category: new.category, capturedAt: new.capturedAt)
     }
 
+    /// Returns a copy of another type. The words, dates, source and "edited" state are untouched:
+    /// choosing a type is filing the note, not correcting it (ADR-192).
+    public func recategorized(to category: MemoryCategory) throws(MemoryValidationError) -> MemoryRecord {
+        try MemoryRecord(
+            id: id, rawText: rawText, currentText: currentText, source: source,
+            category: category, capturedAt: capturedAt, updatedAt: updatedAt, userEdited: userEdited)
+    }
+
     /// Returns a corrected copy. `rawText` and `capturedAt` are untouched.
     public func correcting(to newText: String, at date: Date) throws(MemoryValidationError) -> MemoryRecord {
         try MemoryRecord(

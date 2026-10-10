@@ -29,6 +29,16 @@ struct MemoryDetailView: View {
                                 .accessibilityIdentifier("detail.originalText")
                         }.tint(Theme.ink)
                     }
+                    // File the note under another type. Only the type changes (ADR-192).
+                    Picker("Type", selection: Binding(
+                        get: { record.category },
+                        set: { newType in Task { await setType(newType, for: record) } })
+                    ) {
+                        ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    }
+                    .pickerStyle(.menu)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("detail.type")
                     Text("Your note, your choice. No inferred facts.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                     if let errorMessage { ProblemView(message: errorMessage) }
@@ -82,6 +92,16 @@ struct MemoryDetailView: View {
         }
         let when = ReminderFormat.dateTime(reminder.fireAt, timeZoneID: reminder.timeZoneID)
         return base + " Its reminder for \(when) is cancelled too, and undo doesn't bring the reminder back. Exports and older backups aren't affected."
+    }
+
+    private func setType(_ category: MemoryCategory, for record: MemoryRecord) async {
+        guard category != record.category else { return }
+        do {
+            try await store.setCategory(id: record.id, to: category)
+            errorMessage = nil
+        } catch {
+            errorMessage = UserFacingError.message(for: error)
+        }
     }
 
     private func togglePin(_ record: MemoryRecord) {
