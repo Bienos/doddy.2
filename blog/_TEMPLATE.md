@@ -1,8 +1,12 @@
 ---
 title: "Post title"
 date: YYYY-MM-DD
+keywords: "optional, comma separated, for search engines"
 author: "TBD"
 status: draft
+tldr:
+  - **Point one.** One sentence.
+  - **Point two.** One sentence.
 summary: "One sentence for link previews."
 evidence:
   - docs/…
@@ -23,3 +27,9 @@ Opening: one concrete moment or friction the reader recognises.
 ## What we have not done yet
 
 ## What's next
+
+## FAQ
+
+### A question people actually ask?
+
+A short, honest answer.

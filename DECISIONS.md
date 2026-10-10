@@ -245,7 +245,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 
 | ADR | Decision | Status |
 |---|---|---|
-| 138 | Blog lives in `blog/` as Markdown + YAML front matter; posts start as `status: draft`. Editorial rules in `blog/README.md` mirror the honesty contract (evidence for every claim, candidate art labelled, no identifiers or secrets). No site, hosting or accounts set up. | Applied — **owner to choose publishing venue and approve first post** |
+| 138 | Blog sources live in `blog/posts/` as Markdown + YAML front matter; `tools/build_blog.py` (Python stdlib only, no dependencies) renders posts with `status: published` into static pages under `site/blog/`, styled with the site's own CSS. Editorial rules in `blog/README.md` mirror the honesty contract (evidence for every claim, candidate art labelled, no identifiers or secrets). | Applied — **owner approves each post before it goes live** |
 
 ## Consolidation of the parallel branches (2026-10-10)
 
@@ -260,7 +260,7 @@ Several sessions picked the same ADR numbers. Main-line (`magical-newton`) numbe
 | 125 | 135 | What Doddy did | blissful-curie |
 | 124 | 136 | Reminder marker dedupe (superseded by ADR-126) | blissful-curie |
 | 129 | 137 | Linux CI job | brave-wright |
-| 036 | 138 | Blog | eager-johnson |
+| 036, later 131 | 138 | Blog | eager-johnson |
 | 128 (second use) | 169 | What Doddy did survives a crash | blissful-curie |
 | 131 (second use) | 170 | Private conversation | brave-wright |
 | 132 (second use) | 171 | Notes that may disagree | brave-wright |

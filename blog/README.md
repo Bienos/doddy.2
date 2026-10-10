@@ -1,14 +1,15 @@
 # DODDY blog
 
 Notes from building Doddy, *your mate in your pocket*, in the open. Posts are Markdown files in
-`posts/`. **Nothing here is published yet.** Where and when posts go public is an owner decision
-(see "Publishing" below and ADR 036 in `../DECISIONS.md`).
+`posts/`. Posts with `status: published` appear on the Doddy site at **`/blog/`**
+(https://doddy-eight.vercel.app/blog/ once deployed). See ADR 131 in `../DECISIONS.md`.
 
 ## Posts
 
 | Date | Title | Status |
 |---|---|---|
-| 2026-10-10 | [Hello, Doddy: why the first thing we built is a memory you can check](posts/2026-10-10-hello-doddy.md) | Draft, owner review |
+| 2026-10-10 | [Meet Doddy: an AI companion that wants to do it all for you](posts/2026-10-10-meet-doddy-ai-agent.md) | Published |
+| 2026-10-10 | [Hello, Doddy: why our favourite first result was "I couldn't find it"](posts/2026-10-10-hello-doddy.md) | Published |
 
 Post ideas waiting for a slot: [IDEAS.md](IDEAS.md). New post: copy [_TEMPLATE.md](_TEMPLATE.md).
 
@@ -28,10 +29,12 @@ The blog follows the same honesty contract as the code (`CLAUDE.md`, `README.md`
    caption it "candidate art, not final".
 4. **No secrets or identifiers.** No API keys, agent IDs, bundle IDs, provider tool IDs, private
    repo links or real personal data. Example memories use made-up content.
-5. **Voice:** warm, plain, a little funny about small everyday friction, never hype. Short
+5. **Big goals are fine, as goals.** "Doddy wants to help with anything" is the vision; say
+   clearly what it does *today* next to it (the TL;DR and FAQ are good places).
+6. **Voice:** warm, plain, a little funny about small everyday friction, never hype. Short
    sentences. Doddy's behavioural rules apply to the blog too: no guilt, no fake feelings, no
    promises about features that are not built.
-6. **Name third parties accurately** (e.g. ElevenLabs for voice) and do not imply endorsement.
+7. **Name third parties accurately** (e.g. ElevenLabs for voice) and do not imply endorsement.
 
 ## Front matter
 
@@ -39,8 +42,11 @@ Each post starts with:
 
 ```yaml
 ---
-title: "…"
+title: "…"              # keep under ~60 characters for search results
 date: YYYY-MM-DD
+keywords: "…"           # optional; rendered as <meta name="keywords">
+tldr:                  # optional; 3–6 bullets shown in a box above the post
+  - **Short point.** One sentence.
 author: "…"            # owner fills in
 status: draft          # draft | review | approved | published
 summary: "One sentence for link previews."
@@ -53,7 +59,14 @@ evidence:              # repo docs that back the claims in the post
 
 ## Publishing
 
-Not decided. The repository is private, so a post in this folder is not public. Options for the
-owner: a static site generated from this folder (any generator that reads Markdown + YAML front
-matter works; nothing is set up), a hosted newsletter/blog platform, or LinkedIn/X cross-posts
-linking to one canonical page. No hosting, accounts or paid services were created for the blog.
+1. Write the post in `posts/YYYY-MM-DD-slug.md` (copy `_TEMPLATE.md`). The URL becomes
+   `/blog/slug/`.
+2. Check every claim against the status docs it lists under `evidence`.
+3. Set `status: published` once the owner has approved the text.
+4. Run `python3 -I tools/build_blog.py`. It writes `site/blog/` (index, one page per post and
+   `feed.xml` for RSS). Commit the post and the generated files together.
+5. `scripts/ci.sh` runs `tools/build_blog.py --check` and fails if `site/blog/` is out of date.
+
+Drafts (`status: draft` or `review`) are never rendered. The generator supports `#`/`##`/`###`
+headings, paragraphs, `-` and `1.` lists (one level), `>` quotes, tables, `**bold**`, `*italic*`,
+`` `code` ``, `[links](url)` and HTML comments (dropped). Keep posts to that subset.

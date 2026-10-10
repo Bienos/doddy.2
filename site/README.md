@@ -23,6 +23,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. No cookies, n
 | Telegram | Community group link `https://t.me/+u-YA6P_MISFjYWE0` in the join section ("Want to chat now?") and the footer; opens in a new tab. Change it in both places in `index.html`. |
 | Social | TikTok `https://www.tiktok.com/@doddy_mate` and Instagram `https://www.instagram.com/doddy_mate/` in the join section ("Follow Doddy") and the footer; open in a new tab. The app links the same two accounts from Settings → Follow Doddy (ADR-130). |
 | App Store | Commented-out Smart App Banner in `index.html`; enable when there's an App Store ID. |
+| Blog | `blog/` pages are **generated** by `tools/build_blog.py` from `../blog/posts/*.md` (published posts only); don't edit them by hand. Styles in `blog.css`. Linked from the nav and footer. See `../blog/README.md`. |
 
 ## What's real on the page
 
