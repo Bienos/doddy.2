@@ -43,8 +43,13 @@ final class VoiceSessionController {
         /// these arguments; the approval works once and expires after two minutes.
         case cloud(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
         /// Doddy's own reminder about one saved note (ADR-198). `noteText` is the stored note the
-        /// agent's quote matched, shown exactly; nothing is set until the user taps Set reminder.
-        case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, target: NoteReminderCardTarget)
+        /// agent's quote matched, shown exactly with when it was saved; nothing is set until the
+        /// user taps Set reminder. The user can change the time, or arrive/leave, on the card.
+        case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, savedAt: Date?, target: NoteReminderCardTarget)
+        /// "Start translating?" (ADR-215). The user can change either language on the card.
+        case translator(toolCallID: String, setup: TranslatorSetup)
+        /// "Start a new list?" (ADR-216, L2). The user can fix the name on the card.
+        case createList(toolCallID: String, name: String, items: [String])
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
@@ -52,7 +57,7 @@ final class VoiceSessionController {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
-                 .noteReminder(let id, _, _, _), .plan(let id, _, _):
+                 .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _):
                 id
             }
         }
@@ -60,8 +65,26 @@ final class VoiceSessionController {
 
     /// What a note-reminder card offers: the checked moment, or Apple Maps results to pick from.
     enum NoteReminderCardTarget: Equatable {
-        case time(Date, timeZoneID: String)
+        case time(Date, timeZoneID: String, repeats: ReminderRepeat? = nil)
         case place(results: [PlaceSearchResult], onArrival: Bool)
+    }
+
+    /// The reminder the user confirmed on a note-reminder card, exactly as it was shown.
+    struct ConfirmedNoteReminder: Equatable {
+        enum When: Equatable {
+            case time(Date, timeZoneID: String, repeats: ReminderRepeat? = nil)
+            case place(ReminderPlace)
+        }
+        let memoryID: UUID
+        let noteText: String
+        let when: When
+    }
+
+    /// The receipt after Set reminder on a note-reminder card (ADR-198), read back from the store.
+    /// It stays on screen after the conversation ends, like the Reminders receipt.
+    enum NoteReminderStatus: Equatable {
+        case setting(ConfirmedNoteReminder)
+        case done(ConfirmedNoteReminder, NoteReminderReceipt)
     }
 
     /// Contacts found by a lookup. Shown on screen only; the agent receives names.
@@ -121,6 +144,7 @@ final class VoiceSessionController {
             syncIsland()
         }
     }
+    private(set) var noteReminderStatus: NoteReminderStatus?
     /// Which steps of the plan card are ticked. Every step that can run starts ticked.
     private(set) var planTicked: Set<Int> = []
     /// Steps the user changed on the card (ADR-205); the agent is told when it gets the results.
@@ -134,6 +158,22 @@ final class VoiceSessionController {
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false { didSet { syncIsland() } }
+    /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
+    /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
+    private(set) var listReceipt: ListReceipt?
+    /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
+    /// conversation is private.
+    private(set) var translator: TranslatorSession?
+    /// The end screen after translating: the text stays in memory for five minutes for Copy or
+    /// "Save the facts as a note", then it is dropped (T3).
+    private(set) var translatorSummary: TranslatorSummary?
+    /// What happened when the user tapped "Save the facts as a note".
+    private(set) var translatorFactsSaved: Result<String, TranslatorSaveError>?
+    /// Noisy place: the microphone is muted except while a hold-to-talk button is held (T4).
+    private(set) var holdToTalk = false
+    private(set) var heldSide: TranslatorDirection?
+    /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
+    private var translatorNeedsHello = false
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
@@ -158,7 +198,11 @@ final class VoiceSessionController {
     private var startedAt: Date?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
-    var isPrivate = false
+    var isPrivate = false {
+        didSet { if privacyLocked { isPrivate = true } }
+    }
+    /// Set once translator mode is on (ADR-215): the conversation stays private to the end.
+    private(set) var privacyLocked = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
     /// A finished moment the island shows for a few seconds ("Note saved", "Reminder set").
@@ -184,14 +228,23 @@ final class VoiceSessionController {
 
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
     /// Settings → About you → "Use in voice conversations" is on.
-    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile) async {
+    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil) async {
         guard !isLive else { return }
         // A note being read aloud would fight the conversation for the speaker (ADR-216).
         ReadAloudController.shared.stop()
         lines = []
+        translator = nil
+        listReceipt = nil
+        translatorSummary = nil
+        translatorFactsSaved = nil
+        holdToTalk = false
+        heldSide = nil
+        translatorNeedsHello = false
+        privacyLocked = false
         pendingAction = nil
         contactCard = nil
         reminderStatus = nil
+        noteReminderStatus = nil
         planStatus = nil
         connectionNeeded = nil
         isMuted = false
@@ -223,10 +276,25 @@ final class VoiceSessionController {
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
-        let notes = VoiceContext.savedNotes(store.memories)
-        let recent = logs.isEnabled
+        var notes = VoiceContext.savedNotes(store.memories)
+        var recent = logs.isEnabled
             ? VoiceContext.recentConversations(logs.logs)
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
+        var listsText = ListsPrompt.render(store.lists)
+        var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
+        // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
+        // so it has nothing of the owner's to repeat to the other person.
+        if let preset {
+            let none = "(not shared: this conversation is only for translating)"
+            notes = VoiceContext.Rendered(text: none, includedCount: 0, truncated: false)
+            recent = VoiceContext.Rendered(text: none, includedCount: 0, truncated: false)
+            profileText = none
+            listsText = none
+            isPrivate = true
+            privacyLocked = true
+            translator = TranslatorSession(setup: preset, startedAt: Date())
+            translatorNeedsHello = true
+        }
 
         let ref = WeakRef(self)
         var config = ConversationConfig(
@@ -238,8 +306,9 @@ final class VoiceSessionController {
                 // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
                 // placeholder defaults to the persona defaults, so a build that sends nothing still works.
                 PersonalityPrompt.variableName: PersonalityPrompt.render(.stored(), nickname: Nickname.stored()),
-                ProfilePrompt.variableName: ProfilePrompt.render(
-                    profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice)),
+                ProfilePrompt.variableName: profileText,
+                TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
+                ListsPrompt.variableName: listsText,
             ],
             userId: Self.userID())
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
@@ -374,6 +443,7 @@ final class VoiceSessionController {
     }
 
     func stop() async {
+        endTranslator()
         stopWatchingAudioInterruptions()
         let active = conversation
         conversation = nil
@@ -479,45 +549,110 @@ final class VoiceSessionController {
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
         case .cloud(let id, let call, _, let approvalID, _):
             await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
-        case .noteReminder(let id, let memoryID, let noteText, let target):
-            await reply(id, await setNoteReminder(memoryID: memoryID, noteText: noteText, target: target))
+        case .noteReminder(let id, let memoryID, let noteText, _, let target):
+            guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
+                await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
+                return
+            }
+            let receipt = await setNoteReminder(confirmed)
+            await reply(id, Self.noteReminderReply(receipt, note: noteText))
+        case .translator(let id, let setup):
+            beginTranslator(setup)
+            await reply(id, VoiceToolReply.translatorStarted(setup))
+        case .createList(let id, let name, let items):
+            do {
+                let list = try await store.createList(name: name, items: items, source: .voice)
+                listReceipt = ListReceipt(listID: list.id, title: "New list: \(list.name)", lines: list.items.map { .added($0.text) })
+                await reply(id, VoiceToolReply.listCreated(list))
+            } catch ListError.nameTaken(let taken) {
+                await reply(id, VoiceToolReply.listNameTaken(taken))
+            } catch {
+                await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
+            }
         case .plan(let id, let steps, let blocked):
             await runPlan(id, steps: steps, blocked: blocked)
         }
     }
 
     func selectPlace(_ index: Int) {
-        guard case .noteReminder(_, _, _, .place(let results, _)) = pendingAction, results.indices.contains(index) else { return }
+        guard case .noteReminder(_, _, _, _, .place(let results, _)) = pendingAction, results.indices.contains(index) else { return }
         selectedPlaceIndex = index
     }
 
-    /// Sets the reminder through the same store as the note screen, then tells the agent only what
-    /// the store verified (a scheduled request, Doddy-only, or why nothing was set).
-    private func setNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) async -> String {
-        guard let reminders = store.noteReminders, reminders.isAvailable else {
-            return VoiceToolReply.noteReminderFailed("Reminders on notes aren't available on this iPhone right now.")
-        }
-        // The user just tapped Set reminder, so this is the moment to ask iOS, once.
-        if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
+    /// The user changed the time on the card. The card shows it, and Set reminder uses it.
+    func changeNoteReminderTime(_ date: Date) {
+        guard case .noteReminder(let id, let memoryID, let text, let savedAt, .time(_, let zone, let repeats)) = pendingAction else { return }
+        pendingAction = .noteReminder(
+            toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone, repeats: repeats))
+    }
+
+    /// The user switched arriving/leaving on the card (the agent may have misheard).
+    func setNoteReminderOnArrival(_ onArrival: Bool) {
+        guard case .noteReminder(let id, let memoryID, let text, let savedAt, .place(let results, _)) = pendingAction else { return }
+        pendingAction = .noteReminder(toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .place(results: results, onArrival: onArrival))
+    }
+
+    /// The card's current content, as the reminder to set.
+    private func confirmedNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) -> ConfirmedNoteReminder? {
         switch target {
-        case .time(let date, let zone):
-            await reminders.set(memoryID: memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent)
+        case .time(let date, let zone, let repeats):
+            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats))
         case .place(let results, let onArrival):
+            guard !results.isEmpty else { return nil }
             let choice = results[min(selectedPlaceIndex, results.count - 1)]
             guard let place = try? ReminderPlace(
                 name: String(choice.name.prefix(ReminderPlace.maxNameLength)),
                 latitude: choice.coordinate.latitude, longitude: choice.coordinate.longitude,
                 radiusMeters: ReminderPlace.defaultRadius, onArrival: onArrival)
-            else { return VoiceToolReply.noteReminderFailed("That place can't be used.") }
+            else { return nil }
+            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .place(place))
+        }
+    }
+
+    /// Sets the reminder through the same store as the note screen and shows the store's receipt:
+    /// a scheduled request, Doddy-only, or why nothing was set.
+    private func setNoteReminder(_ confirmed: ConfirmedNoteReminder) async -> NoteReminderReceipt {
+        guard let reminders = store.noteReminders, reminders.isAvailable else {
+            let receipt = NoteReminderReceipt.failed("Reminders on notes aren't available on this iPhone right now.")
+            noteReminderStatus = .done(confirmed, receipt)
+            return receipt
+        }
+        noteReminderStatus = .setting(confirmed)
+        // The user just tapped Set reminder, so this is the moment to ask iOS, once.
+        if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
+        switch confirmed.when {
+        case .time(let date, let zone, let repeats):
+            await reminders.set(
+                memoryID: confirmed.memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent, repeats: repeats)
+        case .place(let place):
             if reminders.locationReadiness == .notDetermined { await reminders.requestLocation() }
-            await reminders.set(memoryID: memoryID, place: place)
+            await reminders.set(memoryID: confirmed.memoryID, place: place)
         }
-        switch reminders.receipts[memoryID] {
-        case .scheduled(let reminder): return VoiceToolReply.noteReminderSet(reminder, note: noteText)
-        case .inAppOnly(let reminder): return VoiceToolReply.noteReminderInDoddyOnly(reminder, note: noteText)
-        case .failed(let message), .needsSettings(let message): return VoiceToolReply.noteReminderFailed(message)
-        case nil: return VoiceToolReply.noteReminderFailed("Doddy couldn't set the reminder.")
+        let receipt = reminders.receipts[confirmed.memoryID] ?? .failed("Doddy couldn't set the reminder.")
+        // The voice screen shows this receipt; the note screen shouldn't repeat it later.
+        reminders.clearReceipt(memoryID: confirmed.memoryID)
+        noteReminderStatus = .done(confirmed, receipt)
+        return receipt
+    }
+
+    private static func noteReminderReply(_ receipt: NoteReminderReceipt, note: String) -> String {
+        switch receipt {
+        case .scheduled(let reminder): VoiceToolReply.noteReminderSet(reminder, note: note)
+        case .inAppOnly(let reminder): VoiceToolReply.noteReminderInDoddyOnly(reminder, note: note)
+        case .failed(let message), .needsSettings(let message): VoiceToolReply.noteReminderFailed(message)
         }
+    }
+
+    /// Try again on a failed receipt: the same reminder the user confirmed, set once more on their
+    /// tap. The agent's tool call is already answered, so only the screen shows the new result.
+    func retryNoteReminder() async {
+        guard case .done(let confirmed, .failed) = noteReminderStatus else { return }
+        _ = await setNoteReminder(confirmed)
+    }
+
+    func dismissNoteReminderStatus() {
+        guard case .done = noteReminderStatus else { return }
+        noteReminderStatus = nil
     }
 
     /// The user tapped the card's decline button. Nothing changes.
@@ -535,7 +670,9 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
-        case .noteReminder(let id, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
+        case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
+        case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
+        case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -543,6 +680,267 @@ final class VoiceSessionController {
                 logPlanStep(step, reply: PlanReply.declined, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
             }
             await reply(id, PlanReply.declined)
+        }
+    }
+
+    // MARK: Lists (ADR-216)
+
+    /// The list the agent named, matched exactly; on no match or several, the agent gets the
+    /// list names and asks. Nothing changes in either case.
+    private func resolveList(_ name: String, toolCallID: String) async -> DoddyList? {
+        await store.reload()
+        switch ListMatch.list(named: name, in: store.lists) {
+        case .one(let list):
+            return list
+        case .none:
+            await reply(toolCallID, VoiceToolReply.listNotFound(name, lists: store.lists))
+        case .several(let lists):
+            await reply(toolCallID, VoiceToolReply.listAmbiguous(name, lists: lists))
+        }
+        return nil
+    }
+
+    /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
+    private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
+        guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
+        do {
+            let result = try await store.addToList(request.items, listID: list.id, source: .voice)
+            var lines = result.added.map { ListReceipt.Line.added($0.text) }
+            lines += result.alreadyThere.map { .note("\($0) · already on the list, not added again") }
+            lines += result.tooLong.map { .note("too long to add: \($0.prefix(40))…") }
+            lines += result.noRoom.map { .note("\($0) · the list is full") }
+            listReceipt = ListReceipt(
+                listID: list.id, title: result.added.isEmpty ? "Nothing new for \(list.name)" : "Added to \(list.name)",
+                lines: lines, undo: result.added.isEmpty ? nil : store.listUndo)
+            await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name))
+        } catch {
+            await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
+        }
+    }
+
+    private func readList(_ name: String, toolCallID: String) async {
+        guard let list = await resolveList(name, toolCallID: toolCallID) else { return }
+        listReceipt = ListReceipt(listID: list.id, title: "\(list.name) · \(list.summary)", lines: list.open.map { .open($0.text) })
+        await reply(toolCallID, VoiceToolReply.listRead(list))
+    }
+
+    /// Ticks or removes only clear matches; items that match several are offered to tap.
+    private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
+        guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
+        let pool = tick ? list.open : list.items
+        var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
+        for phrase in request.items {
+            switch ListMatch.item(phrase, in: pool) {
+            case .one(let item): if !matched.contains(item) { matched.append(item) }
+            case .none: notFound.append(phrase)
+            case .several(let options): ambiguous.append((said: phrase, options: options))
+            }
+        }
+        do {
+            var changed: [ListItem] = []
+            if !matched.isEmpty {
+                if tick {
+                    changed = try await store.setDone(matched, done: true, listID: list.id)
+                } else {
+                    changed = try await store.removeFromList(matched, listID: list.id)
+                }
+            }
+            let verb = tick ? "ticked" : "removed"
+            listReceipt = ListReceipt(
+                listID: list.id, title: "\(tick ? "Ticked on" : "Removed from") \(list.name)",
+                lines: changed.map { tick ? .ticked($0.text) : .removed($0.text) } + notFound.map { .note("not on the list: \($0)") },
+                undo: changed.isEmpty ? nil : store.listUndo,
+                choices: ambiguous.first.map { ListReceipt.Choices(said: $0.said, options: $0.options, tick: tick) })
+            await reply(toolCallID, VoiceToolReply.listChanged(verb: verb, changed: changed, list: list.name, notFound: notFound, ambiguous: ambiguous))
+        } catch {
+            await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
+        }
+    }
+
+    /// The user tapped one of the items Doddy couldn't tell apart.
+    func pickListChoice(_ item: ListItem) async {
+        guard var receipt = listReceipt, let choices = receipt.choices else { return }
+        do {
+            let changed: [ListItem]
+            if choices.tick {
+                changed = try await store.setDone([item], done: true, listID: receipt.listID)
+            } else {
+                changed = try await store.removeFromList([item], listID: receipt.listID)
+            }
+            receipt.lines += changed.map { choices.tick ? .ticked($0.text) : .removed($0.text) }
+            receipt.choices = nil
+            receipt.undo = store.listUndo
+            receipt.problem = nil
+            listReceipt = receipt
+        } catch {
+            receipt.problem = UserFacingError.listMessage(for: error)
+            listReceipt = receipt
+        }
+    }
+
+    /// Undo on the receipt: takes back exactly that change.
+    func undoListReceipt() async {
+        guard var receipt = listReceipt, let undo = receipt.undo else { return }
+        do {
+            try await store.undoListChange(undo)
+            receipt.undo = nil
+            receipt.title = "Undone: \(undo.message.prefix(1).lowercased() + undo.message.dropFirst())"
+            receipt.problem = nil
+            listReceipt = receipt
+        } catch {
+            receipt.problem = "Couldn't undo. " + UserFacingError.listMessage(for: error)
+            listReceipt = receipt
+        }
+    }
+
+    func dismissListReceipt() {
+        listReceipt = nil
+    }
+
+    /// The user fixed the name on the "Start a new list?" card.
+    func changeNewListName(_ name: String) {
+        guard case .createList(let id, _, let items) = pendingAction else { return }
+        pendingAction = .createList(toolCallID: id, name: name, items: items)
+    }
+
+    // MARK: Translator mode (ADR-215)
+
+    /// The owner's language when the agent didn't say: Settings' starting language, else the iPhone's.
+    static var ownerLanguage: TranslatorLanguage {
+        TranslatorLanguages.ownerDefault(
+            settingCode: ConversationLanguage.stored().overrideCode,
+            deviceCode: Locale.current.language.languageCode?.identifier)
+    }
+
+    /// The user changed a language on the "Start translating?" card.
+    func changeTranslatorProposal(owner: TranslatorLanguage, other: TranslatorLanguage?, kind: TranslatorKind) {
+        guard case .translator(let id, _) = pendingAction,
+              let setup = TranslatorSetup(kind: kind, owner: owner, other: other) else { return }
+        pendingAction = .translator(toolCallID: id, setup: setup)
+    }
+
+    private func beginTranslator(_ setup: TranslatorSetup) {
+        // Private from here on: nothing of this conversation is kept on the iPhone.
+        isPrivate = true
+        privacyLocked = true
+        translatorSummary = nil
+        translatorFactsSaved = nil
+        translator = TranslatorSession(setup: setup, startedAt: Date())
+    }
+
+    /// Ends the mode (the conversation may go on) and keeps the text in memory for five minutes.
+    private func endTranslator() {
+        guard let session = translator else { return }
+        translator = nil
+        translatorNeedsHello = false
+        if holdToTalk {
+            holdToTalk = false
+            heldSide = nil
+            if isMuted { Task { await setMicrophone(muted: false) } }
+        }
+        let summary = session.summary(endedAt: Date())
+        translatorSummary = summary
+        translatorFactsSaved = nil
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(TranslatorSummary.keepFor))
+            self?.dropTranslatorSummary(endedAt: summary.endedAt)
+        }
+    }
+
+    private func dropTranslatorSummary(endedAt: Date) {
+        guard translatorSummary?.endedAt == endedAt else { return }
+        translatorSummary = nil
+        translatorFactsSaved = nil
+    }
+
+    /// Done on the end screen: the text is gone now.
+    func dismissTranslatorSummary() {
+        translatorSummary = nil
+        translatorFactsSaved = nil
+    }
+
+    /// End on the translator screen: the conversation ends too.
+    func endTranslating() async {
+        await stop()
+    }
+
+    /// Copy the text, only while the five minutes last. Returns false when it is already gone.
+    func copyTranslatorText() -> Bool {
+        guard let summary = translatorSummary, summary.isAvailable(at: Date()) else {
+            translatorSummary = nil
+            return false
+        }
+        UIPasteboard.general.string = summary.transcript
+        return true
+    }
+
+    /// "Save the facts as a note": the exact facts, saved only on this tap and read back from the store.
+    func saveTranslatorFacts() async {
+        guard let summary = translatorSummary, summary.isAvailable(at: Date()) else {
+            translatorSummary = nil
+            return
+        }
+        guard let text = summary.factsNote(calendar: .current) else {
+            translatorFactsSaved = .failure(.nothingToSave)
+            return
+        }
+        do {
+            let record = try await store.save(text: text, category: .other, source: .explicitText)
+            translatorFactsSaved = .success(record.currentText)
+        } catch {
+            translatorFactsSaved = .failure(.failed(UserFacingError.message(for: error)))
+        }
+    }
+
+    /// Noisy place: mute the microphone except while a hold-to-talk button is held.
+    func setHoldToTalk(_ on: Bool) async {
+        guard translator?.setup.kind == .faceToFace, conversation != nil else { return }
+        holdToTalk = on
+        heldSide = nil
+        await setMicrophone(muted: on)
+    }
+
+    /// `side` is whose button is held: `.toOwner` for the owner's half, `.toOther` for theirs.
+    func beginHold(_ side: TranslatorDirection) async {
+        guard holdToTalk, let setup = translator?.setup else { return }
+        heldSide = side
+        translator?.held = side
+        let who = side == .toOwner
+            ? "the user, in \(setup.owner.englishName)"
+            : "the other person\(setup.other.map { ", in \($0.englishName)" } ?? "")"
+        try? await conversation?.updateContext("\(TranslatorSession.appMessagePrefix) The next words are from \(who). Translate them for the other side.")
+        await setMicrophone(muted: false)
+    }
+
+    func endHold() async {
+        guard holdToTalk else { return }
+        heldSide = nil
+        await setMicrophone(muted: true)
+    }
+
+    /// Say it again: Doddy repeats his last translation to them.
+    func sayTranslationAgain() async {
+        await sendToAgent("Say your last translation to them again, word for word.")
+    }
+
+    /// "Say it to them" on a quiet word: Doddy says his suggestion to them, in their language.
+    func sayAsideToThem() async {
+        guard let other = translator?.setup.other else { return }
+        await sendToAgent("Say the sentence you suggested to them now, in \(other.englishName), exactly as you wrote it. Then go on translating.")
+    }
+
+    /// Messages from the app (never shown as something said; see `TranslatorSession.heard`).
+    private func sendToAgent(_ text: String) async {
+        try? await conversation?.sendMessage("\(TranslatorSession.appMessagePrefix) \(text)")
+    }
+
+    private func setMicrophone(muted: Bool) async {
+        guard let conversation else { return }
+        do {
+            try await conversation.setMuted(muted)
+            isMuted = muted
+        } catch {
+            // Keep the previous state; the UI shows what is actually set.
         }
     }
 
@@ -648,10 +1046,27 @@ final class VoiceSessionController {
 
     private func append(_ text: String, fromUser: Bool) {
         guard !text.allSatisfy(\.isWhitespace) else { return }
+        // Translating: the lines belong to the translator screen, never to the conversation log.
+        if translator != nil {
+            if fromUser {
+                translator?.heard(text)
+            } else {
+                translator?.said(text)
+                if translatorNeedsHello {
+                    translatorNeedsHello = false
+                    Task { await sendToAgent("Translator mode is on. Do what the translator_start section says now.") }
+                }
+            }
+            return
+        }
         lines.append(Line(fromUser: fromUser, text: text))
     }
 
     private func correct(_ original: String, to corrected: String) {
+        if translator != nil {
+            translator?.correct(original, to: corrected)
+            return
+        }
         guard let index = lines.lastIndex(where: { !$0.fromUser && $0.text == original }) else { return }
         lines[index].text = corrected
     }
@@ -663,6 +1078,7 @@ final class VoiceSessionController {
     }
 
     private func disconnected() {
+        endTranslator()
         stopWatchingAudioInterruptions()
         conversation = nil
         pendingAction = nil
@@ -672,11 +1088,17 @@ final class VoiceSessionController {
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
+        let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
+        // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
+        // is looked up or logged.
+        if translator != nil, !TranslatorPolicy.allows(request) {
+            await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))
+            return
+        }
         if call.toolName == VoiceToolName.proposePlan {
             await handlePlan(call)
             return
         }
-        let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
         // Settings → Pause all: no other app or account is used; notes still work.
         if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
@@ -763,6 +1185,39 @@ final class VoiceSessionController {
             }
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
+        case .startTranslator(let proposal):
+            guard let setup = proposal.setup(ownerDefault: Self.ownerLanguage) else {
+                await reply(call.toolCallId, VoiceToolReply.failed("Both languages are the same. Ask the user which language the other person speaks."), isError: true)
+                return
+            }
+            propose(.translator(toolCallID: call.toolCallId, setup: setup), toolCallID: call.toolCallId)
+        case .addToList(let request):
+            await addToList(request, toolCallID: call.toolCallId)
+        case .readList(let name):
+            await readList(name, toolCallID: call.toolCallId)
+        case .checkOff(let request):
+            await changeList(request, tick: true, toolCallID: call.toolCallId)
+        case .removeFromList(let request):
+            await changeList(request, tick: false, toolCallID: call.toolCallId)
+        case .createList(let request):
+            await store.reload()
+            if case .one(let existing) = ListMatch.list(named: request.list, in: store.lists),
+               ListMatch.key(existing.name) == ListMatch.key(request.list) {
+                await reply(call.toolCallId, VoiceToolReply.listNameTaken(existing.name))
+                return
+            }
+            guard store.lists.count < ListLimits.lists else {
+                await reply(call.toolCallId, VoiceToolReply.listFailed(UserFacingError.listMessage(for: ListError.tooManyLists(maximum: ListLimits.lists))))
+                return
+            }
+            propose(.createList(toolCallID: call.toolCallId, name: request.list, items: request.items), toolCallID: call.toolCallId)
+        case .stopTranslator:
+            guard translator != nil else {
+                await reply(call.toolCallId, VoiceToolReply.translatorNotOn)
+                return
+            }
+            endTranslator()
+            await reply(call.toolCallId, VoiceToolReply.translatorStopped)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
@@ -875,6 +1330,20 @@ final class VoiceSessionController {
             return await startTimer(draft)
         case .cloudTool(let call):
             return await runPlanCloud(call, approval: approval)
+        case .addToList(let request):
+            // Matched now, exactly as a single add_to_list would be; nothing changes on no match.
+            await store.reload()
+            switch ListMatch.list(named: request.list, in: store.lists) {
+            case .none: return VoiceToolReply.listNotFound(request.list, lists: store.lists)
+            case .several(let lists): return VoiceToolReply.listAmbiguous(request.list, lists: lists)
+            case .one(let list):
+                do {
+                    let result = try await store.addToList(request.items, listID: list.id, source: .voice)
+                    return VoiceToolReply.listAdded(result, list: list.name)
+                } catch {
+                    return VoiceToolReply.listFailed(UserFacingError.listMessage(for: error))
+                }
+            }
         default:
             // PlanProposal only makes the kinds above.
             return VoiceToolReply.notAdded("This step can't run in a plan.")
@@ -991,7 +1460,8 @@ final class VoiceSessionController {
         switch draft.target {
         case .time(let date, let zone):
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
-                                  target: .time(date, timeZoneID: zone)), toolCallID: toolCallID)
+                                  savedAt: record.capturedAt, target: .time(date, timeZoneID: zone, repeats: draft.repeats)),
+                    toolCallID: toolCallID)
         case .place(let query, let onArrival):
             let results: [PlaceSearchResult]
             do {
@@ -1006,7 +1476,8 @@ final class VoiceSessionController {
             }
             selectedPlaceIndex = 0
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
-                                  target: .place(results: Array(results.prefix(5)), onArrival: onArrival)), toolCallID: toolCallID)
+                                  savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
+                    toolCallID: toolCallID)
         }
     }
 
@@ -1130,6 +1601,38 @@ final class VoiceSessionController {
     }
 }
 
+/// What a list change by voice did, shown on the conversation screen (canvas 4, 6, 7).
+struct ListReceipt: Equatable {
+    enum Line: Equatable {
+        case added(String), ticked(String), removed(String), open(String), note(String)
+    }
+    struct Choices: Equatable {
+        let said: String
+        let options: [ListItem]
+        let tick: Bool
+    }
+    let listID: UUID
+    var title: String
+    var lines: [Line]
+    var undo: ListUndo?
+    var choices: Choices?
+    var problem: String?
+
+    init(listID: UUID, title: String, lines: [Line], undo: ListUndo? = nil, choices: Choices? = nil) {
+        self.listID = listID
+        self.title = title
+        self.lines = lines
+        self.undo = undo
+        self.choices = choices
+    }
+}
+
+/// Why "Save the facts as a note" saved nothing.
+enum TranslatorSaveError: Error, Equatable {
+    case nothingToSave
+    case failed(String)
+}
+
 /// Lets SDK callbacks (which must be `@Sendable`) reach the controller without a retain cycle.
 private final class WeakRef<T: AnyObject>: @unchecked Sendable {
     weak var value: T?
@@ -1140,9 +1643,9 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .cloud, .noteReminder: true
+        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
-        case .map, .shortcut, .message, .plan: false
+        case .map, .shortcut, .message, .translator, .plan: false
         }
     }
 }

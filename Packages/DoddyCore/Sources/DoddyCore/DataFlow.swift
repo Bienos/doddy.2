@@ -58,7 +58,7 @@ public struct DataFlowRow: Equatable, Identifiable, Sendable {
 public enum DataFlow {
     public static func rows(_ state: DataFlowState) -> [DataFlowRow] {
         let apps = state.pauseAll ? [] : state.connectionsOn
-        var voice = ["your voice", "the conversation", "your saved notes", "your personality settings"]
+        var voice = ["your voice", "the conversation", "your saved notes", "your list names (items only when Doddy reads or changes a list)", "your personality settings"]
         if state.rememberConversations { voice.append("your last few conversations") }
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
         if !apps.isEmpty { voice.append("calendar entries, reminders, contact names or drafts Doddy uses (\(names(apps)))") }
@@ -79,6 +79,11 @@ public enum DataFlow {
                 what: sentence(voice),
                 when: "Only while a conversation is open.", isActive: true,
                 note: "ElevenLabs keeps a recording and transcript of each conversation."),
+            DataFlowRow(
+                id: "translator", destination: "ElevenLabs (translator mode)",
+                what: "The other person's voice too, and everything said while translating. Opened from Translate on Home, your notes, conversations and profile aren't sent. Started in a conversation, what Doddy already had in it stays there, and he is told never to repeat it to them.",
+                when: "Only while translator mode is on.", isActive: true,
+                note: "Listen only hears whoever is near you. Nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes of the end."),
             DataFlowRow(
                 id: "lookups", destination: "Open-Meteo and Wikipedia",
                 what: "A place name and its coordinates; search words.",

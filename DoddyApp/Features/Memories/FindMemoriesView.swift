@@ -38,6 +38,11 @@ struct FindMemoriesView: View {
                 } else if isRunning {
                     ProgressView("Finding saved words")
                 } else {
+                    // Lists (ADR-216) are found by their name or items, apart from the notes.
+                    let listHits = ListSearch.hits(query, in: store.lists)
+                    if !listHits.isEmpty {
+                        ListHitsView(hits: listHits)
+                    }
                     RecallResultsView(outcome: outcome, query: query)
                 }
             }.padding(24)
@@ -69,6 +74,41 @@ struct FindMemoriesView: View {
             isRunning = false
             searchError = UserFacingError.message(for: error)
         }
+    }
+}
+
+/// "In your lists": each list with the items that matched; tapping opens the list.
+private struct ListHitsView: View {
+    let hits: [ListSearchHit]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(hits.count == 1 ? "IN ONE LIST" : "IN \(hits.count) LISTS")
+                .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+            ForEach(hits) { hit in
+                NavigationLink(value: MemoryNavigationRoute.note(hit.list.id)) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Label(hit.list.name, systemImage: "checklist").font(.headline)
+                            Spacer()
+                            Text(hit.list.summary).font(.footnote).foregroundStyle(Theme.secondaryText)
+                        }
+                        ForEach(hit.items) { item in
+                            Label(item.text, systemImage: item.isDone ? "checkmark.square" : "square")
+                                .font(.subheadline)
+                                .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                        }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator))
+                    .contentShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the list")
+            }
+        }
+        .accessibilityIdentifier("memories.listHits")
     }
 }
 

@@ -9,6 +9,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.openingScene) private var openingOn = true
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
+    @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var connections = ConnectionController()
@@ -24,6 +25,8 @@ struct SettingsView: View {
     @State private var confirmDeleteAll = false
     @State private var choosingRestoreFile = false
     @State private var restorePlan: MemoryRestorePlan?
+    /// List items from the same file (ADR-216), put back after their lists.
+    @State private var restoreItems: [ListItem] = []
     @State private var restoreMessage: String?
     @State private var restoreFailed = false
     @State private var deleteError: String?
@@ -140,21 +143,21 @@ struct SettingsView: View {
                 Section("Your memories") {
                     StatusRow(title: "Saved on this iPhone", value: "\(store.memories.count)")
                     ShareLink(
-                        item: JSONExport(records: store.memories),
+                        item: JSONExport(records: store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items)),
                         preview: SharePreview("Doddy memories (JSON)")
                     ) {
                         Label("Export as JSON", systemImage: "square.and.arrow.up")
                     }
                     .disabled(store.memories.isEmpty)
                     ShareLink(
-                        item: MemoryExport.plainText(store.memories, exportedAt: .now),
+                        item: MemoryExport.plainText(store.memories, lists: store.lists, exportedAt: .now),
                         preview: SharePreview("Doddy memories (text)")
                     ) {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
                     .disabled(store.memories.isEmpty)
                     ShareLink(
-                        item: MarkdownFileExport(records: store.memories),
+                        item: MarkdownFileExport(records: store.memories, lists: store.lists),
                         preview: SharePreview("Doddy memories (Markdown)")
                     ) {
                         Label("Export as Markdown", systemImage: "doc.richtext")
@@ -180,9 +183,27 @@ struct SettingsView: View {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
+                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos added to notes stay on this iPhone and aren't in exports; deleting a note deletes its photo. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                }
+
+                // Widgets (ADR-219): what they show, and the switch that empties the shared file.
+                Section("Widgets") {
+                    if WidgetSync.shared.isAvailable {
+                        Toggle("Show notes and lists in widgets", isOn: $widgetsOn)
+                            .accessibilityIdentifier("settings.widgetsOn")
+                        Text(widgetsOn
+                             ? "Widgets show your pinned notes, your next reminders and your lists, shortened. They're kept in a file only Doddy and its widgets can open. On the Lock Screen, iOS hides the text until you unlock. Ticking from a widget needs your iPhone unlocked."
+                             : "Widgets show nothing of yours, and the widgets' file holds nothing of yours.")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        if let problem = WidgetSync.shared.problem {
+                            Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+                        }
+                    } else {
+                        Text("This build of Doddy can't share anything with widgets (it isn't signed with Doddy's App Group), so widgets show only \"Open Doddy\".")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
                 }
 
                 Section("Privacy") {
@@ -203,7 +224,7 @@ struct SettingsView: View {
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs (voice); OpenAI if Ask Doddy is on" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
                     // DataFlow (What leaves this iPhone) restates this paragraph row by row; change both together.
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes, your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft or task you confirm) to your Doddy server, which talks to Google, Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes, your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft or task you confirm) to your Doddy server, which talks to Google, Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -630,8 +651,10 @@ struct SettingsView: View {
             guard size <= MemoryRestore.maxFileBytes else {
                 throw MemoryRestoreError.tooLarge(bytes: size, maximum: MemoryRestore.maxFileBytes)
             }
-            let file = try MemoryRestore.read(try Data(contentsOf: url))
-            let plan = MemoryRestore.plan(file.records, existing: store.memories, exportedAt: file.exportedAt)
+            let data = try Data(contentsOf: url)
+            let file = try MemoryRestore.read(data)
+            restoreItems = try MemoryRestore.listItems(data)
+            let plan = MemoryRestore.plan(file.records, existing: store.memories + store.lists.map(\.record), exportedAt: file.exportedAt)
             if plan.isEmpty {
                 restoreFailed = false
                 restoreMessage = RestoreCopy.nothingToAdd(plan)
@@ -647,7 +670,8 @@ struct SettingsView: View {
     private func restore(_ plan: MemoryRestorePlan) async {
         restorePlan = nil
         do {
-            let added = try await store.restore(plan.toAdd)
+            let added = try await store.restore(plan.toAdd, listItems: restoreItems)
+            restoreItems = []
             restoreFailed = false
             restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."
         } catch {
@@ -830,10 +854,11 @@ struct ProfileTextExport: Transferable {
 /// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
 struct MarkdownFileExport: Transferable {
     let records: [MemoryRecord]
+    let lists: [DoddyList]
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
-            Data(MarkdownExport.markdown(export.records, exportedAt: Date()).utf8)
+            Data(MarkdownExport.markdown(export.records, lists: export.lists, exportedAt: Date()).utf8)
         }
         .suggestedFileName("doddy-memories.md")
     }
@@ -842,10 +867,12 @@ struct MarkdownFileExport: Transferable {
 /// JSON export file for the share sheet (format: `MemoryExport.json`).
 struct JSONExport: Transferable {
     let records: [MemoryRecord]
+    /// List items (ADR-216); their lists are among `records`.
+    let listItems: [ListItem]
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .json) { export in
-            try MemoryExport.json(export.records, exportedAt: Date())
+            try MemoryExport.json(export.records, listItems: export.listItems, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
     }

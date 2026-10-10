@@ -99,7 +99,13 @@ public struct ActivityRequest: Equatable, Sendable {
         case .remindAboutNote(let draft):
             let target: String
             switch draft.target {
-            case .time(let date, _): target = when(date, hasTime: true)
+            case .time(let date, let zone):
+                if let rule = draft.repeats {
+                    let phrase = ReminderFormat.repeatPhrase(rule, anchor: date, timeZoneID: zone)
+                    target = phrase.prefix(1).lowercased() + phrase.dropFirst()
+                } else {
+                    target = when(date, hasTime: true)
+                }
             case .place(let query, let onArrival): target = "\(onArrival ? "arriving at" : "leaving") “\(query)”"
             }
             return ActivityRequest(app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", isLookup: false)
@@ -118,8 +124,19 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .messages, title: "Draft a \(kind)", detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             return describe(cloud: call.name)
-        case .unsupported, .invalid, .needsClarification:
-            // A clarification goes straight back to the agent; no app is used.
+        case .addToList(let request):
+            return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .readList(let name):
+            return ActivityRequest(app: .memories, title: "Read a list", detail: "“\(name)”", isLookup: true)
+        case .checkOff(let request):
+            return ActivityRequest(app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .removeFromList(let request):
+            return ActivityRequest(app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .createList(let request):
+            return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", isLookup: false)
+        case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:
+            // A clarification goes straight back to the agent; no app is used. Translator mode
+            // uses no app either, and leaves no trace of the conversation (ADR-215).
             return nil
         }
     }

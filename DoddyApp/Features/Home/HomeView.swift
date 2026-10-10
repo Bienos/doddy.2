@@ -16,6 +16,9 @@ struct HomeView: View {
     @State private var modal: MemoryModal?
     @State private var showAsk = false
     @State private var tool: HomeTool?
+    /// Translate (ADR-215): the start sheet, and what the user chose on it.
+    @State private var showTranslator = false
+    @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     private var router: ShortcutRouter { .shared }
 
@@ -77,6 +80,14 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.ask")
                         .modifier(SlideIn(shown: buttonsShown, delay: 0.07))
 
+                        Button { showTranslator = true } label: {
+                            HStack { Text("Translate"); Spacer(); Image(systemName: "character.bubble") }
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
+                        .accessibilityHint("Doddy translates between you and someone who speaks another language.")
+                        .accessibilityIdentifier("home.translate")
+
                         // Choose one layout rather than keeping off-screen copies
                         // of the same actions in ViewThatFits' accessibility tree.
                         Group {
@@ -114,7 +125,7 @@ struct HomeView: View {
             }
             .background(Theme.canvas)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
-            .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
+            .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(item: $tool) { tool in
                 switch tool {
@@ -123,6 +134,13 @@ struct HomeView: View {
                 }
             }
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
+            // The conversation opens once the start sheet has gone away.
+            .sheet(isPresented: $showTranslator, onDismiss: {
+                if let choice = translatorChoice {
+                    translatorChoice = nil
+                    router.openTranslator(choice)
+                }
+            }) { TranslatorStartView(chosen: $translatorChoice) }
         }
         .foregroundStyle(Theme.ink)
     }

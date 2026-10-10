@@ -35,6 +35,11 @@ struct AppEnvironment: Sendable {
     let privacy: PrivacyDefaults
     /// Set when the memory store could not be opened. Nothing is reset or deleted in that case.
     let storageProblem: String?
+    /// Lists (ADR-216), in the same SQLite file as the notes.
+    var listRepository: any ListRepository = UnavailableListRepository()
+    /// Which note carries which photo (ADR-218), and the folder of photo files next to the database.
+    var photoRepository: any PhotoRepository = UnavailablePhotoRepository()
+    var photoFiles: PhotoFiles = .unavailable
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -51,16 +56,16 @@ struct AppEnvironment: Sendable {
     static func live(arguments: [String] = ProcessInfo.processInfo.arguments) -> AppEnvironment {
         do {
             let isUITest = arguments.contains("-inMemoryStore")
-            let database = isUITest
-                ? try DoddyDatabase.inMemory()
-                : try DoddyDatabase(path: try databaseURL(arguments: arguments).path)
+            let databaseFile = isUITest ? nil : try databaseURL(arguments: arguments)
+            let database = try databaseFile.map { try DoddyDatabase(path: $0.path) } ?? DoddyDatabase.inMemory()
             let repository = SQLiteMemoryRepository(database: database)
             let credentials: any DeviceCredentialStore = isUITest ? InMemoryCredentialStore() : KeychainCredentialStore()
             // UI-test launches never touch iOS notifications: reminders stay inside Doddy.
             let notifications: any NoteNotificationScheduling = isUITest ? DisabledNoteNotifications() : SystemNoteNotifications()
             let noteReminders = NoteReminderCoordinator(
                 repository: SQLiteNoteReminderRepository(database: database), center: notifications,
-                showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) })
+                showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) },
+                language: { .current })
             return AppEnvironment(
                 memoryRepository: repository,
                 profileRepository: SQLiteProfileRepository(database: database),
@@ -71,7 +76,10 @@ struct AppEnvironment: Sendable {
                 // Notifications, texts, calls and news say "needs setup" until a messaging server is set.
                 capabilities: .shipping(serverConfigured: ServerConfig.baseURL() != nil),
                 privacy: .v1Voice,
-                storageProblem: nil)
+                storageProblem: nil,
+                listRepository: SQLiteListRepository(database: database),
+                photoRepository: SQLitePhotoRepository(database: database),
+                photoFiles: databaseFile.map(PhotoFiles.beside(database:)) ?? .temporary())
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

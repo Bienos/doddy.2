@@ -8,27 +8,38 @@ import UserNotifications
 /// No badge, no remote registration, interruption level `.active`.
 struct SystemNoteNotifications: NoteNotificationScheduling {
     static let categoryID = "DODDY_NOTE_REMINDER"
-    /// Place reminders: no "Tomorrow 09:00" (a place has no time to move).
+    /// Repeating reminders (ADR-211): "In 1 hour" and "Done this time"; no "Tomorrow 09:00" (owner
+    /// decision R4) and no Stop, which is on the note only.
+    static let repeatingCategoryID = "DODDY_NOTE_REPEATING_REMINDER"
+    /// Place reminders: no snooze (a place comes back on the next arrival).
     static let placeCategoryID = "DODDY_NOTE_PLACE_REMINDER"
     static let threadID = "doddy-note-reminders"
     static let openAction = "NOTE_OPEN"
+    static let hourAction = "NOTE_IN_1_HOUR"
     static let tomorrowAction = "NOTE_TOMORROW_0900"
     static let doneAction = "NOTE_DONE"
     static let memoryIDKey = "memoryID"
 
     /// Long-press actions. Adds Doddy's category to any already registered (iOS replaces the set).
     static func registerCategory() async {
-        let open = UNNotificationAction(identifier: openAction, title: "Open note", options: [.foreground])
-        let tomorrow = UNNotificationAction(identifier: tomorrowAction, title: "Tomorrow 09:00", options: [])
-        let done = UNNotificationAction(identifier: doneAction, title: "Done", options: [])
+        // In the iPhone's language: Polish or English (ADR-213). Re-registered when it changes.
+        let language = NotificationLanguage.current
+        let title = { (action: NoteReminderCopy.Action) in NoteReminderCopy.action(action, language) }
+        let open = UNNotificationAction(identifier: openAction, title: title(.openNote), options: [.foreground])
+        let hour = UNNotificationAction(identifier: hourAction, title: title(.inAnHour), options: [])
+        let tomorrow = UNNotificationAction(identifier: tomorrowAction, title: title(.tomorrowMorning), options: [])
+        let done = UNNotificationAction(identifier: doneAction, title: title(.done), options: [])
+        let doneThisTime = UNNotificationAction(identifier: doneAction, title: title(.doneThisTime), options: [])
         let category = UNNotificationCategory(
-            identifier: categoryID, actions: [open, tomorrow, done], intentIdentifiers: [], options: [])
+            identifier: categoryID, actions: [open, hour, tomorrow, done], intentIdentifiers: [], options: [])
+        let repeatingCategory = UNNotificationCategory(
+            identifier: repeatingCategoryID, actions: [open, hour, doneThisTime], intentIdentifiers: [], options: [])
         let placeCategory = UNNotificationCategory(
             identifier: placeCategoryID, actions: [open, done], intentIdentifiers: [], options: [])
+        let ours: Set<String> = [categoryID, repeatingCategoryID, placeCategoryID]
         let center = UNUserNotificationCenter.current()
-        let existing = await center.notificationCategories()
-            .filter { $0.identifier != categoryID && $0.identifier != placeCategoryID }
-        center.setNotificationCategories(existing.union([category, placeCategory]))
+        let existing = await center.notificationCategories().filter { !ours.contains($0.identifier) }
+        center.setNotificationCategories(existing.union([category, repeatingCategory, placeCategory]))
     }
 
     func authorization() async -> NotificationAuthorization {
@@ -54,12 +65,29 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         content.interruptionLevel = .active
         content.userInfo = [Self.memoryIDKey: notification.memoryID.uuidString]
 
+        switch notification.category {
+        case .once: content.categoryIdentifier = Self.categoryID
+        case .repeating: content.categoryIdentifier = Self.repeatingCategoryID
+        case .place: content.categoryIdentifier = Self.placeCategoryID
+        }
+
         let trigger: UNNotificationTrigger
+        if let match = notification.repeatMatch {
+            // Repeats at this clock time in the zone it was set in (ADR-211).
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = TimeZone(identifier: match.timeZoneID) ?? .current
+            var components = DateComponents(day: match.day, hour: match.hour, minute: match.minute, second: 0, weekday: match.weekday)
+            components.calendar = calendar
+            components.timeZone = calendar.timeZone
+            trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: true)
+            try await UNUserNotificationCenter.current().add(
+                UNNotificationRequest(identifier: notification.identifier, content: content, trigger: trigger))
+            return
+        }
         switch notification.trigger {
         case .time(let fireAt, let timeZoneID):
             // Pinned to the zone the reminder was set in, so it fires at the confirmed moment even
             // if the iPhone's zone changes (owner decision D3).
-            content.categoryIdentifier = Self.categoryID
             let zone = TimeZone(identifier: timeZoneID) ?? .current
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = zone
@@ -68,7 +96,6 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
             components.timeZone = zone
             trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         case .place(let place):
-            content.categoryIdentifier = Self.placeCategoryID
             trigger = PlaceLocation.trigger(for: place, identifier: notification.identifier)
         }
 
@@ -112,6 +139,8 @@ final class NoteReminderRouter {
     func handle(action: String, requestID: String, memoryString: String?) async {
         guard let reminderID = MemoryReminder.reminderID(fromNotificationID: requestID), let reminders else { return }
         switch action {
+        case SystemNoteNotifications.hourAction:
+            await reminders.snoozeForAnHour(reminderID: reminderID)
         case SystemNoteNotifications.tomorrowAction:
             await reminders.later(reminderID: reminderID)
         case SystemNoteNotifications.doneAction:

@@ -4,12 +4,16 @@ import SwiftUI
 enum PreferenceKey {
     /// Off by default (owner decision D4): note reminders never carry the note text unless turned on.
     static let showNoteTextInNotifications = "showNoteTextInNotifications"
+    /// Memories shows Lists instead of Notes (ADR-216).
+    static let memoriesShowsLists = "memoriesShowsLists"
     static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
     /// Memories list order (`MemorySort` raw value); display only (ADR-186).
     static let memorySort = "memorySort"
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).
     static let pinnedNotes = "pinnedNotes"
+    /// Widgets show pinned notes, reminders and lists (ADR-219); on unless turned off.
+    static let widgetsShowContent = "widgetsShowContent"
     static let hideCharacterArt = "hideCharacterArt"
     /// Settings → Voice → Dynamic Island style (`IslandStyle` raw value); display only (ADR-212).
     static let islandStyle = "islandStyle"
@@ -33,7 +37,7 @@ enum PreferenceKey {
     static let voiceChoice = "voice.choice"
     static let voiceSpeed = "voice.speed"
     static let voiceExpressiveness = "voice.expressiveness"
-    /// Settings → Voice and personality: auto, english or polish (`ConversationLanguage`).
+    /// Settings → Voice and personality: auto or one of 25 European languages (`ConversationLanguage`, ADR-212).
     static let voiceLanguage = "voice.language"
     /// What Doddy calls the user; sent with each voice conversation only when set (ADR-132).
     static let nickname = "personality.nickname"
@@ -73,6 +77,9 @@ struct RootView: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
     @State private var opening = OpeningModel()
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
+    @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
+    @AppStorage(PreferenceKey.showNoteTextInNotifications) private var showNoteText = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -108,6 +115,7 @@ struct RootView: View {
                     FocusController.shared.refresh()
                     BreathingController.shared.refresh()
                 }
+                if phase == .background { WidgetSync.shared.refresh() }
                 // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
                 switch phase {
                 case .background: opening.appWentToBackground()
@@ -115,6 +123,12 @@ struct RootView: View {
                 default: break
                 }
             }
+            // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
+            .onChange(of: store.revision) { WidgetSync.shared.refresh() }
+            .onChange(of: noteReminders.reminders) { WidgetSync.shared.refresh() }
+            .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
+            .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
+            .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -195,6 +209,12 @@ struct RootView: View {
         }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
+            // doddy://open/<id> from a widget opens that note or list on Home (ADR-219).
+            if let memoryID = WidgetLink.memoryID(from: url) {
+                selectedTab = .home
+                homePath = [memoryID]
+                return
+            }
             guard let link = DeepLink(url: url) else { return }
             switch link {
             case .home: selectedTab = .home
@@ -240,7 +260,9 @@ private struct UndoDeleteBar: View {
         HStack(spacing: 12) {
             Image(systemName: failed ? "exclamationmark.triangle" : "trash")
                 .foregroundStyle(failed ? Theme.error : Theme.secondaryText)
-            Text(failed ? "Couldn't bring the note back." : "Note deleted.")
+            Text(failed
+                 ? "Couldn't bring the \(deleted.record.category == .list ? "list" : "note") back."
+                 : deleted.record.category == .list ? "List deleted." : "Note deleted.")
                 .font(.subheadline)
             Spacer(minLength: 8)
             if !failed {

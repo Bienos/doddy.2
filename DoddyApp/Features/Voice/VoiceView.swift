@@ -16,6 +16,10 @@ struct VoiceView: View {
     @State private var controller: VoiceSessionController?
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
+    /// The time picker on a note-reminder card is open (closed again for each new card).
+    @State private var editingNoteReminderTime = false
+    /// "Change languages" on the "Start translating?" card.
+    @State private var changingTranslator = false
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
 
@@ -55,7 +59,10 @@ struct VoiceView: View {
                             Label("Private", systemImage: controller.isPrivate ? "eye.slash.fill" : "eye.slash")
                         }
                         .accessibilityValue(controller.isPrivate ? "On" : "Off")
-                        .accessibilityHint("When on, this conversation isn't kept on your iPhone.")
+                        .accessibilityHint(controller.privacyLocked
+                            ? "This conversation was used for translating, so it stays private."
+                            : "When on, this conversation isn't kept on your iPhone.")
+                        .disabled(controller.privacyLocked)
                         .accessibilityIdentifier("voice.private")
                     }
                 }
@@ -65,7 +72,7 @@ struct VoiceView: View {
         .task {
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
-            await controller.start(mode, profile: profiles.profile)
+            await controller.start(mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset())
         }
         .onDisappear {
             Task { await controller?.stop() }
@@ -80,7 +87,16 @@ struct VoiceView: View {
         }
     }
 
+    @ViewBuilder
     private func session(_ controller: VoiceSessionController) -> some View {
+        if let translator = controller.translator {
+            TranslatorScreen(controller: controller, session: translator)
+        } else {
+            conversation(controller)
+        }
+    }
+
+    private func conversation(_ controller: VoiceSessionController) -> some View {
         VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
@@ -129,6 +145,11 @@ struct VoiceView: View {
 
                         problem(controller)
 
+                        if let summary = controller.translatorSummary {
+                            TranslatorEndCard(controller: controller, summary: summary)
+                                .id("translatorSummary")
+                        }
+
                         ForEach(controller.lines) { line in
                             transcriptLine(line)
                                 .id(line.id)
@@ -142,6 +163,16 @@ struct VoiceView: View {
                         if let status = controller.reminderStatus {
                             reminderStatusCard(status, controller: controller)
                                 .id("reminderStatus")
+                        }
+
+                        if let receipt = controller.listReceipt {
+                            listReceiptCard(receipt, controller: controller)
+                                .id("listReceipt")
+                        }
+
+                        if let status = controller.noteReminderStatus {
+                            noteReminderStatusCard(status, controller: controller)
+                                .id("noteReminderStatus")
                         }
 
                         if let status = controller.planStatus {
@@ -164,7 +195,7 @@ struct VoiceView: View {
                                 .id("contactCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your last few conversations and any calendar entries, contact names or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
+                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -175,7 +206,14 @@ struct VoiceView: View {
                     if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
+                    editingNoteReminderTime = false
                     if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                }
+                .onChange(of: controller.listReceipt) { _, receipt in
+                    if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
+                }
+                .onChange(of: controller.noteReminderStatus) { _, status in
+                    if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
                 }
                 .onChange(of: controller.contactCard) { _, card in
                     if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("contactCard", anchor: .bottom) } }
@@ -265,7 +303,7 @@ struct VoiceView: View {
                 get: { controller.pendingMemoryCategory },
                 set: { controller.pendingMemoryCategory = $0 })
             ) {
-                ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                ForEach(MemoryCategory.noteCategories, id: \.self) { Text($0.displayName).tag($0) }
             }
             .pickerStyle(.menu)
             .frame(minHeight: 44)
@@ -326,8 +364,24 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
-        case .noteReminder(_, _, let noteText, let target):
-            noteReminderContent(noteText: noteText, target: target, controller: controller)
+        case .translator(_, let setup):
+            translatorProposal(setup, controller: controller)
+        case .createList(_, let name, let items):
+            Text("Start a new list?")
+                .font(.headline)
+            TextField("Name", text: Binding(get: { name }, set: { controller.changeNewListName($0) }))
+                .textFieldStyle(.roundedBorder)
+                .font(.headline)
+                .accessibilityLabel("List name")
+                .accessibilityIdentifier("voice.newList.name")
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                Label(item, systemImage: "square")
+            }
+            Text("Fix the name if Doddy misheard. Nothing is made until you tap Create list.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .noteReminder(_, _, let noteText, let savedAt, let target):
+            noteReminderContent(noteText: noteText, savedAt: savedAt, target: target, controller: controller)
         case .cloud(_, _, let preview, _, let mode):
             if mode == .mock {
                 Label("Demo — nothing real will be created", systemImage: "theatermasks")
@@ -417,29 +471,81 @@ struct VoiceView: View {
         case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
         case .noteReminder: ("Set reminder", "Don't set")
+        case .translator: ("Start", "Not now")
+        case .createList: ("Create list", "Not now")
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), "Not now")
         }
     }
 
-    /// Note reminder card (ADR-198): the note exactly as saved, then the time with its zone, or the
-    /// Apple Maps results to pick from. Doddy's own reminder, not Apple Reminders.
+    /// Note reminder card (ADR-198): the note exactly as saved and when, then the time with its
+    /// zone (changeable), or arrive/leave and the Apple Maps results to pick from. Doddy's own
+    /// reminder, not Apple Reminders.
     @ViewBuilder
     private func noteReminderContent(
-        noteText: String, target: VoiceSessionController.NoteReminderCardTarget, controller: VoiceSessionController
+        noteText: String, savedAt: Date?, target: VoiceSessionController.NoteReminderCardTarget, controller: VoiceSessionController
     ) -> some View {
         Text("Remind you about this note?")
             .font(.headline)
-        Text("“\(noteText)”")
-            .font(.body)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(noteText)
+                .font(.body)
+            if let savedAt {
+                Text("Your note, saved \(savedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute()))")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.separator))
+        .accessibilityElement(children: .combine)
         switch target {
-        case .time(let date, let zone):
-            Text(ReminderFormat.full(date, timeZoneID: zone))
-                .foregroundStyle(Theme.secondaryText)
-            Text("A notification on this iPhone from Doddy, not Apple Reminders.")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
+        case .time(let date, let zone, let repeats):
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let repeats {
+                        // The card shows where the repeat really starts (iOS can't start it later).
+                        let first = ReminderSchedule.firstOccurrence(
+                            repeats, picked: date, timeZoneID: zone, now: .now, lead: NoteReminderLimits.minimumLead) ?? date
+                        Text(ReminderFormat.repeatPhrase(repeats, anchor: date, timeZoneID: zone))
+                            .font(.headline)
+                        Text("\(ReminderFormat.zoneName(zone)) · first on \(ReminderFormat.dateTime(first, timeZoneID: zone)) · until you stop it")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    } else {
+                        Text(ReminderFormat.full(date, timeZoneID: zone))
+                            .font(.headline)
+                    }
+                    Text("A notification from Doddy on this iPhone, not Apple Reminders.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            } icon: {
+                Image(systemName: repeats == nil ? "bell" : "repeat")
+            }
+            if editingNoteReminderTime {
+                DatePicker(
+                    "Remind me at",
+                    selection: Binding(get: { date }, set: { controller.changeNoteReminderTime($0) }),
+                    in: Date.now.addingTimeInterval(NoteReminderLimits.minimumLead)...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.compact)
+            } else {
+                Button("Change time") { editingNoteReminderTime = true }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.noteReminder.changeTime")
+            }
         case .place(let results, let onArrival):
-            Text(onArrival ? "When you arrive at (within 200 m):" : "When you leave (within 200 m):")
+            Picker("When", selection: Binding(get: { onArrival }, set: { controller.setNoteReminderOnArrival($0) })) {
+                Text("When I arrive").tag(true)
+                Text("When I leave").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("voice.noteReminder.when")
+            Text("Apple Maps found these. Pick one:")
+                .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
             ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
                 let selected = index == controller.selectedPlaceIndex
@@ -460,10 +566,52 @@ struct VoiceView: View {
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
-            Text("Each time, until you mark it Done. Uses notifications and your location while you use Doddy; iOS watches the place, Doddy doesn't follow where you go.")
+            Text("Within \(ReminderPlace.defaultRadius) m, each time until you mark it Done; change the distance on the note. Uses notifications and your location while you use Doddy. iOS watches the place; Doddy doesn't follow where you go.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
+    }
+
+    /// Receipt after Set reminder on a note-reminder card: the same receipt the note screen shows,
+    /// built from what the store verified. Stays after the conversation ends.
+    private func noteReminderStatusCard(_ status: VoiceSessionController.NoteReminderStatus, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            switch status {
+            case .setting(let confirmed):
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Setting the reminder…")
+                        .font(.headline)
+                }
+                Text(confirmed.noteText)
+                    .font(.body)
+                    .lineLimit(2)
+            case .done(let confirmed, let receipt):
+                NoteReminderReceiptView(receipt: receipt) {
+                    Task { await controller.retryNoteReminder() }
+                }
+                Text("For \u{201C}\(confirmed.noteText)\u{201D}")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                    .lineLimit(2)
+                if controller.isLive {
+                    Button("OK") { controller.dismissNoteReminderStatus() }
+                        .buttonStyle(SecondaryButtonStyle())
+                } else {
+                    // Opening the note closes this screen, so it is offered once the conversation ended.
+                    Button("Open the note") {
+                        store.noteReminders?.pendingOpenMemoryID = confirmed.memoryID
+                        controller.dismissNoteReminderStatus()
+                        dismiss()
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.noteReminder.openNote")
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.noteReminderReceipt")
     }
 
     /// Receipt after Add on a reminder card: what Reminders holds now, read back from the iPhone,
@@ -589,6 +737,87 @@ struct VoiceView: View {
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(SecondaryButtonStyle())
+    }
+
+    /// What a list change by voice did (ADR-216), with Undo and, when "milk" matched two items,
+    /// the items to tap. Read back from the store before it is shown.
+    private func listReceiptCard(_ receipt: ListReceipt, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(receipt.title).font(.headline)
+                Spacer()
+                Button { controller.dismissListReceipt() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            ForEach(Array(receipt.lines.enumerated()), id: \.offset) { _, line in
+                switch line {
+                case .added(let text): Label(text, systemImage: "plus")
+                case .ticked(let text): Label(text, systemImage: "checkmark.square.fill").foregroundStyle(Theme.confirmed)
+                case .removed(let text): Label(text, systemImage: "minus").foregroundStyle(Theme.secondaryText)
+                case .open(let text): Label(text, systemImage: "square")
+                case .note(let text): Text(text).font(.footnote).foregroundStyle(Theme.secondaryText)
+                }
+            }
+            if let choices = receipt.choices {
+                Text("“\(choices.said)” matches more than one. \(choices.tick ? "Tick" : "Remove") which?")
+                    .font(.subheadline.weight(.semibold))
+                ForEach(choices.options) { item in
+                    Button(item.text) { Task { await controller.pickListChoice(item) } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            if let problem = receipt.problem {
+                ProblemView(message: problem)
+            }
+            if receipt.undo != nil {
+                Button("Undo") { Task { await controller.undoListReceipt() } }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.list.undo")
+            }
+            Text("Saved on this iPhone. Open Memories › Lists to see the whole list.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.listReceipt")
+    }
+
+    /// "Start translating?" (canvas 2): the pair, what changes, and Change languages.
+    @ViewBuilder
+    private func translatorProposal(_ setup: TranslatorSetup, controller: VoiceSessionController) -> some View {
+        Text("Start translating?")
+            .font(.headline)
+        HStack(spacing: 8) {
+            languageChip("You", setup.owner.nativeName)
+            Image(systemName: setup.kind == .faceToFace ? "arrow.left.arrow.right" : "arrow.left")
+                .accessibilityLabel(setup.kind == .faceToFace ? "translated both ways" : "translated into your language")
+            languageChip(setup.kind == .faceToFace ? "Them" : "Around you", setup.other?.nativeName ?? "Detect")
+        }
+        Text(setup.kind == .faceToFace
+             ? "While translating, Doddy only translates: no notes, reminders or other tools, and this conversation isn't kept on this iPhone. Their voice goes to ElevenLabs too. Doddy first tells them, in their language, that he's an AI translator."
+             : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        Button("Change languages") { changingTranslator = true }
+            .buttonStyle(SecondaryButtonStyle())
+            .sheet(isPresented: $changingTranslator) {
+                TranslatorChangeSheet(controller: controller, setup: setup)
+            }
+    }
+
+    private func languageChip(_ who: String, _ name: String) -> some View {
+        VStack(spacing: 2) {
+            Text(who).font(.caption).foregroundStyle(Theme.secondaryText)
+            Text(name).font(.headline)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(10)
+        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
+        .accessibilityElement(children: .combine)
     }
 
     private func eventWhen(_ draft: CalendarEventDraft) -> String {
