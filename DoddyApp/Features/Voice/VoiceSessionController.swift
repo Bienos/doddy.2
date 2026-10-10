@@ -73,6 +73,9 @@ final class VoiceSessionController {
     static private(set) var conversationInProgress = false
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
+    /// the agent is never told or asked (ADR-151).
+    var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
     private(set) var reminderStatus: ReminderStatus?
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
@@ -280,7 +283,8 @@ final class VoiceSessionController {
         case .memory(let id, let text):
             do {
                 // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
-                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
+                pendingMemoryCategory = .other
                 savedThisConversation += 1
                 await reply(id, VoiceToolReply.saved(record))
             } catch {
@@ -332,7 +336,9 @@ final class VoiceSessionController {
         guard let action = pendingAction else { return }
         pendingAction = nil
         switch action {
-        case .memory(let id, _): await reply(id, VoiceToolReply.declined)
+        case .memory(let id, _):
+            pendingMemoryCategory = .other
+            await reply(id, VoiceToolReply.declined)
         case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
         case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
@@ -426,6 +432,7 @@ final class VoiceSessionController {
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
+            pendingMemoryCategory = .other
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
         case .readCalendar(let range):
             guard devices.access(for: .calendar) == .granted else {

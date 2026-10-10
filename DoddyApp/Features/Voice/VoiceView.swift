@@ -195,7 +195,7 @@ struct VoiceView: View {
     private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
         let labels = actionLabels(pending)
         return VStack(alignment: .leading, spacing: 12) {
-            actionContent(pending)
+            actionContent(pending, controller: controller)
             Button {
                 Task { await controller.confirmPendingAction() }
             } label: {
@@ -215,13 +215,23 @@ struct VoiceView: View {
     }
 
     @ViewBuilder
-    private func actionContent(_ pending: VoiceSessionController.PendingAction) -> some View {
+    private func actionContent(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
         switch pending {
         case .memory(_, let text):
             Text("Save this note?")
                 .font(.headline)
             Text("“\(text)”")
                 .font(.body)
+            // File it now, or later from the note's own screen (ADR-151).
+            Picker("Type", selection: Binding(
+                get: { controller.pendingMemoryCategory },
+                set: { controller.pendingMemoryCategory = $0 })
+            ) {
+                ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            .pickerStyle(.menu)
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("voice.memoryType")
         case .event(_, let draft):
             Text("Add this event?")
                 .font(.headline)
