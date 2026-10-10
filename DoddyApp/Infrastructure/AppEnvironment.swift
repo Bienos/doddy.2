@@ -29,6 +29,8 @@ struct AppEnvironment: Sendable {
     /// `nil` when the typed assistant is not wired (M0 fallback after a storage failure, previews).
     let assistant: AssistantWiring?
     let toolExecutor: any ToolExecutor
+    /// Reminders on notes (M4a). `nil` when the memory store is not open.
+    let noteReminders: NoteReminderCoordinator?
     let capabilities: CapabilityCatalog
     let privacy: PrivacyDefaults
     /// Set when the memory store could not be opened. Nothing is reset or deleted in that case.
@@ -40,6 +42,7 @@ struct AppEnvironment: Sendable {
         recallService: UnavailableRecallService(),
         assistant: nil,
         toolExecutor: UnavailableToolExecutor(),
+        noteReminders: nil,
         capabilities: .m0,
         privacy: .m0,
         storageProblem: nil)
@@ -53,14 +56,20 @@ struct AppEnvironment: Sendable {
                 : try DoddyDatabase(path: try databaseURL(arguments: arguments).path)
             let repository = SQLiteMemoryRepository(database: database)
             let credentials: any DeviceCredentialStore = isUITest ? InMemoryCredentialStore() : KeychainCredentialStore()
+            // UI-test launches never touch iOS notifications: reminders stay inside Doddy.
+            let notifications: any NoteNotificationScheduling = isUITest ? DisabledNoteNotifications() : SystemNoteNotifications()
+            let noteReminders = NoteReminderCoordinator(
+                repository: SQLiteNoteReminderRepository(database: database), center: notifications,
+                showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) })
             return AppEnvironment(
                 memoryRepository: repository,
                 profileRepository: SQLiteProfileRepository(database: database),
                 recallService: RepositoryRecallService(repository: repository),
                 assistant: AssistantWiring(credentials: credentials, transport: AppHTTPTransport()),
                 toolExecutor: UnavailableToolExecutor(),
+                noteReminders: noteReminders,
                 // Notifications, texts, calls and news say "needs setup" until a messaging server is set.
-                capabilities: .withMessaging(serverConfigured: ServerConfig.baseURL() != nil),
+                capabilities: .shipping(serverConfigured: ServerConfig.baseURL() != nil),
                 privacy: .v1Voice,
                 storageProblem: nil)
         } catch {
@@ -70,6 +79,7 @@ struct AppEnvironment: Sendable {
                 recallService: UnavailableRecallService(),
                 assistant: nil,
                 toolExecutor: UnavailableToolExecutor(),
+                noteReminders: nil,
                 capabilities: .m0,
                 privacy: .m0,
                 storageProblem: storageProblem(for: error))

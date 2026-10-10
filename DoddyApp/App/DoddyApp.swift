@@ -10,10 +10,17 @@ struct DoddyApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var store: MemoryStore
     @State private var profiles: ProfileStore
+    @State private var noteReminders: NoteReminderStore
 
     init() {
         let environment = AppEnvironment.live()
-        _store = State(initialValue: MemoryStore(environment: environment))
+        let store = MemoryStore(environment: environment)
+        let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
+        store.noteReminders = noteReminders
+        // A reminder's "Done" or "Tomorrow 09:00" can start the app in the background.
+        NoteReminderRouter.shared.reminders = noteReminders
+        _store = State(initialValue: store)
+        _noteReminders = State(initialValue: noteReminders)
         _profiles = State(initialValue: ProfileStore(environment: environment))
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
@@ -24,9 +31,11 @@ struct DoddyApp: App {
             RootView()
                 .environment(store)
                 .environment(profiles)
+                .environment(noteReminders)
                 .environment(\.appEnvironment, store.environment)
                 // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
                 .task { await UpdatesModel().syncPushTokenIfOn() }
+                .task { await SystemNoteNotifications.registerCategory() }
         }
     }
 }
