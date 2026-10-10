@@ -7,7 +7,8 @@ enum MemoryModal: String, Identifiable {
 }
 
 enum MemoryNavigationRoute: Hashable {
-    case find
+    /// `query` pre-fills the search (the "Find in Doddy" shortcut); empty otherwise.
+    case find(query: String)
     case note(UUID)
 }
 

@@ -112,6 +112,11 @@ struct RootView: View {
         .sheet(item: $router.shownDraft, onDismiss: { router.showWaitingDraft() }) { draft in
             CaptureView(sharedText: draft.isSharedText ? draft.text : nil)
         }
+        .onChange(of: router.findRequest?.id) { _, id in
+            guard id != nil else { return }
+            selectedTab = .memories
+            showFind = true
+        }
         .onChange(of: router.isVoicePresented) { _, isOpen in
             if !isOpen { router.showWaitingDraft() }
         }

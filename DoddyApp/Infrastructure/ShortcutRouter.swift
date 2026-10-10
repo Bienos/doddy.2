@@ -19,6 +19,10 @@ final class ShortcutRouter {
     private(set) var drafts = SharedDraftQueue()
     /// Capture screens open anywhere in the app (Home, Memories or a shared draft).
     private var openCaptureScreens = 0
+    /// "Find in Doddy" (ADR-138). `RootView` switches to Memories → Find when it changes;
+    /// Find takes the query once with `takeFindQuery()`.
+    private(set) var findRequest: FindRequest?
+    private var unclaimedFindQuery: String?
 
     init(setup: BackTapSetupModel = BackTapSetupModel()) {
         self.setup = setup
@@ -50,6 +54,21 @@ final class ShortcutRouter {
         isSetupPresented = false
         guard openCaptureScreens == 0, drafts.shown == nil, drafts.waiting == nil else { return }
         drafts.receive(.newNote(), blocked: isCaptureBlocked)
+    }
+
+    /// Called from `FindInDoddyIntent.perform()`. Closes the setup sheet; an open conversation
+    /// or capture screen stays open and Find is ready underneath when it closes.
+    func findInDoddyInvoked(query: String) {
+        isSetupPresented = false
+        let request = FindRequest(query: query)
+        unclaimedFindQuery = request.query
+        findRequest = request
+    }
+
+    /// The query for the Find screen that is opening, once; later Find screens start empty.
+    func takeFindQuery() -> String {
+        defer { unclaimedFindQuery = nil }
+        return unclaimedFindQuery ?? ""
     }
 
     /// The shared-draft sheet's binding: setting nil (dismissal) closes the shown draft.

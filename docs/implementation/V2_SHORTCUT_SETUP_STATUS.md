@@ -84,3 +84,11 @@ everything under "Not verified" needs the Mac and a real iPhone.
   - The widget extension and app compile with the new intent and control.
   - The control can be added and a tap opens the capture screen.
   - The Siri phrases work.
+
+## "Find in Doddy" shortcut (added 2026-10-10, ADR-138)
+- **What it does:** `FindInDoddyIntent` (app target) opens Memories → Find with the words filled in. The search runs straight away. It is the same local lookup as typing (FTS, Polish/English counterparts, spoken numbers, "may disagree" flags), and it only searches.
+- **How to start it:** Siri ("Find in Doddy", "Search Doddy", "Look it up in Doddy"; Siri asks "What are you looking for?"), the Shortcuts app and the Action Button.
+- **The query:** one line, trimmed, at most 200 characters, cut at a word break (`FindRequest`, tested).
+- **When something is already open:** the Back Tap setup sheet closes. An open conversation or capture screen stays, and Find is ready underneath it.
+- **Known gap:** running it again with exactly the same words while that Find screen is open doesn't replace text the user has since edited there.
+- **Not verified (needs the Mac and an iPhone):** compile, the Siri phrases and dialog, the switch to Memories → Find, and the search running on arrival.

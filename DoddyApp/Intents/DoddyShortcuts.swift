@@ -1,6 +1,7 @@
 import AppIntents
 
-/// Makes `TalkToDoddyIntent`, `NewNoteIntent` (Shared/Shortcuts) and `SaveToDoddyIntent` appear under Doddy in
+/// Makes `TalkToDoddyIntent`, `NewNoteIntent` (Shared/Shortcuts), `SaveToDoddyIntent` and
+/// `FindInDoddyIntent` appear under Doddy in
 /// Shortcuts, Siri and the Action Button picker with no setup. App target only.
 struct DoddyShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
@@ -31,5 +32,14 @@ struct DoddyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "New note",
             systemImageName: "square.and.pencil")
+        AppShortcut(
+            intent: FindInDoddyIntent(),
+            phrases: [
+                "Find in \(.applicationName)",
+                "Search \(.applicationName)",
+                "Look it up in \(.applicationName)",
+            ],
+            shortTitle: "Find in Doddy",
+            systemImageName: "magnifyingglass")
     }
 }

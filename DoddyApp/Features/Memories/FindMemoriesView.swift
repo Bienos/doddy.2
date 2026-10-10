@@ -3,11 +3,16 @@ import SwiftUI
 
 struct FindMemoriesView: View {
     @Environment(MemoryStore.self) private var store
-    @State private var query = ""
+    @State private var query: String
     @State private var outcome: RecallOutcome?
     @State private var searchError: String?
     @State private var isRunning = false
     @FocusState private var focused: Bool
+
+    /// `initialQuery` comes from the "Find in Doddy" shortcut; the search runs on appear.
+    init(initialQuery: String = "") {
+        _query = State(initialValue: initialQuery)
+    }
 
     var body: some View {
         ScrollView {

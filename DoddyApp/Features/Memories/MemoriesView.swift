@@ -44,7 +44,7 @@ struct MemoriesView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: MemoryNavigationRoute.self) { route in
                 switch route {
-                case .find: FindMemoriesView()
+                case .find(let query): FindMemoriesView(initialQuery: query)
                 case .note(let id): MemoryDetailView(memoryID: id)
                 }
             }
@@ -54,7 +54,7 @@ struct MemoriesView: View {
             guard requested else { return }
             // One typed path owns both search and source detail. Mixing a boolean
             // search destination with value pushes reset the search on iOS 27.
-            path = [.find]
+            path = [.find(query: ShortcutRouter.shared.takeFindQuery())]
             showFind = false
         }
     }
