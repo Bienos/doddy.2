@@ -2,16 +2,24 @@ import DoddyCore
 import SwiftUI
 
 /// Success is backed by a committed repository record, never a simulated timer.
+/// `sharedText` comes from the "Save to Doddy" shortcut: it fills the editor and is still only
+/// saved when the user taps Save (ADR-136).
 struct CaptureView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @State private var text = ""
+    @State private var text: String
+    @State private var isShared: Bool
     @State private var category: MemoryCategory = .other
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var saved: MemoryRecord?
     @State private var confirmDiscard = false
     @FocusState private var editorFocused: Bool
+
+    init(sharedText: String? = nil) {
+        _text = State(initialValue: sharedText ?? "")
+        _isShared = State(initialValue: sharedText != nil)
+    }
 
     private var hasDraft: Bool { !text.allSatisfy(\.isWhitespace) }
 
@@ -33,6 +41,11 @@ struct CaptureView: View {
                     } else {
                         JourneyHeading(eyebrow: "Before it slips away", title: "One less thing\nto remember.",
                                        subtitle: "A thought, a recommendation, where you put the spare keys.")
+                        if isShared {
+                            Label("Shared into Doddy from a shortcut. Check it, change it if you like, then tap Save. Nothing is saved until you do.", systemImage: "square.and.arrow.down")
+                                .font(.footnote).foregroundStyle(Theme.secondaryText)
+                                .accessibilityIdentifier("capture.sharedNotice")
+                        }
                         Text("What would you like to keep?").font(.subheadline)
                         MemoryTextEditor(text: $text, label: "The detail").focused($editorFocused)
                             .accessibilityIdentifier("capture.text")
@@ -77,6 +90,8 @@ struct CaptureView: View {
             } message: { Text("It hasn't been saved.") }
         }
         .interactiveDismissDisabled((hasDraft && saved == nil) || isSaving)
+        .onAppear { ShortcutRouter.shared.captureScreenAppeared() }
+        .onDisappear { ShortcutRouter.shared.captureScreenDisappeared() }
     }
 
     private func close() {
@@ -85,7 +100,7 @@ struct CaptureView: View {
     }
 
     private func startAnother() {
-        text = ""; category = .other; saved = nil; errorMessage = nil
+        text = ""; category = .other; saved = nil; errorMessage = nil; isShared = false
     }
 
     private func beginSave() {
@@ -98,7 +113,7 @@ struct CaptureView: View {
     private func save() async {
         errorMessage = nil
         defer { isSaving = false }
-        do { saved = try await store.save(text: text, category: category) }
+        do { saved = try await store.save(text: text, category: category, source: isShared ? .sharedContent : .explicitText) }
         catch { errorMessage = UserFacingError.message(for: error) }
     }
 }

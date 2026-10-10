@@ -109,6 +109,12 @@ struct RootView: View {
         // open focuses it instead of starting a second one.
         .fullScreenCover(isPresented: $router.isVoicePresented) { VoiceView() }
         .sheet(isPresented: $router.isSetupPresented) { BackTapSetupView(model: router.setup) }
+        .sheet(item: $router.shownDraft, onDismiss: { router.showWaitingDraft() }) { draft in
+            CaptureView(sharedText: draft.text)
+        }
+        .onChange(of: router.isVoicePresented) { _, isOpen in
+            if !isOpen { router.showWaitingDraft() }
+        }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
             guard let link = DeepLink(url: url) else { return }

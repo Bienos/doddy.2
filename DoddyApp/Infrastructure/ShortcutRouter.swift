@@ -15,6 +15,10 @@ final class ShortcutRouter {
     /// Bound to the guided Back Tap setup sheet in `RootView`.
     var isSetupPresented = false
     let setup: BackTapSetupModel
+    /// "Save to Doddy" drafts (ADR-136). `RootView` shows `drafts.shown` in a capture sheet.
+    private(set) var drafts = SharedDraftQueue()
+    /// Capture screens open anywhere in the app (Home, Memories or a shared draft).
+    private var openCaptureScreens = 0
 
     init(setup: BackTapSetupModel = BackTapSetupModel()) {
         self.setup = setup
@@ -31,6 +35,33 @@ final class ShortcutRouter {
             isVoicePresented = true
         }
     }
+
+    /// Called from `SaveToDoddyIntent.perform()`. Shows the text on the capture screen, or keeps
+    /// it until the conversation or another capture screen closes. Never saves anything.
+    func saveToDoddyInvoked(text: String) {
+        isSetupPresented = false
+        drafts.receive(SharedDraft(text: text), blocked: isCaptureBlocked)
+    }
+
+    /// The shared-draft sheet's binding: setting nil (dismissal) closes the shown draft.
+    var shownDraft: SharedDraft? {
+        get { drafts.shown }
+        set { if newValue == nil { drafts.shownClosed() } }
+    }
+
+    func captureScreenAppeared() { openCaptureScreens += 1 }
+
+    func captureScreenDisappeared() {
+        openCaptureScreens = max(0, openCaptureScreens - 1)
+        showWaitingDraft()
+    }
+
+    /// Call when something that blocks the capture sheet closes (the conversation).
+    func showWaitingDraft() {
+        drafts.unblocked(stillBlocked: isCaptureBlocked)
+    }
+
+    private var isCaptureBlocked: Bool { isVoicePresented || openCaptureScreens > 0 }
 }
 
 /// Main-actor state over the deterministic `BackTapSetupCoordinator`. Persists only the

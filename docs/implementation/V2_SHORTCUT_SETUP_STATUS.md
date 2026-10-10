@@ -56,3 +56,17 @@ everything under "Not verified" needs the Mac and a real iPhone.
 - The user adds it: Control Center → edit → Add a Control → Doddy; Lock Screen → customise → controls; Action Button → Controls → Doddy. Settings → Back Tap and Siri says so. Doddy can't add it or detect it.
 - **Not verified:** compile (no Xcode here; `if #available` inside `WidgetBundle` and the shared intent in two targets are the risky parts), that the control shows in the gallery, and that a tap from the Lock Screen unlocks into the conversation.
 
+
+## "Save to Doddy" shortcut (added 2026-10-10, ADR-136)
+- **What it does:** `SaveToDoddyIntent` (app target, `DoddyApp/Intents/`) takes a text and opens Doddy's capture screen with it filled in, marked "Shared into Doddy from a shortcut". Nothing is saved until the user taps Save. The note is then saved with source `shared_content` ("Shared into Doddy").
+- **Where it appears:** an App Shortcut with no setup, in Siri ("Save a note in Doddy", "Save to Doddy", "Keep this in Doddy"; Siri then asks "What should Doddy keep?"), the Shortcuts app and the Action Button picker. A user can build a personal shortcut that receives Share Sheet input and runs this action, which puts Doddy in the Share Sheet. No share extension, App Group or new permission was added.
+- **When something is already open:** the draft waits while a voice conversation or another capture screen is open, and appears when it closes (`SharedDraftQueue`, tested). Only the newest waiting draft is kept. A draft already on screen is never swapped.
+- **Text:** kept exactly, not trimmed or cut. An over-long text gets the usual "That's N characters; the limit is 5,000" message on Save. Whitespace-only text opens an empty editor.
+- **Privacy:** the text goes from Shortcuts to the app on the phone. When it is dictated to Siri, Apple's speech recognition handles that part, as with any Siri request.
+- **Not verified (needs the Mac and an iPhone):**
+  - The app compiles with the new intent; check the `@Parameter` input options in particular.
+  - The shortcut is listed in Shortcuts and Siri.
+  - Siri asks for the text.
+  - Share Sheet input reaches the action.
+  - The sheet appears over Home, and after a conversation ends.
+  - What happens if the Back Tap setup sheet was open.
