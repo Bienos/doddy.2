@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Doddy blog</title>
+    <link>https://doddy-eight.vercel.app/blog/</link>
+    <description>Notes from building Doddy, your mate in your pocket.</description>
+    <language>en</language>
+    <item>
+      <title>Hello, Doddy: why our favourite first result was “I couldn’t find it”</title>
+      <link>https://doddy-eight.vercel.app/blog/hello-doddy/</link>
+      <guid>https://doddy-eight.vercel.app/blog/hello-doddy/</guid>
+      <pubDate>Sat, 10 Oct 2026 09:00:00 +0000</pubDate>
+      <description>Doddy is a hand-drawn mate for your iPhone that keeps the small things you ask it to keep. In its first real conversations it couldn&#x27;t find a note, and said so. Here&#x27;s why that matters, and what we fixed.</description>
+    </item>
+  </channel>
+</rss>

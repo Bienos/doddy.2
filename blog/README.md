@@ -1,14 +1,14 @@
 # DODDY blog
 
 Notes from building Doddy, *your mate in your pocket*, in the open. Posts are Markdown files in
-`posts/`. **Nothing here is published yet.** Where and when posts go public is an owner decision
-(see "Publishing" below and ADR 036 in `../DECISIONS.md`).
+`posts/`. Posts with `status: published` appear on the Doddy site at **`/blog/`**
+(https://doddy-eight.vercel.app/blog/ once deployed). See ADR 131 in `../DECISIONS.md`.
 
 ## Posts
 
 | Date | Title | Status |
 |---|---|---|
-| 2026-10-10 | [Hello, Doddy: why the first thing we built is a memory you can check](posts/2026-10-10-hello-doddy.md) | Draft, owner review |
+| 2026-10-10 | [Hello, Doddy: why our favourite first result was "I couldn't find it"](posts/2026-10-10-hello-doddy.md) | Published |
 
 Post ideas waiting for a slot: [IDEAS.md](IDEAS.md). New post: copy [_TEMPLATE.md](_TEMPLATE.md).
 
@@ -53,7 +53,14 @@ evidence:              # repo docs that back the claims in the post
 
 ## Publishing
 
-Not decided. The repository is private, so a post in this folder is not public. Options for the
-owner: a static site generated from this folder (any generator that reads Markdown + YAML front
-matter works; nothing is set up), a hosted newsletter/blog platform, or LinkedIn/X cross-posts
-linking to one canonical page. No hosting, accounts or paid services were created for the blog.
+1. Write the post in `posts/YYYY-MM-DD-slug.md` (copy `_TEMPLATE.md`). The URL becomes
+   `/blog/slug/`.
+2. Check every claim against the status docs it lists under `evidence`.
+3. Set `status: published` once the owner has approved the text.
+4. Run `python3 -I tools/build_blog.py`. It writes `site/blog/` (index, one page per post and
+   `feed.xml` for RSS). Commit the post and the generated files together.
+5. `scripts/ci.sh` runs `tools/build_blog.py --check` and fails if `site/blog/` is out of date.
+
+Drafts (`status: draft` or `review`) are never rendered. The generator supports `#`/`##`/`###`
+headings, paragraphs, `-` and `1.` lists (one level), `>` quotes, tables, `**bold**`, `*italic*`,
+`` `code` ``, `[links](url)` and HTML comments (dropped). Keep posts to that subset.

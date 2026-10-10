@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hello, Doddy: why our favourite first result was “I couldn’t find it” · Doddy</title>
+  <meta name="description" content="Doddy is a hand-drawn mate for your iPhone that keeps the small things you ask it to keep. In its first real conversations it couldn&#x27;t find a note, and said so. Here&#x27;s why that matters, and what we fixed.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Hello, Doddy: why our favourite first result was “I couldn’t find it” · Doddy">
+  <meta property="og:description" content="Doddy is a hand-drawn mate for your iPhone that keeps the small things you ask it to keep. In its first real conversations it couldn&#x27;t find a note, and said so. Here&#x27;s why that matters, and what we fixed.">
+  <meta property="og:image" content="https://doddy-eight.vercel.app/assets/og-image.png">
+  <meta property="og:url" content="https://doddy-eight.vercel.app/blog/hello-doddy/">
+  <link rel="canonical" href="https://doddy-eight.vercel.app/blog/hello-doddy/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" type="application/rss+xml" title="Doddy blog" href="/blog/feed.xml">
+  <link rel="icon" href="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/blog.css">
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="/" aria-label="Doddy home">Doddy</a>
+      <nav aria-label="Sections">
+        <ul class="nav-links">
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/blog/" aria-current="false">Blog</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+        </ul>
+      </nav>
+      <a class="button small" href="/#join">Join early access</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <article class="post">
+      <div class="wrap post-wrap">
+        <p class="post-back"><a class="text-link" href="/blog/">← All posts</a></p>
+        <header class="post-header">
+          <h1 class="display-m">Hello, Doddy: why our favourite first result was “I couldn’t find it”</h1>
+          <p class="post-meta"><time datetime="2026-10-10">10 October 2026</time> · The Doddy team · 4 min read</p>
+        </header>
+        <div class="post-body">
+<p>You know the parcel locker code. You knew it this morning. Now you're standing at the locker and it's gone, along with the book a friend recommended last week and the wine you liked at that dinner.</p>
+<p>Most of us patch this with messages to ourselves, a Notes app full of half-sentences, or screenshots we never find again. Doddy is our attempt at something friendlier: a small, hand-drawn mate in your iPhone who keeps the things you ask it to keep, and gives you your exact words back later.</p>
+<p>This is the first post about building it: what Doddy is, what happened the first time we actually talked to it, and what is and isn't working yet.</p>
+<h2>Memory first, personality second</h2>
+<p>The easy version of this app would be a cute character attached to a chatbot. It would be fun for a day. Then it would confidently "remember" a locker code you never gave it, and you'd stop trusting it.</p>
+<p>So we built it the other way round. Before the jokes and the animation, Doddy had to do one plain thing reliably:</p>
+<blockquote><p><strong>Tell Doddy before you forget. Find the original later.</strong></p></blockquote>
+<p>That comes with a few rules:</p>
+<ul><li><strong>You choose what gets saved.</strong> Doddy doesn't listen in the background or quietly collect notes from your conversations. Even when you're talking to it, nothing is stored until you tap <strong>Save</strong>.</li><li><strong>"Saved" means saved.</strong> The app only says a note is saved after it has been written to the phone and read back. If that fails, your text stays on screen.</li><li><strong>Answers come from your notes.</strong> Doddy shows the note you wrote, when you wrote it and which words matched. If nothing matches, it says it couldn't find it instead of making something up.</li><li><strong>Your words are kept.</strong> You can edit a note, and the original stays next to the edit.</li><li><strong>You can leave with everything.</strong> Export to JSON or plain text, delete one note, or delete them all.</li><li><strong>No account.</strong> Notes live on your iPhone. When you talk to Doddy, your voice goes to our voice provider, ElevenLabs, to run the conversation. The app says this up front.</li></ul>
+<h2>The first real conversation</h2>
+<p>On 9 October we had the first proper voice conversation with Doddy on an actual iPhone. It lasted 79 seconds. It started in English, switched to Polish on its own when we did, and when we said "Moje urodziny są jutro" ("my birthday is tomorrow") a <strong>Save this note?</strong> card popped up. We tapped Save, and Doddy confirmed it only after the phone reported the note was stored.</p>
+<p>A few minutes later we tried the obvious test. We had saved a code in Polish, spoken out loud, so the note read <em>"Kod: pięć, sześć, siedem, osiem."</em> Then we asked, in English, "what code have you saved?"</p>
+<p>Doddy searched the phone four times across those conversations. Every time the answer was the same: it couldn't find a matching note.</p>
+<p>That was a failure, but the right kind. The note was there. The search just couldn't see it: we asked in English, the note was in Polish, and the numbers were written as words. What Doddy <em>didn't</em> do was guess. It didn't invent a code. If it had said "5678" because that sounded plausible, the whole idea would be broken. A mate who makes things up is worse than a notebook.</p>
+<p>We also caught a small honesty slip. Before the Save card even appeared, Doddy said "I'm saving this for you", which isn't true if you then tap Don't save. Now it says "Confirm on screen if I should save this" instead.</p>
+<h2>What we changed</h2>
+<ul><li><strong>Search works across Polish and English.</strong> Asking for a "code" now finds "kod".</li><li><strong>Spoken numbers count as digits.</strong> "pięć, sześć, siedem, osiem" matches 5678.</li><li><strong>Word endings and small typos are forgiven</strong>, which matters a lot in Polish.</li><li><strong>Doddy is told to write codes, dates and times as digits</strong> when it saves them, so the problem is smaller in the first place.</li></ul>
+<p>The search fixes pass our automated tests, including the exact question from that first conversation. We haven't repeated it by voice on the phone yet. That's next.</p>
+<h2>What is real today</h2>
+<div class="table-wrap"><table><thead><tr><th scope="col">Thing</th><th scope="col">Where it stands</th></tr></thead><tbody><tr><td>Saving, searching, editing, exporting and deleting notes</td><td>Built; app tests pass in the iPhone simulator</td></tr><tr><td>Talking to Doddy, with a Save card before anything is stored</td><td>Works on our own iPhone; a development setup, not open to anyone else yet</td></tr><tr><td>Finding a Polish note with an English question</td><td>Fixed in tests; not yet re-checked by voice on a phone</td></tr><tr><td>Doddy's look</td><td>The character is drawn; animation is still to come</td></tr><tr><td>People outside the team using it</td><td>None yet; you can sign up for early access</td></tr></tbody></table></div>
+<p>Doddy is a bet, not a proven product. The bet is that people who already text themselves reminders would rather tell a friendly character, and would come back to find things later. We haven't tested that with anyone outside the team yet.</p>
+<h2>What's next</h2>
+<ol><li><strong>Ask the locker-code question again</strong>, by voice, on the phone, and write down what happens.</li><li><strong>Lock down voice before anyone else uses it</strong>, and decide how long voice recordings are kept on the provider's side.</li><li><strong>Open a small early-access group</strong> and see whether anyone actually comes back.</li></ol>
+<p>We'll write each of these up as it happens, including the parts that don't work.</p>
+<p>If you have a Notes app full of things you never find again, <a class="text-link" href="/#join">join early access</a> or come say hi in the <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram group</a>.</p>
+        </div>
+        <aside class="post-cta" aria-label="Join early access">
+          <p class="says-small">Want to try Doddy?</p>
+          <p>Doddy is in early testing on iPhone. Leave your email and we'll tell you when early access opens.</p>
+          <a class="button small" href="/#join">Join early access</a>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/blog/feed.xml">RSS</a></li>
+          <li><a href="/#join">Join early access</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram group</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok @doddy_mate</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram @doddy_mate</a></li>
+        </ul>
+      </div>
+      <p>Doddy is an AI assistant, not a person. Your notes stay on your iPhone. Voice conversations run through ElevenLabs while the voice screen is open.</p>
+      <p>This page counts visits with Vercel Web Analytics. No cookies, no cross-site tracking.</p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>
