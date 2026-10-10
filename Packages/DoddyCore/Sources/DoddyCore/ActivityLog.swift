@@ -134,6 +134,14 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
         case .createList(let request):
             return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", isLookup: false)
+        case .changeCalendarEvent(let draft):
+            var parts: [String] = []
+            if let start = draft.newStart { parts.append("to \(when(start, hasTime: !draft.currentIsDayOnly))") }
+            if let title = draft.newTitle { parts.append("renamed “\(title)”") }
+            return ActivityRequest(app: .calendar, title: "Change event", detail: "“\(draft.title)” \(parts.joined(separator: ", "))", isLookup: false)
+        case .changeReminder(let draft):
+            let what = draft.markDone ? "mark done" : "due \(draft.newDue.map(ReminderText.due) ?? "")"
+            return ActivityRequest(app: .reminders, title: "Change reminder", detail: "“\(draft.title)” · \(what)", isLookup: false)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215).

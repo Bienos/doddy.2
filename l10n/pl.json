@@ -560,5 +560,11 @@
  "Your words. Ready when you need them.": "Twoje słowa. Gotowe, gdy ich potrzebujesz.",
  "Yours to keep.\\nYours to change.": "Twoje do zachowania.\nTwoje do zmiany.",
  "iOS notifications": "Powiadomienia iOS",
- "iOS watches the place on this iPhone. Doddy never follows where you go.": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+ "iOS watches the place on this iPhone. Doddy never follows where you go.": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz.",
+ "Change this event?": "Zmienić to wydarzenie?",
+ "Change this reminder?": "Zmienić to przypomnienie?",
+ "Mark this reminder done?": "Oznaczyć to przypomnienie jako zrobione?",
+ "If it repeats, only this time changes. Nothing is deleted.": "Jeśli się powtarza, zmieni się tylko ten raz. Nic nie zostanie usunięte.",
+ "After": "Po zmianie",
+ "Now": "Teraz"
 }

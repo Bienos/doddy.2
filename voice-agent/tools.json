@@ -78,6 +78,38 @@
     },
     {
       "type": "function",
+      "name": "change_calendar_event",
+      "description": "Propose moving or renaming one event already in the user's iPhone Calendar. Use it only when the user clearly asks to move, reschedule or rename an event. First call read_calendar for that day and pass the event's exact title and start as it returned them. Turn relative dates into a date using the current date and time you were given; if the new time is unclear, ask one short question first. A repeating event changes only this occurrence. It never deletes an event. The app shows the event as it is now and after the change, and the user must tap Change; the result starts with 'changed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed unless the result starts with changed. If the result says more than one event matches, ask the user which one.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as read_calendar returned it."},
+          "start": {"type": "string", "description": "The event's current start exactly as read_calendar returned it, as YYYY-MM-DDTHH:MM in local time, or YYYY-MM-DD for an all-day event."},
+          "new_start": {"type": "string", "description": "The new start in the user's local time as YYYY-MM-DDTHH:MM (YYYY-MM-DD for an all-day event). Always the full day, no time zone or offset, later than now. The event keeps its length. Leave out if the time doesn't change."},
+          "new_end": {"type": "string", "description": "A new end as YYYY-MM-DDTHH:MM, only if the user asked for a different end or length."},
+          "new_title": {"type": "string", "description": "A new title in the user's words, only if the user asked to rename it."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+    },
+    {
+      "type": "function",
+      "name": "change_reminder",
+      "description": "Propose changing when one open reminder in the user's iPhone Reminders app is due, or marking it done. Use it only when the user clearly asks to move a reminder or says it's done. Pass the reminder's exact title; if you aren't sure of it, ask. Give either new_due or done: true, never both. Turn relative dates into a date using the current date and time you were given; if the time is unclear, ask one short question first. It never deletes a reminder. The app shows the change and the user must tap Change or Mark done; the result starts with 'changed', 'completed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed or done unless the result starts with changed or completed. If the result says more than one reminder matches, ask the user which one.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The reminder's exact title, in the user's language."},
+          "new_due": {"type": "string", "description": "The new due in the user's local time as YYYY-MM-DDTHH:MM, or YYYY-MM-DD for a day without a time. Always the full day, no time zone or offset, later than now."},
+          "done": {"type": "boolean", "description": "true to mark the reminder done. Leave out when changing the due."}
+        },
+        "required": ["title"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+    },
+    {
+      "type": "function",
       "name": "remind_me_about_note",
       "description": "Propose Doddy's own reminder about one note the user already saved: a notification on this iPhone that opens the note, at a time or when the user arrives at or leaves a place. Use it only when the user asks to be reminded about a saved note (e.g. 'remind me about the parcel code when I get to the post office'). First find the note with search_memories, or use the text save_memory just saved, and pass that note's text exactly. Give due or place, never both. If the user wants it again and again (every day, on weekdays, every week or every month), also give repeat with due; the weekday, day and time come from due, and monthly works for days 1 to 28. You can't stop a repeat; the user does that on the note. For a new to-do that is not a saved note, use create_reminder instead. The app shows the note and the time or place on screen and the user must tap Set reminder; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should set this.' (Polish: 'Potwierdź na ekranie, jeśli mam to ustawić.'). Never say it was set unless the result starts with added. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
       "parameters": {

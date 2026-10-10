@@ -366,6 +366,27 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .changeEvent(_, let plan):
+            Text("Change this event?")
+                .font(.headline)
+            changeRow(after: false, title: plan.before.title, when: eventWhen(plan.before))
+            changeRow(after: true, title: plan.after.title, when: eventWhen(plan.after))
+            Text("If it repeats, only this time changes. Nothing is deleted.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .changeReminder(_, let reminder, let draft):
+            Group {
+                if draft.markDone { Text("Mark this reminder done?") } else { Text("Change this reminder?") }
+            }
+            .font(.headline)
+            Text(reminder.title)
+                .font(.body)
+            Text("In \(reminder.listTitle)")
+                .foregroundStyle(Theme.secondaryText)
+            if !draft.markDone {
+                changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
+                changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
+            }
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -475,6 +496,8 @@ struct VoiceView: View {
         case .noteReminder: ("Set reminder", "Don't set")
         case .translator: ("Start", "Not now")
         case .createList: ("Create list", "Not now")
+        case .changeEvent: ("Change", "Don't change")
+        case .changeReminder(_, _, let draft): (draft.markDone ? "Mark done" : "Change", "Don't change")
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), "Not now")
         }
     }
@@ -820,6 +843,32 @@ struct VoiceView: View {
         .padding(10)
         .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
         .accessibilityElement(children: .combine)
+    }
+
+    /// One side of a change card: "Now" or "After", then the title and when.
+    private func changeRow(after: Bool, title: String?, when: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Group {
+                if after { Text("After") } else { Text("Now") }
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(Theme.secondaryText)
+            if let title {
+                Text(title)
+                    .font(.body)
+            }
+            Text(when)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func eventWhen(_ event: CalendarEventSummary) -> String {
+        if event.allDay {
+            return event.start.formatted(date: .abbreviated, time: .omitted) + " (all day)"
+        }
+        return event.start.formatted(date: .abbreviated, time: .shortened)
+            + " – " + event.end.formatted(date: .omitted, time: .shortened)
     }
 
     private func eventWhen(_ draft: CalendarEventDraft) -> String {

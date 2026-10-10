@@ -221,6 +221,17 @@
         }
       }
     },
+    "After": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po zmianie"
+          }
+        }
+      }
+    },
     "All day": {
       "extractionState": "manual",
       "localizations": {
@@ -613,6 +624,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zmień szczegół.\nZachowaj oryginał."
+          }
+        }
+      }
+    },
+    "Change this event?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienić to wydarzenie?"
+          }
+        }
+      }
+    },
+    "Change this reminder?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienić to przypomnienie?"
           }
         }
       }
@@ -2157,6 +2190,17 @@
         }
       }
     },
+    "If it repeats, only this time changes. Nothing is deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli się powtarza, zmieni się tylko ten raz. Nic nie zostanie usunięte."
+          }
+        }
+      }
+    },
     "If your iPhone doesn't list it under Back Tap": {
       "extractionState": "manual",
       "localizations": {
@@ -2505,6 +2549,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Utwórz ją tutaj albo powiedz Doddy’emu: „dodaj mleko do listy zakupów”. Listy zostają na tym iPhonie."
+          }
+        }
+      }
+    },
+    "Mark this reminder done?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oznaczyć to przypomnienie jako zrobione?"
           }
         }
       }
@@ -3088,6 +3143,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiadomienia Doddy’ego są wyłączone, więc iPhone Cię nie zaalarmuje. Gdy nadejdzie pora, notatka poczeka na górze ekranu Start."
+          }
+        }
+      }
+    },
+    "Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz"
           }
         }
       }
