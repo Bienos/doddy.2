@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "This action needs a fresh confirmation.",
+    "correlationId": "7ca40b6f-9714-4307-9cdc-4295d3213394",
+    "receipt": {
+      "operationId": "d0002b07-ea41-4eb4-b845-3e4ceda94e72",
+      "operation": "write",
+      "toolkit": "gmail",
+      "tool": "draft_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: it wasn't confirmed.",
+      "errorCode": "confirmation_required",
+      "providerReference": null
+    }
+  }
+}

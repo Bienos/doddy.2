@@ -4,6 +4,8 @@ import type { SessionVerifier } from "./auth.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
 import { AppError } from "./errors.js";
 import type { ConnectedAppsService } from "./service.js";
+import type { ToolsMockScenario } from "./tools/mock.js";
+import type { CloudToolsService } from "./tools/service.js";
 
 /**
  * HTTP routing for the Doddy-owned v1 API. Every route under /v1/connected-apps is
@@ -13,6 +15,8 @@ import type { ConnectedAppsService } from "./service.js";
 
 export interface HttpDeps {
   service: ConnectedAppsService;
+  /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
+  tools?: CloudToolsService;
   verifier: SessionVerifier;
   appReturnUrl: string;
   maxBodyBytes: number;
@@ -25,6 +29,9 @@ const OPAQUE = /^[A-Za-z0-9_\-.:]{1,256}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 type Handler = (ctx: { userId: string; body: unknown; scenario: MockScenario | undefined }) => Promise<unknown>;
+
+const TOOLS_SCENARIOS = new Set<ToolsMockScenario>(["normal", "empty", "malformed", "provider_error", "rate_limited", "expired", "broad_scope", "missing_scope"]);
+const TOOLKIT_ROUTE = /^POST \/v1\/tools\/([a-z]{1,20})\/(connect|complete|disconnect)$/;
 
 export function createHandler(deps: HttpDeps) {
   const now = deps.now ?? (() => new Date());
@@ -44,6 +51,17 @@ export function createHandler(deps: HttpDeps) {
     "POST /v1/connected-apps/google-calendar/events": async ({ userId, body, scenario }) => service.listEvents(userId, body, scenario),
     "POST /v1/connected-apps/google-calendar/disconnect": async ({ userId, body }) => service.disconnect(userId, body),
   };
+
+  const tools = deps.tools;
+  const toolsRoutes: Record<string, (userId: string, body: unknown) => unknown | Promise<unknown>> = tools
+    ? {
+        "GET /v1/tools": (userId) => tools.catalog(userId),
+        "GET /v1/tools/receipts": (userId) => ({ receipts: tools.receipts(userId) }),
+        "PUT /v1/tools/switch": (userId, body) => tools.setSwitch(userId, body),
+        "POST /v1/tools/prepare": (userId, body) => tools.prepare(userId, body),
+        "POST /v1/tools/run": (userId, body) => tools.run(userId, body),
+      }
+    : {};
 
   return async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const started = Date.now();
@@ -78,9 +96,12 @@ export function createHandler(deps: HttpDeps) {
         return redirectToApp(res, url, deps.appReturnUrl, key.endsWith("verify"));
       }
 
+      const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;
+      const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
-      if (!handler) throw new AppError("not_found");
-      route = key;
+      if (!handler && !toolsHandler && !toolkitRoute) throw new AppError("not_found");
+      // Route templates only in logs, so the set of values stays small.
+      route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
       const user = deps.verifier.verify(header(req, "authorization"), now());
       if (!user) throw new AppError("unauthenticated");
@@ -89,7 +110,28 @@ export function createHandler(deps: HttpDeps) {
       const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);
       if (scenario && !scenario.success) throw new AppError("invalid_request");
 
-      const body = req.method === "POST" ? await readJson(req, deps.maxBodyBytes) : undefined;
+      const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+      if (tools && (toolsHandler || toolkitRoute)) {
+        const rawTools = header(req, "x-doddy-tools-scenario");
+        if (rawTools !== undefined) {
+          if (!TOOLS_SCENARIOS.has(rawTools as ToolsMockScenario)) throw new AppError("invalid_request");
+          tools.applyMockScenario(user.userId, rawTools as ToolsMockScenario);
+        }
+        let toolsResult: unknown;
+        if (toolsHandler) toolsResult = await toolsHandler(user.userId, body);
+        else if (toolkitRoute) {
+          const [, toolkitId, action] = toolkitRoute;
+          toolsResult =
+            action === "connect"
+              ? await tools.connect(user.userId, toolkitId!, body)
+              : action === "complete"
+                ? await tools.complete(user.userId, toolkitId!, body)
+                : await tools.disconnect(user.userId, toolkitId!, body);
+        }
+        status = 200;
+        return send(res, 200, toolsResult);
+      }
+      if (!handler) throw new AppError("not_found");
       const result = await handler({ userId: user.userId, body, scenario: scenario?.data });
       status = 200;
       send(res, 200, result);
@@ -103,7 +145,7 @@ export function createHandler(deps: HttpDeps) {
           message: appError.message,
           correlationId,
           ...(appError.options.retryAfterSeconds !== undefined ? { retryAfterSeconds: appError.options.retryAfterSeconds } : {}),
-          ...(appError.options.receipt ? { receipt: appError.options.receipt } : {}),
+          ...(appError.options.receipt ? { receipt: appError.options.receipt as ErrorResponse["error"]["receipt"] } : {}),
         },
       };
       if (appError.options.retryAfterSeconds !== undefined) res.setHeader("retry-after", String(appError.options.retryAfterSeconds));

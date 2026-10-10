@@ -8,7 +8,8 @@
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets,
 #  - permission keys only for the microphone, calendar, reminders and contacts,
-#  - backend: Composio tool slugs only in the adapter, no calendar write tools, no proxy execution.
+#  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
+#    their answers), no write tools beyond the two reviewed ones (Gmail draft, Todoist task), no proxy execution.
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -30,6 +31,10 @@ backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
 code_only() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)'; }
 composio_adapter=backend/src/providers/composio.ts
+# Online accounts (Gmail, Drive, Notion, Todoist): the catalog names each slug once; the mock returns
+# the same answer shapes. Nothing else may name a slug.
+tools_catalog=backend/src/tools/catalog.ts
+tools_mock=backend/src/tools/mock.ts
 
 status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
@@ -48,11 +53,16 @@ if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$
   echo "FAIL: calendar or contacts code outside $connections_dir." >&2; status=1
 fi
 if [ -d "$backend_src" ]; then
-  if grep -RInE '(^|[^A-Z_])(GOOGLECALENDAR|GOOGLESUPER|GMAIL|GOOGLEDRIVE|NOTION|TODOIST)_[A-Z]' --include='*.ts' "$backend_src" | code_only | grep -v "^$composio_adapter:"; then
-    echo "FAIL: Composio tool slugs outside $composio_adapter." >&2; status=1
+  if grep -RInE '(^|[^A-Z_])(GOOGLECALENDAR|GOOGLESUPER|GMAIL|GOOGLEDRIVE|NOTION|TODOIST)_[A-Z]' --include='*.ts' "$backend_src" | code_only | grep -v -e "^$composio_adapter:" -e "^$tools_catalog:" -e "^$tools_mock:"; then
+    echo "FAIL: Composio tool slugs outside $composio_adapter, $tools_catalog and $tools_mock." >&2; status=1
   fi
   if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src"; then
     echo "FAIL: calendar write tool referenced in the backend." >&2; status=1
+  fi
+  # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT and TODOIST_CREATE_TASK (each needs a fresh
+  # on-screen approval). Anything that sends, deletes, shares, edits or labels is refused here.
+  if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src"; then
+    echo "FAIL: a write tool beyond the reviewed Gmail draft and Todoist task is referenced in the backend." >&2; status=1
   fi
   if grep -RInE 'tools\.proxy|proxyExecute|COMPOSIO_MULTI_EXECUTE|COMPOSIO_REMOTE' "$backend_src"; then
     echo "FAIL: generic proxy/meta-tool execution in the backend." >&2; status=1
@@ -66,5 +76,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the microphone, calendar, reminders and contacts permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client and URLSessionTransport, web auth only in Connected Apps, audio only in Voice, calendar and contacts only in Connections, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders and contacts; backend has no write tools or proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client and URLSessionTransport, web auth only in Connected Apps, audio only in Voice, calendar and contacts only in Connections, no speech/analytics, no secrets, permissions limited to microphone, calendar, reminders and contacts; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
 exit "$status"

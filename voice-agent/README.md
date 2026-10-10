@@ -21,7 +21,7 @@ adding one adapter, not rewriting the app or the agent.
    `{"prompt": "...", "tools": [...]}` and run `voice_agent_spec.py compare EXPORT.json`.
 
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
-step catches it. Last synced 2026-10-09 (agent version `agtvrsn_8101m4gvnve7fdzsyqk5rjyqcfb8`): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections. **Known drift:** the live agent has 14 tools; `tools.json` still lists the original 10 and lacks `set_timer`, `open_map`, `run_shortcut` and `draft_message` (added on the agent by the Connections work). Add them here before the next tool change.
+step catches it. Last synced 2026-10-10 (agent version `agtvrsn_2801m4hqvf0qfeb8h03ts6cdethc`): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 20 live tools (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_8101m4gvnve7fdzsyqk5rjyqcfb8`.
 
 ## App side (DoddyCore `RealtimeVoice.swift`)
 

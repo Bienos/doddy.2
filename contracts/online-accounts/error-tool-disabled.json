@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "Check my email is turned off in Settings.",
+    "correlationId": "306b403b-6777-4372-aad0-0c28c76e5c55",
+    "receipt": {
+      "operationId": "47c886b6-20b3-491f-a172-9ddacd72c566",
+      "operation": "read",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: Check my email is turned off in Settings.",
+      "errorCode": "capability_disabled",
+      "providerReference": null
+    }
+  }
+}

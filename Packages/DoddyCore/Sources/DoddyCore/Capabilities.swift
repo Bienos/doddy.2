@@ -71,12 +71,12 @@ public struct CapabilityCatalog: Sendable {
     /// Connected Apps foundation: Google Calendar read-only through a Doddy server. Demo data unless
     /// a server in live mode is configured; live provider behaviour is unverified (see docs/integrations).
     public static let v1ConnectedApps = CapabilityCatalog(statuses: v1Voice.statuses.merging([
-        .connectedAccounts: .limited("Google Calendar read-only, needs a Doddy server"),
+        .connectedAccounts: .limited("Google Calendar read-only; Gmail, Drive, Notion, Todoist tools you switch on; needs a Doddy server"),
     ]) { _, new in new })
 
     /// What this build ships: V2 (voice, shortcut, Back Tap guide) plus the Connected Apps foundation.
     public static let v2WithConnectedApps = CapabilityCatalog(statuses: v2Shortcut.statuses.merging([
-        .connectedAccounts: .limited("Google Calendar read-only, needs a Doddy server"),
+        .connectedAccounts: .limited("Google Calendar read-only; Gmail, Drive, Notion, Todoist tools you switch on; needs a Doddy server"),
     ]) { _, new in new })
 }
 

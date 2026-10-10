@@ -114,6 +114,19 @@ export class UsageLimiter {
     if (!ok) throw new AppError("quota_exceeded");
   }
 
+  /** One online-account tool run (read or confirmed write) for this user today. */
+  reserveToolRun(userId: string, now: number): void {
+    const ok = this.store.reserveUsage(
+      [
+        { counter: `user:${userId}:toolruns`, period: `day:${day(now)}`, limit: this.limits.userDailyToolRuns },
+        { counter: "service:calls", period: `day:${day(now)}`, limit: this.limits.serviceDailyCalls },
+        { counter: "service:calls", period: `month:${month(now)}`, limit: this.limits.serviceMonthlyCalls },
+      ],
+      1,
+    );
+    if (!ok) throw new AppError("quota_exceeded");
+  }
+
   /** One user-visible read request (counted separately from the provider calls it causes). */
   reserveRead(userId: string, now: number): void {
     const ok = this.store.reserveUsage(

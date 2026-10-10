@@ -129,7 +129,7 @@ final class ConnectedAppsSupportTests: XCTestCase {
     }
 
     func testConnectedAccountsIsLimitedNotAvailable() {
-        XCTAssertEqual(CapabilityCatalog.v1ConnectedApps.status(of: .connectedAccounts), .limited("Google Calendar read-only, needs a Doddy server"))
+        XCTAssertEqual(CapabilityCatalog.v1ConnectedApps.status(of: .connectedAccounts), .limited("Google Calendar read-only; Gmail, Drive, Notion, Todoist tools you switch on; needs a Doddy server"))
         XCTAssertFalse(CapabilityCatalog.v1ConnectedApps.isAvailable(.connectedAccounts))
         XCTAssertEqual(CapabilityCatalog.m0.status(of: .connectedAccounts), .notImplemented(plannedMilestone: "unscheduled"))
     }

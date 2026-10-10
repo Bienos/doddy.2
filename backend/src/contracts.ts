@@ -96,6 +96,7 @@ export const ConnectionReason = z.enum([
   "missing_read_scope",
   "grant_not_read_only",
   "grant_unverifiable",
+  "grant_too_broad",
   "revoked_or_expired",
   "provider_unavailable",
 ]);

@@ -1,0 +1,19 @@
+{
+  "mode": "mock",
+  "tool": "draft_email",
+  "text": "drafted: Gmail draft to anna@example.com with subject \"Lunch Friday\" was created. It was NOT sent; the user sends it from Gmail.",
+  "count": 1,
+  "truncated": false,
+  "receipt": {
+    "operationId": "73a4555a-42fb-438c-bbf0-f3d87c255c08",
+    "operation": "write",
+    "toolkit": "gmail",
+    "tool": "draft_email",
+    "timestamp": "2026-10-10T10:00:00.000Z",
+    "mode": "mock",
+    "status": "succeeded",
+    "summary": "Gmail draft created (not sent).",
+    "errorCode": null,
+    "providerReference": "mock_log_dec6eb31"
+  }
+}

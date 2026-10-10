@@ -135,6 +135,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
+    case cloudTool(CloudToolCall)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -167,7 +169,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
         default:
-            return .unsupported(name: name)
+            return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
     }
 

@@ -36,11 +36,14 @@ final class VoiceSessionController {
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
         case message(toolCallID: String, draft: MessageDraft, address: String)
+        /// Gmail draft or Todoist task. `preview` and `approvalID` come from Doddy's server for exactly
+        /// these arguments; the approval works once and expires after two minutes.
+        case cloud(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
-                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _):
+                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _):
                 id
             }
         }
@@ -272,6 +275,8 @@ final class VoiceSessionController {
             await reply(id, opened
                 ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
+        case .cloud(let id, let call, _, let approvalID, _):
+            await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
         }
     }
 
@@ -287,6 +292,7 @@ final class VoiceSessionController {
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
+        case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         }
     }
 
@@ -419,10 +425,47 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
+        case .cloudTool(let cloud):
+            await handleCloud(cloud, toolCallID: call.toolCallId)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
             await reply(call.toolCallId, VoiceToolReply.failed("The request was incomplete (\(reason))."), isError: true)
+        }
+    }
+
+    /// Gmail, Drive, Notion and Todoist go through Doddy's server, which checks the tool's switch, the
+    /// account connection and the grant. Reads answer at once; writes show a card first.
+    private func handleCloud(_ cloud: CloudToolCall, toolCallID: String) async {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
+            return
+        }
+        do {
+            if cloud.isWrite {
+                let prepared = try await client.prepare(cloud)
+                propose(
+                    .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
+                    toolCallID: toolCallID)
+            } else {
+                let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: nil)
+                await reply(toolCallID, VoiceToolReply.cloudResult(result))
+            }
+        } catch {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+        }
+    }
+
+    /// The user tapped the card. The approval is for exactly the arguments the card showed.
+    private func runConfirmedCloud(_ cloud: CloudToolCall, approvalID: UUID) async -> String {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            return VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name)
+        }
+        do {
+            let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
+            return VoiceToolReply.cloudResult(result)
+        } catch {
+            return VoiceToolReply.cloudFailed(error, tool: cloud.name)
         }
     }
 

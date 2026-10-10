@@ -44,6 +44,8 @@ public enum ConnectionReason: String, Codable, Sendable {
     case missingReadScope = "missing_read_scope"
     case grantNotReadOnly = "grant_not_read_only"
     case grantUnverifiable = "grant_unverifiable"
+    /// Online accounts: the account granted more than Doddy needs (see OnlineAccounts).
+    case grantTooBroad = "grant_too_broad"
     case revokedOrExpired = "revoked_or_expired"
     case providerUnavailable = "provider_unavailable"
 }

@@ -155,6 +155,146 @@
         "runs_on": "web", "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "tool_1101m4f25rx2fx7ttcempcvx8s89",
         "http": {"method": "GET", "url": "https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}", "path": ["lang", "title"], "query": [], "constants": {}, "headers": {"Accept": "application/json", "User-Agent": "DoddyApp/0.1 (personal voice assistant prototype)"}, "response_fields": ["title", "description", "extract"], "follow_redirects_domains": ["pl.wikipedia.org", "en.wikipedia.org"]}
       }
+    },
+    {
+      "type": "function",
+      "name": "set_timer",
+      "description": "Propose a countdown timer on the user's iPhone for the time the user asked for. Give minutes, seconds, or both, and an optional short label. The app shows the timer on screen and the user must tap Start. The result starts with 'added' (the timer is running and rings at the time in the result), 'declined', 'failed' or 'unknown'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should start this timer.' Never say the timer is running until the result starts with 'added'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "minutes": {"type": "number", "description": "Minutes, for example 10. Use 1.5 for a minute and a half. Leave out if not needed."},
+          "seconds": {"type": "number", "description": "Seconds, for example 45. Leave out if not needed."},
+          "label": {"type": "string", "description": "A short label such as 'pasta'. Leave out if the user gave none."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8601m4gj35c6enz912e0zhax003f"}
+    },
+    {
+      "type": "function",
+      "name": "open_map",
+      "description": "Propose opening a place or address in Apple Maps. Use the place name the user said. The app shows a card and the user taps Open in Maps. The result starts with 'opened' (Maps opened for that place) or 'declined'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should open this in Maps.' Say you opened it only when the result starts with 'opened'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "place": {"type": "string", "description": "The place or address, in the words the user used, for example 'Mokotów Tower'."}
+        },
+        "required": ["place"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6101m4gj36nbe1tv5mpj73rzbqsa"}
+    },
+    {
+      "type": "function",
+      "name": "run_shortcut",
+      "description": "Propose running one of the user's Shortcuts by its exact name. The app shows a card and the user taps Run; the Shortcuts app then opens for a moment. The result starts with 'opened' (Shortcuts was asked to run it; Doddy cannot see whether it finished) or 'declined'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should run that Shortcut.' Never say the shortcut finished.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "description": "The exact name of the user's Shortcut, as the user said it."}
+        },
+        "required": ["name"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m4gj37f5etbres37pgtvrq3c"}
+    },
+    {
+      "type": "function",
+      "name": "draft_message",
+      "description": "Draft a text or an email to one of the user's contacts. Use channel 'text' unless the user asks for email. Write the body in the user's own words and language, short and ready to send. The app looks up the contact and shows the draft on screen; the user taps Open in Messages or Open in Mail and sends it there. Doddy never sends anything. The result starts with 'opened' (the draft is open for the user to send), 'declined', 'failed' (no such contact, or no number or address for that channel) or 'unknown'. Before this tool runs, say only one short line, for example 'Confirm on screen to open this draft.' Never say the message was sent.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "to": {"type": "string", "description": "The contact's name, as the user said it, for example 'Marta'."},
+          "body": {"type": "string", "description": "The message, in the user's words and language."},
+          "channel": {"type": "string", "enum": ["text", "email"], "description": "'text' for a text message, or 'email'. Leave out for a text."}
+        },
+        "required": ["to", "body"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4gj38k8fmwbr3gy4qz3wygw"}
+    },
+    {
+      "type": "function",
+      "name": "check_email",
+      "description": "Check the user's newest Gmail emails: sender, subject, time and a short preview only. Use it when the user asks whether they have new email, what is in their inbox, or whether someone wrote to them. Optional query uses Gmail search words, e.g. 'from:anna' or 'is:unread'; leave it out for the inbox. Answer only from the result and never invent emails. You cannot read full messages; say so if asked. If the result says the tool is switched off or Gmail isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Gmail search words, e.g. 'from:anna' or 'is:unread subject:invoice'. Leave out to list the inbox."},
+          "max": {"type": "integer", "description": "How many emails to list, 1 to 10. Default 5."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_9801m4hqrq17emqbnq8vxnr8r34a"}
+    },
+    {
+      "type": "function",
+      "name": "draft_email",
+      "description": "Propose creating a Gmail DRAFT. It is never sent; the user opens Gmail and sends it themselves. Use it only when the user clearly asks you to write or draft an email. You need a real email address: if the user gave only a name, ask for the address and never guess one. Write the subject and body in the user's words and language. The app shows the draft on screen and the user must tap Create draft; the result starts with 'drafted', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should create this draft.' (Polish: 'Potwierdź na ekranie, jeśli mam utworzyć ten szkic.'). Never say a draft was created unless the result starts with drafted, and never say an email was sent.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "to": {"type": "string", "description": "The recipient's email address, exactly as the user gave it."},
+          "subject": {"type": "string", "description": "Short subject line in the user's language."},
+          "body": {"type": "string", "description": "The message text in the user's words and language."}
+        },
+        "required": ["to", "subject", "body"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5301m4hqrqqkf248sss9jewnp0xb"}
+    },
+    {
+      "type": "function",
+      "name": "find_drive_file",
+      "description": "Find files in the user's Google Drive by part of the name. You get name, type and last-changed time only; you cannot open, read, share or change files. Use it when the user asks where a document is or whether they have a file. Answer only from the result and never invent files. If the result says the tool is switched off or Drive isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "description": "Part of the file name to look for, in the user's words, e.g. 'budget' or 'umowa'."}
+        },
+        "required": ["name"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_6001m4hqrreee7baywf1w3fe92m6"}
+    },
+    {
+      "type": "function",
+      "name": "search_notion",
+      "description": "Search the titles of Notion pages that were shared with Doddy. You get titles and last-edited times only; you cannot read page content or change anything. Use it when the user asks where a Notion page is. Answer only from the result and never invent pages. If nothing is found, say Notion only finds pages shared with Doddy. If the result says the tool is switched off or Notion isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Words from the page title, e.g. 'trip plan'."}
+        },
+        "required": ["query"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_0501m4hqrs7gf6xr08d3fttdy9rg"}
+    },
+    {
+      "type": "function",
+      "name": "list_todoist_tasks",
+      "description": "List the user's open Todoist tasks. Use it when the user asks what is on their to-do list, what is due today or what is overdue. Answer only from the result and never invent tasks. If the result says the tool is switched off or Todoist isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "when": {"type": "string", "enum": ["today", "overdue", "upcoming", "all"], "description": "'today' (today and overdue, the default), 'overdue', 'upcoming' (next 7 days) or 'all'."},
+          "search": {"type": "string", "description": "A word to look for in task names, only if the user asked for a specific task."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_9601m4hqrt0fexpa9hz0yhrzt2f1"}
+    },
+    {
+      "type": "function",
+      "name": "add_todoist_task",
+      "description": "Propose adding one task to the user's Todoist. Use it only when the user clearly asks to add a task or to-do to Todoist (for the iPhone Reminders app use create_reminder instead). The app shows the task on screen and the user must tap Add task; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this task.' (Polish: 'Potwierdź na ekranie, jeśli mam dodać to zadanie.'). Never say it was added unless the result starts with added.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "content": {"type": "string", "description": "The task in the user's words and language, e.g. 'Renew passport'. Do not put the date in here."},
+          "due": {"type": "string", "description": "When it is due, in Todoist's own words, e.g. 'tomorrow 9am', 'next Monday' or 'every Friday'. Leave out if the user gave no time."},
+          "due_lang": {"type": "string", "enum": ["en", "pl", "de", "fr", "es", "it", "nl", "pt"], "description": "Language of the due words if not English, e.g. 'pl' for 'jutro o 9'. Leave out for English."}
+        },
+        "required": ["content"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0601m4hqrttmeph8vwj3kha18fgb"}
     }
   ]
 }

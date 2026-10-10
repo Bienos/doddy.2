@@ -1,4 +1,5 @@
 import type { ErrorCode, Receipt } from "./contracts.js";
+import type { ToolReceipt } from "./tools/contracts.js";
 
 const HTTP_STATUS: Record<ErrorCode, number> = {
   unauthenticated: 401,
@@ -45,7 +46,7 @@ export class AppError extends Error {
   readonly status: number;
   constructor(
     readonly code: ErrorCode,
-    readonly options: { retryAfterSeconds?: number; receipt?: Receipt; message?: string } = {},
+    readonly options: { retryAfterSeconds?: number; receipt?: Receipt | ToolReceipt; message?: string } = {},
   ) {
     super(options.message ?? MESSAGES[code]);
     this.name = "AppError";

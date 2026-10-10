@@ -27,7 +27,18 @@ final class RealtimeVoiceTests: XCTestCase {
 
     func testRepoToolCatalogDecodes() throws {
         let tools = try RealtimeToolCatalog.decode(Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json")))
-        XCTAssertEqual(tools.count, 10)
+        // Every phone tool in the spec is one the app can route; an unrouted one would leave the
+        // agent waiting until its timeout.
+        let routable = Set(tools.filter { $0.runsOn == .phone }.map(\.name).filter { name in
+            if case .unsupported = VoiceToolRequest.parse(name: name, parametersJSON: Data("{}".utf8)) { return false }
+            return true
+        })
+        XCTAssertEqual(RealtimeToolCatalog.unhandledPhoneTools(tools, handled: routable), [])
+        // The online-account tools exist in the spec, run on the phone, and only the writes ask for a tap.
+        let cloud = tools.filter { CloudToolName.all.contains($0.name) }
+        XCTAssertEqual(Set(cloud.map(\.name)), CloudToolName.all)
+        XCTAssertTrue(cloud.allSatisfy { $0.runsOn == .phone })
+        XCTAssertEqual(Set(cloud.filter(\.confirmOnScreen).map(\.name)), CloudToolName.writes)
         let save = try XCTUnwrap(tools.first { $0.name == VoiceToolName.saveMemory })
         XCTAssertEqual(save.runsOn, .phone)
         XCTAssertTrue(save.confirmOnScreen)

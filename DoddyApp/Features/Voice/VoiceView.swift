@@ -242,6 +242,17 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .cloud(_, _, let preview, _, let mode):
+            if mode == .mock {
+                Label("Demo — nothing real will be created", systemImage: "theatermasks")
+                    .font(.footnote)
+            }
+            Text(preview.title)
+                .font(.headline)
+            ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.body)
+            }
         }
     }
 
@@ -253,6 +264,7 @@ struct VoiceView: View {
         case .map: ("Open in Maps", "Don't open")
         case .shortcut: ("Run", "Don't run")
         case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
+        case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
         }
     }
 

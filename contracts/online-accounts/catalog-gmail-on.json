@@ -1,0 +1,91 @@
+{
+  "mode": "mock",
+  "toolkits": [
+    {
+      "id": "gmail",
+      "title": "Gmail",
+      "access": "Doddy can list your recent emails (sender, subject, a short preview) and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+      "status": "connected",
+      "reason": null,
+      "connectedAt": "2026-10-10T10:00:00.000Z",
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "check_email",
+          "title": "Check my email",
+          "blurb": "Lists your newest emails: sender, subject and a short preview. Doddy doesn't open full messages.",
+          "risk": "read",
+          "enabled": true
+        },
+        {
+          "name": "draft_email",
+          "title": "Draft an email",
+          "blurb": "Creates a draft in Gmail after you tap Create on the card. Doddy never sends it.",
+          "risk": "write",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "googledrive",
+      "title": "Google Drive",
+      "access": "Doddy can find files by name (name, type, last change). It can't open, change, share or delete files.",
+      "status": "disconnected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "find_drive_file",
+          "title": "Find a Drive file",
+          "blurb": "Looks up files by name and shows name, type and last change. It can't open or change files.",
+          "risk": "read",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "id": "notion",
+      "title": "Notion",
+      "access": "Doddy can search the titles of pages you shared with it. It doesn't read page content and can't change anything.",
+      "status": "disconnected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "search_notion",
+          "title": "Search Notion",
+          "blurb": "Finds page titles shared with Doddy. It doesn't read the pages.",
+          "risk": "read",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "id": "todoist",
+      "title": "Todoist",
+      "access": "Doddy can list your open tasks and add a task after you tap Add. It can't complete, change or delete tasks.",
+      "status": "disconnected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "list_todoist_tasks",
+          "title": "List my tasks",
+          "blurb": "Lists your open Todoist tasks, for example what's due today.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "add_todoist_task",
+          "title": "Add a task",
+          "blurb": "Adds a Todoist task after you tap Add on the card.",
+          "risk": "write",
+          "enabled": false
+        }
+      ]
+    }
+  ]
+}

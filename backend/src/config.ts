@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 
 /**
  * Environment configuration. Every value is read once at start-up and validated.
@@ -13,6 +14,8 @@ export type CompletionMode = "verifier" | "callback";
 
 export interface Limits {
   userDailyReads: number;
+  /** Online-account tool runs (Gmail, Drive, Notion, Todoist) per user per UTC day. */
+  userDailyToolRuns: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -32,6 +35,12 @@ export interface ComposioSettings {
   completionMode: CompletionMode;
 }
 
+/** One online account (toolkit) that is set up on this server. Absent from the map: not set up. */
+export interface ToolkitSettings {
+  authConfigId: string;
+  toolkitVersion: string;
+}
+
 export interface Config {
   mode: Mode;
   env: Env;
@@ -43,6 +52,8 @@ export interface Config {
   authMode: AuthMode;
   sessionSigningKey: Buffer | null;
   composio: ComposioSettings | null;
+  /** Gmail, Drive, Notion, Todoist: only toolkits with both an auth config and a pinned version. */
+  toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   limits: Limits;
 }
 
@@ -84,6 +95,15 @@ const EnvSchema = z.object({
   COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: z.string().optional(),
   COMPOSIO_COMPLETION_MODE: z.enum(["verifier", "callback"]).default("verifier"),
   DODDY_LIMIT_USER_DAILY_READS: intSetting(30, 1, 10_000),
+  DODDY_LIMIT_USER_DAILY_TOOL_RUNS: intSetting(100, 1, 10_000),
+  COMPOSIO_GMAIL_AUTH_CONFIG_ID: z.string().optional(),
+  COMPOSIO_GMAIL_TOOLKIT_VERSION: z.string().optional(),
+  COMPOSIO_GOOGLEDRIVE_AUTH_CONFIG_ID: z.string().optional(),
+  COMPOSIO_GOOGLEDRIVE_TOOLKIT_VERSION: z.string().optional(),
+  COMPOSIO_NOTION_AUTH_CONFIG_ID: z.string().optional(),
+  COMPOSIO_NOTION_TOOLKIT_VERSION: z.string().optional(),
+  COMPOSIO_TODOIST_AUTH_CONFIG_ID: z.string().optional(),
+  COMPOSIO_TODOIST_TOOLKIT_VERSION: z.string().optional(),
   DODDY_LIMIT_SERVICE_DAILY_CALLS: intSetting(300, 1, 1_000_000),
   DODDY_LIMIT_SERVICE_MONTHLY_CALLS: intSetting(3_000, 1, 10_000_000),
   DODDY_LIMIT_USER_CONCURRENCY: intSetting(1, 1, 10),
@@ -183,6 +203,21 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
+  // Online accounts. Each toolkit needs both values; half a setup is a mistake, not a feature.
+  const toolkits: Partial<Record<ToolkitId, ToolkitSettings>> = {};
+  for (const id of TOOLKIT_IDS) {
+    const prefix = `COMPOSIO_${id.toUpperCase()}`;
+    const authConfigId = (source[`${prefix}_AUTH_CONFIG_ID`] ?? "").trim();
+    const toolkitVersion = (source[`${prefix}_TOOLKIT_VERSION`] ?? "").trim();
+    if (authConfigId === "" && toolkitVersion === "") continue;
+    if (e.DODDY_MODE !== "live") continue; // mock mode never uses Composio settings
+    if (authConfigId === "") problems.push(`${prefix}_AUTH_CONFIG_ID is required when ${prefix}_TOOLKIT_VERSION is set`);
+    else if (toolkitVersion === "") problems.push(`${prefix}_TOOLKIT_VERSION is required when ${prefix}_AUTH_CONFIG_ID is set`);
+    else if (!/^\d{8}_\d{2}$/.test(toolkitVersion)) problems.push(`${prefix}_TOOLKIT_VERSION must be a pinned version like 20250909_00, not 'latest'`);
+    else if (!e.COMPOSIO_API_KEY) problems.push("COMPOSIO_API_KEY is required in live mode");
+    else toolkits[id] = { authConfigId, toolkitVersion };
+  }
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -196,8 +231,10 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     authMode: e.DODDY_AUTH_MODE,
     sessionSigningKey,
     composio,
+    toolkits,
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
+      userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -216,6 +253,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
 export function testLimits(overrides: Partial<Limits> = {}): Limits {
   return {
     userDailyReads: 30,
+    userDailyToolRuns: 100,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,

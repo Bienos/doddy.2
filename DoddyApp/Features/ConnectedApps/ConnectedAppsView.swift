@@ -311,14 +311,12 @@ struct ConnectedAppsView: View {
 }
 
 private enum PlannedApp: CaseIterable {
-    case appleCalendar, appleReminders, todoist, notion
+    case appleCalendar, appleReminders
 
     var name: String {
         switch self {
         case .appleCalendar: "Apple Calendar"
         case .appleReminders: "Apple Reminders"
-        case .todoist: "Todoist"
-        case .notion: "Notion"
         }
     }
 }

@@ -119,6 +119,20 @@ export class Store {
         expires_at INTEGER NOT NULL,
         consumed_at INTEGER
       );
+      CREATE TABLE IF NOT EXISTS tool_switches (
+        user_id TEXT NOT NULL,
+        tool TEXT NOT NULL,
+        enabled INTEGER NOT NULL,
+        changed_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, tool)
+      );
+      CREATE TABLE IF NOT EXISTS tool_receipts (
+        operation_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        body TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
     `);
   }
 
@@ -299,6 +313,50 @@ export class Store {
       .prepare("SELECT body FROM receipts WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?")
       .all(userId, limit) as { body: string }[];
     return rows.map((r) => JSON.parse(r.body) as Receipt);
+  }
+
+  // ------------------------------------------------------------ online-account tools
+
+  /** Tools start off. A missing row means off. */
+  toolEnabled(userId: string, tool: string): boolean {
+    const row = this.db.prepare("SELECT enabled FROM tool_switches WHERE user_id = ? AND tool = ?").get(userId, tool) as
+      | { enabled: number }
+      | undefined;
+    return row?.enabled === 1;
+  }
+
+  enabledTools(userId: string): Set<string> {
+    const rows = this.db.prepare("SELECT tool FROM tool_switches WHERE user_id = ? AND enabled = 1").all(userId) as { tool: string }[];
+    return new Set(rows.map((r) => r.tool));
+  }
+
+  setToolEnabled(userId: string, tool: string, enabled: boolean, now: number): void {
+    this.db
+      .prepare(
+        `INSERT INTO tool_switches (user_id, tool, enabled, changed_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT (user_id, tool) DO UPDATE SET enabled = excluded.enabled, changed_at = excluded.changed_at`,
+      )
+      .run(userId, tool, enabled ? 1 : 0, now);
+  }
+
+  /** Turns off every tool of the given names at once (used when an account is disconnected). */
+  disableTools(userId: string, tools: readonly string[], now: number): void {
+    this.transaction(() => {
+      for (const tool of tools) this.setToolEnabled(userId, tool, false, now);
+    });
+  }
+
+  saveToolReceipt(userId: string, receipt: { operationId: string }, now: number): void {
+    this.db
+      .prepare("INSERT INTO tool_receipts (operation_id, user_id, created_at, body) VALUES (?, ?, ?, ?)")
+      .run(receipt.operationId, userId, now, JSON.stringify(receipt));
+  }
+
+  toolReceipts(userId: string, limit: number): unknown[] {
+    const rows = this.db
+      .prepare("SELECT body FROM tool_receipts WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?")
+      .all(userId, limit) as { body: string }[];
+    return rows.map((r) => JSON.parse(r.body) as unknown);
   }
 
   // ------------------------------------------------------------ usage

@@ -1,0 +1,88 @@
+{
+  "receipts": [
+    {
+      "operationId": "d0002b07-ea41-4eb4-b845-3e4ceda94e72",
+      "operation": "write",
+      "toolkit": "gmail",
+      "tool": "draft_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: it wasn't confirmed.",
+      "errorCode": "confirmation_required",
+      "providerReference": null
+    },
+    {
+      "operationId": "73a4555a-42fb-438c-bbf0-f3d87c255c08",
+      "operation": "write",
+      "toolkit": "gmail",
+      "tool": "draft_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Gmail draft created (not sent).",
+      "errorCode": null,
+      "providerReference": "mock_log_dec6eb31"
+    },
+    {
+      "operationId": "993a1089-f80b-47d0-944a-14c3fd5291fb",
+      "operation": "switch",
+      "toolkit": "gmail",
+      "tool": "draft_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Draft an email switched on.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "4bb34dbe-76af-4a67-ba3f-3fb1102911c1",
+      "operation": "read",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Checked email: 2 messages listed.",
+      "errorCode": null,
+      "providerReference": "mock_log_1ec7e638"
+    },
+    {
+      "operationId": "a44064b2-0ff5-4785-91da-a8c14eecfef4",
+      "operation": "switch",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Check my email switched on.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "71db1d96-d7bd-45b2-be39-047d2e094fa9",
+      "operation": "connect",
+      "toolkit": "gmail",
+      "tool": null,
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Gmail connected. Its tools are off until you switch them on.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "47c886b6-20b3-491f-a172-9ddacd72c566",
+      "operation": "read",
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: Check my email is turned off in Settings.",
+      "errorCode": "capability_disabled",
+      "providerReference": null
+    }
+  ]
+}
