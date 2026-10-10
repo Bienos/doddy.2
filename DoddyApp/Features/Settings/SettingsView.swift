@@ -7,6 +7,8 @@ struct SettingsView: View {
     @Environment(ProfileStore.self) private var profiles
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(PreferenceKey.openingScene) private var openingOn = true
+    @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var connections = ConnectionController()
@@ -192,7 +194,11 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.dataFlow")
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
                     StatusRow(title: "Network", value: privacy.networkRequestsMade ? "While talking (ElevenLabs, token server), when you use Connected Apps, and when you use Ask Doddy" : "None")
-                    StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "Only while talking" : "Not used")
+                    StatusRow(
+                        title: "Microphone",
+                        value: !privacy.microphoneUsed ? "Not used"
+                            : listenOnOpen ? "Only while talking. A conversation starts when you open Doddy; turn that off under Voice"
+                            : "Only while talking")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs (voice); OpenAI if Ask Doddy is on" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
@@ -296,6 +302,14 @@ struct SettingsView: View {
                 Section("Voice") {
                     PersonalityLinkRow()
                     IslandStyleLinkRow()
+                    Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
+                        .accessibilityIdentifier("settings.listenOnOpen")
+                    Text(listenOnOpen
+                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. iOS asks for the microphone the first time and shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when iOS has refused the microphone, or when you open Doddy from Back Tap or Siri, which start their own."
+                        : "Off: nothing listens until you tap Talk to Doddy.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("settings.listenOnOpen.note")
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
                     TextField("Token server (https://…)", text: $voiceTokenServer)
@@ -451,6 +465,11 @@ struct SettingsView: View {
                         }
                     }
                     Toggle("Hide character artwork", isOn: $hideCharacterArt)
+                    Toggle("Doddy's opening", isOn: $openingOn)
+                        .accessibilityIdentifier("settings.openingScene")
+                    Text("Each time you open Doddy: a two-second cartoon. A pen sketches Doddy in, he scores a basket and pops up ready to talk, then the buttons slide in. Tap it to skip. With Reduce Motion on it's a still picture; with character artwork hidden or VoiceOver on it doesn't play.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
                     Text("Text size follows your iOS settings, including larger accessibility sizes.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)

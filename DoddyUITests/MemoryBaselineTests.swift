@@ -7,7 +7,7 @@ final class MemoryBaselineTests: XCTestCase {
     func testSaveRestartFindAndDeleteRealNote() {
         let app = XCUIApplication()
         app.launchArguments = ["-memoryTestID", UUID().uuidString, "-onboardingDone", "YES",
-                               "-backTapSetupStatus", "deferred", "-voiceAgentID", ""]
+                               "-backTapSetupStatus", "deferred", "-voiceAgentID", "", "-openingScene", "NO", "-listenOnOpen", "NO"]
         app.launch()
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 8))
         app.buttons["home.save"].tap()
@@ -50,7 +50,7 @@ final class MemoryBaselineTests: XCTestCase {
     @MainActor
     func testNativeIslandOfflineFixtureCanStartMuteAndEnd() {
         let app = XCUIApplication()
-        app.launchArguments = ["-inMemoryStore", "YES", "-onboardingDone", "YES", "-islandBaseline"]
+        app.launchArguments = ["-inMemoryStore", "YES", "-onboardingDone", "YES", "-islandBaseline", "-openingScene", "NO", "-listenOnOpen", "NO"]
         app.launch()
         XCTAssertTrue(app.buttons["island.fixture.start"].waitForExistence(timeout: 8))
         app.buttons["island.fixture.start"].tap()
