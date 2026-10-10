@@ -1,4 +1,4 @@
-# Translator mode: design (ADR-208; T1, T2, T4–T6 decided, T3 open)
+# Translator mode: design (ADR-208; all decisions made)
 Owner, 2026-10-10: "we should design translator mode where he starts translating and talking in someone's language — suggest design". Canvas: **Doddy Translator** (screens 1–9, 6b and a rules board). Owner answers, 2026-10-10: "1. both 2 mode 3. what 4 yes 5. yes 6 native". **Nothing here is built.**
 
 ## The job
@@ -72,7 +72,7 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
 |---|---|---|
 | T1 | Scope of the first version | **Both**: face to face and listen only |
 | T2 | Separate agent or a mode | **A mode of Doddy** |
-| T3 | What is kept after translating | **Open**; the owner asked what this means (see below) |
+| T3 | What is kept after translating | **(a)**: nothing kept; copy, or save the facts as a note, within 5 minutes on a tap |
 | T4 | Who's talking | **Yes**: by language, with hold-to-talk as a fallback |
 | T5 | Quiet word with Doddy | **Yes**, as text on your half |
 | T6 | Voice | **A native voice per language** |
