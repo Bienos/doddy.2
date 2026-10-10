@@ -48,6 +48,7 @@ final class SharedDraftTests: XCTestCase {
         let blank = SharedDraft.newNote()
         XCTAssertEqual(blank.text, "")
         XCTAssertFalse(blank.isSharedText)
-        XCTAssertTrue(SharedDraft(text: "").isSharedText, "empty shared text is still from a shortcut")
+        XCTAssertFalse(SharedDraft(text: " \n").isSharedText, "nothing was shared, so what the user types is a typed note")
+        XCTAssertTrue(SharedDraft(text: "Locker 12").isSharedText)
     }
 }

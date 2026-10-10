@@ -110,18 +110,22 @@ struct RootView: View {
         .background(Theme.canvas)
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
-        .fullScreenCover(isPresented: $router.isVoicePresented) { VoiceView() }
-        .sheet(isPresented: $router.isSetupPresented) { BackTapSetupView(model: router.setup) }
+        // Waiting drafts appear only once a cover or sheet has finished going away.
+        .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
+        .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
+            BackTapSetupView(model: router.setup)
+        }
         .sheet(item: $router.shownDraft, onDismiss: { router.showWaitingDraft() }) { draft in
             CaptureView(sharedText: draft.isSharedText ? draft.text : nil)
         }
-        .onChange(of: router.findRequest?.id) { _, id in
+        // `initial: true`: on a cold launch the shortcut runs before these views exist.
+        .onChange(of: router.findRequest?.id, initial: true) { _, id in
             guard id != nil else { return }
             selectedTab = .memories
             showFind = true
         }
-        .onChange(of: router.isVoicePresented) { _, isOpen in
-            if !isOpen { router.showWaitingDraft() }
+        .onChange(of: profiles.route == .home, initial: true) { _, atHome in
+            router.isOnboardingShown = !atHome
         }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.

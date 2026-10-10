@@ -51,7 +51,9 @@ struct MemoriesView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: MemoryNavigationRoute.self) { route in
                 switch route {
-                case .find(let query): FindMemoriesView(initialQuery: query)
+                case .find(let query):
+                    // A new "Find in Doddy" request resets the screen even with the same words.
+                    FindMemoriesView(initialQuery: query).id(ShortcutRouter.shared.findRequest?.id)
                 case .note(let id): MemoryDetailView(memoryID: id)
                 }
             }

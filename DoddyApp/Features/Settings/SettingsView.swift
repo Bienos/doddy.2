@@ -117,7 +117,7 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("settings.exportProfileJSON")
                     ShareLink(
-                        item: ProfileExport.plainText(profiles.profile, style: .stored(), exportedAt: .now),
+                        item: ProfileTextExport(profile: profiles.profile),
                         preview: SharePreview("Doddy profile and settings (text)")
                     ) {
                         Label("Export with your settings as text", systemImage: "doc.plaintext")
@@ -693,6 +693,9 @@ enum RestoreCopy {
     static func failure(_ error: any Error) -> String {
         guard let error = error as? MemoryRestoreError else {
             if error is CocoaError { return "That file couldn't be opened. Nothing was added." }
+            if (error as? MemoryStoreError) == .verificationFailed {
+                return "The restored notes couldn't be confirmed, so nothing from the file was added."
+            }
             return UserFacingError.message(for: error)
         }
         switch error {
@@ -720,6 +723,18 @@ struct ProfileJSONExport: Transferable {
             try ProfileExport.json(export.profile, style: .stored(), exportedAt: Date())
         }
         .suggestedFileName("doddy-profile.json")
+    }
+}
+
+/// The same as text. Built when shared, not when Settings last drew, so voice and personality
+/// changes made a moment ago are included.
+struct ProfileTextExport: Transferable {
+    let profile: ApprovedProfile
+
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation(exporting: { (export: ProfileTextExport) in
+            ProfileExport.plainText(export.profile, style: .stored(), exportedAt: Date())
+        })
     }
 }
 

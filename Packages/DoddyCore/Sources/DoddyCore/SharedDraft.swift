@@ -8,14 +8,15 @@ public struct SharedDraft: Identifiable, Equatable, Sendable {
     /// Exactly as received, unless it was only whitespace (then empty). Not trimmed or cut:
     /// the capture screen's own validation reports an over-long text, as for typed notes.
     public let text: String
-    /// True when the text came from a shortcut (saved as `shared_content`); false for the
-    /// "New note" control, which opens an empty capture screen the user types into (ADR-137).
+    /// True when text came from a shortcut (saved as `shared_content`). False for the "New note"
+    /// control and for shared text that was only whitespace: the user types those notes
+    /// themselves, so they are saved as typed (ADR-137).
     public let isSharedText: Bool
 
     public init(id: UUID = UUID(), text: String) {
         self.id = id
         self.text = text.allSatisfy(\.isWhitespace) ? "" : text
-        self.isSharedText = true
+        self.isSharedText = !self.text.isEmpty
     }
 
     private init(id: UUID, blank: Void) {

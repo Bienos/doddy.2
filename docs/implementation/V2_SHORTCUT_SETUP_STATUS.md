@@ -92,3 +92,11 @@ everything under "Not verified" needs the Mac and a real iPhone.
 - **When something is already open:** the Back Tap setup sheet closes. An open conversation or capture screen stays, and Find is ready underneath it.
 - **Known gap:** running it again with exactly the same words while that Find screen is open doesn't replace text the user has since edited there.
 - **Not verified (needs the Mac and an iPhone):** compile, the Siri phrases and dialog, the switch to Memories → Find, and the search running on arrival.
+
+## Review fixes (2026-10-10, from a read-through of the uncompiled app code)
+- **"Find in Doddy" from a closed app:** it now opens Find. The router change is observed with `initial: true`, because the shortcut runs before the tabs exist. A new request with the same words resets the Find screen.
+- **Drafts can no longer get stuck behind a presentation:**
+  - Onboarding and the Back Tap setup sheet count as blockers.
+  - Waiting drafts appear from the conversation cover's and the setup sheet's `onDismiss`, not while they are still closing.
+  - "Talk to Doddy" is ignored while a shared draft's capture sheet is up. That sheet and the conversation cover hang off the same view.
+- **Whitespace-only shared text:** it now opens a plain new note, saved as typed rather than `shared_content`.

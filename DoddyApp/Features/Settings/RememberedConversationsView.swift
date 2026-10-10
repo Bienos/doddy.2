@@ -43,8 +43,9 @@ struct RememberedConversationsView: View {
                         } label: {
                             ConversationLogRow(log: log, isSentNextTime: sentNextTime.contains(log.id))
                         }
-                        .swipeActions {
-                            Button("Delete", role: .destructive) { pendingDelete = log }
+                        // Not `.destructive`: that role removes the row before the user confirms.
+                        .swipeActions(allowsFullSwipe: false) {
+                            Button("Delete") { pendingDelete = log }.tint(Theme.error)
                         }
                     }
                 } footer: {
@@ -120,6 +121,9 @@ private struct ConversationLogDetailView: View {
     let onDelete: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var confirmDelete = false
+    /// Deleting removes the row that pushed this screen, which pops it by itself; so the screen
+    /// closes first and the delete happens once it has gone, to avoid popping twice.
+    @State private var deleteWhenGone = false
 
     var body: some View {
         List {
@@ -150,9 +154,10 @@ private struct ConversationLogDetailView: View {
         .foregroundStyle(Theme.ink)
         .navigationTitle("Conversation")
         .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { if deleteWhenGone { onDelete() } }
         .confirmationDialog("Delete this conversation?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
-                onDelete()
+                deleteWhenGone = true
                 dismiss()
             }
             Button("Cancel", role: .cancel) {}
