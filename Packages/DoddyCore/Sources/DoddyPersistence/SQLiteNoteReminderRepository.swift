@@ -49,15 +49,23 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
             else { throw NoteReminderError.memoryNotFound }
             try db.execute(
                 sql: "DELETE FROM note_reminders WHERE memory_id = ?", arguments: [reminder.memoryID.uuidString])
+            var arguments: StatementArguments = [reminder.id.uuidString, reminder.memoryID.uuidString]
+            switch reminder.trigger {
+            case .time(let fireAt, let zone):
+                arguments += ["time", DoddyDatabase.milliseconds(fireAt), zone, nil, nil, nil, nil, nil]
+            case .place(let place):
+                arguments += [
+                    "place", nil, nil, place.name, place.latitude, place.longitude, place.radiusMeters, place.onArrival,
+                ]
+            }
+            arguments += [DoddyDatabase.milliseconds(reminder.createdAt)]
             try db.execute(
                 sql: """
-                    INSERT INTO note_reminders (id, memory_id, fire_at_ms, time_zone_id, created_at_ms)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO note_reminders (id, memory_id, kind, fire_at_ms, time_zone_id, place_name,
+                                                latitude, longitude, radius_m, on_arrival, created_at_ms)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
-                arguments: [
-                    reminder.id.uuidString, reminder.memoryID.uuidString, DoddyDatabase.milliseconds(reminder.fireAt),
-                    reminder.timeZoneID, DoddyDatabase.milliseconds(reminder.createdAt),
-                ])
+                arguments: arguments)
             guard try Self.fetchReminder(id: reminder.id, db) == reminder else {
                 throw MemoryStoreError.verificationFailed
             }
@@ -84,8 +92,25 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
         guard let id = UUID(uuidString: idString), let memoryID = UUID(uuidString: memoryString) else {
             throw MemoryStoreError.corruptRecord(idString)
         }
+        let trigger: ReminderTrigger
+        switch row["kind"] as String {
+        case "time":
+            guard let fireAt = row["fire_at_ms"] as Int64?, let zone = row["time_zone_id"] as String? else {
+                throw MemoryStoreError.corruptRecord(idString)
+            }
+            trigger = .time(fireAt: DoddyDatabase.date(milliseconds: fireAt), timeZoneID: zone)
+        case "place":
+            do {
+                trigger = .place(try ReminderPlace(
+                    name: row["place_name"], latitude: row["latitude"], longitude: row["longitude"],
+                    radiusMeters: row["radius_m"], onArrival: row["on_arrival"]))
+            } catch {
+                throw MemoryStoreError.corruptRecord(idString)
+            }
+        default:
+            throw MemoryStoreError.corruptRecord(idString)
+        }
         return MemoryReminder(
-            id: id, memoryID: memoryID, fireAt: DoddyDatabase.date(milliseconds: row["fire_at_ms"]),
-            timeZoneID: row["time_zone_id"], createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]))
+            id: id, memoryID: memoryID, trigger: trigger, createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]))
     }
 }

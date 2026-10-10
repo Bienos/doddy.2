@@ -96,6 +96,37 @@ public final class DoddyDatabase: Sendable {
             }
             try db.create(index: "note_reminders_fire_at", on: "note_reminders", columns: ["fire_at_ms"])
         }
+        // ADR-194: a note reminder fires at a time or at a place. SQLite can't relax NOT NULL in
+        // place, so the table is rebuilt; every existing (time) reminder is copied across.
+        migrator.registerMigration("v4_note_reminder_places") { db in
+            try db.execute(sql: """
+                CREATE TABLE note_reminders_v4 (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    memory_id TEXT NOT NULL UNIQUE REFERENCES memories(id) ON DELETE CASCADE,
+                    kind TEXT NOT NULL CHECK (kind IN ('time', 'place')),
+                    fire_at_ms INTEGER,
+                    time_zone_id TEXT,
+                    place_name TEXT,
+                    latitude REAL,
+                    longitude REAL,
+                    radius_m INTEGER,
+                    on_arrival INTEGER,
+                    created_at_ms INTEGER NOT NULL,
+                    CHECK ((kind = 'time' AND fire_at_ms IS NOT NULL AND time_zone_id IS NOT NULL
+                            AND place_name IS NULL AND latitude IS NULL AND longitude IS NULL
+                            AND radius_m IS NULL AND on_arrival IS NULL)
+                        OR (kind = 'place' AND fire_at_ms IS NULL AND time_zone_id IS NULL
+                            AND length(place_name) BETWEEN 1 AND 60
+                            AND latitude BETWEEN -90 AND 90 AND longitude BETWEEN -180 AND 180
+                            AND radius_m BETWEEN 100 AND 1000 AND on_arrival IN (0, 1)))
+                );
+                INSERT INTO note_reminders_v4 (id, memory_id, kind, fire_at_ms, time_zone_id, created_at_ms)
+                    SELECT id, memory_id, 'time', fire_at_ms, time_zone_id, created_at_ms FROM note_reminders;
+                DROP TABLE note_reminders;
+                ALTER TABLE note_reminders_v4 RENAME TO note_reminders;
+                CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
+                """)
+        }
         return migrator
     }
 

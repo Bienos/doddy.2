@@ -29,15 +29,21 @@ struct NoteReminderSection: View {
 
     private func card(_ reminder: MemoryReminder) -> some View {
         let alerts = reminders.authorization == .allowed
+        let atPlace = reminder.place != nil
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(systemName: alerts ? "bell" : "bell.slash").accessibilityHidden(true)
+                Image(systemName: atPlace ? "mappin.and.ellipse" : alerts ? "bell" : "bell.slash").accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(alerts ? "Reminder" : "Reminder · in Doddy only")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
-                    Text(ReminderFormat.full(reminder.fireAt, timeZoneID: reminder.timeZoneID))
+                    Text(ReminderFormat.summary(reminder))
                         .font(.headline)
+                    if let place = reminder.place {
+                        Text("Within \(place.radiusMeters) m, each time, until you mark it Done.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
                     if reminder.isDue(at: .now) {
                         Text("Due now").font(.footnote.bold()).foregroundStyle(Theme.accentText)
                     }
@@ -74,7 +80,9 @@ struct NoteReminderReceiptView: View {
         VStack(alignment: .leading, spacing: 8) {
             switch receipt {
             case .scheduled(let reminder):
-                Label("Reminder set for \(ReminderFormat.dateTime(reminder.fireAt, timeZoneID: reminder.timeZoneID)).", systemImage: "checkmark")
+                Label(reminder.place == nil
+                      ? "Reminder set for \(ReminderFormat.short(reminder))."
+                      : "Reminder set \(ReminderFormat.short(reminder)).", systemImage: "checkmark")
                     .font(.headline)
                     .foregroundStyle(Theme.confirmed)
                 Text(UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
@@ -83,13 +91,20 @@ struct NoteReminderReceiptView: View {
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
             case .inAppOnly(let reminder):
-                Label("Saved in Doddy for \(ReminderFormat.dateTime(reminder.fireAt, timeZoneID: reminder.timeZoneID)).", systemImage: "bell.slash")
+                Label("Saved in Doddy for \(ReminderFormat.short(reminder)).", systemImage: "bell.slash")
                     .font(.headline)
                 Text("Notifications are off for Doddy, so your iPhone won't alert you. When it's due, the note waits at the top of Home.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
                 Button("Open Settings") {
                     if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
+                }
+                .frame(minHeight: 44)
+            case .needsSettings(let message):
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.error)
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
                 .frame(minHeight: 44)
             case .failed(let message):
@@ -137,7 +152,7 @@ struct DueRemindersView: View {
             NavigationLink(value: record.id) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(record.currentText).lineLimit(4)
-                    Text("You asked to see this again · \(ReminderFormat.dateTime(reminder.fireAt, timeZoneID: reminder.timeZoneID))")
+                    Text("You asked to see this again · \(ReminderFormat.short(reminder))")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -183,7 +198,11 @@ struct NoteReminderSettingsSection: View {
             Toggle("Show note text in notifications", isOn: $showNoteText)
                 .onChange(of: showNoteText) { Task { await reminders.noteTextSettingChanged() } }
                 .accessibilityIdentifier("settings.showNoteText")
+            StatusRow(title: "Location for place reminders", value: locationText)
             StatusRow(title: "Reminders set", value: "\(reminders.reminders.count) of \(NoteReminderLimits.maxActive)")
+            StatusRow(
+                title: "At a place",
+                value: "\(reminders.reminders.filter { $0.place != nil }.count) of \(NoteReminderLimits.maxPlaces)")
             Button("Cancel all reminders", role: .destructive) { confirmCancelAll = true }
                 .disabled(reminders.reminders.isEmpty)
             Text(showNoteText
@@ -199,6 +218,16 @@ struct NoteReminderSettingsSection: View {
             Button("Keep them", role: .cancel) {}
         } message: {
             Text("Your notes stay. Only the reminders are removed.")
+        }
+    }
+
+    private var locationText: String {
+        switch reminders.locationReadiness {
+        case .ready: "While Using, precise"
+        case .approximateOnly: "Precise Location off"
+        case .denied: "Off"
+        case .notDetermined: "Not asked yet"
+        case .unavailable: "Location Services off"
         }
     }
 
