@@ -14,6 +14,10 @@ packages:
   ElevenLabs:
     url: https://github.com/elevenlabs/elevenlabs-swift-sdk
     exactVersion: 3.3.1
+  # Already pulled in by ElevenLabs; listed so the app can set the call's audio session (ADR-205).
+  LiveKit:
+    url: https://github.com/livekit/client-sdk-swift
+    from: 2.10.0
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -43,6 +47,7 @@ targets:
       - package: DoddyCore
         product: DoddyPersistence
       - package: ElevenLabs
+      - package: LiveKit
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.

@@ -2,6 +2,7 @@ import AVFAudio
 import DoddyCore
 import ElevenLabs
 import Foundation
+import LiveKit
 import Observation
 import UIKit
 
@@ -251,6 +252,7 @@ final class VoiceSessionController {
         // Closed while the token was being fetched: don't open the microphone after all.
         guard phase == .connecting else { return }
 
+        Self.allowOtherAppsAudio()
         do {
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
             guard isLive else {
@@ -266,6 +268,24 @@ final class VoiceSessionController {
                 : " If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality."
             fail("Couldn't connect to Doddy's voice. Check your internet connection and try again.\(voiceHint) (\(error.localizedDescription))")
         }
+    }
+
+    /// Keeps the conversation going when the user opens another app that plays or records sound
+    /// (ADR-205). The SDK's default call session is not mixable, so another app starting its own
+    /// audio session pauses Doddy at once and nothing brings him back. A mixable session is not
+    /// paused that way. Cost: the other app's sound plays along with Doddy's, and the microphone
+    /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
+    /// `.mixWithOthers`. Not verified on a device.
+    private static func allowOtherAppsAudio() {
+        #if swift(>=6.2)
+        let routes: AVAudioSession.CategoryOptions = [.allowBluetoothHFP, .allowBluetoothA2DP, .allowAirPlay]
+        #else
+        let routes: AVAudioSession.CategoryOptions = [.allowBluetooth, .allowBluetoothA2DP, .allowAirPlay]
+        #endif
+        AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
+            category: .playAndRecord,
+            categoryOptions: routes.union([.defaultToSpeaker, .mixWithOthers]),
+            mode: .videoChat)
     }
 
     func stop() async {
