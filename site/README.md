@@ -1,6 +1,6 @@
 # Doddy landing page
 
-A static, single-page site that explains Doddy (the character) and the Doddy app, built from `prompts/LANDING_PAGE_DESIGN.md`. Nothing is deployed.
+A static, single-page site that explains Doddy (the character) and the Doddy app, built from `prompts/LANDING_PAGE_DESIGN.md`. Live on Vercel at https://doddy-eight.vercel.app (see "Needs the owner" for hosting details).
 
 ## Preview
 
