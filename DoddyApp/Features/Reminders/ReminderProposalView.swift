@@ -7,6 +7,7 @@ import UIKit
 struct ReminderProposalView: View {
     let initialTitle: String
     let initialDue: ReminderDueParse
+    var initialNotes: String? = nil
     let sourceMemoryID: UUID?
     /// Called once with the final action (nil = cancelled).
     let onFinish: (ReminderAction?) -> Void
@@ -15,6 +16,7 @@ struct ReminderProposalView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var operationID = UUID()
     @State private var title = ""
+    @State private var notes = ""
     @State private var hasDue = false
     @State private var includeTime = true
     @State private var dueDate = Date()
@@ -31,6 +33,7 @@ struct ReminderProposalView: View {
     private var payload: ReminderPayload {
         ReminderPayload(
             title: title.trimmingCharacters(in: .whitespacesAndNewlines),
+            notes: notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : notes,
             due: hasDue ? ReminderDue(date: dueDate, includesTime: includeTime, timeZone: timeZone) : nil)
     }
 
@@ -73,6 +76,7 @@ struct ReminderProposalView: View {
         Section("What") {
             TextField("Reminder", text: $title, axis: .vertical)
                 .accessibilityIdentifier("reminder.title")
+            TextField("Notes (optional)", text: $notes, axis: .vertical)
         }
         Section {
             Toggle("Remind me on a date", isOn: $hasDue)
@@ -142,6 +146,7 @@ struct ReminderProposalView: View {
         guard !started else { return }
         started = true
         title = String(initialTitle.prefix(ReminderPayload.maxTitle))
+        notes = initialNotes ?? ""
         switch initialDue {
         case .none:
             hasDue = false

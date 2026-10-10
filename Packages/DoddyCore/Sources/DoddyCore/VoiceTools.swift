@@ -5,7 +5,8 @@ import Foundation
 public enum VoiceToolName {
     public static let searchMemories = "search_memories"
     public static let saveMemory = "save_memory"
-    /// M4. `due` must be a local "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM"; anything else is clarified on screen.
+    /// M4. Matches the live agent's tool (tool_9901m4f2xyn1exfrx6as0kek55rk): title, due, notes.
+    /// `due` must be a local "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM"; anything else is clarified on screen.
     public static let createReminder = "create_reminder"
 }
 
@@ -15,7 +16,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Never saved directly: the app shows it and waits for the user's confirmation.
     case saveMemory(text: String)
     /// Never written directly: the app shows a review screen and waits for the user.
-    case createReminder(title: String, due: String?)
+    case createReminder(title: String, due: String?, notes: String?)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -34,7 +35,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .saveMemory(text: text)
         case VoiceToolName.createReminder:
             guard let title = nonEmpty("title") else { return .invalid(name: name, reason: "missing title") }
-            return .createReminder(title: title, due: nonEmpty("due"))
+            return .createReminder(title: title, due: nonEmpty("due"), notes: nonEmpty("notes"))
         default:
             return .unsupported(name: name)
         }
@@ -69,23 +70,25 @@ public enum VoiceToolReply {
     }
 
     /// Result of a reminder the user reviewed. Says only what was read back from Reminders.
+    /// Prefixes follow the live agent's tool contract: added / declined / unknown / failed.
     public static func reminder(_ action: ReminderAction?) -> String {
         guard let action else {
-            return "declined: the user closed the reminder without adding it. No reminder was created."
+            return "declined: the user closed the reminder without adding it."
         }
         switch action.state {
         case .verifiedSucceeded:
             let when = action.payload.due.map { due -> String in
                 let date = String(format: "%04d-%02d-%02d", due.year, due.month, due.day)
-                return due.hasTime ? " due \(date) \(String(format: "%02d:%02d", due.hour!, due.minute ?? 0))" : " due \(date)"
-            } ?? ""
-            return "created: \"\(action.payload.title)\"\(when) is in Apple Reminders (checked)."
+                let time = due.hasTime ? " \(String(format: "%02d:%02d", due.hour!, due.minute ?? 0))" : ""
+                return "due \(date)\(time) (\(due.timeZoneID))"
+            } ?? "with no due date"
+            return "added: reminder \"\(action.payload.title)\" \(when)."
         case .verifiedFailed where action.errorCode == "permission_denied":
-            return "not created: Doddy has no access to Reminders. Tell the user to allow it in iOS Settings."
+            return "failed: Doddy has no access to Reminders. The user can allow it in iOS Settings."
         case .unknownOutcome:
-            return "unclear: the reminder could not be confirmed in Reminders. Tell the user to check the Reminders app; do not say it was created."
+            return "unknown: the reminder could not be confirmed in Reminders. Ask the user to check the Reminders app before trying again."
         default:
-            return "not created: the reminder was not added."
+            return "failed: the reminder was not added."
         }
     }
 

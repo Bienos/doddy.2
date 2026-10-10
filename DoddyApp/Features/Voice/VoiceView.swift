@@ -57,7 +57,7 @@ struct VoiceView: View {
             await controller.start(auth: auth, server: ServerConfig.client())
         }
         .sheet(item: $reviewingReminder) { reminder in
-            ReminderProposalView(initialTitle: reminder.title, initialDue: reminder.due, sourceMemoryID: nil) { action in
+            ReminderProposalView(initialTitle: reminder.title, initialDue: reminder.due, initialNotes: reminder.notes, sourceMemoryID: nil) { action in
                 Task { await controller?.finishReminder(reminder.toolCallID, action) }
             }
         }

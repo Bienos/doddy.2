@@ -216,8 +216,9 @@ actor MemoryActionStore: ReminderActionStore {
 
 final class ReminderVoiceToolTests: XCTestCase {
     func testCreateReminderToolParsesAndRepliesHonestly() throws {
-        let json = Data(#"{"title":"Call Anna","due":"2026-10-11T17:30"}"#.utf8)
-        XCTAssertEqual(VoiceToolRequest.parse(name: "create_reminder", parametersJSON: json), .createReminder(title: "Call Anna", due: "2026-10-11T17:30"))
+        let json = Data(#"{"title":"Call Anna","due":"2026-10-11T17:30","notes":"about Friday"}"#.utf8)
+        XCTAssertEqual(VoiceToolRequest.parse(name: "create_reminder", parametersJSON: json),
+                       .createReminder(title: "Call Anna", due: "2026-10-11T17:30", notes: "about Friday"))
         XCTAssertEqual(VoiceToolRequest.parse(name: "create_reminder", parametersJSON: Data("{}".utf8)), .invalid(name: "create_reminder", reason: "missing title"))
         XCTAssertTrue(VoiceToolReply.reminder(nil).hasPrefix("declined"))
         let date = Date(timeIntervalSince1970: 1_791_619_200)
@@ -227,9 +228,13 @@ final class ReminderVoiceToolTests: XCTestCase {
         try action.move(to: .pendingExternalWrite, at: date)
         let pending = action
         try action.move(to: .verifiedSucceeded, at: date, externalID: "x")
-        XCTAssertEqual(VoiceToolReply.reminder(action), "created: \"Call Anna\" due 2026-10-11 17:30 is in Apple Reminders (checked).")
+        // The live agent only says "added" when the reply starts with it.
+        XCTAssertEqual(VoiceToolReply.reminder(action), "added: reminder \"Call Anna\" due 2026-10-11 17:30 (Europe/Warsaw).")
         var unknown = pending
         try unknown.move(to: .unknownOutcome, at: date)
-        XCTAssertTrue(VoiceToolReply.reminder(unknown).contains("do not say it was created"))
+        XCTAssertTrue(VoiceToolReply.reminder(unknown).hasPrefix("unknown:"))
+        var failed = ReminderAction(operationID: UUID(), state: .userConfirmed, payload: ReminderPayload(title: "x"), createdAt: date, updatedAt: date)
+        try failed.move(to: .verifiedFailed, at: date, errorCode: "permission_denied")
+        XCTAssertTrue(VoiceToolReply.reminder(failed).hasPrefix("failed:"))
     }
 }

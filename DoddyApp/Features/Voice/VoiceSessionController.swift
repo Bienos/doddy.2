@@ -32,6 +32,7 @@ final class VoiceSessionController {
         let toolCallID: String
         let title: String
         let due: ReminderDueParse
+        let notes: String?
         var id: String { toolCallID }
     }
 
@@ -211,11 +212,11 @@ final class VoiceSessionController {
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
             pendingSave = PendingSave(toolCallID: call.toolCallId, text: text)
-        case .createReminder(let title, let due):
+        case .createReminder(let title, let due, let notes):
             // Nothing reaches Reminders until the user reviews it and taps Add.
             pendingReminder = PendingReminder(
                 toolCallID: call.toolCallId, title: title,
-                due: ReminderDueInput.parse(due, timeZoneID: TimeZone.current.identifier, now: Date()))
+                due: ReminderDueInput.parse(due, timeZoneID: TimeZone.current.identifier, now: Date()), notes: notes)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):

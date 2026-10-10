@@ -46,7 +46,13 @@ Date: 2026-10-10. Built on the owner's instruction "do coding" while the device 
   - permission text in `project.yml`;
   - guard update: EventKit allowed only in the gateway file, and Reminders is the second allowed permission.
 
-## Voice agent: tool to add (owner, ElevenLabs dashboard or connector)
+## Voice agent: tool already exists (checked 2026-10-10)
+The dev agent `agent_0501m4et27vyeawrwqfdxxfszfa6` already has a client tool `create_reminder` (`tool_9901m4f2xyn1exfrx6as0kek55rk`, params `title`, `due`, `notes`, 90 s timeout). It was created from another branch line (e.g. `claude/magical-newton-ip0bx2`). **No second tool was created.**
+- The app's replies now follow that tool's contract: `added:` / `declined:` / `unknown:` / `failed:`.
+- `notes` is passed through to the review screen.
+- Not supported from that contract: "already in Reminders" (repeat confirmations return the existing result as `added`) and "failed: not added yet" (unclear dates are clarified on screen instead).
+
+### Original proposal (superseded by the existing tool)
 Client tool `create_reminder`, **expects a response**, response timeout 120 s:
 ```json
 { "name": "create_reminder",
