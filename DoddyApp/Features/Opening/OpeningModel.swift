@@ -47,15 +47,13 @@ struct OpeningPlay: Equatable, Sendable {
     let reducedMotion: Bool
     /// Open the conversation when the scene ends (Settings → "Start listening when I open Doddy").
     let thenListen: Bool
-    let greeting: OpeningGreeting
     let drawings: OpeningDrawings
     let startedAt: Date
 }
 
-/// Home's state right after the opening: Doddy ready to talk, the hello as the heading, the
-/// buttons sliding in. Over after `OpeningModel.readyFor` seconds.
+/// Home's state right after the opening: Doddy in the listening pose, ready to talk. Over after
+/// `OpeningModel.readyFor` seconds.
 struct OpeningReady: Equatable, Sendable {
-    let greeting: OpeningGreeting
     let since: Date
 }
 
@@ -165,13 +163,12 @@ final class OpeningModel {
             break
         case .scene(let reducedMotion, let thenListen):
             guard let drawings = loadedDrawings() else { return }
-            let greeting = Self.greeting()
             // Home switches to Doddy ready to talk underneath, so it is right when it shows through.
             readyTimer?.cancel()
-            ready = OpeningReady(greeting: greeting, since: now)
+            ready = OpeningReady(since: now)
             handingOver = false
             play = OpeningPlay(
-                reducedMotion: reducedMotion, thenListen: thenListen, greeting: greeting,
+                reducedMotion: reducedMotion, thenListen: thenListen,
                 drawings: drawings, startedAt: now)
         case .listenOnly:
             // Let Home appear first, so the conversation slides up over it as it does from the button.
@@ -182,12 +179,4 @@ final class OpeningModel {
         }
     }
 
-    /// The hello's words, from the same Settings as the voice: language, tone and nickname.
-    static func greeting(defaults: UserDefaults = .standard, locale: Locale = .current) -> OpeningGreeting {
-        OpeningGreetingCopy.render(
-            language: ConversationLanguage.stored(in: defaults),
-            deviceLanguageCode: locale.identifier,
-            formality: PersonalitySettings.stored(in: defaults).formality,
-            nickname: Nickname.stored(in: defaults))
-    }
 }

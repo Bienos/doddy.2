@@ -3,8 +3,8 @@ import SwiftUI
 
 /// Draws the opening (`OpeningScene`, ADR-207) over the whole screen for the time since it
 /// started: a pen sketches Doddy in, he dribbles, crouches, hops and shoots, the ball flies into
-/// the ring ("SWISH!", confetti, a shake), he pops up ready to talk with a hello, and then jumps
-/// into his place on Home while the paper fades and Home shows through. The last frame draws him
+/// the ring ("SWISH!", confetti, a shake), he pops up ready to talk, and then jumps into his
+/// place on Home while the paper fades and Home shows through. The last frame draws him
 /// exactly where Home draws him (`homeTarget`, measured by Home), with the same view
 /// (`CharacterArtImage`), so when this view goes away nothing moves.
 ///
@@ -37,7 +37,7 @@ struct OpeningSceneView: View {
         .contentShape(Rectangle())
         .onTapGesture { skip() }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Doddy's opening. Doddy scores a basket and says: \(play.greeting.spoken)")
+        .accessibilityLabel("Doddy's opening. Doddy scores a basket.")
         .accessibilityHint("Double-tap to skip.")
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("opening.scene")
@@ -96,10 +96,7 @@ struct OpeningSceneView: View {
             if !play.reducedMotion {
                 stage(frame, at: t, drawsReadyDoddy: !inPlace, size: size)
             }
-            if inPlace || t >= OpeningScene.Beat.readyStart {
-                if inPlace { placedDoddy(placed) }
-                bubble(frame.bubble, box: inPlace ? placed.box : court, screenWidth: size.width)
-            }
+            if inPlace { placedDoddy(placed) }
             Text("Tap to skip")
                 .font(.caption)
                 .foregroundStyle(Theme.secondaryText)
@@ -291,7 +288,7 @@ struct OpeningSceneView: View {
             .offset(y: drop)
     }
 
-    // MARK: Ball, burst, bubble
+    // MARK: Ball and burst
 
     private func ball(_ state: OpeningBall, _ w: CGFloat) -> some View {
         let diameter = CGFloat(state.radius) * 2 * w
@@ -348,36 +345,6 @@ struct OpeningSceneView: View {
         .opacity(burst.opacity)
     }
 
-    /// The hello, in a bubble just above Doddy's head (wherever he is), its tail pointing down at
-    /// him. It pops from the tail.
-    private func bubble(_ pop: OpeningBubble, box: ScreenBox, screenWidth: CGFloat) -> some View {
-        let width = CGFloat(OpeningLayout.bubbleWidth) * screenWidth
-        let height = 0.5 * screenWidth
-        let anchor = OpeningHandover.bubbleAnchor(for: box, bubbleWidth: Double(width), screenWidth: Double(screenWidth))
-        return VStack(alignment: .leading, spacing: 4) {
-            Text(play.greeting.headline)
-                .font(.title3.weight(.semibold))
-            Text(play.greeting.question)
-                .font(.body)
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 12)
-        .padding(.bottom, 12 + SpeechBubble.tailHeight)
-        .background {
-            ZStack {
-                SpeechBubble().fill(Theme.quietSurface)
-                SpeechBubble().stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
-            }
-        }
-        .frame(maxWidth: width, alignment: .leading)
-        .fixedSize(horizontal: false, vertical: true)
-        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-        .scaleEffect(CGFloat(max(0, pop.scale)), anchor: .bottomLeading)
-        // The bubble's bottom-left corner sits at the anchor, whatever its size.
-        .frame(width: width, height: height, alignment: .bottomLeading)
-        .position(x: CGFloat(anchor.x) + width / 2, y: CGFloat(anchor.y) - height / 2)
-        .opacity(pop.opacity)
-    }
 }
 
 /// One of the supplied line drawings as strokes, each drawn as far as `progress(index)` says
@@ -452,40 +419,11 @@ private struct BallSeams: Shape {
     }
 }
 
-/// A rounded box with a tail at the left of its bottom edge, drawn as one outline so the stroke
-/// is clean. Corners are quadratic curves, which need no arc direction.
-private struct SpeechBubble: Shape {
-    static let tailHeight: CGFloat = 10
-    var cornerRadius: CGFloat = 18
-
-    func path(in rect: CGRect) -> Path {
-        let r = min(cornerRadius, rect.width / 3)
-        let body = CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height - Self.tailHeight)
-        var path = Path()
-        path.move(to: CGPoint(x: body.minX + r, y: body.minY))
-        path.addLine(to: CGPoint(x: body.maxX - r, y: body.minY))
-        path.addQuadCurve(to: CGPoint(x: body.maxX, y: body.minY + r), control: CGPoint(x: body.maxX, y: body.minY))
-        path.addLine(to: CGPoint(x: body.maxX, y: body.maxY - r))
-        path.addQuadCurve(to: CGPoint(x: body.maxX - r, y: body.maxY), control: CGPoint(x: body.maxX, y: body.maxY))
-        // The tail, near the left end of the bottom edge: down and a little to the left, towards Doddy's head.
-        path.addLine(to: CGPoint(x: body.minX + r + 28, y: body.maxY))
-        path.addLine(to: CGPoint(x: body.minX + r + 10, y: rect.maxY))
-        path.addLine(to: CGPoint(x: body.minX + r + 4, y: body.maxY))
-        path.addLine(to: CGPoint(x: body.minX + r, y: body.maxY))
-        path.addQuadCurve(to: CGPoint(x: body.minX, y: body.maxY - r), control: CGPoint(x: body.minX, y: body.maxY))
-        path.addLine(to: CGPoint(x: body.minX, y: body.minY + r))
-        path.addQuadCurve(to: CGPoint(x: body.minX + r, y: body.minY), control: CGPoint(x: body.minX, y: body.minY))
-        path.closeSubpath()
-        return path
-    }
-}
-
 #Preview("Opening, mid-flight") {
     if let drawings = OpeningDrawings.load() {
         OpeningSceneView(
             play: OpeningPlay(
                 reducedMotion: false, thenListen: false,
-                greeting: OpeningGreeting(headline: "Hey, it's Doddy.", question: "What's up, mate?"),
                 drawings: drawings,
                 startedAt: Date().addingTimeInterval(-1.2)),
             homeTarget: nil, onHandover: {}, onFinished: {})

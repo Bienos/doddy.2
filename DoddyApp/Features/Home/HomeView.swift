@@ -10,8 +10,8 @@ struct HomeView: View {
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Right after the opening (ADR-207) Doddy is ready to talk: the hello is the heading, the
-    /// listening pose is up, and the buttons slide in. Absent in previews and tests.
+    /// Right after the opening (ADR-207) Doddy is ready to talk: the listening pose is up and the
+    /// buttons slide in. Absent in previews and tests.
     @Environment(OpeningModel.self) private var opening: OpeningModel?
     @State private var modal: MemoryModal?
     @State private var showAsk = false
@@ -31,14 +31,13 @@ struct HomeView: View {
                             .font(.caption2).multilineTextAlignment(.trailing)
                             .foregroundStyle(Theme.secondaryText)
                     }
-                    // JourneyHeading's look, with the approved name when there is one; right after
-                    // the opening, Doddy's hello.
+                    // JourneyHeading's look, with the approved name when there is one.
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(ready?.greeting.headline ?? greeting)
+                        Text(greeting)
                             .font(.largeTitle.weight(.medium)).tracking(-1)
                             .accessibilityAddTraits(.isHeader)
                             .accessibilityIdentifier("home.greeting")
-                        Text(ready?.greeting.question ?? "Save a detail.\nFind it when you need it.")
+                        Text("Save a detail.\nFind it when you need it.")
                             .font(.subheadline).foregroundStyle(Theme.secondaryText)
                     }
                     UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)

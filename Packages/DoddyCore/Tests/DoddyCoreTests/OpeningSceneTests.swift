@@ -17,8 +17,7 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertEqual(f.doddy.squashX, 1); XCTAssertEqual(f.doddy.squashY, 1)
         XCTAssertEqual(f.camera.scale, 0.82)
         XCTAssertEqual(f.ball.opacity, 0)
-        XCTAssertEqual(f.bubble.opacity, 0)
-        XCTAssertEqual(f.burst.opacity, 0)
+                XCTAssertEqual(f.burst.opacity, 0)
         XCTAssertEqual(f.setOpacity, 1)
         XCTAssertFalse(f.scored)
     }
@@ -177,12 +176,7 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertEqual(frame(Beat.end).burst.rays, 1, accuracy: 1e-9)
     }
 
-    func testTheHelloComesWithTheReadyPoseAndGoesAsHomeShowsThrough() {
-        XCTAssertGreaterThan(Beat.bubbleIn, Beat.readyStart)
-        XCTAssertEqual(frame(Beat.bubbleIn).bubble.opacity, 0)
-        XCTAssertEqual(frame(Beat.handoverStart).bubble.opacity, 1, accuracy: 1e-9)
-        XCTAssertEqual(frame(Beat.handoverStart).bubble.scale, 1, accuracy: 0.01)
-        XCTAssertEqual(frame(Beat.handoverStart + 0.2).bubble.opacity, 0, accuracy: 1e-9, "the hello moves into Home's heading")
+    func testHomeShowsThroughAsDoddyJumps() {
         XCTAssertEqual(frame(Beat.handoverStart).setOpacity, 1, accuracy: 1e-9)
         XCTAssertEqual(frame(Beat.handoverStart).backdropOpacity, 1, accuracy: 1e-9)
         XCTAssertEqual(frame(Beat.arrive).setOpacity, 0, accuracy: 1e-9)
@@ -222,7 +216,7 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertEqual(box.centerY, (844 - 2 * 390) / 2 + ready.center.y * 390, accuracy: 1e-9)
         XCTAssertEqual(box.height * OpeningHandover.artAspect, ready.width * 390, accuracy: 0.5, "the art's aspect")
         // The camera is 1:1 well before the hand-over starts, so the court box needs no camera.
-        XCTAssertEqual(frame(Beat.bubbleIn).camera.scale, 1, accuracy: 1e-9)
+        XCTAssertEqual(frame(Beat.cameraSettled).camera.scale, 1, accuracy: 1e-9)
         XCTAssertEqual(frame(Beat.handoverStart).camera.shake, StagePoint(x: 0, y: 0))
     }
 
@@ -241,17 +235,6 @@ final class OpeningSceneTests: XCTestCase {
             XCTAssertEqual(OpeningHandover.place(court: court, home: home, at: t, reducedMotion: true),
                            PlacedDoddy(box: home, squashX: 1, squashY: 1, opacity: 1))
         }
-    }
-
-    func testTheHelloSitsAboveHisHeadAndOnTheScreen() {
-        let box = ScreenBox(centerX: 195, centerY: 300, height: 210)
-        let anchor = OpeningHandover.bubbleAnchor(for: box, bubbleWidth: 180, screenWidth: 390)
-        let headTop = box.top + box.height * OpeningLayout.readyHeadFraction
-        XCTAssertEqual(anchor.y, headTop - 4, accuracy: 1e-9)
-        XCTAssertLessThan(anchor.x, box.centerX)
-        // Pushed back on screen near an edge.
-        XCTAssertEqual(OpeningHandover.bubbleAnchor(for: ScreenBox(centerX: 20, centerY: 300, height: 210), bubbleWidth: 180, screenWidth: 390).x, 12)
-        XCTAssertEqual(OpeningHandover.bubbleAnchor(for: ScreenBox(centerX: 380, centerY: 300, height: 210), bubbleWidth: 180, screenWidth: 390).x, 390 - 12 - 180)
     }
 
     func testConfettiFliesUpOutOfTheRingAndFalls() {
@@ -304,7 +287,7 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertEqual(frame(Beat.shotEnd).camera.scale, 1.18, accuracy: 1e-9)
         XCTAssertEqual(frame(Beat.end).camera.scale, 1.0, accuracy: 1e-9)
         XCTAssertEqual(frame(Beat.end).camera.anchor, StagePoint(x: 0.50, y: 1.10))
-        XCTAssertEqual(frame(Beat.bubbleIn).camera.scale, 1.0, accuracy: 1e-9, "1:1 by the hello")
+        XCTAssertEqual(frame(Beat.cameraSettled).camera.scale, 1.0, accuracy: 1e-9, "1:1 before the hand-over")
         for t in stride(from: 0.0, through: Beat.end, by: 0.05) {
             let anchor = frame(t).camera.anchor
             XCTAssertTrue((0...1).contains(anchor.x) && (0...OpeningScene.stageHeight).contains(anchor.y))
@@ -319,7 +302,7 @@ final class OpeningSceneTests: XCTestCase {
         for reduced in [false, true] {
             for t in stride(from: 0.0, through: OpeningScene.duration(reducedMotion: reduced), by: 0.005) {
                 let f = frame(t, reduced: reduced)
-                for value in [f.backdropOpacity, f.setOpacity, f.bubble.opacity, f.burst.opacity, f.hintOpacity, f.ball.opacity, f.doddy.blend, f.doddy.sketch] + f.particles.map(\.opacity) {
+                for value in [f.backdropOpacity, f.setOpacity, f.burst.opacity, f.hintOpacity, f.ball.opacity, f.doddy.blend, f.doddy.sketch] + f.particles.map(\.opacity) {
                     XCTAssertTrue((0...1).contains(value), "\(value) at \(t)")
                 }
                 XCTAssertTrue((0.6...1.3).contains(f.ball.squash))
@@ -347,7 +330,6 @@ final class OpeningSceneTests: XCTestCase {
         }
         XCTAssertEqual(frame(0, reduced: true).backdropOpacity, 1, "Home is covered from the first frame")
         XCTAssertEqual(frame(0.5, reduced: true).backdropOpacity, 1, accuracy: 1e-9)
-        XCTAssertEqual(frame(0.5, reduced: true).bubble.opacity, 1, accuracy: 1e-9)
         XCTAssertTrue(frame(0.5, reduced: true).particles.isEmpty)
         XCTAssertEqual(frame(Beat.stillEnd, reduced: true).backdropOpacity, 0, accuracy: 1e-9)
         XCTAssertTrue(OpeningScene.isFinished(at: Beat.stillEnd, reducedMotion: true))
@@ -373,11 +355,6 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertLessThan(OpeningLayout.gatherHand.y, OpeningLayout.dribbleHand.y)
         XCTAssertLessThan(OpeningLayout.ringCenter.y, OpeningLayout.shotHand.y)
         XCTAssertGreaterThan(OpeningLayout.ringCenter.x, OpeningLayout.shotHand.x)
-        // The bubble sits above the ready Doddy and left of the hoop.
-        XCTAssertLessThan(OpeningLayout.bubbleAnchor.y, ready.origin.y + ready.height * OpeningLayout.readyHeadFraction, "above his head")
-        XCTAssertGreaterThan(OpeningLayout.bubbleAnchor.y, ready.origin.y + ready.height * OpeningLayout.readyHeadFraction - 0.06, "but close to it")
-        XCTAssertLessThan(OpeningLayout.bubbleAnchor.x + OpeningLayout.bubbleWidth, OpeningLayout.ringCenter.x - OpeningLayout.ringWidth / 2)
-        XCTAssertGreaterThan(OpeningLayout.bubbleAnchor.x, 0.05)
     }
 
     func testEasingEndpoints() {

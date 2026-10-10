@@ -93,14 +93,13 @@ button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid 
         <label class="opt"><input type="checkbox" id="slow"> Quarter speed</label>
         <label class="opt"><input type="checkbox" id="reduce"> Reduce Motion (the still picture)</label>
         <label class="opt"><input type="checkbox" id="dark"> Dark appearance</label>
-        <label class="opt"><input type="checkbox" id="polish"> Polish greeting</label>
         <div class="time" id="clock">0.00 s</div>
       </div>
       <div class="group">
         <h3>Beats (seconds)</h3>
         <ul class="beats" id="beats"></ul>
       </div>
-      <p class="fine">Drawings: the four v1.3-r1 basketball poses, read as strokes so the pen can draw them; the ready pose is the app's listening artwork. In the app, the hello stays as Home's heading for eight seconds. The spoken greeting is the live agent's first message, heard only once a conversation really starts, and only if you tap Talk to Doddy or turned on "Start listening when I open Doddy".</p>
+      <p class="fine">Drawings: the four v1.3-r1 basketball poses, read as strokes so the pen can draw them; the ready pose is the app's listening artwork. Doddy's spoken greeting is the live agent's first message, heard only once a conversation starts: when you tap Talk to Doddy, or by itself after the opening while "Start listening when I open Doddy" is on.</p>
     </div>
   </div>
   <svg id="svgwork" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"></svg>
@@ -223,8 +222,6 @@ button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid 
   function bubbleAnchor(box, bw, W) { const w = box.h * 2 / 3, headTop = box.cy - box.h / 2 + box.h * readyHead; return { x: Math.min(Math.max(12, box.cx - w * 0.45), W - 12 - bw), y: headTop - 4 }; }
   const frameAt = (t, r) => r ? still(Math.max(0, t)) : animated(Math.max(0, t));
 
-  // ---- Greeting (OpeningGreetingCopy, casual tone, no nickname)
-  const greeting = (pl) => pl ? ['Hej, tu Doddy.', 'Co słychać? Mogę ci pomóc?'] : ["Hey, it's Doddy.", "What's up, mate?"];
 
   // ---- Drawings: each supplied SVG read into strokes (path data + its group transform), ball left out.
   const work = document.getElementById('svgwork');
@@ -279,7 +276,7 @@ button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid 
     ctx.drawImage(readyImg, x, y, w, h); ctx.restore();
   }
 
-  function render(f, t, words, reduced) {
+  function render(f, t, reduced) {
     const dpr = Math.min(2, window.devicePixelRatio || 1), W = phone.clientWidth, H = phone.clientHeight;
     if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
     const col = { canvas: tok('--canvas'), ink: tok('--ink'), secondary: tok('--secondary'), quiet: tok('--quiet'), separator: tok('--separator'), orange: tok('--orange') };
@@ -356,21 +353,6 @@ button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid 
     // The ready Doddy in screen space from the hand-over: he jumps into his place on Home.
     const court = courtBox(W, H), home = homeTarget(), placed = place(court, home, t, reduced);
     if (inPlace) drawReady(placed.box, placed.sx, placed.sy, placed.op);
-    // The hello, just above his head wherever he is.
-    if (f.bubble.op > 0 && (inPlace || t >= B.readyStart)) {
-      const box = inPlace ? placed.box : court, pad = 16, tail = 10, maxBW = L.bubbleWidth * w, lines = [];
-      const wrap = (text, fnt, lh) => { ctx.font = fnt; const out = []; let line = ''; for (const word of text.split(' ')) { const trial = line ? line + ' ' + word : word; if (ctx.measureText(trial).width > maxBW - pad * 2 && line) { out.push(line); line = word; } else line = trial; } out.push(line); out.forEach((l) => lines.push({ text: l, font: fnt, lh })); };
-      wrap(words[0], '600 19px ' + font, 24); wrap(words[1], '17px ' + font, 22);
-      let tw = 0; for (const l of lines) { ctx.font = l.font; tw = Math.max(tw, ctx.measureText(l.text).width); }
-      const bw = Math.min(maxBW, tw + pad * 2), bh = lines.reduce((s2, l) => s2 + l.lh, 0) + 24 + tail, rr = 18, an = bubbleAnchor(box, bw, W);
-      const left = an.x, bottom = an.y, right = left + bw, tb = bottom - bh, bb2 = bottom - tail;
-      ctx.save(); ctx.globalAlpha = f.bubble.op; ctx.translate(left, bottom); ctx.scale(f.bubble.scale, f.bubble.scale); ctx.translate(-left, -bottom);
-      ctx.beginPath(); ctx.moveTo(left + rr, tb); ctx.lineTo(right - rr, tb); ctx.quadraticCurveTo(right, tb, right, tb + rr); ctx.lineTo(right, bb2 - rr); ctx.quadraticCurveTo(right, bb2, right - rr, bb2);
-      ctx.lineTo(left + rr + 28, bb2); ctx.lineTo(left + rr + 10, bottom); ctx.lineTo(left + rr + 4, bb2); ctx.lineTo(left + rr, bb2); ctx.quadraticCurveTo(left, bb2, left, bb2 - rr); ctx.lineTo(left, tb + rr); ctx.quadraticCurveTo(left, tb, left + rr, tb); ctx.closePath();
-      ctx.fillStyle = col.quiet; ctx.fill(); ctx.strokeStyle = col.ink; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = col.ink; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; let y = tb + 16; for (const l of lines) { ctx.font = l.font; y += l.lh - 6; ctx.fillText(l.text, left + pad, y); y += 6; }
-      ctx.restore();
-    }
     if (f.hint > 0) { ctx.globalAlpha = f.hint; ctx.fillStyle = col.secondary; ctx.font = '12px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('Tap to skip', W / 2, H - 28); ctx.globalAlpha = 1; }
   }
 
@@ -388,29 +370,25 @@ button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid 
   const actions = { bTalk: 'In the app this opens Talk to Doddy: the microphone starts only now, after your tap, and the screen says "Listening" from the real session.',
     bAsk: 'In the app this opens Ask Doddy, for typed questions.', bSave: 'In the app this opens Save a detail.', bFind: 'In the app this opens Find, in your saved notes.' };
   for (const id in actions) document.getElementById(id).addEventListener('click', () => say(actions[id]));
-  // Home underneath: Doddy ready to talk and the hello from the start (covered by the paper),
-  // its own Doddy hidden while the opening's stands in for him, buttons hidden until the hand-over.
-  const homeImg = document.getElementById('homeImg'), readySrc = homeImg.src;
+  // Home underneath: its own Doddy hidden while the opening's stands in for him, buttons hidden
+  // until the hand-over.
   function homeUnderOpening(reduced) {
-    const words = greeting(polish.checked);
-    homeTitle.textContent = words[0]; homeSub.textContent = words[1]; homeImg.src = readySrc;
     homeArt.style.opacity = '0'; clearTimeout(readyTimer);
     if (reduced) home.classList.remove('hidden-buttons'); else home.classList.add('hidden-buttons');
   }
   const handover = () => home.classList.remove('hidden-buttons');
   function homeAfterOpening() {
     homeArt.style.opacity = '1'; home.classList.remove('hidden-buttons'); clearTimeout(readyTimer);
-    readyTimer = setTimeout(() => { homeTitle.textContent = 'A little less to carry.'; homeSub.innerHTML = 'Save a detail.<br>Find it when you need it.'; }, 8000);
   }
 
   // ---- Playback
-  const reduce = document.getElementById('reduce'), slow = document.getElementById('slow'), dark = document.getElementById('dark'), polish = document.getElementById('polish'), clock = document.getElementById('clock');
+  const reduce = document.getElementById('reduce'), slow = document.getElementById('slow'), dark = document.getElementById('dark'), clock = document.getElementById('clock');
   const beatsList = document.getElementById('beats');
   const rows = [['0.00', 'A pen sketches Doddy in', 0], ['0.42', 'The ball pops in; two quick bounces', B.dribbleStart], ['0.78', 'Crouch (squash); the camera punches in', B.gatherStart], ['0.94', 'Up, stretch and hop', B.shotStart],
-    ['1.04', 'Release, follow-through, ghost trail', B.release], ['1.40', 'SWISH! Confetti, shake, ring wobble', B.score], ['1.58', 'Pops up ready to talk; the hello', B.readyStart], ['1.95', 'Jumps into his place on Home; buttons slide in', B.handoverStart], ['2.25', 'Lands (squash) exactly on Home\u2019s Doddy', B.arrive], ['2.40', 'Home', B.end]];
+    ['1.04', 'Release, follow-through, ghost trail', B.release], ['1.40', 'SWISH! Confetti, shake, ring wobble', B.score], ['1.58', 'Pops up ready to talk', B.readyStart], ['1.95', 'Jumps into his place on Home; buttons slide in', B.handoverStart], ['2.25', 'Lands (squash) exactly on Home\u2019s Doddy', B.arrive], ['2.40', 'Home', B.end]];
   for (const [t, label] of rows) { const li = document.createElement('li'); li.innerHTML = '<span class="t">' + t + '</span><span class="label">' + label + '</span>'; beatsList.appendChild(li); }
   let start = performance.now(), shift = 0, playing = true, frozen = null, handedOver = false;
-  try { const q = new URLSearchParams(location.search); if (q.has('t')) frozen = parseFloat(q.get('t')); if (q.get('dark') === '1') dark.checked = true; if (q.get('reduce') === '1') reduce.checked = true; if (q.get('pl') === '1') polish.checked = true; } catch (e) {}
+  try { const q = new URLSearchParams(location.search); if (q.has('t')) frozen = parseFloat(q.get('t')); if (q.get('dark') === '1') dark.checked = true; if (q.get('reduce') === '1') reduce.checked = true; } catch (e) {}
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) reduce.checked = true;
   const applyTheme = () => document.documentElement.setAttribute('data-theme', dark.checked ? 'dark' : 'light');
   function end() { playing = false; canvas.hidden = true; homeAfterOpening(); }
@@ -420,7 +398,7 @@ button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid 
     const reduced = reduce.checked, t = clockAt(now);
     if (playing) {
       if (!handedOver && (reduced || t >= B.handoverStart)) { handedOver = true; handover(); }
-      render(frameAt(t, reduced), t, greeting(polish.checked), reduced);
+      render(frameAt(t, reduced), t, reduced);
       if (frozen === null && t >= duration(reduced)) end();
     }
     clock.textContent = Math.min(t, duration(reduced)).toFixed(2) + ' s' + (playing ? '' : ' (Home)');
@@ -433,7 +411,7 @@ button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid 
   canvas.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); skip(); } });
   document.getElementById('replay').addEventListener('click', replay);
   dark.addEventListener('change', () => { applyTheme(); replay(); });
-  reduce.addEventListener('change', replay); polish.addEventListener('change', replay); slow.addEventListener('change', replay);
+  reduce.addEventListener('change', replay); slow.addEventListener('change', replay);
   applyTheme(); homeUnderOpening(reduce.checked);
   try { if (new URLSearchParams(location.search).get('home') === '1') { frozen = null; end(); } } catch (e) {}
   requestAnimationFrame(tick);
