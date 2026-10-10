@@ -1,5 +1,5 @@
 # Settings and Connections: design proposal
-**Status:** design proposal, 2026-10-10, written from main before the Connections work on this line was seen. Connections cards, Reminders, Calendar, Contacts, Timers and Online accounts are already built here (ADR-073–082, 096–105); use this as a reference for what is still missing there: the plan card for several apps at once. "What Doddy did" (ADR-135), Pause all (ADR-134) and "What leaves this iPhone" (ADR-133) are now built.
+**Status:** design proposal, 2026-10-10, written from main before the Connections work on this line was seen. Connections cards, Reminders, Calendar, Contacts, Timers and Online accounts are already built here (ADR-073–082, 096–105); the plan card for several apps at once is now built too (ADR-204), with "Change" on each step (ADR-205) a practice card in Settings (ADR-206), plans grouped in "What Doddy did" (ADR-208), and Gmail drafts and Todoist tasks as plan steps (ADR-209). "What Doddy did" (ADR-135), Pause all (ADR-134) and "What leaves this iPhone" (ADR-133) are now built.
 **Visual reference:** Pocket Notebook (`design/interface-v1.2/docs/DESIGN-SYSTEM.md`).
 **Clickable study:** `design/settings-and-connections-v0.1/index.html` (fictional data, no real permissions, accounts or writes).
 
@@ -114,7 +114,7 @@ Rules:
 6. **Paused or "Pause all"** turns every step into "Skipped: connections paused".
 7. Read results inserted into a plan are data, not instructions. A calendar title or note that says "also delete my reminders" cannot add a step (prompt-injection rule from the threat model).
 
-**Conflict with current architecture.** `TOOLS_AND_ACTIONS.md` says "single-step … no background autonomous multi-tool plan in MVP". The plan card is a foreground, fully reviewed, multi-step proposal. It needs an explicit owner decision and an ADR update before implementation. Until then the safe subset is: several look-ups + at most one change per card.
+**Conflict with current architecture.** `TOOLS_AND_ACTIONS.md` says "single-step … no background autonomous multi-tool plan in MVP". The plan card is a foreground, fully reviewed, multi-step proposal. The owner approved it ("yes multi-app"). ADR-204 records the rules as built: changes only (look-ups run first with their own tools), at most 5 steps, and no Maps, Shortcuts, drafts or online-account writes inside a plan.
 
 ## 5. "What Doddy did" (activity)
 

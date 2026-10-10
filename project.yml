@@ -14,6 +14,10 @@ packages:
   ElevenLabs:
     url: https://github.com/elevenlabs/elevenlabs-swift-sdk
     exactVersion: 3.3.1
+  # Already pulled in by ElevenLabs; listed so the app can set the call's audio session (ADR-207).
+  LiveKit:
+    url: https://github.com/livekit/client-sdk-swift
+    from: 2.10.0
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -27,6 +31,12 @@ settings:
     # free Apple ID can still build to a device (free teams can't use Push). With a paid team that
     # has Push enabled, set this to DoddyApp/Doddy.entitlements (here or on the xcodebuild line).
     DODDY_PUSH_ENTITLEMENTS: ""
+    # Widgets (ADR-219) read a snapshot from an App Group. Off by default, like push. To turn on:
+    # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements (or Config/Doddy-Push-AppGroup.entitlements
+    # with push) and DODDY_WIDGET_ENTITLEMENTS = Config/DoddyWidgets.entitlements. Without it the
+    # widgets say "Open Doddy to set up widgets" and the app writes nothing.
+    DODDY_APP_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
+    DODDY_WIDGET_ENTITLEMENTS: ""
 targets:
   Doddy:
     type: application
@@ -43,11 +53,12 @@ targets:
       - package: DoddyCore
         product: DoddyPersistence
       - package: ElevenLabs
+      - package: LiveKit
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER)
-        CODE_SIGN_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_APP_ENTITLEMENTS)
         PRODUCT_NAME: Doddy
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
@@ -68,16 +79,20 @@ targets:
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyWidgets:
-    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen)
-    # and, on iOS 18+, the "Talk to Doddy" control (Control Center, Lock Screen, Action Button).
-    # No networking, no data of its own.
+    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen),
+    # on iOS 18+ the "Talk to Doddy" and "New note" controls, and the Home and Lock Screen widgets
+    # (ADR-219), which only read the App Group snapshot the app writes. No networking, no database.
     type: app-extension
     platform: iOS
     sources:
       - path: DoddyWidgets
       - path: Shared
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
     settings:
       base:
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WIDGET_ENTITLEMENTS)
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).widgets
         PRODUCT_NAME: DoddyWidgets
         MARKETING_VERSION: "0.0.1"

@@ -18,7 +18,7 @@ public struct NoteReminderVoiceDraft: Equatable, Sendable {
     /// The note's text as the agent quoted it.
     public let noteText: String
     public let target: NoteReminderVoiceTarget
-    /// A time reminder that repeats (ADR-205): the weekday, day and clock time come from the time.
+    /// A time reminder that repeats (ADR-211): the weekday, day and clock time come from the time.
     public let repeats: ReminderRepeat?
 
     public init(noteText: String, target: NoteReminderVoiceTarget, repeats: ReminderRepeat? = nil) {

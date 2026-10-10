@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// Translator mode screens (ADR-209), after the "Doddy Translator" canvas: start (1), face to face
+// Translator mode screens (ADR-215), after the "Doddy Translator" canvas: start (1), face to face
 // (4, 5, 6, 7, 8), listen only (6b) and the end (9). Their half shows their language's own lines;
 // the owner's half uses the owner's language for the translated text and English for the app.
 
@@ -204,6 +204,15 @@ struct TranslatorScreen: View {
                 .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
             if let careful = session.careful {
                 Label(careful.banner, systemImage: "exclamationmark.shield").font(.footnote)
+            }
+            Toggle("Read aloud", isOn: Binding(get: { controller.readsAloud }, set: { controller.setReadAloud($0) }))
+                .accessibilityIdentifier("translator.readAloud")
+            Text(controller.readsAloud
+                 ? "Doddy says each translation to you. Earphones keep it to you."
+                 : "Silent: read the lines below. Doddy's voice is off on this iPhone only.")
+                .font(.caption).foregroundStyle(Theme.secondaryText)
+            if let problem = controller.readAloudProblem {
+                Label(problem, systemImage: "speaker.slash").font(.footnote).foregroundStyle(Theme.error)
             }
             ScrollViewReader { proxy in
                 ScrollView {

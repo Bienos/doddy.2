@@ -214,4 +214,20 @@ extension TranslatorTests {
         XCTAssertTrue(row.what.contains("other person's voice"))
         XCTAssertTrue(row.note?.contains("Listen only hears whoever is near you") == true)
     }
+
+    /// The native-review sheet is made from the code; regenerate it with
+    /// `DODDY_WRITE_REVIEW_SHEET=1 swift test --filter testReviewSheetMatchesTheCode`.
+    func testReviewSheetMatchesTheCode() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("docs/implementation/TRANSLATOR_LANGUAGE_REVIEW.md")
+        let sheet = TranslatorReviewSheet.markdown()
+        if ProcessInfo.processInfo.environment["DODDY_WRITE_REVIEW_SHEET"] == "1" {
+            try sheet.write(to: url, atomically: true, encoding: .utf8)
+        }
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), sheet)
+        XCTAssertEqual(sheet.components(separatedBy: "\n").filter { $0.hasPrefix("| ") && !$0.hasPrefix("| Code") }.count,
+                       TranslatorLanguages.all.count - 1)
+    }
 }

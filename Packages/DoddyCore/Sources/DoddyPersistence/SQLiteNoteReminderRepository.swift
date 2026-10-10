@@ -34,13 +34,19 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
         try await dbQueue.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM note_reminders") ?? 0 }
     }
 
+    public func isList(memoryID: UUID) async -> Bool {
+        (try? await dbQueue.read { db in
+            try String.fetchOne(db, sql: "SELECT category FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
+        }) == MemoryCategory.list.rawValue
+    }
+
     public func currentText(ofMemory memoryID: UUID) async throws -> String? {
         try await dbQueue.read { db in
             guard let row = try Row.fetchOne(
                 db, sql: "SELECT current_text, category FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
             else { return nil }
             let text: String = row["current_text"]
-            // A list's reminder shows what is still open (ADR-210), rewritten when the list changes.
+            // A list's reminder shows what is still open (ADR-216), rewritten when the list changes.
             guard (row["category"] as String) == MemoryCategory.list.rawValue else { return text }
             let open = try String.fetchAll(
                 db, sql: "SELECT text FROM list_items WHERE list_id = ? AND done_at_ms IS NULL ORDER BY position",

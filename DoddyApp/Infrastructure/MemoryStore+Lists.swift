@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// One list change that can be taken back exactly (ADR-210). Undo reverses only this change:
+/// One list change that can be taken back exactly (ADR-216). Undo reverses only this change:
 /// added items are removed if still open, ticks are unticked, removed items are put back.
 struct ListUndo: Equatable, Identifiable {
     enum Change: Equatable {
@@ -115,5 +115,41 @@ extension UserFacingError {
         case .notFound: return "That list no longer exists."
         case .notANote: return "Lists and notes can't be turned into each other."
         }
+    }
+}
+
+/// Photo notes (ADR-218): the file is written and read back first, then linked to its note.
+extension MemoryStore {
+    func photo(for memoryID: UUID) -> MemoryPhoto? { photos[memoryID] }
+
+    func photoData(_ photo: MemoryPhoto) async -> Data? {
+        let files = environment.photoFiles
+        return await Task.detached(priority: .userInitiated) { files.data(photo.fileName) }.value
+    }
+
+    @discardableResult
+    func attachPhoto(jpeg: Data, width: Int, height: Int, to memoryID: UUID) async throws -> MemoryPhoto {
+        // The file name comes from the note's id, so writing over an existing photo and then
+        // failing would lose it. A note gets a photo only while it has none.
+        guard photos[memoryID] == nil else { throw PhotoError.alreadyAttached }
+        let fileName = MemoryPhoto.fileName(for: memoryID)
+        try environment.photoFiles.write(jpeg, fileName: fileName)
+        do {
+            let photo = try await environment.photoRepository.attach(
+                MemoryPhoto(memoryID: memoryID, fileName: fileName, width: width, height: height, addedAt: Date()))
+            await reload()
+            return photo
+        } catch {
+            environment.photoFiles.delete(fileName)
+            throw error
+        }
+    }
+
+    /// Removes the photo from its note; the note's words stay.
+    func removePhoto(from memoryID: UUID) async throws {
+        if let removed = try await environment.photoRepository.detach(memoryID: memoryID) {
+            environment.photoFiles.delete(removed.fileName)
+        }
+        await reload()
     }
 }

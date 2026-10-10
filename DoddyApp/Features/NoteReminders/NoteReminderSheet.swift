@@ -23,7 +23,7 @@ struct NoteReminderSheet: View {
     @State private var showExplainer = false
     @State private var atPlace = false
     @State private var working = false
-    /// Never (nil), every day, weekdays, every week or every month (ADR-205).
+    /// Never (nil), every day, weekdays, every week or every month (ADR-211).
     @State private var repeatRule: ReminderRepeat?
 
     private var resolvedDate: Date {

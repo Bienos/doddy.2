@@ -21,13 +21,17 @@ public struct DataFlowState: Equatable, Sendable {
     public var pushOn: Bool
     /// The user turned on the server copy of their notes for phone calls.
     public var memoryCopyOn: Bool
+    /// The morning check-in is on (ADR-220).
+    public var morningCheckInOn: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
         connectionsOn: Set<VoiceConnection>, pauseAll: Bool, doddyServerSet: Bool,
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
-        messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false
+        messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
+        morningCheckInOn: Bool = false
     ) {
+        self.morningCheckInOn = morningCheckInOn
         self.rememberConversations = rememberConversations
         self.shareProfileWithVoice = shareProfileWithVoice
         self.tokenServerSet = tokenServerSet
@@ -60,6 +64,7 @@ public enum DataFlow {
         let apps = state.pauseAll ? [] : state.connectionsOn
         var voice = ["your voice", "the conversation", "your saved notes", "your list names (items only when Doddy reads or changes a list)", "your personality settings"]
         if state.rememberConversations { voice.append("your last few conversations") }
+        if state.morningCheckInOn { voice.append("today's Doddy reminders and lists with things left, when you talk through the morning check-in") }
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
         if !apps.isEmpty { voice.append("calendar entries, reminders, contact names or drafts Doddy uses (\(names(apps)))") }
         if state.doddyServerSet && !state.pauseAll { voice.append("results from your online accounts that Doddy uses") }
@@ -84,6 +89,11 @@ public enum DataFlow {
                 what: "The other person's voice too, and everything said while translating. Opened from Translate on Home, your notes, conversations and profile aren't sent. Started in a conversation, what Doddy already had in it stays there, and he is told never to repeat it to them.",
                 when: "Only while translator mode is on.", isActive: true,
                 note: "Listen only hears whoever is near you. Nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes of the end."),
+            DataFlowRow(
+                id: "backup", destination: "Where you save a backup file",
+                what: "Your notes, lists, photos, time reminders and About you answers, locked with your passphrase.",
+                when: "Only when you make a backup file and choose where to save it.", isActive: true,
+                note: "Doddy has no copy of the passphrase or the file. Without the passphrase nobody can open it."),
             DataFlowRow(
                 id: "lookups", destination: "Open-Meteo and Wikipedia",
                 what: "A place name and its coordinates; search words.",

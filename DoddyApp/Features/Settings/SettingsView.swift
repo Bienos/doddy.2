@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(ProfileStore.self) private var profiles
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var connections = ConnectionController()
@@ -22,6 +23,8 @@ struct SettingsView: View {
     @State private var confirmDeleteAll = false
     @State private var choosingRestoreFile = false
     @State private var restorePlan: MemoryRestorePlan?
+    /// List items from the same file (ADR-216), put back after their lists.
+    @State private var restoreItems: [ListItem] = []
     @State private var restoreMessage: String?
     @State private var restoreFailed = false
     @State private var deleteError: String?
@@ -138,7 +141,7 @@ struct SettingsView: View {
                 Section("Your memories") {
                     StatusRow(title: "Saved on this iPhone", value: "\(store.memories.count)")
                     ShareLink(
-                        item: JSONExport(records: store.memories),
+                        item: JSONExport(records: store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items)),
                         preview: SharePreview("Doddy memories (JSON)")
                     ) {
                         Label("Export as JSON", systemImage: "square.and.arrow.up")
@@ -151,6 +154,14 @@ struct SettingsView: View {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
                     .disabled(store.memories.isEmpty)
+                    ShareLink(
+                        item: MarkdownFileExport(records: store.memories, lists: store.lists),
+                        preview: SharePreview("Doddy memories (Markdown)")
+                    ) {
+                        Label("Export as Markdown", systemImage: "doc.richtext")
+                    }
+                    .disabled(store.memories.isEmpty)
+                    .accessibilityIdentifier("settings.exportMarkdown")
                     Button {
                         restoreMessage = nil
                         choosingRestoreFile = true
@@ -170,9 +181,31 @@ struct SettingsView: View {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
+                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos added to notes stay on this iPhone and aren't in exports; deleting a note deletes its photo. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                }
+
+                MorningCheckInSettingsSection()
+
+                BackupSettingsSection()
+
+                // Widgets (ADR-219): what they show, and the switch that empties the shared file.
+                Section("Widgets") {
+                    if WidgetSync.shared.isAvailable {
+                        Toggle("Show notes and lists in widgets", isOn: $widgetsOn)
+                            .accessibilityIdentifier("settings.widgetsOn")
+                        Text(widgetsOn
+                             ? "Widgets show your pinned notes, your next reminders and your lists, shortened. They're kept in a file only Doddy and its widgets can open. On the Lock Screen, iOS hides the text until you unlock. Ticking from a widget needs your iPhone unlocked."
+                             : "Widgets show nothing of yours, and the widgets' file holds nothing of yours.")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        if let problem = WidgetSync.shared.problem {
+                            Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+                        }
+                    } else {
+                        Text("This build of Doddy can't share anything with widgets (it isn't signed with Doddy's App Group), so widgets show only \"Open Doddy\".")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
                 }
 
                 Section("Privacy") {
@@ -356,6 +389,12 @@ struct SettingsView: View {
                         StatusRow(title: "What Doddy did", value: activitySummary)
                     }
                     .accessibilityIdentifier("settings.activity")
+                    NavigationLink {
+                        PlanPracticeView()
+                    } label: {
+                        Label("Try a plan card", systemImage: "checklist")
+                    }
+                    .accessibilityIdentifier("settings.planPractice")
                 } header: {
                     Text("Connections")
                 } footer: {
@@ -596,8 +635,10 @@ struct SettingsView: View {
             guard size <= MemoryRestore.maxFileBytes else {
                 throw MemoryRestoreError.tooLarge(bytes: size, maximum: MemoryRestore.maxFileBytes)
             }
-            let file = try MemoryRestore.read(try Data(contentsOf: url))
-            let plan = MemoryRestore.plan(file.records, existing: store.memories, exportedAt: file.exportedAt)
+            let data = try Data(contentsOf: url)
+            let file = try MemoryRestore.read(data)
+            restoreItems = try MemoryRestore.listItems(data)
+            let plan = MemoryRestore.plan(file.records, existing: store.memories + store.lists.map(\.record), exportedAt: file.exportedAt)
             if plan.isEmpty {
                 restoreFailed = false
                 restoreMessage = RestoreCopy.nothingToAdd(plan)
@@ -613,7 +654,8 @@ struct SettingsView: View {
     private func restore(_ plan: MemoryRestorePlan) async {
         restorePlan = nil
         do {
-            let added = try await store.restore(plan.toAdd)
+            let added = try await store.restore(plan.toAdd, listItems: restoreItems)
+            restoreItems = []
             restoreFailed = false
             restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."
         } catch {
@@ -793,13 +835,28 @@ struct ProfileTextExport: Transferable {
     }
 }
 
+/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
+struct MarkdownFileExport: Transferable {
+    let records: [MemoryRecord]
+    let lists: [DoddyList]
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
+            Data(MarkdownExport.markdown(export.records, lists: export.lists, exportedAt: Date()).utf8)
+        }
+        .suggestedFileName("doddy-memories.md")
+    }
+}
+
 /// JSON export file for the share sheet (format: `MemoryExport.json`).
 struct JSONExport: Transferable {
     let records: [MemoryRecord]
+    /// List items (ADR-216); their lists are among `records`.
+    let listItems: [ListItem]
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .json) { export in
-            try MemoryExport.json(export.records, exportedAt: Date())
+            try MemoryExport.json(export.records, listItems: export.listItems, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
     }

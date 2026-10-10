@@ -2,8 +2,10 @@ import AVFAudio
 import DoddyCore
 import ElevenLabs
 import Foundation
+import LiveKit
 import Observation
 import UIKit
+import os
 
 /// One voice conversation with the ElevenLabs agent. State shown in the UI comes only from real
 /// SDK events (connected, listening, speaking, disconnected), never from timers.
@@ -44,16 +46,18 @@ final class VoiceSessionController {
         /// agent's quote matched, shown exactly with when it was saved; nothing is set until the
         /// user taps Set reminder. The user can change the time, or arrive/leave, on the card.
         case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, savedAt: Date?, target: NoteReminderCardTarget)
-        /// "Start translating?" (ADR-209). The user can change either language on the card.
+        /// "Start translating?" (ADR-215). The user can change either language on the card.
         case translator(toolCallID: String, setup: TranslatorSetup)
-        /// "Start a new list?" (ADR-210, L2). The user can fix the name on the card.
+        /// "Start a new list?" (ADR-216, L2). The user can fix the name on the card.
         case createList(toolCallID: String, name: String, items: [String])
+        /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
+        case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
-                 .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _):
+                 .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _):
                 id
             }
         }
@@ -89,6 +93,22 @@ final class VoiceSessionController {
         let matches: [DeviceConnections.ContactMatch]
     }
 
+    /// Each step of a confirmed plan with its own result, as logged in "What Doddy did". It stays
+    /// on screen after the conversation ends, like the reminder receipt.
+    struct PlanStatus: Equatable {
+        let steps: [PlanStep]
+        var results: [Int: ActivityEntry] = [:]
+        var isRunning = true
+    }
+
+    /// What Doddy's server prepared for one online-account step of a plan (ADR-209).
+    struct PlanCloudApproval: Equatable {
+        let preview: ToolPreview
+        let approvalID: UUID
+        let mode: ConnectedAppsMode
+        let preparedAt: Date
+    }
+
     /// The receipt after the user tapped Add on a reminder card (M4). It stays on screen after
     /// the conversation ends, because the agent may never hear the answer (its wait can time out).
     enum ReminderStatus: Equatable {
@@ -107,18 +127,29 @@ final class VoiceSessionController {
     static private(set) var conversationInProgress = false
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
+    /// the agent is never told or asked (ADR-202).
+    var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
     private(set) var reminderStatus: ReminderStatus?
     private(set) var noteReminderStatus: NoteReminderStatus?
+    /// Which steps of the plan card are ticked. Every step that can run starts ticked.
+    private(set) var planTicked: Set<Int> = []
+    /// Steps the user changed on the card (ADR-205); the agent is told when it gets the results.
+    private(set) var planChanged: Set<Int> = []
+    /// Gmail and Todoist steps on the plan card: the server's preview and its one-time approval
+    /// for exactly these arguments (ADR-209).
+    private(set) var planCloud: [Int: PlanCloudApproval] = [:]
+    private(set) var planStatus: PlanStatus?
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false { didSet { syncIsland() } }
-    /// The last list change made by voice (ADR-210): what changed, its Undo, and items Doddy
+    /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
-    /// Translator mode (ADR-209), in memory only. While it is set the app runs no tool and the
+    /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession?
     /// The end screen after translating: the text stays in memory for five minutes for Copy or
@@ -131,6 +162,12 @@ final class VoiceSessionController {
     private(set) var heldSide: TranslatorDirection?
     /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
     private var translatorNeedsHello = false
+    /// Listen only: "Read aloud" off sets Doddy's voice to silent on this iPhone (the lines still
+    /// show). `readAloudProblem` is set when the silence couldn't be checked.
+    private(set) var readsAloud = true
+    private(set) var readAloudProblem: String?
+    /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
+    private var checkInNeedsBriefing = false
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
@@ -139,7 +176,17 @@ final class VoiceSessionController {
     private var asked: [String: ActivityRequest] = [:]
     /// Changes the user confirmed that are running now, logged "in progress" before they ran.
     private var started: [String: ActivityEntry] = [:]
+    /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
+    private var askedPlans: [String: [PlanStep]] = [:]
     private let island = VoiceLiveActivity()
+    /// True while iOS has paused Doddy's audio because another app took the audio session
+    /// (`AVAudioSession` interruption). Real system events only, never a guess.
+    private(set) var audioPausedByOtherApp = false
+    /// What iOS last said about the audio session (reason and session setup), shown in small print
+    /// on the voice screen so a failure can be read without Xcode. No speech or notes in it.
+    private(set) var audioNote: String?
+    @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
+    private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     private let devices = DeviceConnections()
     private var conversation: Conversation?
     private var startedAt: Date?
@@ -148,7 +195,7 @@ final class VoiceSessionController {
     var isPrivate = false {
         didSet { if privacyLocked { isPrivate = true } }
     }
-    /// Set once translator mode is on (ADR-209): the conversation stays private to the end.
+    /// Set once translator mode is on (ADR-215): the conversation stays private to the end.
     private(set) var privacyLocked = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
@@ -168,9 +215,15 @@ final class VoiceSessionController {
 
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
     /// Settings → About you → "Use in voice conversations" is on.
-    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil) async {
+    func start(
+        _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
+        checkIn: MorningBriefing? = nil
+    ) async {
         guard !isLive else { return }
         lines = []
+        // A translator start sends no notes or lists, so it never carries a check-in too.
+        let checkIn = preset == nil ? checkIn : nil
+        checkInNeedsBriefing = checkIn != nil
         translator = nil
         listReceipt = nil
         translatorSummary = nil
@@ -178,14 +231,19 @@ final class VoiceSessionController {
         holdToTalk = false
         heldSide = nil
         translatorNeedsHello = false
+        readsAloud = true
+        readAloudProblem = nil
         privacyLocked = false
         pendingAction = nil
         contactCard = nil
         reminderStatus = nil
         noteReminderStatus = nil
+        planStatus = nil
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
+        audioPausedByOtherApp = false
+        audioNote = nil
 
         // Not set up: say so without asking for the microphone first.
         if case .notSetUp(let reason) = mode {
@@ -243,6 +301,7 @@ final class VoiceSessionController {
                 ProfilePrompt.variableName: profileText,
                 TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
                 ListsPrompt.variableName: listsText,
+                MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
             ],
             userId: Self.userID())
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
@@ -301,6 +360,7 @@ final class VoiceSessionController {
         // Closed while the token was being fetched: don't open the microphone after all.
         guard phase == .connecting else { return }
 
+        Self.allowOtherAppsAudio()
         do {
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
             guard isLive else {
@@ -309,6 +369,8 @@ final class VoiceSessionController {
                 return
             }
             conversation = started
+            watchAudioInterruptions()
+            Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
             // An agent that doesn't allow the voice overrides refuses the conversation.
             let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
@@ -318,8 +380,64 @@ final class VoiceSessionController {
         }
     }
 
+    /// Keeps the conversation going when the user opens another app that plays or records sound
+    /// (ADR-207). The SDK's default call session is not mixable, so another app starting its own
+    /// audio session pauses Doddy at once and nothing brings him back. A mixable session is not
+    /// paused that way. Cost: the other app's sound plays along with Doddy's, and the microphone
+    /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
+    /// `.mixWithOthers`. Not verified on a device.
+    private static func allowOtherAppsAudio() {
+        #if swift(>=6.2)
+        let routes: AVAudioSession.CategoryOptions = [.allowBluetoothHFP, .allowBluetoothA2DP, .allowAirPlay]
+        #else
+        let routes: AVAudioSession.CategoryOptions = [.allowBluetooth, .allowBluetoothA2DP, .allowAirPlay]
+        #endif
+        AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
+            category: .playAndRecord,
+            categoryOptions: routes.union([.defaultToSpeaker, .mixWithOthers]),
+            mode: .videoChat)
+    }
+
+    /// Reports iOS audio interruptions (for example another app opening its own audio) as they
+    /// happen: on screen, in the log, and as `audioPausedByOtherApp`.
+    private func watchAudioInterruptions() {
+        guard interruptionObserver == nil else { return }
+        let ref = WeakRef(self)
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { note in
+            let info = note.userInfo
+            let began = (info?[AVAudioSessionInterruptionTypeKey] as? UInt) == AVAudioSession.InterruptionType.began.rawValue
+            let reason = (info?[AVAudioSessionInterruptionReasonKey] as? UInt)
+                .flatMap(AVAudioSession.InterruptionReason.init(rawValue:))
+                .map { "\($0)" } ?? "not given"
+            Task { @MainActor in ref.value?.audioInterruption(began: began, reason: reason) }
+        }
+    }
+
+    private func stopWatchingAudioInterruptions() {
+        if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
+        interruptionObserver = nil
+        audioPausedByOtherApp = false
+    }
+
+    private func audioInterruption(began: Bool, reason: String) {
+        guard isLive else { return }
+        audioPausedByOtherApp = began
+        let note = "\(began ? "iOS paused Doddy's audio" : "iOS gave Doddy's audio back") (reason: \(reason)). Session: \(Self.describeAudioSession())."
+        audioNote = note
+        Self.audioLog.notice("\(note, privacy: .public)")
+    }
+
+    private static func describeAudioSession() -> String {
+        let session = AVAudioSession.sharedInstance()
+        let mixing = session.categoryOptions.contains(.mixWithOthers) ? "mixing with other apps ON" : "mixing with other apps OFF"
+        return "\(session.category.rawValue), mode \(session.mode.rawValue), \(mixing), other app audio playing: \(session.isOtherAudioPlaying)"
+    }
+
     func stop() async {
         endTranslator()
+        stopWatchingAudioInterruptions()
         let active = conversation
         conversation = nil
         pendingAction = nil
@@ -377,7 +495,8 @@ final class VoiceSessionController {
         case .memory(let id, let text):
             do {
                 // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
-                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
+                pendingMemoryCategory = .other
                 savedThisConversation += 1
                 await reply(id, VoiceToolReply.saved(record))
             } catch {
@@ -441,6 +560,8 @@ final class VoiceSessionController {
             } catch {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
+        case .plan(let id, let steps, let blocked):
+            await runPlan(id, steps: steps, blocked: blocked)
         }
     }
 
@@ -530,7 +651,9 @@ final class VoiceSessionController {
         guard let action = pendingAction else { return }
         pendingAction = nil
         switch action {
-        case .memory(let id, _): await reply(id, VoiceToolReply.declined)
+        case .memory(let id, _):
+            pendingMemoryCategory = .other
+            await reply(id, VoiceToolReply.declined)
         case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
         case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
@@ -541,10 +664,17 @@ final class VoiceSessionController {
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
+        case .plan(let id, let steps, _):
+            askedPlans[id] = nil
+            let planID = UUID()
+            for step in steps {
+                logPlanStep(step, reply: PlanReply.declined, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
+            }
+            await reply(id, PlanReply.declined)
         }
     }
 
-    // MARK: Lists (ADR-210)
+    // MARK: Lists (ADR-216)
 
     /// The list the agent named, matched exactly; on no match or several, the agent gets the
     /// list names and asks. Nothing changes in either case.
@@ -664,7 +794,7 @@ final class VoiceSessionController {
         pendingAction = .createList(toolCallID: id, name: name, items: items)
     }
 
-    // MARK: Translator mode (ADR-209)
+    // MARK: Translator mode (ADR-215)
 
     /// The owner's language when the agent didn't say: Settings' starting language, else the iPhone's.
     static var ownerLanguage: TranslatorLanguage {
@@ -694,6 +824,7 @@ final class VoiceSessionController {
         guard let session = translator else { return }
         translator = nil
         translatorNeedsHello = false
+        if !readsAloud { setReadAloud(true) }
         if holdToTalk {
             holdToTalk = false
             heldSide = nil
@@ -753,6 +884,26 @@ final class VoiceSessionController {
         }
     }
 
+    /// Listen only: Doddy's spoken translation on or off. Only the playback on this iPhone changes
+    /// (LiveKit's local volume for the agent's track); ElevenLabs still makes the audio. Read back
+    /// from the track; if there is no track yet, it is applied when Doddy first speaks.
+    func setReadAloud(_ on: Bool) {
+        readsAloud = on
+        applyReadAloud()
+    }
+
+    private func applyReadAloud() {
+        guard let track = conversation?.agentAudioTrack else {
+            readAloudProblem = nil
+            return
+        }
+        let wanted: Double = readsAloud ? 1 : 0
+        track.volume = wanted
+        readAloudProblem = abs(track.volume - wanted) < 0.01
+            ? nil
+            : "Doddy's voice couldn't be turned off here. Turn the iPhone's volume down instead."
+    }
+
     /// Noisy place: mute the microphone except while a hold-to-talk button is held.
     func setHoldToTalk(_ on: Bool) async {
         guard translator?.setup.kind == .faceToFace, conversation != nil else { return }
@@ -805,6 +956,29 @@ final class VoiceSessionController {
         }
     }
 
+    /// Ticks or unticks one step of the plan card. Blocked steps stay unticked.
+    func togglePlanStep(_ number: Int) {
+        guard case .plan(_, let steps, let blocked) = pendingAction,
+              steps.contains(where: { $0.number == number }), blocked[number] == nil else { return }
+        if planTicked.contains(number) { planTicked.remove(number) } else { planTicked.insert(number) }
+    }
+
+    /// "Change" on a step: the edit was already checked by `PlanStepForm.apply`. The kind of step,
+    /// and so its app and its block, stay the same.
+    func replacePlanStep(_ step: PlanStep) {
+        guard case .plan(let id, var steps, let blocked) = pendingAction,
+              let index = steps.firstIndex(where: { $0.number == step.number }),
+              steps[index].toolName == step.toolName, blocked[step.number] == nil else { return }
+        steps[index] = step
+        planChanged.insert(step.number)
+        pendingAction = .plan(toolCallID: id, steps: steps, blocked: blocked)
+    }
+
+    func dismissPlanStatus() {
+        guard planStatus?.isRunning == false else { return }
+        planStatus = nil
+    }
+
     func dismissContactCard() {
         contactCard = nil
     }
@@ -845,7 +1019,9 @@ final class VoiceSessionController {
         guard isLive else { return }
         switch state {
         case .listening: phase = .listening
-        case .speaking: phase = .speaking
+        case .speaking:
+            phase = .speaking
+            if !readsAloud { applyReadAloud() }
         case .thinking: phase = .thinking
         }
     }
@@ -866,6 +1042,10 @@ final class VoiceSessionController {
             return
         }
         lines.append(Line(fromUser: fromUser, text: text))
+        if !fromUser, checkInNeedsBriefing {
+            checkInNeedsBriefing = false
+            Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
+        }
     }
 
     private func correct(_ original: String, to corrected: String) {
@@ -878,12 +1058,14 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
     }
 
     private func disconnected() {
         endTranslator()
+        stopWatchingAudioInterruptions()
         conversation = nil
         pendingAction = nil
         keepLog()
@@ -893,9 +1075,14 @@ final class VoiceSessionController {
 
     private func handle(_ call: ClientToolCallEvent) async {
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
-        // Translating: no tool runs at all (ADR-209). Checked before anything is looked up or logged.
+        // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
+        // is looked up or logged.
         if translator != nil, !TranslatorPolicy.allows(request) {
             await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))
+            return
+        }
+        if call.toolName == VoiceToolName.proposePlan {
+            await handlePlan(call)
             return
         }
         asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
@@ -918,6 +1105,7 @@ final class VoiceSessionController {
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
+            pendingMemoryCategory = .other
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
         case .readCalendar(let range):
             guard devices.access(for: .calendar) == .granted else {
@@ -1021,6 +1209,192 @@ final class VoiceSessionController {
         case .invalid(_, let reason):
             await reply(call.toolCallId, VoiceToolReply.failed("The request was incomplete (\(reason))."), isError: true)
         }
+    }
+
+    // MARK: Plan card (ADR-204)
+
+    /// Every step is parsed and checked as if asked on its own. A step the app can't run (paused,
+    /// switched off, no iOS permission) is shown with the reason instead of being dropped.
+    private func handlePlan(_ call: ClientToolCallEvent) async {
+        let steps: [PlanStep]
+        switch PlanProposal.parse(parametersJSON: call.parametersData) {
+        case .refused(let text):
+            await reply(call.toolCallId, text)
+            return
+        case .plan(let parsed):
+            steps = parsed
+        }
+        guard pendingAction == nil else {
+            // One card at a time, as in propose(_:toolCallID:).
+            await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
+            return
+        }
+        var blocked: [Int: PlanBlock] = [:]
+        planCloud = [:]
+        for step in steps {
+            if let block = await planBlock(for: step) {
+                blocked[step.number] = block
+                if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
+            } else if let call = step.cloudCall {
+                // As a single card: the server checks the switch, the connection and the arguments,
+                // and returns the preview the card shows with an approval for exactly these.
+                switch await prepareCloud(call) {
+                case .ready(let approval): planCloud[step.number] = approval
+                case .blocked(let block): blocked[step.number] = block
+                }
+            }
+        }
+        // Nothing could run: answer now instead of showing a card with nothing to tick.
+        guard blocked.count < steps.count else {
+            let planID = UUID()
+            var results: [(step: PlanStep, reply: String)] = []
+            for step in steps {
+                let text = blocked[step.number]?.reply ?? PlanReply.unticked
+                logPlanStep(step, reply: text, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
+                results.append((step, text))
+            }
+            await reply(call.toolCallId, PlanReply.summary(results))
+            return
+        }
+        planTicked = Set(steps.map(\.number)).subtracting(blocked.keys)
+        planChanged = []
+        askedPlans[call.toolCallId] = steps
+        propose(.plan(toolCallID: call.toolCallId, steps: steps, blocked: blocked), toolCallID: call.toolCallId)
+    }
+
+    /// Ticked steps run one after another, each through the same path as its single card, and each
+    /// gets its own result. A step that fails doesn't stop the others; none is retried.
+    private func runPlan(_ toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock]) async {
+        askedPlans[toolCallID] = nil
+        let ticked = planTicked
+        let changed = planChanged
+        let approvals = planCloud
+        let planID = UUID()
+        planStatus = PlanStatus(steps: steps)
+        var results: [(step: PlanStep, reply: String)] = []
+        for step in steps {
+            let ref = ActivityPlanRef(id: planID, step: step.number, count: steps.count)
+            var startedEntry: ActivityEntry?
+            let text: String
+            if let block = blocked[step.number] {
+                text = block.reply
+            } else if !ticked.contains(step.number) {
+                text = PlanReply.unticked
+            } else {
+                // On disk before it runs, like a single card (ActivityLog.recoverInterrupted).
+                if let request = step.activity(calendar: .current) {
+                    let entry = ActivityEntry.started(request, at: Date(), plan: ref)
+                    activity.append(entry)
+                    startedEntry = entry
+                }
+                text = await runPlanStep(step, approval: approvals[step.number])
+            }
+            planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry)
+            results.append((step, text))
+        }
+        planStatus?.isRunning = false
+        await reply(toolCallID, PlanReply.summary(results, changed: changed))
+    }
+
+    /// Checked again at the tap: the user may have paused or switched off the app while the card waited.
+    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
+        if let block = await planBlock(for: step) { return block.reply }
+        switch step.request {
+        case .saveMemory(let text):
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                savedThisConversation += 1
+                return VoiceToolReply.saved(record)
+            } catch {
+                return VoiceToolReply.failed(UserFacingError.message(for: error))
+            }
+        case .createCalendarEvent(let draft):
+            return addEvent(draft)
+        case .createReminder(let draft):
+            return VoiceToolReply.reminder(await addReminder(draft))
+        case .setTimer(let draft):
+            return await startTimer(draft)
+        case .cloudTool(let call):
+            return await runPlanCloud(call, approval: approval)
+        case .addToList(let request):
+            // Matched now, exactly as a single add_to_list would be; nothing changes on no match.
+            await store.reload()
+            switch ListMatch.list(named: request.list, in: store.lists) {
+            case .none: return VoiceToolReply.listNotFound(request.list, lists: store.lists)
+            case .several(let lists): return VoiceToolReply.listAmbiguous(request.list, lists: lists)
+            case .one(let list):
+                do {
+                    let result = try await store.addToList(request.items, listID: list.id, source: .voice)
+                    return VoiceToolReply.listAdded(result, list: list.name)
+                } catch {
+                    return VoiceToolReply.listFailed(UserFacingError.listMessage(for: error))
+                }
+            }
+        default:
+            // PlanProposal only makes the kinds above.
+            return VoiceToolReply.notAdded("This step can't run in a plan.")
+        }
+    }
+
+    private enum CloudPrepared {
+        case ready(PlanCloudApproval)
+        /// Why the server didn't prepare the step, for the card and the agent.
+        case blocked(PlanBlock)
+    }
+
+    private func prepareCloud(_ call: CloudToolCall) async -> CloudPrepared {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            return .blocked(.onlineAccount(
+                screen: OnlineAccountsError.notConfigured.userMessage,
+                reply: VoiceToolReply.cloudFailed(.notConfigured, tool: call.name)))
+        }
+        do {
+            let prepared = try await client.prepare(call)
+            return .ready(PlanCloudApproval(preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode, preparedAt: Date()))
+        } catch {
+            return .blocked(.onlineAccount(screen: error.userMessage, reply: VoiceToolReply.cloudFailed(error, tool: call.name)))
+        }
+    }
+
+    /// The server's approval works once and lasts two minutes. If the card waited longer, a fresh
+    /// one is asked for the same arguments the user saw; the server checks them again.
+    private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?) async -> String {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            return VoiceToolReply.cloudFailed(.notConfigured, tool: call.name)
+        }
+        do {
+            var approvalID = approval?.approvalID
+            if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
+                approvalID = try await client.prepare(call).approvalId
+            }
+            let result = try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: approvalID)
+            return VoiceToolReply.cloudResult(result)
+        } catch {
+            return VoiceToolReply.cloudFailed(error, tool: call.name)
+        }
+    }
+
+    private func planBlock(for step: PlanStep) async -> PlanBlock? {
+        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: step.request) {
+            return .paused
+        }
+        guard let connection = step.connection else { return nil }
+        guard isOn(connection) else { return .notConnected(connection) }
+        let access: DeviceConnections.Access
+        if connection == .timers {
+            access = await devices.notificationAccess()
+        } else {
+            access = devices.access(for: connection)
+        }
+        return access == .granted ? nil : .notConnected(connection)
+    }
+
+    @discardableResult
+    private func logPlanStep(_ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil) -> ActivityEntry? {
+        guard let request = step.activity(calendar: .current) else { return nil }
+        let entry = ActivityEntry(id: started?.id ?? UUID(), request: request, reply: text, at: started?.at ?? Date(), plan: plan)
+        if started != nil { activity.replace(entry) } else { activity.append(entry) }
+        return entry
     }
 
     /// Gmail, Drive, Notion, Todoist and web search go through Doddy's server, which checks the tool's
@@ -1190,6 +1564,17 @@ final class VoiceSessionController {
             activity.append(entry)
             asked[toolCallID] = nil
         }
+        for (_, steps) in askedPlans {
+            let planID = UUID()
+            for step in steps {
+                guard let request = step.activity(calendar: .current) else { continue }
+                var entry = ActivityEntry(request: request, reply: "", at: Date(), plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
+                entry.outcome = .notDone
+                entry.note = "The conversation ended before you answered."
+                activity.append(entry)
+            }
+        }
+        askedPlans = [:]
     }
 
     private static func microphoneAllowed() async -> Bool {
@@ -1245,7 +1630,8 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList: true
-        case .map, .shortcut, .message, .translator: false
+        // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
+        case .map, .shortcut, .message, .translator, .plan: false
         }
     }
 }

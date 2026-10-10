@@ -1,6 +1,6 @@
 import Foundation
 
-// Translator mode (ADR-208 design, ADR-209 build). A mode of Doddy's own conversation (T2), not a
+// Translator mode (ADR-214 design, ADR-215 build). A mode of Doddy's own conversation (T2), not a
 // separate agent: face to face, both ways, or listen only, one way into the owner's language (T1).
 // While it is on, the app refuses every tool call, the conversation is private, and nothing of it
 // is kept on the iPhone; the owner may copy the text or save the facts as a note on a tap within
@@ -15,7 +15,7 @@ public enum TranslatorKind: String, Equatable, Sendable, CaseIterable {
     case listen
 }
 
-/// One of the 37 European languages Doddy speaks (ADR-206), with the lines shown or said to the
+/// One of the 37 European languages Doddy speaks (ADR-212), with the lines shown or said to the
 /// other person in that language. These lines were written for this build and still need a native
 /// speaker's review before release (docs/implementation/TRANSLATOR_STATUS.md).
 public struct TranslatorLanguage: Equatable, Hashable, Sendable, Identifiable {
@@ -321,7 +321,7 @@ public struct TranslatorProposal: Equatable, Sendable {
 }
 
 extension VoiceToolName {
-    /// Proposes translator mode (ADR-209). Shown as a card; the conversation switches on Start.
+    /// Proposes translator mode (ADR-215). Shown as a card; the conversation switches on Start.
     public static let startTranslator = "start_translator"
     /// Ends translator mode. Harmless, so it runs without a card.
     public static let stopTranslator = "stop_translator"
@@ -806,5 +806,36 @@ public struct TranslatorSummary: Equatable, Sendable {
         let day = calendar.dateComponents([.year, .month, .day], from: endedAt)
         let when = String(format: "%04d-%02d-%02d", day.year ?? 0, day.month ?? 0, day.day ?? 0)
         return "From a translated conversation (\(setup.pairText), \(when)): " + facts.joined(separator: "; ")
+    }
+}
+
+/// The review sheet for native speakers (`docs/implementation/TRANSLATOR_LANGUAGE_REVIEW.md`),
+/// made from `TranslatorLanguages.all` so it can't drift from what ships; a test checks the file.
+public enum TranslatorReviewSheet {
+    public static func markdown() -> String {
+        var out = """
+        # Translator lines for native review
+
+        Generated from `TranslatorLanguages.all` (`Packages/DoddyCore/Sources/DoddyCore/Translator.swift`); \
+        `TranslatorTests.testReviewSheetMatchesTheCode` fails when they differ. None of these lines has had a \
+        native speaker's review yet. For each language, check that the four lines are natural, polite to a \
+        stranger, and say the same as the English: Doddy is an AI, on this phone, translating; mistakes are \
+        possible; important things should be in writing. Mark a row OK or write the corrected line.
+
+        English reference:
+        - AI label: "AI translation · may contain mistakes"
+        - Disclosure: "Hi, I'm Doddy, an AI translator on this phone. I'll translate between you two. Please speak normally."
+        - Hold to talk: "Hold while you speak"
+        - Careful: "AI translation. For anything important, please also get it in writing."
+
+        | Code | Language | AI label | Disclosure (said first) | Hold to talk | Careful | Reviewed |
+        |---|---|---|---|---|---|---|
+
+        """
+        for language in TranslatorLanguages.all where language.code != "en" {
+            let cells = [language.code, language.label, language.aiLabel, language.hello, language.holdToTalk, language.careful, ""]
+            out += "| " + cells.map { $0.replacingOccurrences(of: "|", with: "\\|") }.joined(separator: " | ") + " |\n"
+        }
+        return out
     }
 }

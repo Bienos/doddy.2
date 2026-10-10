@@ -30,6 +30,8 @@ final class RealtimeVoiceTests: XCTestCase {
         // Every phone tool in the spec is one the app can route; an unrouted one would leave the
         // agent waiting until its timeout.
         let routable = Set(tools.filter { $0.runsOn == .phone }.map(\.name).filter { name in
+            // The plan card is routed before VoiceToolRequest (PlanProposal, ADR-204).
+            if name == VoiceToolName.proposePlan { return true }
             if case .unsupported = VoiceToolRequest.parse(name: name, parametersJSON: Data("{}".utf8)) { return false }
             return true
         })

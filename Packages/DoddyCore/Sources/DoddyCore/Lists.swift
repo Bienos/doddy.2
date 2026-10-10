@@ -1,6 +1,6 @@
 import Foundation
 
-// Lists (ADR-210). A list is a kind of note: a `memories` row with category `list` whose text is
+// Lists (ADR-216). A list is a kind of note: a `memories` row with category `list` whose text is
 // the list's name, plus items in `list_items` that are deleted with it. Items keep the words the
 // user used. Every change is one transaction, read back before success. Voice changes name a list
 // and items in words; the app matches them exactly (ignoring case, accents, punctuation and a
@@ -363,5 +363,33 @@ extension VoiceToolReply {
 
     public static func listFailed(_ reason: String) -> String {
         "failed: \(reason) The list didn't change."
+    }
+}
+
+/// Find (ADR-216 follow-up): lists whose name or items hold a word of the search. Every word
+/// is matched as the start of a word, ignoring case and accents, as notes are; nothing is guessed.
+public struct ListSearchHit: Equatable, Sendable, Identifiable {
+    public let list: DoddyList
+    /// True when the list's name matched.
+    public let nameMatched: Bool
+    /// Items with a matching word, in list order.
+    public let items: [ListItem]
+
+    public var id: UUID { list.id }
+}
+
+public enum ListSearch {
+    public static func hits(_ query: String, in lists: [DoddyList]) -> [ListSearchHit] {
+        let terms = SearchFolding.queryTerms(query)
+        guard !terms.isEmpty else { return [] }
+        func matches(_ text: String) -> Bool {
+            let words = SearchFolding.tokens(text)
+            return terms.contains { term in words.contains { $0.hasPrefix(term) } }
+        }
+        return lists.compactMap { list in
+            let nameMatched = matches(list.name)
+            let items = list.items.filter { matches($0.text) }
+            return nameMatched || !items.isEmpty ? ListSearchHit(list: list, nameMatched: nameMatched, items: items) : nil
+        }
     }
 }

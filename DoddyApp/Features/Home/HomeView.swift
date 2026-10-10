@@ -11,7 +11,7 @@ struct HomeView: View {
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var modal: MemoryModal?
     @State private var showAsk = false
-    /// Translate (ADR-209): the start sheet, and what the user chose on it.
+    /// Translate (ADR-215): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false

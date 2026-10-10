@@ -1,5 +1,5 @@
-# Translator mode status (ADR-209)
-Date: 2026-10-10. Owner: "build translator mode". Design: ADR-208, `docs/design/TRANSLATOR_MODE.md`, canvas "Doddy Translator". Decisions T1–T6 as the owner answered them.
+# Translator mode status (ADR-215)
+Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/TRANSLATOR_MODE.md`, canvas "Doddy Translator". Decisions T1–T6 as the owner answered them.
 
 ## What ships
 **Two ways in**
@@ -80,13 +80,13 @@ Date: 2026-10-10. Owner: "build translator mode". Design: ADR-208, `docs/design/
   - latency;
   - whether `sendMessage` / `updateContext` messages behave as expected;
   - whether ElevenLabs echoes app messages as user transcripts (the app filters the "(app)" prefix either way).
-- **Language lines:** the disclosure, AI label, hold-to-talk and careful lines in 37 languages were written without native review.
+- **Language lines:** the disclosure, AI label, hold-to-talk and careful lines in 37 languages were written without native review. The review sheet is `docs/implementation/TRANSLATOR_LANGUAGE_REVIEW.md`. It is generated from the code, and a test keeps it in step.
 - **Routing:** the language guess is a small word-and-letter heuristic. It is wrong for very short lines, mixed languages and two people speaking the same language.
 - **Careful mode:** word lists miss topics and may over-trigger.
 - **Listen only:**
-  - There is no "read aloud: off": Doddy speaks the translation aloud to you (earphones recommended).
+  - "Read aloud" (follow-up, ADR-221) can now be turned off. It sets the agent's audio track to volume 0 on this iPhone (LiveKit `RemoteAudioTrack.volume`, read back). ElevenLabs still makes the audio. This has not been heard on a device.
   - Turn-taking with a continuous speaker is untested.
-- **T6:** native voices per language are not built. Doddy's own voice is used for both sides.
+- **T6:** native voices per language are not built. Doddy's own voice is used for both sides. There is a shortlist for a listening pass, and the one-voice-per-conversation constraint, in `docs/implementation/TRANSLATOR_VOICE_SHORTLIST.md`.
 
 ## Constitution evidence log (docs/trust/config/doddy_rules.yaml)
 | Rule | What enforces it here | Tests run | Gaps / claims to limit |

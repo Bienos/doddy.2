@@ -10,6 +10,17 @@
 -->
 <plist version="1.0">
 <dict>
+	<!-- Screens in English and Polish (ADR-223); iOS picks by the iPhone's language. -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>pl</string>
+	</array>
+	<!-- Widgets' shared folder (ADR-219); only works when the build is signed with the App Group. -->
+	<key>DoddyAppGroup</key>
+	<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
