@@ -3,6 +3,7 @@ import SwiftUI
 
 /// Settings → What Doddy did. Newest first, grouped by day. Each row says what was asked and
 /// what actually happened; a reminder Doddy wasn't sure about can be checked in Reminders.
+/// The steps of one plan card are shown together under one heading (ADR-207).
 struct ActivityView: View {
     @State private var activity = ActivityLogStore.shared
     @State private var devices = DeviceConnections()
@@ -10,9 +11,11 @@ struct ActivityView: View {
     @State private var checkProblem: String?
     @State private var confirmClear = false
 
-    private var days: [(day: Date, entries: [ActivityEntry])] {
+    private var days: [(day: Date, items: [ActivityItem])] {
         let calendar = Calendar.current
-        let grouped = Dictionary(grouping: activity.entries) { calendar.startOfDay(for: $0.at) }
+        let items = ActivityItem.items(activity.entries)
+        let grouped = Dictionary(grouping: items) { calendar.startOfDay(for: $0.at) }
+        // Dictionary(grouping:) keeps each day's items in the newest-first order given.
         return grouped.keys.sorted(by: >).map { ($0, grouped[$0] ?? []) }
     }
 
@@ -34,8 +37,13 @@ struct ActivityView: View {
             }
             ForEach(days, id: \.day) { group in
                 Section(Self.dayTitle(group.day)) {
-                    ForEach(group.entries) { entry in
-                        row(entry)
+                    ForEach(group.items) { item in
+                        switch item {
+                        case .single(let entry):
+                            row(entry)
+                        case .plan(_, let steps):
+                            planRow(steps)
+                        }
                     }
                 }
             }
@@ -78,11 +86,6 @@ struct ActivityView: View {
             if let note = entry.note {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
             }
-            if let plan = entry.plan {
-                Label(plan.text, systemImage: "list.number")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-            }
             if entry.canCheckInReminders {
                 Button(checking.contains(entry.id) ? "Checking…" : "Check in Reminders") {
                     Task { await check(entry) }
@@ -94,6 +97,30 @@ struct ActivityView: View {
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
+    }
+
+    /// One plan card: a heading with what happened overall, then each step as its own row.
+    private func planRow(_ steps: [ActivityEntry]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Label(ActivityPlanSummary.title(steps), systemImage: "list.number")
+                    .font(.body.weight(.semibold))
+                Text(ActivityPlanSummary.outcomes(steps))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .accessibilityElement(children: .combine)
+            ForEach(steps) { entry in
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(entry.plan?.step ?? 0).")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundStyle(Theme.secondaryText)
+                    row(entry)
+                }
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityIdentifier("activity.plan")
     }
 
     private func check(_ entry: ActivityEntry) async {

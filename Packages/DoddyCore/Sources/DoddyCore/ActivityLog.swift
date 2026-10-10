@@ -280,3 +280,74 @@ public enum ActivityLog {
         return updated
     }
 }
+
+/// One row in "What Doddy did": a single entry, or every step of one plan card together
+/// (ADR-207), in step order under one heading.
+public enum ActivityItem: Equatable, Identifiable, Sendable {
+    case single(ActivityEntry)
+    case plan(id: UUID, steps: [ActivityEntry])
+
+    public var id: UUID {
+        switch self {
+        case .single(let entry): entry.id
+        case .plan(let id, _): id
+        }
+    }
+
+    /// The newest time in the item, for ordering and for the day it is listed under.
+    public var at: Date {
+        switch self {
+        case .single(let entry): entry.at
+        case .plan(_, let steps): steps.map(\.at).max() ?? .distantPast
+        }
+    }
+
+    /// Newest first. Entries of the same plan are gathered where the plan's newest step falls,
+    /// so a plan never appears twice or split around other entries.
+    public static func items(_ entries: [ActivityEntry]) -> [ActivityItem] {
+        var plans: [UUID: [ActivityEntry]] = [:]
+        var order: [UUID] = []
+        var singles: [UUID: ActivityEntry] = [:]
+        for entry in entries.sorted(by: { $0.at > $1.at }) {
+            if let plan = entry.plan {
+                if plans[plan.id] == nil { order.append(plan.id) }
+                plans[plan.id, default: []].append(entry)
+            } else {
+                order.append(entry.id)
+                singles[entry.id] = entry
+            }
+        }
+        return order.compactMap { id in
+            if let entry = singles[id] { return .single(entry) }
+            guard let steps = plans[id] else { return nil }
+            return .plan(id: id, steps: steps.sorted { ($0.plan?.step ?? 0) < ($1.plan?.step ?? 0) })
+        }
+    }
+}
+
+public enum ActivityPlanSummary {
+    /// "Plan · 3 steps", plus "(1 no longer listed)" when older steps were pruned.
+    public static func title(_ steps: [ActivityEntry]) -> String {
+        let count = steps.compactMap(\.plan?.count).max() ?? steps.count
+        let missing = count - steps.count
+        return "Plan · \(count) step\(count == 1 ? "" : "s")" + (missing > 0 ? " (\(missing) no longer listed)" : "")
+    }
+
+    /// "2 done · 1 not sure · 1 you said no", in a fixed order, only the outcomes present.
+    /// Never counts a step as done unless its own entry is done.
+    public static func outcomes(_ steps: [ActivityEntry]) -> String {
+        let order: [(String, Set<ActivityOutcome>)] = [
+            ("done", [.done, .alreadyThere]),
+            ("not sure", [.notSure]),
+            ("in progress", [.inProgress]),
+            ("didn't happen", [.notDone]),
+            ("you said no", [.declined]),
+            ("opened", [.opened]),
+            ("looked up", [.lookedUp]),
+        ]
+        return order.compactMap { label, outcomes in
+            let count = steps.filter { outcomes.contains($0.outcome) }.count
+            return count > 0 ? "\(count) \(label)" : nil
+        }.joined(separator: " · ")
+    }
+}
