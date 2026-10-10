@@ -92,7 +92,7 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | V5 | Island: start a conversation, tap Mute and Unmute on the Live Activity | The Unmute fix works and the app keeps running (ADR-128; `NATIVE_BASELINE_REPORT.md`) |
 | V6 | Reminders by voice (ADR-126, `M4_REMINDERS_STATUS.md`) | The device checks listed there |
 | V7 | Ask Doddy to save a note by voice, pick "Place" on the card, tap Save | The note is saved with that type (see the type filter chips). Declining and a second proposal start at "Other" again (ADR-202) |
-| V8 | After the live agent is synced (ADR-215): say "remind me next Friday to call mum", then "add the dentist tomorrow at 7", then "remind me tomorrow morning to pay rent" | Each time Doddy asks one question (which Friday, with both dates; 7 in the morning or evening; what time or no time) before any card. After the answer the card shows the chosen date. "Friday 16 October at 19:00" goes straight to the card |
+| V8 | With an app build that includes ADR-215 (live agent synced 2026-10-10): say "remind me next Friday to call mum", then "add the dentist tomorrow at 7", then "remind me tomorrow morning to pay rent" | Each time Doddy asks one question (which Friday, with both dates; 7 in the morning or evening; what time or no time) before any card. After the answer the card shows the chosen date. "Friday 16 October at 19:00" goes straight to the card |
 
 ## 6. Ask and server
 - Ask: after the daily limit is reached, "Try again" is hidden. This needs a deployed gateway with limits set (ADR-124, ADR-125). The Redis store and real OpenAI prices are still owner tasks.

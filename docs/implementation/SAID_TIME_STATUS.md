@@ -39,7 +39,9 @@ The answer the user gives is sent again with the day written out, so the second 
 - **Planted bug:** switching off the "next Friday" check made 3 tests fail. The code was restored.
 
 ## NOT DONE / NOT RUN
-- **Live agent not synced.** The live ElevenLabs agent has not been updated with the new `said_time` parameters and prompt lines, so in real conversations nothing is asked yet. Syncing changes an external service and needs the owner's go-ahead. The steps are in `voice-agent/README.md`. Older app builds ignore the extra field, so syncing first is safe.
+- **Live agent synced 2026-10-10:** version `agtvrsn_1601m4m03vmqe90rh35280g5pxp7` → `agtvrsn_1601m4m2szrwfb9rhx1r2vcgmc3j`. The live agent now sends `said_time`.
+  - Only app builds that include ADR-215 act on it; older builds ignore the field.
+  - The live prompt and tools contain features from other branches that are not in this branch's spec: lists, translator, morning check-in, repeat on note reminders. They were left untouched; only the ADR-215 lines were added.
 - **Not heard in a real conversation or tried on a device:** whether the agent passes the words faithfully, and how often the questions feel unnecessary (Mac checklist V8).
 - **Typed requests are not covered:** Ask Doddy and Shortcuts have no `said_time`.
 
