@@ -29,6 +29,12 @@ public enum AssistantError: Error, Equatable, Sendable {
         }
     }
 
+    /// Whether a "Try again" button makes sense right now. The daily spend cap only resets on the
+    /// next UTC day, so retrying sooner can only fail again (ADR-125).
+    public var canRetryNow: Bool {
+        self != .dailyLimitReached
+    }
+
     /// Plain wording for the screen. Never includes request text.
     public var userMessage: String {
         switch self {

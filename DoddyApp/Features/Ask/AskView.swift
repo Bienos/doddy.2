@@ -165,7 +165,7 @@ struct AskView: View {
                 if needsSettings(error) {
                     Button("Open Settings") { dismiss(); openSettings() }
                         .buttonStyle(SecondaryButtonStyle())
-                } else {
+                } else if error.canRetryNow {
                     Button("Try again") { send() }
                         .buttonStyle(SecondaryButtonStyle())
                         .disabled(!controller.canSend)
