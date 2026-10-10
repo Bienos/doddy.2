@@ -1,0 +1,419 @@
+<title>Doddy Opening Preview</title>
+<style>
+/* Layout: one phone on a quiet paper ground, review controls beside it (stacked under it on a narrow screen).
+   Tokens are the app's own (DoddyDesignTokens, "uploaded" set), light and dark. */
+:root {
+  --canvas: #F5EFE2; --ink: #080808; --secondary: #6B655B; --quiet: #EEE7D9; --separator: #D8D1C3;
+  --orange: #EC803F; --accent: #A64B19; --ground: #E9E1D1; --paperback: transparent;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --canvas: #1D1C19; --ink: #F5EFE2; --secondary: #BDB7AA; --quiet: #292720; --separator: #49453D; --accent: #EC9A68; --ground: #121210; --paperback: #F5EFE2; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --canvas: #1D1C19; --ink: #F5EFE2; --secondary: #BDB7AA; --quiet: #292720; --separator: #49453D; --accent: #EC9A68; --ground: #121210; --paperback: #F5EFE2; color-scheme: dark; }
+body { background: var(--ground); color: var(--ink); font-family: var(--font); margin: 0; }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 40px; padding-inline: 16px; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; margin: 0 0 6px; text-wrap: balance; }
+h1 .dot { color: var(--accent); }
+.lede { color: var(--secondary); font-size: 14px; line-height: 1.5; max-width: 62ch; margin: 0 0 22px; }
+.stage { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+.phone { position: relative; width: 390px; max-width: 100%; aspect-ratio: 390 / 844; border-radius: 44px; background: var(--canvas);
+  border: 1px solid var(--separator); overflow: hidden; flex: 0 0 auto; box-shadow: 0 18px 50px rgba(0,0,0,.14); user-select: none; -webkit-user-select: none; }
+/* Home, underneath */
+.home { position: absolute; inset: 0; padding: 54px 22px 20px; display: flex; flex-direction: column; gap: 12px; }
+.home .row { display: flex; justify-content: space-between; align-items: center; }
+.home .mark { font-size: 26px; font-weight: 500; letter-spacing: -1.5px; }
+.home .mark .dot { color: var(--accent); }
+.home .tag { font-size: 11px; color: var(--secondary); text-align: right; line-height: 1.3; }
+.home h2 { font-size: 30px; font-weight: 500; letter-spacing: -1px; margin: 0; line-height: 1.1; text-wrap: balance; }
+.home .sub { color: var(--secondary); font-size: 15px; line-height: 1.35; margin-top: -4px; }
+.home .art { align-self: center; flex: 0 0 auto; width: calc(190px * 2 / 3); height: 190px; background: var(--paperback); border-radius: 22px; overflow: hidden; }
+.home .art img { width: 100%; height: 100%; object-fit: contain; display: block; }
+@keyframes pop { from { transform: scale(.6); opacity: 0 } to { transform: scale(1); opacity: 1 } }
+.home button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; text-align: left; }
+.home .btn { border-radius: 18px; min-height: 54px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-weight: 600; font-size: 17px; width: 100%; }
+.home .btn.primary { background: var(--ink); color: var(--canvas); }
+.home .btn.secondary { border: 1px solid var(--separator); }
+.home .tiles { display: flex; gap: 10px; }
+.home .tile { flex: 1; min-height: 74px; border-radius: 17px; background: var(--quiet); border: 1px solid var(--separator); padding: 14px 16px; font-size: 15px;
+  display: flex; flex-direction: column; justify-content: space-between; gap: 6px; }
+.home .slide { transition: transform .5s cubic-bezier(.34,1.4,.64,1), opacity .35s ease-out; }
+.home.hidden-buttons .slide { transform: translateY(28px); opacity: 0; transition: none; }
+.home .btn:focus-visible, .home .tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.home .btn:active, .home .tile:active { transform: scale(.98); }
+.toast { position: absolute; left: 16px; right: 16px; bottom: 18px; background: var(--ink); color: var(--canvas); border-radius: 14px; padding: 12px 14px; font-size: 13.5px; line-height: 1.4;
+  opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; }
+.toast.on { opacity: 1; transform: none; }
+canvas.scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
+canvas.scene[hidden] { display: none; }
+.controls { flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 14px; font-size: 14px; }
+.controls .group { background: var(--quiet); border: 1px solid var(--separator); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+.controls .group h3 { margin: 0; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--secondary); font-weight: 600; }
+label.opt { display: flex; align-items: center; gap: 10px; min-height: 28px; }
+label.opt input { width: 18px; height: 18px; accent-color: var(--accent); margin: 0; }
+button.replay { font: inherit; font-weight: 600; font-size: 16px; min-height: 48px; border-radius: 14px; border: 0; background: var(--ink); color: var(--canvas); padding: 0 18px; cursor: pointer; }
+button.replay:focus-visible, label.opt input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.time { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--secondary); font-size: 13px; }
+.beats { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 13px; }
+.beats li { display: contents; }
+.beats .t { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--secondary); }
+.beats .on { color: var(--accent); font-weight: 600; }
+.fine { color: var(--secondary); font-size: 12.5px; line-height: 1.5; max-width: 62ch; margin: 0; }
+#svgwork { position: absolute; left: -9999px; top: 0; width: 512px; height: 512px; visibility: hidden; }
+@media (max-width: 760px) { .phone { width: 100%; } }
+</style>
+
+<div class="wrap">
+  <h1>Doddy<span class="dot">.</span> opening, design preview</h1>
+  <p class="lede">The same timeline the app uses (<code>OpeningScene.frame(at:)</code> in DoddyCore, ADR-210), redrawn in a browser so the cartoon can be looked at before a Mac build. A pen sketches Doddy in, he dribbles, crouches, hops and shoots, SWISH, he pops up ready to talk, then jumps into his exact place on Home while the buttons slide in. Tap the phone to skip; tap the buttons after. This is a design study: nothing here listens or talks.</p>
+
+  <div class="stage">
+    <div class="phone" id="phone">
+      <div class="home" id="home">
+        <div class="row"><div class="mark">doddy<span class="dot">.</span></div><div class="tag">Your mate in<br>your pocket</div></div>
+        <h2 id="homeTitle">A little less to carry.</h2>
+        <div class="sub" id="homeSub">Save a detail.<br>Find it when you need it.</div>
+        <div class="art" id="homeArt"><img id="homeImg" alt="" src="../../DoddyApp/Resources/Assets.xcassets/UploadedDoddy_Listening.imageset/art.png"></div>
+        <button class="btn primary slide" id="bTalk" type="button" style="transition-delay:0s"><span>Talk to Doddy</span><span aria-hidden="true">〰</span></button>
+        <button class="btn secondary slide" id="bAsk" type="button" style="transition-delay:.07s"><span>Ask Doddy</span><span aria-hidden="true">▭</span></button>
+        <div class="tiles slide" style="transition-delay:.14s">
+          <button class="tile" id="bSave" type="button"><span aria-hidden="true">＋</span><span>Save a detail</span></button>
+          <button class="tile" id="bFind" type="button"><span aria-hidden="true">⌕</span><span>Find something</span></button>
+        </div>
+      </div>
+      <canvas class="scene" id="scene" role="button" tabindex="0" aria-label="The opening. Activate to skip it."></canvas>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="controls">
+      <button class="replay" id="replay" type="button">Replay the opening</button>
+      <div class="group">
+        <h3>Review</h3>
+        <label class="opt"><input type="checkbox" id="slow"> Quarter speed</label>
+        <label class="opt"><input type="checkbox" id="reduce"> Reduce Motion (the still picture)</label>
+        <label class="opt"><input type="checkbox" id="dark"> Dark appearance</label>
+        <div class="time" id="clock">0.00 s</div>
+      </div>
+      <div class="group">
+        <h3>Beats (seconds)</h3>
+        <ul class="beats" id="beats"></ul>
+      </div>
+      <p class="fine">Drawings: the four v1.3-r1 basketball poses, read as strokes so the pen can draw them; the ready pose is the app's listening artwork. Doddy's spoken greeting is the live agent's first message, heard only once a conversation starts: when you tap Talk to Doddy, or by itself after the opening while "Start listening when I open Doddy" is on.</p>
+    </div>
+  </div>
+  <svg id="svgwork" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"></svg>
+</div>
+
+<script type="text/plain" id="svg-dribble"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img"><metadata>{"brand":"Doddy","version":"1.3-r1","base":"1.3","scope":"pose and hand refinement"}</metadata><title>Doddy v1.3-r1 / basketball-dribble</title><g id="doddy-basketball-dribble" data-version="1.3-r1"><g id="far-arm"><path d="M272,276 Q228.45,292.25 205,301 Q192.39999999999998,312.76 175,329" fill="none" stroke="#171715" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="far-leg"><path d="M235,349 Q199.9,365.9 181,375 Q167.14,396.84 148,427" fill="none" stroke="#171715" stroke-width="5.9" stroke-linecap="round" stroke-linejoin="round" /></g><g id="body-spine"><path d="M277,260 Q248,311 235,349" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-leg"><path d="M235,349 Q278.55,371.1 302,383 Q309.98,399.79999999999995 321,423" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-arm"><path d="M272,276 Q313.6,292.25 336,301 Q344.4,313.59999999999997 356,331" fill="none" stroke="#171715" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="trainer-far"><g transform="translate(148 427) scale(1.04) rotate(0)"><g id="trainer-front"><path d="M-22 -29 Q-19 -42 0 -42 Q20 -42 23 -29 L29 -6 Q40 15 26 24 Q0 31 -28 23 Q-39 15 -29 -6 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-29 13 Q0 22 30 13 M-23 -4 Q0 -12 23 -4 M-13 -30 L13 -30 M-14 -23 L14 -23 M-14 -16 L15 -16 M-8 -37 L-10 -14 M8 -37 L10 -14" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="trainer-near"><g transform="translate(321 423) scale(0.82) rotate(0)"><g id="trainer-side"><path d="M-37 -8 L-32 -30 Q-28 -41 -12 -37 L3 -20 Q33 -22 57 -5 Q65 5 59 17 Q12 28 -35 18 Q-44 10 -37 -8 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-37 10 Q7 20 60 10 M-24 -29 L-1 -21 M-26 -21 L6 -14 M-9 -34 L-17 -15 M18 -12 Q36 -12 47 -4" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-back"><g transform="translate(175 329) scale(0.84) rotate(136.97493401088198)"><g id="hand-relaxed-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-back"><g transform="translate(356 331) scale(0.96) rotate(12)"><g id="hand-shoot-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L7 -8 Q11 -15 17 -12 L21 -7 L31 -9 Q37 -9 38 -3 L33 0 Q39 0 39 5 Q38 13 27 16 Q14 20 5 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M9 -6 Q15 0 17 6" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="prop"><g transform="translate(373 369) scale(1) rotate(0)"><g id="basketball"><circle cx="0" cy="0" r="35" fill="#F58A24" stroke="#171715" stroke-width="4"/><path d="M-35 0 Q0 -8 35 0 M0 -35 Q-9 0 0 35 M-24.5 -24.5 Q22 -4 24.5 24.5 M24.5 -24.5 Q-22 4 -24.5 24.5" fill="none" stroke="#171715" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-front"><g transform="translate(175 329) scale(0.84) rotate(136.97493401088198)"><g id="hand-relaxed-front" data-origin="wrist" data-fingers="grouped"></g></g></g><g id="hand-near-front"><g transform="translate(356 331) scale(0.96) rotate(12)"><g id="hand-shoot-front" data-origin="wrist" data-fingers="grouped"><path d="M10 6 Q17 12 25 8 L32 3" fill="none" stroke="#171715" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-visible"><g transform="translate(175 329) scale(0.84) rotate(136.97493401088198)"><g id="hand-relaxed-all" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="face-rig" transform="translate(23 57) rotate(-7 256 133)"><g transform="translate(256 133) scale(1) rotate(0)"><g id="head-and-face" data-yaw="0"><path d="M0 -72 C40 -74 72 -43 72 -3 C75 39 43 71 3 73 C-39 76 -72 44 -73 4 C-76 -36 -44 -70 0 -72 Z" fill="#FFF7E9" stroke="#171715" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" id="head-contour"/><g id="eyes"><ellipse cx="-22" cy="-6" rx="4.6" ry="12" fill="#171715" transform="rotate(6 -22 -6)"/><ellipse cx="22" cy="-9" rx="4.6" ry="12" fill="#171715" transform="rotate(6 22 -9)"/></g><g id="mouth-and-brows"><g transform="translate(0 0) scale(1 1)"><path d="M-14 28 Q3 32 21 23" fill="none" stroke="#171715" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M-34 -31 L-12 -25 M12 -26 L32 -34" fill="none" stroke="#171715" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></g></g></g></g></g></g></svg></script>
+<script type="text/plain" id="svg-gather"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img"><metadata>{"brand":"Doddy","version":"1.3-r1","base":"1.3","scope":"pose and hand refinement"}</metadata><title>Doddy v1.3-r1 / basketball-gather</title><g id="doddy-basketball-gather" data-version="1.3-r1"><g id="far-arm"><path d="M258,269 Q230.05,292.4 215,305 Q236,304.58 265,304" fill="none" stroke="#171715" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="far-leg"><path d="M257,358 Q223.2,374.25 205,383 Q194.92,401.48 181,427" fill="none" stroke="#171715" stroke-width="5.9" stroke-linecap="round" stroke-linejoin="round" /></g><g id="body-spine"><path d="M261,255 Q255,312 257,358" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-leg"><path d="M257,358 Q288.85,376.85 306,387 Q318.17999999999995,402.12 335,423" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-arm"><path d="M258,269 Q319.1,272.9 352,275 Q350.32,288.02 348,306" fill="none" stroke="#171715" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="trainer-far"><g transform="translate(181 427) scale(1) rotate(0)"><g id="trainer-front"><path d="M-22 -29 Q-19 -42 0 -42 Q20 -42 23 -29 L29 -6 Q40 15 26 24 Q0 31 -28 23 Q-39 15 -29 -6 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-29 13 Q0 22 30 13 M-23 -4 Q0 -12 23 -4 M-13 -30 L13 -30 M-14 -23 L14 -23 M-14 -16 L15 -16 M-8 -37 L-10 -14 M8 -37 L10 -14" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="trainer-near"><g transform="translate(335 423) scale(0.93) rotate(0)"><g id="trainer-side"><path d="M-37 -8 L-32 -30 Q-28 -41 -12 -37 L3 -20 Q33 -22 57 -5 Q65 5 59 17 Q12 28 -35 18 Q-44 10 -37 -8 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-37 10 Q7 20 60 10 M-24 -29 L-1 -21 M-26 -21 L6 -14 M-9 -34 L-17 -15 M18 -12 Q36 -12 47 -4" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-back"><g transform="translate(265 304) scale(0.84) rotate(0)"><g id="hand-cradle-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L6 -8 Q10 -14 17 -13 Q26 -13 32 -5 Q38 3 30 11 Q15 21 5 10 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M9 -6 Q20 -6 25 1" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-back"><g transform="translate(348 306) scale(0.96) rotate(180)"><g id="hand-cradle-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L6 -8 Q10 -14 17 -13 Q26 -13 32 -5 Q38 3 30 11 Q15 21 5 10 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M9 -6 Q20 -6 25 1" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="prop"><g transform="translate(306 296) scale(1) rotate(0)"><g id="basketball"><circle cx="0" cy="0" r="35" fill="#F58A24" stroke="#171715" stroke-width="4"/><path d="M-35 0 Q0 -8 35 0 M0 -35 Q-9 0 0 35 M-24.5 -24.5 Q22 -4 24.5 24.5 M24.5 -24.5 Q-22 4 -24.5 24.5" fill="none" stroke="#171715" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-front"><g transform="translate(265 304) scale(0.84) rotate(0)"><g id="hand-cradle-front" data-origin="wrist" data-fingers="grouped"><path d="M8 -8 Q14 -13 20 -7 L30 1 Q34 5 29 9 Q24 12 19 6 L11 3 Q8 1 8 -8 Z" fill="#FFF7E9" stroke="#171715" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-front"><g transform="translate(348 306) scale(0.96) rotate(180)"><g id="hand-cradle-front" data-origin="wrist" data-fingers="grouped"><path d="M8 -8 Q14 -13 20 -7 L30 1 Q34 5 29 9 Q24 12 19 6 L11 3 Q8 1 8 -8 Z" fill="#FFF7E9" stroke="#171715" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="face-rig" transform="translate(3 48) rotate(0 256 133)"><g transform="translate(256 133) scale(1) rotate(0)"><g id="head-and-face" data-yaw="0"><path d="M0 -72 C40 -74 72 -43 72 -3 C75 39 43 71 3 73 C-39 76 -72 44 -73 4 C-76 -36 -44 -70 0 -72 Z" fill="#FFF7E9" stroke="#171715" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" id="head-contour"/><g id="eyes"><ellipse cx="-22" cy="-6" rx="4.6" ry="12" fill="#171715" transform="rotate(6 -22 -6)"/><ellipse cx="22" cy="-9" rx="4.6" ry="12" fill="#171715" transform="rotate(6 22 -9)"/></g><g id="mouth-and-brows"><g transform="translate(0 0) scale(1 1)"><path d="M-14 28 Q3 32 21 23" fill="none" stroke="#171715" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M-34 -31 L-12 -25 M12 -26 L32 -34" fill="none" stroke="#171715" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></g></g></g></g></g></g></svg></script>
+<script type="text/plain" id="svg-shot"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img"><metadata>{"brand":"Doddy","version":"1.3-r1","base":"1.3","scope":"pose and hand refinement"}</metadata><title>Doddy v1.3-r1 / basketball-shot</title><g id="doddy-basketball-shot" data-version="1.3-r1"><g id="far-arm"><path d="M267,229 Q292.35,190 306,169 Q318.17999999999995,139.6 335,99" fill="none" stroke="#171715" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="far-leg"><path d="M263,332 Q245.45,358.65 236,373 Q236.83999999999997,388.96 238,411" fill="none" stroke="#171715" stroke-width="5.9" stroke-linecap="round" stroke-linejoin="round" /></g><g id="body-spine"><path d="M270,212 Q259,279 263,332" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-leg"><path d="M263,332 Q278.6,354.75 287,367 Q288.26,383.79999999999995 290,407" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-arm"><path d="M267,229 Q328.1,205.6 361,193 Q366.46,159.82 374,114" fill="none" stroke="#171715" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="trainer-far"><g transform="translate(238 411) scale(0.86) rotate(12)"><g id="trainer-side"><path d="M-37 -8 L-32 -30 Q-28 -41 -12 -37 L3 -20 Q33 -22 57 -5 Q65 5 59 17 Q12 28 -35 18 Q-44 10 -37 -8 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-37 10 Q7 20 60 10 M-24 -29 L-1 -21 M-26 -21 L6 -14 M-9 -34 L-17 -15 M18 -12 Q36 -12 47 -4" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="trainer-near"><g transform="translate(290 407) scale(0.98) rotate(9)"><g id="trainer-three-quarter"><path d="M-32 -11 L-26 -30 Q-19 -40 -6 -34 L8 -20 Q30 -22 46 -6 Q59 12 47 22 Q9 35 -33 21 Q-43 11 -32 -11 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-36 12 Q2 25 50 13 M4 -13 Q26 -19 39 -9 M-21 -27 L2 -20 M-23 -19 L9 -12 M-8 -32 L-15 -13 M-28 0 L-12 3" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-back"><g transform="translate(335 99) scale(0.84) rotate(-60)"><g id="hand-edge-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -4 L8 -6 Q17 -11 28 -7 Q37 -4 38 2 Q36 7 26 8 L9 6 L-5 4 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M9 -1 Q20 3 31 1" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-back"><g transform="translate(374 114) scale(0.96) rotate(-90)"><g id="hand-shoot-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L7 -8 Q11 -15 17 -12 L21 -7 L31 -9 Q37 -9 38 -3 L33 0 Q39 0 39 5 Q38 13 27 16 Q14 20 5 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M9 -6 Q15 0 17 6" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="prop"><g transform="translate(371 80) scale(1) rotate(0)"><g id="basketball"><circle cx="0" cy="0" r="29" fill="#F58A24" stroke="#171715" stroke-width="4"/><path d="M-29 0 Q0 -8 29 0 M0 -29 Q-9 0 0 29 M-20.299999999999997 -20.299999999999997 Q22 -4 20.299999999999997 20.299999999999997 M20.299999999999997 -20.299999999999997 Q-22 4 -20.299999999999997 20.299999999999997" fill="none" stroke="#171715" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-front"><g transform="translate(335 99) scale(0.84) rotate(-60)"><g id="hand-edge-front" data-origin="wrist" data-fingers="grouped"></g></g></g><g id="hand-near-front"><g transform="translate(374 114) scale(0.96) rotate(-90)"><g id="hand-shoot-front" data-origin="wrist" data-fingers="grouped"><path d="M10 6 Q17 12 25 8 L32 3" fill="none" stroke="#171715" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="face-rig" transform="translate(10 13) rotate(7 256 133)"><g transform="translate(256 133) scale(1) rotate(0)"><g id="head-and-face" data-yaw="0"><path d="M0 -72 C40 -74 72 -43 72 -3 C75 39 43 71 3 73 C-39 76 -72 44 -73 4 C-76 -36 -44 -70 0 -72 Z" fill="#FFF7E9" stroke="#171715" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" id="head-contour"/><g id="eyes"><ellipse cx="-22" cy="-6" rx="4.6" ry="12" fill="#171715" transform="rotate(6 -22 -6)"/><ellipse cx="22" cy="-9" rx="4.6" ry="12" fill="#171715" transform="rotate(6 22 -9)"/></g><g id="mouth-and-brows"><g transform="translate(0 0) scale(1 1)"><path d="M-14 28 Q3 32 21 23" fill="none" stroke="#171715" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round" /><path d="M-34 -31 L-12 -25 M12 -26 L32 -34" fill="none" stroke="#171715" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></g></g></g></g></g></g></svg></script>
+<script type="text/plain" id="svg-followThrough"><svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img"><metadata>{"brand":"Doddy","version":"1.3-r1","base":"1.3","scope":"pose and hand refinement"}</metadata><title>Doddy v1.3-r1 / basketball-follow-through</title><g id="doddy-basketball-follow-through" data-version="1.3-r1"><g id="far-arm"><path d="M267,229 Q296.9,232.25 313,234 Q327.28,217.2 347,194" fill="none" stroke="#171715" stroke-width="5.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="far-leg"><path d="M263,332 Q244.8,362.54999999999995 235,379 Q230.79999999999998,397.9 225,424" fill="none" stroke="#171715" stroke-width="5.9" stroke-linecap="round" stroke-linejoin="round" /></g><g id="body-spine"><path d="M270,212 Q259,279 263,332" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-leg"><path d="M263,332 Q279.9,361.25 289,377 Q296.97999999999996,395.06 308,420" fill="none" stroke="#171715" stroke-width="8.2" stroke-linecap="round" stroke-linejoin="round" /></g><g id="near-arm"><path d="M267,229 Q329.4,201.7 363,187 Q369.29999999999995,150.45999999999998 378,100" fill="none" stroke="#171715" stroke-width="7.6" stroke-linecap="round" stroke-linejoin="round" /></g><g id="trainer-far"><g transform="translate(225 424) scale(0.95) rotate(0)"><g id="trainer-front"><path d="M-22 -29 Q-19 -42 0 -42 Q20 -42 23 -29 L29 -6 Q40 15 26 24 Q0 31 -28 23 Q-39 15 -29 -6 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-29 13 Q0 22 30 13 M-23 -4 Q0 -12 23 -4 M-13 -30 L13 -30 M-14 -23 L14 -23 M-14 -16 L15 -16 M-8 -37 L-10 -14 M8 -37 L10 -14" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="trainer-near"><g transform="translate(308 420) scale(1) rotate(0)"><g id="trainer-side"><path d="M-37 -8 L-32 -30 Q-28 -41 -12 -37 L3 -20 Q33 -22 57 -5 Q65 5 59 17 Q12 28 -35 18 Q-44 10 -37 -8 Z" fill="#FFF7E9" stroke="#171715" stroke-width="5.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M-37 10 Q7 20 60 10 M-24 -29 L-1 -21 M-26 -21 L6 -14 M-9 -34 L-17 -15 M18 -12 Q36 -12 47 -4" fill="none" stroke="#171715" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-far-back"><g transform="translate(347 194) scale(0.84) rotate(-49.635463426902646)"><g id="hand-relaxed-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-back"><g transform="translate(378 100) scale(0.96) rotate(0)"><g id="hand-release-back" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L6 -9 Q15 -12 22 -5 L26 8 Q30 19 38 21 Q45 22 44 28 Q35 31 27 24 L18 12 Q10 16 5 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M10 -6 Q18 -3 18 5 M24 15 Q30 24 36 25" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="prop"></g><g id="hand-far-front"><g transform="translate(347 194) scale(0.84) rotate(-49.635463426902646)"><g id="hand-relaxed-front" data-origin="wrist" data-fingers="grouped"></g></g></g><g id="hand-near-front"><g transform="translate(378 100) scale(0.96) rotate(0)"><g id="hand-release-front" data-origin="wrist" data-fingers="grouped"></g></g></g><g id="hand-far-visible"><g transform="translate(347 194) scale(0.84) rotate(-49.635463426902646)"><g id="hand-relaxed-all" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L5 -8 Q9 -13 15 -11 Q21 -16 28 -10 Q37 -5 33 7 Q30 18 19 17 Q9 17 4 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M6 -5 Q17 -6 18 2 Q15 9 8 6" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="hand-near-visible"><g transform="translate(378 100) scale(0.96) rotate(0)"><g id="hand-release-all" data-origin="wrist" data-fingers="grouped"><path d="M-5 -5 L6 -9 Q15 -12 22 -5 L26 8 Q30 19 38 21 Q45 22 44 28 Q35 31 27 24 L18 12 Q10 16 5 9 L-5 5 Z" fill="#FFF7E9" stroke="#171715" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" /><path d="M10 -6 Q18 -3 18 5 M24 15 Q30 24 36 25" fill="none" stroke="#171715" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" /></g></g></g><g id="face-rig" transform="translate(10 13) rotate(7 256 133)"><g transform="translate(256 133) scale(1) rotate(0)"><g id="head-and-face" data-yaw="0"><path d="M0 -72 C40 -74 72 -43 72 -3 C75 39 43 71 3 73 C-39 76 -72 44 -73 4 C-76 -36 -44 -70 0 -72 Z" fill="#FFF7E9" stroke="#171715" stroke-width="7.2" stroke-linecap="round" stroke-linejoin="round" id="head-contour"/><g id="eyes"><ellipse cx="-22" cy="-9" rx="4.6" ry="12" fill="#171715" transform="rotate(6 -22 -9)"/><ellipse cx="22" cy="-12" rx="4.6" ry="12" fill="#171715" transform="rotate(6 22 -12)"/></g><g id="mouth-and-brows"><g transform="translate(0 0) scale(1 1)"><path d="M-30 18 Q-5 49 32 15" fill="none" stroke="#171715" stroke-width="4.7" stroke-linecap="round" stroke-linejoin="round" /><path d="" fill="none" stroke="#171715" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" /></g></g></g></g></g></g></svg></script>
+
+<script>
+(function () {
+  'use strict';
+  // ---- OpeningScene, ported constant for constant from Packages/DoddyCore/Sources/DoddyCore/OpeningScene.swift
+  const STAGE_HEIGHT = 2.0;
+  const L = {
+    floorY: 1.42, doddy: { x: 0.11, y: 0.84, w: 0.58, h: 0.58 }, ready: { x: 0.1665, y: 0.7977, w: 0.467, h: 0.70 }, readyFeet: 0.889,
+    ringCenter: { x: 0.80, y: 0.62 }, ringWidth: 0.12, ringHeight: 0.036, netDepth: 0.10, backboard: { x: 0.865, y: 0.46, w: 0.03, h: 0.22 },
+    keyArcRadius: 0.30, burstAt: { x: 0.78, y: 0.44 }, burstRayLength: 0.09, bubbleAnchor: { x: 0.26, y: 0.85 }, bubbleWidth: 0.46,
+    flightControl: { x: 0.60, y: 0.30 },
+    ballInArt: { dribble: { cx: 0.728, cy: 0.720 }, gather: { cx: 0.597, cy: 0.578 }, shot: { cx: 0.724, cy: 0.156 } },
+    low: 0.037, high: 0.031,
+  };
+  const B = {
+    sketchStart: 0, sketchEnd: 0.50, strokeDuration: 0.14, dribbleStart: 0.42, dribbleEnd: 0.78, bouncePeriod: 0.18,
+    gatherStart: 0.78, gatherEnd: 0.86, crouchPeak: 0.88, shotStart: 0.94, shotEnd: 1.00, hopStart: 0.96, hopEnd: 1.32, hopHeight: 0.06,
+    stretchPeak: 1.02, release: 1.04, followStart: 1.04, followEnd: 1.12, score: 1.40, throughNet: 1.52, burstStart: 1.40, burstEnd: 1.90,
+    readyStart: 1.58, readyEnd: 1.76, bubbleIn: 1.74, handoverStart: 1.95, arrive: 2.25, end: 2.40, stillEnd: 1.10,
+    puffLength: 0.30, confettiLength: 0.90,
+  };
+  const readyHead = 0.113;
+  const hand = (p) => { const a = L.ballInArt[p]; return { x: L.doddy.x + a.cx * L.doddy.w, y: L.doddy.y + a.cy * L.doddy.h }; };
+  const prog = (t, a, b) => b > a ? Math.min(1, Math.max(0, (t - a) / (b - a))) : (t >= b ? 1 : 0);
+  const eOut = (p) => 1 - Math.pow(1 - p, 3);
+  const eInOut = (p) => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+  const back = (p) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const lerpP = (a, b, p) => ({ x: lerp(a.x, b.x, p), y: lerp(a.y, b.y, p) });
+  const bez = (a, b, c, u) => { const v = 1 - u; return { x: v*v*a.x + 2*v*u*b.x + u*u*c.x, y: v*v*a.y + 2*v*u*b.y + u*u*c.y }; };
+  const bezHead = (a, b, c, u) => Math.atan2(2*(1-u)*(b.y-a.y) + 2*u*(c.y-b.y), 2*(1-u)*(b.x-a.x) + 2*u*(c.x-b.x));
+  const hop = (t) => B.hopHeight * Math.sin(Math.PI * prog(t, B.hopStart, B.hopEnd));
+  const releasePoint = () => { const h = hand('shot'); return { x: h.x, y: h.y - hop(B.release) }; };
+  const duration = (r) => r ? B.stillEnd : B.end;
+  const strokeProgress = (i, n, t) => { if (n <= 0) return 1; const span = B.sketchEnd - B.sketchStart - B.strokeDuration; const s = B.sketchStart + (n > 1 ? span * i / (n - 1) : 0); return eOut(prog(t, s, s + B.strokeDuration)); };
+
+  function figure(t, h) {
+    const ch = [['dribble','gather',B.gatherStart,B.gatherEnd],['gather','shot',B.shotStart,B.shotEnd],['shot','followThrough',B.followStart,B.followEnd],['followThrough','ready',B.readyStart,B.readyEnd]];
+    let pose = 'dribble', next = pose, blend = 0;
+    for (const [f, to, s, e] of ch) { if (t <= s) break; if (t < e) { pose = f; next = to; blend = eInOut(prog(t, s, e)); break; } pose = to; next = to; }
+    const crouch = Math.sin(Math.PI * prog(t, B.gatherStart, B.crouchPeak + (B.crouchPeak - B.gatherStart)));
+    const stretch = Math.sin(Math.PI * prog(t, B.shotStart, B.stretchPeak + (B.stretchPeak - B.shotStart)));
+    return { pose, next, blend, sketch: prog(t, B.sketchStart, B.sketchEnd), hop: h, sx: 1 + 0.10*crouch - 0.07*stretch, sy: 1 - 0.12*crouch + 0.10*stretch,
+             readyPop: t <= B.readyStart ? 0 : back(prog(t, B.readyStart, B.readyEnd)) };
+  }
+  function camera(t) {
+    const punch = eOut(prog(t, B.gatherStart, B.shotEnd)), follow = eInOut(prog(t, B.shotEnd, 1.45)), settle = eInOut(prog(t, B.readyStart, B.bubbleIn));
+    const wide = { x: 0.50, y: 1.10 }, on = { x: 0.44, y: 1.08 }, after = { x: 0.52, y: 1.00 };
+    const since = t - B.score, decay = since < 0 ? 0 : 1 - prog(since, 0, 0.28);
+    return { scale: lerp(lerp(lerp(0.82, 1.18, punch), 1.12, follow), 1.0, settle), anchor: lerpP(lerpP(lerpP(wide, on, punch), after, follow), wide, settle),
+             shake: { x: 0.006 * Math.sin(2 * Math.PI * 23 * since) * decay, y: 0.005 * Math.sin(2 * Math.PI * 17 * since + 1) * decay } };
+  }
+  function ball(t, h) {
+    const turns = 6 * Math.PI, down = Math.PI / 2;
+    const still = (c, r, scale = 1, op = 1) => ({ c, r, squash: 1, stretch: 1, heading: down, spin: 0, scale, op, trail: [] });
+    if (t < B.dribbleStart) return still(hand('dribble'), L.low, 0, 0);
+    if (t < B.dribbleEnd) {
+      const pop = back(prog(t, B.dribbleStart, B.dribbleStart + 0.10)), phase = ((t - B.dribbleStart) / B.bouncePeriod) % 1, drop = 1 - Math.pow(2*phase - 1, 2);
+      const hd = hand('dribble'), bottom = L.floorY - L.low, floorP = prog(drop, 0.82, 1);
+      return { c: { x: hd.x, y: hd.y + (bottom - hd.y) * drop }, r: L.low, squash: 1 - 0.28 * floorP, stretch: 1 + 0.18 * Math.abs(2*phase - 1) * (1 - floorP), heading: down, spin: 0, scale: pop, op: 1, trail: [] };
+    }
+    if (t < B.shotStart) return still(lerpP(hand('dribble'), hand('gather'), eOut(prog(t, B.gatherStart, B.gatherEnd))), L.low);
+    if (t < B.release) { const k = eOut(prog(t, B.shotStart, B.shotEnd)), held = lerpP(hand('gather'), hand('shot'), k); return still({ x: held.x, y: held.y - h }, lerp(L.low, L.high, k)); }
+    if (t < B.score) {
+      const u = prog(t, B.release, B.score), a = releasePoint(), b = L.flightControl, c = L.ringCenter;
+      const trail = [0.07, 0.14, 0.21].filter((lag) => u - lag > 0).map((lag) => bez(a, b, c, u - lag));
+      return { c: bez(a, b, c, u), r: L.high, squash: 1, stretch: 1.3, heading: bezHead(a, b, c, u), spin: u * turns, scale: 1 - 0.08 * u, op: 1, trail };
+    }
+    const u = prog(t, B.score, B.throughNet);
+    return still({ x: L.ringCenter.x, y: L.ringCenter.y + L.netDepth * u }, L.high, 0.92, 1 - prog(t, B.throughNet - 0.08, B.throughNet));
+  }
+  function burst(t) {
+    const op = prog(t, B.burstStart, B.burstStart + 0.06) * (1 - prog(t, B.burstEnd - 0.12, B.burstEnd)), since = t - B.burstStart;
+    return { op, scale: t <= B.burstStart ? 0 : 0.3 + 0.7 * back(prog(t, B.burstStart, B.burstStart + 0.18)), rays: eOut(prog(t, B.burstStart, B.burstStart + 0.22)),
+             wobble: t < B.burstStart ? 0 : 0.08 * Math.sin(since * 2 * Math.PI * 5) * (1 - prog(t, B.burstStart, B.burstStart + 0.45)) };
+  }
+  function unit(i, salt) { let x = BigInt(i * 7919 + salt * 104729 + 1); const M = (1n << 64n) - 1n; for (let k = 0; k < 3; k++) { x ^= (x << 13n) & M; x ^= x >> 7n; x ^= (x << 17n) & M; } return Number(x % 10000n) / 10000; }
+  function dust(t) {
+    const out = [], puffs = [[B.dribbleStart + B.bouncePeriod * 0.5, hand('dribble').x], [B.dribbleStart + B.bouncePeriod * 1.5, hand('dribble').x], [B.hopEnd, L.doddy.x + L.doddy.w / 2]];
+    for (const [time, x] of puffs) { const age = t - time; if (age < 0 || age >= B.puffLength) continue; const u = age / B.puffLength;
+      for (let i = 0; i < 5; i++) { const dir = -1 + 2 * i / 4; out.push({ c: { x: x + dir * 0.06 * eOut(u), y: L.floorY - 0.008 - 0.02 * eOut(u) * (1 - Math.abs(dir) * 0.5) }, size: 0.012 + 0.018 * u, rot: 0, op: 0.55 * (1 - u), kind: 'dust' }); } }
+    return out;
+  }
+  const CONFETTI = Array.from({ length: 16 }, (_, i) => ({ a: -Math.PI / 2 + (-0.9 + 1.8 * unit(i, 1)), v: 0.5 + 0.4 * unit(i, 2), spin: (unit(i, 3) * 2 - 1) * 12, size: 0.012 + 0.006 * unit(i, 4) }));
+  function confetti(t) {
+    const age = t - B.score; if (age < 0 || age >= B.confettiLength) return [];
+    return CONFETTI.map((p, i) => ({ c: { x: L.ringCenter.x + Math.cos(p.a) * p.v * age, y: L.ringCenter.y + Math.sin(p.a) * p.v * age + 0.8 * age * age }, size: p.size, rot: p.spin * age, op: 1 - prog(age, 0.6, B.confettiLength), kind: i % 2 ? 'ink' : 'orange' }));
+  }
+  function animated(t) {
+    const h = hop(t), backdrop = 1 - eInOut(prog(t, B.handoverStart, B.arrive)), bp = prog(t, B.bubbleIn, B.bubbleIn + 0.20);
+    return { camera: camera(t), doddy: figure(t, h), ball: ball(t, h), net: 1 + 0.45 * Math.sin(Math.PI * prog(t, B.score, B.score + 0.30)), burst: burst(t),
+             particles: dust(t).concat(confetti(t)),
+             bubble: { op: eOut(prog(t, B.bubbleIn, B.bubbleIn + 0.12)) * (1 - prog(t, B.handoverStart, B.handoverStart + 0.13)), scale: 0.5 + 0.5 * back(bp) },
+             hint: prog(t, 0.30, 0.50) * backdrop, set: 1 - eInOut(prog(t, B.handoverStart, B.handoverStart + 0.20)), backdrop };
+  }
+  function still(t) {
+    const out = prog(t, 0.85, B.stillEnd), shown = prog(t, 0.15, 0.40) * (1 - out);
+    return { camera: { scale: 1, anchor: { x: 0.5, y: 1.1 }, shake: { x: 0, y: 0 } }, doddy: { pose: 'ready', next: 'ready', blend: 0, sketch: 1, hop: 0, sx: 1, sy: 1, readyPop: 1 },
+             ball: { c: hand('shot'), r: L.high, squash: 1, stretch: 1, heading: Math.PI / 2, spin: 0, scale: 1, op: 0, trail: [] }, net: 1,
+             burst: { op: 0, scale: 0, rays: 0, wobble: 0 }, particles: [], bubble: { op: shown, scale: 1 }, hint: shown, set: 0, backdrop: 1 - out };
+  }
+  // OpeningHandover, in phone pixels.
+  const courtBox = (W, H) => { const r = L.ready, top = (H - STAGE_HEIGHT * W) / 2; return { cx: (r.x + r.w / 2) * W, cy: top + (r.y + r.h / 2) * W, h: r.h * W }; };
+  function place(court, home, t, reduced) {
+    if (!home) return { box: court, sx: 1, sy: 1, op: frameAt(t, reduced).backdrop };
+    if (reduced) return { box: home, sx: 1, sy: 1, op: 1 };
+    const p = eInOut(prog(t, B.handoverStart, B.arrive)), lift = (40 + 0.25 * Math.abs(home.cy - court.cy)) * Math.sin(Math.PI * p);
+    const landing = Math.sin(Math.PI * prog(t, B.arrive, B.end)), air = Math.sin(Math.PI * p) * 0.06;
+    return { box: { cx: lerp(court.cx, home.cx, p), cy: lerp(court.cy, home.cy, p) - lift, h: lerp(court.h, home.h, p) }, sx: 1 - air + 0.08 * landing, sy: 1 + air - 0.12 * landing, op: 1 };
+  }
+  function bubbleAnchor(box, bw, W) { const w = box.h * 2 / 3, headTop = box.cy - box.h / 2 + box.h * readyHead; return { x: Math.min(Math.max(12, box.cx - w * 0.45), W - 12 - bw), y: headTop - 4 }; }
+  const frameAt = (t, r) => r ? still(Math.max(0, t)) : animated(Math.max(0, t));
+
+
+  // ---- Drawings: each supplied SVG read into strokes (path data + its group transform), ball left out.
+  const work = document.getElementById('svgwork');
+  const drawings = {};
+  for (const pose of ['dribble', 'gather', 'shot', 'followThrough']) {
+    const text = document.getElementById('svg-' + pose).textContent;
+    const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+    const root = doc.documentElement;
+    work.replaceChildren(...Array.from(root.childNodes).map((n) => document.importNode(n, true)));
+    const strokes = [];
+    for (const el of work.querySelectorAll('path, circle, ellipse')) {
+      if (el.closest('#basketball')) continue;
+      const m = el.getCTM(), base = work.getScreenCTM();
+      const rel = base.inverse().multiply(el.getScreenCTM());
+      let path, length;
+      if (el.tagName === 'path') { path = new Path2D(el.getAttribute('d')); length = el.getTotalLength(); }
+      else {
+        const cx = +el.getAttribute('cx'), cy = +el.getAttribute('cy'), rx = +(el.getAttribute('r') || el.getAttribute('rx')), ry = +(el.getAttribute('r') || el.getAttribute('ry'));
+        path = new Path2D(); path.ellipse(cx, cy, rx, ry, 0, -Math.PI / 2, 1.5 * Math.PI); length = Math.PI * (3 * (rx + ry) - Math.sqrt((3 * rx + ry) * (rx + 3 * ry)));
+      }
+      strokes.push({ path, length, m: [rel.a, rel.b, rel.c, rel.d, rel.e, rel.f], fill: el.getAttribute('fill'), stroke: el.getAttribute('stroke'), width: +(el.getAttribute('stroke-width') || 0) });
+    }
+    drawings[pose] = strokes;
+  }
+  work.replaceChildren();
+  const readyImg = new Image(); readyImg.src = document.getElementById('homeImg').src;
+
+  // ---- Renderer (same layers as OpeningSceneView)
+  const canvas = document.getElementById('scene'), ctx = canvas.getContext('2d'), phone = document.getElementById('phone');
+  const tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+  const roleColor = (hex, col) => { const h = (hex || '').toUpperCase(); return h === '#171715' ? col.ink : h === '#FFF7E9' ? col.canvas : h === '#F58A24' ? col.orange : null; };
+
+  function drawFigure(strokes, x, y, side, sketchT, col) {
+    const k = side / 512, n = strokes.length;
+    strokes.forEach((s, i) => {
+      const p = sketchT === null ? 1 : strokeProgress(i, n, sketchT);
+      if (p <= 0) return;
+      ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.transform(...s.m);
+      const fill = roleColor(s.fill, col), stroke = roleColor(s.stroke, col);
+      if (fill) { ctx.globalAlpha *= p; ctx.fillStyle = fill; ctx.fill(s.path); ctx.globalAlpha /= p; }
+      if (stroke && s.width > 0) { ctx.strokeStyle = stroke; ctx.lineWidth = s.width; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; if (p < 1) ctx.setLineDash([s.length * p, s.length * 2]); ctx.stroke(s.path); }
+      ctx.restore();
+    });
+  }
+
+  function drawReady(box, sx, sy, op) {
+    if (!readyImg.complete || !readyImg.naturalWidth || op <= 0) return;
+    const h = box.h, w = h * 2 / 3, x = box.cx - w / 2, y = box.cy - h / 2, fx = box.cx, fy = y + h * L.readyFeet;
+    ctx.save(); ctx.globalAlpha *= op; ctx.translate(fx, fy); ctx.scale(sx, sy); ctx.translate(-fx, -fy);
+    if (isDark()) { ctx.fillStyle = '#F5EFE2'; ctx.beginPath(); ctx.roundRect(x, y, w, h, 22 * h / 190); ctx.fill(); }
+    ctx.drawImage(readyImg, x, y, w, h); ctx.restore();
+  }
+
+  function render(f, t, reduced) {
+    const dpr = Math.min(2, window.devicePixelRatio || 1), W = phone.clientWidth, H = phone.clientHeight;
+    if (canvas.width !== Math.round(W * dpr) || canvas.height !== Math.round(H * dpr)) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr); }
+    const col = { canvas: tok('--canvas'), ink: tok('--ink'), secondary: tok('--secondary'), quiet: tok('--quiet'), separator: tok('--separator'), orange: tok('--orange') };
+    const w = W, top = (H - STAGE_HEIGHT * w) / 2, X = (p) => p.x * w, Y = (p) => top + p.y * w, font = getComputedStyle(document.body).fontFamily;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1; ctx.clearRect(0, 0, W, H);
+    // The paper: as it fades, Home shows through.
+    ctx.globalAlpha = f.backdrop; ctx.fillStyle = col.canvas; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const inPlace = reduced || t >= B.handoverStart;
+    if (!reduced) {
+      const ax = f.camera.anchor.x * w, ay = top + f.camera.anchor.y * w;
+      ctx.save(); ctx.translate(f.camera.shake.x * w, f.camera.shake.y * w); ctx.translate(ax, ay); ctx.scale(f.camera.scale, f.camera.scale); ctx.translate(-ax, -ay);
+      const setA = f.set;
+      const ring = (front) => { ctx.save(); ctx.globalAlpha = setA; const rx = (L.ringCenter.x + L.ringWidth / 2) * w, ry = Y(L.ringCenter); ctx.translate(rx, ry); ctx.rotate(f.burst.wobble); ctx.translate(-rx, -ry);
+        ctx.strokeStyle = col.orange; ctx.lineWidth = 3; ctx.beginPath(); ctx.ellipse(X(L.ringCenter), Y(L.ringCenter), L.ringWidth / 2 * w, L.ringHeight / 2 * w, 0, front ? 0 : Math.PI, front ? Math.PI : 2 * Math.PI); ctx.stroke(); ctx.restore(); };
+      if (setA > 0) {
+        ctx.globalAlpha = setA; ctx.strokeStyle = col.separator; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(0, Y({ y: L.floorY })); ctx.lineTo(w, Y({ y: L.floorY })); ctx.stroke();
+        ctx.beginPath(); ctx.arc(X(L.ringCenter), Y({ y: L.floorY }), L.keyArcRadius * w, Math.PI, 2 * Math.PI); ctx.stroke();
+        ctx.strokeStyle = col.ink; ctx.lineWidth = 2; const bb = L.backboard;
+        ctx.beginPath(); ctx.roundRect(bb.x * w, top + bb.y * w, bb.w * w, bb.h * w, 3); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo((L.ringCenter.x + L.ringWidth / 2) * w, Y(L.ringCenter)); ctx.lineTo(bb.x * w, Y(L.ringCenter)); ctx.stroke();
+        ctx.globalAlpha = 1; ring(false);
+      }
+      // Doddy, squashed and stretched about the feet. From the hand-over the ready pose is drawn on the screen instead.
+      const d = f.doddy, box = L.doddy, side = box.w * w, feetX = (box.x + box.w / 2) * w, feetY = top + (box.y + box.h - d.hop) * w;
+      ctx.save(); ctx.translate(feetX, feetY); ctx.scale(d.sx, d.sy); ctx.translate(-feetX, -feetY);
+      const layer = (pose, a, sketchT) => {
+        if (a <= 0) return;
+        if (pose === 'ready') { if (inPlace) return; const r = L.ready, pop = Math.max(0, d.readyPop); ctx.save(); ctx.globalAlpha = a; const cb = courtBox(W, H); drawReady(cb, pop, pop, 1); ctx.restore(); return; }
+        ctx.save(); ctx.globalAlpha = a; drawFigure(drawings[pose], box.x * w, top + (box.y - d.hop) * w, side, sketchT, col); ctx.restore();
+      };
+      layer(d.pose, 1 - d.blend, d.pose === 'dribble' && d.sketch < 1 ? t : null);
+      if (d.blend > 0) layer(d.next, d.blend, null);
+      ctx.restore();
+      // Ball, with its ghost trail.
+      const b = f.ball;
+      if (b.op > 0) {
+        const r = b.r * w;
+        b.trail.forEach((g, i) => { ctx.globalAlpha = b.op * 0.28 / (i + 1); ctx.fillStyle = col.orange; ctx.beginPath(); ctx.arc(X(g), Y(g), r * 0.9, 0, Math.PI * 2); ctx.fill(); });
+        ctx.save(); ctx.globalAlpha = b.op; ctx.translate(X(b.c), Y(b.c)); ctx.scale(Math.max(0, b.scale), Math.max(0, b.scale));
+        ctx.translate(0, r); ctx.scale(1 + (1 - b.squash) * 0.6, b.squash); ctx.translate(0, -r);
+        ctx.rotate(b.heading); ctx.scale(b.stretch, 1 / Math.sqrt(b.stretch)); ctx.rotate(-b.heading); ctx.rotate(b.spin);
+        ctx.fillStyle = col.orange; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = col.ink; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(0, 0, r - 0.75, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, -r); ctx.quadraticCurveTo(r * 0.9, 0, 0, r); ctx.moveTo(-r, 0); ctx.quadraticCurveTo(0, r * 0.9, r, 0); ctx.stroke(); ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+      if (setA > 0) {
+        ring(true);
+        ctx.save(); ctx.globalAlpha = setA * 0.7; const rx = (L.ringCenter.x + L.ringWidth / 2) * w, ry = Y(L.ringCenter); ctx.translate(rx, ry); ctx.rotate(f.burst.wobble); ctx.translate(-rx, -ry);
+        ctx.strokeStyle = col.ink; ctx.lineWidth = 1; ctx.beginPath(); const tp = L.ringCenter, half = L.ringWidth / 2, depth = L.netDepth * f.net;
+        for (let i = 0; i < 6; i++) { const q = i / 5; ctx.moveTo((tp.x - half + L.ringWidth * q) * w, Y(tp)); ctx.lineTo((tp.x - half * 0.55 + L.ringWidth * 0.55 * q) * w, top + (tp.y + depth) * w); }
+        for (const row of [0.4, 0.8]) { const reach = half * (1 - 0.45 * row), y = top + (tp.y + depth * row) * w; ctx.moveTo((tp.x - reach) * w, y); ctx.lineTo((tp.x + reach) * w, y); }
+        ctx.stroke(); ctx.restore();
+        // Dust and confetti.
+        for (const pc of f.particles) {
+          const sz = pc.size * w; ctx.save(); ctx.globalAlpha = setA * pc.op; ctx.translate(X(pc.c), Y(pc.c)); ctx.rotate(pc.rot);
+          if (pc.kind === 'dust') { ctx.globalAlpha *= 0.45; ctx.fillStyle = col.secondary; ctx.beginPath(); ctx.arc(0, 0, sz / 2, 0, Math.PI * 2); ctx.fill(); }
+          else { ctx.fillStyle = pc.kind === 'ink' ? col.ink : col.orange; ctx.fillRect(-sz / 2, -sz * 0.225, sz, sz * 0.45); }
+          ctx.restore();
+        }
+        // SWISH! and its rays.
+        const bu = f.burst;
+        if (bu.op > 0) {
+          ctx.save(); ctx.globalAlpha = setA * bu.op; ctx.translate(X(L.burstAt), Y(L.burstAt)); ctx.scale(Math.max(0, bu.scale), Math.max(0, bu.scale));
+          const inner = 0.06 * w, outer = inner + L.burstRayLength * bu.rays * w; ctx.strokeStyle = col.orange; ctx.lineWidth = 2.5; ctx.beginPath();
+          for (let i = 0; i < 8; i++) { const a = i / 8 * 2 * Math.PI - Math.PI / 2; ctx.moveTo(inner * Math.cos(a), inner * Math.sin(a)); ctx.lineTo(outer * Math.cos(a), outer * Math.sin(a)); }
+          ctx.stroke(); ctx.rotate(-12 * Math.PI / 180); ctx.fillStyle = col.ink; ctx.font = 'italic 900 26px ui-rounded, ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SWISH!', 0, 0); ctx.restore();
+        }
+      }
+      ctx.restore(); // camera
+    }
+    // The ready Doddy in screen space from the hand-over: he jumps into his place on Home.
+    const court = courtBox(W, H), home = homeTarget(), placed = place(court, home, t, reduced);
+    if (inPlace) drawReady(placed.box, placed.sx, placed.sy, placed.op);
+    if (f.hint > 0) { ctx.globalAlpha = f.hint; ctx.fillStyle = col.secondary; ctx.font = '12px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText('Tap to skip', W / 2, H - 28); ctx.globalAlpha = 1; }
+  }
+
+  // Where Home draws Doddy, in phone pixels (the app measures this the same way).
+  function homeTarget() {
+    const a = homeArt.getBoundingClientRect(), ph = phone.getBoundingClientRect();
+    if (!a.height) return null;
+    return { cx: a.left - ph.left + a.width / 2, cy: a.top - ph.top + a.height / 2, h: a.height };
+  }
+
+  // ---- Home after the opening: the hello as the heading, the ready pose, buttons sliding in, taps answered.
+  const home = document.getElementById('home'), homeTitle = document.getElementById('homeTitle'), homeSub = document.getElementById('homeSub'), homeArt = document.getElementById('homeArt');
+  const toast = document.getElementById('toast'); let toastTimer = null, readyTimer = null;
+  function say(text) { toast.textContent = text; toast.classList.add('on'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('on'), 2600); }
+  const actions = { bTalk: 'In the app this opens Talk to Doddy: the microphone starts only now, after your tap, and the screen says "Listening" from the real session.',
+    bAsk: 'In the app this opens Ask Doddy, for typed questions.', bSave: 'In the app this opens Save a detail.', bFind: 'In the app this opens Find, in your saved notes.' };
+  for (const id in actions) document.getElementById(id).addEventListener('click', () => say(actions[id]));
+  // Home underneath: its own Doddy hidden while the opening's stands in for him, buttons hidden
+  // until the hand-over.
+  function homeUnderOpening(reduced) {
+    homeArt.style.opacity = '0'; clearTimeout(readyTimer);
+    if (reduced) home.classList.remove('hidden-buttons'); else home.classList.add('hidden-buttons');
+  }
+  const handover = () => home.classList.remove('hidden-buttons');
+  function homeAfterOpening() {
+    homeArt.style.opacity = '1'; home.classList.remove('hidden-buttons'); clearTimeout(readyTimer);
+  }
+
+  // ---- Playback
+  const reduce = document.getElementById('reduce'), slow = document.getElementById('slow'), dark = document.getElementById('dark'), clock = document.getElementById('clock');
+  const beatsList = document.getElementById('beats');
+  const rows = [['0.00', 'A pen sketches Doddy in', 0], ['0.42', 'The ball pops in; two quick bounces', B.dribbleStart], ['0.78', 'Crouch (squash); the camera punches in', B.gatherStart], ['0.94', 'Up, stretch and hop', B.shotStart],
+    ['1.04', 'Release, follow-through, ghost trail', B.release], ['1.40', 'SWISH! Confetti, shake, ring wobble', B.score], ['1.58', 'Pops up ready to talk', B.readyStart], ['1.95', 'Jumps into his place on Home; buttons slide in', B.handoverStart], ['2.25', 'Lands (squash) exactly on Home\u2019s Doddy', B.arrive], ['2.40', 'Home', B.end]];
+  for (const [t, label] of rows) { const li = document.createElement('li'); li.innerHTML = '<span class="t">' + t + '</span><span class="label">' + label + '</span>'; beatsList.appendChild(li); }
+  let start = performance.now(), shift = 0, playing = true, frozen = null, handedOver = false;
+  try { const q = new URLSearchParams(location.search); if (q.has('t')) frozen = parseFloat(q.get('t')); if (q.get('dark') === '1') dark.checked = true; if (q.get('reduce') === '1') reduce.checked = true; } catch (e) {}
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) reduce.checked = true;
+  const applyTheme = () => document.documentElement.setAttribute('data-theme', dark.checked ? 'dark' : 'light');
+  function end() { playing = false; canvas.hidden = true; homeAfterOpening(); }
+  function replay() { start = performance.now(); shift = 0; playing = true; handedOver = false; canvas.hidden = false; homeUnderOpening(reduce.checked); }
+  const clockAt = (now) => frozen !== null ? frozen : (now - start) / 1000 * (slow.checked ? 0.25 : 1) + shift;
+  function tick(now) {
+    const reduced = reduce.checked, t = clockAt(now);
+    if (playing) {
+      if (!handedOver && (reduced || t >= B.handoverStart)) { handedOver = true; handover(); }
+      render(frameAt(t, reduced), t, reduced);
+      if (frozen === null && t >= duration(reduced)) end();
+    }
+    clock.textContent = Math.min(t, duration(reduced)).toFixed(2) + ' s' + (playing ? '' : ' (Home)');
+    beatsList.querySelectorAll('li').forEach((li, i) => li.querySelector('.label').classList.toggle('on', playing && !reduced && t >= rows[i][2] && (i === rows.length - 1 || t < rows[i + 1][2])));
+    requestAnimationFrame(tick);
+  }
+  // A tap jumps to the hand-over, so Doddy still lands in his place instead of the screen cutting.
+  const skip = () => { if (!playing || frozen !== null) return; const t = clockAt(performance.now()), target = reduce.checked ? Math.max(t, duration(true) - 0.25) : Math.max(t, B.handoverStart); shift += target - t; };
+  canvas.addEventListener('click', skip);
+  canvas.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); skip(); } });
+  document.getElementById('replay').addEventListener('click', replay);
+  dark.addEventListener('change', () => { applyTheme(); replay(); });
+  reduce.addEventListener('change', replay); slow.addEventListener('change', replay);
+  applyTheme(); homeUnderOpening(reduce.checked);
+  try { if (new URLSearchParams(location.search).get('home') === '1') { frozen = null; end(); } } catch (e) {}
+  requestAnimationFrame(tick);
+})();
+</script>

@@ -11,6 +11,10 @@ enum PreferenceKey {
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).
     static let pinnedNotes = "pinnedNotes"
     static let hideCharacterArt = "hideCharacterArt"
+    /// Settings → Appearance: the basketball opening each time the app is opened (ADR-210). On unless turned off.
+    static let openingScene = "openingScene"
+    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-210). On unless turned off.
+    static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
@@ -63,7 +67,10 @@ struct RootView: View {
     @State private var homePath: [UUID] = []
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
+    @State private var opening = OpeningModel()
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -95,6 +102,12 @@ struct RootView: View {
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await noteReminders.refreshOnForeground() } }
+                // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
+                switch phase {
+                case .background: opening.appWentToBackground()
+                case .active: opening.appBecameActive(openingConditions)
+                default: break
+                }
             }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
@@ -116,27 +129,37 @@ struct RootView: View {
         }
     }
 
+    /// What the opening's rules need to know right now (ADR-210). Read at decision time, so a
+    /// switch changed in Settings counts from the next opening.
+    private var openingConditions: OpeningConditions {
+        OpeningConditions(
+            sceneOn: OpeningPreferences.sceneOn(),
+            listenOnOpen: OpeningPreferences.listenOnOpen(),
+            characterArtHidden: UserDefaults.standard.bool(forKey: PreferenceKey.hideCharacterArt),
+            reduceMotion: reduceMotion,
+            voiceOverRunning: voiceOverOn,
+            atHome: profiles.route == .home,
+            voiceAvailable: store.environment.capabilities.isAvailable(.voiceInput),
+            microphoneDenied: MicrophoneAccess.isDenied,
+            somethingIsOpen: router.isVoicePresented || router.isSetupPresented
+                || router.shownDraft != nil || router.findRequest != nil)
+    }
+
     private var tabs: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selectedTab) {
-                HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
-                    .tabItem { Label("Home", systemImage: "house") }
-                    .tag(AppTab.home)
-                MemoriesView(showFind: $showFind)
-                    .tabItem { Label("Memories", systemImage: "note.text") }
-                    .tag(AppTab.memories)
-                SettingsView()
-                    .tabItem { Label("Settings", systemImage: "gearshape") }
-                    .tag(AppTab.settings)
+        ZStack {
+            tabContent
+            // The opening (ADR-210) sits over the ready app and fades away to reveal it; a tap
+            // ends it early. It is removed from the hierarchy entirely once it is done.
+            if let play = opening.play {
+                // No fade at the end: Doddy is already in Home's place, and everything else has faded.
+                OpeningSceneView(
+                    play: play, homeTarget: opening.homeArtBox,
+                    onHandover: { opening.handoverStarted() },
+                    onFinished: { opening.finish() })
+                .zIndex(1)
             }
-            .toolbar(.hidden, for: .tabBar)
-            if let deleted = store.recentlyDeleted {
-                UndoDeleteBar(deleted: deleted)
-            }
-            // A sibling reserves real viewport space. A TabView-level safeAreaInset
-            // left nested NavigationStack's final action behind the bar on iOS 27.
-            DoddyTabBar(selectedTab: $selectedTab)
         }
+        .environment(opening)
         .tint(Theme.accentText)
         .background(Theme.canvas)
         // One presentation point for the conversation, so a shortcut invocation while it is
@@ -157,6 +180,12 @@ struct RootView: View {
         }
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
             router.isOnboardingShown = !atHome
+            // The first time Home is ready and on screen is the launch (OpeningModel decides).
+            opening.homeReady(openingConditions, isActive: scenePhase == .active)
+        }
+        // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
+        .onChange(of: router.isVoicePresented) { _, presented in
+            if presented { opening.conversationOpened() }
         }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
@@ -166,6 +195,29 @@ struct RootView: View {
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
             }
+        }
+    }
+
+    private var tabContent: some View {
+        VStack(spacing: 0) {
+            TabView(selection: $selectedTab) {
+                HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
+                    .tabItem { Label("Home", systemImage: "house") }
+                    .tag(AppTab.home)
+                MemoriesView(showFind: $showFind)
+                    .tabItem { Label("Memories", systemImage: "note.text") }
+                    .tag(AppTab.memories)
+                SettingsView()
+                    .tabItem { Label("Settings", systemImage: "gearshape") }
+                    .tag(AppTab.settings)
+            }
+            .toolbar(.hidden, for: .tabBar)
+            if let deleted = store.recentlyDeleted {
+                UndoDeleteBar(deleted: deleted)
+            }
+            // A sibling reserves real viewport space. A TabView-level safeAreaInset
+            // left nested NavigationStack's final action behind the bar on iOS 27.
+            DoddyTabBar(selectedTab: $selectedTab)
         }
     }
 }

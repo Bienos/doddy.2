@@ -65,6 +65,20 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | S5 | Start Save to Doddy while a voice conversation is open | The note appears after the conversation closes |
 | S6 | Run Save to Doddy during first-use onboarding or while the Back Tap setup sheet is open | It waits and appears afterwards. A later Save to Doddy still works (it must not stay blocked) |
 
+## 4b. The opening and listening on open (ADR-210)
+| # | Do this | Expect |
+|---|---|---|
+| O1 | Launch the app (onboarding done) | About 2.4 s: a pen draws Doddy, two bounces with dust, crouch, spring, shot with a trail, SWISH! with confetti and a shake, he pops up, then jumps into his place on Home as Home fades in and the buttons slide in. **Main check: when the opening ends, Home's Doddy must not move by even a point** (light, dark, smallest and largest iPhone, largest text size where Home's picture is 100 pt). Also: every stroke of the pen drawing appears; no text greeting anywhere. `design/opening-v0.1/index.html` shows the intended timing |
+| O2 | Settings → Voice → "Start listening when I open Doddy" off; relaunch and tap during the scene | It jumps to the hand-over: Doddy hops into his place and Home is usable within half a second. Nothing listens |
+| O3 | Switch to another app and back within a minute; then leave it in the background for 5 minutes and come back | No scene on the quick return; the scene on the return after 5 minutes |
+| O4 | Settings → Appearance → "Doddy's opening" off; relaunch | Home straight away. On again: the scene is back on the next launch |
+| O6 | iOS Settings → Accessibility → Motion → Reduce Motion on; relaunch | A still picture: Doddy already in his place on Home, then the paper fades around him in about a second; nothing moves; Home's buttons are there at once. VoiceOver on: no opening |
+| O7 | "Hide character artwork" on; relaunch | No scene |
+| O8 | Fresh install, finish onboarding, then relaunch ("Start listening when I open Doddy" is on by default) | After the scene, Talk to Doddy opens by itself: the iOS microphone prompt the first time, then "Connecting…" and "Listening" from the real session, the orange indicator, Doddy's own first message spoken by the agent. End it. Privacy row reads "Only while talking. A conversation starts when you open Doddy; turn that off under Voice" |
+| O9 | With O8 on: open Doddy from Back Tap or the Talk to Doddy control during the scene | The scene stops; one conversation, not two |
+| O10 | With O8 on: iOS Settings → Doddy → Microphone off; relaunch | The scene plays; no conversation opens by itself (it would only say "Microphone is off"). Tapping Talk to Doddy still explains and offers Open Settings |
+| O11 | With O8 on: tap a note reminder's "Done" from the Lock Screen (a background launch), then open Doddy | Nothing listened in the background; the scene (and the conversation) only once the app is on screen |
+
 ## 5. Voice (needs a real conversation)
 | # | Do this | Expect |
 |---|---|---|
