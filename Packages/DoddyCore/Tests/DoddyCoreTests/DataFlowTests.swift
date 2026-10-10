@@ -11,7 +11,7 @@ final class DataFlowTests: XCTestCase {
         DataFlow.rows(state).first { $0.id == id }!
     }
 
-    func testOffSwitchesShowAsNotSent() {
+    func testOffSwitchesShowAsNotSent() throws {
         XCTAssertFalse(row("tokenServer", base).isActive)
         XCTAssertFalse(row("doddyServer", base).isActive)
         XCTAssertFalse(row("askDoddy", base).isActive)
@@ -22,6 +22,13 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Find by meaning:") }, "meaning search is on-device")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Notes suggested after a conversation:") }, "save suggestions are on-device")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Morning brief:") }, "the brief is on-device")
+        let siriOff = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "siri" })
+        XCTAssertFalse(siriOff.isActive, "off unless the app says the switch is on")
+        var siriState = base
+        siriState.siriReadsNotes = true
+        let siriOn = try XCTUnwrap(DataFlow.rows(siriState).first { $0.id == "siri" })
+        XCTAssertTrue(siriOn.isActive)
+        XCTAssertTrue(siriOn.what.contains("the note Siri reads back"))
         XCTAssertEqual(row("elevenlabs", base).what, "Your voice, the conversation, your saved notes and your personality settings.")
     }
 

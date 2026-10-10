@@ -65,6 +65,8 @@ enum PreferenceKey {
     static let morningBriefTodoist = "morningBrief.todoist"
     static let morningBriefGmail = "morningBrief.gmail"
     static let morningBriefGmailImportant = "morningBrief.gmailImportant"
+    /// Siri may read saved notes aloud (ADR-214). On unless turned off; the phone must be unlocked.
+    static let siriReadsNotes = "siriReadsNotes"
 }
 
 enum AppTab: Hashable {

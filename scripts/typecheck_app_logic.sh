@@ -60,6 +60,7 @@ files=(
   DoddyApp/Infrastructure/MemoryStore.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
+  DoddyApp/Infrastructure/SiriNoteLookup.swift
   DoddyApp/Features/Ask/AskController.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
 )

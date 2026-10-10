@@ -14,6 +14,7 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+    @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
 
     private var state: DataFlowState {
         let defaults = UserDefaults.standard
@@ -31,7 +32,8 @@ struct DataFlowView: View {
             // Same rule as ServerConfig: the built-in address, or a valid one entered in Settings.
             messagingServerSet: ServerConfig.baseURL() != nil,
             pushOn: pushOn,
-            memoryCopyOn: memoryCopyOn)
+            memoryCopyOn: memoryCopyOn,
+            siriReadsNotes: siriReadsNotes)
     }
 
     var body: some View {

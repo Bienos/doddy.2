@@ -13,7 +13,7 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
-        let environment = AppEnvironment.live()
+        let environment = AppEnvironment.shared
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
         store.noteReminders = noteReminders
