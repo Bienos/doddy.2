@@ -446,6 +446,8 @@ ADR-211 was first recorded here as ADR-200; renumbered 2026-10-10 because ADR-20
 
 ADR-216 pack check: `schemas/memory.schema.json` gains the category `list` (exports now carry list records), so its hash in `PACKAGE_MANIFEST.json` was updated, as with ADR-107.
 
+ADR-231 pack check: `schemas/memory.schema.json` gains the source `imported_file` (exports now carry imported notes), so its hash in `PACKAGE_MANIFEST.json` was updated, as with ADR-107 and ADR-216.
+
 ADR-214 owner answers (2026-10-10, "1. both 2 mode 3. what 4 yes 5. yes 6 native"): T1 face to face and listen only; T2 a mode of Doddy (no separate agent); T4 detect by language plus hold-to-talk; T5 quiet word yes; T6 a native voice per language. T3: nothing kept, copy or save the facts within 5 minutes on a tap.
 
 Lines joined again 2026-10-10: the lists line (PR #20, ADR-210 to ADR-224) was merged with `claude/loving-dirac-uuxoux` after PR #16. Both had used ADR-210, so the opening decision below was renumbered 210 → 225 (19 references in code and docs); commit messages before this merge keep the old number.
