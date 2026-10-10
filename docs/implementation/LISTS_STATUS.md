@@ -1,4 +1,4 @@
-# Lists by voice status (ADR-210)
+# Lists by voice status (ADR-216)
 Date: 2026-10-10. Owner: "design lists by voice", then "approved, build it" (L1–L6 as proposed). Design: `docs/design/LISTS.md`, canvas "Doddy Lists".
 
 ## What ships

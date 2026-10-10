@@ -28,8 +28,8 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | Notification | Status | Why |
 |---|---|---|
 | **Memory reminder:** a saved note, at a chosen date/time | **Proposed v1** | The only notification with a user-requested purpose today |
-| Snooze of a delivered reminder | **Built (ADR-205)**: In 1 hour, Tomorrow 09:00; This evening in the app | See "Repeating reminders and snooze" below |
-| Recurring reminders ("every Monday") | **Built (ADR-205)** | See "Repeating reminders and snooze" below |
+| Snooze of a delivered reminder | **Built (ADR-211)**: In 1 hour, Tomorrow 09:00; This evening in the app | See "Repeating reminders and snooze" below |
+| Recurring reminders ("every Monday") | **Built (ADR-211)** | See "Repeating reminders and snooze" below |
 | Location-based ("when I get home") | **Built (ADR-196)** | See "Place reminders" below |
 | Time Sensitive interruption level | Deferred, opt-in only | Breaks through Focus; must be the user's choice per reminder |
 | Voice-session Live Activity / Dynamic Island | Separate track (V3) | Not a notification; see `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` |
@@ -108,7 +108,7 @@ Owner instruction 2026-10-10: "build location reminders next". A note reminder f
 - **Limits:** 10 place reminders (iOS watches at most 20 regions per app), inside the 50 total.
 - **Not built:** a map to drag the circle (a map would load tiles from Apple; can come later), places shared between notes, "at a place between these hours". Voice is built: ADR-198.
 
-## Repeating reminders and snooze (ADR-205)
+## Repeating reminders and snooze (ADR-211)
 Owner: "yes design repeating reminders and snooze", then "approved, build it" (R1–R4 as proposed). Screens 15–21 and the rules board on the Doddy Notifications canvas. Built; status and evidence in `docs/implementation/REPEAT_SNOOZE_STATUS.md`.
 
 **Repeat (time reminders only).**

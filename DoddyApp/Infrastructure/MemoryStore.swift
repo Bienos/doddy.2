@@ -8,7 +8,7 @@ import Observation
 @Observable
 final class MemoryStore {
     let environment: AppEnvironment
-    /// Notes only. Lists (ADR-210) are `memories` rows too, but live in `lists` with their items.
+    /// Notes only. Lists (ADR-216) are `memories` rows too, but live in `lists` with their items.
     private(set) var memories: [MemoryRecord] = []
     private(set) var lists: [DoddyList] = []
     /// Items of the list deleted a moment ago, put back together with it on Undo.

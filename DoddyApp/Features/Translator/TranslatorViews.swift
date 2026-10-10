@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// Translator mode screens (ADR-209), after the "Doddy Translator" canvas: start (1), face to face
+// Translator mode screens (ADR-215), after the "Doddy Translator" canvas: start (1), face to face
 // (4, 5, 6, 7, 8), listen only (6b) and the end (9). Their half shows their language's own lines;
 // the owner's half uses the owner's language for the translated text and English for the app.
 

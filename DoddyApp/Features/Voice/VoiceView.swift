@@ -9,6 +9,7 @@ struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
@@ -19,6 +20,8 @@ struct VoiceView: View {
     @State private var editingNoteReminderTime = false
     /// "Change languages" on the "Start translating?" card.
     @State private var changingTranslator = false
+    /// The plan step whose "Change" sheet is open (ADR-205).
+    @State private var editingPlanStep: PlanStep?
 
     /// Read when a conversation starts, so a changed setting or access code applies next time.
     private var mode: VoiceConnectionMode {
@@ -113,6 +116,20 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
+                        if controller.audioPausedByOtherApp && controller.isLive {
+                            Label("Another app has Doddy's audio. He can't hear you until it lets go.", systemImage: "pause.circle")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                                .accessibilityIdentifier("voice.audioPaused")
+                        }
+                        if let note = controller.audioNote {
+                            Text(note)
+                                .font(.caption2)
+                                .foregroundStyle(Theme.secondaryText)
+                                .textSelection(.enabled)
+                                .accessibilityIdentifier("voice.audioNote")
+                        }
+
                         if controller.isPrivate {
                             Label {
                                 Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and keeps its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
@@ -158,6 +175,11 @@ struct VoiceView: View {
                                 .id("noteReminderStatus")
                         }
 
+                        if let status = controller.planStatus {
+                            planStatusCard(status, controller: controller)
+                                .id("planStatus")
+                        }
+
                         if pauseAllConnections {
                             pausedCard
                                 .id("connectionsPaused")
@@ -181,23 +203,26 @@ struct VoiceView: View {
                     .padding(24)
                 }
                 .onChange(of: controller.lines.count) { _, _ in
-                    if let last = controller.lines.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
+                    if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
-                .onChange(of: controller.pendingAction?.toolCallID) { _, id in
+                .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
-                    if id != nil { withAnimation { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                    if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
-                    if receipt != nil { withAnimation { proxy.scrollTo("listReceipt", anchor: .bottom) } }
+                    if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
                 }
                 .onChange(of: controller.noteReminderStatus) { _, status in
-                    if status != nil { withAnimation { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
+                    if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
                 }
                 .onChange(of: controller.contactCard) { _, card in
-                    if card != nil { withAnimation { proxy.scrollTo("contactCard", anchor: .bottom) } }
+                    if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("contactCard", anchor: .bottom) } }
                 }
                 .onChange(of: controller.reminderStatus) { _, status in
-                    if status != nil { withAnimation { proxy.scrollTo("reminderStatus", anchor: .bottom) } }
+                    if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("reminderStatus", anchor: .bottom) } }
+                }
+                .onChange(of: controller.planStatus == nil) { _, isNil in
+                    if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("planStatus", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -236,7 +261,7 @@ struct VoiceView: View {
 
     /// Card for anything that changes data or opens another app. Nothing happens until the user taps.
     private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
-        let labels = actionLabels(pending)
+        let labels = actionLabels(pending, controller: controller)
         return VStack(alignment: .leading, spacing: 12) {
             actionContent(pending, controller: controller)
             Button {
@@ -245,6 +270,8 @@ struct VoiceView: View {
                 HStack { Text(labels.confirm); Spacer(); Image(systemName: "checkmark") }
             }
             .buttonStyle(PrimaryButtonStyle())
+            // A plan with every step unticked has nothing to confirm; "Not now" declines it.
+            .disabled(isEmptyPlan(pending, controller: controller))
             .accessibilityIdentifier("voice.confirm")
             Button {
                 Task { await controller.declinePendingAction() }
@@ -255,6 +282,12 @@ struct VoiceView: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        // One sheet for the whole card, not one per step (ADR-205).
+        .sheet(item: $editingPlanStep) { step in
+            PlanStepEditor(step: step) { changed in
+                controller.replacePlanStep(changed)
+            }
+        }
     }
 
     @ViewBuilder
@@ -265,6 +298,16 @@ struct VoiceView: View {
                 .font(.headline)
             Text("“\(text)”")
                 .font(.body)
+            // File it now, or later from the note's own screen (ADR-202).
+            Picker("Type", selection: Binding(
+                get: { controller.pendingMemoryCategory },
+                set: { controller.pendingMemoryCategory = $0 })
+            ) {
+                ForEach(MemoryCategory.noteCategories, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            .pickerStyle(.menu)
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("voice.memoryType")
         case .event(_, let draft):
             Text("Add this event?")
                 .font(.headline)
@@ -350,10 +393,75 @@ struct VoiceView: View {
                 Text(line)
                     .font(.body)
             }
+        case .plan(_, let steps, let blocked):
+            planContent(steps: steps, blocked: blocked, controller: controller)
         }
     }
 
-    private func actionLabels(_ pending: VoiceSessionController.PendingAction) -> (confirm: String, decline: String) {
+    /// Plan card (ADR-204): every change with its full details and its own tick box. Blocked steps
+    /// say why and can't be ticked. Nothing runs until the button below is tapped.
+    @ViewBuilder
+    private func planContent(steps: [PlanStep], blocked: [Int: PlanBlock], controller: VoiceSessionController) -> some View {
+        Text("Here's what I'd do")
+            .font(.headline)
+        PlanStepList(
+            steps: steps, blocked: blocked, ticked: controller.planTicked, idPrefix: "voice.plan",
+            cloud: controller.planCloud, onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
+        Text("Untick anything you don't want, or tap Change to fix a step. The rest run in this order, and each one gets its own result.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+    }
+
+    /// After a plan's button: each step with its result, from the same entries as "What Doddy did".
+    private func planStatusCard(_ status: VoiceSessionController.PlanStatus, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                if status.isRunning { ProgressView() }
+                Text(status.isRunning ? "Working through the plan…" : "What happened")
+                    .font(.headline)
+            }
+            ForEach(status.steps) { step in
+                let request = step.activity(calendar: .current)
+                let result = status.results[step.number]
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(step.number). \(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
+                        .font(.body)
+                    if let detail = request?.detail {
+                        Text(detail)
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    Text(result?.outcome.text ?? "Waiting")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(result.map { $0.outcome == .notDone || $0.outcome == .notSure } == true ? Theme.error : Theme.ink)
+                    if let note = result?.note {
+                        Text(note)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .accessibilityElement(children: .combine)
+            }
+            if !status.isRunning {
+                Button("OK") {
+                    controller.dismissPlanStatus()
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.planReceipt")
+    }
+
+    private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {
+        if case .plan = pending { return controller.planTicked.isEmpty }
+        return false
+    }
+
+    private func actionLabels(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> (confirm: String, decline: String) {
         switch pending {
         case .memory: ("Save", "Don't save")
         case .event, .reminder: ("Add", "Don't add")
@@ -365,6 +473,7 @@ struct VoiceView: View {
         case .noteReminder: ("Set reminder", "Don't set")
         case .translator: ("Start", "Not now")
         case .createList: ("Create list", "Not now")
+        case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), "Not now")
         }
     }
 
@@ -630,7 +739,7 @@ struct VoiceView: View {
         .buttonStyle(SecondaryButtonStyle())
     }
 
-    /// What a list change by voice did (ADR-210), with Undo and, when "milk" matched two items,
+    /// What a list change by voice did (ADR-216), with Undo and, when "milk" matched two items,
     /// the items to tap. Read back from the store before it is shown.
     private func listReceiptCard(_ receipt: ListReceipt, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 10) {

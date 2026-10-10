@@ -126,7 +126,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
         try await dbQueue.write { db in
             guard let existing = try Self.fetch(id, db) else { throw MemoryStoreError.notFound(id) }
-            // Lists have their own screens and items (ADR-210); the type picker never crosses over.
+            // Lists have their own screens and items (ADR-216); the type picker never crosses over.
             guard category != .list, existing.category != .list else { throw ListError.notANote }
             let changed = try existing.recategorized(to: category)
             try db.execute(sql: "UPDATE memories SET category = ? WHERE id = ?", arguments: [category.rawValue, id.uuidString])

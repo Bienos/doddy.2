@@ -172,6 +172,43 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         }
     }
 
+    /// A restore that fails its read-back must leave nothing behind, not even the notes before the
+    /// bad one (ADR-178). A date with sub-millisecond precision can't be stored exactly, so the
+    /// read-back doesn't match: a failure injected through the public API.
+    func testRestoreThatFailsItsReadBackAddsNothing() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let mine = try await repo.save(NewMemory(text: "Already here", capturedAt: t0))
+        let good = try MemoryRecord(id: UUID(), rawText: "Fine note", source: .explicitText, capturedAt: Date(timeIntervalSince1970: 1_760_000_000.123))
+        let unstorable = try MemoryRecord(id: UUID(), rawText: "Odd date", source: .explicitText, capturedAt: Date(timeIntervalSince1970: 1_760_000_000.1234567))
+
+        do {
+            _ = try await repo.restore([good, unstorable])
+            XCTFail("the read-back should not match")
+        } catch {
+            XCTAssertEqual(error as? MemoryStoreError, .verificationFailed)
+        }
+        let listed = try await repo.list(limit: nil)
+        XCTAssertEqual(listed, [mine], "the good note before the bad one was rolled back too")
+        let recall = RepositoryRecallService(repository: repo)
+        let search = try await recall.recall("Fine note", limit: 5)
+        XCTAssertEqual(search, .noMatch, "and it is not in the search index either")
+    }
+
+    /// The search index must follow a delete and an undo (A-08): gone after delete, back after restore.
+    func testSearchFollowsDeleteAndUndo() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let recall = RepositoryRecallService(repository: repo)
+        let saved = try await repo.save(NewMemory(text: "Locker twelve code 4821", capturedAt: t0))
+
+        try await repo.delete(id: saved.id)
+        let gone = try await recall.recall("locker code", limit: 5)
+        XCTAssertEqual(gone, .noMatch)
+
+        _ = try await repo.restore([saved])
+        guard case .matches(let hits) = try await recall.recall("locker code", limit: 5) else { return XCTFail("expected the restored note") }
+        XCTAssertEqual(hits.map(\.memoryID), [saved.id])
+    }
+
     func testUndoAfterDeleteBringsTheExactNoteBack() async throws {
         let repo = try SQLiteMemoryRepository.inMemory()
         let saved = try await repo.save(NewMemory(text: "Locker 12, code 4821", capturedAt: t0))

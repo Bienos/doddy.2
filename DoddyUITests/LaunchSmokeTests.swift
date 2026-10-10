@@ -177,6 +177,30 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testPracticePlanCardCountsTicksAndNeverSaysDone() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
+        app.buttons["tab.settings"].tap()
+        let row = app.buttons["settings.planPractice"]
+        for _ in 0..<8 {
+            if row.exists && row.isHittable { break }
+            app.swipeUp()
+        }
+        row.tap()
+        XCTAssertTrue(app.navigationBars["Try a plan card"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["practice.banner"].exists)
+        let confirm = app.buttons["practice.confirm"]
+        XCTAssertTrue(confirm.label.contains("Do 4 things"), confirm.label)
+        app.buttons["practice.step4"].tap()
+        XCTAssertTrue(confirm.label.contains("Do 3 things"), confirm.label)
+        confirm.tap()
+        let results = app.descendants(matching: .any)["practice.results"]
+        XCTAssertTrue(results.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Nothing was done.")).firstMatch.exists)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS %@", "Unticked")).firstMatch.exists)
+    }
+
+    @MainActor
     func testNoFakeListeningOrMicControls() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))

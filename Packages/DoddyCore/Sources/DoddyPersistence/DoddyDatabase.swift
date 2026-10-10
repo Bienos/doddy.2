@@ -127,7 +127,7 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
                 """)
         }
-        // Repeating reminders and snooze (ADR-205). New columns only; existing rows stay one-offs.
+        // Repeating reminders and snooze (ADR-211). New columns only; existing rows stay one-offs.
         migrator.registerMigration("v5_note_reminder_repeat") { db in
             try db.execute(sql: """
                 ALTER TABLE note_reminders ADD COLUMN repeat_rule TEXT
@@ -140,7 +140,7 @@ public final class DoddyDatabase: Sendable {
                     CHECK (first_set_for_ms IS NULL OR (kind = 'time' AND repeat_rule IS NULL));
                 """)
         }
-        // Lists (ADR-210): a list is a `memories` row with category 'list'; its items go with it.
+        // Lists (ADR-216): a list is a `memories` row with category 'list'; its items go with it.
         migrator.registerMigration("v6_list_items") { db in
             try db.execute(sql: """
                 CREATE TABLE list_items (

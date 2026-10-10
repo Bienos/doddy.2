@@ -48,7 +48,7 @@
     "saved_notes_truncated": "'yes' when the list was cut short, else 'no'",
     "recent_conversations": "Recent conversations, oldest first, bounded (VoiceContext.recentConversations)",
     "doddy_personality": "Style settings from Settings, Doddy's personality (PersonalityPrompt.render); default = Doddy's default",
-    "user_profile": "Approved introduction answers (ProfilePrompt.render), sent only when Settings, About you, 'Use in voice conversations' is on; otherwise the not-shared line", "saved_lists": "List names with open and ticked counts (ListsPrompt.render, ADR-210), no items; the not-shared line when opened from Home, Translate", "translator_start": "'none', or translator mode when the conversation was opened from Home, Translate (TranslatorPrompt.render, ADR-209); then saved_notes, recent_conversations and user_profile carry a not-shared line instead"
+    "user_profile": "Approved introduction answers (ProfilePrompt.render), sent only when Settings, About you, 'Use in voice conversations' is on; otherwise the not-shared line", "saved_lists": "List names with open and ticked counts (ListsPrompt.render, ADR-216), no items; the not-shared line when opened from Home, Translate", "translator_start": "'none', or translator mode when the conversation was opened from Home, Translate (TranslatorPrompt.render, ADR-215); then saved_notes, recent_conversations and user_profile carry a not-shared line instead"
   },
   "turn_taking": {
     "eagerness": "high",
@@ -61,7 +61,7 @@
     "temperature": 0.5,
     "timezone": "Europe/Warsaw",
     "turn": {"turn_eagerness": "eager", "speculative_turn": true, "turn_model": "turn_v3", "turn_timeout": 7},
-    "language_presets": "One preset per non-English language in 'languages', each overriding only the first message (ADR-206). The built-in language_detection tool (only_at_conversation_start false) switches between them at any point in a conversation.",
+    "language_presets": "One preset per non-English language in 'languages', each overriding only the first message (ADR-212). The built-in language_detection tool (only_at_conversation_start false) switches between them at any point in a conversation.",
     "tts": {"model_id": "eleven_v4_turbo", "voice_id": "oDULUm0GMltHA6mVZkWh", "speed": 1.0, "stability": 0.5},
     "client_overrides": {"tts": ["voice_id", "speed", "stability"], "agent": ["language"], "note": "Settings, Voice and personality (VoiceStyle, ADR-105); only changed values are sent"},
     "asr": {"provider": "scribe_realtime", "quality": "high"},

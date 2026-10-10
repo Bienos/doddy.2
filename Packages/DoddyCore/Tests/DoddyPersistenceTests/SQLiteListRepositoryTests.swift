@@ -3,7 +3,7 @@ import DoddyPersistence
 import Foundation
 import XCTest
 
-/// Lists on real SQLite (ADR-210): every change read back, duplicates and limits, undo, cascade.
+/// Lists on real SQLite (ADR-216): every change read back, duplicates and limits, undo, cascade.
 final class SQLiteListRepositoryTests: XCTestCase {
     private var clock = Date(timeIntervalSince1970: 1_800_000_000)
 

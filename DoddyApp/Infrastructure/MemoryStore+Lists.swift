@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// One list change that can be taken back exactly (ADR-210). Undo reverses only this change:
+/// One list change that can be taken back exactly (ADR-216). Undo reverses only this change:
 /// added items are removed if still open, ticks are unticked, removed items are put back.
 struct ListUndo: Equatable, Identifiable {
     enum Change: Equatable {

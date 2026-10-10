@@ -35,7 +35,7 @@ struct AppEnvironment: Sendable {
     let privacy: PrivacyDefaults
     /// Set when the memory store could not be opened. Nothing is reset or deleted in that case.
     let storageProblem: String?
-    /// Lists (ADR-210), in the same SQLite file as the notes.
+    /// Lists (ADR-216), in the same SQLite file as the notes.
     var listRepository: any ListRepository = UnavailableListRepository()
 
     static let unavailable = AppEnvironment(

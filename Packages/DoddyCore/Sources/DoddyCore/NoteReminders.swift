@@ -48,7 +48,7 @@ public enum ReminderTrigger: Hashable, Sendable {
     case place(ReminderPlace)
 }
 
-/// How a time reminder repeats (ADR-205). The weekday, day of the month and clock time come from
+/// How a time reminder repeats (ADR-211). The weekday, day of the month and clock time come from
 /// the reminder's first occurrence, in the zone it was set in.
 public enum ReminderRepeat: String, CaseIterable, Hashable, Sendable {
     case daily, weekdays, weekly, monthly
@@ -315,7 +315,7 @@ public enum NoteReminderOutcome: Equatable, Sendable {
     }
 }
 
-/// The language of what iOS shows outside Doddy: notification title, body and buttons (ADR-207).
+/// The language of what iOS shows outside Doddy: notification title, body and buttons (ADR-213).
 /// Polish when the iPhone's first language is Polish; English otherwise, until other languages
 /// have reviewed copy.
 public enum NotificationLanguage: String, Sendable {

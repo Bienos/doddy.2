@@ -8,7 +8,7 @@ import UserNotifications
 /// No badge, no remote registration, interruption level `.active`.
 struct SystemNoteNotifications: NoteNotificationScheduling {
     static let categoryID = "DODDY_NOTE_REMINDER"
-    /// Repeating reminders (ADR-205): "In 1 hour" and "Done this time"; no "Tomorrow 09:00" (owner
+    /// Repeating reminders (ADR-211): "In 1 hour" and "Done this time"; no "Tomorrow 09:00" (owner
     /// decision R4) and no Stop, which is on the note only.
     static let repeatingCategoryID = "DODDY_NOTE_REPEATING_REMINDER"
     /// Place reminders: no snooze (a place comes back on the next arrival).
@@ -22,7 +22,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
 
     /// Long-press actions. Adds Doddy's category to any already registered (iOS replaces the set).
     static func registerCategory() async {
-        // In the iPhone's language: Polish or English (ADR-207). Re-registered when it changes.
+        // In the iPhone's language: Polish or English (ADR-213). Re-registered when it changes.
         let language = NotificationLanguage.current
         let title = { (action: NoteReminderCopy.Action) in NoteReminderCopy.action(action, language) }
         let open = UNNotificationAction(identifier: openAction, title: title(.openNote), options: [.foreground])
@@ -73,7 +73,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
 
         let trigger: UNNotificationTrigger
         if let match = notification.repeatMatch {
-            // Repeats at this clock time in the zone it was set in (ADR-205).
+            // Repeats at this clock time in the zone it was set in (ADR-211).
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(identifier: match.timeZoneID) ?? .current
             var components = DateComponents(day: match.day, hour: match.hour, minute: match.minute, second: 0, weekday: match.weekday)

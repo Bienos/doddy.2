@@ -1,4 +1,4 @@
-# Lists by voice: design (ADR-210)
+# Lists by voice: design (ADR-216)
 Owner, 2026-10-10: "design lists by voice", then "approved, build it" (L1–L6 as proposed). Canvas: **Doddy Lists** (screens 1–9 and a rules board). **Built: see `docs/implementation/LISTS_STATUS.md`** (not compiled with Xcode; no live conversation run).
 
 ## The job

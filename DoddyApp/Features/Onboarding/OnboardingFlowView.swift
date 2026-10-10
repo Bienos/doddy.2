@@ -6,6 +6,7 @@ import SwiftUI
 /// Home card and Settings (DECISIONS.md ADR-040, ADR-089).
 struct OnboardingFlowView: View {
     @Environment(ProfileStore.self) private var profiles
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Group {
@@ -19,7 +20,7 @@ struct OnboardingFlowView: View {
         }
         .background(Theme.canvas.ignoresSafeArea())
         .foregroundStyle(Theme.ink)
-        .animation(.default, value: profiles.route)
+        .animation(reduceMotion ? nil : .default, value: profiles.route)
     }
 }
 

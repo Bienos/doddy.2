@@ -1,5 +1,5 @@
-# Translator mode status (ADR-209)
-Date: 2026-10-10. Owner: "build translator mode". Design: ADR-208, `docs/design/TRANSLATOR_MODE.md`, canvas "Doddy Translator". Decisions T1–T6 as the owner answered them.
+# Translator mode status (ADR-215)
+Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/TRANSLATOR_MODE.md`, canvas "Doddy Translator". Decisions T1–T6 as the owner answered them.
 
 ## What ships
 **Two ways in**

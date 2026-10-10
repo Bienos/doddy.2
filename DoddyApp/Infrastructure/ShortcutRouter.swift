@@ -12,7 +12,7 @@ final class ShortcutRouter {
 
     /// Bound to the full-screen voice conversation in `RootView`.
     var isVoicePresented = false
-    /// Home › Translate (ADR-209): the conversation that opens next starts in translator mode.
+    /// Home › Translate (ADR-215): the conversation that opens next starts in translator mode.
     private var translatorPreset: TranslatorSetup?
     /// Bound to the guided Back Tap setup sheet in `RootView`.
     var isSetupPresented = false

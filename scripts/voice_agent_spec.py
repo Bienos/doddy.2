@@ -58,7 +58,7 @@ def check(tools, session, instructions):
                 errors.append(f"{where}: required '{req}' is not a property")
         for pname, prop in props.items():
             if prop.get("type") == "array":
-                # Only lists of strings (list items, ADR-210); each element needs a description.
+                # Only lists of strings (list items, ADR-216); each element needs a description.
                 items = prop.get("items", {})
                 if items.get("type") != "string" or not items.get("description", "").strip():
                     errors.append(f"{where}.{pname}: an array must hold described strings")

@@ -1,6 +1,6 @@
 import Foundation
 
-// Lists (ADR-210). A list is a kind of note: a `memories` row with category `list` whose text is
+// Lists (ADR-216). A list is a kind of note: a `memories` row with category `list` whose text is
 // the list's name, plus items in `list_items` that are deleted with it. Items keep the words the
 // user used. Every change is one transaction, read back before success. Voice changes name a list
 // and items in words; the app matches them exactly (ignoring case, accents, punctuation and a

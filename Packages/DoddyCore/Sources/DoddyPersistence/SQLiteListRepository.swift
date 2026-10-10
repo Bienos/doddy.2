@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Lists in the same SQLite file as the notes (ADR-210). A list is a `memories` row with category
+/// Lists in the same SQLite file as the notes (ADR-216). A list is a `memories` row with category
 /// `list`; deleting that row deletes its items (foreign key, cascade). Every change is one
 /// transaction and is read back before it is returned.
 public final class SQLiteListRepository: ListRepository {

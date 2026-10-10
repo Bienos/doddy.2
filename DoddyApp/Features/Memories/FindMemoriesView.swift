@@ -75,6 +75,8 @@ struct FindMemoriesView: View {
 private struct RecallResultsView: View {
     let outcome: RecallOutcome?
     let query: String
+    /// Narrows the matches to one note type (ADR-199). Ignored once no match has that type.
+    @State private var category: MemoryCategory?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -82,17 +84,32 @@ private struct RecallResultsView: View {
             case .some(.matches(let candidates)):
                 Text(candidates.count == 1 ? "ONE POSSIBLE MATCH" : "\(candidates.count) POSSIBLE MATCHES")
                     .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                // Types among these matches. The "may disagree" check below always looks at every
+                // match, so the banner counts them all; if the filter hides some of those notes,
+                // the banner says how many (ADR-199).
+                let choices = MemoryFilter.choices(candidates.map(\.record))
+                let active = choices.contains { $0.category == category } ? category : nil
+                let shown = active.map { type in candidates.filter { $0.record.category == type } } ?? candidates
                 let mayDisagree = RecallConflicts.flagged(candidates)
                 if !mayDisagree.isEmpty {
-                    Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.", systemImage: "exclamationmark.2")
+                    let hiddenDisagreeing = mayDisagree.subtracting(shown.map(\.memoryID)).count
+                    Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.\(hiddenDisagreeing > 0 ? " \(hiddenDisagreeing) of them \(hiddenDisagreeing == 1 ? "is" : "are") hidden by the filter." : "")", systemImage: "exclamationmark.2")
                         .font(.footnote)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
                         .accessibilityIdentifier("memories.mayDisagree")
                 }
+                if !choices.isEmpty {
+                    MemoryTypeFilterRow(choices: choices, total: candidates.count, selection: $category, active: active)
+                    if let active {
+                        Text("Showing \(shown.count) of \(candidates.count) matches: \(active.displayName) only.")
+                            .font(.caption).foregroundStyle(Theme.secondaryText)
+                            .accessibilityIdentifier("memories.findFilterNote")
+                    }
+                }
                 LazyVStack(spacing: 12) {
-                    ForEach(candidates, id: \.memoryID) { candidate in
+                    ForEach(shown, id: \.memoryID) { candidate in
                         VStack(alignment: .leading, spacing: 4) {
                             if mayDisagree.contains(candidate.memoryID) {
                                 Label("May disagree with another note", systemImage: "exclamationmark.2")
@@ -118,5 +135,7 @@ private struct RecallResultsView: View {
                 Text("Nothing guessed. Just what you kept.").font(.subheadline).foregroundStyle(Theme.secondaryText)
             }
         }
+        // A type chosen for one search is not carried into the next one.
+        .onChange(of: query) { category = nil }
     }
 }

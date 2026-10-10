@@ -138,7 +138,7 @@ struct SettingsView: View {
                 Section("Your memories") {
                     StatusRow(title: "Saved on this iPhone", value: "\(store.memories.count)")
                     ShareLink(
-                        item: JSONExport(records: store.memories),
+                        item: JSONExport(records: store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items)),
                         preview: SharePreview("Doddy memories (JSON)")
                     ) {
                         Label("Export as JSON", systemImage: "square.and.arrow.up")
@@ -151,6 +151,14 @@ struct SettingsView: View {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
                     .disabled(store.memories.isEmpty)
+                    ShareLink(
+                        item: MarkdownFileExport(records: store.memories, lists: store.lists),
+                        preview: SharePreview("Doddy memories (Markdown)")
+                    ) {
+                        Label("Export as Markdown", systemImage: "doc.richtext")
+                    }
+                    .disabled(store.memories.isEmpty)
+                    .accessibilityIdentifier("settings.exportMarkdown")
                     Button {
                         restoreMessage = nil
                         choosingRestoreFile = true
@@ -356,6 +364,12 @@ struct SettingsView: View {
                         StatusRow(title: "What Doddy did", value: activitySummary)
                     }
                     .accessibilityIdentifier("settings.activity")
+                    NavigationLink {
+                        PlanPracticeView()
+                    } label: {
+                        Label("Try a plan card", systemImage: "checklist")
+                    }
+                    .accessibilityIdentifier("settings.planPractice")
                 } header: {
                     Text("Connections")
                 } footer: {
@@ -793,13 +807,28 @@ struct ProfileTextExport: Transferable {
     }
 }
 
+/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
+struct MarkdownFileExport: Transferable {
+    let records: [MemoryRecord]
+    let lists: [DoddyList]
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
+            Data(MarkdownExport.markdown(export.records, lists: export.lists, exportedAt: Date()).utf8)
+        }
+        .suggestedFileName("doddy-memories.md")
+    }
+}
+
 /// JSON export file for the share sheet (format: `MemoryExport.json`).
 struct JSONExport: Transferable {
     let records: [MemoryRecord]
+    /// List items (ADR-216); their lists are among `records`.
+    let listItems: [ListItem]
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .json) { export in
-            try MemoryExport.json(export.records, exportedAt: Date())
+            try MemoryExport.json(export.records, listItems: export.listItems, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
     }

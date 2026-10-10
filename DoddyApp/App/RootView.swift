@@ -4,7 +4,7 @@ import SwiftUI
 enum PreferenceKey {
     /// Off by default (owner decision D4): note reminders never carry the note text unless turned on.
     static let showNoteTextInNotifications = "showNoteTextInNotifications"
-    /// Memories shows Lists instead of Notes (ADR-210).
+    /// Memories shows Lists instead of Notes (ADR-216).
     static let memoriesShowsLists = "memoriesShowsLists"
     static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
@@ -29,7 +29,7 @@ enum PreferenceKey {
     static let voiceChoice = "voice.choice"
     static let voiceSpeed = "voice.speed"
     static let voiceExpressiveness = "voice.expressiveness"
-    /// Settings → Voice and personality: auto or one of 25 European languages (`ConversationLanguage`, ADR-206).
+    /// Settings → Voice and personality: auto or one of 25 European languages (`ConversationLanguage`, ADR-212).
     static let voiceLanguage = "voice.language"
     /// What Doddy calls the user; sent with each voice conversation only when set (ADR-132).
     static let nickname = "personality.nickname"

@@ -40,7 +40,7 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
                 db, sql: "SELECT current_text, category FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
             else { return nil }
             let text: String = row["current_text"]
-            // A list's reminder shows what is still open (ADR-210), rewritten when the list changes.
+            // A list's reminder shows what is still open (ADR-216), rewritten when the list changes.
             guard (row["category"] as String) == MemoryCategory.list.rawValue else { return text }
             let open = try String.fetchAll(
                 db, sql: "SELECT text FROM list_items WHERE list_id = ? AND done_at_ms IS NULL ORDER BY position",

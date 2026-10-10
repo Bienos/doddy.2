@@ -130,3 +130,15 @@ final class ListsTests: XCTestCase {
         XCTAssertTrue(text.contains("## Shopping\n[ ] milk\n[x] bread"))
     }
 }
+
+extension ListsTests {
+    func testMarkdownExportAddsListsAsTaskLists() throws {
+        let shopping = DoddyList(
+            record: try MemoryRecord(id: UUID(), rawText: "Shopping", source: .explicitText, category: .list, capturedAt: Date(timeIntervalSince1970: 0)),
+            items: [ListItem(id: UUID(), listID: UUID(), text: "milk", source: .typed, addedAt: Date(timeIntervalSince1970: 0), doneAt: nil, position: 0),
+                    ListItem(id: UUID(), listID: UUID(), text: "bread", source: .typed, addedAt: Date(timeIntervalSince1970: 0), doneAt: Date(timeIntervalSince1970: 9), position: 1)])
+        let text = MarkdownExport.markdown([], lists: [shopping], exportedAt: Date(timeIntervalSince1970: 0))
+        XCTAssertTrue(text.contains("# Lists\n\n## Shopping\n\n- [ ] milk\n- [x] bread"))
+        XCTAssertFalse(MarkdownExport.markdown([], exportedAt: Date()).contains("# Lists"))
+    }
+}

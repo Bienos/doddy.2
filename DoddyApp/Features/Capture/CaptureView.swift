@@ -1,5 +1,6 @@
 import DoddyCore
 import SwiftUI
+import UIKit
 
 /// Success is backed by a committed repository record, never a simulated timer.
 /// `sharedText` comes from the "Save to Doddy" shortcut: it fills the editor and is still only
@@ -104,7 +105,13 @@ struct CaptureView: View {
                 }
             }
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
-            .onChange(of: text) { duplicate = nil; allowDuplicate = false }
+            .onChange(of: text) {
+                duplicate = nil
+                allowDuplicate = false
+                // Once the shared text is cleared, whatever is typed or pasted next is the user's
+                // own, so it is saved as a typed note, not as "shared".
+                if isShared && text.allSatisfy(\.isWhitespace) { isShared = false }
+            }
             .confirmationDialog("Discard this note?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) { dismiss() }
                 Button("Keep editing", role: .cancel) {}
@@ -129,6 +136,7 @@ struct CaptureView: View {
         guard !isSaving else { return }
         if !allowDuplicate, let match = DuplicateNote.existing(for: text, in: store.memories) {
             duplicate = match
+            UIAccessibility.post(notification: .announcement, argument: "You saved this already. View it, or save it again anyway.")
             editorFocused = false
             return
         }
