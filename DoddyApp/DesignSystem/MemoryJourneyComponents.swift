@@ -90,6 +90,8 @@ struct MemoryPaperCard: View {
 struct MemoryLinkCard: View {
     let record: MemoryRecord
     var matchedTerms: [String] = []
+    /// Found by meaning search, not by the user's words (ADR-210).
+    var relatedByMeaning = false
     var isPinned = false
 
     var body: some View {
@@ -109,6 +111,9 @@ struct MemoryLinkCard: View {
                 if !matchedTerms.isEmpty {
                     Text("Matched: \(matchedTerms.joined(separator: ", "))")
                         .font(.caption).foregroundStyle(Theme.accentText)
+                } else if relatedByMeaning {
+                    Label("Related by meaning, not your words", systemImage: "text.magnifyingglass")
+                        .font(.caption).foregroundStyle(Theme.secondaryText)
                 }
             }
             .padding(18).frame(maxWidth: .infinity, alignment: .leading)

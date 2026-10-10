@@ -108,6 +108,12 @@ final class MemoryStore {
     func recall(_ question: String) async throws -> RecallOutcome {
         try await environment.recallService.recall(question, limit: 20)
     }
+
+    /// Find by meaning turned off (ADR-210): every stored vector is deleted. The notes are untouched;
+    /// turning it back on embeds them again on the next search.
+    func forgetMeaningVectors() async throws {
+        try await environment.meaningIndex?.forgetAll()
+    }
 }
 
 enum UserFacingError {

@@ -7,13 +7,20 @@ import Foundation
 public struct MemoryCandidate: Equatable, Sendable {
     public let record: MemoryRecord
     public let matchedTerms: [String]
+    /// Set only for a note found by meaning search (ADR-210): it shares no word with the question,
+    /// so `matchedTerms` is empty. Higher is closer; only comparable within one search.
+    public let meaningScore: Double?
 
-    public init(record: MemoryRecord, matchedTerms: [String]) {
+    public init(record: MemoryRecord, matchedTerms: [String], meaningScore: Double? = nil) {
         self.record = record
         self.matchedTerms = matchedTerms
+        self.meaningScore = meaningScore
     }
 
     public var memoryID: UUID { record.id }
+
+    /// Found by meaning, not by the question's words. Shown and spoken as "may be related".
+    public var isMeaningMatch: Bool { matchedTerms.isEmpty && meaningScore != nil }
 }
 
 /// Durable local storage. A returned record means the write is committed and read back.

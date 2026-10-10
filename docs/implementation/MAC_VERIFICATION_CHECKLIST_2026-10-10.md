@@ -39,6 +39,11 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | M9 | Copy some text elsewhere, open the capture screen, tap Paste | No permission prompt. The text goes in exactly as copied, replacing a blank editor or going on a new line after existing text. Nothing is saved until Save (ADR-189) |
 | M10 | Open a voice-saved or "Other" note → Type menu → pick "Place" | The type changes at once and the type filter chips update. The text, dates and "Edited" label stay as they were (ADR-192) |
 | M11 | Search for a word used by notes of two or more types | The same chips above the matches. A chip narrows them and says "Showing N of M matches". The "may disagree" banner still counts every match (ADR-199) |
+| M12 | Run `MeaningSearchCalibrationTests` on a simulator **and** an iPhone; copy the `[calibration]` lines into the result log | Top-1 at least 6 of 8, few wrong offers. If it skips ("model assets not available"), go online and run it again (ADR-210, `MEANING_RECALL_STATUS.md`) |
+| M13 | Save at least 8 notes, including "Kasia says the sushi spot on Mokotowska is great". Find → "japanese food" | "NO NOTE USES THESE WORDS", then "MAYBE RELATED" with the sushi note marked "Related by meaning, not your words". Opening it shows the stored note (ADR-210) |
+| M14 | Same notes, ask Doddy by voice "where should we go for japanese food?" | Doddy says the sushi note *might* be what you mean; never claims it as an exact match. Ask about something unrelated ("my passport number"): no meaning suggestion is read out as an answer |
+| M15 | Settings → Your memories → turn off Find by meaning, then search "japanese food" again | Only word matches; the "MAYBE RELATED" group is gone. Turn it back on: the next search is slower once (notes embedded again), then normal |
+| M16 | Time the first Find after installing with 200+ synthetic notes, then the second | First search embeds up to 200 notes (record the seconds); the second embeds only the question. Record both in the result log |
 
 ## 2b. Accessibility (PRD item 7, acceptance test A-13)
 | # | Do this | Expect |

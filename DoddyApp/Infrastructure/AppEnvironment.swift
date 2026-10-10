@@ -26,6 +26,9 @@ struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let profileRepository: any ProfileRepository
     let recallService: any RecallService
+    /// Find by meaning (ADR-210). `nil` when the store is not open or this iPhone has no on-device
+    /// language model; recall then uses word search alone.
+    let meaningIndex: MeaningIndex?
     /// `nil` when the typed assistant is not wired (M0 fallback after a storage failure, previews).
     let assistant: AssistantWiring?
     let toolExecutor: any ToolExecutor
@@ -40,6 +43,7 @@ struct AppEnvironment: Sendable {
         memoryRepository: UnavailableMemoryRepository(),
         profileRepository: UnavailableProfileRepository(),
         recallService: UnavailableRecallService(),
+        meaningIndex: nil,
         assistant: nil,
         toolExecutor: UnavailableToolExecutor(),
         noteReminders: nil,
@@ -61,10 +65,17 @@ struct AppEnvironment: Sendable {
             let noteReminders = NoteReminderCoordinator(
                 repository: SQLiteNoteReminderRepository(database: database), center: notifications,
                 showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) })
+            // UI-test launches keep word search only, so their results don't depend on a model.
+            let meaning: MeaningIndex? = isUITest ? nil : OnDeviceMeaningEmbedder().map {
+                MeaningIndex(embedder: $0, store: SQLiteMemoryVectorStore(database: database))
+            }
             return AppEnvironment(
                 memoryRepository: repository,
                 profileRepository: SQLiteProfileRepository(database: database),
-                recallService: RepositoryRecallService(repository: repository),
+                recallService: HybridRecallService(
+                    repository: repository, meaning: meaning,
+                    isMeaningEnabled: { UserDefaults.standard.object(forKey: PreferenceKey.findByMeaning) as? Bool ?? true }),
+                meaningIndex: meaning,
                 assistant: AssistantWiring(credentials: credentials, transport: AppHTTPTransport()),
                 toolExecutor: UnavailableToolExecutor(),
                 noteReminders: noteReminders,
@@ -77,6 +88,7 @@ struct AppEnvironment: Sendable {
                 memoryRepository: UnavailableMemoryRepository(),
                 profileRepository: UnavailableProfileRepository(),
                 recallService: UnavailableRecallService(),
+                meaningIndex: nil,
                 assistant: nil,
                 toolExecutor: UnavailableToolExecutor(),
                 noteReminders: nil,

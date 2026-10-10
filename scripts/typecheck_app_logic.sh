@@ -36,6 +36,7 @@ import DoddyCore
 struct AppEnvironment {
     let memoryRepository: any MemoryRepository
     let recallService: any RecallService
+    let meaningIndex: MeaningIndex?
     let profileRepository: any ProfileRepository
     let noteReminders: NoteReminderCoordinator?
     let capabilities: CapabilityCatalog

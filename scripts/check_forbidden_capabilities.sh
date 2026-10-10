@@ -7,6 +7,7 @@
 #  - the system authentication browser is used only by Connected Apps,
 #  - audio/ElevenLabs code only inside DoddyApp/Features/Voice,
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
+#  - Apple's on-device language model (find by meaning, ADR-210) only in OnDeviceMeaningEmbedder.swift,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets (server/messaging and
@@ -47,6 +48,10 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# Find by meaning (ADR-210): Apple's on-device language model, in one file, so "your notes aren't
+# sent anywhere" stays checkable.
+meaning_file=DoddyApp/Infrastructure/OnDeviceMeaningEmbedder.swift
+meaning_only='import NaturalLanguage|NLContextualEmbedding|NLEmbedding'
 
 status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
@@ -57,6 +62,9 @@ if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | gre
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$meaning_only" "${dirs[@]}" | code_only | grep -v "^$meaning_file:"; then
+  echo "FAIL: on-device language model code outside $meaning_file." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
   echo "FAIL: audio/ElevenLabs code outside $voice_dir." >&2; status=1

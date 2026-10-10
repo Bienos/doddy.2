@@ -36,7 +36,7 @@ struct FindMemoriesView: View {
                 if let problem = store.environment.storageProblem ?? store.loadError ?? searchError {
                     ProblemView(message: problem)
                 } else if isRunning {
-                    ProgressView("Finding saved words")
+                    ProgressView("Searching your notes")
                 } else {
                     RecallResultsView(outcome: outcome, query: query)
                 }
@@ -81,44 +81,30 @@ private struct RecallResultsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             switch outcome {
-            case .some(.matches(let candidates)):
-                Text(candidates.count == 1 ? "ONE POSSIBLE MATCH" : "\(candidates.count) POSSIBLE MATCHES")
-                    .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
-                // Types among these matches. The "may disagree" check below always looks at every
-                // match, so the banner counts them all; if the filter hides some of those notes,
-                // the banner says how many (ADR-199).
-                let choices = MemoryFilter.choices(candidates.map(\.record))
-                let active = choices.contains { $0.category == category } ? category : nil
-                let shown = active.map { type in candidates.filter { $0.record.category == type } } ?? candidates
-                let mayDisagree = RecallConflicts.flagged(candidates)
-                if !mayDisagree.isEmpty {
-                    let hiddenDisagreeing = mayDisagree.subtracting(shown.map(\.memoryID)).count
-                    Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.\(hiddenDisagreeing > 0 ? " \(hiddenDisagreeing) of them \(hiddenDisagreeing == 1 ? "is" : "are") hidden by the filter." : "")", systemImage: "exclamationmark.2")
-                        .font(.footnote)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
-                        .accessibilityIdentifier("memories.mayDisagree")
+            case .some(.matches(let found)):
+                // Word matches as before; notes found by meaning (ADR-210) follow in their own
+                // group and never count as matches.
+                let candidates = found.filter { !$0.isMeaningMatch }
+                let related = found.filter(\.isMeaningMatch)
+                if candidates.isEmpty {
+                    Text("NO NOTE USES THESE WORDS")
+                        .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                } else {
+                    wordMatches(candidates)
                 }
-                if !choices.isEmpty {
-                    MemoryTypeFilterRow(choices: choices, total: candidates.count, selection: $category, active: active)
-                    if let active {
-                        Text("Showing \(shown.count) of \(candidates.count) matches: \(active.displayName) only.")
-                            .font(.caption).foregroundStyle(Theme.secondaryText)
-                            .accessibilityIdentifier("memories.findFilterNote")
-                    }
-                }
-                LazyVStack(spacing: 12) {
-                    ForEach(shown, id: \.memoryID) { candidate in
-                        VStack(alignment: .leading, spacing: 4) {
-                            if mayDisagree.contains(candidate.memoryID) {
-                                Label("May disagree with another note", systemImage: "exclamationmark.2")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(Theme.accentText)
-                            }
-                            MemoryLinkCard(record: candidate.record, matchedTerms: candidate.matchedTerms)
+                if !related.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("MAYBE RELATED")
+                            .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                        Text(related.count == 1
+                             ? "This note doesn't use your words but seems to be about the same thing. Check it says what you need."
+                             : "These notes don't use your words but seem to be about the same thing. Check they say what you need.")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        ForEach(related, id: \.memoryID) { candidate in
+                            MemoryLinkCard(record: candidate.record, relatedByMeaning: true)
                         }
                     }
+                    .accessibilityIdentifier("memories.relatedByMeaning")
                 }
                 Label("Always linked to your original note.", systemImage: "book.closed")
                     .font(.caption).foregroundStyle(Theme.secondaryText)
@@ -137,5 +123,48 @@ private struct RecallResultsView: View {
         }
         // A type chosen for one search is not carried into the next one.
         .onChange(of: query) { category = nil }
+    }
+
+    /// Notes that matched the question's words: count, type chips, "may disagree" (unchanged).
+    @ViewBuilder
+    private func wordMatches(_ candidates: [MemoryCandidate]) -> some View {
+        Text(candidates.count == 1 ? "ONE POSSIBLE MATCH" : "\(candidates.count) POSSIBLE MATCHES")
+            .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+        // Types among these matches. The "may disagree" check below always looks at every
+        // match, so the banner counts them all; if the filter hides some of those notes,
+        // the banner says how many (ADR-199).
+        let choices = MemoryFilter.choices(candidates.map(\.record))
+        let active = choices.contains { $0.category == category } ? category : nil
+        let shown = active.map { type in candidates.filter { $0.record.category == type } } ?? candidates
+        let mayDisagree = RecallConflicts.flagged(candidates)
+        if !mayDisagree.isEmpty {
+            let hiddenDisagreeing = mayDisagree.subtracting(shown.map(\.memoryID)).count
+            Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.\(hiddenDisagreeing > 0 ? " \(hiddenDisagreeing) of them \(hiddenDisagreeing == 1 ? "is" : "are") hidden by the filter." : "")", systemImage: "exclamationmark.2")
+                .font(.footnote)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+                .accessibilityIdentifier("memories.mayDisagree")
+        }
+        if !choices.isEmpty {
+            MemoryTypeFilterRow(choices: choices, total: candidates.count, selection: $category, active: active)
+            if let active {
+                Text("Showing \(shown.count) of \(candidates.count) matches: \(active.displayName) only.")
+                    .font(.caption).foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("memories.findFilterNote")
+            }
+        }
+        LazyVStack(spacing: 12) {
+            ForEach(shown, id: \.memoryID) { candidate in
+                VStack(alignment: .leading, spacing: 4) {
+                    if mayDisagree.contains(candidate.memoryID) {
+                        Label("May disagree with another note", systemImage: "exclamationmark.2")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.accentText)
+                    }
+                    MemoryLinkCard(record: candidate.record, matchedTerms: candidate.matchedTerms)
+                }
+            }
+        }
     }
 }

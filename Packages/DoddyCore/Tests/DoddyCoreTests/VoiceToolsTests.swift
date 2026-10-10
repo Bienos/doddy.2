@@ -33,6 +33,28 @@ final class VoiceToolsTests: XCTestCase {
         let reply = VoiceToolReply.search(.matches([MemoryCandidate(record: record, matchedTerms: ["klucze"])]))
         XCTAssertTrue(reply.contains("\"Klucze są w niebieskiej puszce\""))
         XCTAssertTrue(reply.hasPrefix("Found 1 saved note "))
+        XCTAssertFalse(reply.contains("related in meaning"), "word-only replies are unchanged")
+    }
+
+    /// ADR-210: meaning matches are never counted as found notes and come with how to use them.
+    func testSearchReplyKeepsMeaningMatchesApart() throws {
+        let word = try MemoryRecord(id: UUID(), rawText: "Kasia: sushi on Mokotowska", source: .explicitText, capturedAt: Date(timeIntervalSince1970: 0))
+        let meaning = try MemoryRecord(id: UUID(), rawText: "Ramen bar near the station is good", source: .explicitText, capturedAt: Date(timeIntervalSince1970: 0))
+        let related = MemoryCandidate(record: meaning, matchedTerms: [], meaningScore: 0.7)
+
+        let only = VoiceToolReply.search(.matches([related]))
+        XCTAssertTrue(only.hasPrefix("No saved note used these words."))
+        XCTAssertFalse(only.contains("Found "))
+        XCTAssertTrue(only.contains("A note that may be related in meaning"))
+        XCTAssertTrue(only.contains("\"Ramen bar near the station is good\""))
+        XCTAssertTrue(only.contains("tell the user you couldn't find it in their saved memories"))
+
+        let both = VoiceToolReply.search(.matches([MemoryCandidate(record: word, matchedTerms: ["kasia"]), related]))
+        XCTAssertTrue(both.hasPrefix("Found 1 saved note "), "the count is word matches only")
+        XCTAssertTrue(both.contains("may be related in meaning"))
+        XCTAssertTrue(both.contains("If none does, ignore them."))
+        let lines = both.components(separatedBy: "\n")
+        XCTAssertLessThan(lines.firstIndex { $0.contains("Kasia") }!, lines.firstIndex { $0.contains("Ramen") }!)
     }
 
     // MARK: Calendar reads

@@ -48,6 +48,8 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
+    /// Find by meaning (ADR-210). On unless turned off; on-device only. Off deletes the vectors.
+    static let findByMeaning = "findByMeaning"
 }
 
 enum AppTab: Hashable {

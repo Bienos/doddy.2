@@ -391,21 +391,37 @@ public enum VoiceToolReply {
     public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
     public static func search(_ outcome: RecallOutcome, limit: Int = 5) -> String {
-        guard case .matches(let candidates) = outcome, !candidates.isEmpty else {
+        guard case .matches(let all) = outcome, !all.isEmpty else {
             return "No saved note matched. Tell the user you couldn't find it in their saved memories. Do not guess."
         }
-        let shown = candidates.prefix(limit)
-        let mayDisagree = RecallConflicts.flagged(Array(shown))
-        var lines = ["Found \(candidates.count) saved note\(candidates.count == 1 ? "" : "s") (exact text, newest wording):"]
-        for candidate in shown {
-            let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
-            lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")
+        // Meaning-search notes (ADR-210) share no word with the question; they are listed apart
+        // and never counted as matches, so the agent can't present one as what the user asked for.
+        let candidates = all.filter { !$0.isMeaningMatch }
+        let related = all.filter(\.isMeaningMatch)
+        var lines: [String] = []
+        if candidates.isEmpty {
+            lines.append("No saved note used these words.")
+        } else {
+            let shown = candidates.prefix(limit)
+            let mayDisagree = RecallConflicts.flagged(Array(shown))
+            lines.append("Found \(candidates.count) saved note\(candidates.count == 1 ? "" : "s") (exact text, newest wording):")
+            for candidate in shown {
+                let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
+                lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")
+            }
+            if !mayDisagree.isEmpty {
+                lines.append("Notes marked [may disagree] give different numbers for the same thing. Mention each one with when it was saved and let the user decide which is current. Do not pick one.")
+            }
+            if candidates.count > shown.count {
+                lines.append("…and \(candidates.count - shown.count) more. Ask the user to narrow it down if needed.")
+            }
         }
-        if !mayDisagree.isEmpty {
-            lines.append("Notes marked [may disagree] give different numbers for the same thing. Mention each one with when it was saved and let the user decide which is current. Do not pick one.")
-        }
-        if candidates.count > shown.count {
-            lines.append("…and \(candidates.count - shown.count) more. Ask the user to narrow it down if needed.")
+        if !related.isEmpty {
+            lines.append("\(related.count == 1 ? "A note" : "Notes") that may be related in meaning (exact text; \(related.count == 1 ? "it does" : "they do") not use the question's words):")
+            for candidate in related {
+                lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))")
+            }
+            lines.append("Use a related note only if it clearly answers what the user asked, and say it might be what they mean. If none does, \(candidates.isEmpty ? "tell the user you couldn't find it in their saved memories" : "ignore them"). Never mention an unrelated note, and never fill in what a note doesn't say.")
         }
         return lines.joined(separator: "\n")
     }

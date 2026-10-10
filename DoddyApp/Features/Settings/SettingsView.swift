@@ -25,6 +25,8 @@ struct SettingsView: View {
     @State private var restoreMessage: String?
     @State private var restoreFailed = false
     @State private var deleteError: String?
+    @AppStorage(PreferenceKey.findByMeaning) private var findByMeaning = true
+    @State private var meaningError: String?
     @State private var editingProfile = false
     @State private var confirmForget = false
     @State private var forgetError: String?
@@ -170,6 +172,30 @@ struct SettingsView: View {
                     if let restoreMessage {
                         Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
                             .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
+                    }
+                    // ADR-210: on-device meaning search; off deletes its stored vectors.
+                    Toggle("Find by meaning", isOn: $findByMeaning)
+                        .disabled(environment.meaningIndex == nil)
+                        .accessibilityIdentifier("settings.findByMeaning")
+                        .onChange(of: findByMeaning) { _, isOn in
+                            meaningError = nil
+                            guard !isOn else { return }
+                            Task {
+                                do {
+                                    try await store.forgetMeaningVectors()
+                                } catch {
+                                    meaningError = "Find by meaning is off, but its data couldn't be deleted just now. It isn't used while off. (\(error.localizedDescription))"
+                                }
+                            }
+                        }
+                    Text(environment.meaningIndex == nil
+                         ? "This iPhone has no built-in language model for this, so Find and Doddy look for your words only."
+                         : "Find and Doddy also suggest notes about the same thing in other words, marked “Related by meaning”. Apple's language model on this iPhone works this out; your notes aren't sent anywhere (iOS may download the model itself from Apple once). Turning this off deletes that data.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    if let meaningError {
+                        Label(meaningError, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.error)
                     }
                     Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
                         .disabled(store.memories.isEmpty)

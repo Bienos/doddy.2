@@ -127,6 +127,19 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
                 """)
         }
+        // ADR-210: meaning-search vectors, one per note, deleted with it. Derived from the note's
+        // current text on the iPhone; never exported. `vector` is float32 little-endian.
+        migrator.registerMigration("v5_memory_vectors") { db in
+            try db.execute(sql: """
+                CREATE TABLE memory_vectors (
+                    memory_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    model_id TEXT NOT NULL CHECK (length(model_id) BETWEEN 1 AND 200),
+                    text_hash TEXT NOT NULL CHECK (length(text_hash) BETWEEN 1 AND 64),
+                    dimension INTEGER NOT NULL CHECK (dimension BETWEEN 1 AND 4096),
+                    vector BLOB NOT NULL CHECK (length(vector) = dimension * 4)
+                );
+                """)
+        }
         return migrator
     }
 

@@ -118,6 +118,9 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                     corrected.currentText, Self.milliseconds(date), SearchFolding.fold(corrected.currentText),
                     id.uuidString,
                 ])
+            // The meaning-search vector of the old words goes too (ADR-210); the next search
+            // embeds the corrected text.
+            try db.execute(sql: "DELETE FROM memory_vectors WHERE memory_id = ?", arguments: [id.uuidString])
             guard try Self.fetch(id, db) == corrected else { throw MemoryStoreError.verificationFailed }
             return corrected
         }
