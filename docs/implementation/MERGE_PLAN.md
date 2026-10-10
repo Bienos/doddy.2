@@ -122,8 +122,25 @@ pushed after the first merge: `compassionate-darwin` (gateway hosting notes), `b
 disagree) and `eager-johnson` (blog published on the site, which already contains `busy-galileo`).
 Their new ADR numbers collided again (128, 131, 132; the blog moved to 131 on its branch): they
 are now 169, 170, 171, and the blog stays 138. The was/now table in `DECISIONS.md` lists them.
+**Third merge (2026-10-10, ~15:30 UTC, owner: "merge them"):**
+- `brave-wright`: memories and capture work (profile export, read/delete remembered
+  conversations, restore from export, Save/Find shortcuts and New note control, type filter,
+  undo delete, duplicate warning, share, list order, pins, press-and-hold menu, Paste button).
+  Its ADR-133–146 collided with this branch's numbers and are now **176–189**.
+- `hopeful-fermat`: note reminders (local notifications about a saved note, separate from Apple
+  Reminders) and the voice prompt's AI disclosure restored; ADR-173/174 → **190/191**. Its
+  "cancel the reminder on delete" met `brave-wright`'s undo: the delete message now says undo
+  brings the note back but not its reminder.
+- `eager-johnson` / `busy-galileo` (blog: "Hello, Doddy" unpublished, banners) and
+  `serene-johnson` (site footer labels).
+- `confident-planck` started from V1, not this line. Only its **Doddy Constitution documents**
+  were taken (`docs/trust/`, `config/doddy_rules.yaml`, cherry-picked). **Not taken:** its
+  edits to `CLAUDE.md` / `AGENTS.md` (they change every future agent session's instructions:
+  owner decision), and its code (an action ledger, simulated approvals and a third Apple
+  Reminders implementation, which would replace ADR-126's working one).
+
 To stop this repeating, new sessions should start from this branch (or the default branch once
-PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit.
+PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit (192 after the third merge).
 
 **Follow-ups:**
 - ~~Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the
