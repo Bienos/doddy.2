@@ -19,6 +19,9 @@ struct DoddyApp: App {
         store.noteReminders = noteReminders
         // A reminder's "Done" or "Tomorrow 09:00" can start the app in the background.
         NoteReminderRouter.shared.reminders = noteReminders
+        // A tick from a widget can also start the app in the background (ADR-219).
+        WidgetSync.shared.store = store
+        WidgetSync.shared.reminders = noteReminders
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
         _profiles = State(initialValue: ProfileStore(environment: environment))

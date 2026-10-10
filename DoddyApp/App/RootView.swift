@@ -12,6 +12,8 @@ enum PreferenceKey {
     static let memorySort = "memorySort"
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).
     static let pinnedNotes = "pinnedNotes"
+    /// Widgets show pinned notes, reminders and lists (ADR-219); on unless turned off.
+    static let widgetsShowContent = "widgetsShowContent"
     static let hideCharacterArt = "hideCharacterArt"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
@@ -66,6 +68,9 @@ struct RootView: View {
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Bindable private var router = ShortcutRouter.shared
+    @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
+    @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
+    @AppStorage(PreferenceKey.showNoteTextInNotifications) private var showNoteText = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -97,7 +102,14 @@ struct RootView: View {
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await noteReminders.refreshOnForeground() } }
+                if phase == .background { WidgetSync.shared.refresh() }
             }
+            // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
+            .onChange(of: store.revision) { WidgetSync.shared.refresh() }
+            .onChange(of: noteReminders.reminders) { WidgetSync.shared.refresh() }
+            .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
+            .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
+            .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -162,6 +174,12 @@ struct RootView: View {
         }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
+            // doddy://open/<id> from a widget opens that note or list on Home (ADR-219).
+            if let memoryID = WidgetLink.memoryID(from: url) {
+                selectedTab = .home
+                homePath = [memoryID]
+                return
+            }
             guard let link = DeepLink(url: url) else { return }
             switch link {
             case .home: selectedTab = .home

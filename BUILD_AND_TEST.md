@@ -103,6 +103,13 @@ manager — `backend/.env.example` lists names with empty values. No signing tea
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
 `com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
 
+**Widgets (ADR-219)** need an App Group shared by the app and the widget extension, named
+`group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default). It is off by default, like push. To turn it on,
+register the group for your team and set `DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements` (or
+`Config/Doddy-Push-AppGroup.entitlements` if you also use push) and `DODDY_WIDGET_ENTITLEMENTS = Config/DoddyWidgets.entitlements`,
+in `project.yml` or on the `xcodebuild` line. Without it the widgets only say "Open Doddy to set up widgets".
+Whether a free personal team can sign App Groups is not verified here.
+
 ## Connected Apps — Google Calendar, read-only (2026-10-09)
 
 **Status: mock milestone complete; live integration unverified/blocked; iOS app not compiled for this change.**

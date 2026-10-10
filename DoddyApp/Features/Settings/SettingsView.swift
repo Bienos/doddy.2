@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(ProfileStore.self) private var profiles
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var connections = ConnectionController()
@@ -183,6 +184,24 @@ struct SettingsView: View {
                     Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos added to notes stay on this iPhone and aren't in exports; deleting a note deletes its photo. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                }
+
+                // Widgets (ADR-219): what they show, and the switch that empties the shared file.
+                Section("Widgets") {
+                    if WidgetSync.shared.isAvailable {
+                        Toggle("Show notes and lists in widgets", isOn: $widgetsOn)
+                            .accessibilityIdentifier("settings.widgetsOn")
+                        Text(widgetsOn
+                             ? "Widgets show your pinned notes, your next reminders and your lists, shortened. They're kept in a file only Doddy and its widgets can open. On the Lock Screen, iOS hides the text until you unlock. Ticking from a widget needs your iPhone unlocked."
+                             : "Widgets show nothing of yours, and the widgets' file holds nothing of yours.")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        if let problem = WidgetSync.shared.problem {
+                            Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+                        }
+                    } else {
+                        Text("This build of Doddy can't share anything with widgets (it isn't signed with Doddy's App Group), so widgets show only \"Open Doddy\".")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
                 }
 
                 Section("Privacy") {
