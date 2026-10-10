@@ -76,6 +76,17 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                Section("Double tap and Dynamic Island") {
+                    Text("Doddy adds a “Talk to Doddy” shortcut automatically. iOS doesn't let any app switch on Back Tap for you, so do this once:")
+                        .font(.footnote)
+                    Text("1. Open Settings → Accessibility → Touch → Back Tap.\n2. Choose Double Tap.\n3. Scroll to Shortcuts and pick “Talk to Doddy”.")
+                        .font(.footnote)
+                        .accessibilityIdentifier("settings.backTapSteps")
+                    Text("Then double-tap the back of your iPhone from anywhere: Doddy opens and starts listening, and the Dynamic Island appears. Swipe back to Safari or any other app and the conversation keeps going; tap End in the Island to stop. If Live Activities are off for Doddy, the conversation ends when you leave the app.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+
                 Section("Appearance and accessibility") {
                     Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppearancePreference.allCases, id: \.rawValue) { option in

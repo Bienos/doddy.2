@@ -17,6 +17,8 @@ struct RootView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hasSeenFirstHello) private var hasSeenFirstHello = false
     @State private var selectedTab: AppTab = .home
+    @State private var showVoice = false
+    private var launchRouter = VoiceLaunchRouter.shared
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -28,7 +30,7 @@ struct RootView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            HomeView(selectedTab: $selectedTab)
+            HomeView(selectedTab: $selectedTab, showVoice: $showVoice)
                 .tabItem { Label("Home", systemImage: "house") }
                 .tag(AppTab.home)
             MemoriesView()
@@ -41,9 +43,21 @@ struct RootView: View {
         .tint(Theme.accentText)
         .preferredColorScheme(colorScheme)
         .task { await store.reload() }
+        // "Talk to Doddy" shortcut / Back Tap. Waits until the first hello has been seen, and
+        // never opens voice when voice is not available.
+        .onChange(of: launchRouter.isRequested, initial: true) { _, _ in openVoiceIfRequested() }
+        .onChange(of: hasSeenFirstHello) { _, _ in openVoiceIfRequested() }
         .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {
             FirstHelloView { hasSeenFirstHello = true }
                 .preferredColorScheme(colorScheme)
         }
+    }
+
+    private func openVoiceIfRequested() {
+        guard launchRouter.isRequested, hasSeenFirstHello else { return }
+        launchRouter.clear()
+        guard store.environment.capabilities.isAvailable(.voiceInput) else { return }
+        selectedTab = .home
+        showVoice = true
     }
 }

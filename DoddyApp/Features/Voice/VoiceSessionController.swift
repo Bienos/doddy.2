@@ -31,12 +31,23 @@ final class VoiceSessionController {
     private(set) var lines: [Line] = []
     private(set) var pendingSave: PendingSave?
     private(set) var isMuted = false
+    /// True while the Dynamic Island / Lock Screen activity is actually showing.
+    private(set) var islandActive = false
+    /// Why the Dynamic Island isn't showing (Live Activities off, request refused), if it isn't.
+    private(set) var islandProblem: String?
 
     private let store: MemoryStore
+    private let island = VoiceLiveActivity()
     private var conversation: Conversation?
 
     init(store: MemoryStore) {
         self.store = store
+        island.onRemovedBySystem = { [weak self] in
+            // The activity is gone, so nothing tells the user the microphone is open: end it.
+            guard let self else { return }
+            self.islandActive = false
+            Task { await self.stop() }
+        }
     }
 
     var isLive: Bool {
@@ -53,10 +64,16 @@ final class VoiceSessionController {
         isMuted = false
 
         guard await Self.microphoneAllowed() else {
-            phase = .microphoneDenied
+            transition(to: .microphoneDenied)
             return
         }
-        phase = .connecting
+        VoiceActivityBridge.shared.register { [weak self] command in
+            switch command {
+            case .end: await self?.stop()
+            case .toggleMute: await self?.toggleMute()
+            }
+        }
+        transition(to: .connecting)
 
         let ref = WeakRef(self)
         var config = ConversationConfig()
@@ -85,7 +102,7 @@ final class VoiceSessionController {
                 config: config,
                 onAgentReady: {
                     Task { @MainActor in
-                        if ref.value?.phase == .connecting { ref.value?.phase = .listening }
+                        if ref.value?.phase == .connecting { ref.value?.transition(to: .listening) }
                     }
                 },
                 onDisconnect: { _ in
@@ -100,7 +117,7 @@ final class VoiceSessionController {
         let active = conversation
         conversation = nil
         pendingSave = nil
-        if isLive { phase = .ended }
+        if isLive { transition(to: .ended) } else { endIsland() }
         await active?.endConversation()
     }
 
@@ -109,6 +126,7 @@ final class VoiceSessionController {
         do {
             try await conversation.setMuted(!isMuted)
             isMuted.toggle()
+            syncIsland()
         } catch {
             // Keep the previous state; the UI shows what is actually set.
         }
@@ -137,9 +155,9 @@ final class VoiceSessionController {
     private func apply(_ state: ElevenLabs.AgentState) {
         guard isLive else { return }
         switch state {
-        case .listening: phase = .listening
-        case .speaking: phase = .speaking
-        case .thinking: phase = .thinking
+        case .listening: transition(to: .listening)
+        case .speaking: transition(to: .speaking)
+        case .thinking: transition(to: .thinking)
         }
     }
 
@@ -154,15 +172,44 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
-        phase = .failed(message)
+        transition(to: .failed(message))
         pendingSave = nil
     }
 
     private func disconnected() {
         conversation = nil
         pendingSave = nil
-        if case .failed = phase { return }
-        phase = .ended
+        if case .failed = phase { endIsland(); return }
+        transition(to: .ended)
+    }
+
+    // MARK: Dynamic Island
+
+    /// Every phase change goes through here so the island can never disagree with the screen.
+    private func transition(to newPhase: Phase) {
+        phase = newPhase
+        syncIsland()
+    }
+
+    private func syncIsland() {
+        let shown: VoiceActivityAttributes.ContentState.Phase
+        switch phase {
+        case .connecting: shown = .connecting
+        case .listening: shown = .listening
+        case .thinking: shown = .thinking
+        case .speaking: shown = .speaking
+        case .idle, .ended, .microphoneDenied, .failed:
+            endIsland()
+            return
+        }
+        islandProblem = island.show(.init(phase: shown, isMuted: isMuted))
+        islandActive = island.isRunning
+    }
+
+    private func endIsland() {
+        island.end()
+        islandActive = false
+        VoiceActivityBridge.shared.clear()
     }
 
     private func handle(_ call: ClientToolCallEvent) async {

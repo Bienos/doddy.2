@@ -49,7 +49,7 @@ public struct CapabilityCatalog: Sendable {
         .memoryRecall: .available,
     ]) { _, new in new })
 
-    /// V1: local memory plus voice conversation (ElevenLabs agent, foreground only).
+    /// V1: local memory plus voice conversation (ElevenLabs agent; starts in the foreground, continues in the background only while the Dynamic Island is showing).
     public static let v1Voice = CapabilityCatalog(statuses: m1.statuses.merging([
         .cloudAssistant: .available,
         .voiceInput: .available,

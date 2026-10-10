@@ -13,7 +13,7 @@ Date: 2026-10-08. Owner instruction: build with ElevenLabs (owner has the Creato
 | Prompt | AI disclosure, short spoken replies, strict memory rules (answer only from tool results, say "couldn't find it", never claim a save without "saved"), no reminders/messages/other apps |
 
 ## App
-- Home → **Talk to Doddy** opens `VoiceView` (foreground only). It ends when the screen closes or the app goes to the background.
+- Home → **Talk to Doddy** opens `VoiceView` . It starts in the foreground and ends when the screen closes. If you leave the app it continues only while the Dynamic Island is showing (see `V3_DYNAMIC_ISLAND_STATUS.md`).
 - `VoiceSessionController` uses the ElevenLabs Swift SDK 3.3.1 (`ElevenLabs.startConversation(agentId:…)`). Status (connecting, listening, thinking, speaking, ended) comes from real SDK events.
 - `search_memories` runs the local SQLite recall and returns only stored text (`VoiceToolReply.search`).
 - `save_memory` shows a **Save this note?** card; nothing is stored until the user taps Save. The agent is told saved, declined or failed.

@@ -1,8 +1,9 @@
 import SwiftUI
 import UIKit
 
-/// Foreground voice conversation. It ends when the screen closes or the app goes to the
-/// background (background listening and the Dynamic Island are a later step).
+/// Voice conversation. It always starts with Doddy on screen. If you leave the app while it is
+/// open, it keeps going only while the Dynamic Island / Lock Screen activity is showing, so the
+/// microphone is never open without a visible indicator. Otherwise it ends when you leave.
 struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -49,8 +50,8 @@ struct VoiceView: View {
             await controller.start(agentID: trimmedAgentID)
         }
         .onChange(of: scenePhase) { _, newPhase in
-            if newPhase == .background {
-                Task { await controller?.stop() }
+            if newPhase == .background, let controller, !controller.islandActive {
+                Task { await controller.stop() }
             }
         }
         .onDisappear {
@@ -90,7 +91,7 @@ struct VoiceView: View {
                                 .id("pendingSave")
                         }
 
-                        Text("While you talk, your voice and the notes Doddy looks up are sent to ElevenLabs to run the conversation. Nothing is saved unless you tap Save.")
+                        Text("While you talk, your voice and the notes Doddy looks up are sent to ElevenLabs to run the conversation. Nothing is saved unless you tap Save. If you switch to another app, the Dynamic Island shows that Doddy is still listening; End there stops it.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -122,7 +123,9 @@ struct VoiceView: View {
         case .failed(let message):
             ProblemView(message: message)
         default:
-            EmptyView()
+            if controller.isLive, let islandProblem = controller.islandProblem {
+                ProblemView(message: "\(islandProblem) The conversation will end if you leave the app.")
+            }
         }
     }
 

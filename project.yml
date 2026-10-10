@@ -27,7 +27,9 @@ targets:
     platform: iOS
     sources:
       - path: DoddyApp
+      - path: DoddyShared
     dependencies:
+      - target: DoddyWidgets
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore
@@ -51,7 +53,34 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only the microphone, for voice conversations the user starts. No other permission keys.
+        # Live Activities (Dynamic Island) and the audio background mode that lets an already-open
+        # conversation continue while another app is in front. The app ends the conversation when
+        # the Dynamic Island is not showing (VoiceView), so the microphone is never open unseen.
+        INFOPLIST_KEY_NSSupportsLiveActivities: YES
+        INFOPLIST_KEY_UIBackgroundModes: audio
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens only while you are talking to him, after you tap Talk to Doddy. Your voice is sent to ElevenLabs to run the conversation."
+  DoddyWidgets:
+    # Widget extension that draws the Live Activity (Dynamic Island + Lock Screen).
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DoddyWidgets
+      - path: DoddyShared
+    info:
+      path: DoddyWidgets/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        # Must match the app or iOS rejects the embedded extension.
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        SKIP_INSTALL: YES
   DoddyTests:
     type: bundle.unit-test
     platform: iOS

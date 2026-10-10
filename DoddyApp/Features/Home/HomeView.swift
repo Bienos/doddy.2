@@ -3,10 +3,10 @@ import SwiftUI
 
 struct HomeView: View {
     @Binding var selectedTab: AppTab
+    @Binding var showVoice: Bool
 
     @Environment(MemoryStore.self) private var store
     @State private var showCapture = false
-    @State private var showVoice = false
 
     var body: some View {
         NavigationStack {

@@ -58,7 +58,11 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 033 | Voice runs on **ElevenLabs Agents** (owner has Creator plan), behind app-side tool handling; provider bake-off vs OpenAI Realtime still recommended | Applied (owner instruction) |
 | 034 | Dev agent is **public**; its ID is in `VoiceConfig.swift`. Token server + authenticated agent required before any other user | Applied for dev — **must change before TestFlight** |
 | 035 | Agent tools are proposals: search runs locally; save needs an on-screen tap; agent is told saved, declined or failed | Applied |
-| 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | Applied |
+| 036 | Voice is foreground-only in V1; background listening + Dynamic Island are V3 | **Superseded by 038–041** (owner instruction 2026-10-10) |
+| 038 | Dynamic Island = a Live Activity (widget extension `DoddyWidgets`, shared types in `DoddyShared`). Shows only real phases (connecting/listening/thinking/speaking, Muted when muted) + elapsed time + Mute and End buttons. No character art in the Island (SF Symbols), so "Hide character artwork" is never bypassed | Applied — **not run on a device** |
+| 039 | A conversation always **starts with Doddy in front** (iOS blocks starting a mic session from the background). The "Talk to Doddy" App Intent (`openAppWhenRun`) is what Back Tap / Action Button / Siri run. Back Tap itself cannot be assigned by the app: Settings has the 3 steps | Applied — **not run on a device** |
+| 040 | Background continuation uses the `audio` background mode, **only while the Live Activity is showing**. No Live Activity (disabled, refused, swiped away) → the conversation ends when the app leaves the foreground. The mic is never open without a visible indicator | Applied — **not run on a device** |
+| 041 | Not using `AudioRecordingIntent`: Apple's page does not say it can start recording from the background, and developer reports say it cannot | Open — revisit after device tests |
 | 037 | Guard script: no networking of our own, audio and ElevenLabs code only in `Features/Voice`, microphone is the only permission | Applied |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
