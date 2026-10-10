@@ -54,8 +54,12 @@ public struct ReminderDue: Equatable, Sendable {
     }
 
     /// The moment it is due (start of the day for a day without a time).
-    public var date: Date? {
-        calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour ?? 0, minute: minute ?? 0))
+    public var date: Date? { date(in: calendar) }
+
+    /// The moment these wall-clock fields name in `calendar`'s zone, read as Gregorian.
+    func date(in calendar: Calendar) -> Date? {
+        ReminderDueRules.gregorian(calendar).date(
+            from: DateComponents(year: year, month: month, day: day, hour: hour ?? 0, minute: minute ?? 0))
     }
 }
 
@@ -91,10 +95,21 @@ public enum ReminderDueCheck: Equatable, Sendable {
     case clarify(ReminderClarification)
 }
 
+/// Also the rules for calendar event times (`create_calendar_event`, `read_calendar`; ADR-127).
 public enum ReminderDueRules {
-    /// Reads "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM" (":SS" allowed and dropped) as local time in
-    /// `calendar`'s time zone. Strict: no zone suffix, no words, no bare time, no rolled-over dates.
+    /// A reminder's due: `wallClock`, and not already passed.
     public static func check(_ text: String, now: Date, calendar: Calendar) -> ReminderDueCheck {
+        let checked = wallClock(text, calendar: calendar)
+        if case .due(let due) = checked, let late = passed(due, now: now) { return .clarify(late) }
+        return checked
+    }
+
+    /// Reads "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM" (":SS" allowed and dropped) as local time in
+    /// `calendar`'s time zone. Strict: no zone suffix, no words, no bare time, no rolled-over dates,
+    /// no time the clocks skip or repeat. Past times are allowed here; `check` refuses them.
+    public static func wallClock(_ text: String, calendar: Calendar) -> ReminderDueCheck {
+        // The agent writes ISO dates, which are Gregorian whatever calendar the phone is set to.
+        let calendar = gregorian(calendar)
         let zone = calendar.timeZone.identifier
         guard let fields = fields(text) else { return .clarify(unreadable(text)) }
         var components = DateComponents(year: fields.year, month: fields.month, day: fields.day)
@@ -125,8 +140,15 @@ public enum ReminderDueRules {
                     question: "for a different time"))
             }
         }
-        if let late = passed(due, now: now) { return .clarify(late) }
         return .due(due)
+    }
+
+    /// Gregorian, in `calendar`'s time zone.
+    static func gregorian(_ calendar: Calendar) -> Calendar {
+        guard calendar.identifier != .gregorian else { return calendar }
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = calendar.timeZone
+        return gregorian
     }
 
     /// Nil while the due time is still ahead (a day without a time counts until that day ends).
@@ -515,7 +537,13 @@ extension VoiceToolReply {
     /// Sent instead of a card, or after the tap if the time passed meanwhile. Starts with
     /// "failed" so the current agent prompt already handles it.
     public static func reminderClarification(_ clarification: ReminderClarification) -> String {
-        "failed: not added yet: \(clarification.problem). Ask the user \(clarification.question), then call create_reminder again with their answer. Nothing was added."
+        self.clarification(clarification, tool: VoiceToolName.createReminder)
+    }
+
+    /// The same for any tool whose day or time could not be read as it was meant (`tool` is the
+    /// one the agent should call again: create_reminder or create_calendar_event).
+    public static func clarification(_ clarification: ReminderClarification, tool: String) -> String {
+        "failed: not added yet: \(clarification.problem). Ask the user \(clarification.question), then call \(tool) again with their answer. Nothing was added."
     }
 
     private static func dueClause(_ due: ReminderDue?) -> String {

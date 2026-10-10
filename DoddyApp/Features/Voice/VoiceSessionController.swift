@@ -439,9 +439,9 @@ final class VoiceSessionController {
                 return
             }
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
-        case .needsClarification(_, let clarification):
+        case .needsClarification(let name, let clarification):
             // Unclear, past or clock-change time: the agent asks the user; no card, nothing added.
-            await reply(call.toolCallId, VoiceToolReply.reminderClarification(clarification))
+            await reply(call.toolCallId, VoiceToolReply.clarification(clarification, tool: name))
         case .lookupContact(let name):
             guard devices.access(for: .contacts) == .granted else {
                 await notConnected(call.toolCallId, .contacts)

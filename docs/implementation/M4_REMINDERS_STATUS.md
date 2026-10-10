@@ -124,9 +124,10 @@ Record device, iOS version, account type (iCloud or local Reminders) and the res
 - The receipt lives in memory; after a relaunch it is gone (the reminder itself is in Reminders).
 - The M0 `ToolExecutor`/`ActionReceipt` ports are not used by this path; `ReminderStore` +
   `ReminderAction` replace them for Reminders.
-- Found, not fixed (out of scope, Calendar): `VoiceLocalDate.parse`, still used by
-  `create_calendar_event` and `read_calendar`, reads `2026-10-12T18:30+02:00` as 18:00 (probe run
-  2026-10-10). Fix: reuse the strict field parser from `ReminderDueRules` for calendar.
+- Fixed after M4 (ADR-127): `VoiceLocalDate.parse` read `2026-10-12T18:30+02:00` as 18:00 for
+  `create_calendar_event` and `read_calendar`. It is gone; both use `ReminderDueRules.wallClock`
+  (the same rules without the "already passed" check), and an event time it can't read as meant is
+  sent back to the agent as `failed: not added yet …, then call create_calendar_event again…`.
 
 ## Decisions for the owner
 

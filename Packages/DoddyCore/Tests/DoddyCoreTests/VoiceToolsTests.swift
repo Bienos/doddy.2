@@ -92,6 +92,91 @@ final class VoiceToolsTests: XCTestCase {
                        .invalid(name: "create_calendar_event", reason: "missing title"))
     }
 
+    // MARK: Calendar event times (ADR-127: same strict rules as reminders)
+
+    private func clarification(_ request: VoiceToolRequest, file: StaticString = #filePath, line: UInt = #line) -> ReminderClarification? {
+        guard case .needsClarification(let name, let clarification) = request else {
+            XCTFail("expected a question for the agent, got \(request)", file: file, line: line)
+            return nil
+        }
+        XCTAssertEqual(name, "create_calendar_event", file: file, line: line)
+        return clarification
+    }
+
+    func testCreateEventKeepsTheMinutes() {
+        XCTAssertEqual(parse("create_calendar_event", #"{"title":"Dinner","start":"2026-10-12T18:30","end":"2026-10-12T20:45"}"#),
+                       .createCalendarEvent(CalendarEventDraft(
+                           title: "Dinner", start: date(2026, 10, 12, 18, 30), end: date(2026, 10, 12, 20, 45),
+                           allDay: false, location: nil, notes: nil)))
+        // Seconds are allowed and dropped, as for reminders.
+        XCTAssertEqual(parse("create_calendar_event", #"{"title":"Dinner","start":"2026-10-12T18:30:00"}"#),
+                       .createCalendarEvent(CalendarEventDraft(
+                           title: "Dinner", start: date(2026, 10, 12, 18, 30), end: date(2026, 10, 12, 19, 30),
+                           allDay: false, location: nil, notes: nil)))
+    }
+
+    /// The old parser read "18:30+02:00" as 18:00. Now it is never shown as a card at all.
+    func testCreateEventWithZoneOffsetIsAskedAboutNotShifted() {
+        for start in ["2026-10-12T18:30+02:00", "2026-10-12T18:30Z", "2026-10-12T16:30:00+00:00"] {
+            let request = parse("create_calendar_event", #"{"title":"Dinner","start":"\#(start)"}"#)
+            XCTAssertEqual(clarification(request)?.kind, .unreadable, start)
+        }
+        let end = parse("create_calendar_event", #"{"title":"Dinner","start":"2026-10-12T18:30","end":"2026-10-12T20:00+02:00"}"#)
+        XCTAssertEqual(clarification(end)?.kind, .unreadable)
+    }
+
+    func testCreateEventClarificationReply() throws {
+        let request = parse("create_calendar_event", #"{"title":"Dinner","start":"2026-10-12T18:30+02:00"}"#)
+        guard case .needsClarification(let name, let found) = request else { return XCTFail("expected a question") }
+        let reply = VoiceToolReply.clarification(found, tool: name)
+        // Keeps the reply contract: a "failed" result that adds nothing, naming the tool to call again.
+        XCTAssertTrue(reply.hasPrefix("failed: not added yet: "), reply)
+        XCTAssertTrue(reply.contains("\"2026-10-12T18:30+02:00\""), reply)
+        XCTAssertTrue(reply.contains("without a time zone"), reply)
+        XCTAssertTrue(reply.contains("then call create_calendar_event again with their answer"), reply)
+        XCTAssertTrue(reply.hasSuffix("Nothing was added."), reply)
+        XCTAssertFalse(reply.contains("create_reminder"), reply)
+    }
+
+    func testCreateEventImpossibleAndClockChangeTimesAreAskedAbout() {
+        let impossible = parse("create_calendar_event", #"{"title":"X","start":"2026-02-31T10:00"}"#)
+        XCTAssertEqual(clarification(impossible)?.kind, .unreadable)
+        let bareTime = parse("create_calendar_event", #"{"title":"X","start":"18:30"}"#)
+        XCTAssertEqual(clarification(bareTime)?.kind, .unreadable)
+        // Warsaw: clocks go forward at 02:00 on 28 Mar 2027 and back at 03:00 on 25 Oct 2026.
+        let skipped = parse("create_calendar_event", #"{"title":"X","start":"2027-03-28T02:30"}"#)
+        XCTAssertEqual(clarification(skipped)?.kind, .timeSkipped)
+        let repeated = parse("create_calendar_event", #"{"title":"X","start":"2026-10-25T01:00","end":"2026-10-25T02:30"}"#)
+        XCTAssertEqual(clarification(repeated)?.kind, .timeRepeated)
+    }
+
+    /// Unlike reminders, a past start is not refused: the card shows the day and the user decides.
+    func testCreateEventInThePastIsStillShown() {
+        XCTAssertEqual(parse("create_calendar_event", #"{"title":"Lunch","start":"2026-10-08T12:00"}"#),
+                       .createCalendarEvent(CalendarEventDraft(
+                           title: "Lunch", start: date(2026, 10, 8, 12, 0), end: date(2026, 10, 8, 13, 0),
+                           allDay: false, location: nil, notes: nil)))
+    }
+
+    /// ISO dates are Gregorian even when the phone uses another calendar (2026 is not Buddhist 2026).
+    func testCreateEventReadsGregorianDatesOnANonGregorianPhone() {
+        var buddhist = Calendar(identifier: .buddhist)
+        buddhist.timeZone = calendar.timeZone
+        let request = VoiceToolRequest.parse(
+            name: "create_calendar_event", parametersJSON: Data(#"{"title":"Dinner","start":"2026-10-12T18:30"}"#.utf8),
+            now: now, calendar: buddhist)
+        XCTAssertEqual(request, .createCalendarEvent(CalendarEventDraft(
+            title: "Dinner", start: date(2026, 10, 12, 18, 30), end: date(2026, 10, 12, 19, 30),
+            allDay: false, location: nil, notes: nil)))
+    }
+
+    func testReadCalendarRefusesAZoneOffsetInsteadOfShiftingIt() {
+        XCTAssertEqual(parse("read_calendar", #"{"from":"2026-10-12T18:30+02:00"}"#),
+                       .invalid(name: "read_calendar", reason: "missing range or from"))
+        XCTAssertEqual(parse("read_calendar", #"{"from":"2026-10-12T09:00","to":"2026-10-12T18:30+02:00"}"#),
+                       .invalid(name: "read_calendar", reason: "to is not a date"))
+    }
+
     // MARK: Reminders and contacts
 
     func testCreateReminderWithAndWithoutTime() {

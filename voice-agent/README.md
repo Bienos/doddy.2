@@ -25,8 +25,9 @@ step catches it. Last synced 2026-10-10 (agent version `agtvrsn_2801m4hqvf0qfeb8
 
 **Not yet on the live agent (owner to apply, ADR-126):** the M4 Reminders wording — one line in
 `instructions.md` (Calendar and reminder rules: "already in Reminders" and "not added yet") and the
-`create_reminder` description and `due` parameter in `tools.json`. Until it is applied, `compare`
-reports these as drift. The app works with the live prompt as it is: every new reply uses an
+`create_reminder` description and `due` parameter in `tools.json`; and (ADR-127) the
+`create_calendar_event` description and its `start`/`end` parameters. Until it is applied,
+`compare` reports these as drift. The app works with the live prompt as it is: every new reply uses an
 existing prefix (`added`, `failed`, `unknown`).
 
 ## App side (DoddyCore `RealtimeVoice.swift`)

@@ -46,13 +46,13 @@
     {
       "type": "function",
       "name": "create_calendar_event",
-      "description": "Propose adding one event to the user's iPhone calendar. Use it only when the user clearly asks to add or put something in their calendar. Turn relative dates such as 'Thursday' or 'tomorrow at 3' into a date using the current date and time you were given. If the day or time is unclear (for example 'at 5' could be morning or evening), ask one short question first instead of guessing. The app shows the event on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added.",
+      "description": "Propose adding one event to the user's iPhone calendar. Use it only when the user clearly asks to add or put something in their calendar. Turn relative dates such as 'Thursday' or 'tomorrow at 3' into a date using the current date and time you were given. If the day or time is unclear (for example 'at 5' could be morning or evening), ask one short question first instead of guessing. The app shows the event on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
       "parameters": {
         "type": "object",
         "properties": {
           "title": {"type": "string", "description": "Short event title in the user's words and language, e.g. 'Dentist' or 'Obiad z Martą'."},
-          "start": {"type": "string", "description": "Start in the user's local time as YYYY-MM-DDTHH:MM, e.g. 2026-10-12T15:00, or YYYY-MM-DD for an all-day event."},
-          "end": {"type": "string", "description": "End in the user's local time as YYYY-MM-DDTHH:MM. Leave out for a one-hour event."},
+          "start": {"type": "string", "description": "Start in the user's local time as YYYY-MM-DDTHH:MM, e.g. 2026-10-12T15:00, or YYYY-MM-DD for an all-day event. Always write the full day, and no time zone or offset."},
+          "end": {"type": "string", "description": "End in the user's local time as YYYY-MM-DDTHH:MM, with no time zone or offset. Leave out for a one-hour event."},
           "all_day": {"type": "boolean", "description": "True for an all-day event. Leave out otherwise."},
           "location": {"type": "string", "description": "Place, only if the user said one."},
           "notes": {"type": "string", "description": "Extra details, only if the user gave some."}

@@ -138,7 +138,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case createCalendarEvent(CalendarEventDraft)
     case createReminder(ReminderDraft)
     /// The request can't be shown as a card yet (unclear, past or skipped time). The agent gets a
-    /// question to ask the user instead.
+    /// question to ask the user instead. `name` is the tool to call again (reminder or event).
     case needsClarification(name: String, ReminderClarification)
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
@@ -196,45 +196,60 @@ public enum VoiceToolRequest: Equatable, Sendable {
             default: return .invalid(name: name, reason: "range must be today, tomorrow or week")
             }
         }
-        guard let fromText = args.text("from"), let from = VoiceLocalDate.parse(fromText, calendar: calendar) else {
+        guard let fromText = args.text("from"), case .due(let from) = ReminderDueRules.wallClock(fromText, calendar: calendar),
+              let start = from.date(in: calendar) else {
             return .invalid(name: name, reason: "missing range or from")
         }
         let end: Date
         if let toText = args.text("to") {
-            guard let to = VoiceLocalDate.parse(toText, calendar: calendar) else { return .invalid(name: name, reason: "to is not a date") }
-            end = to.date
+            guard case .due(let to) = ReminderDueRules.wallClock(toText, calendar: calendar), let toDate = to.date(in: calendar) else {
+                return .invalid(name: name, reason: "to is not a date")
+            }
+            end = toDate
         } else {
-            end = calendar.date(byAdding: .day, value: 1, to: from.date) ?? from.date
+            end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
         }
-        guard end > from.date else { return .invalid(name: name, reason: "to must be after from") }
-        guard end.timeIntervalSince(from.date) <= 31 * 86_400 else { return .invalid(name: name, reason: "range is longer than 31 days") }
-        return .readCalendar(VoiceTimeRange(start: from.date, end: end))
+        guard end > start else { return .invalid(name: name, reason: "to must be after from") }
+        guard end.timeIntervalSince(start) <= 31 * 86_400 else { return .invalid(name: name, reason: "range is longer than 31 days") }
+        return .readCalendar(VoiceTimeRange(start: start, end: end))
     }
 
+    /// Strict like reminders (ADR-127): start and end are local wall-clock times the agent wrote
+    /// out, in the phone's zone, and not a time the clocks skip or repeat. Anything else goes back
+    /// to the agent as a question rather than being shifted. A past start is not refused here.
     private static func parseEvent(_ args: Arguments, name: String, calendar: Calendar) -> VoiceToolRequest {
         guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
-        guard let startText = args.text("start"), let start = VoiceLocalDate.parse(startText, calendar: calendar) else {
-            return .invalid(name: name, reason: "missing or unreadable start")
+        guard let startText = args.text("start") else { return .invalid(name: name, reason: "missing start") }
+        let startDue: ReminderDue
+        switch ReminderDueRules.wallClock(startText, calendar: calendar) {
+        case .due(let checked): startDue = checked
+        case .clarify(let clarification): return .needsClarification(name: name, clarification)
         }
+        guard let start = startDue.date(in: calendar) else { return .invalid(name: name, reason: "missing start") }
         if args.flag("all_day") {
-            let dayStart = calendar.startOfDay(for: start.date)
+            let dayStart = calendar.startOfDay(for: start)
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
             return .createCalendarEvent(CalendarEventDraft(
                 title: title, start: dayStart, end: dayEnd, allDay: true,
                 location: args.text("location"), notes: args.text("notes")))
         }
-        guard start.hasTime else { return .invalid(name: name, reason: "start needs a time unless all_day is true") }
+        guard startDue.hasTime else { return .invalid(name: name, reason: "start needs a time unless all_day is true") }
         let end: Date
         if let endText = args.text("end") {
-            guard let parsed = VoiceLocalDate.parse(endText, calendar: calendar), parsed.hasTime, parsed.date > start.date else {
+            let endDue: ReminderDue
+            switch ReminderDueRules.wallClock(endText, calendar: calendar) {
+            case .due(let checked): endDue = checked
+            case .clarify(let clarification): return .needsClarification(name: name, clarification)
+            }
+            guard endDue.hasTime, let parsed = endDue.date(in: calendar), parsed > start else {
                 return .invalid(name: name, reason: "end must be a time after start")
             }
-            end = parsed.date
+            end = parsed
         } else {
-            end = start.date.addingTimeInterval(3600)
+            end = start.addingTimeInterval(3600)
         }
         return .createCalendarEvent(CalendarEventDraft(
-            title: title, start: start.date, end: end, allDay: false,
+            title: title, start: start, end: end, allDay: false,
             location: args.text("location"), notes: args.text("notes")))
     }
 
@@ -293,43 +308,6 @@ private struct Arguments {
 
     func number(_ key: String) -> Double? {
         values[key] as? Double
-    }
-}
-
-/// A date the agent wrote in local time: "YYYY-MM-DDTHH:MM" or "YYYY-MM-DD".
-struct VoiceLocalDate: Equatable {
-    let date: Date
-    let hasTime: Bool
-
-    /// Returns nil for anything that is not exactly one of those forms or that does not exist
-    /// (for example February 31). Calendar would otherwise roll it over silently.
-    static func parse(_ text: String, calendar: Calendar) -> VoiceLocalDate? {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        let halves = trimmed.split(separator: "T", maxSplits: 1).map(String.init)
-        guard let dayPart = halves.first else { return nil }
-        let ymd = dayPart.split(separator: "-").compactMap { Int($0) }
-        guard ymd.count == 3 else { return nil }
-
-        var components = DateComponents()
-        components.year = ymd[0]
-        components.month = ymd[1]
-        components.day = ymd[2]
-
-        var hm: [Int] = []
-        if halves.count == 2 {
-            hm = halves[1].split(separator: ":").compactMap { Int($0) }
-            guard hm.count >= 2 else { return nil }
-            components.hour = hm[0]
-            components.minute = hm[1]
-        }
-        guard let date = calendar.date(from: components) else { return nil }
-
-        let back = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
-        guard back.year == ymd[0], back.month == ymd[1], back.day == ymd[2] else { return nil }
-        if halves.count == 2 {
-            guard back.hour == hm[0], back.minute == hm[1] else { return nil }
-        }
-        return VoiceLocalDate(date: date, hasTime: halves.count == 2)
     }
 }
 
