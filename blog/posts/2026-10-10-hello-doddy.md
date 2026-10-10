@@ -2,7 +2,7 @@
 title: "Hello, Doddy. Why our favourite first result was 'I couldn't find it'"
 date: 2026-10-10
 author: "The Doddy team"
-status: published
+status: draft
 summary: "Doddy is a hand-drawn mate for your iPhone that keeps the small things you ask it to keep. In its first real conversations it couldn't find a note, and it said so. Here's why we liked that, and what we fixed."
 evidence:
   - docs/product/PRODUCT_REQUIREMENTS.md

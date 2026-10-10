@@ -3,6 +3,11 @@ title: "Meet Doddy, an AI companion that wants to do it all for you"
 date: 2026-10-10
 author: "The Doddy team"
 status: published
+banner_pose: waving
+banner_says: Hey. I'm Doddy.
+banner_card_title: Save this note?
+banner_card_text: The spare keys are in the blue tin above the fridge.
+banner_tint: orange
 summary: "Doddy is an AI companion for your iPhone with a big goal. One day it should help with anything you need, and it will always ask before it acts. Here's what it does today, what it can't do yet, how we keep it safe, and answers to the questions people ask most."
 keywords: "AI companion, AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI safety, human in the loop"
 tldr:
@@ -93,6 +98,8 @@ tests stays out, however cool the demo looks.
 
 ## Why a character?
 
+{{doddy relaxing "Useful first. Charming second."}}
+
 Talking to a blank text box is a bit weird. Talking to a stick figure in white sneakers is a bit
 less weird. Doddy is meant to be the mate who notices small annoyances and sorts them out without
 fuss, and who might tease you about the twelve tabs you've got open.
@@ -114,6 +121,8 @@ comes first and charm comes second.
 
 ## What Doddy can do today
 
+{{doddy listening "Go on, I'm listening."}}
+
 First, where we are. Doddy is in early testing on our own iPhone and nobody outside the team uses
 it yet. Some of the list below has been tried on a real phone, and the rest has been built and
 tested on a computer so far. We'll tell you which is which.
@@ -125,8 +134,7 @@ These have been tried on a real iPhone.
 - You can save a note by voice. Say "my locker code is 5678" and a Save this note? card pops up.
   Nothing is stored until you tap Save.
 - You can ask "what's my locker code?" and Doddy searches the notes on your phone. If nothing
-  turns up, it says so. (Our first post is
-  [all about that](/blog/hello-doddy/).)
+  turns up, it says so.
 
 These are built and still being tested on a phone.
 
@@ -165,6 +173,8 @@ only.
 
 ## How we think about safety
 
+{{doddy pointing "Your tap, your call."}}
+
 Remember "excessive agency"? This is how we try to avoid it, roughly following what the security
 folks recommend
 ([OWASP](https://genai.owasp.org/llmrisk/llm062025-excessive-agency/)).
@@ -176,8 +186,7 @@ folks recommend
 3. Everything starts switched off. Calendar, reminders and contacts each have their own switch,
    all off by default, plus the usual iOS permission prompt.
 4. Doddy only says "saved" or "added" once your phone confirms it. Early on we caught it saying
-   "I'm saving this" before anyone had tapped, and we
-   [changed that](/blog/hello-doddy/).
+   "I'm saving this" before anyone had tapped, and we changed that.
 5. It tells you it's an AI. In its introduction Doddy says "I'm an AI assistant, not a person."
    That's becoming the law in the EU too. Under the AI Act, AI systems that talk to people have to
    make it clear they're AI, and those transparency rules apply from 2 August 2026
@@ -219,6 +228,8 @@ If that sounds like your kind of thing, [join early access](/#join) or say hi in
 [Telegram group](https://t.me/+u-YA6P_MISFjYWE0).
 
 ## FAQ
+
+{{doddy reading "Good questions."}}
 
 ### What is Doddy?
 
