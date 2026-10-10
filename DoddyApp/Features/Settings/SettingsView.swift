@@ -234,7 +234,12 @@ struct SettingsView: View {
                 Section("What Doddy knows") {
                     Toggle("Remember recent conversations", isOn: $rememberConversations)
                         .accessibilityIdentifier("settings.rememberConversations")
-                    StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
+                    NavigationLink {
+                        RememberedConversationsView(store: conversationLogs)
+                    } label: {
+                        StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
+                    }
+                    .accessibilityIdentifier("settings.rememberedConversations")
                     Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
                         .disabled(conversationLogs.logs.isEmpty)
                     if let problem = conversationLogs.problem {

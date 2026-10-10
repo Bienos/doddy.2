@@ -80,8 +80,22 @@ public enum VoiceContext {
     /// The most recent conversations that fit the budget, rendered oldest to newest so the
     /// agent reads them in order. Whole conversations are dropped from the old end first.
     public static func recentConversations(_ logs: [ConversationLog], maxCharacters: Int = defaultConversationsBudget, timeZone: TimeZone = .current) -> Rendered {
+        let selection = selectConversations(logs, maxCharacters: maxCharacters, timeZone: timeZone)
+        let kept = selection.blocks.map(\.text)
+        let text = kept.isEmpty ? "(no earlier conversations)" : kept.reversed().joined(separator: "\n\n")
+        return Rendered(text: text, includedCount: kept.count, truncated: selection.truncated)
+    }
+
+    /// Which kept conversations the next voice conversation would be handed, by the same rule
+    /// as `recentConversations`. Shown in Settings → Remembered conversations (ADR-134).
+    public static func conversationsSentNextTime(_ logs: [ConversationLog], maxCharacters: Int = defaultConversationsBudget, timeZone: TimeZone = .current) -> Set<UUID> {
+        Set(selectConversations(logs, maxCharacters: maxCharacters, timeZone: timeZone).blocks.map(\.id))
+    }
+
+    /// Newest first; stops at the first conversation that doesn't fit.
+    private static func selectConversations(_ logs: [ConversationLog], maxCharacters: Int, timeZone: TimeZone) -> (blocks: [(id: UUID, text: String)], truncated: Bool) {
         let newestFirst = logs.sorted { $0.endedAt > $1.endedAt }
-        var kept: [String] = []
+        var kept: [(id: UUID, text: String)] = []
         var used = 0
         var truncated = false
         for log in newestFirst where !log.lines.isEmpty {
@@ -92,11 +106,10 @@ public enum VoiceContext {
                 truncated = true
                 break
             }
-            kept.append(block)
+            kept.append((log.id, block))
             used += block.count + 2
         }
-        let text = kept.isEmpty ? "(no earlier conversations)" : kept.reversed().joined(separator: "\n\n")
-        return Rendered(text: text, includedCount: kept.count, truncated: truncated)
+        return (kept, truncated)
     }
 
     static func clip(_ text: String) -> String {
@@ -120,5 +133,26 @@ public enum VoiceContext {
 public enum ConversationRetention {
     public static func shouldKeep(rememberRecent: Bool, isPrivate: Bool, lineCount: Int) -> Bool {
         rememberRecent && !isPrivate && lineCount > 0
+    }
+}
+
+/// Plain-text export of the kept conversations (Settings → Remembered conversations, ADR-134).
+/// Oldest first, every line in full (no clipping), in the user's time zone.
+public enum ConversationLogExport {
+    public static func plainText(_ logs: [ConversationLog], exportedAt: Date, timeZone: TimeZone = .current) -> String {
+        let iso = ISO8601DateFormatter()
+        var lines = [
+            "DODDY remembered conversations — exported \(iso.string(from: exportedAt))",
+            "\(logs.count) \(logs.count == 1 ? "conversation" : "conversations"). Written down from the conversation's text; no audio is kept.",
+            "",
+        ]
+        for log in logs.sorted(by: { $0.startedAt < $1.startedAt }) {
+            lines.append("## \(VoiceContext.format(log.startedAt, timeZone: timeZone)) – \(VoiceContext.format(log.endedAt, timeZone: timeZone))")
+            for line in log.lines {
+                lines.append((line.fromUser ? "You: " : "Doddy: ") + line.text)
+            }
+            lines.append("")
+        }
+        return lines.joined(separator: "\n")
     }
 }
