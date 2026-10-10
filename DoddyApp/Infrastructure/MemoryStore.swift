@@ -13,6 +13,8 @@ final class MemoryStore {
     private(set) var loadError: String?
     /// Bumped on every reload so searches re-run after edits and deletes.
     private(set) var revision = 0
+    /// Reloaded with the memories: a deleted memory takes its note reminder with it.
+    var noteReminders: NoteReminderStore?
 
     init(environment: AppEnvironment) {
         self.environment = environment
@@ -31,6 +33,7 @@ final class MemoryStore {
         }
         hasLoaded = true
         revision += 1
+        await noteReminders?.reload()
     }
 
     /// Returns only after the repository confirmed a committed, read-back write.
@@ -46,17 +49,23 @@ final class MemoryStore {
 
     func correct(id: UUID, text: String) async throws -> MemoryRecord {
         let record = try await environment.memoryRepository.update(id: id, currentText: text)
+        await environment.noteReminders?.refreshContent(forMemory: id)
         await reload()
         return record
     }
 
+    /// The memory's note reminder row is deleted with it (same database); its notification after.
     func delete(id: UUID) async throws {
+        let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
+        if let reminderID { await environment.noteReminders?.memoryDeleted(reminderID: reminderID) }
+        noteReminders?.clearReceipt(memoryID: id)
         await reload()
     }
 
     func deleteAll() async throws {
         try await environment.memoryRepository.deleteAll()
+        await environment.noteReminders?.allMemoriesDeleted()
         await reload()
     }
 

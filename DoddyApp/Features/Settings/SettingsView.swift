@@ -246,6 +246,10 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                if environment.capabilities.isAvailable(.noteReminders) {
+                    NoteReminderSettingsSection()
+                }
+
                 Section("Voice") {
                     PersonalityLinkRow()
                     StatusRow(title: "Connection", value: connectionText)

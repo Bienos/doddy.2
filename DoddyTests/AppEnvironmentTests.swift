@@ -11,6 +11,14 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(env.recallService is UnavailableRecallService)
         XCTAssertNil(env.assistant)
         XCTAssertTrue(env.toolExecutor is UnavailableToolExecutor)
+        XCTAssertNil(env.noteReminders)
+    }
+
+    func testUITestLaunchNeverTouchesIOSNotifications() async {
+        let env = AppEnvironment.live(arguments: ["-inMemoryStore"])
+        XCTAssertTrue(env.capabilities.isAvailable(.noteReminders))
+        let status = await env.noteReminders?.authorization()
+        XCTAssertEqual(status, .denied, "UI-test launches use DisabledNoteNotifications")
     }
 
     func testEveryCapabilityHasHonestDisplayCopy() {

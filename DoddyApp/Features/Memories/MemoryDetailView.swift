@@ -5,6 +5,7 @@ import UIKit
 /// Current and immutable original wording remain attached to the same stored ID.
 struct MemoryDetailView: View {
     @Environment(MemoryStore.self) private var store
+    @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.dismiss) private var dismiss
     let memoryID: UUID
     @State private var correction: MemoryRecord?
@@ -30,6 +31,7 @@ struct MemoryDetailView: View {
                     Text("Your note, your choice. No inferred facts.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                     if let errorMessage { ProblemView(message: errorMessage) }
+                    NoteReminderSection(memoryID: memoryID)
                     Button { correction = record } label: {
                         HStack { Text("Edit this note"); Spacer(); Image(systemName: "pencil") }
                     }
@@ -55,8 +57,17 @@ struct MemoryDetailView: View {
             Button("Delete", role: .destructive, action: beginDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Both current and original text are removed from this iPhone. Exports and older backups aren't affected.")
+            Text(deleteMessage)
         }
+    }
+
+    private var deleteMessage: String {
+        let base = "Both current and original text are removed from this iPhone."
+        guard let reminder = noteReminders.reminder(forMemory: memoryID) else {
+            return base + " Exports and older backups aren't affected."
+        }
+        let when = ReminderFormat.dateTime(reminder.fireAt, timeZoneID: reminder.timeZoneID)
+        return base + " Its reminder for \(when) is cancelled too. Exports and older backups aren't affected."
     }
 
     private func copy(_ record: MemoryRecord) {

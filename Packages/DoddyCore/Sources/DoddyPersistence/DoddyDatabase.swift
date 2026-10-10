@@ -84,6 +84,18 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
+        // M4a: one note reminder per memory, deleted with it (foreign keys are on in GRDB).
+        migrator.registerMigration("v3_note_reminders") { db in
+            try db.create(table: "note_reminders") { t in
+                t.primaryKey("id", .text)
+                t.column("memory_id", .text).notNull().unique()
+                    .references("memories", column: "id", onDelete: .cascade)
+                t.column("fire_at_ms", .integer).notNull()
+                t.column("time_zone_id", .text).notNull()
+                t.column("created_at_ms", .integer).notNull()
+            }
+            try db.create(index: "note_reminders_fire_at", on: "note_reminders", columns: ["fire_at_ms"])
+        }
         return migrator
     }
 
