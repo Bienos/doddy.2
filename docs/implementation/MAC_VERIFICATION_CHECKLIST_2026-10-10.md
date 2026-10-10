@@ -38,6 +38,12 @@ EventKit) has still never been compiled.
 | M10 | Open a voice-saved or "Other" note → Type menu → pick "Place" | The type changes at once and the type filter chips update. The text, dates and "Edited" label stay as they were (ADR-147) |
 | M11 | Search for a word used by notes of two or more types | The same chips above the matches. A chip narrows them and says "Showing N of M matches". The "may disagree" banner still counts every match (ADR-148) |
 
+## 2b. Accessibility (PRD item 7, acceptance test A-13)
+| # | Do this | Expect |
+|---|---|---|
+| A1 | iOS Settings → Accessibility → Motion → Reduce Motion on. Run a voice conversation and the Ask screen; step through first-use onboarding | Scrolling to new messages and the onboarding steps are instant, not animated (ADR-150) |
+| A2 | Largest Dynamic Type and VoiceOver on the new screens: type chips, sort menu, pin, undo bar, duplicate warning, remembered conversations | Everything reachable and readable; chips announce "Place, 2 notes" and "selected"; no clipped text |
+
 ## 3. Export, restore and settings
 | # | Do this | Expect |
 |---|---|---|
