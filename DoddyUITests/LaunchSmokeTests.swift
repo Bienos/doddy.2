@@ -15,7 +15,7 @@ final class LaunchSmokeTests: XCTestCase {
         app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
         if onboardingDone { app.launchArguments += ["-onboardingDone", "YES"] }
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
-        // The opening (ADR-207) is on by default; most tests start straight on Home.
+        // The opening (ADR-210) is on by default; most tests start straight on Home.
         if !opening { app.launchArguments += ["-openingScene", "NO"] }
         // Listening on open is on by default too; it would open a conversation over every test.
         if !listen { app.launchArguments += ["-listenOnOpen", "NO"] }

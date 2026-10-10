@@ -58,7 +58,7 @@ struct UploadedCharacterView: View {
 }
 
 /// The picture itself at an exact height, with the paper backing in dark appearance. Shared by
-/// `UploadedCharacterView` and the opening's hand-over (ADR-207), so the opening's last frame
+/// `UploadedCharacterView` and the opening's hand-over (ADR-210), so the opening's last frame
 /// and Home's picture are drawn the same way, pixel for pixel.
 struct CharacterArtImage: View {
     let assetName: String

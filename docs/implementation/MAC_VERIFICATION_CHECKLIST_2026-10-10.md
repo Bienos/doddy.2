@@ -65,7 +65,7 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | S5 | Start Save to Doddy while a voice conversation is open | The note appears after the conversation closes |
 | S6 | Run Save to Doddy during first-use onboarding or while the Back Tap setup sheet is open | It waits and appears afterwards. A later Save to Doddy still works (it must not stay blocked) |
 
-## 4b. The opening and listening on open (ADR-207)
+## 4b. The opening and listening on open (ADR-210)
 | # | Do this | Expect |
 |---|---|---|
 | O1 | Launch the app (onboarding done) | About 2.4 s: a pen draws Doddy, two bounces with dust, crouch, spring, shot with a trail, SWISH! with confetti and a shake, he pops up, then jumps into his place on Home as Home fades in and the buttons slide in. **Main check: when the opening ends, Home's Doddy must not move by even a point** (light, dark, smallest and largest iPhone, largest text size where Home's picture is 100 pt). Also: every stroke of the pen drawing appears; no text greeting anywhere. `design/opening-v0.1/index.html` shows the intended timing |

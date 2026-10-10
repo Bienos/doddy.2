@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Settings for the opening (ADR-207), read straight from UserDefaults so a UI-test launch
+/// Settings for the opening (ADR-210), read straight from UserDefaults so a UI-test launch
 /// argument such as `-openingScene NO` works the same as the Settings switch.
 enum OpeningPreferences {
     /// "Doddy's opening": on unless the user turned it off.
@@ -11,7 +11,7 @@ enum OpeningPreferences {
     }
 
     /// "Start listening when I open Doddy": on unless the user turned it off (owner decision,
-    /// ADR-207). Must match the Settings toggle's default.
+    /// ADR-210). Must match the Settings toggle's default.
     static let listenOnOpenDefault = true
 
     static func listenOnOpen(_ defaults: UserDefaults = .standard) -> Bool {

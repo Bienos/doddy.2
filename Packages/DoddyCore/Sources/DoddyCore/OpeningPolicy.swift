@@ -1,6 +1,6 @@
 import Foundation
 
-// Whether the opening plays, and whether a conversation starts by itself afterwards (ADR-207).
+// Whether the opening plays, and whether a conversation starts by itself afterwards (ADR-210).
 // The app reads its settings and state into `OpeningConditions`; this decides; the app acts.
 // Listening on open is the user's own switch (on by default, owner decision), and it never
 // opens the microphone silently: the conversation screen comes up, says "Listening" from real

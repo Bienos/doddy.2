@@ -2,8 +2,10 @@ import AVFAudio
 import DoddyCore
 import ElevenLabs
 import Foundation
+import LiveKit
 import Observation
 import UIKit
+import os
 
 /// One voice conversation with the ElevenLabs agent. State shown in the UI comes only from real
 /// SDK events (connected, listening, speaking, disconnected), never from timers.
@@ -76,6 +78,14 @@ final class VoiceSessionController {
         var isRunning = true
     }
 
+    /// What Doddy's server prepared for one online-account step of a plan (ADR-209).
+    struct PlanCloudApproval: Equatable {
+        let preview: ToolPreview
+        let approvalID: UUID
+        let mode: ConnectedAppsMode
+        let preparedAt: Date
+    }
+
     /// The receipt after the user tapped Add on a reminder card (M4). It stays on screen after
     /// the conversation ends, because the agent may never hear the answer (its wait can time out).
     enum ReminderStatus: Equatable {
@@ -103,6 +113,9 @@ final class VoiceSessionController {
     private(set) var planTicked: Set<Int> = []
     /// Steps the user changed on the card (ADR-205); the agent is told when it gets the results.
     private(set) var planChanged: Set<Int> = []
+    /// Gmail and Todoist steps on the plan card: the server's preview and its one-time approval
+    /// for exactly these arguments (ADR-209).
+    private(set) var planCloud: [Int: PlanCloudApproval] = [:]
     private(set) var planStatus: PlanStatus?
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
@@ -120,6 +133,14 @@ final class VoiceSessionController {
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
     private let island = VoiceLiveActivity()
+    /// True while iOS has paused Doddy's audio because another app took the audio session
+    /// (`AVAudioSession` interruption). Real system events only, never a guess.
+    private(set) var audioPausedByOtherApp = false
+    /// What iOS last said about the audio session (reason and session setup), shown in small print
+    /// on the voice screen so a failure can be read without Xcode. No speech or notes in it.
+    private(set) var audioNote: String?
+    @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
+    private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     private let devices = DeviceConnections()
     private var conversation: Conversation?
     private var startedAt: Date?
@@ -154,6 +175,8 @@ final class VoiceSessionController {
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
+        audioPausedByOtherApp = false
+        audioNote = nil
 
         // Not set up: say so without asking for the microphone first.
         if case .notSetUp(let reason) = mode {
@@ -253,6 +276,7 @@ final class VoiceSessionController {
         // Closed while the token was being fetched: don't open the microphone after all.
         guard phase == .connecting else { return }
 
+        Self.allowOtherAppsAudio()
         do {
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
             guard isLive else {
@@ -261,6 +285,8 @@ final class VoiceSessionController {
                 return
             }
             conversation = started
+            watchAudioInterruptions()
+            Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
             // An agent that doesn't allow the voice overrides refuses the conversation.
             let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
@@ -270,7 +296,63 @@ final class VoiceSessionController {
         }
     }
 
+    /// Keeps the conversation going when the user opens another app that plays or records sound
+    /// (ADR-207). The SDK's default call session is not mixable, so another app starting its own
+    /// audio session pauses Doddy at once and nothing brings him back. A mixable session is not
+    /// paused that way. Cost: the other app's sound plays along with Doddy's, and the microphone
+    /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
+    /// `.mixWithOthers`. Not verified on a device.
+    private static func allowOtherAppsAudio() {
+        #if swift(>=6.2)
+        let routes: AVAudioSession.CategoryOptions = [.allowBluetoothHFP, .allowBluetoothA2DP, .allowAirPlay]
+        #else
+        let routes: AVAudioSession.CategoryOptions = [.allowBluetooth, .allowBluetoothA2DP, .allowAirPlay]
+        #endif
+        AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
+            category: .playAndRecord,
+            categoryOptions: routes.union([.defaultToSpeaker, .mixWithOthers]),
+            mode: .videoChat)
+    }
+
+    /// Reports iOS audio interruptions (for example another app opening its own audio) as they
+    /// happen: on screen, in the log, and as `audioPausedByOtherApp`.
+    private func watchAudioInterruptions() {
+        guard interruptionObserver == nil else { return }
+        let ref = WeakRef(self)
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { note in
+            let info = note.userInfo
+            let began = (info?[AVAudioSessionInterruptionTypeKey] as? UInt) == AVAudioSession.InterruptionType.began.rawValue
+            let reason = (info?[AVAudioSessionInterruptionReasonKey] as? UInt)
+                .flatMap(AVAudioSession.InterruptionReason.init(rawValue:))
+                .map { "\($0)" } ?? "not given"
+            Task { @MainActor in ref.value?.audioInterruption(began: began, reason: reason) }
+        }
+    }
+
+    private func stopWatchingAudioInterruptions() {
+        if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
+        interruptionObserver = nil
+        audioPausedByOtherApp = false
+    }
+
+    private func audioInterruption(began: Bool, reason: String) {
+        guard isLive else { return }
+        audioPausedByOtherApp = began
+        let note = "\(began ? "iOS paused Doddy's audio" : "iOS gave Doddy's audio back") (reason: \(reason)). Session: \(Self.describeAudioSession())."
+        audioNote = note
+        Self.audioLog.notice("\(note, privacy: .public)")
+    }
+
+    private static func describeAudioSession() -> String {
+        let session = AVAudioSession.sharedInstance()
+        let mixing = session.categoryOptions.contains(.mixWithOthers) ? "mixing with other apps ON" : "mixing with other apps OFF"
+        return "\(session.category.rawValue), mode \(session.mode.rawValue), \(mixing), other app audio playing: \(session.isOtherAudioPlaying)"
+    }
+
     func stop() async {
+        stopWatchingAudioInterruptions()
         let active = conversation
         conversation = nil
         pendingAction = nil
@@ -519,11 +601,13 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
     }
 
     private func disconnected() {
+        stopWatchingAudioInterruptions()
         conversation = nil
         pendingAction = nil
         keepLog()
@@ -649,10 +733,19 @@ final class VoiceSessionController {
             return
         }
         var blocked: [Int: PlanBlock] = [:]
+        planCloud = [:]
         for step in steps {
-            guard let block = await planBlock(for: step) else { continue }
-            blocked[step.number] = block
-            if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
+            if let block = await planBlock(for: step) {
+                blocked[step.number] = block
+                if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
+            } else if let call = step.cloudCall {
+                // As a single card: the server checks the switch, the connection and the arguments,
+                // and returns the preview the card shows with an approval for exactly these.
+                switch await prepareCloud(call) {
+                case .ready(let approval): planCloud[step.number] = approval
+                case .blocked(let block): blocked[step.number] = block
+                }
+            }
         }
         // Nothing could run: answer now instead of showing a card with nothing to tick.
         guard blocked.count < steps.count else {
@@ -678,6 +771,7 @@ final class VoiceSessionController {
         askedPlans[toolCallID] = nil
         let ticked = planTicked
         let changed = planChanged
+        let approvals = planCloud
         let planID = UUID()
         planStatus = PlanStatus(steps: steps)
         var results: [(step: PlanStep, reply: String)] = []
@@ -696,7 +790,7 @@ final class VoiceSessionController {
                     activity.append(entry)
                     startedEntry = entry
                 }
-                text = await runPlanStep(step)
+                text = await runPlanStep(step, approval: approvals[step.number])
             }
             planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry)
             results.append((step, text))
@@ -706,7 +800,7 @@ final class VoiceSessionController {
     }
 
     /// Checked again at the tap: the user may have paused or switched off the app while the card waited.
-    private func runPlanStep(_ step: PlanStep) async -> String {
+    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
         if let block = await planBlock(for: step) { return block.reply }
         switch step.request {
         case .saveMemory(let text):
@@ -723,9 +817,49 @@ final class VoiceSessionController {
             return VoiceToolReply.reminder(await addReminder(draft))
         case .setTimer(let draft):
             return await startTimer(draft)
+        case .cloudTool(let call):
+            return await runPlanCloud(call, approval: approval)
         default:
-            // PlanProposal only makes the four kinds above.
+            // PlanProposal only makes the kinds above.
             return VoiceToolReply.notAdded("This step can't run in a plan.")
+        }
+    }
+
+    private enum CloudPrepared {
+        case ready(PlanCloudApproval)
+        /// Why the server didn't prepare the step, for the card and the agent.
+        case blocked(PlanBlock)
+    }
+
+    private func prepareCloud(_ call: CloudToolCall) async -> CloudPrepared {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            return .blocked(.onlineAccount(
+                screen: OnlineAccountsError.notConfigured.userMessage,
+                reply: VoiceToolReply.cloudFailed(.notConfigured, tool: call.name)))
+        }
+        do {
+            let prepared = try await client.prepare(call)
+            return .ready(PlanCloudApproval(preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode, preparedAt: Date()))
+        } catch {
+            return .blocked(.onlineAccount(screen: error.userMessage, reply: VoiceToolReply.cloudFailed(error, tool: call.name)))
+        }
+    }
+
+    /// The server's approval works once and lasts two minutes. If the card waited longer, a fresh
+    /// one is asked for the same arguments the user saw; the server checks them again.
+    private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?) async -> String {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            return VoiceToolReply.cloudFailed(.notConfigured, tool: call.name)
+        }
+        do {
+            var approvalID = approval?.approvalID
+            if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
+                approvalID = try await client.prepare(call).approvalId
+            }
+            let result = try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: approvalID)
+            return VoiceToolReply.cloudResult(result)
+        } catch {
+            return VoiceToolReply.cloudFailed(error, tool: call.name)
         }
     }
 

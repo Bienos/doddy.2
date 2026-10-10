@@ -9,6 +9,9 @@ struct PlanStepList: View {
     let ticked: Set<Int>
     /// Accessibility identifiers: "<prefix>.step<n>" and "<prefix>.change<n>".
     let idPrefix: String
+    /// Gmail and Todoist steps: the preview Doddy's server prepared (ADR-209), shown instead of
+    /// the step's name only.
+    var cloud: [Int: VoiceSessionController.PlanCloudApproval] = [:]
     let onToggle: (Int) -> Void
     let onChange: (PlanStep) -> Void
 
@@ -24,13 +27,28 @@ struct PlanStepList: View {
                     Image(systemName: block != nil ? "minus.circle" : isTicked ? "checkmark.square.fill" : "square")
                         .foregroundStyle(block != nil ? Theme.secondaryText : Theme.ink)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("\(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
-                            .font(.body)
-                            .foregroundStyle(Theme.ink)
-                        if let detail = request?.detail {
-                            Text(detail)
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.secondaryText)
+                        if let prepared = cloud[step.number] {
+                            if prepared.mode == .mock {
+                                Label("Demo — nothing real will be created", systemImage: "theatermasks")
+                                    .font(.footnote)
+                            }
+                            Text("\(prepared.preview.title) · \(request?.app.title ?? "")")
+                                .font(.body)
+                                .foregroundStyle(Theme.ink)
+                            ForEach(Array(prepared.preview.lines.enumerated()), id: \.offset) { _, line in
+                                Text(line)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Theme.secondaryText)
+                            }
+                        } else {
+                            Text("\(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
+                                .font(.body)
+                                .foregroundStyle(Theme.ink)
+                            if let detail = request?.detail {
+                                Text(detail)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Theme.secondaryText)
+                            }
                         }
                         if let block {
                             Text(block.screenText)
@@ -47,7 +65,7 @@ struct PlanStepList: View {
             .disabled(block != nil)
             .accessibilityValue(block?.screenText ?? (isTicked ? "Ticked" : "Not ticked"))
             .accessibilityIdentifier("\(idPrefix).step\(step.number)")
-            if block == nil {
+            if block == nil, step.canChange {
                 Button("Change") {
                     onChange(step)
                 }

@@ -61,7 +61,7 @@ final class PlanTests: XCTestCase {
     }
 
     func testToolsThatLeaveDoddyOrNeedTheServerAreNotSteps() {
-        for tool in [VoiceToolName.openMap, VoiceToolName.draftMessage, VoiceToolName.runShortcut, "draft_email", "add_todoist_task", VoiceToolName.proposePlan] {
+        for tool in [VoiceToolName.openMap, VoiceToolName.draftMessage, VoiceToolName.runShortcut, "check_email", "web_search", VoiceToolName.proposePlan] {
             let text = refusal(parse([["tool": tool, "place": "Hala Koszyki"]]))
             XCTAssertTrue(text.contains("step 1 (\(tool)) can't be part of a plan"), text)
         }
@@ -118,5 +118,24 @@ final class PlanTests: XCTestCase {
         let decoded = try JSONDecoder().decode(ActivityEntry.self, from: JSONSerialization.data(withJSONObject: json))
         XCTAssertNil(decoded.plan)
         XCTAssertEqual(decoded.outcome, .done)
+    }
+
+    func testGmailDraftsAndTodoistTasksAreSteps() {
+        let parsed = steps(parse(#"[{"tool":"draft_email","to":"marta@example.com","subject":"Saturday","body":"See you at 2"},{"tool":"add_todoist_task","content":"Buy flowers","due":"saturday 11am"}]"#))
+        XCTAssertEqual(parsed.map(\.toolName), [CloudToolName.draftEmail, CloudToolName.addTodoistTask])
+        XCTAssertEqual(parsed[0].cloudCall?.arguments["to"], .string("marta@example.com"))
+        XCTAssertNil(parsed[0].connection, "online accounts are checked by Doddy's server, not a Connections switch")
+        XCTAssertFalse(parsed[0].canChange)
+        XCTAssertTrue(steps(parse(#"[{"tool":"save_memory","text":"x"}]"#))[0].canChange)
+        // Names only in "What Doddy did": no address, subject or task text.
+        XCTAssertEqual(parsed[0].activity(calendar: calendar)?.title, "Create an email draft")
+        XCTAssertNil(parsed[0].activity(calendar: calendar)?.detail)
+        XCTAssertEqual(PlanProposal.confirmTitle([parsed[0]]), "Draft 1 email")
+        XCTAssertEqual(PlanProposal.confirmTitle([parsed[1], parsed[1]]), "Add 2 tasks")
+        XCTAssertEqual(PlanProposal.confirmTitle(parsed), "Do 2 things")
+        XCTAssertTrue(refusal(parse([["tool": "draft_email", "to": ["not", "an", "object"]], ["tool": "x"]])).contains("step 2 (x)"))
+        let blocked = PlanBlock.onlineAccount(screen: "Gmail isn't connected", reply: "failed: Gmail isn't connected or needs reconnecting. Nothing was done.")
+        XCTAssertEqual(blocked.screenText, "Gmail isn't connected")
+        XCTAssertTrue(PlanReply.summary([(parsed[0], "drafted: ok")]).contains("\"drafted:\""))
     }
 }

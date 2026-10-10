@@ -10,7 +10,7 @@ struct HomeView: View {
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dynamicTypeSize) private var textSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Right after the opening (ADR-207) Doddy is ready to talk: the listening pose is up and the
+    /// Right after the opening (ADR-210) Doddy is ready to talk: the listening pose is up and the
     /// buttons slide in. Absent in previews and tests.
     @Environment(OpeningModel.self) private var opening: OpeningModel?
     @State private var modal: MemoryModal?

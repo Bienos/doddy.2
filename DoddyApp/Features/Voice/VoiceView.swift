@@ -100,6 +100,20 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
+                        if controller.audioPausedByOtherApp && controller.isLive {
+                            Label("Another app has Doddy's audio. He can't hear you until it lets go.", systemImage: "pause.circle")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                                .accessibilityIdentifier("voice.audioPaused")
+                        }
+                        if let note = controller.audioNote {
+                            Text(note)
+                                .font(.caption2)
+                                .foregroundStyle(Theme.secondaryText)
+                                .textSelection(.enabled)
+                                .accessibilityIdentifier("voice.audioNote")
+                        }
+
                         if controller.isPrivate {
                             Label {
                                 Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and keeps its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
@@ -338,7 +352,7 @@ struct VoiceView: View {
             .font(.headline)
         PlanStepList(
             steps: steps, blocked: blocked, ticked: controller.planTicked, idPrefix: "voice.plan",
-            onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
+            cloud: controller.planCloud, onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
         Text("Untick anything you don't want, or tap Change to fix a step. The rest run in this order, and each one gets its own result.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)

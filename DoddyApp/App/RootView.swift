@@ -11,9 +11,9 @@ enum PreferenceKey {
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).
     static let pinnedNotes = "pinnedNotes"
     static let hideCharacterArt = "hideCharacterArt"
-    /// Settings → Appearance: the basketball opening each time the app is opened (ADR-207). On unless turned off.
+    /// Settings → Appearance: the basketball opening each time the app is opened (ADR-210). On unless turned off.
     static let openingScene = "openingScene"
-    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-207). On unless turned off.
+    /// Settings → Voice: open the conversation by itself when the app is opened (ADR-210). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
@@ -129,7 +129,7 @@ struct RootView: View {
         }
     }
 
-    /// What the opening's rules need to know right now (ADR-207). Read at decision time, so a
+    /// What the opening's rules need to know right now (ADR-210). Read at decision time, so a
     /// switch changed in Settings counts from the next opening.
     private var openingConditions: OpeningConditions {
         OpeningConditions(
@@ -148,7 +148,7 @@ struct RootView: View {
     private var tabs: some View {
         ZStack {
             tabContent
-            // The opening (ADR-207) sits over the ready app and fades away to reveal it; a tap
+            // The opening (ADR-210) sits over the ready app and fades away to reveal it; a tap
             // ends it early. It is removed from the hierarchy entirely once it is done.
             if let play = opening.play {
                 // No fade at the end: Doddy is already in Home's place, and everything else has faded.
