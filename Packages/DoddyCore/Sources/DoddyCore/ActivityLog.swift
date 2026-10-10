@@ -96,6 +96,13 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)", isLookup: false,
                 reminderKey: ReminderWrite(draft).key)
+        case .remindAboutNote(let draft):
+            let target: String
+            switch draft.target {
+            case .time(let date, _): target = when(date, hasTime: true)
+            case .place(let query, let onArrival): target = "\(onArrival ? "arriving at" : "leaving") “\(query)”"
+            }
+            return ActivityRequest(app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", isLookup: false)
         case .lookupContact(let name):
             return ActivityRequest(app: .contacts, title: "Looked for a contact", detail: "“\(name)”", isLookup: true)
         case .setTimer(let draft):

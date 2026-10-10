@@ -15,6 +15,8 @@ struct VoiceView: View {
     @State private var controller: VoiceSessionController?
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
+    /// The time picker on a note-reminder card is open (closed again for each new card).
+    @State private var editingNoteReminderTime = false
 
     /// Read when a conversation starts, so a changed setting or access code applies next time.
     private var mode: VoiceConnectionMode {
@@ -127,6 +129,11 @@ struct VoiceView: View {
                                 .id("reminderStatus")
                         }
 
+                        if let status = controller.noteReminderStatus {
+                            noteReminderStatusCard(status, controller: controller)
+                                .id("noteReminderStatus")
+                        }
+
                         if pauseAllConnections {
                             pausedCard
                                 .id("connectionsPaused")
@@ -152,8 +159,12 @@ struct VoiceView: View {
                 .onChange(of: controller.lines.count) { _, _ in
                     if let last = controller.lines.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
-                .onChange(of: controller.pendingAction) { _, pending in
-                    if pending != nil { withAnimation { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                .onChange(of: controller.pendingAction?.toolCallID) { _, id in
+                    editingNoteReminderTime = false
+                    if id != nil { withAnimation { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                }
+                .onChange(of: controller.noteReminderStatus) { _, status in
+                    if status != nil { withAnimation { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
                 }
                 .onChange(of: controller.contactCard) { _, card in
                     if card != nil { withAnimation { proxy.scrollTo("contactCard", anchor: .bottom) } }
@@ -200,7 +211,7 @@ struct VoiceView: View {
     private func actionCard(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
         let labels = actionLabels(pending)
         return VStack(alignment: .leading, spacing: 12) {
-            actionContent(pending)
+            actionContent(pending, controller: controller)
             Button {
                 Task { await controller.confirmPendingAction() }
             } label: {
@@ -220,7 +231,7 @@ struct VoiceView: View {
     }
 
     @ViewBuilder
-    private func actionContent(_ pending: VoiceSessionController.PendingAction) -> some View {
+    private func actionContent(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> some View {
         switch pending {
         case .memory(_, let text):
             Text("Save this note?")
@@ -283,6 +294,8 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .noteReminder(_, _, let noteText, let savedAt, let target):
+            noteReminderContent(noteText: noteText, savedAt: savedAt, target: target, controller: controller)
         case .cloud(_, _, let preview, _, let mode):
             if mode == .mock {
                 Label("Demo — nothing real will be created", systemImage: "theatermasks")
@@ -306,7 +319,134 @@ struct VoiceView: View {
         case .shortcut: ("Run", "Don't run")
         case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
+        case .noteReminder: ("Set reminder", "Don't set")
         }
+    }
+
+    /// Note reminder card (ADR-198): the note exactly as saved and when, then the time with its
+    /// zone (changeable), or arrive/leave and the Apple Maps results to pick from. Doddy's own
+    /// reminder, not Apple Reminders.
+    @ViewBuilder
+    private func noteReminderContent(
+        noteText: String, savedAt: Date?, target: VoiceSessionController.NoteReminderCardTarget, controller: VoiceSessionController
+    ) -> some View {
+        Text("Remind you about this note?")
+            .font(.headline)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(noteText)
+                .font(.body)
+            if let savedAt {
+                Text("Your note, saved \(savedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute()))")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.separator))
+        .accessibilityElement(children: .combine)
+        switch target {
+        case .time(let date, let zone):
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(ReminderFormat.full(date, timeZoneID: zone))
+                        .font(.headline)
+                    Text("A notification from Doddy on this iPhone, not Apple Reminders.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            } icon: {
+                Image(systemName: "bell")
+            }
+            if editingNoteReminderTime {
+                DatePicker(
+                    "Remind me at",
+                    selection: Binding(get: { date }, set: { controller.changeNoteReminderTime($0) }),
+                    in: Date.now.addingTimeInterval(NoteReminderLimits.minimumLead)...,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.compact)
+            } else {
+                Button("Change time") { editingNoteReminderTime = true }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.noteReminder.changeTime")
+            }
+        case .place(let results, let onArrival):
+            Picker("When", selection: Binding(get: { onArrival }, set: { controller.setNoteReminderOnArrival($0) })) {
+                Text("When I arrive").tag(true)
+                Text("When I leave").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("voice.noteReminder.when")
+            Text("Apple Maps found these. Pick one:")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
+                let selected = index == controller.selectedPlaceIndex
+                Button { controller.selectPlace(index) } label: {
+                    HStack(alignment: .top) {
+                        Image(systemName: selected ? "largecircle.fill.circle" : "circle").accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(result.name).font(.subheadline.bold())
+                            if !result.address.isEmpty {
+                                Text(result.address).font(.footnote).foregroundStyle(Theme.secondaryText)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+            Text("Within \(ReminderPlace.defaultRadius) m, each time until you mark it Done; change the distance on the note. Uses notifications and your location while you use Doddy. iOS watches the place; Doddy doesn't follow where you go.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+    }
+
+    /// Receipt after Set reminder on a note-reminder card: the same receipt the note screen shows,
+    /// built from what the store verified. Stays after the conversation ends.
+    private func noteReminderStatusCard(_ status: VoiceSessionController.NoteReminderStatus, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            switch status {
+            case .setting(let confirmed):
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Setting the reminder…")
+                        .font(.headline)
+                }
+                Text(confirmed.noteText)
+                    .font(.body)
+                    .lineLimit(2)
+            case .done(let confirmed, let receipt):
+                NoteReminderReceiptView(receipt: receipt) {
+                    Task { await controller.retryNoteReminder() }
+                }
+                Text("For \u{201C}\(confirmed.noteText)\u{201D}")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                    .lineLimit(2)
+                if controller.isLive {
+                    Button("OK") { controller.dismissNoteReminderStatus() }
+                        .buttonStyle(SecondaryButtonStyle())
+                } else {
+                    // Opening the note closes this screen, so it is offered once the conversation ended.
+                    Button("Open the note") {
+                        store.noteReminders?.pendingOpenMemoryID = confirmed.memoryID
+                        controller.dismissNoteReminderStatus()
+                        dismiss()
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.noteReminder.openNote")
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.noteReminderReceipt")
     }
 
     /// Receipt after Add on a reminder card: what Reminders holds now, read back from the iPhone,

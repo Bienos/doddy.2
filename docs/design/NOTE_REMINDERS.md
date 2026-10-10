@@ -33,13 +33,13 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | Location-based ("when I get home") | **Built (ADR-196)** | See "Place reminders" below |
 | Time Sensitive interruption level | Deferred, opt-in only | Breaks through Focus; must be the user's choice per reminder |
 | Voice-session Live Activity / Dynamic Island | Separate track (V3) | Not a notification; see `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` |
-| Voice agent proposing a reminder | Later | Agent may *propose*; the same on-screen sheet confirms (tool contract in `docs/architecture/TOOLS_AND_ACTIONS.md`) |
+| Voice agent proposing a reminder | **Built (ADR-198)** | `remind_me_about_note`: the agent proposes, an on-screen card confirms; see `docs/implementation/VOICE_NOTE_REMINDERS_STATUS.md` |
 | Note reminders through remote push | **Never** | Note reminders are local; no note text or reminder time is sent to a server. (Updates and news are a separate opt-in server feature.) |
 | Re-engagement, streaks, "you haven't saved anything", tips, marketing | **Never** | Guilt/dependency patterns; persona rules forbid them |
 | Unprompted resurfacing ("a year ago you saved…") | **Never without a new decision** | Doddy would be deciding what to show the user; that breaks principle 1 |
 | AI-written note-reminder text | **Never** | The body is the user's own note or fixed copy, nothing generated |
 | App icon badge counts | **Off** | Badges create pressure; overdue reminders already show on Home |
-| Voice | Uses Apple Reminders (M4) for now | The live agent's `create_reminder` already works; a note-linked voice path is an open decision |
+| Voice | **Both (ADR-198)** | `create_reminder` adds a new to-do to Apple Reminders; `remind_me_about_note` sets Doddy's own reminder on a saved note, confirmed on screen |
 
 ## Flow and screens
 
@@ -106,7 +106,7 @@ Owner instruction 2026-10-10: "build location reminders next". A note reminder f
 - **What's stored:** the place's name, latitude, longitude, radius and arrive/leave, in the same `note_reminders` row (migration `v4_note_reminder_places` rebuilds the table with CHECKs; existing time reminders are copied across). Doddy never records where the user is or goes; the one position read for "Use where I am now" becomes the place only if the user sets it.
 - **What leaves the phone:** only Apple Maps search: the typed words and, if Doddy already read a position in that sheet, roughly where the user is. Settings → Privacy and "What leaves this iPhone" say so.
 - **Limits:** 10 place reminders (iOS watches at most 20 regions per app), inside the 50 total.
-- **Not built:** a map to drag the circle (a map would load tiles from Apple; can come later), places shared between notes, "at a place between these hours", voice.
+- **Not built:** a map to drag the circle (a map would load tiles from Apple; can come later), places shared between notes, "at a place between these hours". Voice is built: ADR-198.
 
 ## Engineering contract (for the implementing milestone)
 

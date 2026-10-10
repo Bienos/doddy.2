@@ -5,6 +5,8 @@ import SwiftUI
 /// Set reminder; the first time a permission is undecided, a short explainer comes before the iOS prompt.
 struct NoteReminderSheet: View {
     let memoryID: UUID
+    /// Open on "At a time" even if the note has a place reminder (e.g. location is off).
+    var startAtTime = false
 
     @Environment(NoteReminderStore.self) private var reminders
     @Environment(\.dismiss) private var dismiss
@@ -182,7 +184,7 @@ struct NoteReminderSheet: View {
 
     private func prepare() {
         options = ReminderQuickPick.options(now: .now, calendar: .autoupdatingCurrent)
-        if let existing = reminders.reminder(forMemory: memoryID), existing.place != nil {
+        if !startAtTime, let existing = reminders.reminder(forMemory: memoryID), existing.place != nil {
             atPlace = true
         } else if let existing = reminders.reminder(forMemory: memoryID), let fireAt = existing.fireAt, !existing.isDue(at: .now) {
             customDate = fireAt
