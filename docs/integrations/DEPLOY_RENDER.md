@@ -1,6 +1,10 @@
 # Deploying the backend to Render
 
-Status 2026-10-10: **not deployed yet.** Owner choice: Render workspace **SLIYD**, service name **`doddy`**.
+Status 2026-10-10: **deployed, web search only.** Render workspace **SLIYD**, service **`doddy`**
+(`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com, free plan, Frankfurt, auto-deploy **off**: deploy by hand
+after pushing). `/v1/health` answers `"mode":"live"`; one live search with an owner-minted token returned 5 results
+in about 6 s. Created with the Render API, which cannot set a root directory or health check path, so the build and
+start commands `cd backend` first; set the health check path to `/v1/health` in the dashboard if wanted.
 Since ADR-193 the backend starts in live mode with **only a Monid key** (web search); Composio is optional.
 
 ## Web search only (fastest path)
