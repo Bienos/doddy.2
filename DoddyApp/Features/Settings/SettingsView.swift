@@ -332,6 +332,12 @@ struct SettingsView: View {
                         Label("Notifications and texts", systemImage: "bell")
                     }
                     .accessibilityIdentifier("settings.updates")
+                    NavigationLink {
+                        NewsSettingsView()
+                    } label: {
+                        Label("Daily news", systemImage: "newspaper")
+                    }
+                    .accessibilityIdentifier("settings.news")
                 } header: {
                     Text("Messages from Doddy")
                 } footer: {

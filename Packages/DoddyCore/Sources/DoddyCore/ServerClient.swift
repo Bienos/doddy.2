@@ -298,3 +298,16 @@ private struct ConsentBody: Encodable { let consent: Bool; let textVersion: Stri
 private struct UpdateBody: Encodable { let text: String; let channels: [UpdateChannel]; let idempotencyKey: String }
 private struct QueuedList: Decodable { let messages: [QueuedUpdate] }
 private struct ErrorBody: Decodable { let error: String?; let fields: [String]? }
+
+/// ISO 8601 timestamps as the messaging server writes them (with or without fractional seconds).
+public enum ServerDates {
+    public static func parse(_ text: String) -> Date? {
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fractional.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+    }
+
+    public static func format(_ date: Date) -> String {
+        ISO8601DateFormatter().string(from: date)
+    }
+}
