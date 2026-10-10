@@ -153,3 +153,41 @@ extension MemoryStore {
         await reload()
     }
 }
+
+/// Voice memos (ADR-230): the recording is copied in and read back first, then linked to its note.
+extension MemoryStore {
+    func recording(for memoryID: UUID) -> MemoryAudio? { recordings[memoryID] }
+
+    /// Where the recording is on this iPhone, or nil when its file is missing.
+    func recordingURL(_ audio: MemoryAudio) -> URL? {
+        guard environment.audioFiles.exists(audio.fileName) else { return nil }
+        return environment.audioFiles.url(for: audio.fileName)
+    }
+
+    @discardableResult
+    func attachRecording(from source: URL, durationMilliseconds: Int, to memoryID: UUID) async throws -> MemoryAudio {
+        // As with photos, a note gets a recording only while it has none.
+        guard recordings[memoryID] == nil else { throw AudioError.alreadyAttached }
+        guard MemoryAudio.isValidDuration(durationMilliseconds) else { throw AudioError.badDuration }
+        let fileName = MemoryAudio.fileName(for: memoryID)
+        let files = environment.audioFiles
+        try await Task.detached(priority: .userInitiated) { try files.store(from: source, fileName: fileName) }.value
+        do {
+            let audio = try await environment.audioRepository.attach(
+                MemoryAudio(memoryID: memoryID, fileName: fileName, durationMilliseconds: durationMilliseconds, addedAt: Date()))
+            await reload()
+            return audio
+        } catch {
+            files.delete(fileName)
+            throw error
+        }
+    }
+
+    /// Removes the recording from its note; the note's words stay.
+    func removeRecording(from memoryID: UUID) async throws {
+        if let removed = try await environment.audioRepository.detach(memoryID: memoryID) {
+            environment.audioFiles.delete(removed.fileName)
+        }
+        await reload()
+    }
+}

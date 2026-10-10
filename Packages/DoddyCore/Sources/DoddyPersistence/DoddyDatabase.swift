@@ -167,6 +167,17 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
+        // Voice memos (ADR-230): one recording per note, deleted with it. The file name is checked.
+        migrator.registerMigration("v8_memory_audio") { db in
+            try db.execute(sql: """
+                CREATE TABLE memory_audio (
+                    memory_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    file_name TEXT NOT NULL CHECK (length(file_name) = 40 AND file_name LIKE '%.m4a'),
+                    duration_ms INTEGER NOT NULL CHECK (duration_ms BETWEEN \(VoiceMemoLimits.minMilliseconds) AND \(VoiceMemoLimits.maxSeconds * 1000 + 999)),
+                    added_at_ms INTEGER NOT NULL
+                );
+                """)
+        }
         return migrator
     }
 

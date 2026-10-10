@@ -1508,6 +1508,28 @@
         }
       }
     },
+    "Don't keep it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zachowuj"
+          }
+        }
+      }
+    },
+    "Don't keep this recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zachowuj tego nagrania"
+          }
+        }
+      }
+    },
     "Done": {
       "extractionState": "manual",
       "localizations": {
@@ -2285,6 +2307,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zachowaj je"
+          }
+        }
+      }
+    },
+    "Kept only on this iPhone, never sent anywhere. Not in exports or backup files.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach ani w plikach kopii zapasowej."
           }
         }
       }
@@ -3752,6 +3785,17 @@
         }
       }
     },
+    "Record a voice memo": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagraj notatkę głosową"
+          }
+        }
+      }
+    },
     "Remember recent conversations": {
       "extractionState": "manual",
       "localizations": {
@@ -3928,6 +3972,17 @@
         }
       }
     },
+    "Remove recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń nagranie"
+          }
+        }
+      }
+    },
     "Remove session token": {
       "extractionState": "manual",
       "localizations": {
@@ -3957,6 +4012,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć to zdjęcie?"
+          }
+        }
+      }
+    },
+    "Remove this recording?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to nagranie?"
           }
         }
       }
@@ -5105,6 +5171,17 @@
         }
       }
     },
+    "The recording is deleted from this iPhone. The note's words stay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagranie zostanie usunięte z tego iPhone’a. Słowa notatki zostają."
+          }
+        }
+      }
+    },
     "The text already added stays in the note until you change it.": {
       "extractionState": "manual",
       "localizations": {
@@ -5211,6 +5288,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na tym iPhonie brakuje pliku zdjęcia tej notatki."
+          }
+        }
+      }
+    },
+    "This note's recording is missing on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrania tej notatki nie ma na tym iPhonie."
           }
         }
       }
@@ -5563,6 +5651,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odznacz, czego nie chcesz, albo stuknij Zmień, aby poprawić krok. Reszta wykona się w tej kolejności, a każdy krok dostanie własny wynik."
+          }
+        }
+      }
+    },
+    "Up to 5 minutes. Doddy writes it out on this iPhone; the recording is never sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do 5 minut. Doddy zapisuje ją jako tekst na tym iPhonie; nagranie nigdy nie jest nigdzie wysyłane."
           }
         }
       }
@@ -5959,6 +6058,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Widżety"
+          }
+        }
+      }
+    },
+    "Words already added stay in the note until you change them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodane już słowa zostają w notatce, dopóki ich nie zmienisz."
+          }
+        }
+      }
+    },
+    "Write it out in another language": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w innym języku"
+          }
+        }
+      }
+    },
+    "Writing it out on this iPhone…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisuję jako tekst na tym iPhonie…"
           }
         }
       }

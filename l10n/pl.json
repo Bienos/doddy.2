@@ -566,5 +566,17 @@
  "Mark this reminder done?": "Oznaczyć to przypomnienie jako zrobione?",
  "If it repeats, only this time changes. Nothing is deleted.": "Jeśli się powtarza, zmieni się tylko ten raz. Nic nie zostanie usunięte.",
  "After": "Po zmianie",
- "Now": "Teraz"
+ "Now": "Teraz",
+ "Record a voice memo": "Nagraj notatkę głosową",
+ "Up to 5 minutes. Doddy writes it out on this iPhone; the recording is never sent anywhere.": "Do 5 minut. Doddy zapisuje ją jako tekst na tym iPhonie; nagranie nigdy nie jest nigdzie wysyłane.",
+ "Don't keep it": "Nie zachowuj",
+ "Writing it out on this iPhone…": "Zapisuję jako tekst na tym iPhonie…",
+ "Write it out in another language": "Zapisz w innym języku",
+ "Don't keep this recording": "Nie zachowuj tego nagrania",
+ "Words already added stay in the note until you change them.": "Dodane już słowa zostają w notatce, dopóki ich nie zmienisz.",
+ "This note's recording is missing on this iPhone.": "Nagrania tej notatki nie ma na tym iPhonie.",
+ "Kept only on this iPhone, never sent anywhere. Not in exports or backup files.": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach ani w plikach kopii zapasowej.",
+ "Remove recording": "Usuń nagranie",
+ "Remove this recording?": "Usunąć to nagranie?",
+ "The recording is deleted from this iPhone. The note's words stay.": "Nagranie zostanie usunięte z tego iPhone’a. Słowa notatki zostają."
 }

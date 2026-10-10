@@ -72,6 +72,11 @@ public enum RecognizedText {
         public let text: String
         /// True when the read text was longer than `PhotoLimits.maxRecognizedCharacters`.
         public let wasCut: Bool
+
+        public init(text: String, wasCut: Bool) {
+            self.text = text
+            self.wasCut = wasCut
+        }
     }
 
     /// Lines in reading order, trimmed, empty ones dropped, joined with newlines; cut at the last

@@ -40,6 +40,9 @@ struct AppEnvironment: Sendable {
     /// Which note carries which photo (ADR-218), and the folder of photo files next to the database.
     var photoRepository: any PhotoRepository = UnavailablePhotoRepository()
     var photoFiles: PhotoFiles = .unavailable
+    /// Which note carries which recording (ADR-230), and the folder of recordings next to the database.
+    var audioRepository: any AudioRepository = UnavailableAudioRepository()
+    var audioFiles: AudioFiles = .unavailable
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -79,7 +82,9 @@ struct AppEnvironment: Sendable {
                 storageProblem: nil,
                 listRepository: SQLiteListRepository(database: database),
                 photoRepository: SQLitePhotoRepository(database: database),
-                photoFiles: databaseFile.map(PhotoFiles.beside(database:)) ?? .temporary())
+                photoFiles: databaseFile.map(PhotoFiles.beside(database:)) ?? .temporary(),
+                audioRepository: SQLiteAudioRepository(database: database),
+                audioFiles: databaseFile.map(AudioFiles.beside(database:)) ?? .temporary())
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),
