@@ -121,6 +121,9 @@ struct TodayCard: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.refresh() } }
         }
+        // A container keeps its own identifier only as an element; otherwise SwiftUI copies it onto
+        // every child and the Open Settings button would lose `today.openSettings`.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("home.today")
     }
 
