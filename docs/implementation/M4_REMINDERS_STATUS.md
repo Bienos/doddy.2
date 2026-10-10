@@ -125,8 +125,9 @@ Record device, iOS version, account type (iCloud or local Reminders) and the res
 - The M0 `ToolExecutor`/`ActionReceipt` ports are not used by this path; `ReminderStore` +
   `ReminderAction` replace them for Reminders.
 - Fixed after M4 (ADR-127): `VoiceLocalDate.parse` read `2026-10-12T18:30+02:00` as 18:00 for
-  `create_calendar_event` and `read_calendar`. It is gone; both use `ReminderDueRules.wallClock`
-  (the same rules without the "already passed" check), and an event time it can't read as meant is
+  `create_calendar_event` and `read_calendar`. It is gone; events follow the reminder rules,
+  including "not already passed" (ADR-128), `read_calendar` uses `ReminderDueRules.wallClock` (no
+  past check), and an event time that can't be read as meant, or has passed, is
   sent back to the agent as `failed: not added yet …, then call create_calendar_event again…`.
 
 ## Decisions for the owner

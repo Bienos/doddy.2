@@ -95,7 +95,8 @@ public enum ReminderDueCheck: Equatable, Sendable {
     case clarify(ReminderClarification)
 }
 
-/// Also the rules for calendar event times (`create_calendar_event`, `read_calendar`; ADR-127).
+/// Also the rules for calendar times: `check`'s rules for `create_calendar_event` (ADR-127,
+/// ADR-128), `wallClock` alone for `read_calendar`, where past days are fine.
 public enum ReminderDueRules {
     /// A reminder's due: `wallClock`, and not already passed.
     public static func check(_ text: String, now: Date, calendar: Calendar) -> ReminderDueCheck {

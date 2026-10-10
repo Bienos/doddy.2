@@ -541,6 +541,10 @@ final class VoiceSessionController {
         guard devices.access(for: .calendar) == .granted else {
             return VoiceToolReply.notAdded("Calendar isn't connected.")
         }
+        // The start may have passed while the card waited (ADR-128): ask again, add nothing.
+        if let late = draft.passed(now: Date(), calendar: .current) {
+            return VoiceToolReply.clarification(late, tool: VoiceToolName.createCalendarEvent)
+        }
         do {
             switch try devices.addEvent(draft) {
             case .verified: return VoiceToolReply.eventAdded(draft, calendar: .current)

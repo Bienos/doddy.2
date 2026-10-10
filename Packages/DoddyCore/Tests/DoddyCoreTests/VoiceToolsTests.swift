@@ -150,12 +150,41 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(clarification(repeated)?.kind, .timeRepeated)
     }
 
-    /// Unlike reminders, a past start is not refused: the card shows the day and the user decides.
-    func testCreateEventInThePastIsStillShown() {
-        XCTAssertEqual(parse("create_calendar_event", #"{"title":"Lunch","start":"2026-10-08T12:00"}"#),
+    /// Like reminders (ADR-128): a start that has passed is asked about, not shown. Now is 10:00.
+    func testCreateEventInThePastIsAskedAbout() {
+        let earlier = parse("create_calendar_event", #"{"title":"Lunch","start":"2026-10-08T12:00"}"#)
+        XCTAssertEqual(clarification(earlier)?.kind, .timePassed)
+        let thisMorning = parse("create_calendar_event", #"{"title":"Standup","start":"2026-10-09T09:30"}"#)
+        XCTAssertEqual(clarification(thisMorning)?.kind, .timePassed)
+        let yesterday = parse("create_calendar_event", #"{"title":"Trip","start":"2026-10-08","all_day":true}"#)
+        XCTAssertEqual(clarification(yesterday)?.kind, .dayPassed)
+
+        guard case .needsClarification(let name, let late) = earlier else { return XCTFail("expected a question") }
+        let reply = VoiceToolReply.clarification(late, tool: name)
+        XCTAssertTrue(reply.hasPrefix("failed: not added yet: 2026-10-08 12:00 has already passed (it is now 2026-10-09 10:00 in Europe/Warsaw)"), reply)
+        XCTAssertTrue(reply.contains("then call create_calendar_event again"), reply)
+    }
+
+    func testCreateEventLaterTodayAndAllDayTodayAreShown() {
+        XCTAssertEqual(parse("create_calendar_event", #"{"title":"Gym","start":"2026-10-09T10:30"}"#),
                        .createCalendarEvent(CalendarEventDraft(
-                           title: "Lunch", start: date(2026, 10, 8, 12, 0), end: date(2026, 10, 8, 13, 0),
+                           title: "Gym", start: date(2026, 10, 9, 10, 30), end: date(2026, 10, 9, 11, 30),
                            allDay: false, location: nil, notes: nil)))
+        // An all-day event counts until its day ends, even if the agent also sent a morning time.
+        XCTAssertEqual(parse("create_calendar_event", #"{"title":"Holiday","start":"2026-10-09T08:00","all_day":true}"#),
+                       .createCalendarEvent(CalendarEventDraft(
+                           title: "Holiday", start: date(2026, 10, 9, 0, 0), end: date(2026, 10, 10, 0, 0),
+                           allDay: true, location: nil, notes: nil)))
+    }
+
+    /// The tap rechecks: the card may wait while the start goes by.
+    func testEventPassedWhileTheCardWaited() {
+        let gym = CalendarEventDraft(title: "Gym", start: date(2026, 10, 9, 10, 30), end: date(2026, 10, 9, 11, 30), allDay: false, location: nil, notes: nil)
+        XCTAssertNil(gym.passed(now: date(2026, 10, 9, 10, 29), calendar: calendar))
+        XCTAssertEqual(gym.passed(now: date(2026, 10, 9, 10, 31), calendar: calendar)?.kind, .timePassed)
+        let holiday = CalendarEventDraft(title: "Holiday", start: date(2026, 10, 9, 0, 0), end: date(2026, 10, 10, 0, 0), allDay: true, location: nil, notes: nil)
+        XCTAssertNil(holiday.passed(now: date(2026, 10, 9, 23, 59), calendar: calendar))
+        XCTAssertEqual(holiday.passed(now: date(2026, 10, 10, 0, 1), calendar: calendar)?.kind, .dayPassed)
     }
 
     /// ISO dates are Gregorian even when the phone uses another calendar (2026 is not Buddhist 2026).

@@ -74,6 +74,19 @@ public struct CalendarEventDraft: Equatable, Sendable {
     public let allDay: Bool
     public let location: String?
     public let notes: String?
+
+    /// Nil while the event is still ahead (an all-day event counts until its day ends). Checked
+    /// when the card is shown and again when the user taps Add, as for reminders (ADR-128).
+    public func passed(now: Date, calendar: Calendar) -> ReminderClarification? {
+        let gregorian = ReminderDueRules.gregorian(calendar)
+        let fields = gregorian.dateComponents([.year, .month, .day, .hour, .minute], from: start)
+        guard let year = fields.year, let month = fields.month, let day = fields.day else { return nil }
+        let due = ReminderDue(
+            year: year, month: month, day: day,
+            hour: allDay ? nil : fields.hour, minute: allDay ? nil : fields.minute,
+            timeZoneID: gregorian.timeZone.identifier)
+        return ReminderDueRules.passed(due, now: now)
+    }
 }
 
 /// A reminder the agent proposed. Nothing is added until the user taps Add on the card.
@@ -163,7 +176,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.readCalendar:
             return parseRead(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createCalendarEvent:
-            return parseEvent(args, name: name, calendar: calendar)
+            return parseEvent(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createReminder:
             return parseReminder(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.lookupContact:
@@ -214,10 +227,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
         return .readCalendar(VoiceTimeRange(start: start, end: end))
     }
 
-    /// Strict like reminders (ADR-127): start and end are local wall-clock times the agent wrote
-    /// out, in the phone's zone, and not a time the clocks skip or repeat. Anything else goes back
-    /// to the agent as a question rather than being shifted. A past start is not refused here.
-    private static func parseEvent(_ args: Arguments, name: String, calendar: Calendar) -> VoiceToolRequest {
+    /// Strict like reminders (ADR-127, ADR-128): start and end are local wall-clock times the agent
+    /// wrote out, in the phone's zone, not a time the clocks skip or repeat, and not already passed.
+    /// Anything else goes back to the agent as a question rather than being shifted.
+    private static func parseEvent(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
         guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
         guard let startText = args.text("start") else { return .invalid(name: name, reason: "missing start") }
         let startDue: ReminderDue
@@ -229,9 +242,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
         if args.flag("all_day") {
             let dayStart = calendar.startOfDay(for: start)
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-            return .createCalendarEvent(CalendarEventDraft(
+            return proposeEvent(CalendarEventDraft(
                 title: title, start: dayStart, end: dayEnd, allDay: true,
-                location: args.text("location"), notes: args.text("notes")))
+                location: args.text("location"), notes: args.text("notes")), name: name, now: now, calendar: calendar)
         }
         guard startDue.hasTime else { return .invalid(name: name, reason: "start needs a time unless all_day is true") }
         let end: Date
@@ -248,9 +261,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
         } else {
             end = start.addingTimeInterval(3600)
         }
-        return .createCalendarEvent(CalendarEventDraft(
+        return proposeEvent(CalendarEventDraft(
             title: title, start: start, end: end, allDay: false,
-            location: args.text("location"), notes: args.text("notes")))
+            location: args.text("location"), notes: args.text("notes")), name: name, now: now, calendar: calendar)
+    }
+
+    private static func proposeEvent(_ draft: CalendarEventDraft, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
+        if let late = draft.passed(now: now, calendar: calendar) { return .needsClarification(name: name, late) }
+        return .createCalendarEvent(draft)
     }
 
     /// Strict (M4): the due is a day the agent wrote out, local time in the phone's zone, still

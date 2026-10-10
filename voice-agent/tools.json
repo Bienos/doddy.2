@@ -51,7 +51,7 @@
         "type": "object",
         "properties": {
           "title": {"type": "string", "description": "Short event title in the user's words and language, e.g. 'Dentist' or 'Obiad z Martą'."},
-          "start": {"type": "string", "description": "Start in the user's local time as YYYY-MM-DDTHH:MM, e.g. 2026-10-12T15:00, or YYYY-MM-DD for an all-day event. Always write the full day, and no time zone or offset."},
+          "start": {"type": "string", "description": "Start in the user's local time as YYYY-MM-DDTHH:MM, e.g. 2026-10-12T15:00, or YYYY-MM-DD for an all-day event. Always write the full day, and no time zone or offset. It must be later than now (an all-day event: today or later)."},
           "end": {"type": "string", "description": "End in the user's local time as YYYY-MM-DDTHH:MM, with no time zone or offset. Leave out for a one-hour event."},
           "all_day": {"type": "boolean", "description": "True for an all-day event. Leave out otherwise."},
           "location": {"type": "string", "description": "Place, only if the user said one."},

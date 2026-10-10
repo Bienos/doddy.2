@@ -20,7 +20,7 @@ Date: 2026-10-08. Updated 2026-10-09 after a read-only live check of the ElevenL
 | `search_memories` `tool_6701m4et16pveywrpymdw3h3v0wp` | phone | Searches local notes; returns stored text only. Always on. |
 | `save_memory` `tool_9401m4et17pfe598c1wmvdhpwhcv` | phone | Card with **Save**; nothing stored until the tap. Always on. |
 | `read_calendar` | phone, Calendar switch | Returns titles and times for today, tomorrow, the week, or a range. Nothing is added. |
-| `create_calendar_event` | phone, Calendar switch | Card with **Add**; added only after the tap, then read back to verify. Start/end follow the reminder date rules (ADR-127): a zone suffix, impossible date or clock-change time is sent back as a question (`failed: not added yet`), never shifted. |
+| `create_calendar_event` | phone, Calendar switch | Card with **Add**; added only after the tap, then read back to verify. Start/end follow the reminder date rules (ADR-127): a zone suffix, impossible date, clock-change time or a start that has passed (checked again at the tap, ADR-128) is sent back as a question (`failed: not added yet`), never shifted. |
 | `create_reminder` | phone, Reminders switch | Card with **Add**; unclear or past times go back to the agent as a question; after the tap Doddy checks it isn't already there, adds it once, reads it back and shows a receipt (M4, `M4_REMINDERS_STATUS.md`). |
 | `lookup_contact` | phone, Contacts switch | Agent gets names only; numbers and emails show on screen only, with Call, Text and Email buttons that each need a tap. |
 | `set_timer` `tool_8601m4gj35c6enz912e0zhax003f` | phone, Timers switch (+ notification permission) | Card with **Start**; scheduled as a local notification, read back to verify. Banner shows even while Doddy is open. |
