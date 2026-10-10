@@ -1,0 +1,63 @@
+# Render Blueprint for the Doddy backend (Gmail/Drive/Notion/Todoist/Calendar through Composio).
+# Deploy: Render dashboard > New > Blueprint > pick this repo and branch. Render then asks for every
+# variable marked `sync: false`; type the secrets THERE (never in chat or in this file).
+# Status: not deployed, never run on Render. See docs/integrations/DEPLOY_RENDER.md.
+services:
+  - type: web
+    name: doddy-backend
+    runtime: node
+    plan: free            # sleeps when idle; the SQLite file resets on every restart/deploy (see doc)
+    region: frankfurt     # closest to Warsaw
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/src/server.js
+    healthCheckPath: /v1/health
+    autoDeploy: false
+    envVars:
+      - key: NODE_VERSION
+        value: "22"       # package.json needs >= 22.22.3 (node:sqlite)
+      - key: DODDY_MODE
+        value: live
+      # production + live is refused by the server until real app sign-in exists.
+      - key: DODDY_ENV
+        value: development
+      - key: DODDY_HOST
+        value: 0.0.0.0
+      - key: DODDY_PORT
+        value: "10000"    # Render's default PORT
+      - key: DODDY_AUTH_MODE
+        value: signed
+      - key: DODDY_SESSION_SIGNING_KEY
+        generateValue: true
+      - key: DODDY_DB_PATH
+        value: ./data/doddy-backend.sqlite
+      # callback = single-owner development only (the server refuses it in production).
+      - key: COMPOSIO_COMPLETION_MODE
+        value: callback
+      # https origin, no path: https://<service name>.onrender.com (check the URL Render shows).
+      - key: DODDY_PUBLIC_BASE_URL
+        sync: false
+      - key: COMPOSIO_API_KEY
+        sync: false
+      # Live mode still requires the Google Calendar pair to start.
+      - key: COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION
+        sync: false
+      # Online accounts: both values or neither (neither = "Not set up" in the app).
+      - key: COMPOSIO_GMAIL_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_GMAIL_TOOLKIT_VERSION
+        sync: false
+      - key: COMPOSIO_GOOGLEDRIVE_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_GOOGLEDRIVE_TOOLKIT_VERSION
+        sync: false
+      - key: COMPOSIO_NOTION_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_NOTION_TOOLKIT_VERSION
+        sync: false
+      - key: COMPOSIO_TODOIST_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_TODOIST_TOOLKIT_VERSION
+        sync: false
