@@ -38,6 +38,8 @@ public enum ActivityOutcome: String, Codable, Sendable {
     case notSure
     case notDone
     case declined
+    /// Written before a change runs. If Doddy closes before the result, it becomes `notSure`.
+    case inProgress
 
     public var text: String {
         switch self {
@@ -48,6 +50,7 @@ public enum ActivityOutcome: String, Codable, Sendable {
         case .notSure: "Not sure it happened"
         case .notDone: "Didn't happen"
         case .declined: "You said no"
+        case .inProgress: "In progress"
         }
     }
 }
@@ -155,10 +158,17 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
     /// app's own verified result (VoiceToolReply), so the log can never claim more than the agent heard.
-    public init(request: ActivityRequest, reply: String, at: Date) {
+    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
-            at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome, note: note,
+            id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
+            note: note, reminderKey: request.reminderKey)
+    }
+
+    /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
+    public static func started(_ request: ActivityRequest, at: Date) -> ActivityEntry {
+        ActivityEntry(
+            at: at, app: request.app, title: request.title, detail: request.detail, outcome: .inProgress,
             reminderKey: request.reminderKey)
     }
 
@@ -210,6 +220,20 @@ public enum ActivityLog {
     public static func pruned(_ entries: [ActivityEntry], now: Date) -> [ActivityEntry] {
         let cutoff = now.addingTimeInterval(-Double(keepDays) * 86_400)
         return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries))
+    }
+
+    public static let interruptedNote = "Doddy closed before this finished. Check before asking again, so it isn't done twice."
+
+    /// At launch: anything still in progress was cut off (crash, force-quit, iOS ended the app).
+    /// It is never shown as done; it becomes "Not sure", and an unsure reminder offers Check.
+    public static func recoverInterrupted(_ entries: [ActivityEntry]) -> [ActivityEntry] {
+        entries.map { entry in
+            guard entry.outcome == .inProgress else { return entry }
+            var recovered = entry
+            recovered.outcome = .notSure
+            recovered.note = interruptedNote
+            return recovered
+        }
     }
 
     /// Result of looking in Reminders for an entry Doddy wasn't sure about.

@@ -38,7 +38,10 @@ final class ActivityLogStore {
 
     private func load() {
         guard let fileURL, let data = try? Data(contentsOf: fileURL) else { return }
-        entries = ActivityLog.pruned((try? JSONDecoder().decode([ActivityEntry].self, from: data)) ?? [], now: Date())
+        let stored = (try? JSONDecoder().decode([ActivityEntry].self, from: data)) ?? []
+        // Anything still "in progress" from the last run was cut off; it is never shown as done.
+        entries = ActivityLog.pruned(ActivityLog.recoverInterrupted(stored), now: Date())
+        if entries != stored { save() }
     }
 
     private func save() {
