@@ -5,6 +5,7 @@ import Foundation
 import LiveKit
 import Observation
 import UIKit
+import os
 
 /// One voice conversation with the ElevenLabs agent. State shown in the UI comes only from real
 /// SDK events (connected, listening, speaking, disconnected), never from timers.
@@ -119,6 +120,14 @@ final class VoiceSessionController {
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
     private let island = VoiceLiveActivity()
+    /// True while iOS has paused Doddy's audio because another app took the audio session
+    /// (`AVAudioSession` interruption). Real system events only, never a guess.
+    private(set) var audioPausedByOtherApp = false
+    /// What iOS last said about the audio session (reason and session setup), shown in small print
+    /// on the voice screen so a failure can be read without Xcode. No speech or notes in it.
+    private(set) var audioNote: String?
+    @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
+    private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     private let devices = DeviceConnections()
     private var conversation: Conversation?
     private var startedAt: Date?
@@ -153,6 +162,8 @@ final class VoiceSessionController {
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
+        audioPausedByOtherApp = false
+        audioNote = nil
 
         // Not set up: say so without asking for the microphone first.
         if case .notSetUp(let reason) = mode {
@@ -261,6 +272,8 @@ final class VoiceSessionController {
                 return
             }
             conversation = started
+            watchAudioInterruptions()
+            Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
             // An agent that doesn't allow the voice overrides refuses the conversation.
             let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
@@ -288,7 +301,45 @@ final class VoiceSessionController {
             mode: .videoChat)
     }
 
+    /// Reports iOS audio interruptions (for example another app opening its own audio) as they
+    /// happen: on screen, in the log, and as `audioPausedByOtherApp`.
+    private func watchAudioInterruptions() {
+        guard interruptionObserver == nil else { return }
+        let ref = WeakRef(self)
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { note in
+            let info = note.userInfo
+            let began = (info?[AVAudioSessionInterruptionTypeKey] as? UInt) == AVAudioSession.InterruptionType.began.rawValue
+            let reason = (info?[AVAudioSessionInterruptionReasonKey] as? UInt)
+                .flatMap(AVAudioSession.InterruptionReason.init(rawValue:))
+                .map { "\($0)" } ?? "not given"
+            Task { @MainActor in ref.value?.audioInterruption(began: began, reason: reason) }
+        }
+    }
+
+    private func stopWatchingAudioInterruptions() {
+        if let interruptionObserver { NotificationCenter.default.removeObserver(interruptionObserver) }
+        interruptionObserver = nil
+        audioPausedByOtherApp = false
+    }
+
+    private func audioInterruption(began: Bool, reason: String) {
+        guard isLive else { return }
+        audioPausedByOtherApp = began
+        let note = "\(began ? "iOS paused Doddy's audio" : "iOS gave Doddy's audio back") (reason: \(reason)). Session: \(Self.describeAudioSession())."
+        audioNote = note
+        Self.audioLog.notice("\(note, privacy: .public)")
+    }
+
+    private static func describeAudioSession() -> String {
+        let session = AVAudioSession.sharedInstance()
+        let mixing = session.categoryOptions.contains(.mixWithOthers) ? "mixing with other apps ON" : "mixing with other apps OFF"
+        return "\(session.category.rawValue), mode \(session.mode.rawValue), \(mixing), other app audio playing: \(session.isOtherAudioPlaying)"
+    }
+
     func stop() async {
+        stopWatchingAudioInterruptions()
         let active = conversation
         conversation = nil
         pendingAction = nil
@@ -526,11 +577,13 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
     }
 
     private func disconnected() {
+        stopWatchingAudioInterruptions()
         conversation = nil
         pendingAction = nil
         keepLog()
