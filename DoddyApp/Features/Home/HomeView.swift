@@ -9,6 +9,10 @@ struct HomeView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Right after the opening (ADR-210) Doddy is ready to talk: the listening pose is up and the
+    /// buttons slide in. Absent in previews and tests.
+    @Environment(OpeningModel.self) private var opening: OpeningModel?
     @State private var modal: MemoryModal?
     @State private var showAsk = false
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
@@ -36,8 +40,20 @@ struct HomeView: View {
                         Text("Save a detail.\nFind it when you need it.")
                             .font(.subheadline).foregroundStyle(Theme.secondaryText)
                     }
-                    UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: 210)
+                    UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
+                        // The opening lands Doddy exactly here, so it needs to know where "here" is.
+                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
+                            Task { @MainActor in
+                                opening?.homeArtBox = ScreenBox(centerX: rect.midX, centerY: rect.midY, height: rect.height)
+                            }
+                        }
+                        // While the opening plays, its Doddy stands in for this one; when it ends,
+                        // this one is in the same place, so nothing moves.
+                        .opacity(opening?.play == nil ? 1 : 0)
                         .frame(maxWidth: .infinity)
+                        .id(ready != nil)
+                        .transition(.opacity)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
 
                     if let problem = store.environment.storageProblem {
                         ProblemView(message: problem)
@@ -50,6 +66,7 @@ struct HomeView: View {
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
                         .accessibilityIdentifier("home.talk")
+                        .modifier(SlideIn(shown: buttonsShown, delay: 0))
 
                         Button { showAsk = true } label: {
                             HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
@@ -57,14 +74,18 @@ struct HomeView: View {
                         .buttonStyle(SecondaryButtonStyle())
                         .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
                         .accessibilityIdentifier("home.ask")
+                        .modifier(SlideIn(shown: buttonsShown, delay: 0.07))
 
                         // Choose one layout rather than keeping off-screen copies
                         // of the same actions in ViewThatFits' accessibility tree.
-                        if textSize.isAccessibilitySize {
-                            VStack(spacing: 10) { saveAction; findAction }
-                        } else {
-                            HStack(spacing: 10) { saveAction; findAction }
+                        Group {
+                            if textSize.isAccessibilitySize {
+                                VStack(spacing: 10) { saveAction; findAction }
+                            } else {
+                                HStack(spacing: 10) { saveAction; findAction }
+                            }
                         }
+                        .modifier(SlideIn(shown: buttonsShown, delay: 0.14))
                     }
                     Text("Only the things you choose to save.")
                         .font(.caption).foregroundStyle(Theme.secondaryText)
@@ -97,6 +118,15 @@ struct HomeView: View {
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    private var ready: OpeningReady? { opening?.ready }
+
+    /// Hidden under the opening until its hand-over, then they slide in as Doddy jumps into
+    /// place. Never hidden under Reduce Motion.
+    private var buttonsShown: Bool {
+        guard let opening, let play = opening.play else { return true }
+        return play.reducedMotion || opening.handingOver
     }
 
     private var saveAction: some View {
@@ -184,6 +214,20 @@ struct HomeView: View {
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
+    }
+}
+
+/// A button's entrance after the opening: up from just below, with a little bounce, each a
+/// beat after the one before. Instant (never hidden) under Reduce Motion, where `shown` stays true.
+private struct SlideIn: ViewModifier {
+    let shown: Bool
+    let delay: Double
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 28)
+            .animation(.spring(duration: 0.5, bounce: 0.3).delay(delay), value: shown)
     }
 }
 

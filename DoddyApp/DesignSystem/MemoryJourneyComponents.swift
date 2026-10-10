@@ -47,20 +47,32 @@ struct JourneyHeading: View {
 struct UploadedCharacterView: View {
     let assetName: String
     var height: CGFloat = 180
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var textSize
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     var body: some View {
         if !hideCharacterArt {
-            Image(decorative: assetName)
-                .resizable().scaledToFit()
-                .frame(height: textSize.isAccessibilitySize ? min(height, 100) : height)
-                .padding(.horizontal, colorScheme == .dark ? 12 : 0)
-                .background(colorScheme == .dark ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
-                            in: RoundedRectangle(cornerRadius: 24))
-                .accessibilityHidden(true)
+            CharacterArtImage(assetName: assetName, height: textSize.isAccessibilitySize ? min(height, 100) : height)
         }
+    }
+}
+
+/// The picture itself at an exact height, with the paper backing in dark appearance. Shared by
+/// `UploadedCharacterView` and the opening's hand-over (ADR-210), so the opening's last frame
+/// and Home's picture are drawn the same way, pixel for pixel.
+struct CharacterArtImage: View {
+    let assetName: String
+    let height: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Image(decorative: assetName)
+            .resizable().scaledToFit()
+            .frame(height: height)
+            .padding(.horizontal, colorScheme == .dark ? 12 : 0)
+            .background(colorScheme == .dark ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
+                        in: RoundedRectangle(cornerRadius: 24))
+            .accessibilityHidden(true)
     }
 }
 

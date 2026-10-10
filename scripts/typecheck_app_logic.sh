@@ -63,6 +63,7 @@ files=(
   DoddyApp/Infrastructure/SiriNoteLookup.swift
   DoddyApp/Features/Ask/AskController.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
+  DoddyApp/Features/Opening/OpeningModel.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

@@ -1,7 +1,8 @@
 # Device test script — six features built on Linux (2026-10-10)
 
 One pass, in order, for branch `claude/sleepy-gates-f9najr`. Everything here was written and tested only on Linux
-(`scripts/ci.sh --core-only`: 454 DoddyCore package tests, 123 backend tests, all pass). **None of it has been
+(`scripts/ci.sh --core-only` on the branch merged with `claude/loving-dirac-uuxoux`: 490 DoddyCore package tests,
+123 backend tests, all pass). **None of it has been
 compiled with Xcode or run on an iPhone.** Each step names the checklist rows in
 `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`, where the full expected results are.
 
@@ -25,6 +26,10 @@ one tells us nothing.
 
 ## Step 0 — Record the setup (2 min)
 Fill in the top of the results table: commit (`git rev-parse --short HEAD`), Xcode version, iOS version, device model.
+
+The base branch now plays an opening scene and **starts listening when Doddy opens** (ADR-210, on by default). For
+steps 3–8 turn off Settings → Voice → "Start listening when I open Doddy", so a conversation doesn't open by itself
+when a notification, widget or link opens the app. Test the opening on its own with checklist section 4d (O1–O11).
 
 ## Step 1 — Build, default settings (10–30 min)
 1. `git checkout claude/sleepy-gates-f9najr && git pull`
