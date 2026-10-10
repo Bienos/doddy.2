@@ -1,5 +1,14 @@
 # Go live: the daily news message (owner steps)
 
+> **Status 2026-10-10 (owner: "set up Render", "Free trial"):** created in Render workspace SLIYD,
+> Frankfurt, free plan: Postgres `doddy-messaging-db` (PostgreSQL 16, **free databases expire
+> 2026-11-09**) and web service `doddy-messaging` (https://doddy-messaging.onrender.com, branch
+> `claude/elegant-knuth-hc1aql`, auto-deploy off, `RUN_WORKER_IN_WEB=1` so one service also runs
+> the worker). Free web services sleep after ~15 minutes idle: while asleep nothing is built or
+> sent, and the scheduled digest is built when the service next wakes. Still to do by the owner:
+> `DATABASE_URL` (the database's Internal Database URL) and `ANTHROPIC_API_KEY` in the service's
+> Environment, typed in Render only.
+
 Date: 2026-10-10. Turns on **one** messaging-server feature: a short daily news digest at your
 chosen time. Two ways (ADR-174):
 - **In the app only** (cheapest): the digest waits in Settings → Messages from Doddy → Daily news.
