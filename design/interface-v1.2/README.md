@@ -8,7 +8,7 @@ Open **index.html** in a modern browser. No install, account or internet connect
 
 ## Try the new first-use journey
 
-1. Open “Try the journey.” Start with optional Double Back Tap setup. Choose the voice preview or step cards; prepare a personal Open Doddy shortcut, follow the reported Settings steps, then simulate a shortcut receipt and confirm how you triggered it. Pause, stop, collapse or open the illustrated Island. Use the review controls to test microphone denial, unavailable Live Activities and non-Island fallback.
+1. Open “Try the journey.” Start with optional Double Back Tap setup. Choose the voice preview or step cards; prepare a personal Open Doddy shortcut, follow the reported Settings steps, optionally keep the taps quiet (an illustrated Show Banner step; Doddy cannot change that iPhone setting, so it records your report only), then simulate a shortcut receipt and confirm how you triggered it. Pause, stop, collapse or open the illustrated Island. Use the review controls to test microphone denial, unavailable Live Activities and non-Island fallback.
 2. Finish or defer setup to reach “Hey. Let’s talk.”
 3. Choose the short introduction or ask what Doddy can do. Skip any question; “Review & finish” is always available.
 4. Review the drafted preferences. Edit or remove values, then explicitly save them—or continue without saving.
@@ -26,6 +26,7 @@ Read `docs/ONBOARDING-AND-PERSONAL-HOME.md` for the complete flow, fields, activ
 - `previews/01-pocket-notebook.png`, `02-quiet-companion.png`, `03-tiny-investigation.png`: three comparable concept sheets.
 - `previews/04-core-gallery.png`: extended core journey.
 - `previews/11-guided-back-tap-setup.png`: first setup, guided Settings and tap-test design.
+- `previews/setup-quiet-banner-on.png`, `setup-quiet-banner-off.png`, `setup-quiet-dark.png`, `setup-quiet-large.png`, `settings-double-back-tap-row.png`: optional quiet-taps step and the Settings entry (rendered with fallback system fonts, not the reviewed typesetting).
 - `docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md`: precise steps, platform requirements, sources and device acceptance gates.
 - `docs/CLAUDE-GUIDED-SETUP-PROMPT.md`: phased native implementation prompt.
 - `previews/10-first-hello-personal-home.png`: new first hello, conversational preferences and personal Home.

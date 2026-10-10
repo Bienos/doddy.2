@@ -2,8 +2,7 @@
 enum VoiceConfig {
     /// Public ElevenLabs agent "Doddy (dev prototype)". An agent ID is not a secret key, but a
     /// public agent can be used by anyone who has the ID and spends the owner's minutes.
-    /// Used only by debug builds with no Doddy server connected (VoiceAuthPolicy). With a server,
-    /// the app fetches a short-lived token from `/v1/voice/token`. Before anyone else installs
-    /// the app, turn on authentication for this agent in ElevenLabs so the ID alone stops working.
+    /// Before anyone else installs the app, deploy `server/voice-token`, set it in Settings → Voice,
+    /// then switch the agent to authenticated mode (docs/implementation/VOICE_TOKEN_SERVER_STATUS.md).
     static let developmentAgentID = "agent_0501m4et27vyeawrwqfdxxfszfa6"
 }

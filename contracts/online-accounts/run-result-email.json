@@ -1,0 +1,19 @@
+{
+  "mode": "mock",
+  "tool": "check_email",
+  "text": "Found 2 emails (newest first; sender, subject, received, preview):\n- From \"Anna Demo <anna@demo.example>\": \"Lunch on Friday?\" (2026-10-09 11:30) preview: \"Are you free around 1pm? There's a new place near the office.\"\n- From \"Demo Bank <noreply@demo.example>\": \"Your statement is ready\" (2026-10-08 09:00) preview: \"Your September statement is now available.\"",
+  "count": 2,
+  "truncated": false,
+  "receipt": {
+    "operationId": "4bb34dbe-76af-4a67-ba3f-3fb1102911c1",
+    "operation": "read",
+    "toolkit": "gmail",
+    "tool": "check_email",
+    "timestamp": "2026-10-10T10:00:00.000Z",
+    "mode": "mock",
+    "status": "succeeded",
+    "summary": "Checked email: 2 messages listed.",
+    "errorCode": null,
+    "providerReference": "mock_log_1ec7e638"
+  }
+}

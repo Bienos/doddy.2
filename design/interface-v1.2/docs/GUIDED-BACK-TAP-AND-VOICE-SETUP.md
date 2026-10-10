@@ -8,8 +8,9 @@ Revision 1.2 · 8 October 2026 · design/engineering proposal, not native implem
 2. Choose voice guidance or written step cards. Request real microphone permission only after the user chooses voice in the future native app. The browser has no microphone/audio access.
 3. Guide creation of a personal **Open Doddy** shortcut. Add Doddy's Open Doddy App Intent when available, or system Open App → Doddy. Save and run it once. Do not assume an automatic App Shortcut appears in the personal Back Tap list without checking the native workflow.
 4. The user opens Settings and follows **Accessibility → Touch → Back Tap → Double Tap → Shortcuts → Open Doddy**. Guidance follows the page the user reports, not an assumed view of their screen.
-5. Run a tap test. A received intent proves the shortcut handoff; the user separately confirms whether Double Back Tap triggered it. Another entry point must not be treated as Back Tap verification.
-6. End setup guidance. Continue to the first hello/profile introduction; continuing a new voice conversation requires an explicit user action. Deferred setup leaves the app usable.
+5. **Optional: keep the taps quiet.** On the same Back Tap page, iOS shows a **Show Banner** switch. It is an iPhone system setting: Doddy cannot read, change or verify it. The guide explains it, shows an illustration (not an Apple screenshot) and records only the user's report (“turned off” / “leaving it on”). It is never required and never blocks the test. The same guide is reachable later from Settings → Double Back Tap.
+6. Run a tap test. A received intent proves the shortcut handoff; the user separately confirms whether Double Back Tap triggered it. Another entry point must not be treated as Back Tap verification.
+7. End setup guidance. Continue to the first hello/profile introduction; continuing a new voice conversation requires an explicit user action. Deferred setup leaves the app usable.
 
 ## What “conversation in the Island” means
 

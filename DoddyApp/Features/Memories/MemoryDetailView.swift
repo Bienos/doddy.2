@@ -2,126 +2,76 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// One stored memory: current text, immutable original, provenance, correct/copy/delete.
+/// Current and immutable original wording remain attached to the same stored ID.
 struct MemoryDetailView: View {
-    let memoryID: UUID
-
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    @State private var showCorrection = false
+    let memoryID: UUID
+    @State private var correction: MemoryRecord?
     @State private var confirmDelete = false
+    @State private var isDeleting = false
     @State private var errorMessage: String?
     @State private var copied = false
-    @State private var showReminder = false
 
     var body: some View {
-        Group {
-            if let record = store.record(id: memoryID) {
-                detail(record)
-            } else {
-                Text("This memory no longer exists.")
-                    .foregroundStyle(Theme.secondaryText)
-                    .padding(24)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.canvas)
-        .navigationTitle("Your memory")
-        .navigationBarTitleDisplayMode(.inline)
-        .foregroundStyle(Theme.ink)
-    }
-
-    private func detail(_ record: MemoryRecord) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(record.currentText)
-                    .font(.title2)
-                    .textSelection(.enabled)
-                    .accessibilityIdentifier("detail.currentText")
-
-                VStack(spacing: 8) {
-                    StatusRow(title: "Saved", value: DateText.full(record.capturedAt))
-                    StatusRow(title: "Source", value: record.source.displayName)
-                    StatusRow(title: "Type", value: record.category.displayName)
+            VStack(alignment: .leading, spacing: 24) {
+                if let record = store.record(id: memoryID) {
+                    JourneyHeading(eyebrow: "Straight from your note", title: "The original\nis right here.")
+                    MemoryPaperCard(record: record, textIdentifier: "detail.currentText")
                     if record.userEdited {
-                        StatusRow(title: "Corrected", value: DateText.full(record.updatedAt))
+                        Text("Edited \(DateText.full(record.updatedAt))").font(.caption).foregroundStyle(Theme.secondaryText)
+                        DisclosureGroup("Original capture") {
+                            Text(record.rawText).frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled).padding(.top, 12)
+                                .accessibilityIdentifier("detail.originalText")
+                        }.tint(Theme.ink)
                     }
-                }
-                .font(.subheadline)
-
-                if record.userEdited {
-                    DisclosureGroup("Original capture") {
-                        Text(record.rawText)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .textSelection(.enabled)
-                            .padding(.top, 8)
+                    Text("Your note, your choice. No inferred facts.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
+                    if let errorMessage { ProblemView(message: errorMessage) }
+                    Button { correction = record } label: {
+                        HStack { Text("Edit this note"); Spacer(); Image(systemName: "pencil") }
                     }
-                    .tint(Theme.ink)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("This is your note.")
-                        .font(.subheadline.bold())
-                    Text("No guessed details. Corrections keep the original capture; deleting removes both versions.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-                .padding(.leading, 12)
-                .overlay(alignment: .leading) {
-                    Rectangle().fill(Theme.orangeCue).frame(width: 3).accessibilityHidden(true)
-                }
-
-                if let errorMessage {
-                    Label(errorMessage, systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(Theme.error)
-                }
-
-                VStack(spacing: 12) {
-                    Button { showCorrection = true } label: {
-                        HStack { Text("Correct this detail"); Spacer(); Image(systemName: "pencil") }
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-
-                    Button { showReminder = true } label: {
-                        HStack { Text("Remind me"); Spacer(); Image(systemName: "bell") }
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .accessibilityIdentifier("detail.remind")
-
-                    Button {
-                        UIPasteboard.general.string = record.currentText
-                        copied = true
-                    } label: {
-                        HStack {
-                            Text(copied ? "Copied" : "Copy text")
-                            Spacer()
-                            Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                        }
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-
+                    .buttonStyle(PrimaryButtonStyle()).accessibilityIdentifier("detail.edit")
+                    Button { copy(record) } label: {
+                        HStack { Text(copied ? "Copied" : "Copy text"); Spacer(); Image(systemName: copied ? "checkmark" : "doc.on.doc") }
+                    }.buttonStyle(SecondaryButtonStyle())
                     Button(role: .destructive) { confirmDelete = true } label: {
-                        HStack { Text("Delete this memory"); Spacer(); Image(systemName: "trash") }
+                        Text(isDeleting ? "Deleting…" : "Delete this memory").frame(maxWidth: .infinity, minHeight: 44)
                     }
-                    .buttonStyle(SecondaryButtonStyle(tint: Theme.error))
-                    .accessibilityIdentifier("detail.delete")
+                    .tint(Theme.error).disabled(isDeleting).accessibilityIdentifier("detail.delete")
+                } else {
+                    Text("This memory no longer exists.").foregroundStyle(Theme.secondaryText)
                 }
-            }
-            .padding(24)
+            }.padding(24)
         }
-        .sheet(isPresented: $showCorrection) { CorrectionView(record: record) }
-        .sheet(isPresented: $showReminder) {
-            ReminderProposalView(initialTitle: record.currentText, initialDue: .none, sourceMemoryID: record.id) { _ in }
-        }
+        .background(Theme.canvas).foregroundStyle(Theme.ink)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbar { ToolbarItem(placement: .principal) { DoddyWordmark() } }
+        .sheet(item: $correction) { CorrectionView(record: $0) }
         .confirmationDialog("Delete this memory?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) { Task { await delete() } }
+            Button("Delete", role: .destructive, action: beginDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("The current text and the original capture are removed from this iPhone. Copies you exported aren't affected.")
+            Text("Both current and original text are removed from this iPhone. Exports and older backups aren't affected.")
         }
+    }
+
+    private func copy(_ record: MemoryRecord) {
+        UIPasteboard.general.string = record.currentText
+        copied = true
+    }
+
+    private func beginDelete() {
+        guard !isDeleting else { return }
+        isDeleting = true
+        Task { await delete() }
     }
 
     private func delete() async {
+        defer { isDeleting = false }
         do {
             try await store.delete(id: memoryID)
             dismiss()

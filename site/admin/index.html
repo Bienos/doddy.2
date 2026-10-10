@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Doddy waitlist</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <link rel="icon" href="../assets/poses/doddy-pose-reading-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="../tokens.css">
+  <link rel="stylesheet" href="admin.css">
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <header class="bar">
+    <div class="wrap bar-inner">
+      <a class="wordmark" href="../">Doddy</a>
+      <span class="tag">Waitlist</span>
+      <div class="bar-actions" id="bar-actions" hidden>
+        <button class="ghost" id="refresh" type="button">Refresh</button>
+        <button class="ghost" id="sign-out" type="button">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Sign in -->
+    <section class="wrap login" id="login" aria-labelledby="login-title">
+      <div class="login-card">
+        <img class="login-pose" src="../assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" alt="">
+        <div>
+          <p class="hand">Password, please.</p>
+          <h1 id="login-title" class="title">The waitlist</h1>
+          <p class="muted">Everyone who signed up on the Doddy page. Only people with the password can see it.</p>
+          <form id="login-form" class="login-form" novalidate>
+            <label for="password">Password</label>
+            <div class="row">
+              <input id="password" name="password" type="password" autocomplete="current-password" required>
+              <button class="button" type="submit">Open the waitlist</button>
+            </div>
+            <label class="check"><input id="remember" type="checkbox" checked> Keep me signed in until this tab closes</label>
+            <p id="login-status" class="status" role="status" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dashboard -->
+    <div id="dash" hidden>
+      <section class="wrap head" aria-labelledby="dash-title">
+        <div>
+          <h1 id="dash-title" class="title">The waitlist</h1>
+          <p class="muted" id="updated">Loading…</p>
+        </div>
+        <div class="cheer">
+          <p class="hand" id="cheer">Let's see who's in.</p>
+          <img src="../assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg" width="512" height="512" alt="">
+        </div>
+      </section>
+
+      <section class="wrap stats" aria-label="Summary">
+        <div class="stat primary"><p class="stat-label">Signed up</p><p class="stat-value" id="s-total">0</p><p class="stat-note">people in total</p></div>
+        <div class="stat"><p class="stat-label">Today</p><p class="stat-value" id="s-today">0</p><p class="stat-note" id="s-today-note">since midnight</p></div>
+        <div class="stat"><p class="stat-label">Last 7 days</p><p class="stat-value" id="s-week">0</p><p class="stat-note" id="s-week-note">&nbsp;</p></div>
+        <div class="stat"><p class="stat-label">Latest</p><p class="stat-value small" id="s-latest">None yet</p><p class="stat-note" id="s-latest-note">&nbsp;</p></div>
+      </section>
+
+      <section class="wrap answers-grid" aria-label="Answers to the optional questions">
+        <div class="card"><div class="card-head"><h2>Phone</h2><p class="muted" id="a-phone-note"></p></div><div class="hbars" id="a-phone"></div></div>
+        <div class="card"><div class="card-head"><h2>Heard about Doddy</h2><p class="muted" id="a-heard-note"></p></div><div class="hbars" id="a-heard"></div></div>
+        <div class="card wishes"><div class="card-head"><h2>Wants Doddy to</h2><p class="muted" id="a-wish-note"></p></div><ul class="wish-list" id="a-wish"></ul></div>
+      </section>
+
+      <section class="wrap" aria-labelledby="chart-title">
+        <div class="card chart-card">
+          <div class="card-head">
+            <h2 id="chart-title">Sign-ups per day</h2>
+            <p class="muted" id="chart-note">Last 30 days, your local time</p>
+          </div>
+          <div class="chart" id="chart"></div>
+          <div class="tip" id="tip" role="status" hidden></div>
+        </div>
+      </section>
+
+      <section class="wrap" aria-labelledby="list-title">
+        <div class="card">
+          <div class="card-head list-head">
+            <h2 id="list-title">Everyone <span class="count" id="list-count"></span></h2>
+            <div class="tools">
+              <label class="search"><span class="sr-only">Search emails and wishes</span><input id="search" type="search" placeholder="Search emails or wishes" autocomplete="off"></label>
+              <button class="button secondary" id="copy-emails" type="button">Copy emails</button>
+              <button class="button" id="download" type="button">Download for Excel</button>
+            </div>
+          </div>
+          <div class="filters" role="group" aria-label="Show">
+            <button class="filter on" type="button" data-filter="all" aria-pressed="true">All</button>
+            <button class="filter" type="button" data-filter="iphone" aria-pressed="false">iPhone</button>
+            <button class="filter" type="button" data-filter="android" aria-pressed="false">Android</button>
+            <button class="filter" type="button" data-filter="answered" aria-pressed="false">Answered questions</button>
+            <button class="filter" type="button" data-filter="wish" aria-pressed="false">Has a wish</button>
+          </div>
+          <p id="tools-status" class="status" role="status" aria-live="polite"></p>
+          <div class="table-wrap">
+            <table class="people">
+              <thead>
+                <tr><th scope="col">#</th><th scope="col">Email</th><th scope="col">Signed up</th><th scope="col">Phone</th><th scope="col">Heard from</th><th scope="col">Wants Doddy to</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div class="empty" id="empty" hidden>
+            <img src="../assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" alt="">
+            <p class="hand" id="empty-text">Nobody yet. Share the link and check back.</p>
+          </div>
+        </div>
+      </section>
+
+      <p class="wrap foot muted">Stored privately in Vercel Blob (Frankfurt). Deleting here removes the email for good; files you already downloaded aren't affected.</p>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "doddy-site",
+  "private": true,
+  "type": "module",
+  "description": "Doddy landing page. Static files plus two Vercel Functions in api/ for the waitlist.",
+  "dependencies": {
+    "@vercel/blob": "2.8.0"
+  }
+}

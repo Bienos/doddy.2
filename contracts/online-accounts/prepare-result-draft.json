@@ -1,0 +1,15 @@
+{
+  "mode": "mock",
+  "tool": "draft_email",
+  "preview": {
+    "title": "Create this Gmail draft?",
+    "lines": [
+      "To: anna@example.com",
+      "Subject: Lunch Friday",
+      "Yes, 1pm works."
+    ],
+    "confirmLabel": "Create draft"
+  },
+  "approvalId": "50cbf646-dbef-4a17-9efa-c529621df5bf",
+  "expiresAt": "2026-10-10T10:02:00.000Z"
+}

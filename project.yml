@@ -21,19 +21,17 @@ settings:
     CODE_SIGN_STYLE: Automatic
     # No signing team is committed. Select your own team in Xcode to run on a device.
     DEVELOPMENT_TEAM: ""
+    # Override this at build time for an isolated simulator install; keep the owner's default.
+    DODDY_APP_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
 targets:
   Doddy:
     type: application
     platform: iOS
     sources:
       - path: DoddyApp
-    # Push notifications for Doddy updates (S1). Release/TestFlight signing switches this to
-    # production automatically; a signing team with the Push capability is needed on device.
-    entitlements:
-      path: DoddyApp/Doddy.entitlements
-      properties:
-        aps-environment: development
+      - path: Shared
     dependencies:
+      - target: DoddyWidgets
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore
@@ -44,22 +42,45 @@ targets:
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.
-        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER)
         PRODUCT_NAME: Doddy
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
-        # No app icon until the owner approves one (DECISIONS.md ADR-023); XcodeGen would
-        # otherwise require an "AppIcon" set and the asset catalog build fails.
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # Candidate icon (owner request 2026-10-09, DECISIONS.md ADR-050); light + dark variants.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
-        # Only the microphone, for voice conversations the user starts. No other permission keys.
-        # M4: written only after the user reviews a reminder and taps Add; read only to check it's there.
-        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds a reminder to Apple Reminders only after you review it and tap Add to Reminders. It reads your reminders only to check that the one it added is really there."
+        # Only these permissions. Each is asked for only when the user turns the matching toggle on in Settings, Connections.
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens only while you are talking to him, after you tap Talk to Doddy. Your voice is sent to ElevenLabs to run the conversation."
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds an event only after you tap Add. Turn this off in Settings, Connections."
+        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds a reminder only after you tap Add. Turn this off in Settings, Connections."
+        INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name when you ask. The details stay on your screen. Turn this off in Settings, Connections."
+        # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
+        INFOPLIST_FILE: Config/Doddy-Info.plist
+  DoddyWidgets:
+    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen)
+    # and, on iOS 18+, the "Talk to Doddy" control (Control Center, Lock Screen, Action Button).
+    # No networking, no data of its own.
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DoddyWidgets
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).widgets
+        PRODUCT_NAME: DoddyWidgets
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyWidgets-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        SKIP_INSTALL: YES
+        # Shared/ intents check this to skip app-only code (TalkToDoddyIntent runs in the app).
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DODDY_WIDGET_EXTENSION"
   DoddyTests:
     type: bundle.unit-test
     platform: iOS
@@ -71,7 +92,7 @@ targets:
         product: DoddyCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.tests
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).tests
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
   DoddyUITests:
@@ -83,7 +104,7 @@ targets:
       - target: Doddy
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev.uitests
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).uitests
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: YES
 schemes:

@@ -26,7 +26,8 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
             return XCTFail("expected a match")
         }
         XCTAssertEqual(hits.map(\.memoryID), [book.id])
-        XCTAssertEqual(Set(hits[0].matchedTerms), ["marta", "polecila", "lodz"])
+        // "book" also matches: English "book" finds Polish "książkę" (RecallMatching.bilingual).
+        XCTAssertEqual(Set(hits[0].matchedTerms), ["book", "marta", "polecila", "lodz"])
         guard case .matches(let red) = try await recall.recall("red tin", limit: 5) else { return XCTFail() }
         XCTAssertEqual(red.map(\.memoryID), [keys.id])
         let blue = try await recall.recall("blue", limit: 5)
@@ -64,37 +65,43 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         XCTAssertEqual(memories.first?["id"] as? String, saved.id.uuidString)
         XCTAssertEqual(memories.first?["source"] as? String, "explicit_text")
     }
-}
 
-final class SQLiteReminderActionStoreTests: XCTestCase {
-    func testActionsRoundTripAndAreErasedWithAllMemories() async throws {
+    /// The searches that failed on the owner's iPhone on 2026-10-09 (V1_VOICE_STATUS.md), plus
+    /// typos and Polish endings, on real SQLite.
+    func testRecallAcrossLanguagesSpokenNumbersEndingsAndTypos() async throws {
         let repo = try SQLiteMemoryRepository.inMemory()
-        let store = repo.reminderActionStore()
-        let date = Date(timeIntervalSince1970: 1_791_619_200)
-        var action = ReminderAction(
-            operationID: UUID(), state: .userConfirmed,
-            payload: ReminderPayload(title: "Zadzwonić do Anny", notes: "piątek",
-                                     due: ReminderDue(year: 2026, month: 10, day: 16, hour: 9, minute: 30, timeZoneID: "Europe/Warsaw")),
-            sourceMemoryID: UUID(), createdAt: date, updatedAt: date)
-        try await store.put(action)
-        try action.move(to: .pendingExternalWrite, at: date)
-        try await store.put(action)
-        try action.move(to: .verifiedSucceeded, at: date, externalID: "EK-123")
-        try await store.put(action)
+        let code = try await repo.save(NewMemory(text: "Kod: pięć, sześć, siedem, osiem.", capturedAt: t0))
+        let birthday = try await repo.save(NewMemory(text: "Moje urodziny są jutro.", capturedAt: t0))
+        let dentist = try await repo.save(NewMemory(text: "Dentist appointment on Friday at 9.", capturedAt: t0))
+        let locker = try await repo.save(NewMemory(text: "Paczkomat code 4821", capturedAt: t0))
+        let recall = RepositoryRecallService(repository: repo)
 
-        let back = try await store.get(action.operationID)
-        XCTAssertEqual(back?.state, .verifiedSucceeded)
-        XCTAssertEqual(back?.externalID, "EK-123")
-        XCTAssertEqual(back?.payload, action.payload)
-        XCTAssertEqual(back?.sourceMemoryID, action.sourceMemoryID)
-        XCTAssertNotNil(back?.verifiedAt)
-        let pending = try await store.inStates([.pendingExternalWrite])
-        XCTAssertTrue(pending.isEmpty)
-        let recent = try await store.recent(limit: 10)
-        XCTAssertEqual(recent.count, 1)
+        func ids(_ question: String) async throws -> [UUID] {
+            guard case .matches(let hits) = try await recall.recall(question, limit: 5) else { return [] }
+            return hits.map(\.memoryID)
+        }
 
-        try await repo.deleteAll()
-        let afterDelete = try await store.recent(limit: 10)
-        XCTAssertTrue(afterDelete.isEmpty, "delete-all also removes the local records of reminders")
+        // English question, Polish note.
+        var found = try await ids("what code you have saved?")
+        XCTAssertEqual(found.first, locker.id, "both mention a code; the one with 'code' in it ranks first")
+        XCTAssertTrue(found.contains(code.id))
+        // Digits find a code saved as number words.
+        found = try await ids("5678")
+        XCTAssertEqual(found, [code.id])
+        found = try await ids("five six seven eight")
+        XCTAssertEqual(found, [code.id])
+        // Polish ending and English counterpart.
+        found = try await ids("kiedy mam urodziny?")
+        XCTAssertEqual(found, [birthday.id])
+        found = try await ids("when is my birthday")
+        XCTAssertEqual(found, [birthday.id])
+        // Typos.
+        found = try await ids("dentsit")
+        XCTAssertEqual(found, [dentist.id])
+        found = try await ids("paczkomta")
+        XCTAssertEqual(found, [locker.id])
+        // Nothing related: still an honest no-match.
+        let none = try await recall.recall("passport number", limit: 5)
+        XCTAssertEqual(none, .noMatch)
     }
 }

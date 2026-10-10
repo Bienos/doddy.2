@@ -17,3 +17,15 @@
 .island-collapse{border:0;background:none;color:var(--muted);font-size:9px;min-height:44px;text-decoration:underline;display:block;margin:auto}.island-disclaimer{margin-bottom:10px}
 
 .setup-inline-actions{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:18px 0}.setup-inline-actions .text-link{margin:0;text-align:left;min-height:44px}
+
+/* Quiet taps: illustration of the iPhone Back Tap page. Not an Apple screenshot; never reads or changes system settings. */
+.ios-mock{position:relative;background:#101010;color:#f2f2f2;border-radius:22px;padding:14px 14px 12px;margin:20px 0;overflow:hidden;font-size:14px}
+.ios-nav{display:flex;align-items:center;justify-content:space-between;margin:60px 0 14px;font-size:12px}.ios-nav span{color:#4da3ff}.ios-nav i{width:34px}
+.ios-group{background:#1c1c1e;border-radius:12px;margin-bottom:12px}.ios-row{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:0 14px;border-bottom:1px solid #2c2c2e}.ios-row:last-child{border-bottom:0}.ios-row em{font-style:normal;color:#8e8e93;font-size:13px}
+.ios-group.ring{outline:2px solid var(--orange);outline-offset:3px}
+.ios-toggle{width:51px;height:31px;border-radius:16px;border:0;background:#39393d;position:relative;padding:0;min-width:51px;transition:background .2s}.ios-toggle i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:transform .2s}.ios-toggle.on{background:#34c759}.ios-toggle.on i{transform:translateX(20px)}
+.ios-banner{position:absolute;left:10px;right:10px;top:8px;background:#2c2c2e;border-radius:16px;padding:8px 12px;display:flex;flex-direction:column;gap:1px;font-size:11px;opacity:0;transform:translateY(-40px);transition:opacity .25s,transform .25s}.ios-banner b{font-size:11px;font-weight:600}.ios-banner span{color:#c7c7cc}
+.banner-on .ios-banner{opacity:1;transform:none}
+.ios-note{display:block;font-size:8px;letter-spacing:.6px;color:#8e8e93;text-align:center;margin-top:4px;line-height:1.5}
+.quiet-choice{margin:10px 0 4px}.quiet-choice .secondary{margin-top:8px}
+.phone.large .ios-mock{font-size:18px}.phone.large .ios-row em{font-size:16px}.phone.large .ios-banner,.phone.large .ios-banner b{font-size:14px}

@@ -1,86 +1,63 @@
-# Render Blueprint for the Doddy server (ADR-036). EU region; secrets are entered in the
-# Render dashboard (sync: false) and never committed. Plans below are paid: confirm before applying.
-envVarGroups:
-  - name: doddy-secrets
-    envVars:
-      - key: APNS_TEAM_ID
-        sync: false
-      - key: APNS_KEY_ID
-        sync: false
-      - key: APNS_PRIVATE_KEY
-        sync: false
-      - key: APNS_BUNDLE_ID
-        sync: false
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_MESSAGING_SERVICE_SID
-        sync: false
-      - key: TWILIO_VERIFY_SERVICE_SID
-        sync: false
-      - key: ELEVENLABS_API_KEY
-        sync: false
-      - key: ELEVENLABS_AGENT_ID
-        sync: false
-      - key: PUBLIC_BASE_URL
-        sync: false
-      # S2 phone calls
-      - key: MEMORY_ENCRYPTION_KEY
-        sync: false
-      - key: ELEVENLABS_TOOL_SECRET
-        sync: false
-      - key: ELEVENLABS_PHONE_AGENT_ID
-        sync: false
-      - key: ELEVENLABS_PHONE_NUMBER_ID
-        sync: false
-      - key: DODDY_PHONE_NUMBER
-        sync: false
-      # News digests
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: GNEWS_API_KEY
-        sync: false
-
+# Render Blueprint for the Doddy backend (Gmail/Drive/Notion/Todoist/Calendar through Composio).
+# Deploy: Render dashboard > New > Blueprint > pick this repo and branch. Render then asks for every
+# variable marked `sync: false`; type the secrets THERE (never in chat or in this file).
+# Status: not deployed, never run on Render. See docs/integrations/DEPLOY_RENDER.md.
 services:
   - type: web
-    name: doddy-api
+    name: doddy-backend
     runtime: node
-    region: frankfurt
-    plan: starter
-    rootDir: server
+    plan: free            # sleeps when idle; the SQLite file resets on every restart/deploy (see doc)
+    region: frankfurt     # closest to Warsaw
+    rootDir: backend
     buildCommand: npm ci && npm run build
-    startCommand: npm start
-    healthCheckPath: /healthz
+    startCommand: node dist/src/server.js
+    healthCheckPath: /v1/health
+    autoDeploy: false
     envVars:
       - key: NODE_VERSION
-        value: "22"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: doddy-db
-          property: connectionString
-      - fromGroup: doddy-secrets
-
-  - type: worker
-    name: doddy-worker
-    runtime: node
-    region: frankfurt
-    plan: starter
-    rootDir: server
-    buildCommand: npm ci && npm run build
-    startCommand: npm run worker
-    envVars:
-      - key: NODE_VERSION
-        value: "22"
-      - key: DATABASE_URL
-        fromDatabase:
-          name: doddy-db
-          property: connectionString
-      - fromGroup: doddy-secrets
-
-databases:
-  - name: doddy-db
-    region: frankfurt
-    plan: basic-256mb
-    postgresMajorVersion: "16"
-    ipAllowList: []
+        value: "22"       # package.json needs >= 22.22.3 (node:sqlite)
+      - key: DODDY_MODE
+        value: live
+      # production + live is refused by the server until real app sign-in exists.
+      - key: DODDY_ENV
+        value: development
+      - key: DODDY_HOST
+        value: 0.0.0.0
+      - key: DODDY_PORT
+        value: "10000"    # Render's default PORT
+      - key: DODDY_AUTH_MODE
+        value: signed
+      - key: DODDY_SESSION_SIGNING_KEY
+        generateValue: true
+      - key: DODDY_DB_PATH
+        value: ./data/doddy-backend.sqlite
+      # callback = single-owner development only (the server refuses it in production).
+      - key: COMPOSIO_COMPLETION_MODE
+        value: callback
+      # https origin, no path: https://<service name>.onrender.com (check the URL Render shows).
+      - key: DODDY_PUBLIC_BASE_URL
+        sync: false
+      - key: COMPOSIO_API_KEY
+        sync: false
+      # Live mode still requires the Google Calendar pair to start.
+      - key: COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION
+        sync: false
+      # Online accounts: both values or neither (neither = "Not set up" in the app).
+      - key: COMPOSIO_GMAIL_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_GMAIL_TOOLKIT_VERSION
+        sync: false
+      - key: COMPOSIO_GOOGLEDRIVE_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_GOOGLEDRIVE_TOOLKIT_VERSION
+        sync: false
+      - key: COMPOSIO_NOTION_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_NOTION_TOOLKIT_VERSION
+        sync: false
+      - key: COMPOSIO_TODOIST_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_TODOIST_TOOLKIT_VERSION
+        sync: false

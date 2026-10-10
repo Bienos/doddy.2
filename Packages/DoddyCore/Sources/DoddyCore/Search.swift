@@ -12,8 +12,11 @@ public enum SearchFolding {
         "a", "an", "the", "is", "was", "were", "what", "where", "when", "who", "how", "which",
         "that", "this", "it", "of", "to", "in", "on", "for", "and", "or", "my", "me", "i", "did",
         "do", "does", "with", "at", "be", "are", "from", "about", "again", "tell", "remind",
+        "have", "has", "had", "you", "your", "know", "any", "some", "there", "can", "could", "please",
         // Polish
         "w", "z", "na", "do", "co", "to", "jak", "gdzie", "sie", "ze", "jest", "byl", "byla", "mi", "mnie",
+        "kiedy", "jaki", "jaka", "jakie", "jakiego", "mam", "moj", "moja", "moje", "mojej", "mojego",
+        "czy", "ten", "ta", "tego", "o", "od", "po", "dla", "ile", "sa", "juz", "jeszcze", "pamietasz",
     ]
 
     public static func fold(_ text: String) -> String {
@@ -23,21 +26,18 @@ public enum SearchFolding {
 
     /// Folded word tokens, in order.
     public static func tokens(_ text: String) -> [String] {
-        fold(text)
-            .split(whereSeparator: { !($0.isLetter || $0.isNumber) })
-            .map(String.init)
+        tokens(folded: fold(text))
+    }
+
+    /// Tokens of text that is already folded (the stored `search_text` column).
+    public static func tokens(folded text: String) -> [String] {
+        text.split(whereSeparator: { !($0.isLetter || $0.isNumber) }).map(String.init)
     }
 
     /// Distinct query terms with stopwords removed.
     public static func queryTerms(_ query: String) -> [String] {
         var seen = Set<String>()
         return tokens(query).filter { !stopwords.contains($0) && seen.insert($0).inserted }
-    }
-
-    /// Terms that prefix-match a word in `text` (same rule as the FTS `term*` query).
-    public static func matchedTerms(_ terms: [String], in text: String) -> [String] {
-        let words = tokens(text)
-        return terms.filter { term in words.contains { $0.hasPrefix(term) } }
     }
 }
 

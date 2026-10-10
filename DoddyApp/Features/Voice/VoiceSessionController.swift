@@ -3,10 +3,15 @@ import DoddyCore
 import ElevenLabs
 import Foundation
 import Observation
+import UIKit
 
 /// One voice conversation with the ElevenLabs agent. State shown in the UI comes only from real
 /// SDK events (connected, listening, speaking, disconnected), never from timers.
-/// Tool calls are proposals: searches run against the local store, saves wait for the user.
+/// Tool calls are proposals. Lookups run on the phone. Anything that changes data, starts
+/// something, or opens another app waits for the user's tap, and Doddy never sends a message.
+/// At start the app hands the agent the saved notes and the last few conversations (dynamic
+/// variables); at the end the transcript lines are kept locally in `ConversationLogStore`.
+/// Every tool call and its verified result is recorded in "What Doddy did" (`ActivityLogStore`).
 @MainActor
 @Observable
 final class VoiceSessionController {
@@ -22,31 +27,75 @@ final class VoiceSessionController {
         var text: String
     }
 
-    struct PendingSave: Equatable {
-        let toolCallID: String
-        let text: String
+    /// Something the agent proposed that waits for the user's tap on the card.
+    enum PendingAction: Equatable {
+        case memory(toolCallID: String, text: String)
+        case event(toolCallID: String, draft: CalendarEventDraft)
+        case reminder(toolCallID: String, draft: ReminderDraft)
+        case timer(toolCallID: String, draft: TimerDraft)
+        case map(toolCallID: String, place: String)
+        case shortcut(toolCallID: String, name: String)
+        /// `address` is the phone number or email from Contacts. It is shown on screen only.
+        case message(toolCallID: String, draft: MessageDraft, address: String)
+        /// Gmail draft or Todoist task. `preview` and `approvalID` come from Doddy's server for exactly
+        /// these arguments; the approval works once and expires after two minutes.
+        case cloud(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
+
+        var toolCallID: String {
+            switch self {
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
+                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _):
+                id
+            }
+        }
     }
 
-    /// A reminder Doddy proposed by voice; the user reviews it on screen (M4).
-    struct PendingReminder: Equatable, Identifiable {
-        let toolCallID: String
-        let title: String
-        let due: ReminderDueParse
-        let notes: String?
-        var id: String { toolCallID }
+    /// Contacts found by a lookup. Shown on screen only; the agent receives names.
+    struct ContactCard: Equatable {
+        let query: String
+        let matches: [DeviceConnections.ContactMatch]
     }
 
-    private(set) var phase: Phase = .idle
+    /// The receipt after the user tapped Add on a reminder card (M4). It stays on screen after
+    /// the conversation ends, because the agent may never hear the answer (its wait can time out).
+    enum ReminderStatus: Equatable {
+        case adding(ReminderDraft)
+        case done(ReminderDraft, ReminderOutcome)
+    }
+
+    private(set) var phase: Phase = .idle {
+        didSet {
+            Self.conversationInProgress = isLive
+            syncIsland()
+        }
+    }
+    /// True while any conversation holds the microphone (the island keeps it alive in other
+    /// screens). Voice samples in Settings don't play then, so they never take over its audio.
+    static private(set) var conversationInProgress = false
     private(set) var lines: [Line] = []
-    private(set) var pendingSave: PendingSave?
-    var pendingReminder: PendingReminder?
-    private(set) var isMuted = false
+    private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    private(set) var contactCard: ContactCard?
+    private(set) var reminderStatus: ReminderStatus?
+    /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
+    private(set) var connectionNeeded: VoiceConnection?
+    private(set) var isMuted = false { didSet { syncIsland() } }
 
     private let store: MemoryStore
+    private let logs: ConversationLogStore
+    private let activity: ActivityLogStore
+    /// What each open tool call asked for, until its reply is sent and logged.
+    private var asked: [String: ActivityRequest] = [:]
+    private let island = VoiceLiveActivity()
+    private let devices = DeviceConnections()
     private var conversation: Conversation?
+    private var startedAt: Date?
+    /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
+    private var savedThisConversation = 0
 
-    init(store: MemoryStore) {
+    init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
         self.store = store
+        self.logs = logs
+        self.activity = activity
     }
 
     var isLive: Bool {
@@ -56,25 +105,70 @@ final class VoiceSessionController {
         }
     }
 
-    /// `auth` comes from `VoiceAuthPolicy`; `server` is needed for `.serverToken`.
-    func start(auth: VoiceAuthChoice, server: DoddyServerClient?) async {
+    /// `profile` is the user's approved introduction answers; it reaches the agent only when
+    /// Settings → About you → "Use in voice conversations" is on.
+    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile) async {
         guard !isLive else { return }
-        if case .unavailable(let reason) = auth {
-            phase = .failed(reason)
+        lines = []
+        pendingAction = nil
+        contactCard = nil
+        reminderStatus = nil
+        connectionNeeded = nil
+        isMuted = false
+        savedThisConversation = 0
+
+        // Not set up: say so without asking for the microphone first.
+        if case .notSetUp(let reason) = mode {
+            fail(reason)
             return
         }
-        lines = []
-        pendingSave = nil
-        isMuted = false
-
         guard await Self.microphoneAllowed() else {
             phase = .microphoneDenied
             return
         }
+        startedAt = Date()
         phase = .connecting
 
+        // The Dynamic Island / Lock Screen buttons reach this conversation through these.
+        let actions = VoiceActivityActions.shared
+        actions.endConversation = { [weak self] in
+            await self?.stop()
+            await self?.island.settle()
+        }
+        actions.toggleMute = { [weak self] in await self?.toggleMute() }
+
+        // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
+        // few conversations. Both are bounded and say when they were cut.
+        await store.reload()
+        let notes = VoiceContext.savedNotes(store.memories)
+        let recent = logs.isEnabled
+            ? VoiceContext.recentConversations(logs.logs)
+            : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
+
         let ref = WeakRef(self)
-        var config = ConversationConfig()
+        var config = ConversationConfig(
+            dynamicVariables: [
+                "saved_notes": notes.text,
+                "saved_notes_count": "\(notes.includedCount)",
+                "saved_notes_truncated": notes.truncated ? "yes" : "no",
+                "recent_conversations": recent.text,
+                // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
+                // placeholder defaults to the persona defaults, so a build that sends nothing still works.
+                PersonalityPrompt.variableName: PersonalityPrompt.render(.stored(), nickname: Nickname.stored()),
+                ProfilePrompt.variableName: ProfilePrompt.render(
+                    profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice)),
+            ],
+            userId: Self.userID())
+        // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
+        // are sent; the agent must allow these TTS overrides (ADR-105).
+        if let tts = VoiceStyle.stored().override {
+            config.ttsOverrides = TTSOverrides(voiceId: tts.voiceID, stability: tts.stability, speed: tts.speed)
+        }
+        // Starting language (ADR-132): only sent when the user picked one; needs the agent to
+        // allow the `agent.language` override. Auto keeps the agent's own language detection.
+        if let code = ConversationLanguage.stored().overrideCode, let language = Language(rawValue: code) {
+            config.agentOverrides = AgentOverrides(language: language)
+        }
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
@@ -94,49 +188,80 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
         }
 
-        let onAgentReady: @Sendable () -> Void = {
+        config.onAgentReady = {
             Task { @MainActor in
                 if ref.value?.phase == .connecting { ref.value?.phase = .listening }
             }
         }
-        let onDisconnect: @Sendable (DisconnectionReason) -> Void = { _ in
+        config.onDisconnect = { _ in
             Task { @MainActor in ref.value?.disconnected() }
         }
 
-        do {
-            switch auth {
-            case .serverToken:
-                // Short-lived token from the Doddy server; the ElevenLabs key never reaches the app.
-                guard let server else {
-                    return fail("Voice needs the Doddy server, which isn't connected.")
-                }
-                let token: String
-                do {
-                    token = try await server.voiceConversationToken()
-                } catch {
-                    return fail("Couldn't start voice. \(UpdatesModel.text(for: error))")
-                }
-                conversation = try await ElevenLabs.startConversation(
-                    conversationToken: token, config: config,
-                    onAgentReady: onAgentReady, onDisconnect: onDisconnect)
-            case .publicAgent(let id):
-                conversation = try await ElevenLabs.startConversation(
-                    agentId: id, config: config,
-                    onAgentReady: onAgentReady, onDisconnect: onDisconnect)
-            case .unavailable:
+        let auth: ElevenLabsConfiguration
+        switch mode {
+        case .publicAgent(let agentID):
+            auth = .publicAgent(id: agentID)
+        case .tokenServer(let endpoint, let accessCode):
+            do throws(VoiceTokenError) {
+                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
+            } catch {
+                if phase == .connecting { fail(VoiceTokenServer.message(for: error)) }
                 return
             }
+        case .notSetUp(let reason):
+            fail(reason)
+            return
+        }
+        // Closed while the token was being fetched: don't open the microphone after all.
+        guard phase == .connecting else { return }
+
+        do {
+            let started = try await ElevenLabs.startConversation(auth: auth, config: config)
+            guard isLive else {
+                // Closed while connecting: end it so nothing keeps listening.
+                await started.endConversation()
+                return
+            }
+            conversation = started
         } catch {
-            fail("Couldn't connect to Doddy's voice. Check your internet connection and try again. (\(error.localizedDescription))")
+            // An agent that doesn't allow the voice overrides refuses the conversation.
+            let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
+                ? ""
+                : " If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality."
+            fail("Couldn't connect to Doddy's voice. Check your internet connection and try again.\(voiceHint) (\(error.localizedDescription))")
         }
     }
 
     func stop() async {
         let active = conversation
         conversation = nil
-        pendingSave = nil
+        pendingAction = nil
+        contactCard = nil
+        connectionNeeded = nil
         if isLive { phase = .ended }
+        keepLog()
         await active?.endConversation()
+    }
+
+    /// Keeps the transcript lines of this conversation on the phone, once, so the next
+    /// conversation can continue from it. Nothing is kept when there were no lines or when the
+    /// user switched "Remember recent conversations" off.
+    private func keepLog() {
+        logUnanswered()
+        guard let startedAt else { return }
+        self.startedAt = nil
+        let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
+        logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept))
+    }
+
+    /// A random, stable id for this install, so ElevenLabs can tell the owner's conversations
+    /// apart without knowing who they are.
+    private static func userID() -> String {
+        let defaults = UserDefaults.standard
+        if let existing = defaults.string(forKey: PreferenceKey.voiceUserID), !existing.isEmpty { return existing }
+        let fresh = UUID().uuidString.lowercased()
+        defaults.set(fresh, forKey: PreferenceKey.voiceUserID)
+        return fresh
     }
 
     func toggleMute() async {
@@ -149,22 +274,109 @@ final class VoiceSessionController {
         }
     }
 
-    /// The user approved the note shown on screen.
-    func confirmSave() async {
-        guard let pending = pendingSave else { return }
-        pendingSave = nil
-        do {
-            let record = try await store.save(text: pending.text, category: .other)
-            await reply(pending.toolCallID, VoiceToolReply.saved(record))
-        } catch {
-            await reply(pending.toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+    /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
+    func confirmPendingAction() async {
+        guard let action = pendingAction else { return }
+        pendingAction = nil
+        switch action {
+        case .memory(let id, let text):
+            do {
+                // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                savedThisConversation += 1
+                await reply(id, VoiceToolReply.saved(record))
+            } catch {
+                await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .event(let id, let draft):
+            await reply(id, addEvent(draft))
+        case .reminder(let id, let draft):
+            // The card is already gone (pendingAction is nil), so a second tap does nothing.
+            reminderStatus = .adding(draft)
+            let outcome = await addReminder(draft)
+            reminderStatus = .done(draft, outcome)
+            await reply(id, VoiceToolReply.reminder(outcome))
+        case .timer(let id, let draft):
+            await reply(id, await startTimer(draft))
+        case .map(let id, let place):
+            guard let url = OpenLinks.map(place: place) else {
+                await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
+                return
+            }
+            let opened = await open(url)
+            await reply(id, opened ? VoiceToolReply.mapOpened(place) : VoiceToolReply.notOpened("Maps didn't open."))
+        case .shortcut(let id, let name):
+            guard let url = OpenLinks.shortcut(name: name) else {
+                await reply(id, VoiceToolReply.notOpened("That shortcut name can't be used."))
+                return
+            }
+            let opened = await open(url)
+            await reply(id, opened ? VoiceToolReply.shortcutRequested(name) : VoiceToolReply.notOpened("Shortcuts didn't open."))
+        case .message(let id, let draft, let address):
+            let url = draft.channel == .text
+                ? OpenLinks.text(number: address, body: draft.body)
+                : OpenLinks.email(address: address, body: draft.body)
+            guard let url else {
+                await reply(id, VoiceToolReply.notOpened("That address can't be used."))
+                return
+            }
+            let opened = await open(url)
+            await reply(id, opened
+                ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
+                : VoiceToolReply.notOpened("Messages or Mail didn't open."))
+        case .cloud(let id, let call, _, let approvalID, _):
+            await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
         }
     }
 
-    func declineSave() async {
-        guard let pending = pendingSave else { return }
-        pendingSave = nil
-        await reply(pending.toolCallID, VoiceToolReply.declined)
+    /// The user tapped the card's decline button. Nothing changes.
+    func declinePendingAction() async {
+        guard let action = pendingAction else { return }
+        pendingAction = nil
+        switch action {
+        case .memory(let id, _): await reply(id, VoiceToolReply.declined)
+        case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
+        case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
+        case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
+        case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
+        case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
+        case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
+        case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
+        }
+    }
+
+    func dismissContactCard() {
+        contactCard = nil
+    }
+
+    func dismissReminderStatus() {
+        guard case .done = reminderStatus else { return }
+        reminderStatus = nil
+    }
+
+    // MARK: Dynamic Island
+
+    /// What the Live Activity shows, or nil when no conversation is running.
+    private var islandState: DoddyVoiceAttributes.ContentState? {
+        let status: DoddyVoiceAttributes.ContentState.Status
+        switch phase {
+        case .connecting: status = .connecting
+        case .listening: status = .listening
+        case .thinking: status = .thinking
+        case .speaking: status = .speaking
+        case .idle, .ended, .microphoneDenied, .failed: return nil
+        }
+        return .init(status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted)
+    }
+
+    private func syncIsland() {
+        if let state = islandState {
+            island.show(state, startedAt: startedAt ?? .now)
+        } else if phase == .ended {
+            island.finish(savedCount: savedThisConversation)
+        } else {
+            island.end()
+        }
     }
 
     // MARK: Events
@@ -190,18 +402,30 @@ final class VoiceSessionController {
 
     private func fail(_ message: String) {
         phase = .failed(message)
-        pendingSave = nil
+        pendingAction = nil
     }
 
     private func disconnected() {
         conversation = nil
-        pendingSave = nil
+        pendingAction = nil
+        keepLog()
         if case .failed = phase { return }
         phase = .ended
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
-        switch VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData) {
+        let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
+        asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
+        // Settings → Pause all: no other app or account is used; notes still work.
+        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
+            await reply(call.toolCallId, ConnectionPause.reply)
+            return
+        }
+        if let connection = VoiceConnection.serving(call.toolName), !isOn(connection) {
+            await notConnected(call.toolCallId, connection)
+            return
+        }
+        switch request {
         case .searchMemories(let query):
             do {
                 let outcome = try await store.recall(query)
@@ -211,12 +435,69 @@ final class VoiceSessionController {
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
-            pendingSave = PendingSave(toolCallID: call.toolCallId, text: text)
-        case .createReminder(let title, let due, let notes):
-            // Nothing reaches Reminders until the user reviews it and taps Add.
-            pendingReminder = PendingReminder(
-                toolCallID: call.toolCallId, title: title,
-                due: ReminderDueInput.parse(due, timeZoneID: TimeZone.current.identifier, now: Date()), notes: notes)
+            propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
+        case .readCalendar(let range):
+            guard devices.access(for: .calendar) == .granted else {
+                await notConnected(call.toolCallId, .calendar)
+                return
+            }
+            let events = devices.events(in: range)
+            await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
+        case .createCalendarEvent(let draft):
+            propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .createReminder(let draft):
+            // Blocked by iOS: say so now instead of showing a card that can only fail.
+            guard devices.access(for: .reminders) == .granted else {
+                await notConnected(call.toolCallId, .reminders)
+                return
+            }
+            propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .needsClarification(let name, let clarification):
+            // Unclear, past or clock-change time: the agent asks the user; no card, nothing added.
+            await reply(call.toolCallId, VoiceToolReply.clarification(clarification, tool: name))
+        case .lookupContact(let name):
+            guard devices.access(for: .contacts) == .granted else {
+                await notConnected(call.toolCallId, .contacts)
+                return
+            }
+            do {
+                let matches = try devices.findContacts(named: name)
+                contactCard = ContactCard(query: name, matches: matches)
+                await reply(call.toolCallId, VoiceToolReply.contactMatches(matches.map(\.name), query: name))
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .setTimer(let draft):
+            guard await devices.notificationAccess() == .granted else {
+                await notConnected(call.toolCallId, .timers)
+                return
+            }
+            propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .openMap(let place):
+            propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
+        case .runShortcut(let name):
+            propose(.shortcut(toolCallID: call.toolCallId, name: name), toolCallID: call.toolCallId)
+        case .draftMessage(let draft):
+            guard devices.access(for: .contacts) == .granted else {
+                await notConnected(call.toolCallId, .contacts)
+                return
+            }
+            do {
+                guard let match = try devices.findContacts(named: draft.recipientName).first else {
+                    await reply(call.toolCallId, VoiceToolReply.contactMatches([], query: draft.recipientName))
+                    return
+                }
+                let address = draft.channel == .text ? match.phoneNumbers.first : match.emailAddresses.first
+                guard let address else {
+                    await reply(call.toolCallId, VoiceToolReply.noAddress(match.name, channel: draft.channel), isError: true)
+                    return
+                }
+                propose(.message(toolCallID: call.toolCallId, draft: draft, address: address), toolCallID: call.toolCallId)
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .cloudTool(let cloud):
+            await handleCloud(cloud, toolCallID: call.toolCallId)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
@@ -224,14 +505,133 @@ final class VoiceSessionController {
         }
     }
 
-    /// The review screen closed: tell the agent exactly what happened.
-    func finishReminder(_ toolCallID: String, _ action: ReminderAction?) async {
-        if pendingReminder?.toolCallID == toolCallID { pendingReminder = nil }
-        await reply(toolCallID, VoiceToolReply.reminder(action), isError: action?.state != .verifiedSucceeded && action != nil)
+    /// Gmail, Drive, Notion and Todoist go through Doddy's server, which checks the tool's switch, the
+    /// account connection and the grant. Reads answer at once; writes show a card first.
+    private func handleCloud(_ cloud: CloudToolCall, toolCallID: String) async {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
+            return
+        }
+        do {
+            if cloud.isWrite {
+                let prepared = try await client.prepare(cloud)
+                propose(
+                    .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
+                    toolCallID: toolCallID)
+            } else {
+                let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: nil)
+                await reply(toolCallID, VoiceToolReply.cloudResult(result))
+            }
+        } catch {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+        }
+    }
+
+    /// The user tapped the card. The approval is for exactly the arguments the card showed.
+    private func runConfirmedCloud(_ cloud: CloudToolCall, approvalID: UUID) async -> String {
+        guard let client = OnlineAccountsClientFactory.make() else {
+            return VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name)
+        }
+        do {
+            let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
+            return VoiceToolReply.cloudResult(result)
+        } catch {
+            return VoiceToolReply.cloudFailed(error, tool: cloud.name)
+        }
+    }
+
+    /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
+    /// call is left without an answer.
+    private func propose(_ action: PendingAction, toolCallID: String) {
+        guard pendingAction == nil else {
+            Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
+            return
+        }
+        pendingAction = action
+    }
+
+    private func addEvent(_ draft: CalendarEventDraft) -> String {
+        guard devices.access(for: .calendar) == .granted else {
+            return VoiceToolReply.notAdded("Calendar isn't connected.")
+        }
+        // The start may have passed while the card waited (ADR-128): ask again, add nothing.
+        if let late = draft.passed(now: Date(), calendar: .current) {
+            return VoiceToolReply.clarification(late, tool: VoiceToolName.createCalendarEvent)
+        }
+        do {
+            switch try devices.addEvent(draft) {
+            case .verified: return VoiceToolReply.eventAdded(draft, calendar: .current)
+            case .unconfirmed: return VoiceToolReply.addUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
+    /// Look first, write once, read back (DoddyCore `ReminderAction`). Permission is checked again
+    /// at the tap, since the user may have changed it while the card waited.
+    private func addReminder(_ draft: ReminderDraft) async -> ReminderOutcome {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return .notAdded(.notAllowed)
+        }
+        let outcome = await ReminderAction.add(draft, to: devices, now: Date())
+        if outcome == .notAdded(.notAllowed) { connectionNeeded = .reminders }
+        return outcome
+    }
+
+    private func startTimer(_ draft: TimerDraft) async -> String {
+        guard await devices.notificationAccess() == .granted else {
+            return VoiceToolReply.notAdded("Notifications are off for Doddy.")
+        }
+        do {
+            switch try await devices.startTimer(draft) {
+            case .verified:
+                let endsAt = Date().addingTimeInterval(TimeInterval(draft.seconds))
+                return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
+            case .unconfirmed:
+                return VoiceToolReply.addUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
+    private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
+        connectionNeeded = connection
+        await reply(toolCallID, VoiceToolReply.notConnected(connection))
+    }
+
+    /// Called after the Connections sheet closes: the prompt goes away once the switch is on.
+    func refreshConnectionNeeded() {
+        guard let needed = connectionNeeded, isOn(needed) else { return }
+        connectionNeeded = nil
+    }
+
+    private func open(_ url: URL) async -> Bool {
+        await UIApplication.shared.open(url)
+    }
+
+    private func isOn(_ connection: VoiceConnection) -> Bool {
+        UserDefaults.standard.bool(forKey: connection.preferenceKey)
     }
 
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false) async {
+        if let request = asked.removeValue(forKey: toolCallID) {
+            activity.append(ActivityEntry(request: request, reply: text, at: Date()))
+        }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
+    }
+
+    /// Requests still waiting on a card when the conversation ends: nothing happened.
+    private func logUnanswered() {
+        for request in asked.values {
+            var entry = ActivityEntry(request: request, reply: "", at: Date())
+            entry.outcome = .notDone
+            entry.note = "The conversation ended before you answered."
+            activity.append(entry)
+        }
+        asked = [:]
     }
 
     private static func microphoneAllowed() async -> Bool {

@@ -1,0 +1,20 @@
+{
+  "error": {
+    "code": "rate_limited",
+    "message": "Google Calendar is busy right now. Try again shortly.",
+    "correlationId": "2bc5f8d9-5eae-4db1-a744-608611609443",
+    "retryAfterSeconds": 1,
+    "receipt": {
+      "operationId": "5c315dcd-0684-4a7e-9a7f-d135df7a9747",
+      "operation": "read",
+      "toolkit": "todoist",
+      "tool": "list_todoist_tasks",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "failed",
+      "summary": "Todoist wasn't reached or its answer couldn't be used. Nothing is shown instead.",
+      "errorCode": "rate_limited",
+      "providerReference": null
+    }
+  }
+}

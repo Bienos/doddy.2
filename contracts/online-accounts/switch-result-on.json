@@ -1,0 +1,39 @@
+{
+  "toolkit": {
+    "id": "gmail",
+    "title": "Gmail",
+    "access": "Doddy can list your recent emails (sender, subject, a short preview) and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+    "status": "connected",
+    "reason": null,
+    "connectedAt": "2026-10-10T10:00:00.000Z",
+    "remoteCleanup": "none",
+    "tools": [
+      {
+        "name": "check_email",
+        "title": "Check my email",
+        "blurb": "Lists your newest emails: sender, subject and a short preview. Doddy doesn't open full messages.",
+        "risk": "read",
+        "enabled": true
+      },
+      {
+        "name": "draft_email",
+        "title": "Draft an email",
+        "blurb": "Creates a draft in Gmail after you tap Create on the card. Doddy never sends it.",
+        "risk": "write",
+        "enabled": false
+      }
+    ]
+  },
+  "receipt": {
+    "operationId": "a44064b2-0ff5-4785-91da-a8c14eecfef4",
+    "operation": "switch",
+    "toolkit": "gmail",
+    "tool": "check_email",
+    "timestamp": "2026-10-10T10:00:00.000Z",
+    "mode": "mock",
+    "status": "succeeded",
+    "summary": "Check my email switched on.",
+    "errorCode": null,
+    "providerReference": null
+  }
+}

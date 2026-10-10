@@ -8,7 +8,7 @@ Storage was exercised on real SQLite (Linux and macOS). The app built and its un
 | 1 First launch, no account, AI disclosure | First Hello + Home/Settings copy |
 | 2 Explicit text capture, ≤5,000, no truncation, save only after durable success | `CaptureView` → `NewMemory` validation → transaction + read-back; draft kept on failure; receipt only with committed record |
 | 3 Immutable raw text, editable current text, timestamps, source, type | `MemoryRecord` + `memories` table; type picker |
-| 4 List + deterministic lexical search, diacritic-insensitive, source shown, no-match message | Memories tab list + `.searchable`; FTS5; matched terms and source on each row; `RecallCopy.noMatch` |
+| 4 List + deterministic lexical search, diacritic-insensitive, source shown, no-match message | Memories tab list + `.searchable`; FTS5; matched terms and source on each row; `RecallCopy.noMatch`. Since 2026-10-09 also Polish/English counterparts, spoken numbers, word endings and typos (`RecallMatching`, ADR-093) |
 | 5 Edit, copy, export JSON/text, delete one, delete all with confirmation | Detail screen, `CorrectionView`, Settings export/delete-all |
 | 6 Private session mode | **Not built** |
 | 7 VoiceOver / Dynamic Type / 44pt / light-dark | Semantic headings, combined rows, 54pt buttons, token colours; **unverified on device** |

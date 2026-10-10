@@ -1,8 +1,8 @@
 import DoddyCore
 import SwiftUI
 
-/// Decorative character art. Labelled as candidate art; hidden from VoiceOver; hidden
-/// entirely when the user turns on "Hide character artwork".
+/// Compatibility wrapper for existing onboarding/voice views. All visible drawings
+/// now use the owner's uploaded pack; original asset sets remain untouched.
 struct CandidateCharacterView: View {
     let assetName: String
     var size: CGFloat = 180
@@ -11,16 +11,8 @@ struct CandidateCharacterView: View {
 
     var body: some View {
         if !hideCharacterArt {
-            VStack(spacing: 4) {
-                Image(decorative: assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxWidth: size, maxHeight: size)
-                Text("Candidate art — not final")
-                    .font(.caption2)
-                    .foregroundStyle(Theme.secondaryText)
-            }
-            .accessibilityHidden(true)
+            UploadedCharacterView(assetName: assetName == "Doddy_listening" ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting",
+                                  height: size)
         }
     }
 }
@@ -143,7 +135,7 @@ enum StatusCopy {
     static func text(for status: CapabilityStatus) -> String {
         switch status {
         case .available: "Available"
-        case .needsSetup(let what): "Built · needs setup: \(what)"
+        case .limited(let note): "Limited · \(note)"
         case .notImplemented(let milestone) where milestone == "unscheduled": "Not built · not scheduled"
         case .notImplemented(let milestone): "Not built yet · planned \(milestone)"
         }
@@ -156,15 +148,13 @@ extension Capability {
         case .memoryStorage: "Saving memories"
         case .memoryRecall: "Finding memories"
         case .cloudAssistant: "AI answers"
+        case .textAssistant: "Typed AI questions"
         case .voiceInput: "Listening (voice)"
         case .voiceOutput: "Speaking (voice)"
         case .reminders: "Reminders"
-        case .pushUpdates: "Notifications from Doddy"
-        case .textUpdates: "Texts from Doddy"
-        case .phoneCalls: "Phone calls with Doddy"
-        case .newsDigests: "Daily news from Doddy"
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
+        case .systemShortcut: "Shortcut and Back Tap"
         }
     }
 }
