@@ -159,6 +159,13 @@ extension TimerBanners {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let action = response.actionIdentifier
         let requestID = response.notification.request.identifier
+        // The weekly tidy-up (ADR-228) opens its screen; nothing changes until the user taps.
+        if TidyUp.isTidyUp(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.tidyUpOpened() }
+            }
+            return
+        }
         // The morning check-in (ADR-220) opens its screen; nothing else happens until the user taps.
         if MorningCheckIn.isCheckIn(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

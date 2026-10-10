@@ -43,6 +43,7 @@ struct DoddyApp: App {
                 .task { await SystemNoteNotifications.registerCategory() }
                 // Keeps the morning check-in's words in the iPhone's current language (ADR-220).
                 .task { if MorningCheckInSettings.stored().isOn { _ = await MorningCheckInScheduler.apply(.stored()) } }
+                .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
         }
     }
 }

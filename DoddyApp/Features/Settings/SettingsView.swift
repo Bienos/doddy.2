@@ -190,6 +190,8 @@ struct SettingsView: View {
 
                 MorningCheckInSettingsSection()
 
+                TidyUpSettingsSection()
+
                 BackupSettingsSection()
 
                 // Widgets (ADR-219): what they show, and the switch that empties the shared file.
