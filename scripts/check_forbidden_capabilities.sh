@@ -9,6 +9,7 @@
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
+#  - on-device meaning search (NaturalLanguage) only inside DoddyApp/Features/Meaning (ADR-227),
 #  - photo text reading (Vision) and the photo picker only inside DoddyApp/Features/Photos, never the
 #    camera or the whole photo library (ADR-218),
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets (server/messaging and
@@ -35,6 +36,8 @@ web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
 voice_only='import AVFoundation|import AVFAudio|AVAudio|import ElevenLabs'
 connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger'
+meaning_dir=DoddyApp/Features/Meaning
+meaning_only='import NaturalLanguage|NLContextualEmbedding|NLEmbedding'
 photos_dir=DoddyApp/Features/Photos
 photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI|PhotosPicker'
 photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsset\.fetch|UIImagePickerController|AVCaptureSession|NSCameraUsageDescription|NSPhotoLibrary(Add)?UsageDescription'
@@ -68,6 +71,9 @@ if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_
 fi
 if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$connections_dir/"; then
   echo "FAIL: calendar, contacts or location code outside $connections_dir." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$meaning_only" "${dirs[@]}" | grep -v "^$meaning_dir/"; then
+  echo "FAIL: on-device language models outside $meaning_dir (ADR-227)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$photos_only" "${dirs[@]}" | grep -v "^$photos_dir/"; then
   echo "FAIL: photo reading or the photo picker outside $photos_dir." >&2; status=1
