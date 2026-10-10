@@ -11,6 +11,8 @@ enum PreferenceKey {
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).
     static let pinnedNotes = "pinnedNotes"
     static let hideCharacterArt = "hideCharacterArt"
+    /// Settings → Voice → Dynamic Island style (`IslandStyle` raw value); display only (ADR-212).
+    static let islandStyle = "islandStyle"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-210). On unless turned off.
     static let openingScene = "openingScene"
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-210). On unless turned off.
@@ -101,7 +103,11 @@ struct RootView: View {
                 await noteReminders.refreshOnForeground()
             }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { Task { await noteReminders.refreshOnForeground() } }
+                if phase == .active {
+                    Task { await noteReminders.refreshOnForeground() }
+                    FocusController.shared.refresh()
+                    BreathingController.shared.refresh()
+                }
                 // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
                 switch phase {
                 case .background: opening.appWentToBackground()

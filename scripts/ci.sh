@@ -41,6 +41,8 @@ if command -v swift >/dev/null 2>&1; then
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
+  # Island drawing data matches the owner's SVGs, parses, and maps states correctly (ADR-212).
+  run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
 else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi

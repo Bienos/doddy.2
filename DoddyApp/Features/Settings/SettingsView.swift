@@ -301,6 +301,7 @@ struct SettingsView: View {
 
                 Section("Voice") {
                     PersonalityLinkRow()
+                    IslandStyleLinkRow()
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
                     Text(listenOnOpen
