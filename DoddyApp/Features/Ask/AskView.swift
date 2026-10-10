@@ -8,6 +8,7 @@ struct AskView: View {
 
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(PreferenceKey.assistantConsent) private var consent = false
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
     @AppStorage(PreferenceKey.gatewayAddress) private var gatewayAddress = ""
@@ -71,7 +72,7 @@ struct AskView: View {
                 .padding(24)
             }
             .onChange(of: controller.messages.count) { _, _ in
-                if let last = controller.messages.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
+                if let last = controller.messages.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
             }
         }
     }

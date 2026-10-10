@@ -151,6 +151,14 @@ struct SettingsView: View {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
                     .disabled(store.memories.isEmpty)
+                    ShareLink(
+                        item: MarkdownFileExport(records: store.memories),
+                        preview: SharePreview("Doddy memories (Markdown)")
+                    ) {
+                        Label("Export as Markdown", systemImage: "doc.richtext")
+                    }
+                    .disabled(store.memories.isEmpty)
+                    .accessibilityIdentifier("settings.exportMarkdown")
                     Button {
                         restoreMessage = nil
                         choosingRestoreFile = true
@@ -790,6 +798,18 @@ struct ProfileTextExport: Transferable {
         ProxyRepresentation(exporting: { (export: ProfileTextExport) in
             ProfileExport.plainText(export.profile, style: .stored(), exportedAt: Date())
         })
+    }
+}
+
+/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
+struct MarkdownFileExport: Transferable {
+    let records: [MemoryRecord]
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
+            Data(MarkdownExport.markdown(export.records, exportedAt: Date()).utf8)
+        }
+        .suggestedFileName("doddy-memories.md")
     }
 }
 

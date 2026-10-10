@@ -9,6 +9,7 @@ struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
@@ -150,16 +151,16 @@ struct VoiceView: View {
                     .padding(24)
                 }
                 .onChange(of: controller.lines.count) { _, _ in
-                    if let last = controller.lines.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
+                    if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
-                    if pending != nil { withAnimation { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                    if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
                 }
                 .onChange(of: controller.contactCard) { _, card in
-                    if card != nil { withAnimation { proxy.scrollTo("contactCard", anchor: .bottom) } }
+                    if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("contactCard", anchor: .bottom) } }
                 }
                 .onChange(of: controller.reminderStatus) { _, status in
-                    if status != nil { withAnimation { proxy.scrollTo("reminderStatus", anchor: .bottom) } }
+                    if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("reminderStatus", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -227,6 +228,16 @@ struct VoiceView: View {
                 .font(.headline)
             Text("“\(text)”")
                 .font(.body)
+            // File it now, or later from the note's own screen (ADR-202).
+            Picker("Type", selection: Binding(
+                get: { controller.pendingMemoryCategory },
+                set: { controller.pendingMemoryCategory = $0 })
+            ) {
+                ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+            }
+            .pickerStyle(.menu)
+            .frame(minHeight: 44)
+            .accessibilityIdentifier("voice.memoryType")
         case .event(_, let draft):
             Text("Add this event?")
                 .font(.headline)
