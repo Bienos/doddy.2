@@ -61,6 +61,16 @@ xcodebuild test -project Doddy.xcodeproj -scheme Doddy \
 scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 ```
 
+**Hosted macOS CI (`.github/workflows/ios.yml`, ADR-123) has never run a step.** As of 2026-10-10 all
+58 runs (pull requests and one manual dispatch) end in failure within seconds, for the macOS job *and*
+the Ubuntu job alike: no runner is ever assigned (`runner_id: 0`) and there are no logs to download.
+The API gives no reason; it is shown as a banner on the run page (e.g.
+<https://github.com/Bienos/doddy.2/actions/runs/38085624065>). The usual causes for a private repo are
+Actions billing (included minutes used up, spending limit at 0, or a failed payment: GitHub Settings →
+Billing and plans → Spending limits → Actions) or an Actions policy that blocks the actions used
+(repo Settings → Actions → General → "Allow all actions and reusable workflows"). Nothing in the workflow
+file is known to be wrong. Until a run starts, every iOS build is a manual Mac build.
+
 Why `Doddy.xcodeproj` is not committed: no Xcode could open or build a generated project when M0 was
 authored, and the architecture notes forbid presenting an unverified project file as working. The
 `project.yml` spec **was** run through XcodeGen 2.44.1 on Linux and generated a project (targets,

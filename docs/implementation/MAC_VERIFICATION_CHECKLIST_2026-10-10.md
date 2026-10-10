@@ -72,7 +72,8 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | V2 | Start a conversation with a non-default voice, speed and starting language | The voice and language are used. The dev agent allows the overrides. If it connects but sounds default, check the agent's override switches |
 | V3 | Set a nickname | Doddy uses it now and then (ADR-127) |
 | V4 | Turn on Private on the Talk screen, talk, end | The banner shows. The conversation is not in Remembered conversations (ADR-170) |
-| V5 | Island: start a conversation, tap Mute and Unmute on the Live Activity | The Unmute fix works and the app keeps running (ADR-128; `NATIVE_BASELINE_REPORT.md`) |
+| V5 | Island: start a conversation, press Home, long-press the island, tap Mute then Unmute | Status changes to Muted and back; the app keeps running (ADR-128; `NATIVE_BASELINE_REPORT.md`). If a tap does nothing, read the Console line (subsystem `com.bienos.doddy2`, category `island`): it names the process that ran the intent and whether a handler was there (`V3_ISLAND_STATUS.md`, "Go live") |
+| V5b | Simulator first: `DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd` on an iPhone with a Dynamic Island, plus `DoddyTests/IslandBaselineTests` | All green. This is the red check from the Codex run; it is the first thing to run after `make project` |
 | V6 | Reminders by voice (ADR-126, `M4_REMINDERS_STATUS.md`) | The device checks listed there |
 | V7 | Ask Doddy to save a note by voice, pick "Place" on the card, tap Save | The note is saved with that type (see the type filter chips). Declining and a second proposal start at "Other" again (ADR-202) |
 
