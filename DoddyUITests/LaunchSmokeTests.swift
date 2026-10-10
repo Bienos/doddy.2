@@ -77,6 +77,37 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
+        app.buttons["home.ask"].tap()
+
+        XCTAssertTrue(app.textFields["ask.input"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["ask.disclosure"].exists)
+        XCTAssertTrue(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
+        // Nothing to send yet, so Send stays disabled.
+        XCTAssertFalse(app.buttons["ask.send"].isEnabled)
+    }
+
+    @MainActor
+    func testSettingsShowsAskDoddyOffUntilTheUserTurnsItOn() {
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
+        app.buttons["tab.settings"].tap()
+        let consent = app.switches["settings.assistantConsent"]
+        // The long Settings form creates rows lazily; scroll until the section is on screen.
+        for _ in 0..<10 {
+            if consent.exists && consent.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(consent.exists)
+        XCTAssertEqual(consent.value as? String, "0")
+        let status = app.descendants(matching: .any)["settings.assistantStatus"].firstMatch
+        XCTAssertTrue(status.exists)
+        XCTAssertTrue(status.label.contains("Off"))
+    }
+
+    @MainActor
     func testBackTapCardCanBeDeferredAndNeverShowsAsVerified() {
         let app = launch(onboardingDone: true, backTapSetup: "notStarted")
         XCTAssertTrue(app.buttons["home.backTap.later"].waitForExistence(timeout: 5))

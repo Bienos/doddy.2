@@ -3,15 +3,31 @@ import DoddyPersistence
 import Foundation
 import SwiftUI
 
+/// What the typed assistant (M2) needs from the app: where credentials live and how HTTP is sent.
+/// The gateway address comes from Settings at question time, so changing it needs no restart.
+struct AssistantWiring: Sendable {
+    let credentials: any DeviceCredentialStore
+    let transport: any GatewayTransport
+
+    func service(gatewayAddress: String, recall: any RecallService) -> AssistantService {
+        let client = GatewayAssistantClient(
+            configuration: GatewayConfiguration(string: gatewayAddress),
+            transport: transport,
+            credentials: credentials)
+        return AssistantService(recall: recall, client: client)
+    }
+}
+
 /// Composition root. Local memory and the reviewed profile use one SQLite file; voice uses the
-/// ElevenLabs agent (VoiceView); the Talk to Doddy shortcut and Back Tap guide live in
-/// `ShortcutRouter`; Connected Apps talks to a Doddy server (ConnectedAppsScreen); other actions
-/// stay explicit `Unavailable*` adapters.
+/// ElevenLabs agent (VoiceView); typed questions go through the Doddy gateway (AskView); the Talk to
+/// Doddy shortcut and Back Tap guide live in `ShortcutRouter`; Connected Apps talks to a Doddy server
+/// (ConnectedAppsScreen); other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let profileRepository: any ProfileRepository
     let recallService: any RecallService
-    let assistantClient: any AssistantClient
+    /// `nil` when the typed assistant is not wired (M0 fallback after a storage failure, previews).
+    let assistant: AssistantWiring?
     let toolExecutor: any ToolExecutor
     let capabilities: CapabilityCatalog
     let privacy: PrivacyDefaults
@@ -22,7 +38,7 @@ struct AppEnvironment: Sendable {
         memoryRepository: UnavailableMemoryRepository(),
         profileRepository: UnavailableProfileRepository(),
         recallService: UnavailableRecallService(),
-        assistantClient: UnavailableAssistantClient(),
+        assistant: nil,
         toolExecutor: UnavailableToolExecutor(),
         capabilities: .m0,
         privacy: .m0,
@@ -31,17 +47,19 @@ struct AppEnvironment: Sendable {
     /// `-inMemoryStore` (UI tests) keeps everything in memory and writes nothing to disk.
     static func live(arguments: [String] = ProcessInfo.processInfo.arguments) -> AppEnvironment {
         do {
-            let database = arguments.contains("-inMemoryStore")
+            let isUITest = arguments.contains("-inMemoryStore")
+            let database = isUITest
                 ? try DoddyDatabase.inMemory()
                 : try DoddyDatabase(path: try databaseURL(arguments: arguments).path)
             let repository = SQLiteMemoryRepository(database: database)
+            let credentials: any DeviceCredentialStore = isUITest ? InMemoryCredentialStore() : KeychainCredentialStore()
             return AppEnvironment(
                 memoryRepository: repository,
                 profileRepository: SQLiteProfileRepository(database: database),
                 recallService: RepositoryRecallService(repository: repository),
-                assistantClient: UnavailableAssistantClient(),
+                assistant: AssistantWiring(credentials: credentials, transport: AppHTTPTransport()),
                 toolExecutor: UnavailableToolExecutor(),
-                capabilities: .v2WithConnectedApps,
+                capabilities: .v2WithAssistant,
                 privacy: .v1Voice,
                 storageProblem: nil)
         } catch {
@@ -49,7 +67,7 @@ struct AppEnvironment: Sendable {
                 memoryRepository: UnavailableMemoryRepository(),
                 profileRepository: UnavailableProfileRepository(),
                 recallService: UnavailableRecallService(),
-                assistantClient: UnavailableAssistantClient(),
+                assistant: nil,
                 toolExecutor: UnavailableToolExecutor(),
                 capabilities: .m0,
                 privacy: .m0,

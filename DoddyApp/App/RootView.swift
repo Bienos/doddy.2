@@ -27,6 +27,10 @@ enum PreferenceKey {
     static let voiceTokenServer = "voiceTokenServer"
     /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
     static let connectedAppsServerURL = "connectedAppsServerURL"
+    /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
+    static let assistantConsent = "assistantConsent"
+    static let assistantUseNotes = "assistantUseNotes"
+    static let gatewayAddress = "gatewayAddress"
 }
 
 enum AppTab: Hashable {

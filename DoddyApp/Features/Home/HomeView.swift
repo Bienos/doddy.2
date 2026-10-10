@@ -9,6 +9,7 @@ struct HomeView: View {
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var modal: MemoryModal?
+    @State private var showAsk = false
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     private var router: ShortcutRouter { .shared }
 
@@ -47,6 +48,13 @@ struct HomeView: View {
                         .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
                         .accessibilityIdentifier("home.talk")
 
+                        Button { showAsk = true } label: {
+                            HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
+                        .accessibilityIdentifier("home.ask")
+
                         // Choose one layout rather than keeping off-screen copies
                         // of the same actions in ViewThatFits' accessibility tree.
                         if textSize.isAccessibilitySize {
@@ -68,7 +76,7 @@ struct HomeView: View {
 
                     recent
 
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
+                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")
@@ -80,6 +88,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
+            .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
         }
         .foregroundStyle(Theme.ink)
     }

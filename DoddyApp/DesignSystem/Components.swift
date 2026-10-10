@@ -148,6 +148,7 @@ extension Capability {
         case .memoryStorage: "Saving memories"
         case .memoryRecall: "Finding memories"
         case .cloudAssistant: "AI answers"
+        case .textAssistant: "Typed AI questions"
         case .voiceInput: "Listening (voice)"
         case .voiceOutput: "Speaking (voice)"
         case .reminders: "Reminders"
