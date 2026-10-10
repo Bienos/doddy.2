@@ -64,6 +64,13 @@ Owner setup before inviting anyone (none of this has been done):
 3. In the OpenAI dashboard set a hard monthly budget/limit on the dedicated project as the second line of defence.
 4. After deploying, check the logs show no `limitsPerInstance` or `placeholderPrices` warnings, and do one supervised question to see `costMicros` in the log.
 
+## Hosting (2026-10-10)
+- Vercel project **`doddy-gateway`** (team `bienos`, root directory `gateway/`, Node 22) created by the agent. It deploys only when `gateway/` changes (Ignored Build Step `git diff HEAD^ HEAD --quiet -- .`); preview deployments sit behind Vercel login.
+- Production env set: `OPENAI_MODEL=gpt-6-luna` (owner's choice), `GATEWAY_TOKEN_SECRET` and `GATEWAY_INVITE_CODES` (both Sensitive, random, never committed; the invite code was handed to the owner privately).
+- **Still missing:** `OPENAI_API_KEY`. The owner added it to the `doddy` website project by mistake; it belongs in `doddy-gateway` (Production, Sensitive) and should be removed from `doddy`.
+- **Not deployed yet.** Vercel's daily deployment limit was hit on 2026-10-10. The first production deploy must come from a branch that contains `gateway/` (this one), because the project's production branch does not. Until then the gateway does not exist on the internet, and with any variable missing it refuses every request (`503`).
+- NOT RUN: `/api/register` and `/api/assist` against the deployed gateway, and the first paid call.
+
 ## Independent review
 A read-only security review of the gateway and Swift client found 4 real issues and several hardening items. All were fixed with tests: invite codes <16 chars refused; IPv6 /64 bucketing; per-invite assist cap; limiter eviction no longer resets the global brake; one whole-request deadline so a retry can't outlive the function limit; catch-all so errors can't leak via the platform's 500; invite tag keyed with the server secret; log values shape-checked; cached token bound to its gateway host; redirects refused; corrupt Keychain token treated as empty. Not fixed, by design: the limiter is still per instance (README, ADR-114). A review is not a penetration test.
 
@@ -82,7 +89,7 @@ A read-only security review of the gateway and Swift client found 4 real issues 
 - Notes sent to a third party is a real change from "nothing leaves the phone": the opt-in dialog and the per-answer "N notes were sent" line exist for that, but they are product decisions the owner should read.
 
 ## Decisions required from the owner
-1. Pick `OPENAI_MODEL`; approve a dedicated OpenAI project and monthly cap; authorise a Vercel deploy and the first paid call.
+1. ~~Pick `OPENAI_MODEL`~~ (`gpt-6-luna`, 2026-10-10); approve a dedicated OpenAI project and monthly cap; authorise the first paid call.
 2. Invite-code beta gate acceptable, or require accounts/App Attest first?
 3. Shared limits store (Vercel Marketplace Redis or Upstash) — approve the extra service and create it; set `DAILY_BUDGET_USD` and real `OPENAI_PRICE_*` values (setup steps above). ADR-124, ADR-125.
 4. Legal/privacy review of the OpenAI data flow and the Device ID declaration.
