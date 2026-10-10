@@ -1,4 +1,10 @@
 # N1 status — daily news DM from Doddy
+
+> **Merged 2026-10-10:** this work now sits on the combined branch line. The server lives in
+> `server/messaging/` (it was `server/`), its ADRs are 139–168 (were 036–065), the
+> `/v1/voice/token` route is gone (the app uses the Vercel `server/voice-token`), and this line's
+> M4 Reminders was replaced by the main line's. See `docs/implementation/MERGE_PLAN.md`.
+
 Date: 2026-10-10. Owner decisions on that date:
 - **Sources:** RSS feeds plus a paid news API (GNews).
 - **Writer:** Claude Haiku writes the one-liners.

@@ -1,4 +1,10 @@
 # Integrations and channels catalog
+
+> **Merged 2026-10-10:** this work now sits on the combined branch line. The server lives in
+> `server/messaging/` (it was `server/`), its ADRs are 139–168 (were 036–065), the
+> `/v1/voice/token` route is gone (the app uses the Vercel `server/voice-token`), and this line's
+> M4 Reminders was replaced by the main line's. See `docs/implementation/MERGE_PLAN.md`.
+
 Date: 2026-10-10. This is the list of what Doddy can connect to on an iPhone, how each one connects, and its status.
 Each connection is opt-in, one at a time. Each becomes one entry in the tool registry (`TOOLS_AND_ACTIONS.md`): Doddy proposes, the user confirms, and a result counts only once it is verified.
 
@@ -9,7 +15,7 @@ Each connection is opt-in, one at a time. Each becomes one entry in the tool reg
 4. "Connected ✓".
 5. Disconnect, which revokes access and deletes cached data.
 
-Cloud tokens live on the server (`server/`), never in the app.
+Cloud tokens live on the server (`server/messaging/`), never in the app.
 
 ## A. Apple apps on the phone (permission prompt, no account)
 | App | API | Status |

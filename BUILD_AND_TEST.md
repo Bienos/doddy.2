@@ -42,6 +42,13 @@ The gateway has never been deployed or called against the real OpenAI API.
 non-zero (exit 2 = blocked, 1 = failure, 0 = everything passed). `--core-only` exits 0 only for its own
 narrower scope and still prints the iOS step as `NOT RUN`.
 
+### Messaging server (Node 22 + Postgres)
+`scripts/ci.sh` also installs and tests `server/messaging/` (notifications, texts, phone calls, daily
+news). Set `TEST_DATABASE_URL` to a **disposable** Postgres database (the tests drop its schema);
+without it the database tests are listed as SKIPPED. The Linux CI job provides one. See
+`server/messaging/README.md`. On a device, Settings → Messages from Doddy needs a deployed server
+address (https).
+
 ## Needs a Mac (UNVERIFIED)
 
 ```sh

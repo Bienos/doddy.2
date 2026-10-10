@@ -1,5 +1,5 @@
 # Merge plan: this branch (PR #5) vs the parallel branch line
-Date: 2026-10-10. A proposal only: nothing has been merged, rebased or closed.
+Date: 2026-10-10. Proposed first, then **applied the same day on this branch** (see "What was done" at the end).
 
 ## The situation
 Both lines start from the same commit, `7073c98` "V1: talk to Doddy by voice". The repo's default branch, `claude/loving-dirac-uuxoux`, is still at that commit, and it is PR #5's base.
@@ -88,3 +88,37 @@ Then **close PR #5** with a link to PRs A–D.
 ## What stays true whatever is chosen
 - No change has been made to any other branch, the default branch or the live agent by this comparison.
 - This branch's server tests (34) and core tests (61) pass on the branch. They will need re-running after each port, because the base types differ.
+
+## What was done (2026-10-10, after the owner's answers)
+
+**Owner decisions (Step 0):**
+1. Base line: the owner wasn't sure ("idk"), so the recommendation was applied: **the parallel line is the base**.
+2. Identity: **anonymous device accounts now, Sign in with Apple before public release** (recommended).
+3. Servers: **one Render setup** (owner: "ok"); short term the messaging server is a separate service next to `backend/`.
+
+**How, given that this session may push only to `claude/elegant-knuth-hc1aql`:** instead of
+separate PRs A–D, everything happened on this branch as one merge plus one commit per port, so
+**PR #5 now carries the combined line**. Merging PR #5 into the default branch
+(`claude/loving-dirac-uuxoux`, still at V1) therefore also does Step 1's "make the parallel line
+the default".
+
+| Commit | What |
+|---|---|
+| merge `blissful-curie` (local) | Parallel tip + `compassionate-darwin` (CI on a Mac, social links) + `brave-wright` (Linux CI, language override) + `blissful-curie` (What Doddy did, Pause all, What leaves this iPhone). `blissful-curie`'s own reminder dedupe duplicated ADR-126; the main line's version was kept and "What Doddy did" adapted to it |
+| merge `eager-johnson` (local) | Blog. Colliding ADR numbers 123–129 sorted out (main line keeps its numbers; others moved to 131–138; was/now table in `DECISIONS.md`) |
+| Merge into PR #5's branch | Conflicts resolved toward the combined line; `server/` → `server/messaging/`; this branch's M4 and voice-token route dropped; its ADRs renumbered 036–065 → 139–168 |
+| Port A | Notifications and texts (app side), capabilities, privacy copy and manifest, push entitlement, guard, CI with Postgres, `render.yaml` |
+| Port B | Daily news (app side) |
+| Port C | Phone calls and memory on calls (app side) |
+
+Left out on purpose: `busy-galileo` (same social links as `clever-ritchie`), and the older variant
+branches `busy-hawking`, `friendly-sagan`, `busy-mendel`, `vibrant-pasteur`, `upbeat-brown`,
+`eloquent-hawking` (their features are on the main line in later form; `explicit_voice` is
+already used for voice notes). Other sessions were still pushing while this was done: anything
+pushed to those branches after 2026-10-10 12:15 UTC is not included and needs one more merge.
+
+**Follow-ups:**
+- Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the
+  `voice-agent/` spec format so the drift check covers it.
+- The owner merges PR #5 once CI is green, then closes or deletes the merged parallel branches.
+- Everything in the S1/S2/N1 status docs under "owner actions" is still open (Render, Twilio, APNs, keys).

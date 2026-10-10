@@ -1,11 +1,17 @@
 # S1 status — Doddy server: push, SMS, voice tokens
+
+> **Merged 2026-10-10:** this work now sits on the combined branch line. The server lives in
+> `server/messaging/` (it was `server/`), its ADRs are 139–168 (were 036–065), the
+> `/v1/voice/token` route is gone (the app uses the Vercel `server/voice-token`), and this line's
+> M4 Reminders was replaced by the main line's. See `docs/implementation/MERGE_PLAN.md`.
+
 Date: 2026-10-10. Owner decisions on that date:
 - Add a server.
 - Phone and voice providers: Twilio + ElevenLabs.
 - Update channels: push + SMS.
 - Apply for Apple Messages for Business.
 
-## Built (`server/`)
+## Built (`server/messaging/`)
 - TypeScript/Node 22 service + worker, Postgres schema `001_init.sql`, Render blueprint `render.yaml` (Frankfurt).
 - Anonymous device accounts with hashed bearer tokens; full account erasure.
 - APNs token-auth push sender (HTTP/2, ES256 JWT); dead device tokens are switched off.
@@ -16,7 +22,7 @@ Date: 2026-10-10. Owner decisions on that date:
 ## Executed (Linux container, Node 22.22.0, PostgreSQL 16.15)
 | Command | Result |
 |---|---|
-| `TEST_DATABASE_URL=… npm test` (in `server/`) | **11 tests, 0 failures** (8 against real Postgres + HTTP layer + dispatcher; Twilio signature cross-checked with the official `twilio` library; APNs JWT verified with a generated key) |
+| `TEST_DATABASE_URL=… npm test` (in `server/messaging/`) | **11 tests, 0 failures** (8 against real Postgres + HTTP layer + dispatcher; Twilio signature cross-checked with the official `twilio` library; APNs JWT verified with a generated key) |
 | `node dist/src/index.js` + `worker.js` | Booted, migrated a fresh DB, `/healthz` → `{"ok":true}`, `POST /v1/accounts` → 201 |
 | `scripts/check_forbidden_capabilities.sh` | PASS (server scanned for key values; planted key correctly fails) |
 | `scripts/ci.sh --core-only` | Pack integrity PASS, guard PASS, server PASS; Swift tests **NOT RUN** (no Swift toolchain in this container) |

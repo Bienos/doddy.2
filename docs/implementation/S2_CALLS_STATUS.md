@@ -1,4 +1,10 @@
 # S2 status — phone calls with Doddy (Twilio + ElevenLabs)
+
+> **Merged 2026-10-10:** this work now sits on the combined branch line. The server lives in
+> `server/messaging/` (it was `server/`), its ADRs are 139–168 (were 036–065), the
+> `/v1/voice/token` route is gone (the app uses the Vercel `server/voice-token`), and this line's
+> M4 Reminders was replaced by the main line's. See `docs/implementation/MERGE_PLAN.md`.
+
 Date: 2026-10-10. Owner decisions on that date:
 - Calls in **both directions**.
 - **Opt-in memory copy on the server**, so calls can answer from memories.
@@ -21,7 +27,7 @@ Date: 2026-10-10. Owner decisions on that date:
 
 ## Built
 - **Server:** migration `002_calls.sql`, `calls.ts`, `crypto.ts`, `memorySearch.ts`, routes `calls.ts` (app) and `elevenlabs.ts` (webhook and tools), `ElevenLabsOutboundCaller`.
-- **`server/scripts/setup-phone-agent.mjs`:** creates the workspace secret, the 3 webhook tools (with secret and session headers) and the agent.
+- **`server/messaging/scripts/setup-phone-agent.mjs`:** creates the workspace secret, the 3 webhook tools (with secret and session headers) and the agent.
   - The agent has the prompt, an AI disclosure in its first sentence, no audio recording, and 30-day transcript retention.
   - The workspace-wide call-start webhook is changed only with `--set-workspace-webhook`.
 - **DoddyCore:** `CallsClient.swift` (settings, PIN, consent `calls-v1`, call me now, call list, notes inbox, memory copy on/off and snapshot), `CallPIN` rules shared with the server, `.weakPIN` error, capability `.phoneCalls`. The catalog never reports it as "available"; it is "needs setup" until the screen confirms.
