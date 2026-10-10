@@ -8,6 +8,8 @@ public struct PrivacyDefaults: Equatable, Sendable {
     public let analyticsEnabled: Bool
     public let cloudAIEnabled: Bool
     public let syncEnabled: Bool
+    /// Apple Reminders access (iOS only offers full access). Data stays on the device.
+    public var remindersUsed: Bool = false
 
     public static let m0 = PrivacyDefaults(
         accountRequired: false, networkRequestsMade: false, microphoneUsed: false,
@@ -20,7 +22,15 @@ public struct PrivacyDefaults: Equatable, Sendable {
         accountRequired: false, networkRequestsMade: true, microphoneUsed: true,
         contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: true, syncEnabled: false)
 
-    /// True when nothing leaves the device and nothing listens.
+    /// M4: V1 voice plus Apple Reminders, asked for the first time the user approves a reminder.
+    public static let m4Reminders: PrivacyDefaults = {
+        var defaults = v1Voice
+        defaults.remindersUsed = true
+        return defaults
+    }()
+
+    /// True when nothing leaves the device and nothing listens. Reminders access stays on the
+    /// device, so it doesn't change this.
     public var isFullyLocal: Bool {
         !(accountRequired || networkRequestsMade || microphoneUsed || contentTelemetryEnabled
             || analyticsEnabled || cloudAIEnabled || syncEnabled)

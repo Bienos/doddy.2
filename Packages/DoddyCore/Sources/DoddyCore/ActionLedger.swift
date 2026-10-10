@@ -111,24 +111,18 @@ public actor ActionLedger {
     }
 
     /// Runs an approved action once. The approval is used up whatever the outcome.
+    /// The adapter's readiness (for example OS permission) is checked first; if it isn't ready,
+    /// nothing changes and the approval still stands.
     public func execute(_ id: UUID) async throws -> ActionRecord {
-        var record = try self.record(id)
-        switch record.status {
-        case .needsApproval: break
-        case .executing: throw ActionPolicyError.alreadyExecuting
-        case .unknown: throw ActionPolicyError.reconcileFirst
-        case .confirmed, .failed, .cancelled: throw ActionPolicyError.alreadyFinished(record.status)
-        case .proposed, .drafted: throw ActionPolicyError.notApproved
-        }
-        guard let approval = record.approval else { throw ActionPolicyError.notApproved }
-        guard approval.approvedPayload == record.payload else { throw ActionPolicyError.payloadChanged }
-        guard now() <= approval.expiresAt else {
-            record.approval = nil
-            record.history.append(ActionEvent(status: .needsApproval, at: now(), note: "Approval expired"))
-            try commit(record)
-            throw ActionPolicyError.approvalExpired
-        }
+        var record = try executable(try self.record(id))
         let adapter = try adapter(for: record.type)
+
+        if case .notReady(let reason) = await adapter.readiness(for: record.type) {
+            throw ActionPolicyError.notReady(reason)
+        }
+        // The await above let other calls run (a second execute, a cancel, an edit): check
+        // everything again on the current record. Only one caller can get past `commit` below.
+        record = try executable(try self.record(id))
 
         // Stored before the await: a second call sees `executing` and is refused, and if the
         // app stops during the call the next launch knows a send may have happened.
@@ -250,6 +244,27 @@ public actor ActionLedger {
             try store.save(record)
         } catch {
             throw ActionPolicyError.resultNotSaved(record.status)
+        }
+        return record
+    }
+
+    /// Status and approval checks shared by both passes of `execute`.
+    private func executable(_ record: ActionRecord) throws -> ActionRecord {
+        var record = record
+        switch record.status {
+        case .needsApproval: break
+        case .executing: throw ActionPolicyError.alreadyExecuting
+        case .unknown: throw ActionPolicyError.reconcileFirst
+        case .confirmed, .failed, .cancelled: throw ActionPolicyError.alreadyFinished(record.status)
+        case .proposed, .drafted: throw ActionPolicyError.notApproved
+        }
+        guard let approval = record.approval else { throw ActionPolicyError.notApproved }
+        guard approval.approvedPayload == record.payload else { throw ActionPolicyError.payloadChanged }
+        guard now() <= approval.expiresAt else {
+            record.approval = nil
+            record.history.append(ActionEvent(status: .needsApproval, at: now(), note: "Approval expired"))
+            try commit(record)
+            throw ActionPolicyError.approvalExpired
         }
         return record
     }

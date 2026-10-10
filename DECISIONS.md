@@ -77,6 +77,12 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 047 | Provider answered but the result couldn't be stored → receipt shows the result, error `resultNotSaved`; the stored `executing` turns into `unknown` after restart and is re-checked | Applied |
 | 048 | **Retention:** finished actions (confirmed, failed, cancelled) are deleted 30 days after their last change; unfinished/unknown kept until resolved or deleted. User can delete all history (refused while a send is in flight) | Applied — **owner to confirm 30 days** |
 | 049 | Lifecycle rules are repeated as SQLite CHECK constraints and re-checked by `ActionRecord.restore` on load; a damaged store switches actions off, never resets the file | Applied |
+| 050 | **Apple Reminders is the first real action** (M4), via `RemindersActionAdapter` in the same ledger. EventKit is behind a `RemindersClient` protocol; the only EventKit code is `DoddyApp/Features/Reminders/EventKitRemindersClient.swift` | Applied (owner instruction) — **device verification pending** |
+| 051 | **Second permission:** `NSRemindersFullAccessUsageDescription` (iOS 17 offers no write-only access to reminders). Asked only after an in-app explanation, the first time the user adds a reminder. Guard (supersedes ADR-037 on this point): EventKit only in `Features/Reminders`, no calendar events, permissions = microphone + Reminders full access | Applied |
+| 052 | **Verified write:** each reminder carries the idempotency key in its URL and notes; "confirmed" only after finding it again; a failed save is looked up before being called failed; a lookup before writing prevents duplicates; reconcile = lookup only | Applied |
+| 053 | Adapters expose `readiness`; the ledger checks it before `executing` and **re-validates the record after the await**. `notReady` leaves the action and its approval untouched (draft kept when access is off) | Applied |
+| 054 | Reminder payload = title, due time as ISO 8601 with UTC offset, time-zone ID, list ID; target = list name. Default suggestion tomorrow 09:00 device time, shown and editable; seconds dropped; no past dates | Applied — owner may prefer another default |
+| 055 | Entry point is a memory's detail screen only. Not built: voice `create_reminder` tool (changes the live ElevenLabs agent), non-default lists, editing/deleting reminders from Doddy | Applied — **owner to decide on voice tool** |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

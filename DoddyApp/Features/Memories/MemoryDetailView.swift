@@ -12,6 +12,7 @@ struct MemoryDetailView: View {
     @State private var confirmDelete = false
     @State private var errorMessage: String?
     @State private var copied = false
+    @State private var showReminder = false
 
     var body: some View {
         Group {
@@ -76,6 +77,14 @@ struct MemoryDetailView: View {
                 }
 
                 VStack(spacing: 12) {
+                    if store.environment.capabilities.isAvailable(.reminders), store.environment.remindersClient != nil {
+                        Button { showReminder = true } label: {
+                            HStack { Text("Add to Reminders…"); Spacer(); Image(systemName: "checklist") }
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .accessibilityIdentifier("detail.addReminder")
+                    }
+
                     Button { showCorrection = true } label: {
                         HStack { Text("Correct this detail"); Spacer(); Image(systemName: "pencil") }
                     }
@@ -103,6 +112,11 @@ struct MemoryDetailView: View {
             .padding(24)
         }
         .sheet(isPresented: $showCorrection) { CorrectionView(record: record) }
+        .sheet(isPresented: $showReminder) {
+            if let client = store.environment.remindersClient {
+                ReminderFlowView(ledger: store.environment.actionLedger, client: client, suggestedTitle: record.currentText)
+            }
+        }
         .confirmationDialog("Delete this memory?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { Task { await delete() } }
             Button("Cancel", role: .cancel) {}

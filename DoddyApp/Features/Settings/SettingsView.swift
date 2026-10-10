@@ -9,6 +9,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @State private var confirmDeleteAll = false
     @State private var deleteError: String?
+    @State private var remindersAccess: RemindersAuthorization?
 
     private var environment: AppEnvironment { store.environment }
     private var privacy: PrivacyDefaults { environment.privacy }
@@ -56,9 +57,18 @@ struct SettingsView: View {
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
+                    if privacy.remindersUsed {
+                        StatusRow(title: "Reminders", value: Self.remindersText(remindersAccess))
+                            .accessibilityIdentifier("settings.reminders")
+                    }
                     Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                    if privacy.remindersUsed {
+                        Text("Reminders: Doddy asks iOS for access the first time you add one. iOS only offers full access; Doddy uses it only to add reminders you approve and to check they were saved. Change it in iOS Settings → Doddy.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
                 }
                 .accessibilityIdentifier("settings.privacy")
 
@@ -113,6 +123,7 @@ struct SettingsView: View {
             .background(Theme.canvas)
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .task { remindersAccess = await environment.remindersClient?.authorization() }
             .confirmationDialog(
                 "Delete all \(store.memories.count) memories?",
                 isPresented: $confirmDeleteAll, titleVisibility: .visible
@@ -132,6 +143,16 @@ struct SettingsView: View {
             deleteError = nil
         } catch {
             deleteError = UserFacingError.message(for: error)
+        }
+    }
+
+    private static func remindersText(_ access: RemindersAuthorization?) -> String {
+        switch access {
+        case .granted: "Allowed (only for reminders you approve)"
+        case .notDetermined: "Not asked yet"
+        case .denied: "Off"
+        case .restricted: "Restricted on this iPhone"
+        case nil: "Checking…"
         }
     }
 

@@ -4,14 +4,16 @@ import Foundation
 import SwiftUI
 
 /// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView);
-/// actions go through one persistent `ActionLedger` whose only adapter is the simulation
-/// (no real external action exists yet).
+/// actions go through one persistent `ActionLedger` with two adapters: the simulation
+/// (approval demo) and Apple Reminders (EventKit, asked for when first used).
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let recallService: any RecallService
     let assistantClient: any AssistantClient
-    /// The one action ledger (SQLite-backed). Until a real adapter exists it holds only the simulation.
+    /// The one action ledger (SQLite-backed): simulated messages + Apple Reminders.
     let actionLedger: ActionLedger
+    /// Apple Reminders access; nil when actions are unavailable.
+    let remindersClient: (any RemindersClient)?
     /// The simulated provider behind the approval demo; nil when actions are unavailable.
     let simulatedActions: SimulatedActionAdapter?
     let capabilities: CapabilityCatalog
@@ -25,6 +27,7 @@ struct AppEnvironment: Sendable {
         assistantClient: UnavailableAssistantClient(),
         actionLedger: ActionLedger(adapters: [UnavailableActionAdapter()]),
         simulatedActions: nil,
+        remindersClient: nil,
         capabilities: .m0,
         privacy: .m0,
         storageProblem: nil)
@@ -42,9 +45,10 @@ struct AppEnvironment: Sendable {
                 assistantClient: UnavailableAssistantClient(),
                 actionLedger: actions.ledger,
                 simulatedActions: actions.simulation,
-                // Without a working action store the approval demo is switched off.
-                capabilities: actions.simulation == nil ? .v1Voice : .v1Trust,
-                privacy: .v1Voice,
+                remindersClient: actions.reminders,
+                // Without a working action store, actions (demo and Reminders) are switched off.
+                capabilities: actions.simulation == nil ? .v1Voice : .m4Reminders,
+                privacy: actions.simulation == nil ? .v1Voice : .m4Reminders,
                 storageProblem: nil)
         } catch {
             return AppEnvironment(
@@ -53,6 +57,7 @@ struct AppEnvironment: Sendable {
                 assistantClient: UnavailableAssistantClient(),
                 actionLedger: ActionLedger(adapters: [UnavailableActionAdapter()]),
                 simulatedActions: nil,
+        remindersClient: nil,
                 capabilities: .m0,
                 privacy: .m0,
                 storageProblem: "Doddy couldn't open its memory store, so saving is switched off. Nothing was deleted or reset. Try closing and reopening the app. (\(error.localizedDescription))")
@@ -60,15 +65,19 @@ struct AppEnvironment: Sendable {
     }
 
     /// Separate SQLite file (ADR-045). If it can't open, actions are off and nothing is reset.
-    private static func makeActions(arguments: [String]) -> (ledger: ActionLedger, simulation: SimulatedActionAdapter?) {
+    private static func makeActions(
+        arguments: [String]
+    ) -> (ledger: ActionLedger, simulation: SimulatedActionAdapter?, reminders: (any RemindersClient)?) {
         do {
             let store: any ActionStore = arguments.contains("-inMemoryStore")
                 ? InMemoryActionStore()
                 : try SQLiteActionStore(path: try databaseURL(directory: "Actions", file: "actions.sqlite").path)
             let simulation = SimulatedActionAdapter()
-            return (ActionLedger(adapters: [simulation], store: store), simulation)
+            let reminders = EventKitRemindersClient()
+            let ledger = ActionLedger(adapters: [simulation, RemindersActionAdapter(client: reminders)], store: store)
+            return (ledger, simulation, reminders)
         } catch {
-            return (ActionLedger(adapters: [UnavailableActionAdapter()]), nil)
+            return (ActionLedger(adapters: [UnavailableActionAdapter()]), nil, nil)
         }
     }
 

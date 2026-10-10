@@ -10,6 +10,7 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(env.recallService is UnavailableRecallService)
         XCTAssertTrue(env.assistantClient is UnavailableAssistantClient)
         XCTAssertNil(env.simulatedActions)
+        XCTAssertNil(env.remindersClient)
     }
 
     func testUnavailableEnvironmentRefusesEveryAction() async throws {

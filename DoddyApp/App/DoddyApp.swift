@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// DODDY V2. Local text memory (M1) works; AI, voice, reminders and accounts do not exist yet.
+/// DODDY V2. Local memory, ElevenLabs voice and approved Apple Reminders; no accounts or sync.
 @main
 struct DoddyApp: App {
     @State private var store = MemoryStore(environment: .live())

@@ -81,14 +81,14 @@ public struct ActionPayload: Equatable, Hashable, Codable, Sendable {
         fields.first { $0.key == key }?.value
     }
 
-    private init(type: ActionType, target: String, fields: [Field]) {
+    init(type: ActionType, target: String, fields: [Field]) {
         self.type = type
         self.target = target
         self.fields = fields
     }
 
     /// Values are kept exactly as given (shown and executed unchanged); blank values are rejected.
-    private static func validated(_ value: String, key: String, limit: Int) throws -> String {
+    static func validated(_ value: String, key: String, limit: Int) throws -> String {
         guard !value.allSatisfy(\.isWhitespace) else { throw ActionPayloadError.missingField(key) }
         guard value.unicodeScalars.count <= limit else { throw ActionPayloadError.fieldTooLong(key, limit: limit) }
         return value
@@ -231,6 +231,19 @@ public protocol ActionAdapter: Sendable {
     func execute(_ request: ActionExecutionRequest) async throws -> ActionProviderResult
     /// Provider-side status for an earlier request, used to reconcile `unknown`.
     func status(idempotencyKey: UUID) async throws -> ActionProviderResult
+    /// Checked by the ledger just before execution (for example OS permission). `notReady`
+    /// leaves the action and its approval untouched.
+    func readiness(for type: ActionType) async -> ActionReadiness
+}
+
+public enum ActionReadiness: Equatable, Sendable {
+    case ready
+    /// User-facing reason, including that nothing was done.
+    case notReady(String)
+}
+
+extension ActionAdapter {
+    public func readiness(for type: ActionType) async -> ActionReadiness { .ready }
 }
 
 public enum ActionPolicyError: Error, Equatable, Sendable {
@@ -254,6 +267,8 @@ public enum ActionPolicyError: Error, Equatable, Sendable {
     case storageUnavailable
     /// An action is being sent right now.
     case actionInProgress
+    /// The adapter can't run now (for example permission missing). Nothing changed.
+    case notReady(String)
 }
 
 /// User-facing wording (UX-02). "Confirmed" only ever appears for provider-confirmed records.
@@ -272,6 +287,13 @@ public enum ActionStatusCopy {
     }
 
     public static func summary(_ record: ActionRecord) -> String {
+        switch record.type {
+        case .sendMessage: messageSummary(record)
+        case .createReminder: reminderSummary(record)
+        }
+    }
+
+    private static func messageSummary(_ record: ActionRecord) -> String {
         let simulated = record.isSimulation
         switch record.status {
         case .proposed, .drafted:
@@ -283,13 +305,32 @@ public enum ActionStatusCopy {
         case .confirmed:
             return simulated
                 ? "Simulated send confirmed by the test adapter. Nothing actually left this iPhone."
-                : record.type == .sendMessage ? "Sent to \(record.payload.target)." : "Added to \(record.payload.target)."
+                : "Sent to \(record.payload.target)."
         case .failed:
             return simulated ? "Simulated failure. Nothing was sent." : "Not sent."
         case .unknown:
             return "Couldn't confirm whether it was sent. Doddy won't send it again until the status is checked."
         case .cancelled:
             return "Cancelled. Nothing was sent."
+        }
+    }
+
+    private static func reminderSummary(_ record: ActionRecord) -> String {
+        switch record.status {
+        case .proposed, .drafted:
+            return "Drafted. Not added to Reminders."
+        case .needsApproval:
+            return record.approval == nil ? "Waiting for your approval. Not added yet." : "Approved. Not added yet."
+        case .executing:
+            return "Adding to Reminders…"
+        case .confirmed:
+            return "Added to your “\(record.payload.target)” list in Reminders. Doddy found it there after saving."
+        case .failed:
+            return "Not added to Reminders."
+        case .unknown:
+            return "Couldn't confirm whether it was added. Doddy won't add it again until the status is checked."
+        case .cancelled:
+            return "Cancelled. Nothing was added."
         }
     }
 }
@@ -317,6 +358,7 @@ extension ActionStatusCopy {
         case .resultNotSaved: return "Doddy got the result shown above but couldn't save it. After a restart it will show as unconfirmed and be checked again."
         case .storageUnavailable: return "Doddy couldn't open its saved actions, so actions are switched off. Nothing was sent or deleted."
         case .actionInProgress: return "Something is being sent right now. Try again when it finishes."
+        case .notReady(let reason): return reason
         }
     }
 }

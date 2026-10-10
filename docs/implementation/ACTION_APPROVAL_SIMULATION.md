@@ -103,7 +103,7 @@ Key tests:
 
 ## Gaps before any real action (repo M4 or earlier)
 1. ~~**Persistence**~~: built (see above). Still open: a launch-time check that runs without opening the demo; today unknown actions are checked when the demo opens.
-2. **Real permission checks** (OS / OAuth scope) at proposal and at execution time; none exist for the simulation.
+2. ~~**Real permission checks**~~: built for Reminders (`ActionAdapter.readiness` + check at write; see `M4_REMINDERS_STATUS.md`).
 3. **Per-user binding:** single local user today. Approval must also bind to the account/connector once accounts exist.
 4. **Full receipt history screen**: the demo shows the 5 most recent. No export of action history yet.
 5. **Voice:** the ElevenLabs agent has no action tools. Adding one must go through `ActionProposalParser` → ledger, with spoken read-back of critical fields (T37).

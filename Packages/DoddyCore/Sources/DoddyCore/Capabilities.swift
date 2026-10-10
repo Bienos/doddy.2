@@ -64,6 +64,12 @@ public struct CapabilityCatalog: Sendable {
     public static let v1Trust = CapabilityCatalog(statuses: v1Voice.statuses.merging([
         .actionSimulation: .available,
     ]) { _, new in new })
+
+    /// M4: V1 + simulation + Apple Reminders through the approval flow (docs/implementation/M4_REMINDERS_STATUS.md).
+    /// Built does not mean permitted: iOS access is asked for when first used and can be off.
+    public static let m4Reminders = CapabilityCatalog(statuses: v1Trust.statuses.merging([
+        .reminders: .available,
+    ]) { _, new in new })
 }
 
 public enum DoddyError: Error, Equatable, Sendable {
