@@ -100,6 +100,11 @@ def check(tools, session, instructions):
         errors.append(f"instructions: {{{{{name}}}}} is not declared in session.json variables")
     for name in sorted(declared - used):
         errors.append(f"session.json: variable '{name}' is never used in instructions")
+    # DODDY AI Constitution DOD-03 (ADR-177, ADR-178): asked whether it is human, Doddy says plainly it is an AI.
+    if "ai, not a person" not in instructions.lower():
+        errors.append("instructions: must tell Doddy to say plainly it is an AI, not a person (DOD-03)")
+    if "vague answer" in instructions.lower():
+        errors.append("instructions: must not ask for a vague answer about being human or an AI (DOD-03)")
     return errors
 
 
