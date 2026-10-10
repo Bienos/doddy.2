@@ -4,7 +4,12 @@ import SwiftUI
 /// SIMULATION of how Doddy asks before acting (UX-02 action receipts, UX-03 approval).
 /// Nothing is sent and no contact is used; every screen says so.
 struct ActionDemoView: View {
-    @State private var model = ActionDemoModel()
+    @State private var model: ActionDemoModel
+    @State private var confirmDeleteHistory = false
+
+    init(ledger: ActionLedger, simulation: SimulatedActionAdapter) {
+        _model = State(initialValue: ActionDemoModel(ledger: ledger, adapter: simulation))
+    }
 
     var body: some View {
         ScrollView {
@@ -19,8 +24,12 @@ struct ActionDemoView: View {
                     case .executing, .confirmed, .failed, .unknown, .cancelled:
                         receiptCard(record)
                     }
-                } else {
+                } else if model.hasLoaded {
                     intro
+                }
+
+                if model.hasLoaded {
+                    recentSection
                 }
 
                 if let problem = model.problem {
@@ -35,6 +44,46 @@ struct ActionDemoView: View {
         .navigationTitle("Approval flow")
         .navigationBarTitleDisplayMode(.inline)
         .foregroundStyle(Theme.ink)
+        .task { await model.load() }
+        .confirmationDialog("Delete action history?", isPresented: $confirmDeleteHistory, titleVisibility: .visible) {
+            Button("Delete history", role: .destructive) { Task { await model.deleteHistory() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes every saved action from this iPhone, including any Doddy couldn't confirm. It can't be undone. Older backups aren't affected.")
+        }
+    }
+
+    // MARK: Saved actions (persist across restarts)
+
+    @ViewBuilder
+    private var recentSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Earlier actions (simulated)")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            if model.recent.isEmpty {
+                Text("None saved yet.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            } else {
+                ForEach(model.recent) { earlier in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(ActionStatusCopy.label(earlier.status)) · \(earlier.payload.target)")
+                        Text(DateText.full(earlier.updatedAt))
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .accessibilityElement(children: .combine)
+                    Divider()
+                }
+            }
+            Text("Actions are saved on this iPhone so their status survives a restart, and are included in device backups. Finished ones are removed after 30 days.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            Button("Delete action history", role: .destructive) { confirmDeleteHistory = true }
+                .disabled(model.isWorking || (model.recent.isEmpty && model.record == nil))
+                .accessibilityIdentifier("actions.deleteHistory")
+        }
     }
 
     private var banner: some View {
@@ -173,7 +222,7 @@ struct ActionDemoView: View {
             }
 
             if record.status.isTerminal || record.status == .unknown {
-                Button("Start over") { model.startOver() }
+                Button("Start over") { Task { await model.startOver() } }
                     .buttonStyle(SecondaryButtonStyle())
                     .disabled(model.isWorking)
                     .accessibilityIdentifier("actions.startOver")

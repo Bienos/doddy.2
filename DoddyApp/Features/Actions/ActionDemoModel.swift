@@ -3,15 +3,18 @@ import Foundation
 import Observation
 
 /// SIMULATION. Drives the approval and receipt flow against `SimulatedActionAdapter`.
-/// All state and every rule live in `ActionLedger`; this model only forwards taps and
-/// shows what the ledger returns.
+/// All state and every rule live in `ActionLedger` (stored on this iPhone); this model only
+/// forwards taps and shows what the ledger returns.
 @MainActor
 @Observable
 final class ActionDemoModel {
-    private let adapter = SimulatedActionAdapter()
+    private let adapter: SimulatedActionAdapter
     private let ledger: ActionLedger
 
     private(set) var record: ActionRecord?
+    /// Earlier actions from the ledger, newest first (excluding `record`).
+    private(set) var recent: [ActionRecord] = []
+    private(set) var hasLoaded = false
     private(set) var isWorking = false
     private(set) var problem: String?
     /// Edit buffers for the draft. Changes reach the ledger only through `saveEdits()`.
@@ -19,8 +22,38 @@ final class ActionDemoModel {
     var text = ""
     var outcome: SimulatedActionAdapter.Outcome = .delivers
 
-    init() {
-        ledger = ActionLedger(adapters: [adapter])
+    init(ledger: ActionLedger, adapter: SimulatedActionAdapter) {
+        self.ledger = ledger
+        self.adapter = adapter
+    }
+
+    static let recentLimit = 5
+
+    /// On open: checks any action whose outcome is unknown (status only, never a re-send),
+    /// then resumes the newest unfinished action, if there is one.
+    func load() async {
+        _ = await ledger.reconcileAllUnknown()
+        do {
+            let history = try await ledger.history()
+            if let open = history.first(where: { !$0.status.isTerminal }) {
+                show(open)
+            }
+            await refreshRecent(from: history)
+            problem = nil
+        } catch {
+            problem = ActionStatusCopy.problem(for: error)
+        }
+        hasLoaded = true
+    }
+
+    /// Deletes every stored action. The view asks for confirmation first.
+    func deleteHistory() async {
+        do {
+            try await ledger.deleteHistory()
+            await startOver()
+        } catch {
+            problem = ActionStatusCopy.problem(for: error)
+        }
     }
 
     var hasUnsavedEdits: Bool {
@@ -70,11 +103,12 @@ final class ActionDemoModel {
         await run { try await self.ledger.cancel(id) }
     }
 
-    func startOver() {
+    func startOver() async {
         record = nil
         problem = nil
         recipient = ""
         text = ""
+        await refreshRecent()
     }
 
     private func run(_ step: @escaping () async throws -> ActionRecord) async {
@@ -89,6 +123,13 @@ final class ActionDemoModel {
             problem = ActionStatusCopy.problem(for: error)
             if let id = record?.id, let latest = try? await ledger.record(id) { show(latest) }
         }
+        await refreshRecent()
+    }
+
+    private func refreshRecent(from history: [ActionRecord]? = nil) async {
+        let all: [ActionRecord]
+        if let history { all = history } else { all = (try? await ledger.history()) ?? recent }
+        recent = Array(all.filter { $0.id != record?.id }.prefix(Self.recentLimit))
     }
 
     private func show(_ updated: ActionRecord) {

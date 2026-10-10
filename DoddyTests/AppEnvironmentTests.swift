@@ -9,7 +9,16 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(env.memoryRepository is UnavailableMemoryRepository)
         XCTAssertTrue(env.recallService is UnavailableRecallService)
         XCTAssertTrue(env.assistantClient is UnavailableAssistantClient)
-        XCTAssertTrue(env.actionAdapter is UnavailableActionAdapter)
+        XCTAssertNil(env.simulatedActions)
+    }
+
+    func testUnavailableEnvironmentRefusesEveryAction() async throws {
+        do {
+            _ = try await AppEnvironment.unavailable.actionLedger.propose(ActionProposal(payload: .message(to: "A", text: "b")))
+            XCTFail("expected unsupportedAction")
+        } catch {
+            XCTAssertEqual(error as? ActionPolicyError, .unsupportedAction(.sendMessage))
+        }
     }
 
     func testEveryCapabilityHasHonestDisplayCopy() {

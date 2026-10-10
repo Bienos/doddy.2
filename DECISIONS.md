@@ -70,8 +70,13 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 040 | Approval is bound by **equality with the full canonical payload** (type, target, every field, exact whitespace) instead of a digest: equivalent in memory, no crypto dependency. Add a digest when approvals are persisted or sent to a server | Applied |
 | 041 | Approval lasts **5 minutes** and is **single use**; any edit clears it. `failed` is final; a retry must be a new draft with a new approval | Applied — owner may adjust lifetime |
 | 042 | An adapter error or an OK without a provider reference is recorded as **`unknown`**, never success; `unknown` can only be reconciled (status check by idempotency key), never re-executed or cancelled | Applied |
-| 043 | `ActionLedger` is **in memory** for the simulation. Durable pending state before the external call is a prerequisite for any real adapter | Applied — **blocks real actions** |
+| 043 | `ActionLedger` is **in memory** for the simulation. Durable pending state before the external call is a prerequisite for any real adapter | Superseded by ADR-045 |
 | 044 | Approval demo lives in Settings → Actions, runs only on `SimulatedActionAdapter`, labelled as simulation on every state; capability `actionSimulation` in `CapabilityCatalog.v1Trust`. Old `ToolProposal`/`ToolConfirmation`/`ToolExecutor`/`ActionReceipt` ports replaced by `ActionAdapter` + `UnavailableActionAdapter` | Applied |
+| 045 | Actions persist in a **separate SQLite file** (`Application Support/Actions/actions.sqlite`, same protection and `secure_delete` as memories, included in backups). The ledger calls `ActionStore` **synchronously inside the actor**, so writes are ordered and nothing interleaves; `executing` is stored before the provider call | Applied |
+| 046 | **Approvals are never stored**; after a restart every action needs a new approval tap. `executing` found at launch becomes `unknown` and is only reconciled | Applied |
+| 047 | Provider answered but the result couldn't be stored → receipt shows the result, error `resultNotSaved`; the stored `executing` turns into `unknown` after restart and is re-checked | Applied |
+| 048 | **Retention:** finished actions (confirmed, failed, cancelled) are deleted 30 days after their last change; unfinished/unknown kept until resolved or deleted. User can delete all history (refused while a send is in flight) | Applied — **owner to confirm 30 days** |
+| 049 | Lifecycle rules are repeated as SQLite CHECK constraints and re-checked by `ActionRecord.restore` on load; a damaged store switches actions off, never resets the file | Applied |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

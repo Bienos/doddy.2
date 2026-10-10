@@ -7,34 +7,57 @@ import Foundation
 /// proposed → drafted → needsApproval → executing → confirmed | failed | unknown;
 /// unknown → (reconcile) → confirmed | failed; cancel from proposed, drafted or needsApproval.
 ///
-/// In memory only: records are lost when the app quits. Persisting pending state before an
-/// external call is required before any real adapter is added (see ACTION_APPROVAL_SIMULATION.md).
+/// Persistence: every change is written to the `ActionStore` before it is returned or
+/// before the provider is called, so `executing` is on disk while a send is in flight.
+/// On first use after launch the ledger loads the store and recovers:
+/// - `executing` (the app stopped mid-send) becomes `unknown`, to be reconciled, never re-sent;
+/// - approvals are not stored, so nothing approved before a restart can run without a new tap;
+/// - finished records (confirmed, failed, cancelled) older than `retention` are deleted.
 public actor ActionLedger {
     public static let defaultApprovalLifetime: TimeInterval = 5 * 60
+    public static let defaultRetention: TimeInterval = 30 * 24 * 60 * 60
+
+    private enum LoadState { case notLoaded, loaded, failed }
 
     private let adapters: [any ActionAdapter]
+    private let store: any ActionStore
     private let now: @Sendable () -> Date
     private let approvalLifetime: TimeInterval
+    private let retention: TimeInterval?
     private var records: [UUID: ActionRecord] = [:]
     private var reconciling: Set<UUID> = []
+    private var loadState = LoadState.notLoaded
 
     public init(
         adapters: [any ActionAdapter],
+        store: any ActionStore = InMemoryActionStore(),
         approvalLifetime: TimeInterval = ActionLedger.defaultApprovalLifetime,
+        retention: TimeInterval? = ActionLedger.defaultRetention,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.adapters = adapters
+        self.store = store
         self.approvalLifetime = approvalLifetime
+        self.retention = retention
         self.now = now
     }
 
     public func record(_ id: UUID) throws -> ActionRecord {
+        try ensureLoaded()
         guard let record = records[id] else { throw ActionPolicyError.notFound(id) }
         return record
     }
 
+    /// Newest first.
+    public func history(limit: Int? = nil) throws -> [ActionRecord] {
+        try ensureLoaded()
+        let sorted = records.values.sorted { ($0.updatedAt, $0.id.uuidString) > ($1.updatedAt, $1.id.uuidString) }
+        return limit.map { Array(sorted.prefix(max(0, $0))) } ?? sorted
+    }
+
     /// Records a suggestion and drafts it. Unsupported types are refused before any record exists.
     public func propose(_ proposal: ActionProposal) throws -> ActionRecord {
+        try ensureLoaded()
         let adapter = try adapter(for: proposal.payload.type)
         let at = now()
         let record = ActionRecord(
@@ -42,8 +65,7 @@ public actor ActionLedger {
             idempotencyKey: nil, providerReference: nil, failureReason: nil,
             connectorID: adapter.connectorID, isSimulation: adapter.isSimulation,
             history: [ActionEvent(status: .proposed, at: at, note: nil), ActionEvent(status: .drafted, at: at, note: nil)])
-        records[record.id] = record
-        return record
+        return try commit(record)
     }
 
     /// The draft is on screen for review.
@@ -51,7 +73,7 @@ public actor ActionLedger {
         var record = try self.record(id)
         try require(record, in: [.drafted], to: .needsApproval)
         transition(&record, to: .needsApproval)
-        return store(record)
+        return try commit(record)
     }
 
     /// Any edit voids an existing approval and sends the action back to draft.
@@ -63,7 +85,7 @@ public actor ActionLedger {
         record.payload = payload
         record.approval = nil
         transition(&record, to: .drafted, note: "Edited; approval cleared")
-        return store(record)
+        return try commit(record)
     }
 
     /// Call only from an explicit user control. `reviewedPayload` is what the screen showed;
@@ -77,7 +99,7 @@ public actor ActionLedger {
         let at = now()
         record.approval = ActionApproval(approvedPayload: record.payload, approvedAt: at, expiresAt: at + approvalLifetime)
         record.history.append(ActionEvent(status: .needsApproval, at: at, note: "Approved by you"))
-        return store(record)
+        return try commit(record)
     }
 
     public func cancel(_ id: UUID) throws -> ActionRecord {
@@ -85,7 +107,7 @@ public actor ActionLedger {
         try require(record, in: [.proposed, .drafted, .needsApproval], to: .cancelled)
         record.approval = nil
         transition(&record, to: .cancelled)
-        return store(record)
+        return try commit(record)
     }
 
     /// Runs an approved action once. The approval is used up whatever the outcome.
@@ -103,17 +125,18 @@ public actor ActionLedger {
         guard now() <= approval.expiresAt else {
             record.approval = nil
             record.history.append(ActionEvent(status: .needsApproval, at: now(), note: "Approval expired"))
-            store(record)
+            try commit(record)
             throw ActionPolicyError.approvalExpired
         }
         let adapter = try adapter(for: record.type)
 
-        // Committed before the await: a second call sees `executing` and is refused.
+        // Stored before the await: a second call sees `executing` and is refused, and if the
+        // app stops during the call the next launch knows a send may have happened.
         let key = UUID()
         record.idempotencyKey = key
         record.approval = nil
         transition(&record, to: .executing)
-        store(record)
+        try commit(record)
 
         let result: ActionProviderResult
         do {
@@ -123,7 +146,7 @@ public actor ActionLedger {
         }
         record = try self.record(id)
         apply(result, to: &record)
-        return store(record)
+        return try commitResult(record)
     }
 
     /// Asks the provider what happened to an `unknown` action. Never re-sends it.
@@ -145,10 +168,91 @@ public actor ActionLedger {
         }
         record = try self.record(id)
         apply(result, to: &record)
-        return store(record)
+        return try commitResult(record)
+    }
+
+    /// Checks every `unknown` action once (for example after launch). A check that fails
+    /// leaves the action `unknown`, which is still the truthful status, so errors are not rethrown.
+    public func reconcileAllUnknown() async -> [ActionRecord] {
+        guard let unknown = try? history().filter({ $0.status == .unknown }) else { return [] }
+        var results: [ActionRecord] = []
+        for record in unknown {
+            _ = try? await reconcile(record.id)
+            if let latest = records[record.id] { results.append(latest) }
+        }
+        return results
+    }
+
+    /// Deletes every stored action, including unresolved ones. Refused while a send is in flight,
+    /// because that record holds the only key for checking what happened.
+    public func deleteHistory() throws {
+        try ensureLoaded()
+        guard !records.values.contains(where: { $0.status == .executing }) else {
+            throw ActionPolicyError.actionInProgress
+        }
+        do {
+            try store.delete(ids: Array(records.keys))
+        } catch {
+            throw ActionPolicyError.storageFailed
+        }
+        records = [:]
     }
 
     // MARK: - Private
+
+    private func ensureLoaded() throws {
+        switch loadState {
+        case .loaded: return
+        case .failed: throw ActionPolicyError.storageUnavailable
+        case .notLoaded: break
+        }
+        do {
+            var loaded = Dictionary(uniqueKeysWithValues: try store.loadAll().map { ($0.id, $0.storable) })
+            for var record in loaded.values where record.status == .executing {
+                transition(&record, to: .unknown, note: "The app stopped before the provider answered")
+                try store.save(record)
+                loaded[record.id] = record
+            }
+            if let retention {
+                let cutoff = now() - retention
+                let expired = loaded.values.filter { $0.status.isTerminal && $0.updatedAt < cutoff }.map(\.id)
+                if !expired.isEmpty {
+                    try store.delete(ids: expired)
+                    for id in expired { loaded[id] = nil }
+                }
+            }
+            records = loaded
+            loadState = .loaded
+        } catch {
+            loadState = .failed
+            throw ActionPolicyError.storageUnavailable
+        }
+    }
+
+    /// Stores the record, then updates memory. On failure nothing changes.
+    @discardableResult
+    private func commit(_ record: ActionRecord) throws -> ActionRecord {
+        do {
+            try store.save(record)
+        } catch {
+            throw ActionPolicyError.storageFailed
+        }
+        records[record.id] = record
+        return record
+    }
+
+    /// After a provider call the result is real whether or not it can be stored: memory keeps it
+    /// and the caller is told. The stored copy still says `executing` / `unknown`, which becomes
+    /// `unknown` after a restart and is reconciled.
+    private func commitResult(_ record: ActionRecord) throws -> ActionRecord {
+        records[record.id] = record
+        do {
+            try store.save(record)
+        } catch {
+            throw ActionPolicyError.resultNotSaved(record.status)
+        }
+        return record
+    }
 
     private func adapter(for type: ActionType) throws -> any ActionAdapter {
         guard let adapter = adapters.first(where: { $0.supports(type) }) else {
@@ -187,12 +291,6 @@ public actor ActionLedger {
     private func transition(_ record: inout ActionRecord, to status: ActionStatus, note: String? = nil) {
         record.status = status
         record.history.append(ActionEvent(status: status, at: now(), note: note))
-    }
-
-    @discardableResult
-    private func store(_ record: ActionRecord) -> ActionRecord {
-        records[record.id] = record
-        return record
     }
 }
 

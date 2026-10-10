@@ -114,7 +114,7 @@ public struct ActionApproval: Equatable, Sendable {
     }
 }
 
-public struct ActionEvent: Equatable, Sendable {
+public struct ActionEvent: Equatable, Codable, Sendable {
     public let status: ActionStatus
     public let at: Date
     public let note: String?
@@ -140,6 +140,73 @@ public struct ActionRecord: Equatable, Sendable, Identifiable {
     public var riskTier: ActionRiskTier { payload.type.riskTier }
     public var createdAt: Date { history.first?.at ?? .distantPast }
     public var updatedAt: Date { history.last?.at ?? .distantPast }
+
+    /// What `ActionStore` keeps: everything except the approval. Approvals are never stored,
+    /// so a stored or restored record can never authorise a send.
+    public var storable: ActionRecord {
+        var copy = self
+        copy.approval = nil
+        return copy
+    }
+
+    /// Rebuilds a stored record. Throws if the row breaks a lifecycle rule (for example
+    /// `confirmed` without a provider reference), so a damaged store is reported, not trusted.
+    public static func restore(
+        id: UUID, payload: ActionPayload, status: ActionStatus, idempotencyKey: UUID?,
+        providerReference: String?, failureReason: String?, connectorID: String,
+        isSimulation: Bool, history: [ActionEvent]
+    ) throws -> ActionRecord {
+        let ranProvider: Set<ActionStatus> = [.executing, .confirmed, .failed, .unknown]
+        guard !history.isEmpty, history.last?.status == status else { throw ActionStoreError.corruptRecord(id.uuidString) }
+        guard !ranProvider.contains(status) || idempotencyKey != nil else { throw ActionStoreError.corruptRecord(id.uuidString) }
+        if status == .confirmed {
+            guard let providerReference, !providerReference.allSatisfy(\.isWhitespace) else {
+                throw ActionStoreError.corruptRecord(id.uuidString)
+            }
+        } else if providerReference != nil {
+            throw ActionStoreError.corruptRecord(id.uuidString)
+        }
+        return ActionRecord(
+            id: id, payload: payload, status: status, approval: nil, idempotencyKey: idempotencyKey,
+            providerReference: providerReference, failureReason: failureReason, connectorID: connectorID,
+            isSimulation: isSimulation, history: history)
+    }
+}
+
+public enum ActionStoreError: Error, Equatable, Sendable {
+    case corruptRecord(String)
+    /// The write reported success but reading it back did not match.
+    case verificationFailed
+}
+
+/// Durable home of action records (DOD-08). Synchronous on purpose: `ActionLedger` calls it
+/// inside the actor, so writes happen in order and nothing interleaves with them. A call that
+/// returns has committed and read back the record. Approvals are not stored (`storable`).
+public protocol ActionStore: Sendable {
+    /// Every stored record, in no particular order.
+    func loadAll() throws -> [ActionRecord]
+    func save(_ record: ActionRecord) throws
+    func delete(ids: [UUID]) throws
+}
+
+/// Keeps records in memory only: for tests, previews and UI-test launches.
+public final class InMemoryActionStore: ActionStore, @unchecked Sendable {
+    private let lock = NSLock()
+    private var records: [UUID: ActionRecord] = [:]
+
+    public init() {}
+
+    public func loadAll() throws -> [ActionRecord] {
+        lock.withLock { Array(records.values) }
+    }
+
+    public func save(_ record: ActionRecord) throws {
+        lock.withLock { records[record.id] = record.storable }
+    }
+
+    public func delete(ids: [UUID]) throws {
+        lock.withLock { for id in ids { records[id] = nil } }
+    }
 }
 
 public struct ActionExecutionRequest: Equatable, Sendable {
@@ -178,6 +245,15 @@ public enum ActionPolicyError: Error, Equatable, Sendable {
     /// The last attempt's outcome is unknown; reconcile before anything else.
     case reconcileFirst
     case alreadyFinished(ActionStatus)
+    /// The store refused the write; nothing changed.
+    case storageFailed
+    /// The provider answered but the result couldn't be stored. The receipt shows it for now;
+    /// after a restart the action reads "Couldn't confirm" and is checked again.
+    case resultNotSaved(ActionStatus)
+    /// Stored actions couldn't be loaded, so no action can run.
+    case storageUnavailable
+    /// An action is being sent right now.
+    case actionInProgress
 }
 
 /// User-facing wording (UX-02). "Confirmed" only ever appears for provider-confirmed records.
@@ -237,6 +313,10 @@ extension ActionStatusCopy {
         case .approvalExpired: return "Your approval expired. Check the draft and approve again. Nothing was sent."
         case .alreadyExecuting: return "It's already being sent. It won't be sent twice."
         case .reconcileFirst: return "Doddy couldn't confirm the last attempt, so it won't send again. Check the status first."
+        case .storageFailed: return "Doddy couldn't save this step on your iPhone, so nothing changed. Nothing was sent."
+        case .resultNotSaved: return "Doddy got the result shown above but couldn't save it. After a restart it will show as unconfirmed and be checked again."
+        case .storageUnavailable: return "Doddy couldn't open its saved actions, so actions are switched off. Nothing was sent or deleted."
+        case .actionInProgress: return "Something is being sent right now. Try again when it finishes."
         }
     }
 }

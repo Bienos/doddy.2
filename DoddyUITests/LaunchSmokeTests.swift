@@ -60,6 +60,8 @@ final class LaunchSmokeTests: XCTestCase {
         link.tap()
 
         XCTAssertTrue(app.descendants(matching: .any)["actions.banner"].waitForExistence(timeout: 5))
+        // The demo loads saved actions first; a fresh in-memory launch has none.
+        XCTAssertTrue(app.buttons["actions.draftSample"].waitForExistence(timeout: 5))
         app.buttons["actions.draftSample"].tap()
         let status = app.staticTexts["actions.status"]
         XCTAssertTrue(status.waitForExistence(timeout: 5))

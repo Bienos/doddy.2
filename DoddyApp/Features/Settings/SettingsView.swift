@@ -76,9 +76,11 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
-                if environment.capabilities.isAvailable(.actionSimulation) {
+                if environment.capabilities.isAvailable(.actionSimulation), let simulation = environment.simulatedActions {
                     Section("Actions") {
-                        NavigationLink("Try the approval flow (simulation)") { ActionDemoView() }
+                        NavigationLink("Try the approval flow (simulation)") {
+                            ActionDemoView(ledger: environment.actionLedger, simulation: simulation)
+                        }
                             .accessibilityIdentifier("settings.actionDemo")
                         Text("Doddy can't send messages or change other apps yet. This demo shows how it will ask first and report only what it can confirm. Nothing is sent.")
                             .font(.footnote)
