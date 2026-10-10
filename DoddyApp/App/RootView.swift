@@ -52,6 +52,11 @@ enum PreferenceKey {
     static let findByMeaning = "findByMeaning"
     /// "Worth keeping?" after a voice conversation (ADR-211). On unless turned off; on-device rules.
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
+    /// Morning brief (ADR-212). Off unless turned on; time of day; the day it was closed on Home.
+    static let morningBriefOn = "morningBrief.on"
+    static let morningBriefHour = "morningBrief.hour"
+    static let morningBriefMinute = "morningBrief.minute"
+    static let morningBriefClosedDay = "morningBrief.closedDay"
 }
 
 enum AppTab: Hashable {
@@ -106,6 +111,13 @@ struct RootView: View {
                 selectedTab = .home
                 homePath = [memoryID]
                 noteReminders.pendingOpenMemoryID = nil
+            }
+            // A tapped morning-brief notification opens Home, where the brief is (ADR-212).
+            .task(id: MorningBriefRouter.shared.openRequested) {
+                guard MorningBriefRouter.shared.openRequested else { return }
+                selectedTab = .home
+                homePath = []
+                MorningBriefRouter.shared.openRequested = false
             }
             // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
             .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }

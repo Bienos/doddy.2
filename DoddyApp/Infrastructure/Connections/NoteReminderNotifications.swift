@@ -131,6 +131,12 @@ extension TimerBanners {
         let action = response.actionIdentifier
         let requestID = response.notification.request.identifier
         let memoryString = response.notification.request.content.userInfo[SystemNoteNotifications.memoryIDKey] as? String
+        if MorningBriefNotification.isBrief(requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { MorningBriefRouter.shared.openRequested = true }
+            }
+            return
+        }
         await NoteReminderRouter.shared.handle(action: action, requestID: requestID, memoryString: memoryString)
     }
 }

@@ -326,6 +326,8 @@ struct SettingsView: View {
                     NoteReminderSettingsSection()
                 }
 
+                MorningBriefSettingsSection()
+
                 Section("Voice") {
                     PersonalityLinkRow()
                     StatusRow(title: "Connection", value: connectionText)

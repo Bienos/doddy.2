@@ -21,6 +21,7 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Places you set for reminders") })
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Find by meaning:") }, "meaning search is on-device")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Notes suggested after a conversation:") }, "save suggestions are on-device")
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Morning brief:") }, "the brief is on-device")
         XCTAssertEqual(row("elevenlabs", base).what, "Your voice, the conversation, your saved notes and your personality settings.")
     }
 

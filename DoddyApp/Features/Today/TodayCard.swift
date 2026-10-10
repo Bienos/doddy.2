@@ -2,6 +2,26 @@ import DoddyCore
 import Observation
 import SwiftUI
 
+/// What Today and the morning brief (ADR-212) read: the same switches, permissions and pause.
+@MainActor
+enum TodayReading {
+    static func read(_ devices: DeviceConnections, now: Date, calendar: Calendar) async -> BriefSource {
+        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) { return .paused }
+        func isOn(_ connection: VoiceConnection) -> Bool {
+            UserDefaults.standard.bool(forKey: connection.preferenceKey) && devices.access(for: connection) == .granted
+        }
+        let calendarOn = isOn(.calendar), remindersOn = isOn(.reminders)
+        guard calendarOn || remindersOn else { return .notConnected }
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? now
+        let events = calendarOn ? devices.events(in: VoiceTimeRange(start: start, end: end)) : []
+        let reminders = remindersOn ? await devices.remindersDue(by: end, calendar: calendar) : []
+        return .agenda(
+            TodayAgenda(events: events, reminders: reminders, now: now, calendar: calendar),
+            calendarRead: calendarOn, remindersRead: remindersOn)
+    }
+}
+
 /// Home → Today: the rest of today from the user's Calendar and Reminders on this iPhone, with
 /// optional "before this event" nudges. Read only when the matching switch in Settings →
 /// Connections is on and iOS allows it. Nothing here is sent anywhere.
@@ -23,26 +43,16 @@ final class TodayModel {
     /// The last nudge result: a receipt read back from iOS, or what went wrong.
     private(set) var notice: String?
 
-    private func isOn(_ connection: VoiceConnection) -> Bool {
-        UserDefaults.standard.bool(forKey: connection.preferenceKey) && devices.access(for: connection) == .granted
-    }
-
     func refresh(now: Date = .now, calendar: Calendar = .current) async {
-        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) {
+        switch await TodayReading.read(devices, now: now, calendar: calendar) {
+        case .paused:
             content = .paused
-            return
-        }
-        let calendarOn = isOn(.calendar), remindersOn = isOn(.reminders)
-        guard calendarOn || remindersOn else {
+        case .notConnected:
             content = .notConnected
-            return
+        case .agenda(let agenda, _, _):
+            content = .agenda(agenda)
+            nudges = await devices.pendingNudges()
         }
-        let start = calendar.startOfDay(for: now)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? now
-        let events = calendarOn ? devices.events(in: VoiceTimeRange(start: start, end: end)) : []
-        let reminders = remindersOn ? await devices.remindersDue(by: end, calendar: calendar) : []
-        content = .agenda(TodayAgenda(events: events, reminders: reminders, now: now, calendar: calendar))
-        nudges = await devices.pendingNudges()
     }
 
     /// The nudge set for this event, if any.

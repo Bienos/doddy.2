@@ -128,6 +128,7 @@ public enum DataFlow {
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
             "Find by meaning: Apple's language model works it out from your notes on this iPhone.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
+            "Morning brief: put together and read aloud on this iPhone.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }

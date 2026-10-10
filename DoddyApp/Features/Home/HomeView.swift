@@ -70,6 +70,9 @@ struct HomeView: View {
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                         .frame(maxWidth: .infinity)
 
+                    // Only from its time on mornings the user turned it on (ADR-212).
+                    MorningBriefCard()
+
                     TodayCard(openSettings: { selectedTab = .settings })
 
                     if router.setup.phase == .notStarted {

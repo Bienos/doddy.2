@@ -70,6 +70,17 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | S5 | Start Save to Doddy while a voice conversation is open | The note appears after the conversation closes |
 | S6 | Run Save to Doddy during first-use onboarding or while the Back Tap setup sheet is open | It waits and appears afterwards. A later Save to Doddy still works (it must not stay blocked) |
 
+## 4b. Morning brief (ADR-212, `MORNING_BRIEF_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| B1 | Settings → Morning brief on, time 2 minutes from now | iOS asks for notifications (first time). Status "On. A notification every day at …" only after iOS lists it. Home shows nothing yet |
+| B2 | Wait for the time with the phone locked | Banner "Morning brief — Your day at a glance is ready in Doddy." No titles or notes on the Lock Screen. Tap it from another tab: Doddy opens on Home with the brief at the top |
+| B3 | With Calendar and Reminders on, a timed event, an all-day event, a reminder from yesterday and a note reminder later today | The brief lists counts, the first timed event's time, the all-day title, "One is from an earlier day", and the note reminder with its words. Compare with the Today card below it: same data |
+| B4 | Read aloud, then Stop; start a voice conversation and try Read aloud | It speaks with the iPhone's voice and stops at once; it never speaks during a conversation. Leaving the app stops it |
+| B5 | Close for today; relaunch; change the time to later today | The brief stays gone today and comes back tomorrow. Status updates and iOS lists the new time (one notification only) |
+| B6 | Pause all connections; Calendar off; notifications refused in iOS | The brief says what it couldn't read; never guesses. Refused notifications: Settings says so and the brief still shows on Home |
+| B7 | Turn the brief off | Status "Off. No morning notification." and iOS no longer lists it; timers, nudges and note reminders are still there |
+
 ## 5. Voice (needs a real conversation)
 | # | Do this | Expect |
 |---|---|---|

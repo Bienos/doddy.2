@@ -36,6 +36,8 @@ struct DoddyApp: App {
                 // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
                 .task { await UpdatesModel().syncPushTokenIfOn() }
                 .task { await SystemNoteNotifications.registerCategory() }
+                // Morning brief (ADR-212): iOS's daily notification matches the setting; never asks.
+                .task { await MorningBriefNotifications.syncAtLaunch() }
         }
     }
 }
