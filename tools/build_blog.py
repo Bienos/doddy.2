@@ -144,8 +144,10 @@ def load_posts() -> list[dict]:
         meta["slug"] = re.sub(r"^\d{4}-\d{2}-\d{2}-", "", path.stem)
         meta["html"] = markdown(body)
         meta["minutes"] = max(1, round(len(body.split()) / 220))
+        meta["stem"] = path.stem
         posts.append(meta)
-    return sorted(posts, key=lambda p: p["day"], reverse=True)
+    # Newest first; same-day posts by file name, descending, so the order is stable.
+    return sorted(posts, key=lambda p: (p["day"], p["stem"]), reverse=True)
 
 
 def nice_date(d: date) -> str:
@@ -154,7 +156,7 @@ def nice_date(d: date) -> str:
 
 # ---------- Pages ----------
 
-def page(title: str, description: str, path: str, main: str, og_type: str = "website") -> str:
+def page(title: str, description: str, path: str, main: str, og_type: str = "website", extra_head: str = "") -> str:
     t, d, url = html.escape(title), html.escape(description), SITE_URL + path
     return f"""<!doctype html>
 <html lang="en">
@@ -162,7 +164,7 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{t}</title>
-  <meta name="description" content="{d}">
+  <meta name="description" content="{d}">{extra_head}
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FFF7E9">
   <meta property="og:type" content="{og_type}">
@@ -273,7 +275,10 @@ def post_page(p: dict) -> str:
         </aside>
       </div>
     </article>"""
-    return page(f"{p['title']} · Doddy", p["summary"], f"/blog/{p['slug']}/", main, og_type="article")
+    head = f'\n  <meta property="article:published_time" content="{p['date']}">'
+    if p.get("keywords"):
+        head += f'\n  <meta name="keywords" content="{html.escape(p['keywords'])}">'
+    return page(f"{p['title']} · Doddy", p["summary"], f"/blog/{p['slug']}/", main, og_type="article", extra_head=head)
 
 
 def feed(posts: list[dict]) -> str:

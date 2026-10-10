@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Meet Doddy, the AI agent that remembers what you tell it · Doddy</title>
+  <meta name="description" content="AI agents are everywhere in 2026. Doddy is a friendlier, smaller one: an iPhone assistant you talk to, that keeps your notes in your own words and asks before it does anything. Here&#x27;s what it can do, what it can&#x27;t, and how we keep it safe.">
+  <meta property="article:published_time" content="2026-10-10">
+  <meta name="keywords" content="AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI companion, AI safety, human in the loop">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Meet Doddy, the AI agent that remembers what you tell it · Doddy">
+  <meta property="og:description" content="AI agents are everywhere in 2026. Doddy is a friendlier, smaller one: an iPhone assistant you talk to, that keeps your notes in your own words and asks before it does anything. Here&#x27;s what it can do, what it can&#x27;t, and how we keep it safe.">
+  <meta property="og:image" content="https://doddy-eight.vercel.app/assets/og-image.png">
+  <meta property="og:url" content="https://doddy-eight.vercel.app/blog/meet-doddy-ai-agent/">
+  <link rel="canonical" href="https://doddy-eight.vercel.app/blog/meet-doddy-ai-agent/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" type="application/rss+xml" title="Doddy blog" href="/blog/feed.xml">
+  <link rel="icon" href="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/blog.css">
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="/" aria-label="Doddy home">Doddy</a>
+      <nav aria-label="Sections">
+        <ul class="nav-links">
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/blog/" aria-current="false">Blog</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+        </ul>
+      </nav>
+      <a class="button small" href="/#join">Join early access</a>
+    </div>
+  </header>
+
+  <main id="main">
+    <article class="post">
+      <div class="wrap post-wrap">
+        <p class="post-back"><a class="text-link" href="/blog/">← All posts</a></p>
+        <header class="post-header">
+          <h1 class="display-m">Meet Doddy, the AI agent that remembers what you tell it</h1>
+          <p class="post-meta"><time datetime="2026-10-10">10 October 2026</time> · The Doddy team · 8 min read</p>
+        </header>
+        <div class="post-body">
+<p>Everyone's building AI agents right now. Agents that book flights, write code, shop for you, answer your email while you sleep. It's a lot.</p>
+<p>Doddy is an AI agent too, just a much smaller and friendlier one. It's a hand-drawn mate that lives in your iPhone. You talk to it like a person (it's not one, and it tells you so), it keeps the little things you ask it to keep, and it can help with a few everyday jobs on your phone. The one rule it never breaks: <strong>it asks before it does anything.</strong></p>
+<p>This post covers what Doddy is, why we think it's worth building, what it can and can't do today, and how we're thinking about safety. With sources, because the AI world has enough vibes already.</p>
+<h2>Wait, what's an "AI agent"?</h2>
+<p>A chatbot talks. An agent <strong>does things</strong>: it can use tools, like your calendar, your contacts or a search, to get a job done instead of just describing it.</p>
+<p>That's the exciting part and the scary part. A chatbot that gets something wrong gives you a bad answer. An agent that gets something wrong might send the wrong message, book the wrong thing or delete something you needed. Security people even have a name for it: <strong>"excessive agency"</strong>, meaning an AI that has more power, more permissions or more freedom to act than the job needs (<a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">OWASP Top 10 for LLM Applications</a>).</p>
+<p>People seem to get this intuitively. In Accenture's 2026 survey of more than 25,000 consumers in 16 countries, 74% said they'd trust a personal AI agent more than their best friend to buy something for them. But only <strong>9%</strong> were open to letting it complete a purchase on its own. Far more (32%) liked the idea of the AI choosing while <em>they</em> still confirm the payment (<a class="text-link" href="https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent" target="_blank" rel="noopener">Accenture Consumer Pulse 2026</a>).</p>
+<p>In other words: help me, sure. Act without asking? No thanks. That's exactly how Doddy works.</p>
+<h2>The goal: a little less to carry</h2>
+<p>Your head is full of small stuff. The parcel locker code. Where you put the spare keys. The book your friend recommended. Your kid's shoe size. The name of that wine. None of it is important enough for a proper system, and all of it is annoying to lose.</p>
+<p>Lots of people already lean on AI for this kind of everyday help. Pew's 2026 survey found that <strong>49% of US adults</strong> have used an AI chatbot and <strong>24%</strong> use one every day. The most common use was simply looking things up, at 42% (<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">Pew Research Center, 2026</a>). In the EU, <strong>32.7%</strong> of people aged 16 to 74 used generative AI tools in 2025 (<a class="text-link" href="https://ec.europa.eu/eurostat/web/products-eurostat-news/w/ddn-20251216-3" target="_blank" rel="noopener">Eurostat, 2025</a>). And when researchers looked at how people actually use ChatGPT, more than 70% of messages were about everyday, non-work life: practical guidance, finding information, writing (<a class="text-link" href="https://www.nber.org/papers/w34255" target="_blank" rel="noopener">NBER Working Paper 34255</a>).</p>
+<p>So people want help with ordinary life. What they don't always get is an assistant that <strong>remembers what they actually said</strong>, and is honest when it doesn't know. General chatbots are great at sounding sure. Doddy is built to show you your own words instead.</p>
+<h2>Why a character?</h2>
+<p>Because talking to a blank text box is a bit weird, and talking to a stick figure in white sneakers is a bit less weird. Doddy is meant to be the mate who notices small annoyances and fixes them without fuss, and who might joke about the twelve tabs you have open.</p>
+<p>What Doddy is <strong>not</strong> meant to be is a replacement friend. Researchers are starting to look closely at AI companions. A 2026 study in <em>Nature Human Behaviour</em> of more than 1,100 Character.AI users found that using a chatbot mainly for companionship was linked with lower well-being, especially for heavy users (<a class="text-link" href="https://www.nature.com/articles/s41562-026-02516-2" target="_blank" rel="noopener">Zhang et al., 2026</a>). An OpenAI and MIT Media Lab study found something similar: emotional use was rare overall, but heavier use went along with worse outcomes for some people (<a class="text-link" href="https://www.media.mit.edu/posts/openai-mit-research-collaboration-affective-use-and-emotional-wellbeing-in-ChatGPT/" target="_blank" rel="noopener">MIT Media Lab, 2025</a>). Neither study proves cause and effect, but the direction is clear enough for us.</p>
+<p>So Doddy's personality has rules. No guilt trips. No "I missed you". No pretending to have feelings. No trying to keep you talking longer than you need to. It's useful first and charming second.</p>
+<h2>What Doddy can do today</h2>
+<p>Honest status first: Doddy is in <strong>early testing on our own iPhone</strong>. Nobody outside the team uses it yet. Some of this has been tried on a real phone, and some has only been built and tested on a computer so far. We'll tell you which is which.</p>
+<p><strong>Tried on a real iPhone:</strong></p>
+<ul><li><strong>Talk to it.</strong> Hold a real voice conversation in English or Polish. It switches language when you do.</li><li><strong>Save a note by voice.</strong> Say "my locker code is 5678" and a <strong>Save this note?</strong> card appears. Nothing is stored until you tap Save.</li><li><strong>Find a note.</strong> Ask "what's my locker code?" and Doddy searches the notes on your phone. If it can't find one, it says so instead of guessing. (Our first post is <a class="text-link" href="/blog/hello-doddy/">all about that</a>.)</li></ul>
+<p><strong>Built, still being tested on a phone:</strong></p>
+<ul><li><strong>Type notes too</strong>, then search, edit, export or delete them. The original wording is always kept.</li><li><strong>Smarter search</strong> that matches across Polish and English ("code" finds "kod"), spoken numbers and small typos.</li><li><strong>Calendar and reminders.</strong> "What's on tomorrow?" reads your calendar. "Add dentist on Friday at 3" shows a card, and the event is only added when you tap <strong>Add</strong>. Doddy then checks it was really saved before saying so.</li><li><strong>A Today card</strong> with the rest of your day, plus a gentle nudge before an event if you want one.</li><li><strong>Small phone jobs</strong>: start a timer, open a place in Apple Maps, run one of your Shortcuts, look up a contact.</li><li><strong>Draft a message.</strong> Doddy can write "running 10 min late" and open it in Messages or Mail. <strong>You</strong> press send. Doddy never sends anything itself.</li><li><strong>Weather and Wikipedia</strong> questions.</li><li><strong>Talk without opening the app</strong>: from Control Center, the Action Button, or Back Tap (you set that up yourself in iOS Settings). The conversation keeps going in the Dynamic Island while you use other apps.</li></ul>
+<h2>What Doddy can't do (on purpose, or not yet)</h2>
+<ul><li><strong>It doesn't listen in the background.</strong> Doddy only hears you while a conversation is open. No "always on" microphone.</li><li><strong>It doesn't save anything by itself.</strong> No quietly building a profile of you from your chats.</li><li><strong>It never sends, buys or deletes things in other apps.</strong> It drafts and you decide.</li><li><strong>It can't read your screen, your email or your other apps.</strong></li><li><strong>It doesn't make up memories.</strong> If it isn't in your notes, Doddy says it couldn't find it.</li><li><strong>No live web search</strong> yet, so it can't check today's news or prices. It'll tell you that rather than guess.</li><li><strong>It's not a therapist, doctor or financial adviser.</strong> For anything serious (health, money, legal stuff, feelings) it drops the jokes and stays calm and factual.</li><li><strong>iPhone only</strong>, for now.</li></ul>
+<h2>How we think about safety</h2>
+<p>Remember "excessive agency"? Here's how we're trying to avoid it, roughly following what the security folks recommend (<a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">OWASP</a>):</p>
+<ol><li><strong>You approve every action.</strong> Saving, adding an event, starting a timer, opening a draft: each one is a card you tap. This is what's called "human in the loop", and in Doddy it isn't optional.</li><li><strong>Only the tools it needs.</strong> Doddy has a short, fixed list of jobs. There's no "do anything on my phone" button.</li><li><strong>Everything is off until you turn it on.</strong> Calendar, reminders and contacts each have their own switch, all off by default, plus the normal iOS permission prompt.</li><li><strong>"Done" means done.</strong> Doddy only says "saved" or "added" after your phone confirms it. Early on we caught it saying "I'm saving this" before you'd even tapped, and we <a class="text-link" href="/blog/hello-doddy/">changed that</a>.</li><li><strong>It's upfront about being an AI.</strong> In its introduction Doddy says it straight out: "I'm an AI assistant, not a person." That's also becoming the law in the EU: under the AI Act, AI systems that talk to people have to make clear they're AI, with those transparency rules applying from 2 August 2026 (<a class="text-link" href="https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems" target="_blank" rel="noopener">European Commission</a>).</li></ol>
+<p><strong>Where your data goes.</strong> Your notes are stored on your iPhone, and there's no Doddy account. Voice is different, and we'd rather be upfront about it. Conversations run through our voice provider, ElevenLabs. In the current test build, when you start a conversation Doddy also sends your saved notes and your last few conversations along, so it has something to work with. Weather and Wikipedia lookups are made from ElevenLabs' servers too. Right now that provider keeps the recordings, and choosing a proper retention limit is on our list <strong>before</strong> anyone outside the team uses voice. People are right to care: 71% of US adults expect AI to make their personal information less secure (<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">Pew, 2026</a>). We'd like to be one of the reasons that doesn't happen.</p>
+<h2>How you might use Doddy</h2>
+<p>A few everyday examples, all built on the features above:</p>
+<ul><li><strong>"Remember that the spare keys are in the blue tin above the fridge."</strong> Three weeks later: "where are the spare keys?"</li><li><strong>At the shop:</strong> "what size shoes does Maja wear?"</li><li><strong>After dinner with friends:</strong> "save: the wine was a Rioja from Bodegas Muga." Find it again before your next order.</li><li><strong>Morning:</strong> "what's on today?", then "nudge me 30 minutes before the dentist."</li><li><strong>Running late:</strong> "tell Kasia I'm 10 minutes late." Doddy opens the draft, you hit send.</li><li><strong>Book tips:</strong> "Tomek recommended <em>Project Hail Mary</em>." Months later: "what book did Tomek recommend?"</li></ul>
+<h2>What's next</h2>
+<p>Doddy is a bet, not a proven product. We think people who already text themselves reminders would rather tell a friendly character, and would come back to find things later. We haven't tested that with anyone outside the team yet. So the next steps are boring and important: test every feature on a real phone, lock down voice and set a retention limit, then open a small early-access group and see if anyone actually comes back.</p>
+<p>If that sounds like your kind of thing, <a class="text-link" href="/#join">join early access</a> or say hi in the <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram group</a>.</p>
+<h2>Sources</h2>
+<ul><li>Pew Research Center, <em>Americans and AI 2026: chatbots, smart devices and views on impact</em>, 17 June 2026 (survey of 5,119 US adults, 17–23 February 2026). <a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">pewresearch.org</a></li><li>Eurostat, <em>32.7% of EU people used generative AI tools in 2025</em>, 16 December 2025. <a class="text-link" href="https://ec.europa.eu/eurostat/web/products-eurostat-news/w/ddn-20251216-3" target="_blank" rel="noopener">ec.europa.eu</a></li><li>Chatterji et al., <em>How People Use ChatGPT</em>, NBER Working Paper 34255, September 2025. <a class="text-link" href="https://www.nber.org/papers/w34255" target="_blank" rel="noopener">nber.org</a></li><li>Accenture, <em>Consumer Pulse Research 2026</em> (25,590 consumers in 16 countries, January 2026). <a class="text-link" href="https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent" target="_blank" rel="noopener">accenture.com</a></li><li>OWASP, <em>LLM06:2025 Excessive Agency</em>, OWASP Top 10 for LLM Applications 2025. <a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">genai.owasp.org</a></li><li>Zhang, Zhao, Hancock, Kraut and Yang, <em>Interaction with AI companions and psychological well-being</em>, Nature Human Behaviour, 4 August 2026. <a class="text-link" href="https://www.nature.com/articles/s41562-026-02516-2" target="_blank" rel="noopener">nature.com</a></li><li>MIT Media Lab and OpenAI, <em>Early methods for studying affective use and emotional wellbeing in ChatGPT</em>, 21 March 2025. <a class="text-link" href="https://www.media.mit.edu/posts/openai-mit-research-collaboration-affective-use-and-emotional-wellbeing-in-ChatGPT/" target="_blank" rel="noopener">media.mit.edu</a></li><li>European Commission, <em>Guidelines on transparency obligations for providers and deployers of AI systems</em> (AI Act Article 50), 20 July 2026. <a class="text-link" href="https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems" target="_blank" rel="noopener">digital-strategy.ec.europa.eu</a></li></ul>
+        </div>
+        <aside class="post-cta" aria-label="Join early access">
+          <p class="says-small">Want to try Doddy?</p>
+          <p>Doddy is in early testing on iPhone. Leave your email and we'll tell you when early access opens.</p>
+          <a class="button small" href="/#join">Join early access</a>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="/">Home</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/blog/feed.xml">RSS</a></li>
+          <li><a href="/#join">Join early access</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram group</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok @doddy_mate</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram @doddy_mate</a></li>
+        </ul>
+      </div>
+      <p>Doddy is an AI assistant, not a person. Your notes stay on your iPhone. Voice conversations run through ElevenLabs while the voice screen is open.</p>
+      <p>This page counts visits with Vercel Web Analytics. No cookies, no cross-site tracking.</p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,6 +1,7 @@
 ---
 title: "Post title"
 date: YYYY-MM-DD
+keywords: "optional, comma separated, for search engines"
 author: "TBD"
 status: draft
 summary: "One sentence for link previews."

@@ -46,8 +46,9 @@ That comes with a few rules:
 - **Your words are kept.** You can edit a note, and the original stays next to the edit.
 - **You can leave with everything.** Export to JSON or plain text, delete one note, or delete them
   all.
-- **No account.** Notes live on your iPhone. When you talk to Doddy, your voice goes to our voice
-  provider, ElevenLabs, to run the conversation. The app says this up front.
+- **No account.** Notes are stored on your iPhone. Voice is the exception: conversations run
+  through our voice provider, ElevenLabs, and in the current test build your saved notes are sent
+  along at the start of a conversation so Doddy has context. The app says this up front.
 
 ## The first real conversation
 

@@ -6,6 +6,13 @@
     <description>Notes from building Doddy, your mate in your pocket.</description>
     <language>en</language>
     <item>
+      <title>Meet Doddy, the AI agent that remembers what you tell it</title>
+      <link>https://doddy-eight.vercel.app/blog/meet-doddy-ai-agent/</link>
+      <guid>https://doddy-eight.vercel.app/blog/meet-doddy-ai-agent/</guid>
+      <pubDate>Sat, 10 Oct 2026 09:00:00 +0000</pubDate>
+      <description>AI agents are everywhere in 2026. Doddy is a friendlier, smaller one: an iPhone assistant you talk to, that keeps your notes in your own words and asks before it does anything. Here&#x27;s what it can do, what it can&#x27;t, and how we keep it safe.</description>
+    </item>
+    <item>
       <title>Hello, Doddy: why our favourite first result was “I couldn’t find it”</title>
       <link>https://doddy-eight.vercel.app/blog/hello-doddy/</link>
       <guid>https://doddy-eight.vercel.app/blog/hello-doddy/</guid>

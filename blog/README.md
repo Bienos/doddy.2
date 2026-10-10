@@ -8,6 +8,7 @@ Notes from building Doddy, *your mate in your pocket*, in the open. Posts are Ma
 
 | Date | Title | Status |
 |---|---|---|
+| 2026-10-10 | [Meet Doddy, the AI agent that remembers what you tell it](posts/2026-10-10-meet-doddy-ai-agent.md) | Published |
 | 2026-10-10 | [Hello, Doddy: why our favourite first result was "I couldn't find it"](posts/2026-10-10-hello-doddy.md) | Published |
 
 Post ideas waiting for a slot: [IDEAS.md](IDEAS.md). New post: copy [_TEMPLATE.md](_TEMPLATE.md).
@@ -39,8 +40,9 @@ Each post starts with:
 
 ```yaml
 ---
-title: "…"
+title: "…"              # keep under ~60 characters for search results
 date: YYYY-MM-DD
+keywords: "…"           # optional; rendered as <meta name="keywords">
 author: "…"            # owner fills in
 status: draft          # draft | review | approved | published
 summary: "One sentence for link previews."
