@@ -143,6 +143,7 @@ enum StatusCopy {
     static func text(for status: CapabilityStatus) -> String {
         switch status {
         case .available: "Available"
+        case .needsSetup(let what): "Built · needs setup: \(what)"
         case .notImplemented(let milestone) where milestone == "unscheduled": "Not built · not scheduled"
         case .notImplemented(let milestone): "Not built yet · planned \(milestone)"
         }
@@ -158,6 +159,8 @@ extension Capability {
         case .voiceInput: "Listening (voice)"
         case .voiceOutput: "Speaking (voice)"
         case .reminders: "Reminders"
+        case .pushUpdates: "Notifications from Doddy"
+        case .textUpdates: "Texts from Doddy"
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
         }

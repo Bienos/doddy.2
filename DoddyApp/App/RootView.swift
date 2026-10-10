@@ -6,6 +6,8 @@ enum PreferenceKey {
     static let hideCharacterArt = "hideCharacterArt"
     static let hasSeenFirstHello = "hasSeenFirstHello"
     static let voiceAgentID = "voiceAgentID"
+    static let serverURL = "serverURL"
+    static let pushUpdatesOn = "pushUpdatesOn"
 }
 
 enum AppTab: Hashable {

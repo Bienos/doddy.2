@@ -27,6 +27,12 @@ targets:
     platform: iOS
     sources:
       - path: DoddyApp
+    # Push notifications for Doddy updates (S1). Release/TestFlight signing switches this to
+    # production automatically; a signing team with the Push capability is needed on device.
+    entitlements:
+      path: DoddyApp/Doddy.entitlements
+      properties:
+        aps-environment: development
     dependencies:
       - package: DoddyCore
         product: DoddyCore

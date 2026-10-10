@@ -51,16 +51,25 @@ struct SettingsView: View {
 
                 Section("Privacy") {
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
-                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "Only while talking (ElevenLabs)" : "None")
+                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "While talking (ElevenLabs) and for updates you turn on (Doddy server)" : "None")
                     StatusRow(title: "Microphone", value: privacy.microphoneUsed ? "Only while talking" : "Not used")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs, only while talking" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation and any notes Doddy looks up are sent to ElevenLabs, which runs the voice agent. If you turn on notifications or texts, the Doddy server keeps what it needs to send them (see Updates). Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .accessibilityIdentifier("settings.privacy")
+
+                Section("Updates") {
+                    NavigationLink {
+                        UpdatesSettingsView()
+                    } label: {
+                        Label("Notifications and texts", systemImage: "bell")
+                    }
+                    .accessibilityIdentifier("settings.updates")
+                }
 
                 Section("Voice") {
                     TextField("ElevenLabs agent ID", text: $voiceAgentID)

@@ -30,6 +30,11 @@ swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT 
 non-zero (exit 2 = blocked, 1 = failure, 0 = everything passed). `--core-only` exits 0 only for its own
 narrower scope and still prints the iOS step as `NOT RUN`.
 
+## Server (Node 22 + Postgres)
+`scripts/ci.sh` also installs and tests `server/` when `npm` is present. Set `TEST_DATABASE_URL` to a
+**disposable** Postgres database (the tests drop its schema); without it the DB tests are listed as SKIPPED.
+See `server/README.md`. On a device, Settings → Updates needs a deployed server address (https).
+
 ## Needs a Mac (UNVERIFIED)
 
 ```sh

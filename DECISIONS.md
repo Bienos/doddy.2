@@ -86,3 +86,7 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 041 | Outbox never resends an `unknown` outcome; message text erased on final state; logs carry no text/numbers/tokens. | Applied |
 | 042 | Apply for **Apple Messages for Business** via an approved MSP. Apple requires live agents during business hours; custom-MSP route not recommended. | Owner decided; **owner must submit** — checklist in `docs/implementation/APPLE_MESSAGES_FOR_BUSINESS_APPLICATION.md` |
 | 043 | `check_forbidden_capabilities.sh` scans `server/` for key *values* only (header names like `xi-api-key` are allowed there, still forbidden in the app). | Applied |
+| 044 | **No login for now** (owner 2026-10-10). The anonymous device account is enough while memories are local. When multi-device or web arrives: Sign in with Apple first (App Store 4.8 requires it if Google sign-in is offered), Google optional. Connecting Google Calendar/Gmail is a separate OAuth "connection", not a login. | Owner-approved (deferred) |
+| 045 | App networking of its own is allowed **only** in `DoddyApp/Infrastructure/Server` and only to the Doddy server over https; the guard enforces the folder. | Applied |
+| 046 | Server token in the Keychain with `AfterFirstUnlockThisDeviceOnly`: not backed up or synced, so a restored iPhone starts a new anonymous account. | Applied — owner may prefer restore-with-backup |
+| 047 | New capability status `needsSetup`: built features that need an external piece (a deployed server) are shown as "Built · needs setup", never "Available". | Applied |

@@ -53,8 +53,8 @@ Cloud tokens live on the server (`server/`), never in the app.
 ## D. Doddy → user updates (owner decision 2026-10-10: **push + SMS**)
 | Channel | Status |
 |---|---|
-| Push (APNs) | **Server built (S1)**; app side not yet |
-| SMS (Twilio, verified number + explicit opt-in, STOP honoured) | **Server built (S1)**; app side not yet |
+| Push (APNs) | **Server + app built (S1)**; not yet run on a device |
+| SMS (Twilio, verified number + explicit opt-in, STOP honoured) | **Server + app built (S1)**; not yet run with real Twilio |
 | iMessage via Apple Messages for Business | Owner applying; live-agent requirement, see `APPLE_MESSAGES_FOR_BUSINESS_APPLICATION.md` |
 | Telegram / WhatsApp | Not chosen |
 | Mac-relay iMessage services | **Rejected**: against Apple's terms, numbers get blocked |

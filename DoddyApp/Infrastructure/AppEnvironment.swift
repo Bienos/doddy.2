@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 
 /// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView);
+/// push and text updates go through the Doddy server (Settings → Updates);
 /// reminders and other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
@@ -35,7 +36,7 @@ struct AppEnvironment: Sendable {
                 recallService: RepositoryRecallService(repository: repository),
                 assistantClient: UnavailableAssistantClient(),
                 toolExecutor: UnavailableToolExecutor(),
-                capabilities: .v1Voice,
+                capabilities: .s1Updates(serverConfigured: ServerConfig.baseURL() != nil),
                 privacy: .v1Voice,
                 storageProblem: nil)
         } catch {

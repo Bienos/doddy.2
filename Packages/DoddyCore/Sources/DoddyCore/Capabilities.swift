@@ -9,12 +9,16 @@ public enum Capability: String, CaseIterable, Sendable {
     case voiceInput
     case voiceOutput
     case reminders
+    case pushUpdates
+    case textUpdates
     case connectedAccounts
     case cloudSync
 }
 
 public enum CapabilityStatus: Equatable, Sendable {
     case notImplemented(plannedMilestone: String)
+    /// Built, but it can't work until something outside the app exists (e.g. a deployed server).
+    case needsSetup(String)
     case available
 }
 
@@ -39,6 +43,8 @@ public struct CapabilityCatalog: Sendable {
         .voiceInput: .notImplemented(plannedMilestone: "M3"),
         .voiceOutput: .notImplemented(plannedMilestone: "M3"),
         .reminders: .notImplemented(plannedMilestone: "M4"),
+        .pushUpdates: .notImplemented(plannedMilestone: "S1"),
+        .textUpdates: .notImplemented(plannedMilestone: "S1"),
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
     ])
@@ -55,6 +61,16 @@ public struct CapabilityCatalog: Sendable {
         .voiceInput: .available,
         .voiceOutput: .available,
     ]) { _, new in new })
+
+    /// S1: voice plus push and text updates through the Doddy server. Without a server
+    /// address the updates are reported as needing setup, never as available.
+    public static func s1Updates(serverConfigured: Bool) -> CapabilityCatalog {
+        let updates: CapabilityStatus = serverConfigured ? .available : .needsSetup("Doddy server not connected")
+        return CapabilityCatalog(statuses: v1Voice.statuses.merging([
+            .pushUpdates: updates,
+            .textUpdates: updates,
+        ]) { _, new in new })
+    }
 }
 
 public enum DoddyError: Error, Equatable, Sendable {
