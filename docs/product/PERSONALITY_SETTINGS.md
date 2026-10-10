@@ -36,7 +36,9 @@ All six voices are already in the owner's account (built-in or My Voices), so no
 
 **Hear a sample (ADR-122):** Settings → Voice opens a list where every voice row has a play button (tap the face) and tapping the rest of the row selects it; a "Hear <voice>" button under the voice settings also plays the chosen one. Each plays a short clip bundled in the app: Doddy's hello in English and Polish in that voice, at the chosen speed. Expressiveness is only heard in a real conversation. Samples don't play while a conversation is running, and stop when the voice or speed changes or the screen closes. Clips live in `DoddyApp/Resources/VoicePreviews/`; `VoiceStyleTests.testEveryVoiceHasABundledSample` fails if a voice has none.
 
-Not included: language (the agent already detects it), proactivity (nothing proactive is built), reduced motion (no character animation yet).
+**Nickname and starting language (ADR-127):** "What Doddy calls you" is an optional name (single line, letters only, ≤30 characters; anything else is ignored and the field says why). When set it is added as one line to the `doddy_personality` text, so the live agent needs no change. "Starts in" picks the greeting language: Automatic (default; sends nothing), English or Polish (sent as the `agent.language` override; allowed on the dev agent since 2026-10-10, version `agtvrsn_9701m4jtjj5hek1a1h6tbqb9xrvf`).
+
+Not included: per-language voice (the agent already detects it), proactivity (nothing proactive is built), reduced motion (no character animation yet).
 
 **Never changeable:** the persona immutables (answer first, say when unsure, memory and receipt rules, AI disclosure, no humour in sensitive moments, no shame, guilt or clinginess). The text sent to the agent always ends with a fixed sentence saying so.
 
@@ -67,3 +69,4 @@ Done on the live agent as described above (the section sits right after `# How y
 ## Privacy and security
 - Nothing new leaves the phone except the four style choices, sent to ElevenLabs inside the conversation start.
 - The dev agent is public, so anyone with the agent ID can send any text in this variable, as with the existing ones. The authenticated agent and token server (ADR-034) are still required before anyone else uses the app.
+- **Export (ADR-133):** Settings → About you → "Export with your settings" puts every choice on this page (voice, speed, expressiveness, starting language, nickname, the four dials) in a JSON or text file with the reviewed profile. The file is made on the phone and goes only where the user sends it from the share sheet. It is separate from the memory export.

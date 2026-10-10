@@ -21,6 +21,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. No cookies, n
 | Waitlist | The form posts to `api/waitlist.js` on the same site, which stores each signup as one private JSON file in the Vercel Blob store **doddy-waitlist** (region fra1, private access; the site gets `BLOB_READ_WRITE_TOKEN` automatically). Stored: email, page, consent version, time, plus the optional answers (phone, where they heard about Doddy, what they'd like Doddy to do). See the admin page at `/admin/` or download an Excel-ready CSV from `/api/waitlist-export` (password = `WAITLIST_ADMIN_PASSWORD`, any username). |
 | Open Doddy | `APP_URL` in `main.js` (`doddy://home`); the app handles `doddy://home`, `memories` and `settings`. On non-iPhone devices it explains that Doddy runs on iPhone; on iPhone, if the page is still visible after 1.5 s, it says the app isn't installed. |
 | Telegram | Community group link `https://t.me/+u-YA6P_MISFjYWE0` in the join section ("Want to chat now?") and the footer; opens in a new tab. Change it in both places in `index.html`. |
+| Social | TikTok `https://www.tiktok.com/@doddy_mate` and Instagram `https://www.instagram.com/doddy_mate/` in the join section ("Follow Doddy") and the footer; open in a new tab. The app links the same two accounts from Settings → Follow Doddy (ADR-130). |
 | App Store | Commented-out Smart App Banner in `index.html`; enable when there's an App Store ID. |
 
 ## What's real on the page

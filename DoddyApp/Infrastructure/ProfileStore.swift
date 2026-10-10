@@ -126,17 +126,6 @@ enum ProfileErrorText {
 }
 
 extension ProfileKey {
-    var label: String {
-        switch self {
-        case .name: "What to call you"
-        case .help: "Useful help"
-        case .style: "Answer style"
-        case .language: "Language"
-        case .humor: "Humor"
-        case .context: "Current focus"
-        }
-    }
-
     var question: String {
         switch self {
         case .name: "First things first. What should I call you?"

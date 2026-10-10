@@ -44,6 +44,18 @@ struct VoiceView: View {
                         }
                     }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    if let controller {
+                        Button {
+                            controller.isPrivate.toggle()
+                        } label: {
+                            Label("Private", systemImage: controller.isPrivate ? "eye.slash.fill" : "eye.slash")
+                        }
+                        .accessibilityValue(controller.isPrivate ? "On" : "Off")
+                        .accessibilityHint("When on, this conversation isn't kept on your iPhone.")
+                        .accessibilityIdentifier("voice.private")
+                    }
+                }
             }
         }
         .foregroundStyle(Theme.ink)
@@ -85,6 +97,19 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
+                        if controller.isPrivate {
+                            Label {
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and keeps its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                    .font(.footnote)
+                            } icon: {
+                                Image(systemName: "eye.slash.fill")
+                            }
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+                            .accessibilityIdentifier("voice.privateBanner")
+                        }
+
                         problem(controller)
 
                         ForEach(controller.lines) { line in
@@ -100,6 +125,11 @@ struct VoiceView: View {
                         if pauseAllConnections {
                             pausedCard
                                 .id("connectionsPaused")
+                        }
+
+                        if let status = controller.reminderStatus {
+                            reminderStatusCard(status, controller: controller)
+                                .id("reminderStatus")
                         }
 
                         if let needed = controller.connectionNeeded {
@@ -127,6 +157,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.contactCard) { _, card in
                     if card != nil { withAnimation { proxy.scrollTo("contactCard", anchor: .bottom) } }
+                }
+                .onChange(of: controller.reminderStatus) { _, status in
+                    if status != nil { withAnimation { proxy.scrollTo("reminderStatus", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -210,12 +243,14 @@ struct VoiceView: View {
                 .font(.headline)
             Text(draft.title)
                 .font(.body)
-            if let due = draft.due {
-                Text(draft.dueHasTime
-                     ? due.formatted(date: .abbreviated, time: .shortened)
-                     : due.formatted(date: .abbreviated, time: .omitted))
+            if draft.due != nil {
+                // Day, time and time zone exactly as they will be written (M4).
+                Text(ReminderText.due(draft.due))
                     .foregroundStyle(Theme.secondaryText)
             }
+            Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .timer(_, let draft):
             Text("Start this timer?")
                 .font(.headline)
@@ -272,6 +307,42 @@ struct VoiceView: View {
         case .message(_, let draft, _): (draft.channel == .text ? "Open in Messages" : "Open in Mail", "Don't open")
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, "Don't do this")
         }
+    }
+
+    /// Receipt after Add on a reminder card: what Reminders holds now, read back from the iPhone,
+    /// or why nothing was added. Text comes from DoddyCore (`ReminderOutcome.screen`).
+    private func reminderStatusCard(_ status: VoiceSessionController.ReminderStatus, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            switch status {
+            case .adding(let draft):
+                HStack(spacing: 8) {
+                    ProgressView()
+                    Text("Adding to Reminders…")
+                        .font(.headline)
+                }
+                Text("“\(draft.title)”")
+                    .font(.body)
+            case .done(let draft, let outcome):
+                let receipt = outcome.screen(for: draft)
+                Label(receipt.headline, systemImage: receipt.isProblem ? "exclamationmark.triangle" : "checkmark.circle")
+                    .font(.headline)
+                    .foregroundStyle(receipt.isProblem ? Theme.error : Theme.ink)
+                ForEach(Array(receipt.lines.enumerated()), id: \.offset) { index, line in
+                    Text(line)
+                        .font(index == 0 ? .body : .subheadline)
+                        .foregroundStyle(index == 0 ? Theme.ink : Theme.secondaryText)
+                }
+                Button("OK") {
+                    controller.dismissReminderStatus()
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.reminderReceipt")
     }
 
     /// Shown when the agent asked for something that is switched off. One tap opens the same

@@ -90,10 +90,10 @@ public struct ActivityRequest: Equatable, Sendable {
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
             return ActivityRequest(app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)", isLookup: false)
         case .createReminder(let draft):
-            let due = draft.due.map { " · due \(when($0, hasTime: draft.dueHasTime))" } ?? ""
+            let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
             return ActivityRequest(
                 app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)", isLookup: false,
-                reminderKey: ReminderKey.key(for: draft, calendar: calendar))
+                reminderKey: ReminderIdempotency.key(title: draft.title, due: draft.due))
         case .lookupContact(let name):
             return ActivityRequest(app: .contacts, title: "Looked for a contact", detail: "“\(name)”", isLookup: true)
         case .setTimer(let draft):
@@ -109,7 +109,8 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .messages, title: "Draft a \(kind)", detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             return describe(cloud: call.name)
-        case .unsupported, .invalid:
+        case .unsupported, .invalid, .needsClarification:
+            // Nothing reached an app: the agent was told what to ask instead.
             return nil
         }
     }

@@ -23,9 +23,26 @@ public protocol MemoryRepository: Sendable {
     func list(limit: Int?) async throws -> [MemoryRecord]
     func query(_ query: String, limit: Int) async throws -> [MemoryCandidate]
     func update(id: UUID, currentText: String) async throws -> MemoryRecord
+    /// Changes only the note's type. Read back before success; the words, dates and "edited"
+    /// state stay as they are.
+    func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord
     func delete(id: UUID) async throws
     func deleteAll() async throws
     func export() async throws -> Data
+    /// Adds exported records exactly as they were (id, both texts, source, category, dates).
+    /// A record whose id is already stored is left untouched. One transaction: every added
+    /// record is read back before success, otherwise nothing is added. Returns what was added.
+    func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord]
+}
+
+extension MemoryRepository {
+    public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
+    public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
 }
 
 public enum MemoryStoreError: Error, Equatable, Sendable {

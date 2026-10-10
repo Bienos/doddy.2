@@ -94,43 +94,20 @@ final class VoiceToolsTests: XCTestCase {
 
     // MARK: Reminders and contacts
 
-    func testReminderKeyMatchesTheSameReminderOnly() {
-        let call = ReminderDraft(title: "Call Marta", due: date(2026, 10, 12, 18, 0), dueHasTime: true, notes: nil)
-        let key = ReminderKey.key(for: call, calendar: calendar)
-        // Case, accents and spacing don't make a new reminder; notes don't either.
-        let sameAgain = ReminderDraft(title: "  call  MARTA ", due: date(2026, 10, 12, 18, 0), dueHasTime: true, notes: "x")
-        XCTAssertEqual(ReminderKey.key(for: sameAgain, calendar: calendar), key)
-        // Different time, a date-only due, or no due are different reminders.
-        for other in [
-            ReminderDraft(title: "Call Marta", due: date(2026, 10, 12, 19, 0), dueHasTime: true, notes: nil),
-            ReminderDraft(title: "Call Marta", due: date(2026, 10, 12, 0, 0), dueHasTime: false, notes: nil),
-            ReminderDraft(title: "Call Marta", due: nil, dueHasTime: false, notes: nil),
-            ReminderDraft(title: "Call Marek", due: date(2026, 10, 12, 18, 0), dueHasTime: true, notes: nil),
-        ] {
-            XCTAssertNotEqual(ReminderKey.key(for: other, calendar: calendar), key, other.title)
-        }
-        XCTAssertEqual(ReminderKey.key(fromMarker: ReminderKey.markerURL(for: call, calendar: calendar)), key)
-        XCTAssertNil(ReminderKey.key(fromMarker: URL(string: "https://example.com/reminder/\(key)")))
-        XCTAssertNil(ReminderKey.key(fromMarker: nil))
-        XCTAssertTrue(VoiceToolReply.reminderAlreadyThere(call, calendar: calendar).hasPrefix("added: "))
-    }
 
     func testCreateReminderWithAndWithoutTime() {
+        let warsaw = "Europe/Warsaw"
         XCTAssertEqual(parse("create_reminder", #"{"title":"Call Marta","due":"2026-10-12T18:00"}"#),
-                       .createReminder(ReminderDraft(title: "Call Marta", due: date(2026, 10, 12, 18, 0), dueHasTime: true, notes: nil)))
+                       .createReminder(ReminderDraft(title: "Call Marta", due: ReminderDue(year: 2026, month: 10, day: 12, hour: 18, minute: 0, timeZoneID: warsaw), notes: nil)))
         XCTAssertEqual(parse("create_reminder", #"{"title":"Pay rent","due":"2026-10-31"}"#),
-                       .createReminder(ReminderDraft(title: "Pay rent", due: date(2026, 10, 31, 0, 0), dueHasTime: false, notes: nil)))
-        XCTAssertEqual(parse("create_reminder", #"{"title":"Buy milk"}"#),
-                       .createReminder(ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil)))
-        XCTAssertEqual(parse("create_reminder", #"{"title":"Buy milk","due":"tomorrow"}"#),
-                       .invalid(name: "create_reminder", reason: "due is not a date"))
-        // Now is 9 Oct 10:00: earlier today, or yesterday, is refused; later today is fine.
-        XCTAssertEqual(parse("create_reminder", #"{"title":"Buy milk","due":"2026-10-09T09:00"}"#),
-                       .invalid(name: "create_reminder", reason: "due is in the past"))
-        XCTAssertEqual(parse("create_reminder", #"{"title":"Buy milk","due":"2026-10-08"}"#),
-                       .invalid(name: "create_reminder", reason: "due is in the past"))
-        XCTAssertEqual(parse("create_reminder", #"{"title":"Buy milk","due":"2026-10-09"}"#),
-                       .createReminder(ReminderDraft(title: "Buy milk", due: date(2026, 10, 9, 0, 0), dueHasTime: false, notes: nil)))
+                       .createReminder(ReminderDraft(title: "Pay rent", due: ReminderDue(year: 2026, month: 10, day: 31, timeZoneID: warsaw), notes: nil)))
+        XCTAssertEqual(parse("create_reminder", #"{"title":"  Buy milk "}"#),
+                       .createReminder(ReminderDraft(title: "Buy milk", due: nil, notes: nil)))
+        guard case .needsClarification(let name, let clarification) = parse("create_reminder", #"{"title":"Buy milk","due":"tomorrow"}"#) else {
+            return XCTFail("a word instead of a date must be sent back as a question")
+        }
+        XCTAssertEqual(name, "create_reminder")
+        XCTAssertEqual(clarification.kind, .unreadable)
     }
 
     func testLookupContactNeedsName() {
@@ -206,7 +183,7 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertTrue(added.hasPrefix("added: "))
         XCTAssertTrue(added.contains("2026-10-12 15:00 to 2026-10-12 16:00"))
 
-        XCTAssertTrue(VoiceToolReply.reminderAdded(ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil), calendar: calendar).hasPrefix("added: reminder"))
+        XCTAssertTrue(VoiceToolReply.reminder(.added(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: nil))).hasPrefix("added: reminder"))
         XCTAssertTrue(VoiceToolReply.declinedEvent.hasPrefix("declined: "))
         XCTAssertTrue(VoiceToolReply.notAdded("Calendar is read-only.").hasPrefix("failed: "))
         XCTAssertTrue(VoiceToolReply.addUnconfirmed.hasPrefix("unknown: "))

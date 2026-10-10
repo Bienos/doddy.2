@@ -116,8 +116,15 @@ final class AssistantServiceTests: XCTestCase {
         XCTAssertEqual(sent.count, 3)
     }
 
+    func testOnlyTheDailyLimitHidesTryAgain() {
+        XCTAssertFalse(AssistantError.dailyLimitReached.canRetryNow)
+        XCTAssertTrue(AssistantError.rateLimited(retryAfterSeconds: 12).canRetryNow)
+        XCTAssertTrue(AssistantError.timeout.canRetryNow)
+        XCTAssertTrue(AssistantError.offline.canRetryNow)
+    }
+
     func testOfflineRateLimitRefusalAndAuthFailuresAreNotRetried() async {
-        let cases: [AssistantError] = [.offline, .rateLimited(retryAfterSeconds: 12), .refused, .notAuthorized, .notConfigured]
+        let cases: [AssistantError] = [.offline, .rateLimited(retryAfterSeconds: 12), .dailyLimitReached, .refused, .notAuthorized, .notConfigured]
         for expected in cases {
             let client = FakeAssistantClient([.failure(expected)])
             do {

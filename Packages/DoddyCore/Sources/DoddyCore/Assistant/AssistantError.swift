@@ -9,6 +9,8 @@ public enum AssistantError: Error, Equatable, Sendable {
     case offline
     case timeout
     case rateLimited(retryAfterSeconds: Int?)
+    /// The gateway's daily spend cap (everyone, or this install) is used up until the next UTC day.
+    case dailyLimitReached
     case providerUnavailable
     case refused
     case invalidRequest
@@ -27,6 +29,12 @@ public enum AssistantError: Error, Equatable, Sendable {
         }
     }
 
+    /// Whether a "Try again" button makes sense right now. The daily spend cap only resets on the
+    /// next UTC day, so retrying sooner can only fail again (ADR-125).
+    public var canRetryNow: Bool {
+        self != .dailyLimitReached
+    }
+
     /// Plain wording for the screen. Never includes request text.
     public var userMessage: String {
         switch self {
@@ -43,6 +51,8 @@ public enum AssistantError: Error, Equatable, Sendable {
         case .rateLimited(let seconds):
             if let seconds { "Doddy is getting a lot of questions. Try again in about \(seconds) seconds." }
             else { "Doddy is getting a lot of questions. Try again in a little while." }
+        case .dailyLimitReached:
+            "Doddy's daily limit is reached. Try again tomorrow. Your notes still work."
         case .providerUnavailable:
             "The assistant is unavailable right now. Try again in a moment."
         case .refused:
@@ -65,6 +75,7 @@ public enum AssistantError: Error, Equatable, Sendable {
         switch wireCode {
         case "notAuthorized": self = .notAuthorized
         case "rateLimited": self = .rateLimited(retryAfterSeconds: retryAfterSeconds)
+        case "dailyLimitReached": self = .dailyLimitReached
         case "timeout": self = .timeout
         case "invalidRequest", "payloadTooLarge": self = .invalidRequest
         case "invalidCitations": self = .invalidCitations

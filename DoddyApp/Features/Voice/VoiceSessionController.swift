@@ -56,6 +56,13 @@ final class VoiceSessionController {
         let matches: [DeviceConnections.ContactMatch]
     }
 
+    /// The receipt after the user tapped Add on a reminder card (M4). It stays on screen after
+    /// the conversation ends, because the agent may never hear the answer (its wait can time out).
+    enum ReminderStatus: Equatable {
+        case adding(ReminderDraft)
+        case done(ReminderDraft, ReminderOutcome)
+    }
+
     private(set) var phase: Phase = .idle {
         didSet {
             Self.conversationInProgress = isLive
@@ -68,6 +75,7 @@ final class VoiceSessionController {
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     private(set) var contactCard: ContactCard?
+    private(set) var reminderStatus: ReminderStatus?
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
     private(set) var isMuted = false { didSet { syncIsland() } }
@@ -83,6 +91,9 @@ final class VoiceSessionController {
     private let devices = DeviceConnections()
     private var conversation: Conversation?
     private var startedAt: Date?
+    /// Private conversation (PRD item 6, ADR-131): when on at the end, nothing of it is kept on the
+    /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
+    var isPrivate = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
 
@@ -106,6 +117,7 @@ final class VoiceSessionController {
         lines = []
         pendingAction = nil
         contactCard = nil
+        reminderStatus = nil
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
@@ -147,7 +159,7 @@ final class VoiceSessionController {
                 "recent_conversations": recent.text,
                 // Style only (Settings → Doddy's personality). The agent prompt's {{doddy_personality}}
                 // placeholder defaults to the persona defaults, so a build that sends nothing still works.
-                PersonalityPrompt.variableName: PersonalityPrompt.render(.stored()),
+                PersonalityPrompt.variableName: PersonalityPrompt.render(.stored(), nickname: Nickname.stored()),
                 ProfilePrompt.variableName: ProfilePrompt.render(
                     profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice)),
             ],
@@ -156,6 +168,11 @@ final class VoiceSessionController {
         // are sent; the agent must allow these TTS overrides (ADR-105).
         if let tts = VoiceStyle.stored().override {
             config.ttsOverrides = TTSOverrides(voiceId: tts.voiceID, stability: tts.stability, speed: tts.speed)
+        }
+        // Starting language (ADR-127): only sent when the user picked one; needs the agent to
+        // allow the `agent.language` override. Auto keeps the agent's own language detection.
+        if let code = ConversationLanguage.stored().overrideCode, let language = Language(rawValue: code) {
+            config.agentOverrides = AgentOverrides(language: language)
         }
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
@@ -213,7 +230,9 @@ final class VoiceSessionController {
             conversation = started
         } catch {
             // An agent that doesn't allow the voice overrides refuses the conversation.
-            let voiceHint = config.ttsOverrides == nil ? "" : " If it keeps failing, choose \"Use Doddy's own voice\" in Settings → Voice and personality."
+            let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
+                ? ""
+                : " If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality."
             fail("Couldn't connect to Doddy's voice. Check your internet connection and try again.\(voiceHint) (\(error.localizedDescription))")
         }
     }
@@ -230,12 +249,13 @@ final class VoiceSessionController {
     }
 
     /// Keeps the transcript lines of this conversation on the phone, once, so the next
-    /// conversation can continue from it. Nothing is kept when there were no lines or when the
-    /// user switched "Remember recent conversations" off.
+    /// conversation can continue from it. Nothing is kept when there were no lines, when the
+    /// user switched "Remember recent conversations" off, or when this conversation is private.
     private func keepLog() {
         logUnanswered()
         guard let startedAt else { return }
         self.startedAt = nil
+        guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
         logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept))
     }
@@ -284,7 +304,11 @@ final class VoiceSessionController {
         case .event(let id, let draft):
             await reply(id, addEvent(draft))
         case .reminder(let id, let draft):
-            await reply(id, await addReminder(draft))
+            // The card is already gone (pendingAction is nil), so a second tap does nothing.
+            reminderStatus = .adding(draft)
+            let outcome = await addReminder(draft)
+            reminderStatus = .done(draft, outcome)
+            await reply(id, VoiceToolReply.reminder(outcome))
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
         case .map(let id, let place):
@@ -336,6 +360,11 @@ final class VoiceSessionController {
 
     func dismissContactCard() {
         contactCard = nil
+    }
+
+    func dismissReminderStatus() {
+        guard case .done = reminderStatus else { return }
+        reminderStatus = nil
     }
 
     // MARK: Dynamic Island
@@ -430,7 +459,15 @@ final class VoiceSessionController {
         case .createCalendarEvent(let draft):
             propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .createReminder(let draft):
+            // Blocked by iOS: say so now instead of showing a card that can only fail.
+            guard devices.access(for: .reminders) == .granted else {
+                await notConnected(call.toolCallId, .reminders)
+                return
+            }
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .needsClarification(_, let clarification):
+            // Unclear, past or clock-change time: the agent asks the user; no card, nothing added.
+            await reply(call.toolCallId, VoiceToolReply.reminderClarification(clarification))
         case .lookupContact(let name):
             guard devices.access(for: .contacts) == .granted else {
                 await notConnected(call.toolCallId, .contacts)
@@ -540,19 +577,16 @@ final class VoiceSessionController {
         }
     }
 
-    private func addReminder(_ draft: ReminderDraft) async -> String {
-        guard devices.access(for: .reminders) == .granted else {
-            return VoiceToolReply.notAdded("Reminders isn't connected.")
+    /// Look first, write once, read back (DoddyCore `ReminderAction`). Permission is checked again
+    /// at the tap, since the user may have changed it while the card waited.
+    private func addReminder(_ draft: ReminderDraft) async -> ReminderOutcome {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return .notAdded(.notAllowed)
         }
-        do {
-            switch try await devices.addReminder(draft, calendar: .current) {
-            case .added: return VoiceToolReply.reminderAdded(draft, calendar: .current)
-            case .alreadyThere: return VoiceToolReply.reminderAlreadyThere(draft, calendar: .current)
-            case .unconfirmed: return VoiceToolReply.addUnconfirmed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
-        }
+        let outcome = await ReminderAction.add(draft, to: devices, now: Date())
+        if outcome == .notAdded(.notAllowed) { connectionNeeded = .reminders }
+        return outcome
     }
 
     private func startTimer(_ draft: TimerDraft) async -> String {

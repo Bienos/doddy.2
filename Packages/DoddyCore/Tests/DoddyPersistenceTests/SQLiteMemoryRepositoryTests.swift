@@ -104,4 +104,85 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         let none = try await recall.recall("passport number", limit: 5)
         XCTAssertEqual(none, .noMatch)
     }
+
+    func testRestoreAddsExportedNotesExactlyOnceAndKeepsNotesAlreadyHere() async throws {
+        let source = try SQLiteMemoryRepository.inMemory()
+        let keys = try await source.save(NewMemory(text: "Spare keys in the blue tin", capturedAt: t0))
+        let corrected = try await source.update(id: keys.id, currentText: "Spare keys in the red tin")
+        let code = try await source.save(NewMemory(text: "Kod do bramy 4821", source: .explicitVoice, capturedAt: t0.addingTimeInterval(1)))
+        // Many dates with odd milliseconds must survive export and restore exactly.
+        var many: [MemoryRecord] = []
+        for i in 0..<200 {
+            many.append(try await source.save(NewMemory(
+                text: "Note \(i)", capturedAt: Date(timeIntervalSince1970: 1_700_000_000 + Double(i) * 0.001 + 0.0007))))
+        }
+        let exported = try MemoryRestore.read(try await source.export()).records
+        XCTAssertEqual(exported.count, 202)
+
+        let target = try SQLiteMemoryRepository.inMemory()
+        let mine = try await target.save(NewMemory(text: "Already on the new phone", capturedAt: t0))
+        let added = try await target.restore(exported)
+        XCTAssertEqual(Set(added), Set([corrected, code] + many))
+        let listed = try await target.list(limit: nil)
+        XCTAssertEqual(Set(listed), Set([mine, corrected, code] + many))
+
+        // Restored notes are searchable by their current text.
+        let recall = RepositoryRecallService(repository: target)
+        guard case .matches(let hits) = try await recall.recall("red tin", limit: 5) else { return XCTFail("expected a match") }
+        XCTAssertEqual(hits.map(\.memoryID), [keys.id])
+
+        // A second restore of the same file adds nothing, and a note changed here since the
+        // export is not overwritten by the file's older version.
+        let changedHere = try await target.update(id: keys.id, currentText: "Spare keys with Ania")
+        let again = try await target.restore(exported)
+        XCTAssertEqual(again, [])
+        let afterAgain = try await target.list(limit: nil)
+        XCTAssertEqual(afterAgain.first { $0.id == keys.id }, changedHere)
+    }
+
+    func testChangingTheTypeKeepsTheWordsDatesAndEditedState() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let saved = try await repo.save(NewMemory(text: "Gate code 4821", source: .explicitVoice, capturedAt: t0))
+        XCTAssertEqual(saved.category, .other)
+        let corrected = try await repo.update(id: saved.id, currentText: "Gate code 4822")
+
+        let filed = try await repo.setCategory(id: saved.id, to: .place)
+        XCTAssertEqual(filed.category, .place)
+        XCTAssertEqual(filed.rawText, saved.rawText)
+        XCTAssertEqual(filed.currentText, "Gate code 4822")
+        XCTAssertEqual(filed.capturedAt, corrected.capturedAt)
+        XCTAssertEqual(filed.updatedAt, corrected.updatedAt, "filing is not a correction")
+        XCTAssertEqual(filed.source, .explicitVoice)
+        XCTAssertTrue(filed.userEdited)
+
+        let listed = try await repo.list(limit: nil)
+        XCTAssertEqual(listed, [filed], "stored, not just returned")
+
+        // A note that was never corrected stays "not edited".
+        let plain = try await repo.save(NewMemory(text: "Call Ania", capturedAt: t0))
+        let plainFiled = try await repo.setCategory(id: plain.id, to: .commitment)
+        XCTAssertFalse(plainFiled.userEdited)
+        XCTAssertNil(plainFiled.updatedAt)
+
+        do {
+            _ = try await repo.setCategory(id: UUID(), to: .fact)
+            XCTFail("a missing note can't be filed")
+        } catch {
+            XCTAssertTrue(error is MemoryStoreError)
+        }
+    }
+
+    func testUndoAfterDeleteBringsTheExactNoteBack() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let saved = try await repo.save(NewMemory(text: "Locker 12, code 4821", capturedAt: t0))
+        let corrected = try await repo.update(id: saved.id, currentText: "Locker 14, code 4821")
+        try await repo.delete(id: saved.id)
+        let afterDelete = try await repo.list(limit: nil)
+        XCTAssertTrue(afterDelete.isEmpty)
+
+        let restored = try await repo.restore([corrected])
+        XCTAssertEqual(restored, [corrected])
+        let listed = try await repo.list(limit: nil)
+        XCTAssertEqual(listed, [corrected], "same id, original and corrected text, dates")
+    }
 }

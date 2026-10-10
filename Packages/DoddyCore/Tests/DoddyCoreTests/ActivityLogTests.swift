@@ -11,7 +11,7 @@ final class ActivityLogTests: XCTestCase {
 
     private var now: Date { calendar.date(from: DateComponents(year: 2026, month: 10, day: 10, hour: 12))! }
 
-    private let reminder = ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil)
+    private let reminder = ReminderDraft(title: "Buy milk", due: nil, notes: nil)
 
     private func entry(_ request: VoiceToolRequest, reply: String) -> ActivityEntry {
         ActivityEntry(request: ActivityRequest.describe(request, calendar: calendar)!, reply: reply, at: now)
@@ -19,8 +19,11 @@ final class ActivityLogTests: XCTestCase {
 
     func testOutcomesComeFromTheVerifiedReply() {
         let add = VoiceToolRequest.createReminder(reminder)
-        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminderAdded(reminder, calendar: calendar)).outcome, .done)
-        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminderAlreadyThere(reminder, calendar: calendar)).outcome, .alreadyThere)
+        let receipt = ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: nil)
+        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminder(.added(receipt))).outcome, .done)
+        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminder(.alreadyThere(receipt))).outcome, .alreadyThere)
+        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminder(.unknown)).outcome, .notSure)
+        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminder(.notAdded(.couldNotCheck))).outcome, .notDone)
         XCTAssertEqual(entry(add, reply: VoiceToolReply.addUnconfirmed).outcome, .notSure)
         XCTAssertEqual(entry(add, reply: VoiceToolReply.declinedReminder).outcome, .declined)
 
@@ -62,7 +65,7 @@ final class ActivityLogTests: XCTestCase {
     func testCheckIsOfferedOnlyForUnsureRemindersAndSettlesIt() {
         let unsure = entry(.createReminder(reminder), reply: VoiceToolReply.addUnconfirmed)
         XCTAssertTrue(unsure.canCheckInReminders)
-        XCTAssertEqual(unsure.reminderKey, ReminderKey.key(for: reminder, calendar: calendar))
+        XCTAssertEqual(unsure.reminderKey, ReminderIdempotency.key(title: reminder.title, due: reminder.due))
         XCTAssertFalse(entry(.openMap(place: "x"), reply: VoiceToolReply.addUnconfirmed).canCheckInReminders)
 
         let found = ActivityLog.checked(unsure, found: true, at: now)
@@ -104,7 +107,7 @@ final class ActivityLogTests: XCTestCase {
 
 final class ConnectionPauseTests: XCTestCase {
     func testPauseStopsEveryAppButLeavesNotes() {
-        let draft = ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil)
+        let draft = ReminderDraft(title: "Buy milk", due: nil, notes: nil)
         let paused: [VoiceToolRequest] = [
             .readCalendar(VoiceTimeRange(start: Date(), end: Date().addingTimeInterval(3600))),
             .createReminder(draft), .lookupContact(name: "Marta"), .openMap(place: "Koszyki"),
@@ -120,7 +123,7 @@ final class ConnectionPauseTests: XCTestCase {
     func testPausedRequestsShowAsNotDoneInWhatDoddyDid() {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(identifier: "Europe/Warsaw")!
-        let draft = ReminderDraft(title: "Buy milk", due: nil, dueHasTime: false, notes: nil)
+        let draft = ReminderDraft(title: "Buy milk", due: nil, notes: nil)
         for request in [VoiceToolRequest.createReminder(draft), .lookupContact(name: "Marta")] {
             let entry = ActivityEntry(
                 request: ActivityRequest.describe(request, calendar: calendar)!, reply: ConnectionPause.reply, at: Date())

@@ -11,7 +11,7 @@ public enum ConnectionPause {
     /// True for tool calls that would reach another app or account.
     public static func applies(to request: VoiceToolRequest) -> Bool {
         switch request {
-        case .searchMemories, .saveMemory, .unsupported, .invalid:
+        case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification:
             false
         case .readCalendar, .createCalendarEvent, .createReminder, .lookupContact, .setTimer,
              .openMap, .runShortcut, .draftMessage, .cloudTool:

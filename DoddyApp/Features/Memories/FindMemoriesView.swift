@@ -3,11 +3,16 @@ import SwiftUI
 
 struct FindMemoriesView: View {
     @Environment(MemoryStore.self) private var store
-    @State private var query = ""
+    @State private var query: String
     @State private var outcome: RecallOutcome?
     @State private var searchError: String?
     @State private var isRunning = false
     @FocusState private var focused: Bool
+
+    /// `initialQuery` comes from the "Find in Doddy" shortcut; the search runs on appear.
+    init(initialQuery: String = "") {
+        _query = State(initialValue: initialQuery)
+    }
 
     var body: some View {
         ScrollView {
@@ -77,8 +82,26 @@ private struct RecallResultsView: View {
             case .some(.matches(let candidates)):
                 Text(candidates.count == 1 ? "ONE POSSIBLE MATCH" : "\(candidates.count) POSSIBLE MATCHES")
                     .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                let mayDisagree = RecallConflicts.flagged(candidates)
+                if !mayDisagree.isEmpty {
+                    Label("\(mayDisagree.count) of these give different numbers for the same thing. Check which one is current; nothing was changed.", systemImage: "exclamationmark.2")
+                        .font(.footnote)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+                        .accessibilityIdentifier("memories.mayDisagree")
+                }
                 LazyVStack(spacing: 12) {
-                    ForEach(candidates, id: \.memoryID) { MemoryLinkCard(record: $0.record, matchedTerms: $0.matchedTerms) }
+                    ForEach(candidates, id: \.memoryID) { candidate in
+                        VStack(alignment: .leading, spacing: 4) {
+                            if mayDisagree.contains(candidate.memoryID) {
+                                Label("May disagree with another note", systemImage: "exclamationmark.2")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Theme.accentText)
+                            }
+                            MemoryLinkCard(record: candidate.record, matchedTerms: candidate.matchedTerms)
+                        }
+                    }
                 }
                 Label("Always linked to your original note.", systemImage: "book.closed")
                     .font(.caption).foregroundStyle(Theme.secondaryText)

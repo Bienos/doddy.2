@@ -42,6 +42,14 @@ final class ConversationLogStore {
         save()
     }
 
+    /// Settings → Remembered conversations → Delete. The file is rewritten without it, so it
+    /// can't come back as context in a later conversation.
+    func remove(_ id: ConversationLog.ID) {
+        guard logs.contains(where: { $0.id == id }) else { return }
+        logs.removeAll { $0.id == id }
+        save()
+    }
+
     private func load() {
         guard let fileURL, let data = try? Data(contentsOf: fileURL) else { return }
         logs = (try? JSONDecoder().decode([ConversationLog].self, from: data)) ?? []

@@ -6,11 +6,11 @@ Storage was exercised on real SQLite (Linux and macOS). The app built and its un
 | PRD M1 item | What exists |
 |---|---|
 | 1 First launch, no account, AI disclosure | First Hello + Home/Settings copy |
-| 2 Explicit text capture, ≤5,000, no truncation, save only after durable success | `CaptureView` → `NewMemory` validation → transaction + read-back; draft kept on failure; receipt only with committed record |
+| 2 Explicit text capture, ≤5,000, no truncation, save only after durable success | `CaptureView` → `NewMemory` validation → transaction + read-back; draft kept on failure; receipt only with committed record. Since 2026-10-10 a note with the same words as a saved one gets a "You saved this already" warning first (ADR-141) |
 | 3 Immutable raw text, editable current text, timestamps, source, type | `MemoryRecord` + `memories` table; type picker |
-| 4 List + deterministic lexical search, diacritic-insensitive, source shown, no-match message | Memories tab list + `.searchable`; FTS5; matched terms and source on each row; `RecallCopy.noMatch`. Since 2026-10-09 also Polish/English counterparts, spoken numbers, word endings and typos (`RecallMatching`, ADR-093) |
-| 5 Edit, copy, export JSON/text, delete one, delete all with confirmation | Detail screen, `CorrectionView`, Settings export/delete-all |
-| 6 Private session mode | **Not built** |
+| 4 List + deterministic lexical search, diacritic-insensitive, source shown, no-match message | Memories tab list + `.searchable`; FTS5; matched terms and source on each row; `RecallCopy.noMatch`. Since 2026-10-09 also Polish/English counterparts, spoken numbers, word endings and typos (`RecallMatching`, ADR-093). Since 2026-10-10 the list can be filtered by note type (ADR-139) |
+| 5 Edit, copy, export JSON/text, delete one, delete all with confirmation | Detail screen, `CorrectionView`, Settings export/delete-all. Since 2026-10-10 the reviewed profile and style settings have their own export (ADR-133), and a JSON memory export can be restored (ADR-135); deleting one note can be undone for 10 seconds (ADR-140); up to 10 notes can be pinned to the top of the list (ADR-144) |
+| 6 Private session mode | Built later as a Private toggle on the Talk screen (ADR-131); Ask was already never stored |
 | 7 VoiceOver / Dynamic Type / 44pt / light-dark | Semantic headings, combined rows, 54pt buttons, token colours; **unverified on device** |
 | 8 Content-free telemetry | **Not built** (no telemetry at all) |
 

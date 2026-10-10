@@ -9,6 +9,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
         DoddyVoiceLiveActivity()
         if #available(iOS 18.0, *) {
             TalkToDoddyControl()
+            NewNoteControl()
         }
     }
 }

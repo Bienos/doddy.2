@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { MemorySpendCap } from '../src/budget.js';
 import { MemoryRateLimiter } from '../src/ratelimit.js';
 import { inviteTag, issueToken } from '../src/token.js';
 
@@ -65,6 +66,7 @@ export function makeDeps(overrides = {}) {
       fetch: fakeProvider(providerOk({ answer: 'ok', sources: [] })),
       now: () => NOW_MS,
       limiter: new MemoryRateLimiter(),
+      spend: new MemorySpendCap(),
       logSink: (line) => logs.push(line),
       ...overrides,
     },

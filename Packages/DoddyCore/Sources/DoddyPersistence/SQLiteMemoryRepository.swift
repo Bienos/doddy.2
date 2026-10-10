@@ -123,6 +123,16 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         }
     }
 
+    public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
+        try await dbQueue.write { db in
+            guard let existing = try Self.fetch(id, db) else { throw MemoryStoreError.notFound(id) }
+            let changed = try existing.recategorized(to: category)
+            try db.execute(sql: "UPDATE memories SET category = ? WHERE id = ?", arguments: [category.rawValue, id.uuidString])
+            guard try Self.fetch(id, db) == changed else { throw MemoryStoreError.verificationFailed }
+            return changed
+        }
+    }
+
     public func delete(id: UUID) async throws {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM memories WHERE id = ?", arguments: [id.uuidString])
@@ -139,6 +149,32 @@ public final class SQLiteMemoryRepository: MemoryRepository {
 
     public func export() async throws -> Data {
         try MemoryExport.json(try await list(limit: nil), exportedAt: now())
+    }
+
+    public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
+        try await dbQueue.write { db in
+            var added: [MemoryRecord] = []
+            for record in records where record.source != .sampleFixture {
+                try db.execute(
+                    sql: """
+                        INSERT INTO memories (id, raw_text, current_text, category, source, captured_at_ms,
+                                              updated_at_ms, user_edited, search_text, schema_version)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ON CONFLICT(id) DO NOTHING
+                        """,
+                    arguments: [
+                        record.id.uuidString, record.rawText, record.currentText, record.category.rawValue,
+                        record.source.rawValue, record.capturedAt.map(Self.exportedMilliseconds),
+                        record.updatedAt.map(Self.exportedMilliseconds), record.userEdited,
+                        SearchFolding.fold(record.currentText), MemoryRecord.schemaVersion,
+                    ])
+                guard db.changesCount > 0 else { continue }
+                // Throwing here rolls the whole transaction back: nothing from the file is kept.
+                guard try Self.fetch(record.id, db) == record else { throw MemoryStoreError.verificationFailed }
+                added.append(record)
+            }
+            return added
+        }
     }
 
     // MARK: Helpers
@@ -176,4 +212,10 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     private static func milliseconds(_ date: Date) -> Int64 { DoddyDatabase.milliseconds(date) }
 
     private static func truncatedToMilliseconds(_ date: Date) -> Date { DoddyDatabase.truncatedToMilliseconds(date) }
+
+    /// Restored dates were read from whole milliseconds, which `MemoryExport` wrote by rounding;
+    /// rounding again is the exact inverse.
+    private static func exportedMilliseconds(_ date: Date) -> Int64 {
+        Int64((date.timeIntervalSince1970 * 1000).rounded())
+    }
 }

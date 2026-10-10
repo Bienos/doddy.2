@@ -27,7 +27,7 @@
     "timezone": "Europe/Warsaw",
     "turn": {"turn_eagerness": "eager", "speculative_turn": true, "turn_model": "turn_v3", "turn_timeout": 7},
     "tts": {"model_id": "eleven_v4_turbo", "voice_id": "oDULUm0GMltHA6mVZkWh", "speed": 1.0, "stability": 0.5},
-    "client_overrides": {"tts": ["voice_id", "speed", "stability"], "note": "Settings, Voice and personality (VoiceStyle, ADR-105); only changed values are sent"},
+    "client_overrides": {"tts": ["voice_id", "speed", "stability"], "agent": ["language"], "note": "Settings, Voice and personality (VoiceStyle, ADR-105); only changed values are sent"},
     "asr": {"provider": "scribe_realtime", "quality": "high"},
     "vad": {"background_voice_detection": true},
     "variables_as": "dynamic_variables (filled by the app at startConversation)"
