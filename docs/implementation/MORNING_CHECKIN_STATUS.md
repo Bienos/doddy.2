@@ -48,7 +48,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 5 of the proposed list).
   - repeating calendar triggers;
   - a tap from a cold start opening the sheet;
   - the sheet-then-cover order.
-- **Live agent not updated yet.** The `morning_checkin` placeholder and prompt section are in the spec only. Until the live agent is updated, the variable is ignored and Doddy greets normally. This is part of the batched agent update at the end of this round.
+- **Live agent updated** (`agtvrsn_0401m4kzqvpkfjb8bqsvnsg2j3nh`, see `voice-agent/README.md`), but no conversation has been run against it, so the spoken briefing is untested.
 - Whether the "(app)" message comes back as a transcript line in the conversation log is not checked. The translator start uses the same path.
 
 ## Constitution evidence log (docs/trust/config/doddy_rules.yaml)
