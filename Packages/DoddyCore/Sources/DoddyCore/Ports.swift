@@ -7,7 +7,7 @@ import Foundation
 public struct MemoryCandidate: Equatable, Sendable {
     public let record: MemoryRecord
     public let matchedTerms: [String]
-    /// Set only for a note found by meaning search (ADR-210): it shares no word with the question,
+    /// Set only for a note found by meaning search (ADR-228): it shares no word with the question,
     /// so `matchedTerms` is empty. Higher is closer; only comparable within one search.
     public let meaningScore: Double?
 

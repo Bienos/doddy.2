@@ -41,7 +41,7 @@ struct DoddyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Find in Doddy",
             systemImageName: "magnifyingglass")
-        // Answers out loud without opening the app; Siri asks "What are you looking for?" (ADR-214).
+        // Answers out loud without opening the app; Siri asks "What are you looking for?" (ADR-232).
         AppShortcut(
             intent: AskDoddyNoteIntent(),
             phrases: [

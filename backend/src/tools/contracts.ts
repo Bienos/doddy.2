@@ -89,7 +89,7 @@ export const PrepareResultSchema = z
 export type PrepareResult = z.infer<typeof PrepareResultSchema>;
 
 /**
- * One listed email or task, for screens such as the morning brief (ADR-213). Metadata only:
+ * One listed email or task, for screens such as the morning brief (ADR-231). Metadata only:
  * never an email preview or body, never task notes.
  */
 export const ResultItemSchema = z

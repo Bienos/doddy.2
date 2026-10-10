@@ -1,6 +1,6 @@
 # Home Screen and Lock Screen widgets — status
 
-Date: 2026-10-10. Owner request: "build the widgets next". Decision: `DECISIONS.md` ADR-215.
+Date: 2026-10-10. Owner request: "build the widgets next". Decision: `DECISIONS.md` ADR-233.
 
 ## What the user gets
 | Widget | Sizes | Shows | Tap |

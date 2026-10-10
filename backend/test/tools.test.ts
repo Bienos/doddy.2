@@ -171,7 +171,7 @@ test("check_email returns newest first and only sender, subject, time and a shor
   assert.ok(!rig.logs.join("\n").includes("Lunch"));
 });
 
-test("check_email and list_todoist_tasks also list their items as data, without previews (ADR-213)", async () => {
+test("check_email and list_todoist_tasks also list their items as data, without previews (ADR-231)", async () => {
   rig = await start();
   await ready(rig, "gmail", "check_email");
   const email = await run(rig, "check_email", { max: 5 });

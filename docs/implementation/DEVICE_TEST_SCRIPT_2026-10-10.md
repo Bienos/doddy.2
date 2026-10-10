@@ -7,12 +7,12 @@ compiled with Xcode or run on an iPhone.** Each step names the checklist rows in
 
 | Feature | Decision | Checklist rows |
 |---|---|---|
-| Find by meaning | ADR-210 | M12–M16 |
-| "Worth keeping?" after a conversation | ADR-211 | V8–V10 |
-| Morning brief | ADR-212 | B1–B7 |
-| Brief: news, Todoist, Gmail, choosing contents | ADR-213 | B8–B11 |
-| Siri reads a note back | ADR-214 | S7–S11 |
-| Widgets | ADR-215 | W1–W7 |
+| Find by meaning | ADR-228 | M12–M16 |
+| "Worth keeping?" after a conversation | ADR-229 | V8–V10 |
+| Morning brief | ADR-230 | B1–B7 |
+| Brief: news, Todoist, Gmail, choosing contents | ADR-231 | B8–B11 |
+| Siri reads a note back | ADR-232 | S7–S11 |
+| Widgets | ADR-233 | W1–W7 |
 
 **Time:** about 90 minutes, plus fixing whatever doesn't compile. **You need:** a Mac with Xcode and XcodeGen, an
 iPhone on iOS 17 or later (iOS 18 for the controls) with a cable, the iPhone online, and for step 6 a paid team that

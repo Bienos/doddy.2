@@ -1,6 +1,6 @@
 import Foundation
 
-// End-of-conversation save suggestions (ADR-211). After a voice conversation ends, Doddy offers
+// End-of-conversation save suggestions (ADR-229). After a voice conversation ends, Doddy offers
 // up to three things the user said that look worth keeping: "Marta's birthday is 12 May", "the
 // plumber Adam comes on Tuesday". Rules, not a model, on the iPhone:
 //  - only the user's own transcribed sentences are used, never Doddy's lines or tool results;
@@ -327,7 +327,7 @@ public enum SaveSuggestions {
     ]
 }
 
-/// The "Worth keeping?" card after a conversation (ADR-211). All suggestions start unticked; the
+/// The "Worth keeping?" card after a conversation (ADR-229). All suggestions start unticked; the
 /// user may change the words before saving. A suggestion counts as saved only when the memory
 /// store returned the read-back record.
 public struct SaveSuggestionCard: Equatable, Sendable {

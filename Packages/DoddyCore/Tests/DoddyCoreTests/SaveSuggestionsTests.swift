@@ -2,7 +2,7 @@
 import Foundation
 import XCTest
 
-/// ADR-211. Synthetic transcripts only.
+/// ADR-229. Synthetic transcripts only.
 final class SaveSuggestionsTests: XCTestCase {
     private func suggest(_ lines: [String], proposed: [String] = [], notes: [MemoryRecord] = []) -> [String] {
         SaveSuggestions.suggest(userLines: lines, alreadyProposed: proposed, existingNotes: notes).map(\.text)

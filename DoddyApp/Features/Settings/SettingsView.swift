@@ -176,7 +176,7 @@ struct SettingsView: View {
                         Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
                             .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
                     }
-                    // ADR-210: on-device meaning search; off deletes its stored vectors.
+                    // ADR-228: on-device meaning search; off deletes its stored vectors.
                     Toggle("Find by meaning", isOn: $findByMeaning)
                         .disabled(environment.meaningIndex == nil)
                         .accessibilityIdentifier("settings.findByMeaning")
@@ -309,7 +309,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.rememberedConversations")
                     Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
                         .disabled(conversationLogs.logs.isEmpty)
-                    // ADR-211: "Worth keeping?" after a voice conversation.
+                    // ADR-229: "Worth keeping?" after a voice conversation.
                     Toggle("Suggest notes after a conversation", isOn: $suggestSaves)
                         .accessibilityIdentifier("settings.suggestSaves")
                     Text("When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers.")
@@ -382,7 +382,7 @@ struct SettingsView: View {
                     Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
-                    // ADR-214: "Ask Doddy what I saved".
+                    // ADR-232: "Ask Doddy what I saved".
                     Toggle("Siri can read my notes aloud", isOn: $siriReadsNotes)
                         .accessibilityIdentifier("settings.siriReadsNotes")
                     Text("Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings.")
@@ -390,7 +390,7 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
-                // ADR-215: Home Screen and Lock Screen widgets.
+                // ADR-233: Home Screen and Lock Screen widgets.
                 Section("Widgets") {
                     StatusRow(title: "Note widgets", value: WidgetSnapshotFile.appGroup == nil ? "Not set up in this build" : "Ready")
                         .accessibilityIdentifier("settings.widgets.status")

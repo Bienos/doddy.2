@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import XCTest
 
-/// ADR-215. Synthetic notes only.
+/// ADR-233. Synthetic notes only.
 final class WidgetSnapshotTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_790_000_000)
 

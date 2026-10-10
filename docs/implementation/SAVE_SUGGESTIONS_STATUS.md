@@ -1,6 +1,6 @@
 # Save suggestions after a conversation — status
 
-Date: 2026-10-10. Owner request: "build the end-of-conversation save suggestions next". Decision: `DECISIONS.md` ADR-211.
+Date: 2026-10-10. Owner request: "build the end-of-conversation save suggestions next". Decision: `DECISIONS.md` ADR-229.
 
 ## What the user gets
 | Where | Behaviour |

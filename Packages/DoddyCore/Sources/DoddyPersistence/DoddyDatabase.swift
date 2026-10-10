@@ -127,7 +127,7 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
                 """)
         }
-        // ADR-210: meaning-search vectors, one per note, deleted with it. Derived from the note's
+        // ADR-228: meaning-search vectors, one per note, deleted with it. Derived from the note's
         // current text on the iPhone; never exported. `vector` is float32 little-endian.
         migrator.registerMigration("v5_memory_vectors") { db in
             try db.execute(sql: """

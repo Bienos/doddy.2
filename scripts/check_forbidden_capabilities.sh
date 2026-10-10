@@ -7,7 +7,7 @@
 #  - the system authentication browser is used only by Connected Apps,
 #  - audio/ElevenLabs code only inside DoddyApp/Features/Voice,
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
-#  - Apple's on-device language model (find by meaning, ADR-210) only in OnDeviceMeaningEmbedder.swift,
+#  - Apple's on-device language model (find by meaning, ADR-228) only in OnDeviceMeaningEmbedder.swift,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - no speech framework, accounts, analytics or crash SDKs, no secrets (server/messaging and
@@ -48,7 +48,7 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
-# Find by meaning (ADR-210): Apple's on-device language model, in one file, so "your notes aren't
+# Find by meaning (ADR-228): Apple's on-device language model, in one file, so "your notes aren't
 # sent anywhere" stays checkable.
 meaning_file=DoddyApp/Infrastructure/OnDeviceMeaningEmbedder.swift
 meaning_only='import NaturalLanguage|NLContextualEmbedding|NLEmbedding'

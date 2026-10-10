@@ -90,7 +90,7 @@ struct MemoryPaperCard: View {
 struct MemoryLinkCard: View {
     let record: MemoryRecord
     var matchedTerms: [String] = []
-    /// Found by meaning search, not by the user's words (ADR-210).
+    /// Found by meaning search, not by the user's words (ADR-228).
     var relatedByMeaning = false
     var isPinned = false
 

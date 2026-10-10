@@ -31,7 +31,7 @@ settings:
     # free Apple ID can still build to a device (free teams can't use Push). With a paid team that
     # has Push enabled, set this to DoddyApp/Doddy.entitlements (here or on the xcodebuild line).
     DODDY_PUSH_ENTITLEMENTS: ""
-    # Widgets that show notes (ADR-215) read a file the app shares through an App Group. Off by
+    # Widgets that show notes (ADR-233) read a file the app shares through an App Group. Off by
     # default so a free Apple ID can still build. To turn on: set DODDY_APP_GROUP to a group your
     # team owns (e.g. group.com.bienos.doddy2.dev), DODDY_WIDGET_ENTITLEMENTS to
     # Config/DoddyWidgets-AppGroup.entitlements, and DODDY_PUSH_ENTITLEMENTS to
@@ -83,7 +83,7 @@ targets:
   DoddyWidgets:
     # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen),
     # on iOS 18+ the "Talk to Doddy" and "New note" controls, and the Home Screen and Lock Screen
-    # widgets (ADR-215). No networking; it reads only the app's widget snapshot (App Group).
+    # widgets (ADR-233). No networking; it reads only the app's widget snapshot (App Group).
     type: app-extension
     platform: iOS
     sources:

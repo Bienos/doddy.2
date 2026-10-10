@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// The one file the app writes and Doddy's widgets read (ADR-215), in the App Group set by the
+/// The one file the app writes and Doddy's widgets read (ADR-233), in the App Group set by the
 /// DODDY_APP_GROUP build setting. Compiled into the app and the widget extension. Only the app
 /// writes; the widgets only read.
 enum WidgetSnapshotFile {

@@ -1,6 +1,6 @@
 import Foundation
 
-// Siri reads a note back (ADR-214): "Hey Siri, ask Doddy what I saved" → "What are you looking
+// Siri reads a note back (ADR-232): "Hey Siri, ask Doddy what I saved" → "What are you looking
 // for?" → "gate code" → Siri says the stored note. The search is the same on-device recall as
 // Memories → Find; this file only turns its outcome into what Siri says. Rules, not a model:
 // the note's own words, when it was saved, and nothing else. Never a guess.

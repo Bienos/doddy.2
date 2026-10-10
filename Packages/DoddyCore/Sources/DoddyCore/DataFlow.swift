@@ -21,7 +21,7 @@ public struct DataFlowState: Equatable, Sendable {
     public var pushOn: Bool
     /// The user turned on the server copy of their notes for phone calls.
     public var memoryCopyOn: Bool
-    /// Siri may read saved notes aloud (ADR-214).
+    /// Siri may read saved notes aloud (ADR-232).
     public var siriReadsNotes: Bool
 
     public init(

@@ -1,6 +1,6 @@
 # Find by meaning — status
 
-Date: 2026-10-10. Owner request: "build meaning-based recall first". Decision: `DECISIONS.md` ADR-210.
+Date: 2026-10-10. Owner request: "build meaning-based recall first". Decision: `DECISIONS.md` ADR-228.
 
 ## What the user gets
 | Where | Behaviour |

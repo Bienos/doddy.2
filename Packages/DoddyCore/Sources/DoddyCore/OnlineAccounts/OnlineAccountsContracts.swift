@@ -90,7 +90,7 @@ public struct PrepareResult: Codable, Equatable, Sendable {
     public let expiresAt: String
 }
 
-/// One listed email or task as data (ADR-213), for screens such as the morning brief. Metadata
+/// One listed email or task as data (ADR-231), for screens such as the morning brief. Metadata
 /// only: never an email preview or body, never task notes.
 public struct ResultItem: Codable, Equatable, Sendable {
     public enum Kind: String, Codable, Sendable { case email, task }
@@ -120,7 +120,7 @@ public struct RunResult: Codable, Equatable, Sendable {
     public let text: String
     public let count: Int
     public let truncated: Bool
-    /// check_email and list_todoist_tasks on servers from ADR-213 on; nil from older servers.
+    /// check_email and list_todoist_tasks on servers from ADR-231 on; nil from older servers.
     public let items: [ResultItem]?
     public let receipt: OnlineToolReceipt
 }

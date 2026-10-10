@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// ADR-212. Synthetic calendar data in Europe/Warsaw.
+/// ADR-230. Synthetic calendar data in Europe/Warsaw.
 final class MorningBriefTests: XCTestCase {
     private var calendar: Calendar = {
         var c = Calendar(identifier: .gregorian)

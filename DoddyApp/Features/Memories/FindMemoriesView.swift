@@ -82,7 +82,7 @@ private struct RecallResultsView: View {
         VStack(alignment: .leading, spacing: 20) {
             switch outcome {
             case .some(.matches(let found)):
-                // Word matches as before; notes found by meaning (ADR-210) follow in their own
+                // Word matches as before; notes found by meaning (ADR-228) follow in their own
                 // group and never count as matches.
                 let candidates = found.filter { !$0.isMeaningMatch }
                 let related = found.filter(\.isMeaningMatch)

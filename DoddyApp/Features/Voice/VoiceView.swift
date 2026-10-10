@@ -410,7 +410,7 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.planReceipt")
     }
 
-    /// "Worth keeping?" after the conversation (ADR-211): the user's own sentences, none ticked.
+    /// "Worth keeping?" after the conversation (ADR-229): the user's own sentences, none ticked.
     /// The words can be changed before saving; changing them ticks the item.
     private func saveSuggestionsCard(_ card: SaveSuggestionCard, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 12) {

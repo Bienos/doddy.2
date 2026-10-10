@@ -1,6 +1,6 @@
 import Foundation
 
-// Home Screen and Lock Screen widgets (ADR-215). The widget extension can't open the notes
+// Home Screen and Lock Screen widgets (ADR-233). The widget extension can't open the notes
 // database, so the app writes this small snapshot to a file shared only with its own widgets
 // (an App Group), and asks WidgetKit to redraw. It holds only what the widgets show: up to 3
 // pinned notes and the next few time reminders, with their words only if the user allows it.

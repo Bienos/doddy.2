@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 @preconcurrency import NaturalLanguage
 
-/// Meaning-search vectors from Apple's on-device language model (ADR-210). The only file that uses
+/// Meaning-search vectors from Apple's on-device language model (ADR-228). The only file that uses
 /// NaturalLanguage (guard script). Note text is processed on the iPhone and never sent anywhere.
 ///
 /// `NLContextualEmbedding` for the Latin script covers Polish and English in one model, so a

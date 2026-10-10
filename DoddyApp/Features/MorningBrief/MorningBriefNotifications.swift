@@ -3,7 +3,7 @@ import Foundation
 import Observation
 import UserNotifications
 
-/// The morning brief's one daily local notification (ADR-212). Same words every day, so nothing
+/// The morning brief's one daily local notification (ADR-230). Same words every day, so nothing
 /// personal is on the Lock Screen and nothing runs in the background. Only the identifier
 /// `MorningBriefNotification.identifier` is touched here; timers, nudges, note reminders and server
 /// pushes share iOS's queue and are left alone.
@@ -97,7 +97,7 @@ extension MorningBriefSections {
     }
 }
 
-/// What the server sections returned this morning (ADR-213). Kept in memory only (email subjects
+/// What the server sections returned this morning (ADR-231). Kept in memory only (email subjects
 /// and task titles are never written to disk) and fetched at most once per day and choice, unless
 /// the user taps Refresh, so opening Home again doesn't ask Doddy's server again.
 @MainActor

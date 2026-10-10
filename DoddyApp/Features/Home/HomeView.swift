@@ -70,7 +70,7 @@ struct HomeView: View {
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                         .frame(maxWidth: .infinity)
 
-                    // Only from its time on mornings the user turned it on (ADR-212).
+                    // Only from its time on mornings the user turned it on (ADR-230).
                     MorningBriefCard()
 
                     TodayCard(openSettings: { selectedTab = .settings })

@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Meaning-search vectors (ADR-210) in the same SQLite file as the notes. A vector row references
+/// Meaning-search vectors (ADR-228) in the same SQLite file as the notes. A vector row references
 /// its note, so deleting a note (or every note) deletes its vector; `secure_delete` overwrites it.
 public final class SQLiteMemoryVectorStore: MemoryVectorStore {
     private let dbQueue: DatabaseQueue

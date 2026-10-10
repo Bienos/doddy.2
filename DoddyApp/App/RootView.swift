@@ -48,16 +48,16 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
-    /// Find by meaning (ADR-210). On unless turned off; on-device only. Off deletes the vectors.
+    /// Find by meaning (ADR-228). On unless turned off; on-device only. Off deletes the vectors.
     static let findByMeaning = "findByMeaning"
-    /// "Worth keeping?" after a voice conversation (ADR-211). On unless turned off; on-device rules.
+    /// "Worth keeping?" after a voice conversation (ADR-229). On unless turned off; on-device rules.
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
-    /// Morning brief (ADR-212). Off unless turned on; time of day; the day it was closed on Home.
+    /// Morning brief (ADR-230). Off unless turned on; time of day; the day it was closed on Home.
     static let morningBriefOn = "morningBrief.on"
     static let morningBriefHour = "morningBrief.hour"
     static let morningBriefMinute = "morningBrief.minute"
     static let morningBriefClosedDay = "morningBrief.closedDay"
-    /// What's in the brief (ADR-213). On-iPhone sections default on; server ones default off.
+    /// What's in the brief (ADR-231). On-iPhone sections default on; server ones default off.
     static let morningBriefEvents = "morningBrief.events"
     static let morningBriefReminders = "morningBrief.reminders"
     static let morningBriefNoteReminders = "morningBrief.noteReminders"
@@ -65,9 +65,9 @@ enum PreferenceKey {
     static let morningBriefTodoist = "morningBrief.todoist"
     static let morningBriefGmail = "morningBrief.gmail"
     static let morningBriefGmailImportant = "morningBrief.gmailImportant"
-    /// Siri may read saved notes aloud (ADR-214). On unless turned off; the phone must be unlocked.
+    /// Siri may read saved notes aloud (ADR-232). On unless turned off; the phone must be unlocked.
     static let siriReadsNotes = "siriReadsNotes"
-    /// Widgets show note words (ADR-215). On unless turned off; off keeps them out of the file.
+    /// Widgets show note words (ADR-233). On unless turned off; off keeps them out of the file.
     static let widgetNoteWords = "widgetNoteWords"
 }
 
@@ -126,14 +126,14 @@ struct RootView: View {
                 homePath = [memoryID]
                 noteReminders.pendingOpenMemoryID = nil
             }
-            // A tapped morning-brief notification opens Home, where the brief is (ADR-212).
+            // A tapped morning-brief notification opens Home, where the brief is (ADR-230).
             .task(id: MorningBriefRouter.shared.openRequested) {
                 guard MorningBriefRouter.shared.openRequested else { return }
                 selectedTab = .home
                 homePath = []
                 MorningBriefRouter.shared.openRequested = false
             }
-            // Widgets (ADR-215): the snapshot follows notes, pins, note reminders and the words setting.
+            // Widgets (ADR-233): the snapshot follows notes, pins, note reminders and the words setting.
             .task { syncWidgets() }
             .onChange(of: store.revision) { syncWidgets() }
             .onChange(of: noteReminders.reminders) { syncWidgets() }
@@ -199,7 +199,7 @@ struct RootView: View {
             router.isOnboardingShown = !atHome
         }
         .onOpenURL { url in
-            // doddy://note/<id> from a widget (ADR-215): opens that note on Home, like a note reminder.
+            // doddy://note/<id> from a widget (ADR-233): opens that note on Home, like a note reminder.
             // A deleted note shows "This memory no longer exists" there.
             if let memoryID = NoteLink.id(from: url) {
                 selectedTab = .home

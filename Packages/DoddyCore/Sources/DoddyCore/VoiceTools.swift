@@ -394,7 +394,7 @@ public enum VoiceToolReply {
         guard case .matches(let all) = outcome, !all.isEmpty else {
             return "No saved note matched. Tell the user you couldn't find it in their saved memories. Do not guess."
         }
-        // Meaning-search notes (ADR-210) share no word with the question; they are listed apart
+        // Meaning-search notes (ADR-228) share no word with the question; they are listed apart
         // and never counted as matches, so the agent can't present one as what the user asked for.
         let candidates = all.filter { !$0.isMeaningMatch }
         let related = all.filter(\.isMeaningMatch)

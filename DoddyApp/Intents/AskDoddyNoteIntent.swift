@@ -1,6 +1,6 @@
 import AppIntents
 
-/// "Ask Doddy what I saved" (ADR-214): Siri asks what to look for, Doddy searches the saved notes
+/// "Ask Doddy what I saved" (ADR-232): Siri asks what to look for, Doddy searches the saved notes
 /// on this iPhone (the same search as Memories → Find) and Siri says the note's own words and
 /// when it was saved. The app doesn't open. Nothing is saved or changed.
 ///

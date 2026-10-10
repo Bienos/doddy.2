@@ -1,6 +1,6 @@
 # Morning brief — status
 
-Date: 2026-10-10. Owner request: "build the morning brief next". Decision: `DECISIONS.md` ADR-212.
+Date: 2026-10-10. Owner request: "build the morning brief next". Decision: `DECISIONS.md` ADR-230.
 
 ## What the user gets
 | Where | Behaviour |
@@ -16,7 +16,7 @@ Date: 2026-10-10. Owner request: "build the morning brief next". Decision: `DECI
 - **Doddy's note reminders:** time reminders that fire later today, with the note's current words. Place reminders
   have no time, so they are left out.
 - **Name:** the nickname from Doddy's personality settings, else the approved name from About you, else none.
-- **Daily news, Todoist, Gmail** (ADR-213): only when chosen under Settings → Morning brief → In your morning brief.
+- **Daily news, Todoist, Gmail** (ADR-231): only when chosen under Settings → Morning brief → In your morning brief.
   See "Server sections" below.
 - **Not included:** weather (the app has no weather source of its own).
 
@@ -51,7 +51,7 @@ App compile of the new files (UserNotifications, AVFoundation, SwiftUI); that th
 the local time and the tap opens Home; the read-back on a real device; read aloud; the Today card after the
 refactor. Checklist B1–B7 in `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`.
 
-## Server sections and choosing what's in it (ADR-213)
+## Server sections and choosing what's in it (ADR-231)
 | Choice (Settings → Morning brief → In your morning brief) | Default | Where it comes from |
 |---|---|---|
 | Events left today, Reminders due | On | Calendar and Reminders on this iPhone (not read at all when both are off) |

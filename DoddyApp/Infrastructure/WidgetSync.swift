@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import WidgetKit
 
-/// Keeps the widgets' snapshot equal to what the app has (ADR-215): rewritten when notes, pins,
+/// Keeps the widgets' snapshot equal to what the app has (ADR-233): rewritten when notes, pins,
 /// note reminders or the "note words in widgets" setting change, then WidgetKit is asked to
 /// redraw. Does nothing in a build without an App Group, or in UI-test launches.
 @MainActor

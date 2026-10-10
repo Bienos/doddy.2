@@ -1,6 +1,6 @@
 import Foundation
 
-// Meaning search (ADR-210): finds saved notes that are about the question without sharing its
+// Meaning search (ADR-228): finds saved notes that are about the question without sharing its
 // words ("sushi place Kasia liked" → "Kasia: the Japanese spot on Mokotowska is great").
 //
 // It never makes anything up: it only ranks notes that are really stored, returns them verbatim,

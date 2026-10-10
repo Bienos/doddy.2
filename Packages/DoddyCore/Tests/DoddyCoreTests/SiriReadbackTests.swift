@@ -2,7 +2,7 @@
 import Foundation
 import XCTest
 
-/// ADR-214. What Siri says, from synthetic notes.
+/// ADR-232. What Siri says, from synthetic notes.
 final class SiriReadbackTests: XCTestCase {
     private var calendar: Calendar = {
         var c = Calendar(identifier: .gregorian)

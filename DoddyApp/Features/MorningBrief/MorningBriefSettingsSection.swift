@@ -1,13 +1,13 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Morning brief (ADR-212). Off unless turned on. Turning it on asks iOS for
+/// Settings → Morning brief (ADR-230). Off unless turned on. Turning it on asks iOS for
 /// notifications if it hasn't yet; the brief still shows on Home if notifications are refused.
 struct MorningBriefSettingsSection: View {
     @AppStorage(PreferenceKey.morningBriefOn) private var isOn = false
     @AppStorage(PreferenceKey.morningBriefHour) private var hour = MorningBriefSchedule.defaultHour
     @AppStorage(PreferenceKey.morningBriefMinute) private var minute = MorningBriefSchedule.defaultMinute
-    // In your brief (ADR-213): what's on the iPhone is in by default; server sections are chosen.
+    // In your brief (ADR-231): what's on the iPhone is in by default; server sections are chosen.
     @AppStorage(PreferenceKey.morningBriefEvents) private var events = MorningBriefSections.standard.events
     @AppStorage(PreferenceKey.morningBriefReminders) private var reminders = MorningBriefSections.standard.reminders
     @AppStorage(PreferenceKey.morningBriefNoteReminders) private var noteReminders = MorningBriefSections.standard.noteReminders

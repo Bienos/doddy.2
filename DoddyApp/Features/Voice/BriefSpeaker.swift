@@ -1,7 +1,7 @@
 import AVFoundation
 import Observation
 
-/// Reads the morning brief aloud with the iPhone's own speech voice (ADR-212), on the device.
+/// Reads the morning brief aloud with the iPhone's own speech voice (ADR-230), on the device.
 /// It is not Doddy's voice and not a conversation: nothing is sent anywhere and nothing listens.
 /// Lives in Features/Voice because audio code is kept here (guard script).
 @MainActor

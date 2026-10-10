@@ -2,7 +2,7 @@ import DoddyCore
 import Observation
 import SwiftUI
 
-/// What Today and the morning brief (ADR-212) read: the same switches, permissions and pause.
+/// What Today and the morning brief (ADR-230) read: the same switches, permissions and pause.
 @MainActor
 enum TodayReading {
     static func read(_ devices: DeviceConnections, now: Date, calendar: Calendar) async -> BriefSource {

@@ -150,9 +150,9 @@ final class VoiceSessionController {
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
     /// Every note text Doddy put on a save card or plan in this conversation, saved or declined,
-    /// so the end-of-conversation suggestions never offer them again (ADR-211).
+    /// so the end-of-conversation suggestions never offer them again (ADR-229).
     private var proposedNoteTexts: [String] = []
-    /// "Worth keeping?" after the conversation ends (ADR-211). Nothing ticked, nothing saved
+    /// "Worth keeping?" after the conversation ends (ADR-229). Nothing ticked, nothing saved
     /// until the user taps Save.
     private(set) var saveSuggestions: SaveSuggestionCard?
     /// Suggestions are worked out once per conversation, so a dismissed card doesn't come back.
@@ -628,7 +628,7 @@ final class VoiceSessionController {
         offerSaveSuggestions()
     }
 
-    // MARK: End-of-conversation save suggestions (ADR-211)
+    // MARK: End-of-conversation save suggestions (ADR-229)
 
     /// Picks what the user said that may be worth keeping, on the phone, from their own lines only.
     /// Not for a private conversation, not when switched off, not when notes can't be saved.

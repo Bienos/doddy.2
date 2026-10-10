@@ -94,7 +94,7 @@ export interface ToolOutcome {
   text: string;
   count: number;
   truncated: boolean;
-  /** Listed emails or tasks as data for app screens (ADR-213); no previews or bodies. */
+  /** Listed emails or tasks as data for app screens (ADR-231); no previews or bodies. */
   items?: ResultItem[];
   /** One line for the receipt. No message bodies. */
   summary: string;

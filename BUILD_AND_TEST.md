@@ -103,7 +103,7 @@ manager — `backend/.env.example` lists names with empty values. No signing tea
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
 `com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
 
-### Note widgets need an App Group (ADR-215, optional)
+### Note widgets need an App Group (ADR-233, optional)
 
 The Talk to Doddy widget works in every build. The Pinned notes and Next note reminder widgets read a file the app
 shares through an App Group, which is off by default so a free Apple ID can still build. To turn it on, register a

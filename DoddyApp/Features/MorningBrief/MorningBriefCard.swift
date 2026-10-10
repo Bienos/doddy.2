@@ -1,10 +1,10 @@
 import DoddyCore
 import SwiftUI
 
-/// Home → the morning brief (ADR-212): from its time for a few hours, until closed for the day.
+/// Home → the morning brief (ADR-230): from its time for a few hours, until closed for the day.
 /// Built on this iPhone from Today's Calendar and Reminders (same switches) and Doddy's own note
 /// reminders, plus, only if chosen in Settings, today's news, Todoist and unread Gmail fetched
-/// through Doddy's server (ADR-213). Read aloud uses the iPhone's speech voice.
+/// through Doddy's server (ADR-231). Read aloud uses the iPhone's speech voice.
 struct MorningBriefCard: View {
     @Environment(MemoryStore.self) private var store
     @Environment(NoteReminderStore.self) private var noteReminders

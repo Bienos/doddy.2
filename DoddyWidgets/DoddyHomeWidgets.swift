@@ -3,7 +3,7 @@ import DoddyCore
 import SwiftUI
 import WidgetKit
 
-// Home Screen and Lock Screen widgets (ADR-215).
+// Home Screen and Lock Screen widgets (ADR-233).
 // - Talk to Doddy: buttons that run the same intents as the controls and Siri, so no web link can
 //   open the microphone. No data.
 // - Pinned notes and Next note reminder: read the app's snapshot (`WidgetSnapshotFile`). Note words

@@ -26,7 +26,7 @@ struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let profileRepository: any ProfileRepository
     let recallService: any RecallService
-    /// Find by meaning (ADR-210). `nil` when the store is not open or this iPhone has no on-device
+    /// Find by meaning (ADR-228). `nil` when the store is not open or this iPhone has no on-device
     /// language model; recall then uses word search alone.
     let meaningIndex: MeaningIndex?
     /// `nil` when the typed assistant is not wired (M0 fallback after a storage failure, previews).
@@ -51,7 +51,7 @@ struct AppEnvironment: Sendable {
         privacy: .m0,
         storageProblem: nil)
 
-    /// The one environment of this process, so the app and Siri (ADR-214) share one database
+    /// The one environment of this process, so the app and Siri (ADR-232) share one database
     /// connection whichever starts first.
     static let shared = AppEnvironment.live()
 

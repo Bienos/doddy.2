@@ -36,7 +36,7 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertFalse(reply.contains("related in meaning"), "word-only replies are unchanged")
     }
 
-    /// ADR-210: meaning matches are never counted as found notes and come with how to use them.
+    /// ADR-228: meaning matches are never counted as found notes and come with how to use them.
     func testSearchReplyKeepsMeaningMatchesApart() throws {
         let word = try MemoryRecord(id: UUID(), rawText: "Kasia: sushi on Mokotowska", source: .explicitText, capturedAt: Date(timeIntervalSince1970: 0))
         let meaning = try MemoryRecord(id: UUID(), rawText: "Ramen bar near the station is good", source: .explicitText, capturedAt: Date(timeIntervalSince1970: 0))

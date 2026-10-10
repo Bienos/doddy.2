@@ -2,7 +2,7 @@
 import Foundation
 import XCTest
 
-/// ADR-213: choosing what's in the brief, and Daily news, Todoist and Gmail sections.
+/// ADR-231: choosing what's in the brief, and Daily news, Todoist and Gmail sections.
 final class MorningBriefOnlineTests: XCTestCase {
     private var calendar: Calendar = {
         var c = Calendar(identifier: .gregorian)

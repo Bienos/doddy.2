@@ -1,6 +1,6 @@
 import Foundation
 
-// Morning brief (ADR-212): the day at a glance, once a day, when the user turns it on.
+// Morning brief (ADR-230): the day at a glance, once a day, when the user turns it on.
 // Built on the iPhone from what Home → Today already reads (Calendar and Reminders, only with
 // their Connections switches on) and Doddy's own note reminders. Nothing is sent anywhere.
 // The daily notification says only that the brief is ready: no titles or notes on the Lock Screen.
@@ -57,7 +57,7 @@ public enum MorningBriefNotification {
     public static func isBrief(_ identifier: String) -> Bool { identifier == Self.identifier }
 }
 
-/// What the user chose to have in the brief (Settings → Morning brief → In your brief, ADR-213).
+/// What the user chose to have in the brief (Settings → Morning brief → In your brief, ADR-231).
 /// What's on the iPhone is in by default; anything fetched from a server is out until chosen.
 public struct MorningBriefSections: Equatable, Sendable {
     public var events: Bool
@@ -345,7 +345,7 @@ public struct MorningBrief: Equatable, Sendable {
     }
 }
 
-/// Fetches the server-backed sections the user chose (ADR-213). Each read is the same one the voice
+/// Fetches the server-backed sections the user chose (ADR-231). Each read is the same one the voice
 /// agent can make, with the same switch, connection check, limits and server receipt; read only,
 /// never retried here. Nothing is fetched for a section that isn't chosen.
 public enum MorningBriefFetcher {

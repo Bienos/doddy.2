@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// What Siri says for "Ask Doddy what I saved" (ADR-214): the same on-device search as
+/// What Siri says for "Ask Doddy what I saved" (ADR-232): the same on-device search as
 /// Memories → Find, turned into words by `SiriReadback`. Kept apart from the App Intent so it
 /// type-checks without App Intents.
 @MainActor

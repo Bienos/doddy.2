@@ -2,7 +2,7 @@ import DoddyCore
 import XCTest
 @testable import Doddy
 
-/// ADR-210 calibration with Apple's real on-device model (Mac / iPhone only; never run on Linux).
+/// ADR-228 calibration with Apple's real on-device model (Mac / iPhone only; never run on Linux).
 /// Synthetic notes only. Prints every score so the thresholds in `MeaningPolicy` can be checked
 /// against what the model actually does, and fails if meaning search is mostly wrong.
 final class MeaningSearchCalibrationTests: XCTestCase {

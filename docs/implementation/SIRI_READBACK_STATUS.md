@@ -1,6 +1,6 @@
 # Siri reads a note back — status
 
-Date: 2026-10-10. Owner request: "build the Siri note readback next". Decision: `DECISIONS.md` ADR-214.
+Date: 2026-10-10. Owner request: "build the Siri note readback next". Decision: `DECISIONS.md` ADR-232.
 
 ## What the user gets
 | Where | Behaviour |

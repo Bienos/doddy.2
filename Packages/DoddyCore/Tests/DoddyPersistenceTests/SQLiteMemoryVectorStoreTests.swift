@@ -21,7 +21,7 @@ private final class LetterEmbedder: TextEmbedder, @unchecked Sendable {
     }
 }
 
-/// ADR-210: the vector cache in the real SQLite file. Deletion must reach it.
+/// ADR-228: the vector cache in the real SQLite file. Deletion must reach it.
 final class SQLiteMemoryVectorStoreTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_790_000_000)
 
