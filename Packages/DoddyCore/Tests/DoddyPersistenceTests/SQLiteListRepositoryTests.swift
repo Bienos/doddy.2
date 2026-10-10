@@ -130,3 +130,40 @@ final class SQLiteListRepositoryTests: XCTestCase {
         XCTAssertEqual(text, "Shopping: nothing left")
     }
 }
+
+extension SQLiteListRepositoryTests {
+    /// Export, wipe, restore: the list comes back with its items, ticks and order.
+    func testExportThenRestoreBringsListItemsBack() async throws {
+        let (_, lists, memories) = try make()
+        let list = try await lists.create(name: "Packing", items: ["charger", "passport"], source: .typed)
+        _ = try await lists.setDone([list.items[1].id], done: true)
+        let data = try await memories.export()
+        try await memories.deleteAll()
+        let lists0 = try await lists.lists()
+        XCTAssertEqual(lists0, [])
+
+        let file = try MemoryRestore.read(data)
+        let items = try MemoryRestore.listItems(data)
+        XCTAssertEqual(items.count, 2)
+        _ = try await memories.restore(file.records)
+        let restored = try await lists.restore(items)
+        XCTAssertEqual(restored.count, 2)
+        let back = try await lists.list(id: list.id)
+        XCTAssertEqual(back?.open.map(\.text), ["charger"])
+        XCTAssertEqual(back?.done.map(\.text), ["passport"])
+    }
+
+    func testListReminderIsKnownAsAList() async throws {
+        let (database, lists, memories) = try make()
+        let list = try await lists.create(name: "Shopping", items: [], source: .typed)
+        let note = try await memories.save(NewMemory(text: "Keys in the tin", capturedAt: Date(timeIntervalSince1970: 0)))
+        let reminders = SQLiteNoteReminderRepository(database: database)
+        let listIs = await reminders.isList(memoryID: list.id)
+        let noteIs = await reminders.isList(memoryID: note.id)
+        XCTAssertTrue(listIs)
+        XCTAssertFalse(noteIs)
+        XCTAssertEqual(NoteReminderCopy.body(noteText: "x", showNoteText: false, isList: true), "A list you asked to see again.")
+        XCTAssertEqual(NoteReminderCopy.body(noteText: "x", showNoteText: false, language: .polish, isList: true), "Lista, którą chcesz zobaczyć ponownie.")
+        XCTAssertEqual(NoteReminderCopy.body(noteText: "x", showNoteText: false), NoteReminderCopy.privateBody)
+    }
+}

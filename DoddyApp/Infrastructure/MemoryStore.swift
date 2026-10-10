@@ -105,8 +105,10 @@ final class MemoryStore {
     }
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
-    func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
+    func restore(_ records: [MemoryRecord], listItems: [ListItem] = []) async throws -> [MemoryRecord] {
         let added = try await environment.memoryRepository.restore(records)
+        // Items go back only into lists that exist now; items already here are left alone.
+        if !listItems.isEmpty { _ = try await environment.listRepository.restore(listItems) }
         await reload()
         return added
     }

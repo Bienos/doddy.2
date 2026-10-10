@@ -1274,6 +1274,20 @@ final class VoiceSessionController {
             return await startTimer(draft)
         case .cloudTool(let call):
             return await runPlanCloud(call, approval: approval)
+        case .addToList(let request):
+            // Matched now, exactly as a single add_to_list would be; nothing changes on no match.
+            await store.reload()
+            switch ListMatch.list(named: request.list, in: store.lists) {
+            case .none: return VoiceToolReply.listNotFound(request.list, lists: store.lists)
+            case .several(let lists): return VoiceToolReply.listAmbiguous(request.list, lists: lists)
+            case .one(let list):
+                do {
+                    let result = try await store.addToList(request.items, listID: list.id, source: .voice)
+                    return VoiceToolReply.listAdded(result, list: list.name)
+                } catch {
+                    return VoiceToolReply.listFailed(UserFacingError.listMessage(for: error))
+                }
+            }
         default:
             // PlanProposal only makes the kinds above.
             return VoiceToolReply.notAdded("This step can't run in a plan.")

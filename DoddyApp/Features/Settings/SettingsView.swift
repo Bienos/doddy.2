@@ -22,6 +22,8 @@ struct SettingsView: View {
     @State private var confirmDeleteAll = false
     @State private var choosingRestoreFile = false
     @State private var restorePlan: MemoryRestorePlan?
+    /// List items from the same file (ADR-216), put back after their lists.
+    @State private var restoreItems: [ListItem] = []
     @State private var restoreMessage: String?
     @State private var restoreFailed = false
     @State private var deleteError: String?
@@ -610,8 +612,10 @@ struct SettingsView: View {
             guard size <= MemoryRestore.maxFileBytes else {
                 throw MemoryRestoreError.tooLarge(bytes: size, maximum: MemoryRestore.maxFileBytes)
             }
-            let file = try MemoryRestore.read(try Data(contentsOf: url))
-            let plan = MemoryRestore.plan(file.records, existing: store.memories, exportedAt: file.exportedAt)
+            let data = try Data(contentsOf: url)
+            let file = try MemoryRestore.read(data)
+            restoreItems = try MemoryRestore.listItems(data)
+            let plan = MemoryRestore.plan(file.records, existing: store.memories + store.lists.map(\.record), exportedAt: file.exportedAt)
             if plan.isEmpty {
                 restoreFailed = false
                 restoreMessage = RestoreCopy.nothingToAdd(plan)
@@ -627,7 +631,8 @@ struct SettingsView: View {
     private func restore(_ plan: MemoryRestorePlan) async {
         restorePlan = nil
         do {
-            let added = try await store.restore(plan.toAdd)
+            let added = try await store.restore(plan.toAdd, listItems: restoreItems)
+            restoreItems = []
             restoreFailed = false
             restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."
         } catch {

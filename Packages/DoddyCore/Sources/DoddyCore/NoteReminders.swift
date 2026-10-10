@@ -350,6 +350,11 @@ public enum NoteReminderCopy {
         language == .polish ? "Notatka, którą chcesz zobaczyć ponownie." : privateBody
     }
 
+    /// The private body for a list's reminder (ADR-216): it never names the list or its items.
+    public static func privateListBody(_ language: NotificationLanguage) -> String {
+        language == .polish ? "Lista, którą chcesz zobaczyć ponownie." : "A list you asked to see again."
+    }
+
     /// Long-press buttons, in the order the categories use them.
     public enum Action: Sendable {
         case openNote, inAnHour, tomorrowMorning, done, doneThisTime
@@ -370,8 +375,8 @@ public enum NoteReminderCopy {
         }
     }
 
-    public static func body(noteText: String, showNoteText: Bool, language: NotificationLanguage = .english) -> String {
-        guard showNoteText else { return privateBody(language) }
+    public static func body(noteText: String, showNoteText: Bool, language: NotificationLanguage = .english, isList: Bool = false) -> String {
+        guard showNoteText else { return isList ? privateListBody(language) : privateBody(language) }
         let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count > NoteReminderLimits.maxBodyLength else { return trimmed }
         return String(trimmed.prefix(NoteReminderLimits.maxBodyLength - 1)) + "…"
@@ -423,9 +428,9 @@ public struct NoteReminderNotification: Equatable, Sendable {
     /// match for a repeat (five for weekdays); plus a snooze still ahead.
     public static func requests(
         for reminder: MemoryReminder, noteText: String, showNoteText: Bool, at date: Date,
-        language: NotificationLanguage = .english
+        language: NotificationLanguage = .english, isList: Bool = false
     ) -> [NoteReminderNotification] {
-        let body = NoteReminderCopy.body(noteText: noteText, showNoteText: showNoteText, language: language)
+        let body = NoteReminderCopy.body(noteText: noteText, showNoteText: showNoteText, language: language, isList: isList)
         let plainTitle = NoteReminderCopy.title(language)
         switch reminder.trigger {
         case .place:
@@ -500,6 +505,8 @@ public protocol NoteReminderRepository: Sendable {
     func reminder(forMemory memoryID: UUID) async throws -> MemoryReminder?
     func reminderCount() async throws -> Int
     func currentText(ofMemory memoryID: UUID) async throws -> String?
+    /// True when the memory is a list (ADR-216), so its private notification says "a list".
+    func isList(memoryID: UUID) async -> Bool
     /// Stores the memory's one reminder, replacing any earlier one; returns it read back.
     /// Throws `NoteReminderError.memoryNotFound` if the memory does not exist.
     func upsertReminder(_ reminder: MemoryReminder) async throws -> MemoryReminder
@@ -756,7 +763,8 @@ public actor NoteReminderCoordinator {
     /// Adds every request the reminder needs now and checks iOS lists each one as pending.
     private func addVerified(_ reminder: MemoryReminder, text: String) async throws {
         let requests = NoteReminderNotification.requests(
-            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language())
+            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language(),
+            isList: await repository.isList(memoryID: reminder.memoryID))
         for request in requests { try await center.add(request) }
         let pending = await center.pendingIdentifiers()
         guard requests.allSatisfy({ pending.contains($0.identifier) }) else { throw NoteReminderError.notScheduled }
@@ -867,8 +875,9 @@ public actor NoteReminderCoordinator {
 
     private func addIfPossible(_ reminder: MemoryReminder) async {
         guard let text = try? await repository.currentText(ofMemory: reminder.memoryID) else { return }
+        let isList = await repository.isList(memoryID: reminder.memoryID)
         for request in NoteReminderNotification.requests(
-            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language()) {
+            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language(), isList: isList) {
             try? await center.add(request)
         }
     }
@@ -889,6 +898,7 @@ public struct UnavailableNoteReminderRepository: NoteReminderRepository {
     public func reminder(forMemory memoryID: UUID) async throws -> MemoryReminder? { throw DoddyError.capabilityUnavailable(.noteReminders) }
     public func reminderCount() async throws -> Int { throw DoddyError.capabilityUnavailable(.noteReminders) }
     public func currentText(ofMemory memoryID: UUID) async throws -> String? { throw DoddyError.capabilityUnavailable(.noteReminders) }
+    public func isList(memoryID: UUID) async -> Bool { false }
     public func upsertReminder(_ reminder: MemoryReminder) async throws -> MemoryReminder { throw DoddyError.capabilityUnavailable(.noteReminders) }
     public func deleteReminder(id: UUID) async throws -> Bool { throw DoddyError.capabilityUnavailable(.noteReminders) }
 }

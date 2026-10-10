@@ -142,3 +142,28 @@ extension ListsTests {
         XCTAssertFalse(MarkdownExport.markdown([], exportedAt: Date()).contains("# Lists"))
     }
 }
+
+extension ListsTests {
+    func testAPlanCanAddToAList() throws {
+        let json = #"{"steps":"[{\"tool\":\"add_to_list\",\"list\":\"Shopping\",\"items\":[\"milk\",\"eggs\"]},{\"tool\":\"set_timer\",\"minutes\":10}]"}"#
+        guard case .plan(let steps) = PlanProposal.parse(parametersJSON: Data(json.utf8)) else { return XCTFail("expected a plan") }
+        XCTAssertEqual(steps[0].request, .addToList(ListVoiceRequest(list: "Shopping", items: ["milk", "eggs"])))
+        XCTAssertFalse(steps[0].canChange, "a list step is matched when it runs, not edited on the card")
+        XCTAssertEqual(PlanProposal.confirmTitle([steps[0]]), "Add to the list")
+        XCTAssertEqual(PlanProposal.confirmTitle(steps), "Do 2 things")
+    }
+}
+
+extension ListsTests {
+    func testFindSearchesListNamesAndItems() throws {
+        let shopping = try list("Shopping", [item("Mleko 2 l"), item("eggs", position: 1)])
+        let packing = try list("Packing for Kraków", [item("passport")])
+        XCTAssertEqual(ListSearch.hits("mleko", in: [shopping, packing]).map(\.list.name), ["Shopping"])
+        XCTAssertEqual(ListSearch.hits("mleko", in: [shopping])[0].items.map(\.text), ["Mleko 2 l"])
+        let krakow = ListSearch.hits("krakow", in: [shopping, packing])
+        XCTAssertEqual(krakow.map(\.list.name), ["Packing for Kraków"])
+        XCTAssertTrue(krakow[0].nameMatched)
+        XCTAssertEqual(ListSearch.hits("bread", in: [shopping, packing]), [])
+        XCTAssertEqual(ListSearch.hits("the", in: [shopping]), [], "stopwords alone find nothing")
+    }
+}

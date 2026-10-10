@@ -34,6 +34,12 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
         try await dbQueue.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM note_reminders") ?? 0 }
     }
 
+    public func isList(memoryID: UUID) async -> Bool {
+        (try? await dbQueue.read { db in
+            try String.fetchOne(db, sql: "SELECT category FROM memories WHERE id = ?", arguments: [memoryID.uuidString])
+        }) == MemoryCategory.list.rawValue
+    }
+
     public func currentText(ofMemory memoryID: UUID) async throws -> String? {
         try await dbQueue.read { db in
             guard let row = try Row.fetchOne(

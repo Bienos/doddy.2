@@ -89,8 +89,7 @@ Date: 2026-10-10. Owner: "design lists by voice", then "approved, build it" (L1â
 ## NOT RUN / UNVERIFIED
 - **App:** not compiled or run (no Xcode here), and no screen has been seen. Untested on a device: the swipe actions in a `List` inside the Memories `NavigationStack`, the Undo timing, and the menu inside the toolbar.
 - **Live conversation:** none run. Unchecked: whether the agent uses list names from `{{saved_lists}}`, sends items as an array, skips the confirm-on-screen line for adds, and asks on "not found".
-- **Find:** shows no lists (recall leaves them out). The design said lists come up in Find; that is not built.
-- **Restore from an export file:** list names come back as lists, but items do not (`MemoryRestore` doesn't read `listItems` yet).
+- **Find and restore (ADR-217):** Find now shows lists that match by name or item, and restoring a JSON export puts list items back. The Markdown export lists them as task lists.
 - **Notification wording:** the private body is the general "A note you asked to see again.", the title is "Reminder" and the button is "Open note". The canvas was updated to match. A list-specific wording is not built.
 - **Server copy for phone calls** (opt-in): sends notes only, not lists.
 
