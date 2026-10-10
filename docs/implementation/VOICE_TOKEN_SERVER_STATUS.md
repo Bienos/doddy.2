@@ -37,5 +37,6 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 | Env `ELEVENLABS_API_KEY` | Set by the owner on 2026-10-10 (Sensitive, Production). Key scope: **ElevenAgents = Read, every other endpoint No Access**; switch Agents to Write only if a real token request fails with a permission error |
 | Live check | Before the key: wrong code → `500 server_not_configured`. After the key and a production redeploy (2026-10-10, `dpl_6CbRFEZxwEJ3xU9Xo6ozmWCPPDaS`): wrong code → `401 {"error":"invalid_access_code"}`, `GET` → `405`. A real token (owner's access code from the app) is **not yet verified** |
 | Previews | Behind Vercel Authentication (SSO), so only production is usable by the app |
+| Ignored Build Step | Project setting (2026-10-10): `git diff HEAD^ HEAD --quiet -- .` (run in `server/voice-token`). A push that changes nothing under `server/voice-token/` skips the build, preview and production alike, so other work doesn't use up the Hobby plan's 100 deployments/day. Change the server's code to get a new deployment, or redeploy from the dashboard |
 | Agent authentication | Still **off**. Turn on only after the app works in "Private (token server)" mode |
 
