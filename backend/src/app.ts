@@ -5,6 +5,7 @@ import type { Config } from "./config.js";
 import { createHandler } from "./http.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
+import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService } from "./service.js";
 import { Store } from "./store.js";
@@ -23,8 +24,8 @@ export function buildApp(
   let provider: CalendarProvider;
   if (overrides.provider) provider = overrides.provider;
   else if (config.mode === "live") {
-    if (!config.composio) throw new Error("live mode without Composio settings");
-    provider = new ComposioCalendarProvider(config.composio);
+    // Live without Composio (web search only): the calendar says "not set up", never demo data.
+    provider = config.composio ? new ComposioCalendarProvider(config.composio) : new UnconfiguredCalendarProvider();
   } else provider = new MockCalendarProvider();
 
   const verifier: SessionVerifier =
@@ -37,12 +38,14 @@ export function buildApp(
     limits: config.limits,
     publicBaseUrl: config.publicBaseUrl,
     appReturnUrl: config.appReturnUrl,
-    completionMode: provider.mode === "mock" ? "mock" : config.composio!.completionMode,
+    completionMode: provider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
   });
   // Online accounts. Live: only toolkits with their own settings are connectable; the rest say so.
   let toolsProvider: ToolsProvider;
   if (overrides.toolsProvider) toolsProvider = overrides.toolsProvider;
-  else if (config.mode === "live") toolsProvider = new ComposioToolsProvider(config.composio!.apiKey, config.toolkits);
+  else if (config.mode === "live") {
+    toolsProvider = config.composio ? new ComposioToolsProvider(config.composio.apiKey, config.toolkits) : new UnconfiguredToolsProvider();
+  }
   else toolsProvider = new MockToolsProvider();
   // Web search: live only with a Monid key (otherwise "not set up"); mock mode uses offline demo results.
   const webSearch =
@@ -60,7 +63,7 @@ export function buildApp(
     limits: config.limits,
     publicBaseUrl: config.publicBaseUrl,
     appReturnUrl: config.appReturnUrl,
-    completionMode: toolsProvider.mode === "mock" ? "mock" : config.composio!.completionMode,
+    completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
   });
   const handler = createHandler({ service, tools, verifier, appReturnUrl: config.appReturnUrl, maxBodyBytes: config.limits.maxBodyBytes });
   // Last line of defence: a handler failure closes that one connection, never the process.

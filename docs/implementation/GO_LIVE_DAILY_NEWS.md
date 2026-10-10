@@ -35,7 +35,7 @@ Not needed for this: Twilio, ElevenLabs, `PUBLIC_BASE_URL`, the Composio backend
 
 ## 3. Render (about 20 minutes)
 Created by hand rather than with `render.yaml`: the blueprint would also create
-`doddy-backend`, which refuses to start without its Composio keys.
+`doddy` (the backend; since ADR-193 it starts with a Monid key alone, but it is a separate decision).
 
 1. **New → Postgres**: name `doddy-db`, region **Frankfurt**, PostgreSQL **16**, the smallest
    paid plan. When it is ready, copy its **Internal Database URL**.

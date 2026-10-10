@@ -1,5 +1,6 @@
 # Render Blueprint for two Doddy services:
-#  - doddy-backend: Gmail/Drive/Notion/Todoist/Calendar through Composio (backend/).
+#  - doddy: the backend (backend/): web search through Monid, and Gmail/Drive/Notion/Todoist/Calendar
+#    through Composio. Either half is optional in live mode; at least one must be set (ADR-193).
 #  - doddy-messaging (+ worker + Postgres): notifications, texts, phone calls and the daily news
 #    (server/messaging/, ADR-139). Paid plans: confirm cost before applying. Owner decision
 #    2026-10-10: one Render setup; the backend is expected to move onto the same Postgres later.
@@ -49,7 +50,7 @@ envVarGroups:
 
 services:
   - type: web
-    name: doddy-backend
+    name: doddy
     runtime: node
     plan: free            # sleeps when idle; the SQLite file resets on every restart/deploy (see doc)
     region: frankfurt     # closest to Warsaw
@@ -75,16 +76,17 @@ services:
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
       - key: DODDY_DB_PATH
-        value: ./data/doddy-backend.sqlite
+        value: ./data/doddy.sqlite
       # callback = single-owner development only (the server refuses it in production).
       - key: COMPOSIO_COMPLETION_MODE
         value: callback
-      # https origin, no path: https://<service name>.onrender.com (check the URL Render shows).
+      # https origin, no path: https://doddy.onrender.com or the URL Render shows if that name is taken.
       - key: DODDY_PUBLIC_BASE_URL
         sync: false
+      # Composio is optional: leave all three empty for a web-search-only server (accounts show
+      # "Not set up"); fill all three to turn the accounts on.
       - key: COMPOSIO_API_KEY
         sync: false
-      # Live mode still requires the Google Calendar pair to start.
       - key: COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID
         sync: false
       - key: COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION

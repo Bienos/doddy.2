@@ -187,7 +187,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
+  // Live mode needs Composio (accounts) or Monid (web search), or both. Composio is optional: a
+  // server can run web search only, and the accounts then show "Not set up" (never demo data).
   let composio: ComposioSettings | null = null;
+  const composioNames = ["COMPOSIO_API_KEY", "COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID", "COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION"] as const;
+  const composioGiven = composioNames.some((name) => (e[name] ?? "").trim() !== "");
   if (e.DODDY_MODE === "live") {
     if (e.DODDY_ENV === "production") {
       // The only session mechanism built is an owner-minted signed token. A public release needs a
@@ -195,21 +199,19 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       problems.push("DODDY_MODE=live with DODDY_ENV=production is blocked until real app sign-in exists");
     }
     if (e.DODDY_AUTH_MODE !== "signed") problems.push("DODDY_MODE=live requires DODDY_AUTH_MODE=signed");
-    const missing = (
-      [
-        "COMPOSIO_API_KEY",
-        "COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID",
-        "COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION",
-      ] as const
-    ).filter((name) => !e[name] || e[name]!.trim() === "");
-    for (const name of missing) problems.push(`${name} is required in live mode`);
+    if (!composioGiven && (e.MONID_API_KEY ?? "").trim() === "") {
+      problems.push("DODDY_MODE=live needs Composio (COMPOSIO_API_KEY and the Google Calendar pair) or MONID_API_KEY");
+    }
+    // Half a Composio setup is a mistake, not a feature: all three or none.
+    const missing = composioGiven ? composioNames.filter((name) => !e[name] || e[name]!.trim() === "") : [];
+    for (const name of missing) problems.push(`${name} is required when Composio is set up in live mode`);
     if (e.COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION && !/^\d{8}_\d{2}$/.test(e.COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION)) {
       problems.push("COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION must be a pinned version like 20250909_00, not 'latest'");
     }
     if (e.COMPOSIO_COMPLETION_MODE === "callback" && e.DODDY_ENV !== "development") {
       problems.push("COMPOSIO_COMPLETION_MODE=callback is only allowed for single-owner development; use verifier");
     }
-    if (missing.length === 0) {
+    if (composioGiven && missing.length === 0) {
       composio = {
         apiKey: e.COMPOSIO_API_KEY!,
         authConfigId: e.COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID!,
