@@ -1,0 +1,48 @@
+{
+  "format": "doddy-voice-session/1",
+  "note": "Phone agent settings (S2). Variables come from the call-start webhook (server/messaging/src/routes/elevenlabs.ts); the placeholders below are only for tests in the ElevenLabs dashboard.",
+  "first_message": {
+    "en": "Hi, this is Doddy, an AI assistant. How can I help?"
+  },
+  "languages": [
+    "en"
+  ],
+  "variables": {
+    "doddy_caller": "known | unknown | calls_off | unavailable",
+    "doddy_direction": "inbound | outbound",
+    "doddy_memory": "on | off (memory on calls)",
+    "doddy_pin": "set | not_set"
+  },
+  "elevenlabs": {
+    "agent_name": "Doddy (phone)",
+    "tags": [
+      "doddy",
+      "phone"
+    ],
+    "llm": "gemini-2.5-flash",
+    "temperature": 0.3,
+    "timezone": "Europe/Warsaw",
+    "secret_variables": {
+      "secret__doddy_session": "Per-call session id; only ever placed in tool headers, never shown to the model"
+    },
+    "placeholders": {
+      "secret__doddy_session": "none",
+      "doddy_caller": "unknown",
+      "doddy_memory": "off",
+      "doddy_pin": "not_set",
+      "doddy_direction": "inbound"
+    },
+    "workspace_secrets": {
+      "doddy_tool_secret": "ELEVENLABS_TOOL_SECRET (same value as on the server)"
+    },
+    "overrides": {
+      "enable_conversation_initiation_client_data_from_webhook": true
+    },
+    "privacy": {
+      "record_voice": false,
+      "retention_days": 30,
+      "note": "Calls can contain memories read aloud (ADR-158)"
+    },
+    "call_start_webhook": "/webhooks/elevenlabs/call-start"
+  }
+}

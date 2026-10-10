@@ -126,7 +126,7 @@ To stop this repeating, new sessions should start from this branch (or the defau
 PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit.
 
 **Follow-ups:**
-- Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the
-  `voice-agent/` spec format so the drift check covers it.
+- ~~Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the
+  `voice-agent/` spec format so the drift check covers it.~~ Done (ADR-172, `voice-agent/phone/`).
 - The owner merges PR #5 once CI is green, then closes or deletes the merged parallel branches.
 - Everything in the S1/S2/N1 status docs under "owner actions" is still open (Render, Twilio, APNs, keys).

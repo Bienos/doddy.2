@@ -9,6 +9,10 @@ copy of the live ElevenLabs agent against the spec so drift made in the dashboar
   python3 -I scripts/voice_agent_spec.py openai              # session.update body (template unrendered)
   python3 -I scripts/voice_agent_spec.py elevenlabs          # one ElevenLabs tool_config per tool
   python3 -I scripts/voice_agent_spec.py compare EXPORT.json # EXPORT = {"prompt": str, "tools": [agents_list_tools items]}
+
+Add `--agent phone` to any command for the phone agent (voice-agent/phone/, S2): its tools are
+webhooks to the messaging server, written with a `base` env name, a `path_template` and `body`
+parameters instead of a fixed https url.
 """
 import json
 import re
@@ -17,15 +21,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "voice-agent"
+AGENTS = {"app": SPEC, "phone": SPEC / "phone"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
 
 
-def load():
-    tools = json.loads((SPEC / "tools.json").read_text(encoding="utf-8"))
-    session = json.loads((SPEC / "session.json").read_text(encoding="utf-8"))
-    instructions = (SPEC / "instructions.md").read_text(encoding="utf-8")
+def load(spec=SPEC):
+    tools = json.loads((spec / "tools.json").read_text(encoding="utf-8"))
+    session = json.loads((spec / "session.json").read_text(encoding="utf-8"))
+    instructions = (spec / "instructions.md").read_text(encoding="utf-8")
     return tools, session, instructions
 
 
@@ -67,15 +72,22 @@ def check(tools, session, instructions):
             errors.append(f"{where}: x_doddy.timeout_secs must be a positive integer")
         if x.get("runs_on") == "web":
             http = x.get("http") or {}
-            if not str(http.get("url", "")).startswith("https://"):
-                errors.append(f"{where}: web tools need an https x_doddy.http.url")
+            if "base" in http:
+                # Our own server: the origin comes from an env var at setup time.
+                if not re.fullmatch(r"[A-Z][A-Z0-9_]*", str(http["base"])) or not str(http.get("path_template", "")).startswith("/"):
+                    errors.append(f"{where}: x_doddy.http needs an ENV_NAME base and a path_template starting with '/'")
+            elif not str(http.get("url", "")).startswith("https://"):
+                errors.append(f"{where}: web tools need an https x_doddy.http.url (or a base + path_template)")
             path = http.get("path", [])
             query = http.get("query", [])
+            body = http.get("body", [])
             for p in path:
-                if "{" + p + "}" not in http.get("url", ""):
+                if "{" + p + "}" not in http.get("url", http.get("path_template", "")):
                     errors.append(f"{where}: path param '{p}' is not in the url")
-            if sorted(path + query) != sorted(props):
-                errors.append(f"{where}: http path+query must list exactly the tool's parameters")
+            if sorted(path + query + body) != sorted(props):
+                errors.append(f"{where}: http path+query+body must list exactly the tool's parameters")
+            if body and http.get("method") != "POST":
+                errors.append(f"{where}: body parameters need method POST")
             overlap = set(http.get("constants", {})) & set(props)
             if overlap:
                 errors.append(f"{where}: constants shadow parameters {sorted(overlap)}")
@@ -135,6 +147,22 @@ def elevenlabs_tool(tool):
             "properties": {k: _el_param(v) for k, v in props.items()},
         }}
     http = x["http"]
+    if "base" in http:
+        # Webhook to our own server: JSON body, headers that reference a workspace secret or a
+        # secret dynamic variable (setup-phone-agent.mjs resolves the secret id and the origin).
+        headers = {}
+        for name, ref in http.get("headers", {}).items():
+            headers[name] = {"secret_id": "<" + ref["secret"] + ">"} if "secret" in ref else {"variable_name": ref["variable"]}
+        return {**common, "type": "webhook", "api_schema": {
+            "url": "${" + http["base"] + "}" + http["path_template"],
+            "method": http["method"],
+            "request_headers": headers,
+            "request_body_schema": {
+                "type": "object",
+                "properties": {k: _el_param(props[k]) for k in http.get("body", [])},
+                "required": [k for k in tool["parameters"].get("required", []) if k in http.get("body", [])],
+            },
+        }}
     query = {k: _el_param(props[k]) for k in http.get("query", [])}
     query.update({k: _el_param(None, v) for k, v in http.get("constants", {}).items()})
     required = tool["parameters"].get("required", [])
@@ -162,7 +190,8 @@ def _live_params(cfg):
             out[k] = (v.get("type"), v.get("description", ""), v.get("enum"))
     else:
         api = cfg.get("api_schema", {})
-        sources = [api.get("path_params_schema", {}), api.get("query_params_schema", {}).get("properties", {})]
+        sources = [api.get("path_params_schema", {}), api.get("query_params_schema", {}).get("properties", {}),
+                   (api.get("request_body_schema") or {}).get("properties", {})]
         for source in sources:
             for k, v in source.items():
                 if v.get("constant_value") in ("", None):
@@ -170,10 +199,10 @@ def _live_params(cfg):
     return out
 
 
-def compare(tools, instructions, export):
+def compare(tools, instructions, export, where="voice-agent/"):
     diffs = []
     if export.get("prompt") is not None and export["prompt"].strip() != instructions.strip():
-        diffs.append("prompt: live agent prompt differs from voice-agent/instructions.md")
+        diffs.append(f"prompt: live agent prompt differs from {where}instructions.md")
     live = {t["tool_config"]["name"]: t for t in export.get("tools", [])}
     spec = {t["name"]: t for t in tools["tools"]}
     for name in sorted(set(spec) - set(live)):
@@ -201,13 +230,20 @@ def compare(tools, instructions, export):
 
 
 def main(argv):
-    if len(argv) < 2 or argv[1] not in {"check", "openai", "elevenlabs", "compare"}:
+    agent = "app"
+    if "--agent" in argv:
+        i = argv.index("--agent")
+        agent = argv[i + 1] if i + 1 < len(argv) else ""
+        argv = argv[:i] + argv[i + 2:]
+    if agent not in AGENTS or len(argv) < 2 or argv[1] not in {"check", "openai", "elevenlabs", "compare"}:
         print(__doc__.strip())
         return 2
-    tools, session, instructions = load()
+    spec = AGENTS[agent]
+    where = spec.relative_to(ROOT).as_posix() + "/"
+    tools, session, instructions = load(spec)
     errors = check(tools, session, instructions)
     if errors:
-        print("FAIL voice agent spec")
+        print(f"FAIL voice agent spec ({where})")
         for e in errors:
             print(f"  - {e}")
         return 1
@@ -215,7 +251,8 @@ def main(argv):
     if cmd == "check":
         phone = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "phone"]
         web = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "web"]
-        print(f"PASS voice agent spec: {len(tools['tools'])} tools (phone: {', '.join(phone)}; web: {', '.join(web)})")
+        groups = "; ".join(f"{label}: {', '.join(names)}" for label, names in (("phone", phone), ("web", web)) if names)
+        print(f"PASS voice agent spec ({where}): {len(tools['tools'])} tools ({groups})")
     elif cmd == "openai":
         print(json.dumps(openai_session(tools, session, instructions), ensure_ascii=False, indent=2))
     elif cmd == "elevenlabs":
@@ -225,13 +262,13 @@ def main(argv):
             print("compare needs an export file")
             return 2
         export = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
-        diffs = compare(tools, instructions, export)
+        diffs = compare(tools, instructions, export, where)
         if diffs:
-            print("DRIFT between live ElevenLabs agent and voice-agent/")
+            print(f"DRIFT between live ElevenLabs agent and {where}")
             for d in diffs:
                 print(f"  - {d}")
             return 1
-        print("MATCH live ElevenLabs agent equals voice-agent/ spec")
+        print(f"MATCH live ElevenLabs agent equals {where} spec")
     return 0
 
 

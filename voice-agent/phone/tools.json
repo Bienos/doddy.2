@@ -1,0 +1,123 @@
+{
+  "format": "doddy-voice-tools/1",
+  "note": "The phone agent 'Doddy (phone)' (S2, ADR-152). Webhook tools that call server/messaging; the server checks X-Doddy-Tool-Secret and the per-call session. Created by server/messaging/scripts/setup-phone-agent.mjs from these files.",
+  "tools": [
+    {
+      "type": "function",
+      "name": "verify_pin",
+      "description": "Check the caller's Doddy PIN. Required once per call before search_memories or save_note.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "pin": {
+            "type": "string",
+            "description": "Only the digits of the PIN the caller just said."
+          }
+        },
+        "required": [
+          "pin"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "web",
+        "confirm_on_screen": false,
+        "speak_before": "auto",
+        "timeout_secs": 10,
+        "http": {
+          "base": "PUBLIC_BASE_URL",
+          "path_template": "/webhooks/elevenlabs/tools/verify-pin",
+          "method": "POST",
+          "body": [
+            "pin"
+          ],
+          "headers": {
+            "X-Doddy-Tool-Secret": {
+              "secret": "doddy_tool_secret"
+            },
+            "X-Doddy-Session": {
+              "variable": "secret__doddy_session"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "name": "search_memories",
+      "description": "Search the caller's own saved Doddy memories. Answer only from what it returns.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Key words from the caller's question, in the caller's language."
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "web",
+        "confirm_on_screen": false,
+        "speak_before": "auto",
+        "timeout_secs": 10,
+        "http": {
+          "base": "PUBLIC_BASE_URL",
+          "path_template": "/webhooks/elevenlabs/tools/search-memories",
+          "method": "POST",
+          "body": [
+            "query"
+          ],
+          "headers": {
+            "X-Doddy-Tool-Secret": {
+              "secret": "doddy_tool_secret"
+            },
+            "X-Doddy-Session": {
+              "variable": "secret__doddy_session"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "name": "save_note",
+      "description": "Save something the caller asked Doddy to remember. It waits in the Doddy app until they confirm it.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "What to remember, in the caller's own words."
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "web",
+        "confirm_on_screen": false,
+        "speak_before": "auto",
+        "timeout_secs": 10,
+        "http": {
+          "base": "PUBLIC_BASE_URL",
+          "path_template": "/webhooks/elevenlabs/tools/save-note",
+          "method": "POST",
+          "body": [
+            "text"
+          ],
+          "headers": {
+            "X-Doddy-Tool-Secret": {
+              "secret": "doddy_tool_secret"
+            },
+            "X-Doddy-Session": {
+              "variable": "secret__doddy_session"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

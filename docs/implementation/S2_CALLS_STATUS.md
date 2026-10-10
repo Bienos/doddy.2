@@ -28,6 +28,7 @@ Date: 2026-10-10. Owner decisions on that date:
 ## Built
 - **Server:** migration `002_calls.sql`, `calls.ts`, `crypto.ts`, `memorySearch.ts`, routes `calls.ts` (app) and `elevenlabs.ts` (webhook and tools), `ElevenLabsOutboundCaller`.
 - **`server/messaging/scripts/setup-phone-agent.mjs`:** creates the workspace secret, the 3 webhook tools (with secret and session headers) and the agent.
+- **Since 2026-10-10 (ADR-172):** the prompt, tools and settings live in `voice-agent/phone/` and are checked in CI (`voice_agent_spec.py check --agent phone`); the script reads them. Its tool requests now also carry `pre_tool_speech` / `force_pre_tool_speech`, the same fields the app agent's live tools use. The dry-run output was compared by eye with the earlier one; it was **not** re-validated against the ElevenLabs OpenAPI schema.
   - The agent has the prompt, an AI disclosure in its first sentence, no audio recording, and 30-day transcript retention.
   - The workspace-wide call-start webhook is changed only with `--set-workspace-webhook`.
 - **DoddyCore:** `CallsClient.swift` (settings, PIN, consent `calls-v1`, call me now, call list, notes inbox, memory copy on/off and snapshot), `CallPIN` rules shared with the server, `.weakPIN` error, capability `.phoneCalls`. The catalog never reports it as "available"; it is "needs setup" until the screen confirms.
