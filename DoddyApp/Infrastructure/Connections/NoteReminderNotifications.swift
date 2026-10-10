@@ -159,6 +159,13 @@ extension TimerBanners {
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let action = response.actionIdentifier
         let requestID = response.notification.request.identifier
+        // The morning check-in (ADR-220) opens its screen; nothing else happens until the user taps.
+        if MorningCheckIn.isCheckIn(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.morningCheckInOpened() }
+            }
+            return
+        }
         let memoryString = response.notification.request.content.userInfo[SystemNoteNotifications.memoryIDKey] as? String
         await NoteReminderRouter.shared.handle(action: action, requestID: requestID, memoryString: memoryString)
     }

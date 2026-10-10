@@ -31,7 +31,8 @@ struct DataFlowView: View {
             // Same rule as ServerConfig: the built-in address, or a valid one entered in Settings.
             messagingServerSet: ServerConfig.baseURL() != nil,
             pushOn: pushOn,
-            memoryCopyOn: memoryCopyOn)
+            memoryCopyOn: memoryCopyOn,
+            morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey))
     }
 
     var body: some View {

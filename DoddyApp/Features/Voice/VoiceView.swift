@@ -72,7 +72,9 @@ struct VoiceView: View {
         .task {
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
-            await controller.start(mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset())
+            await controller.start(
+                mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
+                checkIn: ShortcutRouter.shared.takeCheckInBriefing())
         }
         .onDisappear {
             Task { await controller?.stop() }

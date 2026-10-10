@@ -186,6 +186,8 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                MorningCheckInSettingsSection()
+
                 // Widgets (ADR-219): what they show, and the switch that empties the shared file.
                 Section("Widgets") {
                     if WidgetSync.shared.isAvailable {

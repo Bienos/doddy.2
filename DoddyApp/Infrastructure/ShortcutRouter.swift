@@ -14,6 +14,10 @@ final class ShortcutRouter {
     var isVoicePresented = false
     /// Home › Translate (ADR-215): the conversation that opens next starts in translator mode.
     private var translatorPreset: TranslatorSetup?
+    /// The morning check-in screen (ADR-220), opened from its notification or Settings.
+    var isCheckInPresented = false
+    /// "Talk it through": the conversation that opens next starts with this briefing.
+    private var checkInBriefing: MorningBriefing?
     /// Bound to the guided Back Tap setup sheet in `RootView`.
     var isSetupPresented = false
     let setup: BackTapSetupModel
@@ -56,6 +60,32 @@ final class ShortcutRouter {
         isSetupPresented = false
         translatorPreset = setup
         isVoicePresented = true
+    }
+
+    /// The check-in notification was tapped: show the check-in screen, unless a conversation or
+    /// a shared draft is already up (the user is busy; the notification stays in history).
+    func morningCheckInOpened() {
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isCheckInPresented = true
+    }
+
+    /// "Talk it through" on the check-in screen. The sheet closes first; the conversation opens
+    /// from `checkInSheetDismissed()`, once it has gone (one presentation at a time).
+    func openCheckInConversation(_ briefing: MorningBriefing) {
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        checkInBriefing = briefing
+        isCheckInPresented = false
+    }
+
+    func checkInSheetDismissed() {
+        if checkInBriefing != nil, !isVoicePresented { isVoicePresented = true } else { showWaitingDraft() }
+    }
+
+    /// The check-in briefing for the conversation that is starting, once.
+    func takeCheckInBriefing() -> MorningBriefing? {
+        defer { checkInBriefing = nil }
+        return checkInBriefing
     }
 
     /// The translator setup for the conversation that is starting, once.

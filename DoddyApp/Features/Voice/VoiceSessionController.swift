@@ -162,6 +162,8 @@ final class VoiceSessionController {
     private(set) var heldSide: TranslatorDirection?
     /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
     private var translatorNeedsHello = false
+    /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
+    private var checkInNeedsBriefing = false
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
@@ -209,9 +211,15 @@ final class VoiceSessionController {
 
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
     /// Settings → About you → "Use in voice conversations" is on.
-    func start(_ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil) async {
+    func start(
+        _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
+        checkIn: MorningBriefing? = nil
+    ) async {
         guard !isLive else { return }
         lines = []
+        // A translator start sends no notes or lists, so it never carries a check-in too.
+        let checkIn = preset == nil ? checkIn : nil
+        checkInNeedsBriefing = checkIn != nil
         translator = nil
         listReceipt = nil
         translatorSummary = nil
@@ -287,6 +295,7 @@ final class VoiceSessionController {
                 ProfilePrompt.variableName: profileText,
                 TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
                 ListsPrompt.variableName: listsText,
+                MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
             ],
             userId: Self.userID())
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
@@ -1004,6 +1013,10 @@ final class VoiceSessionController {
             return
         }
         lines.append(Line(fromUser: fromUser, text: text))
+        if !fromUser, checkInNeedsBriefing {
+            checkInNeedsBriefing = false
+            Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
+        }
     }
 
     private func correct(_ original: String, to corrected: String) {

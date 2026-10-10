@@ -160,6 +160,10 @@ struct RootView: View {
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             BackTapSetupView(model: router.setup)
         }
+        // The morning check-in (ADR-220), from its notification or Settings.
+        .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
+            MorningCheckInView(openSettings: { selectedTab = .settings })
+        }
         .sheet(item: $router.shownDraft, onDismiss: { router.showWaitingDraft() }) { draft in
             CaptureView(sharedText: draft.isSharedText ? draft.text : nil)
         }
