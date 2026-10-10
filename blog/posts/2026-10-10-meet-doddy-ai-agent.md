@@ -1,10 +1,17 @@
 ---
-title: "Meet Doddy, the AI agent that remembers what you tell it"
+title: "Meet Doddy: an AI companion that wants to do it all for you"
 date: 2026-10-10
 author: "The Doddy team"
 status: published
-summary: "AI agents are everywhere in 2026. Doddy is a friendlier, smaller one: an iPhone assistant you talk to, that keeps your notes in your own words and asks before it does anything. Here's what it can do, what it can't, and how we keep it safe."
-keywords: "AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI companion, AI safety, human in the loop"
+summary: "Doddy is an AI companion for your iPhone with a big goal: to help with anything you need, and always ask before it acts. Here's what it does today, what it can't do yet, how we keep it safe, and answers to the questions people ask most."
+keywords: "AI companion, AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI companion, AI safety, human in the loop"
+tldr:
+  - **Doddy is an AI companion for your iPhone.** A hand-drawn mate you talk to, in English or Polish.
+  - **The goal is big:** a companion that can help you with anything, one skill at a time.
+  - **Today it does a handful of things:** remembers what you tell it in your own words, finds it again, and helps with your calendar, reminders, timers, maps and message drafts.
+  - **It always asks first.** Every action is a card you tap. It never sends, buys or deletes anything on its own.
+  - **It's honest.** If it can't find something, it says so. It tells you it's an AI.
+  - **It's early.** Tested on our own iPhone, not open to the public yet. [Join early access](/#join).
 evidence:
   - docs/implementation/V1_VOICE_STATUS.md
   - docs/implementation/TODAY_STATUS.md
@@ -17,13 +24,17 @@ evidence:
 Everyone's building AI agents right now. Agents that book flights, write code, shop for you,
 answer your email while you sleep. It's a lot.
 
-Doddy is an AI agent too, just a much smaller and friendlier one. It's a hand-drawn mate that
-lives in your iPhone. You talk to it like a person (it's not one, and it tells you so), it keeps
-the little things you ask it to keep, and it can help with a few everyday jobs on your phone. The
-one rule it never breaks: **it asks before it does anything.**
+Doddy is our take on it: an **AI companion** that lives in your iPhone. A hand-drawn mate you
+talk to like a person (it's not one, and it tells you so). The dream is simple: whatever you need,
+you tell Doddy and it gets handled. Remember this, plan that, sort the other thing.
 
-This post covers what Doddy is, why we think it's worth building, what it can and can't do today,
-and how we're thinking about safety. With sources, because the AI world has enough vibes already.
+We're not there yet, and we won't pretend we are. Today Doddy does a handful of things well, and
+it gets a new skill only once it can do that skill safely. The one rule that never changes:
+**it asks before it does anything.**
+
+This post covers what Doddy is, where it's going, what it can and can't do today, and how we're
+thinking about safety. There's an FAQ at the end, and sources, because the AI world has enough
+vibes already.
 
 ## Wait, what's an "AI agent"?
 
@@ -64,13 +75,27 @@ So people want help with ordinary life. What they don't always get is an assista
 **remembers what they actually said**, and is honest when it doesn't know. General chatbots are
 great at sounding sure. Doddy is built to show you your own words instead.
 
+## Where we're going: a companion that can do it all
+
+Here's the honest version of "a companion that can do anything for you". Doddy grows one skill at
+a time, and every new skill has to pass the same three tests before it ships:
+
+1. **It asks first.** You see what Doddy is about to do and tap to say yes.
+2. **It proves it worked.** Doddy checks the result before it says "done".
+3. **You can switch it off.** Every skill that touches your stuff has its own switch.
+
+Things we'd love Doddy to help with one day: keeping track of parcels and appointments, planning a
+week, remembering birthdays and what people like, sorting out the small admin that eats your
+evenings. None of these are built, and there are no dates. If a skill can't pass the three tests,
+it doesn't ship, however cool the demo looks.
+
 ## Why a character?
 
 Because talking to a blank text box is a bit weird, and talking to a stick figure in white
 sneakers is a bit less weird. Doddy is meant to be the mate who notices small annoyances and fixes
 them without fuss, and who might joke about the twelve tabs you have open.
 
-What Doddy is **not** meant to be is a replacement friend. Researchers are starting to look
+"Companion" for us means a mate who helps, not a replacement for your friends. Researchers are starting to look
 closely at AI companions. A 2026 study in *Nature Human Behaviour* of more than 1,100
 Character.AI users found that using a chatbot mainly for companionship was linked with lower
 well-being, especially for heavy users
@@ -190,6 +215,74 @@ group and see if anyone actually comes back.
 
 If that sounds like your kind of thing, [join early access](/#join) or say hi in the
 [Telegram group](https://t.me/+u-YA6P_MISFjYWE0).
+
+## FAQ
+
+### What is Doddy?
+
+An AI companion app for iPhone. You talk to it (or type), it keeps the things you ask it to keep,
+and it helps with everyday jobs on your phone, like your calendar, reminders, timers and message
+drafts.
+
+### Can Doddy really do anything for me?
+
+Not yet. That's the goal, not the current state. Today it remembers, finds, and helps with a
+short list of phone jobs. New skills get added only when Doddy can ask first and check its own
+work.
+
+### Is Doddy a real person?
+
+No. Doddy is an AI, and it says so. The drawings and the personality are there to make it
+friendlier, not to make you think someone's on the other end.
+
+### Is Doddy an AI girlfriend or boyfriend type of app?
+
+No. Doddy is a helpful mate, not a romantic or emotional stand-in. It won't guilt-trip you, say it
+misses you, or try to keep you chatting.
+
+### Does Doddy listen all the time?
+
+No. It only hears you while a conversation is open. There's no always-on microphone.
+
+### Where are my notes stored?
+
+On your iPhone, and there's no account. The exception is voice: conversations run through our
+voice provider, ElevenLabs, and in the current test build your saved notes and recent
+conversations are sent along when a conversation starts, so Doddy has context.
+
+### Can I delete everything?
+
+Your notes, yes: delete one, or delete all of them in Settings. You can also export them first,
+as JSON or plain text. How long the voice provider keeps conversation recordings is something we
+still have to settle before anyone outside the team uses voice.
+
+### Will Doddy do things without asking?
+
+No. Saving a note, adding an event, starting a timer, opening a message draft: each one is a card
+you tap. Doddy never sends, buys or deletes anything in other apps.
+
+### What if Doddy gets something wrong?
+
+If it can't find something, it says so instead of guessing. You can edit any note, and the
+original wording is kept. And because every action needs your tap, a mistake gets caught before
+it happens.
+
+### Which languages does Doddy speak?
+
+English and Polish. It switches when you do.
+
+### Is there an Android version?
+
+Not yet. Doddy starts on iPhone.
+
+### How much does it cost?
+
+We haven't decided on pricing yet.
+
+### When can I try it?
+
+Doddy is in early testing. [Join early access](/#join) and we'll tell you when it opens. There's
+no date yet.
 
 ## Sources
 

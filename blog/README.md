@@ -8,7 +8,7 @@ Notes from building Doddy, *your mate in your pocket*, in the open. Posts are Ma
 
 | Date | Title | Status |
 |---|---|---|
-| 2026-10-10 | [Meet Doddy, the AI agent that remembers what you tell it](posts/2026-10-10-meet-doddy-ai-agent.md) | Published |
+| 2026-10-10 | [Meet Doddy: an AI companion that wants to do it all for you](posts/2026-10-10-meet-doddy-ai-agent.md) | Published |
 | 2026-10-10 | [Hello, Doddy: why our favourite first result was "I couldn't find it"](posts/2026-10-10-hello-doddy.md) | Published |
 
 Post ideas waiting for a slot: [IDEAS.md](IDEAS.md). New post: copy [_TEMPLATE.md](_TEMPLATE.md).
@@ -29,10 +29,12 @@ The blog follows the same honesty contract as the code (`CLAUDE.md`, `README.md`
    caption it "candidate art, not final".
 4. **No secrets or identifiers.** No API keys, agent IDs, bundle IDs, provider tool IDs, private
    repo links or real personal data. Example memories use made-up content.
-5. **Voice:** warm, plain, a little funny about small everyday friction, never hype. Short
+5. **Big goals are fine, as goals.** "Doddy wants to help with anything" is the vision; say
+   clearly what it does *today* next to it (the TL;DR and FAQ are good places).
+6. **Voice:** warm, plain, a little funny about small everyday friction, never hype. Short
    sentences. Doddy's behavioural rules apply to the blog too: no guilt, no fake feelings, no
    promises about features that are not built.
-6. **Name third parties accurately** (e.g. ElevenLabs for voice) and do not imply endorsement.
+7. **Name third parties accurately** (e.g. ElevenLabs for voice) and do not imply endorsement.
 
 ## Front matter
 
@@ -43,6 +45,8 @@ Each post starts with:
 title: "…"              # keep under ~60 characters for search results
 date: YYYY-MM-DD
 keywords: "…"           # optional; rendered as <meta name="keywords">
+tldr:                  # optional; 3–6 bullets shown in a box above the post
+  - **Short point.** One sentence.
 author: "…"            # owner fills in
 status: draft          # draft | review | approved | published
 summary: "One sentence for link previews."

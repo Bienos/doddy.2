@@ -6,6 +6,7 @@ having no build step on Vercel: the generated HTML is committed.
   python3 -I tools/build_blog.py          write site/blog/
   python3 -I tools/build_blog.py --check  exit 1 if site/blog/ is out of date
 
+Front matter may add `tldr:` (a list, shown as a box above the post) and `keywords:`.
 Markdown support is deliberately small: #/##/### headings, paragraphs, - and 1. lists (one level),
 > quotes, | tables |, ---, **bold**, *italic*, `code`, [links](url) and HTML comments (dropped).
 """
@@ -258,13 +259,21 @@ def index_page(posts: list[dict]) -> str:
 
 def post_page(p: dict) -> str:
     author = f" · {html.escape(p['author'])}" if p.get("author") and p["author"] != "TBD" else ""
+    tldr = ""
+    if isinstance(p.get("tldr"), list) and p["tldr"]:
+        items = "".join(f"<li>{inline(t)}</li>" for t in p["tldr"])
+        tldr = f'''
+        <aside class="tldr" aria-label="TL;DR">
+          <p class="tldr-label">TL;DR</p>
+          <ul>{items}</ul>
+        </aside>'''
     main = f"""    <article class="post">
       <div class="wrap post-wrap">
         <p class="post-back"><a class="text-link" href="/blog/">← All posts</a></p>
         <header class="post-header">
           <h1 class="display-m">{html.escape(p['title'])}</h1>
           <p class="post-meta"><time datetime="{p['date']}">{nice_date(p['day'])}</time>{author} · {p['minutes']} min read</p>
-        </header>
+        </header>{tldr}
         <div class="post-body">
 {p['html']}
         </div>

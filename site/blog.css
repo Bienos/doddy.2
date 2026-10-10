@@ -54,3 +54,14 @@
 }
 .post-cta .says-small { margin: 0 0 8px; }
 .post-cta p:not(.says-small) { color: var(--secondary-text); }
+
+.tldr {
+  margin: 0 0 clamp(28px, 4vw, 40px); padding: 18px 22px 8px;
+  background: var(--paper); border: 1px solid var(--rule); border-left: 4px solid var(--orange-cue);
+  border-radius: 0 18px 18px 0; box-shadow: var(--lift);
+}
+.tldr-label { font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 1; color: var(--accent-text); margin: 0 0 8px; }
+.tldr ul { margin: 0 0 12px; padding-left: 1.2em; }
+.tldr li { margin-bottom: 6px; }
+.tldr li::marker { color: var(--accent-text); }
+.post-body h3 { font-size: 1.2rem; margin: 28px 0 6px; }
