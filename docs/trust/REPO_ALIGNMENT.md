@@ -32,7 +32,7 @@ The constitution's architecture milestones (`04_ENFORCEMENT_ARCHITECTURE.md`, "M
 | Rule | Status in repo | Gap |
 |---|---|---|
 | DOD-06 / UX-01 memory | Explicit save only; voice `save_memory` waits for an on-screen tap; per-record edit/delete, delete-all (FTS rebuilt, `secure_delete`), JSON/text export; backups disclosed (ADR-028) | No expiry, category or sensitivity fields; no long-term-memory off switch distinct from saving; "forget that" by voice has no tool — agent must not claim forgetting |
-| DOD-07/08 / UX-02/03 actions | No external writes exist. `ToolProposal` / `ToolConfirmation` / `ActionReceipt` (verified / unknown / failed) ports exist | Missing: full status set (proposed, drafted, needs_approval, executing, cancelled), payload digest binding, expiry, idempotency key, policy engine, receipt UI. **Required before any external write.** |
+| DOD-07/08/09 / UX-02/03 actions | **Simulation built 2026-10-10** (`docs/implementation/ACTION_APPROVAL_SIMULATION.md`): `ActionLedger` enforces the full status set, exact-payload approval (expiring, single use), idempotency key, no retry from `unknown`, reconcile; approval + receipt screen in Settings. No real external writes exist | Ledger is in memory; no real permission checks, receipt history or voice action tools. **Persistence before any real adapter.** |
 | DOD-11 privacy | Mic only while talking; ElevenLabs disclosed in Settings; privacy manifest declares audio | Dev ElevenLabs agent is public (ADR-034); ElevenLabs retention/region not decided; legal review not done |
 | DOD-05 / UX-05 preferences | None | No typed, persisted tone/verbosity/nickname preferences; voice agent cannot persist "less sarcasm" — must say so |
 | Character routing (TASK / CASUAL / SENSITIVE) | Only via the ElevenLabs agent prompt (configured remotely, not in repo) | No code-level router; agent prompt not yet checked against 02_BEHAVIOUR spec (sensitive mode, no flattery, no guilt farewells) |
@@ -52,5 +52,5 @@ The constitution's architecture milestones (`04_ENFORCEMENT_ARCHITECTURE.md`, "M
 
 ## Owner decisions this raises
 1. Approve the constitution text (its header says owner approval pending) — the instruction above is treated as adoption for working purposes.
-2. Whether to build the mock-only action approval/receipt slice next, or keep the repo's current order and build it right before M4.
+2. ~~Whether to build the mock-only action approval/receipt slice next~~: built 2026-10-10 on owner instruction.
 3. Review the ElevenLabs agent prompt against `02_BEHAVIOUR_AND_CHARACTER_SPEC.md` (needs the connector; prompt changes affect the live dev agent).

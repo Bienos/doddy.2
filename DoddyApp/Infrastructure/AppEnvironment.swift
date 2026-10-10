@@ -4,12 +4,13 @@ import Foundation
 import SwiftUI
 
 /// Composition root. Local memory uses SQLite; voice uses the ElevenLabs agent (VoiceView);
-/// reminders and other actions stay explicit `Unavailable*` adapters.
+/// real actions stay `UnavailableActionAdapter` (the approval demo uses its own simulated ledger).
 struct AppEnvironment: Sendable {
     let memoryRepository: any MemoryRepository
     let recallService: any RecallService
     let assistantClient: any AssistantClient
-    let toolExecutor: any ToolExecutor
+    /// Adapter for real external actions. None exist yet.
+    let actionAdapter: any ActionAdapter
     let capabilities: CapabilityCatalog
     let privacy: PrivacyDefaults
     /// Set when the memory store could not be opened. Nothing is reset or deleted in that case.
@@ -19,7 +20,7 @@ struct AppEnvironment: Sendable {
         memoryRepository: UnavailableMemoryRepository(),
         recallService: UnavailableRecallService(),
         assistantClient: UnavailableAssistantClient(),
-        toolExecutor: UnavailableToolExecutor(),
+        actionAdapter: UnavailableActionAdapter(),
         capabilities: .m0,
         privacy: .m0,
         storageProblem: nil)
@@ -34,8 +35,8 @@ struct AppEnvironment: Sendable {
                 memoryRepository: repository,
                 recallService: RepositoryRecallService(repository: repository),
                 assistantClient: UnavailableAssistantClient(),
-                toolExecutor: UnavailableToolExecutor(),
-                capabilities: .v1Voice,
+                actionAdapter: UnavailableActionAdapter(),
+                capabilities: .v1Trust,
                 privacy: .v1Voice,
                 storageProblem: nil)
         } catch {
@@ -43,7 +44,7 @@ struct AppEnvironment: Sendable {
                 memoryRepository: UnavailableMemoryRepository(),
                 recallService: UnavailableRecallService(),
                 assistantClient: UnavailableAssistantClient(),
-                toolExecutor: UnavailableToolExecutor(),
+                actionAdapter: UnavailableActionAdapter(),
                 capabilities: .m0,
                 privacy: .m0,
                 storageProblem: "Doddy couldn't open its memory store, so saving is switched off. Nothing was deleted or reset. Try closing and reopening the app. (\(error.localizedDescription))")

@@ -20,6 +20,16 @@ final class HonestyTests: XCTestCase {
         XCTAssertEqual(CapabilityCatalog.m0.status(of: .reminders), .notImplemented(plannedMilestone: "M4"))
     }
 
+    func testV1TrustAddsOnlyTheSimulationNotRealActions() {
+        XCTAssertTrue(CapabilityCatalog.v1Trust.isAvailable(.actionSimulation))
+        XCTAssertFalse(CapabilityCatalog.v1Voice.isAvailable(.actionSimulation))
+        XCTAssertFalse(CapabilityCatalog.v1Trust.isAvailable(.reminders))
+        XCTAssertFalse(CapabilityCatalog.v1Trust.isAvailable(.connectedAccounts))
+        for capability in Capability.allCases where capability != .actionSimulation {
+            XCTAssertEqual(CapabilityCatalog.v1Trust.status(of: capability), CapabilityCatalog.v1Voice.status(of: capability))
+        }
+    }
+
     func testPrivacyDefaultsAreFullyLocal() {
         XCTAssertTrue(PrivacyDefaults.m0.isFullyLocal)
         XCTAssertFalse(PrivacyDefaults.m0.accountRequired)
@@ -39,10 +49,12 @@ final class HonestyTests: XCTestCase {
         await assertUnavailable(.cloudAssistant) {
             _ = try await UnavailableAssistantClient().respond(AssistantRequest(sessionID: UUID(), userText: "hi"))
         }
-        let proposal = ToolProposal(operationID: UUID(), kind: .createReminder, summary: "x")
-        await assertUnavailable(.reminders) {
-            _ = try await UnavailableToolExecutor().execute(ToolConfirmation(proposal: proposal, confirmedAt: Date(timeIntervalSince1970: 0)))
-        }
+        let unavailable = UnavailableActionAdapter()
+        XCTAssertFalse(ActionType.allCases.contains(where: unavailable.supports))
+        XCTAssertFalse(unavailable.isSimulation)
+        let request = ActionExecutionRequest(actionID: UUID(), payload: try .message(to: "a", text: "b"), idempotencyKey: UUID())
+        await assertUnavailable(.reminders) { _ = try await unavailable.execute(request) }
+        await assertUnavailable(.reminders) { _ = try await unavailable.status(idempotencyKey: UUID()) }
     }
 
     func testNoMatchCopyDoesNotInventAnAnswer() {

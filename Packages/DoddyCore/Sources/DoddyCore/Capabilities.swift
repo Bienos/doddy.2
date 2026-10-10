@@ -11,6 +11,8 @@ public enum Capability: String, CaseIterable, Sendable {
     case reminders
     case connectedAccounts
     case cloudSync
+    /// Approval and receipt flow driven by a simulated adapter. Nothing is sent anywhere.
+    case actionSimulation
 }
 
 public enum CapabilityStatus: Equatable, Sendable {
@@ -41,6 +43,7 @@ public struct CapabilityCatalog: Sendable {
         .reminders: .notImplemented(plannedMilestone: "M4"),
         .connectedAccounts: .notImplemented(plannedMilestone: "unscheduled"),
         .cloudSync: .notImplemented(plannedMilestone: "unscheduled"),
+        .actionSimulation: .notImplemented(plannedMilestone: "V1"),
     ])
 
     /// M1: local text memory (save, list, correct, delete, export, lexical recall).
@@ -54,6 +57,12 @@ public struct CapabilityCatalog: Sendable {
         .cloudAssistant: .available,
         .voiceInput: .available,
         .voiceOutput: .available,
+    ]) { _, new in new })
+
+    /// V1 plus the simulated approval/receipt flow (docs/implementation/ACTION_APPROVAL_SIMULATION.md).
+    /// Real actions (`reminders`, `connectedAccounts`) stay not built.
+    public static let v1Trust = CapabilityCatalog(statuses: v1Voice.statuses.merging([
+        .actionSimulation: .available,
     ]) { _, new in new })
 }
 
@@ -82,7 +91,16 @@ public struct UnavailableAssistantClient: AssistantClient {
     public func respond(_ request: AssistantRequest) async throws -> AssistantReply { throw DoddyError.capabilityUnavailable(.cloudAssistant) }
 }
 
-public struct UnavailableToolExecutor: ToolExecutor {
+/// Supports no action, so a ledger using it refuses every proposal before anything runs.
+public struct UnavailableActionAdapter: ActionAdapter {
     public init() {}
-    public func execute(_ confirmation: ToolConfirmation) async throws -> ActionReceipt { throw DoddyError.capabilityUnavailable(.reminders) }
+    public var connectorID: String { "unavailable" }
+    public var isSimulation: Bool { false }
+    public func supports(_ type: ActionType) -> Bool { false }
+    public func execute(_ request: ActionExecutionRequest) async throws -> ActionProviderResult {
+        throw DoddyError.capabilityUnavailable(.reminders)
+    }
+    public func status(idempotencyKey: UUID) async throws -> ActionProviderResult {
+        throw DoddyError.capabilityUnavailable(.reminders)
+    }
 }

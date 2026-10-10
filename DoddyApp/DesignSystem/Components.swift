@@ -160,6 +160,7 @@ extension Capability {
         case .reminders: "Reminders"
         case .connectedAccounts: "Connected accounts"
         case .cloudSync: "Sync between devices"
+        case .actionSimulation: "Approval flow (simulation only)"
         }
     }
 }

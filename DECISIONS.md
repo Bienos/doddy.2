@@ -66,6 +66,12 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | ADR | Decision | Status |
 |---|---|---|
 | 038 | **DODDY AI Constitution V1** (2026-10-10) adopted as the governing behaviour, memory, action, privacy and character spec: `docs/trust/`, `config/doddy_rules.yaml`; mapping and gaps in `docs/trust/REPO_ALIGNMENT.md`. Repo milestones stay the build order; the constitution's "M1–M5" are mapped, not renamed. Its rules are appended to `AGENTS.md` and `CLAUDE.md`; `scripts/verify_imported_pack.py` treats those two files as append-only (imported bytes must remain an exact prefix) | Applied (owner approved option A) — constitution text itself still marked "owner approval pending" in its header |
+| 039 | Action statuses follow the constitution (`proposed, drafted, needs_approval, executing, confirmed, failed, unknown, cancelled`); they supersede the reminder state names in `docs/architecture/TOOLS_AND_ACTIONS.md` (pinned pack doc, left unedited) | Applied |
+| 040 | Approval is bound by **equality with the full canonical payload** (type, target, every field, exact whitespace) instead of a digest: equivalent in memory, no crypto dependency. Add a digest when approvals are persisted or sent to a server | Applied |
+| 041 | Approval lasts **5 minutes** and is **single use**; any edit clears it. `failed` is final; a retry must be a new draft with a new approval | Applied — owner may adjust lifetime |
+| 042 | An adapter error or an OK without a provider reference is recorded as **`unknown`**, never success; `unknown` can only be reconciled (status check by idempotency key), never re-executed or cancelled | Applied |
+| 043 | `ActionLedger` is **in memory** for the simulation. Durable pending state before the external call is a prerequisite for any real adapter | Applied — **blocks real actions** |
+| 044 | Approval demo lives in Settings → Actions, runs only on `SimulatedActionAdapter`, labelled as simulation on every state; capability `actionSimulation` in `CapabilityCatalog.v1Trust`. Old `ToolProposal`/`ToolConfirmation`/`ToolExecutor`/`ActionReceipt` ports replaced by `ActionAdapter` + `UnavailableActionAdapter` | Applied |
 
 ## Decisions the owner must approve before M1 (written at M0; items 6–7 since applied as defaults in M1)
 

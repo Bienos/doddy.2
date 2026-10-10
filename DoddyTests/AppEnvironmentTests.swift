@@ -9,7 +9,7 @@ final class AppEnvironmentTests: XCTestCase {
         XCTAssertTrue(env.memoryRepository is UnavailableMemoryRepository)
         XCTAssertTrue(env.recallService is UnavailableRecallService)
         XCTAssertTrue(env.assistantClient is UnavailableAssistantClient)
-        XCTAssertTrue(env.toolExecutor is UnavailableToolExecutor)
+        XCTAssertTrue(env.actionAdapter is UnavailableActionAdapter)
     }
 
     func testEveryCapabilityHasHonestDisplayCopy() {

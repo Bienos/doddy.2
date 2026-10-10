@@ -76,6 +76,16 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
 
+                if environment.capabilities.isAvailable(.actionSimulation) {
+                    Section("Actions") {
+                        NavigationLink("Try the approval flow (simulation)") { ActionDemoView() }
+                            .accessibilityIdentifier("settings.actionDemo")
+                        Text("Doddy can't send messages or change other apps yet. This demo shows how it will ask first and report only what it can confirm. Nothing is sent.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+
                 Section("Appearance and accessibility") {
                     Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppearancePreference.allCases, id: \.rawValue) { option in
