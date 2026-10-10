@@ -65,11 +65,12 @@ Owner setup before inviting anyone (none of this has been done):
 4. After deploying, check the logs show no `limitsPerInstance` or `placeholderPrices` warnings, and do one supervised question to see `costMicros` in the log.
 
 ## Hosting (2026-10-10)
-- Vercel project **`doddy-gateway`** (team `bienos`, root directory `gateway/`, Node 22) created by the agent. It deploys only when `gateway/` changes (Ignored Build Step `git diff HEAD^ HEAD --quiet -- .`); preview deployments sit behind Vercel login.
-- Production env set: `OPENAI_MODEL=gpt-6-luna` (owner's choice), `GATEWAY_TOKEN_SECRET` and `GATEWAY_INVITE_CODES` (both Sensitive, random, never committed; the invite code was handed to the owner privately).
-- **Still missing:** `OPENAI_API_KEY`. The owner added it to the `doddy` website project by mistake; it belongs in `doddy-gateway` (Production, Sensitive) and should be removed from `doddy`.
-- **Not deployed yet.** Vercel's daily deployment limit was hit on 2026-10-10. The first production deploy must come from a branch that contains `gateway/` (this one), because the project's production branch does not. Until then the gateway does not exist on the internet, and with any variable missing it refuses every request (`503`).
-- NOT RUN: `/api/register` and `/api/assist` against the deployed gateway, and the first paid call.
+- Vercel project **`doddy-gateway`** (team `bienos`, root directory `gateway/`, Node 22). **Deployed to production** on 2026-10-10 (`dpl_9vqejfWyE5rEJk7P1b992UiNqBy1`, commit `e212b66`). Address for the app's Settings → Ask Doddy: **`https://doddy-gateway.vercel.app`** (the app adds `/api/register` and `/api/assist`).
+- Ignored Build Step: `if [ "$VERCEL_ENV" = "production" ]; then exit 1; fi; git diff HEAD^ HEAD --quiet -- .` Production deploys always build; preview deploys only when `gateway/` changed. Preview deployments sit behind Vercel login.
+- Production env: `OPENAI_API_KEY` (owner, Sensitive), `OPENAI_MODEL=gpt-6-luna` (owner's choice), `GATEWAY_TOKEN_SECRET` and `GATEWAY_INVITE_CODES` (Sensitive, random, never committed; the invite code went to the owner privately). Budget, price and rate-limit variables use the code defaults (ADR-124, ADR-125); no shared store is configured, so limits are per instance.
+- Checked against the live deployment (no OpenAI call made): `POST /api/register` with a wrong invite code → `401 notAuthorized`; `POST /api/assist` with no token or a forged token → `401 notAuthorized`; `GET /api/register` → `405`.
+- NOT RUN: a real registration with the owner's invite code and the first paid question. Those happen from the app on the owner's iPhone.
+- Open: the owner's earlier copy of `OPENAI_API_KEY` is still in the `doddy` website project and should be deleted there. The OpenAI project spend limit is the owner's to set.
 
 ## Independent review
 A read-only security review of the gateway and Swift client found 4 real issues and several hardening items. All were fixed with tests: invite codes <16 chars refused; IPv6 /64 bucketing; per-invite assist cap; limiter eviction no longer resets the global brake; one whole-request deadline so a retry can't outlive the function limit; catch-all so errors can't leak via the platform's 500; invite tag keyed with the server secret; log values shape-checked; cached token bound to its gateway host; redirects refused; corrupt Keychain token treated as empty. Not fixed, by design: the limiter is still per instance (README, ADR-114). A review is not a penetration test.
