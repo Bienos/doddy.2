@@ -31,16 +31,11 @@ struct PersonalityView: View {
             }
 
             Section {
-                Picker("Voice", selection: $voiceRaw) {
-                    ForEach(VoiceChoice.allCases, id: \.self) { choice in
-                        VStack(alignment: .leading) {
-                            Text(Self.label(choice))
-                            Text(Self.detail(choice)).font(.footnote).foregroundStyle(Theme.secondaryText)
-                        }
-                        .tag(choice.rawValue)
-                    }
+                NavigationLink {
+                    VoiceChoiceView(voiceRaw: $voiceRaw, speed: voiceStyle.speed, preview: preview)
+                } label: {
+                    StatusRow(title: "Voice", value: Self.name(voiceStyle.voice))
                 }
-                .pickerStyle(.navigationLink)
                 .accessibilityIdentifier("settings.voice.choice")
                 Picker("Speed", selection: $speedRaw) {
                     ForEach(SpeakingSpeed.allCases, id: \.self) { Text(Self.label($0)).tag($0.rawValue) }
@@ -52,8 +47,8 @@ struct PersonalityView: View {
                     preview.toggle(voiceStyle)
                 } label: {
                     Label(
-                        preview.playing == nil ? "Hear \(Self.name(voiceStyle.voice))" : "Stop sample",
-                        systemImage: preview.playing == nil ? "play.circle.fill" : "stop.circle.fill")
+                        preview.playing == voiceStyle.voice ? "Stop sample" : "Hear \(Self.name(voiceStyle.voice))",
+                        systemImage: preview.playing == voiceStyle.voice ? "stop.circle.fill" : "play.circle.fill")
                 }
                 .accessibilityIdentifier("settings.voice.preview")
                 if let problem = preview.problem {
@@ -107,7 +102,6 @@ struct PersonalityView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
-        .onChange(of: voiceRaw) { _, _ in preview.stop() }
         .onChange(of: speedRaw) { _, _ in preview.stop() }
         .onDisappear { preview.stop() }
         .navigationTitle("Voice and personality")
@@ -144,10 +138,6 @@ struct PersonalityView: View {
         }
     }
 
-    static func label(_ value: VoiceChoice) -> String {
-        value == .doddy ? "Doddy (default)" : name(value)
-    }
-
     static func name(_ value: VoiceChoice) -> String {
         switch value {
         case .doddy: "Doddy"
@@ -163,7 +153,7 @@ struct PersonalityView: View {
         switch value {
         case .doddy: "The voice Doddy was given"
         case .josh: "Warm, smooth and steady"
-        case .wiktor: "Warm, native Polish"
+        case .wiktor: "Warm and engaging"
         case .river: "Relaxed and neutral"
         case .jessica: "Bright and warm"
         case .will: "Laid-back and easy-going"
@@ -238,5 +228,95 @@ struct PersonalityLinkRow: View {
                     + PersonalityView.summary(PersonalitySettings(humour: humourRaw, length: lengthRaw, formality: formalityRaw, mood: moodRaw)))
         }
         .accessibilityIdentifier("settings.personality")
+    }
+}
+
+/// Settings → Voice and personality → Voice. Each row has a play button for that voice's bundled
+/// sample (at the chosen speed) and selects the voice when tapped (ADR-106).
+struct VoiceChoiceView: View {
+    @Binding var voiceRaw: String
+    let speed: SpeakingSpeed
+    let preview: VoicePreviewPlayer
+
+    private var selected: VoiceChoice { VoiceChoice(rawValue: voiceRaw) ?? .doddy }
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(VoiceChoice.allCases, id: \.self) { choice in
+                    row(choice)
+                }
+            } footer: {
+                Text("Tap a face to hear Doddy's hello in that voice, in English and Polish. All voices speak both; Wiktor is a native Polish speaker. Your choice applies from the next conversation.")
+            }
+            if let problem = preview.problem {
+                Label(problem, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.error)
+            }
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.canvas)
+        .navigationTitle("Voice")
+        .navigationBarTitleDisplayMode(.inline)
+        .onDisappear { preview.stop() }
+    }
+
+    private func row(_ choice: VoiceChoice) -> some View {
+        let isPlaying = preview.playing == choice
+        let name = PersonalityView.name(choice)
+        return HStack(spacing: 14) {
+            Button {
+                preview.toggle(VoiceStyle(voice: choice, speed: speed, expressiveness: .natural))
+            } label: {
+                ZStack(alignment: .bottomTrailing) {
+                    Text(String(name.prefix(1)))
+                        .font(.title3.bold())
+                        .foregroundStyle(Theme.ink)
+                        .frame(width: 52, height: 52)
+                        .background(choice == .doddy ? Theme.orangeCue : Theme.quietSurface, in: Circle())
+                    Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(isPlaying ? Theme.ink : Theme.canvas)
+                        .frame(width: 24, height: 24)
+                        .background(isPlaying ? Theme.orangeCue : Theme.ink, in: Circle())
+                        .overlay(Circle().strokeBorder(Theme.canvas, lineWidth: 2))
+                        .offset(x: 3, y: 3)
+                }
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(isPlaying ? "Stop \(name) sample" : "Play \(name) sample")
+            .accessibilityIdentifier("settings.voice.play.\(choice.rawValue)")
+
+            Button {
+                voiceRaw = choice.rawValue
+            } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Text(name).font(.headline).foregroundStyle(Theme.ink)
+                            if choice == .doddy {
+                                Text("Default").font(.caption.weight(.semibold)).foregroundStyle(Theme.accentText)
+                            } else if choice == .wiktor {
+                                Text("Polish native").font(.caption.weight(.semibold)).foregroundStyle(Theme.accentText)
+                            }
+                        }
+                        Text(isPlaying ? "Playing sample…" : PersonalityView.detail(choice))
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    Spacer(minLength: 8)
+                    if choice == selected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(Theme.ink)
+                    }
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .accessibilityAddTraits(choice == selected ? .isSelected : [])
+            .accessibilityIdentifier("settings.voice.select.\(choice.rawValue)")
+        }
+        .padding(.vertical, 6)
     }
 }
