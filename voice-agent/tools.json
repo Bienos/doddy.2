@@ -142,11 +142,11 @@
     {
       "type": "function",
       "name": "wikipedia_search",
-      "description": "Search Wikipedia (Polish 'pl' or English 'en') for articles matching a phrase. Returns up to three results with title and a short snippet. Use it when you do not know the exact article title, then call wikipedia_summary with the best title.",
+      "description": "Search Wikipedia in the user's language (two-letter code, e.g. 'pl', 'en', 'de') for articles matching a phrase. Returns up to three results with title and a short snippet. Use it when you do not know the exact article title, then call wikipedia_summary with the best title.",
       "parameters": {
         "type": "object",
         "properties": {
-          "lang": {"type": "string", "enum": ["pl", "en"], "description": "Wikipedia language edition: 'pl' for Polish or 'en' for English."},
+          "lang": {"type": "string", "enum": ["en", "pl", "de", "fr", "es", "it", "pt", "nl", "sv", "da", "no", "fi", "cs", "sk", "hu", "ro", "bg", "el", "hr", "sl", "lv", "lt", "uk", "ru", "tr", "et", "ca", "sr", "is", "ga", "mt", "mk", "bs", "be", "cy", "gl", "lb"], "description": "Wikipedia language edition as a two-letter code, e.g. 'pl' for Polish, 'en' for English, 'de' for German. Use the language the user is speaking."},
           "srsearch": {"type": "string", "description": "Search phrase, e.g. 'prezydent Polski' or 'tallest building in Europe'."}
         },
         "required": ["lang", "srsearch"]
@@ -159,18 +159,18 @@
     {
       "type": "function",
       "name": "wikipedia_summary",
-      "description": "Get the short summary of one Wikipedia article, in Polish (lang 'pl') or English (lang 'en'). Use it for facts about places, people, things, events and definitions when the user asks and you are not sure, or when they ask you to check. The title must be an exact article title; if you are unsure of the title, call wikipedia_search first and use a returned title. Answer in one to three spoken sentences from the 'extract'; say it comes from Wikipedia.",
+      "description": "Get the short summary of one Wikipedia article, in the user's language (two-letter code, e.g. 'pl', 'en', 'de'). Use it for facts about places, people, things, events and definitions when the user asks and you are not sure, or when they ask you to check. The title must be an exact article title; if you are unsure of the title, call wikipedia_search first and use a returned title. Answer in one to three spoken sentences from the 'extract'; say it comes from Wikipedia.",
       "parameters": {
         "type": "object",
         "properties": {
-          "lang": {"type": "string", "enum": ["pl", "en"], "description": "Wikipedia language edition: 'pl' for Polish or 'en' for English. Prefer the language the user is speaking."},
+          "lang": {"type": "string", "enum": ["en", "pl", "de", "fr", "es", "it", "pt", "nl", "sv", "da", "no", "fi", "cs", "sk", "hu", "ro", "bg", "el", "hr", "sl", "lv", "lt", "uk", "ru", "tr", "et", "ca", "sr", "is", "ga", "mt", "mk", "bs", "be", "cy", "gl", "lb"], "description": "Wikipedia language edition as a two-letter code, e.g. 'pl' for Polish, 'en' for English, 'de' for German. Prefer the language the user is speaking; use the same code as the search."},
           "title": {"type": "string", "description": "Exact article title, e.g. 'Warszawa', 'Albert Einstein' or 'Kraków'."}
         },
         "required": ["lang", "title"]
       },
       "x_doddy": {
         "runs_on": "web", "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "tool_1101m4f25rx2fx7ttcempcvx8s89",
-        "http": {"method": "GET", "url": "https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}", "path": ["lang", "title"], "query": [], "constants": {}, "headers": {"Accept": "application/json", "User-Agent": "DoddyApp/0.1 (personal voice assistant prototype)"}, "response_fields": ["title", "description", "extract"], "follow_redirects_domains": ["pl.wikipedia.org", "en.wikipedia.org"]}
+        "http": {"method": "GET", "url": "https://{lang}.wikipedia.org/api/rest_v1/page/summary/{title}", "path": ["lang", "title"], "query": [], "constants": {}, "headers": {"Accept": "application/json", "User-Agent": "DoddyApp/0.1 (personal voice assistant prototype)"}, "response_fields": ["title", "description", "extract"], "follow_redirects_domains": ["en.wikipedia.org", "pl.wikipedia.org", "de.wikipedia.org", "fr.wikipedia.org", "es.wikipedia.org", "it.wikipedia.org", "pt.wikipedia.org", "nl.wikipedia.org", "sv.wikipedia.org", "uk.wikipedia.org", "ru.wikipedia.org", "cs.wikipedia.org", "ro.wikipedia.org", "hu.wikipedia.org", "el.wikipedia.org", "fi.wikipedia.org", "da.wikipedia.org", "no.wikipedia.org", "tr.wikipedia.org", "bg.wikipedia.org"]}
       }
     },
     {

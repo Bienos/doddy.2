@@ -127,7 +127,7 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
                 """)
         }
-        // Repeating reminders and snooze (ADR-200). New columns only; existing rows stay one-offs.
+        // Repeating reminders and snooze (ADR-205). New columns only; existing rows stay one-offs.
         migrator.registerMigration("v5_note_reminder_repeat") { db in
             try db.execute(sql: """
                 ALTER TABLE note_reminders ADD COLUMN repeat_rule TEXT

@@ -103,9 +103,14 @@ public struct VoiceStyle: Equatable, Sendable, Codable {
 
 /// Which language a voice conversation starts in. `auto` keeps the agent's language detection
 /// (it starts in English and follows the user); a fixed language is sent as the ElevenLabs
-/// `agent.language` override, which also picks that language's greeting (ADR-132).
+/// `agent.language` override, which also picks that language's greeting (ADR-132). Either way the
+/// agent switches when the user switches (ADR-206). The fixed choices are the European languages
+/// the ElevenLabs Swift SDK can start in; the agent also follows Estonian, Catalan, Serbian,
+/// Icelandic, Irish, Maltese, Macedonian, Bosnian, Belarusian, Welsh, Galician and Luxembourgish
+/// once the user speaks them. Raw values are stored, so existing ones never change.
 public enum ConversationLanguage: String, CaseIterable, Sendable, Codable {
-    case auto, english, polish
+    case auto
+    case english, polish, german, french, spanish, italian, portuguese, dutch, swedish, danish, norwegian, finnish, czech, slovak, hungarian, romanian, bulgarian, greek, croatian, slovenian, latvian, lithuanian, ukrainian, russian, turkish
 
     /// ISO 639-1 code for the override, or nil to send nothing.
     public var overrideCode: String? {
@@ -113,6 +118,92 @@ public enum ConversationLanguage: String, CaseIterable, Sendable, Codable {
         case .auto: nil
         case .english: "en"
         case .polish: "pl"
+        case .german: "de"
+        case .french: "fr"
+        case .spanish: "es"
+        case .italian: "it"
+        case .portuguese: "pt"
+        case .dutch: "nl"
+        case .swedish: "sv"
+        case .danish: "da"
+        case .norwegian: "no"
+        case .finnish: "fi"
+        case .czech: "cs"
+        case .slovak: "sk"
+        case .hungarian: "hu"
+        case .romanian: "ro"
+        case .bulgarian: "bg"
+        case .greek: "el"
+        case .croatian: "hr"
+        case .slovenian: "sl"
+        case .latvian: "lv"
+        case .lithuanian: "lt"
+        case .ukrainian: "uk"
+        case .russian: "ru"
+        case .turkish: "tr"
+        }
+    }
+
+    /// The language's own name ("Deutsch"); "Automatic" is the app's word, not a language.
+    public var nativeName: String? {
+        switch self {
+        case .auto: nil
+        case .english: "English"
+        case .polish: "Polski"
+        case .german: "Deutsch"
+        case .french: "Français"
+        case .spanish: "Español"
+        case .italian: "Italiano"
+        case .portuguese: "Português"
+        case .dutch: "Nederlands"
+        case .swedish: "Svenska"
+        case .danish: "Dansk"
+        case .norwegian: "Norsk"
+        case .finnish: "Suomi"
+        case .czech: "Čeština"
+        case .slovak: "Slovenčina"
+        case .hungarian: "Magyar"
+        case .romanian: "Română"
+        case .bulgarian: "Български"
+        case .greek: "Ελληνικά"
+        case .croatian: "Hrvatski"
+        case .slovenian: "Slovenščina"
+        case .latvian: "Latviešu"
+        case .lithuanian: "Lietuvių"
+        case .ukrainian: "Українська"
+        case .russian: "Русский"
+        case .turkish: "Türkçe"
+        }
+    }
+
+    public var englishName: String? {
+        switch self {
+        case .auto: nil
+        case .english: "English"
+        case .polish: "Polish"
+        case .german: "German"
+        case .french: "French"
+        case .spanish: "Spanish"
+        case .italian: "Italian"
+        case .portuguese: "Portuguese"
+        case .dutch: "Dutch"
+        case .swedish: "Swedish"
+        case .danish: "Danish"
+        case .norwegian: "Norwegian"
+        case .finnish: "Finnish"
+        case .czech: "Czech"
+        case .slovak: "Slovak"
+        case .hungarian: "Hungarian"
+        case .romanian: "Romanian"
+        case .bulgarian: "Bulgarian"
+        case .greek: "Greek"
+        case .croatian: "Croatian"
+        case .slovenian: "Slovenian"
+        case .latvian: "Latvian"
+        case .lithuanian: "Lithuanian"
+        case .ukrainian: "Ukrainian"
+        case .russian: "Russian"
+        case .turkish: "Turkish"
         }
     }
 

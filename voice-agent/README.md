@@ -36,9 +36,16 @@ version `agtvrsn_3401m4k47e2revvv01sk7xv1tb26` → `agtvrsn_5801m4k5544wevk9bz7w
 bullet and one reminder rule). Version `agtvrsn_1401m4k5nha9ffv81j7c6m6sze2n` → `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`;
 compare run against the new tool and the full prompt (no drift). For rollback, the previous version has 21 tools.
 
-**Applied to the live agent 2026-10-10 (ADR-200):** `remind_me_about_note` (`tool_7401m4k84jjgf1ctk26vj03kextq`)
+**Applied to the live agent 2026-10-10 (ADR-205):** `remind_me_about_note` (`tool_7401m4k84jjgf1ctk26vj03kextq`)
 gained the `repeat` parameter and one sentence in its description, updated in place; the prompt and the agent's
 tool list are unchanged.
+
+**Applied to the live agent 2026-10-10 (ADR-206): European languages.**
+- **Language presets:** 36 non-English presets (the `languages` list in `session.json`), each overriding only the first message. ElevenLabs refused Basque (`eu`) and Albanian (`sq`), so they are left out. The built-in `language_detection` tool was already on with `only_at_conversation_start: false`; with the presets it switches between all of them mid-conversation.
+- **Prompt:** three lines changed: the reply language, the Wikipedia language code, and the languages for note search.
+- **Wikipedia tools:** `wikipedia_search` and `wikipedia_summary` accept the same codes. Summary redirects stay limited to the 20 largest editions, because ElevenLabs allows at most 20 redirect domains.
+- **Versions:** `agtvrsn_2801m4knwd04fxfbj25wat868jtp` → `agtvrsn_2301m4kpwmr1fcers0b8vf7th8qr` (presets) → `agtvrsn_7101m4kpz26mf3p8yysmx0y4z6cz` (prompt).
+- **Known drift, not from this line:** the live agent also has `propose_plan` (`tool_3001m4knv27zfw09afmn7sjamfcp`) and its prompt line from ADR-204 on the `claude/loving-dirac-uuxoux` line. Both were kept as they are. The live first message is the owner's dashboard text "Hey, it's Doddy. what's up?", now copied into `session.json`.
 
 ## App side (DoddyCore `RealtimeVoice.swift`)
 

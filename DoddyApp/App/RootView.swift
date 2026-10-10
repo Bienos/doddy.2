@@ -27,7 +27,7 @@ enum PreferenceKey {
     static let voiceChoice = "voice.choice"
     static let voiceSpeed = "voice.speed"
     static let voiceExpressiveness = "voice.expressiveness"
-    /// Settings → Voice and personality: auto, english or polish (`ConversationLanguage`).
+    /// Settings → Voice and personality: auto or one of 25 European languages (`ConversationLanguage`, ADR-206).
     static let voiceLanguage = "voice.language"
     /// What Doddy calls the user; sent with each voice conversation only when set (ADR-132).
     static let nickname = "personality.nickname"

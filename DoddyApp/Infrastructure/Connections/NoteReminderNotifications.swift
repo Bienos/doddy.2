@@ -8,7 +8,7 @@ import UserNotifications
 /// No badge, no remote registration, interruption level `.active`.
 struct SystemNoteNotifications: NoteNotificationScheduling {
     static let categoryID = "DODDY_NOTE_REMINDER"
-    /// Repeating reminders (ADR-200): "In 1 hour" and "Done this time"; no "Tomorrow 09:00" (owner
+    /// Repeating reminders (ADR-205): "In 1 hour" and "Done this time"; no "Tomorrow 09:00" (owner
     /// decision R4) and no Stop, which is on the note only.
     static let repeatingCategoryID = "DODDY_NOTE_REPEATING_REMINDER"
     /// Place reminders: no snooze (a place comes back on the next arrival).
@@ -22,11 +22,14 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
 
     /// Long-press actions. Adds Doddy's category to any already registered (iOS replaces the set).
     static func registerCategory() async {
-        let open = UNNotificationAction(identifier: openAction, title: "Open note", options: [.foreground])
-        let hour = UNNotificationAction(identifier: hourAction, title: "In 1 hour", options: [])
-        let tomorrow = UNNotificationAction(identifier: tomorrowAction, title: "Tomorrow 09:00", options: [])
-        let done = UNNotificationAction(identifier: doneAction, title: "Done", options: [])
-        let doneThisTime = UNNotificationAction(identifier: doneAction, title: "Done this time", options: [])
+        // In the iPhone's language: Polish or English (ADR-207). Re-registered when it changes.
+        let language = NotificationLanguage.current
+        let title = { (action: NoteReminderCopy.Action) in NoteReminderCopy.action(action, language) }
+        let open = UNNotificationAction(identifier: openAction, title: title(.openNote), options: [.foreground])
+        let hour = UNNotificationAction(identifier: hourAction, title: title(.inAnHour), options: [])
+        let tomorrow = UNNotificationAction(identifier: tomorrowAction, title: title(.tomorrowMorning), options: [])
+        let done = UNNotificationAction(identifier: doneAction, title: title(.done), options: [])
+        let doneThisTime = UNNotificationAction(identifier: doneAction, title: title(.doneThisTime), options: [])
         let category = UNNotificationCategory(
             identifier: categoryID, actions: [open, hour, tomorrow, done], intentIdentifiers: [], options: [])
         let repeatingCategory = UNNotificationCategory(
@@ -70,7 +73,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
 
         let trigger: UNNotificationTrigger
         if let match = notification.repeatMatch {
-            // Repeats at this clock time in the zone it was set in (ADR-200).
+            // Repeats at this clock time in the zone it was set in (ADR-205).
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(identifier: match.timeZoneID) ?? .current
             var components = DateComponents(day: match.day, hour: match.hour, minute: match.minute, second: 0, weekday: match.weekday)
