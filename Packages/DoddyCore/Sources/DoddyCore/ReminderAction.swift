@@ -75,6 +75,14 @@ public struct ReminderClarification: Equatable, Sendable {
         case timeSkipped
         /// The clocks pass this time twice that day (daylight saving ends).
         case timeRepeated
+        /// The user's words for the time and the date sent don't agree (ADR-215).
+        case saidDifferently
+        /// The words allow two days ("next Friday", "this weekend") (ADR-215).
+        case ambiguousDay
+        /// The words allow two times ("at 7") (ADR-215).
+        case ambiguousTime
+        /// A time was sent that the user never said (ADR-215).
+        case noTimeSaid
     }
 
     public let kind: Kind

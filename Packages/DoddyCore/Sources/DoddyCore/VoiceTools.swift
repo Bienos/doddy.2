@@ -247,6 +247,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case .clarify(let clarification): return .needsClarification(name: name, clarification)
         }
         guard let start = startDue.date(in: calendar) else { return .invalid(name: name, reason: "missing start") }
+        // The user's own words for when, if the agent passed them (ADR-215).
+        if let said = args.text("said_time") {
+            let day = ReminderDue(year: startDue.year, month: startDue.month, day: startDue.day, timeZoneID: startDue.timeZoneID)
+            let allDay = args.flag("all_day")
+            if let question = SaidTime.check(said, due: allDay ? day : startDue, now: now, timeRequired: !allDay) {
+                return .needsClarification(name: name, question)
+            }
+        }
         if args.flag("all_day") {
             let dayStart = calendar.startOfDay(for: start)
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
@@ -290,6 +298,19 @@ public enum VoiceToolRequest: Equatable, Sendable {
             switch ReminderDueRules.check(dueText, now: now, calendar: calendar) {
             case .due(let checked): due = checked
             case .clarify(let clarification): return .needsClarification(name: name, clarification)
+            }
+        }
+        // The user's own words for when, if the agent passed them (ADR-215).
+        if let said = args.text("said_time") {
+            guard let due else {
+                // Words about a time but no due: ask rather than add a reminder without one.
+                return .needsClarification(name: name, ReminderClarification(
+                    kind: .saidDifferently,
+                    problem: "the user said \"\(said)\" but the request has no due date",
+                    question: "which day, and what time if any, they want it"))
+            }
+            if let question = SaidTime.check(said, due: due, now: now, timeRequired: false) {
+                return .needsClarification(name: name, question)
             }
         }
         return .createReminder(ReminderDraft(title: title, due: due, notes: args.text("notes")))
