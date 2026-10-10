@@ -151,10 +151,11 @@ struct RootView: View {
             // The opening (ADR-207) sits over the ready app and fades away to reveal it; a tap
             // ends it early. It is removed from the hierarchy entirely once it is done.
             if let play = opening.play {
-                OpeningSceneView(play: play) {
-                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.35)) { opening.finish() }
-                }
-                .transition(.opacity)
+                // No fade at the end: Doddy is already in Home's place, and everything else has faded.
+                OpeningSceneView(
+                    play: play, homeTarget: opening.homeArtBox,
+                    onHandover: { opening.handoverStarted() },
+                    onFinished: { opening.finish() })
                 .zIndex(1)
             }
         }

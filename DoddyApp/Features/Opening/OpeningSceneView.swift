@@ -2,26 +2,40 @@ import DoddyCore
 import SwiftUI
 
 /// Draws the opening (`OpeningScene`, ADR-207) over the whole screen for the time since it
-/// started: a pen sketches Doddy in, he dribbles, crouches, hops and shoots, the ball arcs into
-/// the ring ("SWISH!"), and he pops up ready to talk with a hello while the court fades for
-/// Home to take over. Presentation only: every value comes from `OpeningScene.frame(at:)`,
-/// and the view never starts a conversation or reads a setting. When the timeline ends, or the
-/// user taps, it tells the model, which does the rest.
+/// started: a pen sketches Doddy in, he dribbles, crouches, hops and shoots, the ball flies into
+/// the ring ("SWISH!", confetti, a shake), he pops up ready to talk with a hello, and then jumps
+/// into his place on Home while the paper fades and Home shows through. The last frame draws him
+/// exactly where Home draws him (`homeTarget`, measured by Home), with the same view
+/// (`CharacterArtImage`), so when this view goes away nothing moves.
+///
+/// Presentation only: every value comes from `OpeningScene` and `OpeningHandover`; the view
+/// never starts a conversation or reads a setting. It tells the model when the hand-over starts
+/// (Home's buttons slide in) and when it is over.
 struct OpeningSceneView: View {
     let play: OpeningPlay
+    /// Home's picture of Doddy, in global points; nil until Home has been laid out.
+    let homeTarget: ScreenBox?
+    let onHandover: () -> Void
     let onFinished: () -> Void
 
-    @Environment(\.colorScheme) private var colorScheme
     @State private var done = false
     @State private var scored = false
+    @State private var handoverSent = false
+    /// Seconds added to the clock by a tap: the tap jumps straight to the hand-over.
+    @State private var shift: TimeInterval = 0
+
+    private func time(_ date: Date) -> TimeInterval { date.timeIntervalSince(play.startedAt) + shift }
 
     var body: some View {
-        TimelineView(.animation(paused: done)) { context in
-            let t = context.date.timeIntervalSince(play.startedAt)
-            stage(OpeningScene.frame(at: t, reducedMotion: play.reducedMotion), at: t)
+        GeometryReader { geo in
+            TimelineView(.animation(paused: done)) { context in
+                let t = time(context.date)
+                scene(OpeningScene.frame(at: t, reducedMotion: play.reducedMotion), at: t, in: geo)
+            }
         }
+        .ignoresSafeArea()
         .contentShape(Rectangle())
-        .onTapGesture { finish() }
+        .onTapGesture { skip() }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Doddy's opening. Doddy scores a basket and says: \(play.greeting.spoken)")
         .accessibilityHint("Double-tap to skip.")
@@ -29,18 +43,34 @@ struct OpeningSceneView: View {
         .accessibilityIdentifier("opening.scene")
         .sensoryFeedback(.impact(weight: .light), trigger: scored)
         .task {
-            // The timeline is the clock; this only waits for two of its moments.
-            if !play.reducedMotion {
-                let untilScore = OpeningScene.Beat.score - Date().timeIntervalSince(play.startedAt)
-                if untilScore > 0 { try? await Task.sleep(for: .seconds(untilScore)) }
-                if Task.isCancelled { return }
-                scored = true
+            // The timeline draws; this only watches for three of its moments.
+            let length = OpeningScene.duration(reducedMotion: play.reducedMotion)
+            while !Task.isCancelled {
+                let t = time(.now)
+                if !play.reducedMotion && !scored && t >= OpeningScene.Beat.score && t < OpeningScene.Beat.score + 0.3 {
+                    scored = true
+                }
+                if !handoverSent && (play.reducedMotion || t >= OpeningScene.Beat.handoverStart) {
+                    handoverSent = true
+                    onHandover()
+                }
+                if t >= length {
+                    finish()
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(30))
             }
-            let untilEnd = OpeningScene.duration(reducedMotion: play.reducedMotion) - Date().timeIntervalSince(play.startedAt)
-            if untilEnd > 0 { try? await Task.sleep(for: .seconds(untilEnd)) }
-            if Task.isCancelled { return }
-            finish()
         }
+    }
+
+    /// A tap goes straight to the hand-over (or the still picture's fade), so Doddy still lands
+    /// in his place instead of the screen cutting.
+    private func skip() {
+        let t = time(.now)
+        let target = play.reducedMotion
+            ? max(t, OpeningScene.duration(reducedMotion: true) - 0.25)
+            : max(t, OpeningScene.Beat.handoverStart)
+        shift += target - t
     }
 
     private func finish() {
@@ -49,45 +79,74 @@ struct OpeningSceneView: View {
         onFinished()
     }
 
-    // MARK: - Stage
+    // MARK: - Layers
 
-    private func stage(_ frame: OpeningFrame, at t: TimeInterval) -> some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            ZStack {
-                // The set: court and hoop. It fades at the hand-over while Doddy stays.
-                Group {
-                    court(w)
-                    backboard(w)
-                    ring(w, front: false, wobble: frame.burst.ringWobble)
-                }
-                .opacity(frame.setOpacity)
-                figure(frame.doddy, at: t, w)
-                ball(frame.ball, w)
-                Group {
-                    ring(w, front: true, wobble: frame.burst.ringWobble)
-                    net(frame.netStretch, wobble: frame.burst.ringWobble, w)
-                    burst(frame.burst, w)
-                }
-                .opacity(frame.setOpacity)
-                bubble(frame.bubble, w)
-            }
-            .frame(width: w, height: w * CGFloat(OpeningScene.stageHeight))
-            .scaleEffect(
-                CGFloat(frame.camera.scale),
-                anchor: UnitPoint(x: frame.camera.anchor.x, y: frame.camera.anchor.y / OpeningScene.stageHeight))
-            .position(x: geo.size.width / 2, y: geo.size.height / 2)
+    private func scene(_ frame: OpeningFrame, at t: TimeInterval, in geo: GeometryProxy) -> some View {
+        let size = geo.size
+        let origin = geo.frame(in: .global).origin
+        let court = OpeningHandover.courtBox(screenWidth: Double(size.width), screenHeight: Double(size.height))
+        let home = homeTarget.map {
+            ScreenBox(centerX: $0.centerX - Double(origin.x), centerY: $0.centerY - Double(origin.y), height: $0.height)
         }
-        .overlay(alignment: .bottom) {
+        let inPlace = play.reducedMotion || t >= OpeningScene.Beat.handoverStart
+        let placed = OpeningHandover.place(court: court, home: home, at: t, reducedMotion: play.reducedMotion)
+        return ZStack(alignment: .topLeading) {
+            // The paper. As it fades, Home shows through.
+            Theme.canvas.opacity(frame.backdropOpacity)
+            if !play.reducedMotion {
+                stage(frame, at: t, drawsReadyDoddy: !inPlace, size: size)
+            }
+            if inPlace || t >= OpeningScene.Beat.readyStart {
+                if inPlace { placedDoddy(placed) }
+                bubble(frame.bubble, box: inPlace ? placed.box : court, screenWidth: size.width)
+            }
             Text("Tap to skip")
                 .font(.caption)
                 .foregroundStyle(Theme.secondaryText)
-                .padding(.bottom, 12)
+                .frame(maxWidth: .infinity)
+                .position(x: size.width / 2, y: size.height - 40)
                 .opacity(frame.hintOpacity)
         }
+        .frame(width: size.width, height: size.height)
         .foregroundStyle(Theme.ink)
-        .background { Theme.canvas.ignoresSafeArea() }
-        .opacity(frame.sceneOpacity)
+    }
+
+    /// Everything on the court, through the camera (zoom about a moving point, and the shake).
+    private func stage(_ frame: OpeningFrame, at t: TimeInterval, drawsReadyDoddy: Bool, size: CGSize) -> some View {
+        let w = size.width
+        return ZStack {
+            Group {
+                court(w)
+                backboard(w)
+                ring(w, front: false, wobble: frame.burst.ringWobble)
+            }
+            .opacity(frame.setOpacity)
+            figure(frame.doddy, at: t, drawsReady: drawsReadyDoddy, w)
+            ball(frame.ball, w)
+            Group {
+                ring(w, front: true, wobble: frame.burst.ringWobble)
+                net(frame.netStretch, wobble: frame.burst.ringWobble, w)
+                particles(frame.particles, w)
+                burst(frame.burst, w)
+            }
+            .opacity(frame.setOpacity)
+        }
+        .frame(width: w, height: w * CGFloat(OpeningScene.stageHeight))
+        .scaleEffect(
+            CGFloat(frame.camera.scale),
+            anchor: UnitPoint(x: frame.camera.anchor.x, y: frame.camera.anchor.y / OpeningScene.stageHeight))
+        .offset(x: CGFloat(frame.camera.shake.x) * w, y: CGFloat(frame.camera.shake.y) * w)
+        .position(x: size.width / 2, y: size.height / 2)
+    }
+
+    /// Doddy on his way to (or in) his place on Home, in screen points.
+    private func placedDoddy(_ placed: PlacedDoddy) -> some View {
+        CharacterArtImage(assetName: "UploadedDoddy_Listening", height: CGFloat(placed.box.height))
+            .scaleEffect(
+                x: CGFloat(placed.squashX), y: CGFloat(placed.squashY),
+                anchor: UnitPoint(x: 0.5, y: OpeningLayout.readyFeetFraction))
+            .position(x: CGFloat(placed.box.centerX), y: CGFloat(placed.box.centerY))
+            .opacity(placed.opacity)
     }
 
     /// The floor line and the free-throw arc under the hoop, in the quiet separator colour.
@@ -156,22 +215,48 @@ struct OpeningSceneView: View {
             }
         }
         .stroke(Theme.ink.opacity(0.7), lineWidth: 1)
-        .rotationEffect(
-            .radians(wobble),
-            anchor: UnitPoint(x: (top.x + half) , y: top.y / OpeningScene.stageHeight))
+        .rotationEffect(.radians(wobble), anchor: UnitPoint(x: top.x + half, y: top.y / OpeningScene.stageHeight))
+    }
+
+    /// Dust puffs and confetti.
+    private func particles(_ particles: [OpeningParticle], _ w: CGFloat) -> some View {
+        ZStack {
+            ForEach(Array(particles.enumerated()), id: \.offset) { _, piece in
+                let size = CGFloat(piece.size) * w
+                Group {
+                    switch piece.kind {
+                    case .dust:
+                        Circle().fill(Theme.secondaryText.opacity(0.45))
+                            .frame(width: size, height: size)
+                    case .confettiOrange:
+                        Rectangle().fill(Theme.orangeCue)
+                            .frame(width: size, height: size * 0.45)
+                    case .confettiInk:
+                        Rectangle().fill(Theme.ink)
+                            .frame(width: size, height: size * 0.45)
+                    }
+                }
+                .rotationEffect(.radians(piece.rotation))
+                .position(x: CGFloat(piece.center.x) * w, y: CGFloat(piece.center.y) * w)
+                .opacity(piece.opacity)
+            }
+        }
     }
 
     // MARK: Doddy
 
     /// The drawing that is up and, during a change of pose, the next one fading in over it,
-    /// squashed, stretched and lifted about the feet.
-    private func figure(_ figure: OpeningDoddy, at t: TimeInterval, _ w: CGFloat) -> some View {
+    /// squashed, stretched and lifted about the feet. From the hand-over the ready pose is drawn
+    /// in screen points instead (`placedDoddy`), so it is left out here.
+    private func figure(_ figure: OpeningDoddy, at t: TimeInterval, drawsReady: Bool, _ w: CGFloat) -> some View {
         let box = OpeningLayout.doddy
         let side = CGFloat(box.width) * w
         return ZStack(alignment: .bottom) {
-            pose(figure.pose, sketch: figure.sketch, readyPop: figure.readyPop, at: t, side: side, w)
-                .opacity(1 - figure.blend)
-            if figure.blend > 0 {
+            if figure.pose != .ready || drawsReady {
+                pose(figure.pose, sketch: figure.sketch, readyPop: figure.readyPop, at: t, side: side, w)
+                    .opacity(1 - figure.blend)
+            }
+            if figure.blend > 0 && (figure.nextPose != .ready || drawsReady) {
                 pose(figure.nextPose, sketch: 1, readyPop: figure.readyPop, at: t, side: side, w)
                     .opacity(figure.blend)
             }
@@ -194,22 +279,15 @@ struct OpeningSceneView: View {
         }
     }
 
-    /// The listening artwork Home shows too (`UploadedDoddy_Listening`), feet on the floor,
-    /// popping up from nothing. In dark appearance it keeps its paper backing, as on Home.
+    /// The ready pose on the court, popping up from nothing at his feet. The same view and size
+    /// as `placedDoddy` at the start of the hand-over, so the switch between them doesn't show.
     private func readyArt(pop: Double, _ w: CGFloat) -> some View {
         let box = OpeningLayout.ready
         let shooter = OpeningLayout.doddy
         // The figure frame is bottom-aligned to the shooter's box; move the art to its own box.
         let drop = CGFloat((box.origin.y + box.height) - (shooter.origin.y + shooter.height)) * w
-        let feet = CGFloat(box.height * OpeningLayout.readyFeetFraction) / CGFloat(box.height)
-        return Image(decorative: "UploadedDoddy_Listening")
-            .resizable()
-            .scaledToFit()
-            .frame(width: CGFloat(box.width) * w, height: CGFloat(box.height) * w)
-            .padding(.horizontal, colorScheme == .dark ? 12 : 0)
-            .background(colorScheme == .dark ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
-                        in: RoundedRectangle(cornerRadius: 24))
-            .scaleEffect(CGFloat(max(0, pop)), anchor: UnitPoint(x: 0.5, y: feet))
+        return CharacterArtImage(assetName: "UploadedDoddy_Listening", height: CGFloat(box.height) * w)
+            .scaleEffect(CGFloat(max(0, pop)), anchor: UnitPoint(x: 0.5, y: OpeningLayout.readyFeetFraction))
             .offset(y: drop)
     }
 
@@ -270,11 +348,12 @@ struct OpeningSceneView: View {
         .opacity(burst.opacity)
     }
 
-    /// The hello, in a bubble above Doddy whose tail points down at his head. It pops from the tail.
-    private func bubble(_ pop: OpeningBubble, _ w: CGFloat) -> some View {
-        let width = CGFloat(OpeningLayout.bubbleWidth) * w
-        let height = 0.5 * w
-        let anchor = OpeningLayout.bubbleAnchor
+    /// The hello, in a bubble just above Doddy's head (wherever he is), its tail pointing down at
+    /// him. It pops from the tail.
+    private func bubble(_ pop: OpeningBubble, box: ScreenBox, screenWidth: CGFloat) -> some View {
+        let width = CGFloat(OpeningLayout.bubbleWidth) * screenWidth
+        let height = 0.5 * screenWidth
+        let anchor = OpeningHandover.bubbleAnchor(for: box, bubbleWidth: Double(width), screenWidth: Double(screenWidth))
         return VStack(alignment: .leading, spacing: 4) {
             Text(play.greeting.headline)
                 .font(.title3.weight(.semibold))
@@ -294,9 +373,9 @@ struct OpeningSceneView: View {
         .fixedSize(horizontal: false, vertical: true)
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .scaleEffect(CGFloat(max(0, pop.scale)), anchor: .bottomLeading)
-        // The bubble's bottom-left corner sits at `bubbleAnchor`, whatever its size.
+        // The bubble's bottom-left corner sits at the anchor, whatever its size.
         .frame(width: width, height: height, alignment: .bottomLeading)
-        .position(x: CGFloat(anchor.x) * w + width / 2, y: CGFloat(anchor.y) * w - height / 2)
+        .position(x: CGFloat(anchor.x) + width / 2, y: CGFloat(anchor.y) - height / 2)
         .opacity(pop.opacity)
     }
 }
@@ -409,7 +488,7 @@ private struct SpeechBubble: Shape {
                 greeting: OpeningGreeting(headline: "Hey, it's Doddy.", question: "What's up, mate?"),
                 drawings: drawings,
                 startedAt: Date().addingTimeInterval(-1.2)),
-            onFinished: {})
+            homeTarget: nil, onHandover: {}, onFinished: {})
     } else {
         Text("The pose SVGs are not in the bundle.")
     }

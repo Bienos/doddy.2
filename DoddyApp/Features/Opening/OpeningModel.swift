@@ -70,8 +70,12 @@ final class OpeningModel {
 
     /// The opening on screen now; nil when nothing is showing.
     private(set) var play: OpeningPlay?
-    /// Home's ready state after the opening; nil otherwise.
+    /// Home's ready state: set as the opening starts (under it), kept for `readyFor` after it.
     private(set) var ready: OpeningReady?
+    /// The opening's hand-over has begun: Home's buttons slide in.
+    private(set) var handingOver = false
+    /// Where Home draws Doddy, in global points, measured by Home. The opening lands him here.
+    var homeArtBox: ScreenBox?
     private var consideredLaunch = false
     private var backgroundedAt: Date?
     private var drawings: OpeningDrawings?
@@ -110,20 +114,28 @@ final class OpeningModel {
     /// The conversation came up on its own (Back Tap, Siri, the island) while the scene was
     /// playing: the scene stops, and nothing else opens.
     func conversationOpened() {
+        guard play != nil else { return }
         play = nil
+        handingOver = false
+        keepReadyForAWhile()
     }
 
-    /// The scene reached its end, or the user tapped to skip it. Home takes over with Doddy
-    /// ready and the hello; the conversation starts if that was decided.
-    func finish(now: Date = .now) {
+    /// The scene reached its hand-over (by itself or because the user tapped to skip).
+    func handoverStarted() {
+        handingOver = true
+    }
+
+    /// The scene reached its end: Doddy is in his place on Home. The conversation starts if that
+    /// was decided.
+    func finish() {
         guard let ended = play else { return }
         play = nil
-        showReady(ended.greeting, now: now)
+        handingOver = false
+        keepReadyForAWhile()
         if ended.thenListen { ShortcutRouter.shared.startListeningOnOpen() }
     }
 
-    private func showReady(_ greeting: OpeningGreeting, now: Date) {
-        ready = OpeningReady(greeting: greeting, since: now)
+    private func keepReadyForAWhile() {
         readyTimer?.cancel()
         readyTimer = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(Self.readyFor))
@@ -153,8 +165,13 @@ final class OpeningModel {
             break
         case .scene(let reducedMotion, let thenListen):
             guard let drawings = loadedDrawings() else { return }
+            let greeting = Self.greeting()
+            // Home switches to Doddy ready to talk underneath, so it is right when it shows through.
+            readyTimer?.cancel()
+            ready = OpeningReady(greeting: greeting, since: now)
+            handingOver = false
             play = OpeningPlay(
-                reducedMotion: reducedMotion, thenListen: thenListen, greeting: Self.greeting(),
+                reducedMotion: reducedMotion, thenListen: thenListen, greeting: greeting,
                 drawings: drawings, startedAt: now)
         case .listenOnly:
             // Let Home appear first, so the conversation slides up over it as it does from the button.

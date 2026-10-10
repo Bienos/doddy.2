@@ -177,19 +177,121 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertEqual(frame(Beat.end).burst.rays, 1, accuracy: 1e-9)
     }
 
-    func testTheHelloComesWithTheReadyPoseAndTheCourtFadesForTheHandover() {
+    func testTheHelloComesWithTheReadyPoseAndGoesAsHomeShowsThrough() {
         XCTAssertGreaterThan(Beat.bubbleIn, Beat.readyStart)
         XCTAssertEqual(frame(Beat.bubbleIn).bubble.opacity, 0)
-        XCTAssertEqual(frame(Beat.bubbleIn + 0.3).bubble.opacity, 1, accuracy: 1e-9)
-        XCTAssertEqual(frame(Beat.bubbleIn + 0.3).bubble.scale, 1, accuracy: 1e-9)
+        XCTAssertEqual(frame(Beat.handoverStart).bubble.opacity, 1, accuracy: 1e-9)
+        XCTAssertEqual(frame(Beat.handoverStart).bubble.scale, 1, accuracy: 0.01)
+        XCTAssertEqual(frame(Beat.handoverStart + 0.2).bubble.opacity, 0, accuracy: 1e-9, "the hello moves into Home's heading")
         XCTAssertEqual(frame(Beat.handoverStart).setOpacity, 1, accuracy: 1e-9)
-        XCTAssertEqual(frame(Beat.end).setOpacity, 0, accuracy: 1e-9)
-        XCTAssertEqual(frame(Beat.end).sceneOpacity, 1, "Doddy and the hello stay for Home to take over")
-        XCTAssertEqual(frame(Beat.end).bubble.opacity, 1, accuracy: 1e-9)
+        XCTAssertEqual(frame(Beat.handoverStart).backdropOpacity, 1, accuracy: 1e-9)
+        XCTAssertEqual(frame(Beat.arrive).setOpacity, 0, accuracy: 1e-9)
+        XCTAssertEqual(frame(Beat.arrive).backdropOpacity, 0, accuracy: 1e-9, "Home fully visible when Doddy lands")
         XCTAssertEqual(frame(Beat.end).hintOpacity, 0, accuracy: 1e-9)
         XCTAssertTrue(OpeningScene.isFinished(at: Beat.end, reducedMotion: false))
         XCTAssertFalse(OpeningScene.isFinished(at: Beat.end - 0.01, reducedMotion: false))
         XCTAssertLessThanOrEqual(OpeningScene.duration(reducedMotion: false), 2.5)
+    }
+
+    func testDoddyLandsExactlyInHisPlaceOnHome() {
+        let court = OpeningHandover.courtBox(screenWidth: 390, screenHeight: 844)
+        let home = ScreenBox(centerX: 195, centerY: 300, height: 210)
+        func place(_ t: Double) -> PlacedDoddy { OpeningHandover.place(court: court, home: home, at: t, reducedMotion: false) }
+        // On the court until the hand-over, at full size and opacity.
+        XCTAssertEqual(place(0), PlacedDoddy(box: court, squashX: 1, squashY: 1, opacity: 1))
+        XCTAssertEqual(place(Beat.handoverStart), PlacedDoddy(box: court, squashX: 1, squashY: 1, opacity: 1))
+        // Arrives at the beat, then only squashes; the last frame is exactly Home's box, unsquashed.
+        XCTAssertEqual(place(Beat.arrive).box, home)
+        XCTAssertEqual(place((Beat.arrive + Beat.end) / 2).box, home)
+        XCTAssertLessThan(place((Beat.arrive + Beat.end) / 2).squashY, 0.95, "squashes on landing")
+        XCTAssertEqual(place(Beat.end), PlacedDoddy(box: home, squashX: 1, squashY: 1, opacity: 1))
+        XCTAssertEqual(place(Beat.end + 1), PlacedDoddy(box: home, squashX: 1, squashY: 1, opacity: 1))
+        // An arc: above the straight line half way.
+        let mid = place((Beat.handoverStart + Beat.arrive) / 2).box
+        XCTAssertLessThan(mid.centerY, (court.centerY + home.centerY) / 2 - 30)
+        XCTAssertGreaterThan(place((Beat.handoverStart + Beat.arrive) / 2).squashY, 1, "stretched in the air")
+        // Never faded while he has a place to land in.
+        for t in stride(from: 0.0, through: Beat.end, by: 0.01) { XCTAssertEqual(place(t).opacity, 1) }
+    }
+
+    func testTheCourtBoxIsTheStageReadyPoseOnScreen() {
+        let box = OpeningHandover.courtBox(screenWidth: 390, screenHeight: 844)
+        let ready = OpeningLayout.ready
+        XCTAssertEqual(box.height, ready.height * 390, accuracy: 1e-9)
+        XCTAssertEqual(box.centerX, ready.center.x * 390, accuracy: 1e-9)
+        XCTAssertEqual(box.centerY, (844 - 2 * 390) / 2 + ready.center.y * 390, accuracy: 1e-9)
+        XCTAssertEqual(box.height * OpeningHandover.artAspect, ready.width * 390, accuracy: 0.5, "the art's aspect")
+        // The camera is 1:1 well before the hand-over starts, so the court box needs no camera.
+        XCTAssertEqual(frame(Beat.bubbleIn).camera.scale, 1, accuracy: 1e-9)
+        XCTAssertEqual(frame(Beat.handoverStart).camera.shake, StagePoint(x: 0, y: 0))
+    }
+
+    func testWithoutAPlaceOnHomeDoddyFadesWithThePaper() {
+        let court = OpeningHandover.courtBox(screenWidth: 390, screenHeight: 844)
+        let start = OpeningHandover.place(court: court, home: nil, at: Beat.handoverStart, reducedMotion: false)
+        XCTAssertEqual(start.box, court)
+        XCTAssertEqual(start.opacity, 1, accuracy: 1e-9)
+        XCTAssertEqual(OpeningHandover.place(court: court, home: nil, at: Beat.arrive, reducedMotion: false).opacity, 0, accuracy: 1e-9)
+    }
+
+    func testUnderReduceMotionDoddyIsInHisPlaceFromTheStart() {
+        let court = OpeningHandover.courtBox(screenWidth: 390, screenHeight: 844)
+        let home = ScreenBox(centerX: 195, centerY: 300, height: 100)
+        for t in [0.0, 0.5, Beat.stillEnd] {
+            XCTAssertEqual(OpeningHandover.place(court: court, home: home, at: t, reducedMotion: true),
+                           PlacedDoddy(box: home, squashX: 1, squashY: 1, opacity: 1))
+        }
+    }
+
+    func testTheHelloSitsAboveHisHeadAndOnTheScreen() {
+        let box = ScreenBox(centerX: 195, centerY: 300, height: 210)
+        let anchor = OpeningHandover.bubbleAnchor(for: box, bubbleWidth: 180, screenWidth: 390)
+        let headTop = box.top + box.height * OpeningLayout.readyHeadFraction
+        XCTAssertEqual(anchor.y, headTop - 4, accuracy: 1e-9)
+        XCTAssertLessThan(anchor.x, box.centerX)
+        // Pushed back on screen near an edge.
+        XCTAssertEqual(OpeningHandover.bubbleAnchor(for: ScreenBox(centerX: 20, centerY: 300, height: 210), bubbleWidth: 180, screenWidth: 390).x, 12)
+        XCTAssertEqual(OpeningHandover.bubbleAnchor(for: ScreenBox(centerX: 380, centerY: 300, height: 210), bubbleWidth: 180, screenWidth: 390).x, 390 - 12 - 180)
+    }
+
+    func testConfettiFliesUpOutOfTheRingAndFalls() {
+        XCTAssertTrue(frame(Beat.score - 0.01).particles.filter { $0.kind != .dust }.isEmpty)
+        let start = frame(Beat.score).particles.filter { $0.kind != .dust }
+        XCTAssertEqual(start.count, OpeningScene.confettiCount)
+        for piece in start {
+            XCTAssertEqual(piece.center.x, OpeningLayout.ringCenter.x, accuracy: 1e-9)
+            XCTAssertEqual(piece.center.y, OpeningLayout.ringCenter.y, accuracy: 1e-9)
+        }
+        let early = frame(Beat.score + 0.15).particles.filter { $0.kind != .dust }
+        XCTAssertTrue(early.allSatisfy { $0.center.y < OpeningLayout.ringCenter.y }, "thrown upwards first")
+        XCTAssertEqual(Set(early.map(\.kind)), [.confettiOrange, .confettiInk])
+        let late = frame(Beat.score + 0.85).particles.filter { $0.kind != .dust }
+        XCTAssertTrue(late.contains { $0.center.y > OpeningLayout.ringCenter.y }, "gravity brings them down")
+        XCTAssertTrue(frame(Beat.score + Beat.confettiLength + 0.001).particles.filter { $0.kind != .dust }.isEmpty)
+        XCTAssertLessThan(Beat.score + Beat.confettiLength, Beat.end)
+        XCTAssertEqual(frame(Beat.score + 0.3), frame(Beat.score + 0.3), "the same every time")
+    }
+
+    func testDustPuffsWhereTheBallHitsTheFloorAndWhereDoddyLands() {
+        let firstBounce = Beat.dribbleStart + Beat.bouncePeriod * 0.5
+        XCTAssertTrue(frame(firstBounce - 0.01).particles.isEmpty)
+        let puff = frame(firstBounce + 0.1).particles
+        XCTAssertEqual(puff.count, 5)
+        XCTAssertTrue(puff.allSatisfy { $0.kind == .dust && $0.center.y < OpeningLayout.floorY && $0.opacity > 0 })
+        // The second bounce's puff overlaps the first; once the first is over only five are left.
+        XCTAssertEqual(frame(firstBounce + Beat.puffLength + 0.001).particles.filter { $0.kind == .dust }.count, 5)
+        XCTAssertTrue(frame(Beat.dribbleStart + Beat.bouncePeriod * 1.5 + Beat.puffLength + 0.001).particles.filter { $0.kind == .dust }.isEmpty)
+        let landing = frame(Beat.hopEnd + 0.05).particles.filter { $0.kind == .dust }
+        XCTAssertEqual(landing.count, 5)
+        XCTAssertEqual(landing.map(\.center.x).reduce(0, +) / 5, OpeningLayout.doddy.bottomCenter.x, accuracy: 1e-9)
+    }
+
+    func testTheScoreShakesTheCameraBriefly() {
+        XCTAssertEqual(frame(Beat.score - 0.01).camera.shake, StagePoint(x: 0, y: 0))
+        let shaken = frame(Beat.score + 0.03).camera.shake
+        XCTAssertGreaterThan(abs(shaken.x) + abs(shaken.y), 0.001)
+        XCTAssertLessThan(abs(shaken.x), 0.01)
+        XCTAssertEqual(frame(Beat.score + 0.3).camera.shake, StagePoint(x: 0, y: 0))
     }
 
     func testTheCameraPunchesInForTheShotAndSettlesBackForTheHandover() {
@@ -202,6 +304,7 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertEqual(frame(Beat.shotEnd).camera.scale, 1.18, accuracy: 1e-9)
         XCTAssertEqual(frame(Beat.end).camera.scale, 1.0, accuracy: 1e-9)
         XCTAssertEqual(frame(Beat.end).camera.anchor, StagePoint(x: 0.50, y: 1.10))
+        XCTAssertEqual(frame(Beat.bubbleIn).camera.scale, 1.0, accuracy: 1e-9, "1:1 by the hello")
         for t in stride(from: 0.0, through: Beat.end, by: 0.05) {
             let anchor = frame(t).camera.anchor
             XCTAssertTrue((0...1).contains(anchor.x) && (0...OpeningScene.stageHeight).contains(anchor.y))
@@ -216,7 +319,7 @@ final class OpeningSceneTests: XCTestCase {
         for reduced in [false, true] {
             for t in stride(from: 0.0, through: OpeningScene.duration(reducedMotion: reduced), by: 0.005) {
                 let f = frame(t, reduced: reduced)
-                for value in [f.sceneOpacity, f.setOpacity, f.bubble.opacity, f.burst.opacity, f.hintOpacity, f.ball.opacity, f.doddy.blend, f.doddy.sketch] {
+                for value in [f.backdropOpacity, f.setOpacity, f.bubble.opacity, f.burst.opacity, f.hintOpacity, f.ball.opacity, f.doddy.blend, f.doddy.sketch] + f.particles.map(\.opacity) {
                     XCTAssertTrue((0...1).contains(value), "\(value) at \(t)")
                 }
                 XCTAssertTrue((0.6...1.3).contains(f.ball.squash))
@@ -242,10 +345,11 @@ final class OpeningSceneTests: XCTestCase {
             XCTAssertEqual(f.burst.opacity, 0)
             XCTAssertFalse(f.scored)
         }
-        XCTAssertEqual(frame(0, reduced: true).sceneOpacity, 0)
-        XCTAssertEqual(frame(0.5, reduced: true).sceneOpacity, 1, accuracy: 1e-9)
+        XCTAssertEqual(frame(0, reduced: true).backdropOpacity, 1, "Home is covered from the first frame")
+        XCTAssertEqual(frame(0.5, reduced: true).backdropOpacity, 1, accuracy: 1e-9)
         XCTAssertEqual(frame(0.5, reduced: true).bubble.opacity, 1, accuracy: 1e-9)
-        XCTAssertEqual(frame(Beat.stillEnd, reduced: true).sceneOpacity, 0, accuracy: 1e-9)
+        XCTAssertTrue(frame(0.5, reduced: true).particles.isEmpty)
+        XCTAssertEqual(frame(Beat.stillEnd, reduced: true).backdropOpacity, 0, accuracy: 1e-9)
         XCTAssertTrue(OpeningScene.isFinished(at: Beat.stillEnd, reducedMotion: true))
         XCTAssertLessThan(OpeningScene.duration(reducedMotion: true), OpeningScene.duration(reducedMotion: false))
     }

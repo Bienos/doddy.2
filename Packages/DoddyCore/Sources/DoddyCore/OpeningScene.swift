@@ -1,8 +1,9 @@
 import Foundation
 
 // The opening (ADR-207): a pen sketches Doddy in, he dribbles, crouches, hops and shoots, the
-// ball arcs into the ring ("SWISH!"), and he pops up ready to talk, with a hello, as the court
-// fades and the app's own buttons slide in under him. Everything in this file is a pure
+// ball arcs into the ring ("SWISH!", confetti), he pops up ready to talk with a hello, and then
+// jumps into his place on Home: the last frame puts him exactly where Home's own picture of him
+// is, so the hand-over has no jump (`OpeningHandover`). Everything in this file is a pure
 // function of time, so the renderer only draws what `OpeningScene.frame(at:)` returns and
 // decides nothing itself: no timers, no state, no side effects. The policy that says whether
 // the opening plays at all, and whether a conversation starts afterwards, is `OpeningPolicy`.
@@ -88,6 +89,24 @@ public struct OpeningCamera: Equatable, Sendable {
     public var scale: Double
     /// The stage point that stays put while the scale changes.
     public var anchor: StagePoint
+    /// A short shake on the score, in stage units; zero otherwise.
+    public var shake: StagePoint
+}
+
+public enum ParticleKind: Equatable, Sendable {
+    /// A puff where the ball or the feet hit the floor.
+    case dust
+    case confettiOrange, confettiInk
+}
+
+public struct OpeningParticle: Equatable, Sendable {
+    public var center: StagePoint
+    /// Diameter (dust) or long side (confetti), stage units.
+    public var size: Double
+    /// Radians.
+    public var rotation: Double
+    public var opacity: Double
+    public var kind: ParticleKind
 }
 
 public struct OpeningDoddy: Equatable, Sendable {
@@ -148,12 +167,14 @@ public struct OpeningFrame: Equatable, Sendable {
     /// Vertical stretch of the net, 1 at rest.
     public var netStretch: Double
     public var burst: OpeningBurst
+    public var particles: [OpeningParticle]
     public var bubble: OpeningBubble
     public var hintOpacity: Double
-    /// The court, hoop and burst: they fade at the hand-over while Doddy stays.
+    /// The court, hoop, burst and particles: they fade at the hand-over.
     public var setOpacity: Double
-    /// The whole picture (the still fades in and out; the animated opening is cut by the app).
-    public var sceneOpacity: Double
+    /// The paper behind everything. As it fades, Home shows through; Doddy is drawn separately
+    /// and is never faded while he has a place on Home to land in (`OpeningHandover`).
+    public var backdropOpacity: Double
     public var scored: Bool
 }
 
@@ -248,15 +269,20 @@ public enum OpeningScene {
         /// "SWISH!", rays, the ring wobbles.
         public static let burstStart = 1.40
         public static let burstEnd = 1.90
-        /// Follow-through → ready, with a pop.
+        /// Follow-through → ready, with a pop; the camera is back to 1:1 by the hello.
         public static let readyStart = 1.58
         public static let readyEnd = 1.76
         public static let bubbleIn = 1.74
-        /// The court and hoop fade; Doddy and the hello stay for the app to take over.
-        public static let handoverStart = 2.00
-        public static let end = 2.30
-        /// The still picture (Reduce Motion): a fade in, the ready pose and the hello, a fade out.
+        /// The hand-over: the court fades, Home shows through, and Doddy jumps along an arc into
+        /// his place on Home, landing with a squash.
+        public static let handoverStart = 1.95
+        public static let arrive = 2.25
+        public static let end = 2.40
+        /// The still picture (Reduce Motion): Doddy already in his place, the hello, then the paper fades.
         public static let stillEnd = 1.10
+        /// How long a dust puff and the confetti last.
+        public static let puffLength = 0.30
+        public static let confettiLength = 0.90
     }
 
     public static func duration(reducedMotion: Bool) -> TimeInterval {
@@ -284,21 +310,82 @@ public enum OpeningScene {
 
     static func animated(at t: Double) -> OpeningFrame {
         let hop = hop(at: t)
-        let handover = Ease.inOut(Ease.progress(t, Beat.handoverStart, Beat.end))
-        let bubbleP = Ease.progress(t, Beat.bubbleIn, Beat.bubbleIn + 0.25)
+        let backdrop = 1 - Ease.inOut(Ease.progress(t, Beat.handoverStart, Beat.arrive))
+        let bubbleP = Ease.progress(t, Beat.bubbleIn, Beat.bubbleIn + 0.20)
         return OpeningFrame(
             camera: camera(at: t),
             doddy: figure(at: t, hop: hop),
             ball: ball(at: t, hop: hop),
             netStretch: 1 + 0.45 * sin(.pi * Ease.progress(t, Beat.score, Beat.score + 0.30)),
             burst: burst(at: t),
+            particles: dust(at: t) + confetti(at: t),
             bubble: OpeningBubble(
-                opacity: Ease.out(Ease.progress(t, Beat.bubbleIn, Beat.bubbleIn + 0.12)),
+                // The hello moves into Home's heading: the bubble goes as Doddy jumps.
+                opacity: Ease.out(Ease.progress(t, Beat.bubbleIn, Beat.bubbleIn + 0.12))
+                    * (1 - Ease.progress(t, Beat.handoverStart, Beat.handoverStart + 0.13)),
                 scale: 0.5 + 0.5 * Ease.backOut(bubbleP)),
-            hintOpacity: Ease.progress(t, 0.30, 0.50) * (1 - handover),
-            setOpacity: 1 - handover,
-            sceneOpacity: 1,
+            hintOpacity: Ease.progress(t, 0.30, 0.50) * backdrop,
+            setOpacity: 1 - Ease.inOut(Ease.progress(t, Beat.handoverStart, Beat.handoverStart + 0.20)),
+            backdropOpacity: backdrop,
             scored: t >= Beat.score)
+    }
+
+    /// Dust where the ball hits the floor (twice) and where Doddy lands from the hop.
+    static func dust(at t: Double) -> [OpeningParticle] {
+        let floor = OpeningLayout.floorY
+        let puffs: [(Double, Double)] = [
+            (Beat.dribbleStart + Beat.bouncePeriod * 0.5, OpeningLayout.dribbleHand.x),
+            (Beat.dribbleStart + Beat.bouncePeriod * 1.5, OpeningLayout.dribbleHand.x),
+            (Beat.hopEnd, OpeningLayout.doddy.bottomCenter.x),
+        ]
+        var result: [OpeningParticle] = []
+        for (time, x) in puffs {
+            let age = t - time
+            guard age >= 0, age < Beat.puffLength else { continue }
+            let u = age / Beat.puffLength
+            for i in 0..<5 {
+                let dir = -1 + 2 * Double(i) / 4
+                result.append(OpeningParticle(
+                    center: StagePoint(
+                        x: x + dir * 0.06 * Ease.out(u),
+                        y: floor - 0.008 - 0.02 * Ease.out(u) * (1 - abs(dir) * 0.5)),
+                    size: 0.012 + 0.018 * u, rotation: 0, opacity: 0.55 * (1 - u), kind: .dust))
+            }
+        }
+        return result
+    }
+
+    public static let confettiCount = 16
+
+    /// Confetti thrown up out of the ring on the score, falling back with gravity. The same every
+    /// time: each piece's direction, speed, spin and size come from its index.
+    static func confetti(at t: Double) -> [OpeningParticle] {
+        let age = t - Beat.score
+        guard age >= 0, age < Beat.confettiLength else { return [] }
+        let ring = OpeningLayout.ringCenter
+        return (0..<confettiCount).map { i in
+            let angle = -Double.pi / 2 + (-0.9 + 1.8 * unit(i, 1))
+            let speed = 0.5 + 0.4 * unit(i, 2)
+            return OpeningParticle(
+                center: StagePoint(
+                    x: ring.x + cos(angle) * speed * age,
+                    y: ring.y + sin(angle) * speed * age + 0.5 * 1.6 * age * age),
+                size: 0.012 + 0.006 * unit(i, 4),
+                rotation: (unit(i, 3) * 2 - 1) * 12 * age,
+                opacity: 1 - Ease.progress(age, 0.6, Beat.confettiLength),
+                kind: i.isMultiple(of: 2) ? .confettiOrange : .confettiInk)
+        }
+    }
+
+    /// A fixed pseudo-random number in 0..<1 for piece `i` (xorshift), so the confetti is the same each time.
+    static func unit(_ i: Int, _ salt: Int) -> Double {
+        var x = UInt64(truncatingIfNeeded: i &* 7919 &+ salt &* 104_729 &+ 1)
+        for _ in 0..<3 {
+            x ^= x << 13
+            x ^= x >> 7
+            x ^= x << 17
+        }
+        return Double(x % 10_000) / 10_000
     }
 
     static func hop(at t: Double) -> Double {
@@ -341,18 +428,21 @@ public enum OpeningScene {
             readyPop: t <= Beat.readyStart ? 0 : readyPop)
     }
 
-    /// Wide for the sketch, a punch in for the shot, a drift after the ball, then back out so
-    /// the ready Doddy sits at his natural size for the hand-over.
+    /// Wide for the sketch, a punch in for the shot, a drift after the ball, a shake on the
+    /// score, then back to 1:1 by the hello, so the hand-over happens on the plain screen.
     static func camera(at t: Double) -> OpeningCamera {
         let punch = Ease.out(Ease.progress(t, Beat.gatherStart, Beat.shotEnd))
         let follow = Ease.inOut(Ease.progress(t, Beat.shotEnd, 1.45))
-        let settle = Ease.inOut(Ease.progress(t, Beat.readyStart, Beat.readyEnd + 0.10))
+        let settle = Ease.inOut(Ease.progress(t, Beat.readyStart, Beat.bubbleIn))
         let wide = StagePoint(x: 0.50, y: 1.10)
         let onDoddy = StagePoint(x: 0.44, y: 1.08)
         let afterBall = StagePoint(x: 0.52, y: 1.00)
         let scale = lerp(lerp(lerp(0.82, 1.18, punch), 1.12, follow), 1.0, settle)
         let anchor = StagePoint.lerp(StagePoint.lerp(StagePoint.lerp(wide, onDoddy, punch), afterBall, follow), wide, settle)
-        return OpeningCamera(scale: scale, anchor: anchor)
+        let since = t - Beat.score
+        let decay = since < 0 ? 0 : 1 - Ease.progress(since, 0, 0.28)
+        let shake = StagePoint(x: 0.006 * sin(2 * .pi * 23 * since) * decay, y: 0.005 * sin(2 * .pi * 17 * since + 1) * decay)
+        return OpeningCamera(scale: scale, anchor: anchor, shake: shake)
     }
 
     /// Where the ball leaves the hand: the shot hand, lifted by the hop at that moment.
@@ -427,20 +517,22 @@ public enum OpeningScene {
 
     // MARK: - The still picture (Reduce Motion)
 
-    /// The ready artwork and the hello, nothing else. Only the picture fades in and out.
+    /// Doddy already in his place on Home with the hello; nothing moves. The paper covers Home
+    /// from the first frame and fades at the end, so Home appears around him.
     static func still(at t: Double) -> OpeningFrame {
         let fadeOut = Ease.progress(t, 0.85, Beat.stillEnd)
         let shown = Ease.progress(t, 0.15, 0.40) * (1 - fadeOut)
         return OpeningFrame(
-            camera: OpeningCamera(scale: 1, anchor: StagePoint(x: 0.5, y: 1.1)),
+            camera: OpeningCamera(scale: 1, anchor: StagePoint(x: 0.5, y: 1.1), shake: StagePoint(x: 0, y: 0)),
             doddy: OpeningDoddy(pose: .ready, nextPose: .ready, blend: 0, sketch: 1, hop: 0, squashX: 1, squashY: 1, readyPop: 1),
             ball: OpeningBall(center: OpeningLayout.shotHand, radius: OpeningLayout.highBallRadius, squash: 1, stretch: 1, heading: .pi / 2, spin: 0, scale: 1, opacity: 0, trail: []),
             netStretch: 1,
             burst: OpeningBurst(opacity: 0, scale: 0, rays: 0, ringWobble: 0),
+            particles: [],
             bubble: OpeningBubble(opacity: shown, scale: 1),
             hintOpacity: shown,
             setOpacity: 0,
-            sceneOpacity: Ease.progress(t, 0, 0.20) * (1 - fadeOut),
+            backdropOpacity: 1 - fadeOut,
             scored: false)
     }
 
@@ -466,5 +558,79 @@ enum Ease {
         let c1 = 1.70158
         let c3 = c1 + 1
         return 1 + c3 * pow(p - 1, 3) + c1 * pow(p - 1, 2)
+    }
+}
+
+// MARK: - The hand-over
+
+/// A box on the screen, in points, in whatever coordinate space the caller uses for both ends.
+/// Used for Doddy's ready picture: `height` is the picture's height; it is as wide as the art.
+public struct ScreenBox: Equatable, Sendable {
+    public var centerX: Double
+    public var centerY: Double
+    public var height: Double
+
+    public init(centerX: Double, centerY: Double, height: Double) {
+        self.centerX = centerX
+        self.centerY = centerY
+        self.height = height
+    }
+
+    public var top: Double { centerY - height / 2 }
+}
+
+/// Where the ready Doddy is drawn, and how he is squashed, at one moment.
+public struct PlacedDoddy: Equatable, Sendable {
+    public var box: ScreenBox
+    public var squashX: Double
+    public var squashY: Double
+    public var opacity: Double
+}
+
+/// Doddy's jump from the court into his place on Home. The renderer gives the box his picture
+/// fills on Home (measured there); at the end of the opening the picture is in exactly that box,
+/// at scale 1, so Home's own picture takes over with no jump.
+public enum OpeningHandover {
+    /// `UploadedDoddy_Listening` is 1024 × 1536.
+    public static let artAspect = 2.0 / 3.0
+
+    /// The ready pose on the court, on a screen `width` × `height` points, with the camera at 1:1
+    /// (it is from `Beat.bubbleIn` on). Same placement as `OpeningLayout.ready` on the stage.
+    public static func courtBox(screenWidth width: Double, screenHeight height: Double) -> ScreenBox {
+        let ready = OpeningLayout.ready
+        let top = (height - OpeningScene.stageHeight * width) / 2
+        return ScreenBox(centerX: ready.center.x * width, centerY: top + ready.center.y * width, height: ready.height * width)
+    }
+
+    /// From `Beat.handoverStart` Doddy leaves `court` along an arc and arrives in `home` at
+    /// `Beat.arrive`, then lands with a squash that settles by `Beat.end`. Without a place on Home
+    /// (`home` nil) he stays on the court and fades with the paper. Under Reduce Motion he is in
+    /// his place from the start.
+    public static func place(court: ScreenBox, home: ScreenBox?, at t: Double, reducedMotion: Bool) -> PlacedDoddy {
+        guard let home else {
+            let frame = OpeningScene.frame(at: t, reducedMotion: reducedMotion)
+            return PlacedDoddy(box: court, squashX: 1, squashY: 1, opacity: frame.backdropOpacity)
+        }
+        if reducedMotion { return PlacedDoddy(box: home, squashX: 1, squashY: 1, opacity: 1) }
+        let Beat = OpeningScene.Beat.self
+        let p = Ease.inOut(Ease.progress(t, Beat.handoverStart, Beat.arrive))
+        let lift = (40 + 0.25 * abs(home.centerY - court.centerY)) * sin(.pi * p)
+        let box = ScreenBox(
+            centerX: court.centerX + (home.centerX - court.centerX) * p,
+            centerY: court.centerY + (home.centerY - court.centerY) * p - lift,
+            height: court.height + (home.height - court.height) * p)
+        let landing = sin(.pi * Ease.progress(t, Beat.arrive, Beat.end))
+        // A little stretch in the air, a squash on landing.
+        let air = sin(.pi * p) * 0.06
+        return PlacedDoddy(box: box, squashX: 1 - air + 0.08 * landing, squashY: 1 + air - 0.12 * landing, opacity: 1)
+    }
+
+    /// The hello's bottom-left corner: just above Doddy's head, a little to the left, kept on the
+    /// screen (`margin` from each edge) for a bubble `bubbleWidth` wide.
+    public static func bubbleAnchor(for box: ScreenBox, bubbleWidth: Double, screenWidth: Double, margin: Double = 12) -> (x: Double, y: Double) {
+        let width = box.height * artAspect
+        let headTop = box.top + box.height * OpeningLayout.readyHeadFraction
+        let x = min(max(margin, box.centerX - width * 0.45), screenWidth - margin - bubbleWidth)
+        return (x, headTop - 4)
     }
 }
