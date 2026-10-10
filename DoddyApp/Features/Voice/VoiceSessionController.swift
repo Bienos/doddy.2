@@ -69,6 +69,8 @@ final class VoiceSessionController {
     private let devices = DeviceConnections()
     private var conversation: Conversation?
     private var startedAt: Date?
+    /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
+    private var savedThisConversation = 0
 
     init(store: MemoryStore, logs: ConversationLogStore = .shared) {
         self.store = store
@@ -91,6 +93,7 @@ final class VoiceSessionController {
         contactCard = nil
         connectionNeeded = nil
         isMuted = false
+        savedThisConversation = 0
 
         // Not set up: say so without asking for the microphone first.
         if case .notSetUp(let reason) = mode {
@@ -106,7 +109,10 @@ final class VoiceSessionController {
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.
         let actions = VoiceActivityActions.shared
-        actions.endConversation = { [weak self] in await self?.stop() }
+        actions.endConversation = { [weak self] in
+            await self?.stop()
+            await self?.island.settle()
+        }
         actions.toggleMute = { [weak self] in await self?.toggleMute() }
 
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
@@ -246,6 +252,7 @@ final class VoiceSessionController {
         case .memory(let id, let text):
             do {
                 let record = try await store.save(text: text, category: .other)
+                savedThisConversation += 1
                 await reply(id, VoiceToolReply.saved(record))
             } catch {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
@@ -325,6 +332,8 @@ final class VoiceSessionController {
     private func syncIsland() {
         if let state = islandState {
             island.show(state, startedAt: startedAt ?? .now)
+        } else if phase == .ended {
+            island.finish(savedCount: savedThisConversation)
         } else {
             island.end()
         }
