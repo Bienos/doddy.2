@@ -9,6 +9,7 @@ struct MemoriesView: View {
     @State private var path: [MemoryNavigationRoute] = []
     /// Type filter (ADR-139). Ignored once no note of that type is left.
     @State private var category: MemoryCategory?
+    @AppStorage(PreferenceKey.memorySort) private var sortRaw = MemorySort.newestFirst.rawValue
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -36,12 +37,20 @@ struct MemoriesView: View {
                     } else {
                         let choices = MemoryFilter.choices(store.memories)
                         let active = choices.contains { $0.category == category } ? category : nil
-                        Text("YOUR SAVED NOTES").font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                        HStack {
+                            Text("YOUR SAVED NOTES").font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                            Spacer()
+                            if store.memories.count > 1 {
+                                MemorySortMenu(sortRaw: $sortRaw)
+                            }
+                        }
                         if !choices.isEmpty {
                             MemoryTypeFilterRow(choices: choices, total: store.memories.count, selection: $category, active: active)
                         }
                         LazyVStack(spacing: 12) {
-                            ForEach(MemoryFilter.apply(active, to: store.memories)) { MemoryLinkCard(record: $0) }
+                            ForEach(MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories))) {
+                                MemoryLinkCard(record: $0)
+                            }
                         }
                     }
                 }
@@ -66,6 +75,33 @@ struct MemoriesView: View {
             path = [.find(query: ShortcutRouter.shared.takeFindQuery())]
             showFind = false
         }
+    }
+}
+
+/// "Newest first / Oldest first / Recently changed". Display only; it remembers the choice.
+private struct MemorySortMenu: View {
+    @Binding var sortRaw: String
+
+    private static func title(_ sort: MemorySort) -> String {
+        switch sort {
+        case .newestFirst: "Newest first"
+        case .oldestFirst: "Oldest first"
+        case .recentlyChanged: "Recently changed"
+        }
+    }
+
+    var body: some View {
+        Menu {
+            Picker("Order", selection: $sortRaw) {
+                ForEach(MemorySort.allCases, id: \.self) { Text(Self.title($0)).tag($0.rawValue) }
+            }
+        } label: {
+            Label(Self.title(MemorySort(stored: sortRaw)), systemImage: "arrow.up.arrow.down")
+                .font(.caption)
+                .frame(minHeight: 44)
+        }
+        .accessibilityLabel("Order, \(Self.title(MemorySort(stored: sortRaw)))")
+        .accessibilityIdentifier("memories.sort")
     }
 }
 

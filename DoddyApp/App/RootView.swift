@@ -3,6 +3,8 @@ import SwiftUI
 
 enum PreferenceKey {
     static let appearance = "appearance"
+    /// Memories list order (`MemorySort` raw value); display only (ADR-143).
+    static let memorySort = "memorySort"
     static let hideCharacterArt = "hideCharacterArt"
     static let voiceAgentID = "voiceAgentID"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
