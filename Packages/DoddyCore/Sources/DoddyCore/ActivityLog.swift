@@ -6,6 +6,7 @@ import Foundation
 public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
+    case web
 
     public var title: String {
         switch self {
@@ -21,6 +22,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .drive: "Google Drive"
         case .notion: "Notion"
         case .todoist: "Todoist"
+        case .web: "Web search"
         }
     }
 }
@@ -124,6 +126,7 @@ public struct ActivityRequest: Equatable, Sendable {
         case CloudToolName.searchNotion: ActivityRequest(app: .notion, title: "Searched Notion", detail: nil, isLookup: true)
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
         case CloudToolName.addTodoistTask: ActivityRequest(app: .todoist, title: "Add a task", detail: nil, isLookup: false)
+        case CloudToolName.webSearch: ActivityRequest(app: .web, title: "Searched the web", detail: nil, isLookup: true)
         default: nil
         }
     }

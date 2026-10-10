@@ -20,7 +20,8 @@ const settingsBody = z.object({
   enabled: z.boolean(),
   sendTime: z.string().regex(/^([01][0-9]|2[0-3]):[0-5][0-9]$/),
   timezone: z.string().max(64).refine(isValidTimeZone),
-  channels: z.array(z.enum(["push", "sms"])).min(1).max(2).refine((c) => new Set(c).size === c.length),
+  // Empty = in the app only: the digest is kept for the app and nothing is sent (ADR-174).
+  channels: z.array(z.enum(["push", "sms"])).max(2).refine((c) => new Set(c).size === c.length),
   language: z.enum(["en", "pl"]),
   topics: z.array(topic).max(MAX_TOPICS),
   feeds: z.array(z.string().url().max(500)).max(MAX_FEEDS),
@@ -47,7 +48,7 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const topics = await db.query(
       `SELECT catalog_id AS "catalogId", label, keywords FROM news_topics WHERE account_id = $1 ORDER BY position`, [accountId]);
     const feeds = await db.query<{ url: string; ok: boolean | null; title: string | null }>(
-      `SELECT f.url, c.ok, c.title FROM news_feeds f LEFT JOIN news_cache c ON c.key = 'feed:' || f.url
+      `SELECT f.url, c.ok, c.title FROM news_feeds f LEFT JOIN news_cache c ON c.key = encode(sha256(convert_to('feed:' || f.url, 'UTF8')), 'hex')
        WHERE f.account_id = $1 ORDER BY f.url`, [accountId]);
     return {
       available: { writer: !!news?.writer, keywordSearch: !!news?.search },

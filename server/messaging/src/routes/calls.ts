@@ -22,7 +22,7 @@ const snapshotBody = z.object({
     text: z.string().min(1).max(5000),
     capturedAt: z.iso.datetime({ offset: true }).nullable().optional(),
   })).max(5000),
-});
+}).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
 
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
@@ -81,7 +81,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const { accountId } = principal(req);
     await ensureRow(accountId);
     await db.query(
-      `UPDATE call_settings SET pin_hash = $2, pin_failed_attempts = 0, pin_locked_until = NULL, updated_at = now()
+      `UPDATE call_settings SET pin_hash = $2, pin_failed_attempts = 0, pin_lock_count = 0, pin_locked_until = NULL, updated_at = now()
        WHERE account_id = $1`, [accountId, await hashPin(body.pin)]);
     return reply.code(204).send();
   });
@@ -166,7 +166,10 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   });
 
   // Replaces the whole copy with what the phone holds now (deletions included).
-  app.put("/v1/memory-copy/snapshot", { preHandler: auth, bodyLimit: 8 * 1024 * 1024 }, async (req, reply) => {
+  // The app sends one snapshot per burst of edits; 60 an hour is plenty and caps the encrypt work.
+  app.put("/v1/memory-copy/snapshot", {
+    preHandler: auth, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
+  }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
     const body = parse(snapshotBody, req.body, reply);
     if (!body) return;

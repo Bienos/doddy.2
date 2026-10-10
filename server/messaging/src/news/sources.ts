@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { Db } from "../db.js";
 import { parseFeed, plainText, type NewsItem } from "./feeds.js";
 import { safeFetchText } from "./safeFetch.js";
@@ -46,12 +47,27 @@ export function searchQuery(keywords: string[]): string {
 }
 
 /**
+ * The cache's row key: a hash, so a user's private feed URL (which can carry a token) is never
+ * stored outside their own news_feeds rows, which go when the account is deleted (ADR-175).
+ */
+export function cacheKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex");
+}
+
+/** Drops cache rows nobody has refreshed for a day (worker, about hourly). */
+export async function pruneNewsCache(db: Db): Promise<number> {
+  const r = await db.query("DELETE FROM news_cache WHERE fetched_at < now() - interval '24 hours'");
+  return r.rowCount ?? 0;
+}
+
+/**
  * Shared cache in front of feeds and searches (not linked to any account). A failed refresh
  * keeps the last good items so one flaky publisher doesn't empty a digest.
  */
 export async function cached(
   db: Db, key: string, maxAgeMinutes: number, load: () => Promise<{ title?: string; items: NewsItem[] }>,
 ): Promise<{ ok: boolean; title?: string; items: NewsItem[] }> {
+  key = cacheKey(key);
   const { rows } = await db.query<{ fresh: boolean; ok: boolean; title: string | null; items: NewsItem[] }>(
     `SELECT fetched_at > now() - make_interval(mins => $2) AS fresh, ok, title, items FROM news_cache WHERE key = $1`,
     [key, maxAgeMinutes]);

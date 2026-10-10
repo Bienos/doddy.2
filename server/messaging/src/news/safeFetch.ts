@@ -17,7 +17,9 @@ for (const [net, bits] of [
 for (const [net, bits] of [
   // IPv4-mapped addresses (::ffff:a.b.c.d) are unwrapped and checked as IPv4 below; a
   // ::ffff:0:0/96 rule here would make BlockList treat every IPv4 address as blocked.
-  ["::", 128], ["::1", 128], ["64:ff9b::", 96], ["100::", 64], ["2001:db8::", 32],
+  ["::", 96], ["::1", 128], ["64:ff9b::", 96], ["64:ff9b:1::", 48], ["100::", 64],
+  // 2001::/32 Teredo and 2002::/16 6to4 can tunnel to an embedded IPv4 address; feeds don't need them.
+  ["2001::", 32], ["2001:db8::", 32], ["2002::", 16],
   ["fc00::", 7], ["fe80::", 10], ["ff00::", 8],
 ] as const) blocked.addSubnet(net, bits, "ipv6");
 
@@ -65,9 +67,12 @@ export async function safeFetchText(
   raw: string, opts: { timeoutMs?: number; maxBytes?: number; maxRedirects?: number; userAgent?: string } = {},
 ): Promise<FetchedText> {
   const { timeoutMs = 10_000, maxBytes = 2 * 1024 * 1024, maxRedirects = 3 } = opts;
+  // One deadline for the whole fetch, redirects included: a server that drips a byte every few
+  // seconds must not hold the worker (the socket timeout alone only catches silence).
+  const deadline = Date.now() + timeoutMs;
   let url = checkUrl(raw);
   for (let hop = 0; ; hop++) {
-    const res = await requestOnce(url, timeoutMs, maxBytes, opts.userAgent);
+    const res = await requestOnce(url, deadline, maxBytes, opts.userAgent);
     if (res.status >= 300 && res.status < 400 && res.location) {
       if (hop >= maxRedirects) throw new UnsafeUrlError("too many redirects");
       url = checkUrl(new URL(res.location, url).toString());
@@ -77,8 +82,12 @@ export async function safeFetchText(
   }
 }
 
-function requestOnce(url: URL, timeoutMs: number, maxBytes: number, userAgent?: string) {
+/** Exported for tests only: one request with an overall deadline (no redirect handling). */
+export function requestOnce(url: URL, deadline: number, maxBytes: number, userAgent?: string) {
   return new Promise<{ status: number; text: string; location?: string }>((resolve, reject) => {
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return reject(new Error("timeout"));
+    const timeoutMs = remaining;
     const lib = url.protocol === "https:" ? https : http;
     const req = lib.get(url, {
       lookup: safeLookup,
@@ -104,6 +113,8 @@ function requestOnce(url: URL, timeoutMs: number, maxBytes: number, userAgent?: 
       res.on("error", reject);
     });
     req.on("timeout", () => req.destroy(new Error("timeout")));
+    const hardStop = setTimeout(() => req.destroy(new Error("timeout")), timeoutMs);
+    req.on("close", () => clearTimeout(hardStop));
     req.on("error", reject);
   });
 }

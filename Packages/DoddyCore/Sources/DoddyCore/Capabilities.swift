@@ -19,7 +19,7 @@ public enum Capability: String, CaseIterable, Sendable {
     case textUpdates
     case phoneCalls
     case newsDigests
-    /// M4a: reminders on a saved note, as local notifications that open the note (ADR-173).
+    /// M4a: reminders on a saved note, as local notifications that open the note (ADR-176).
     case noteReminders
 }
 
@@ -122,7 +122,7 @@ public struct CapabilityCatalog: Sendable {
         ]) { _, new in new })
     }
 
-    /// What the app ships (ADR-173): `withMessaging` plus reminders on notes, which are local
+    /// What the app ships (ADR-176): `withMessaging` plus reminders on notes, which are local
     /// notifications and need no server.
     public static func shipping(serverConfigured: Bool) -> CapabilityCatalog {
         CapabilityCatalog(statuses: withMessaging(serverConfigured: serverConfigured).statuses.merging([

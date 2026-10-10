@@ -51,6 +51,8 @@ extension VoiceToolReply {
                 return "failed: \(account) isn't connected or needs reconnecting. Tell the user they can connect it in Settings, Online accounts. Nothing was done."
             case "live_not_configured":
                 return "failed: \(account) isn't set up on Doddy's server. Nothing was done."
+            case "quota_exceeded" where !CloudToolName.needsAccount(tool):
+                return "failed: today's web search limit was reached. Tell the user it works again tomorrow and answer from what you know if you can, saying it may be out of date. Nothing was looked up."
             case "rate_limited", "quota_exceeded", "busy":
                 return "failed: \(account) or Doddy's usage limit says to wait. Tell the user to try again later. Nothing was done."
             case "provider_timeout", "provider_unavailable":

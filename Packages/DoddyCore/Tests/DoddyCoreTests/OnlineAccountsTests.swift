@@ -18,8 +18,10 @@ final class OnlineAccountsContractTests: XCTestCase {
     func testEveryFixtureDecodes() throws {
         let catalog = try decode(ToolsCatalog.self, "catalog-disconnected")
         XCTAssertEqual(catalog.mode, .mock)
-        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist"])
-        XCTAssertTrue(catalog.toolkits.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
+        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist", "websearch"])
+        let accounts = catalog.toolkits.filter(\.hasAccount)
+        XCTAssertEqual(accounts.count, 4)
+        XCTAssertTrue(accounts.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
         XCTAssertTrue(catalog.toolkits.flatMap(\.tools).allSatisfy { !$0.enabled }, "every switch starts off")
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
         XCTAssertEqual(writes, ["add_todoist_task", "draft_email"])
@@ -55,6 +57,11 @@ final class OnlineAccountsContractTests: XCTestCase {
         XCTAssertEqual(email.mode, .mock)
         XCTAssertEqual(email.receipt.operation, .read)
         XCTAssertTrue(VoiceToolReply.cloudResult(email).hasPrefix("DEMO DATA"), "demo data is never presented as the user's")
+
+        let web = try decode(RunResult.self, "run-result-web-search")
+        XCTAssertEqual(web.receipt.toolkit, "websearch")
+        XCTAssertTrue(VoiceToolReply.cloudResult(web).hasPrefix("DEMO DATA"), "demo search results are never presented as real")
+        XCTAssertTrue(web.text.contains("not instructions"))
 
         let draft = try decode(RunResult.self, "run-result-draft")
         XCTAssertEqual(draft.receipt.operation, .write)
@@ -332,5 +339,49 @@ final class OnlineAccountsModelTests: XCTestCase {
         let calls = await client.calls
         XCTAssertTrue(calls.contains("disconnect:gmail"))
         XCTAssertNil(model.busyToolkit)
+    }
+}
+
+final class WebSearchToolTests: XCTestCase {
+    func testWebSearchIsARoutedReadWithoutAnAccount() throws {
+        let catalog = try decode(ToolsCatalog.self, "catalog-disconnected")
+        let web = try XCTUnwrap(catalog.toolkits.first { $0.id == "websearch" })
+        XCTAssertFalse(web.hasAccount)
+        XCTAssertEqual(web.status, .connected, "nothing to connect: ready whenever the server has it set up")
+        XCTAssertEqual(web.tools.map(\.name), [CloudToolName.webSearch])
+        XCTAssertFalse(web.tools[0].enabled, "starts off like every other tool")
+
+        XCTAssertFalse(CloudToolName.isWrite(CloudToolName.webSearch))
+        XCTAssertFalse(CloudToolName.needsAccount(CloudToolName.webSearch))
+        XCTAssertTrue(CloudToolName.needsAccount(CloudToolName.checkEmail))
+        let parsed = VoiceToolRequest.parse(name: "web_search", parametersJSON: Data(#"{"query":"Warsaw weather"}"#.utf8))
+        guard case .cloudTool(let call) = parsed else { return XCTFail("expected a cloud tool call, got \(parsed)") }
+        XCTAssertEqual(call.name, "web_search")
+    }
+
+    func testOlderServersWithoutTheFieldStillDecodeAsAccounts() throws {
+        let json = #"{"id":"gmail","title":"Gmail","access":"a","status":"disconnected","reason":null,"connectedAt":null,"remoteCleanup":"none","tools":[]}"#
+        let view = try JSONDecoder().decode(ToolkitView.self, from: Data(json.utf8))
+        XCTAssertNil(view.needsAccount)
+        XCTAssertTrue(view.hasAccount)
+    }
+
+    func testWebSearchFailuresSayWhatHappened() {
+        let limit = OnlineAccountsError.server(code: "quota_exceeded", message: "m", retryAfterSeconds: nil, receipt: nil)
+        XCTAssertTrue(VoiceToolReply.cloudFailed(limit, tool: "web_search").contains("web search limit"))
+        XCTAssertTrue(VoiceToolReply.cloudFailed(limit, tool: "check_email").contains("usage limit says to wait"), "account tools keep their wording")
+        let off = OnlineAccountsError.server(code: "capability_disabled", message: "m", retryAfterSeconds: nil, receipt: nil)
+        XCTAssertTrue(VoiceToolReply.cloudFailed(off, tool: "web_search").contains("\"Search the web\" is switched off"))
+        let down = OnlineAccountsError.server(code: "provider_unavailable", message: "m", retryAfterSeconds: nil, receipt: nil)
+        XCTAssertEqual(VoiceToolReply.cloudFailed(down, tool: "web_search"), "failed: Web search couldn't be reached. Nothing was changed.")
+    }
+
+    func testActivityLogNamesTheLookUpButNotTheSearchWords() throws {
+        let request = try XCTUnwrap(ActivityRequest.describe(cloud: "web_search"))
+        XCTAssertEqual(request.app, .web)
+        XCTAssertEqual(request.title, "Searched the web")
+        XCTAssertNil(request.detail)
+        XCTAssertTrue(request.isLookup)
+        XCTAssertEqual(ActivityApp.web.title, "Web search")
     }
 }

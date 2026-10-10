@@ -9,8 +9,10 @@ import { dispatchDue } from "../src/outbox.js";
 import { dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, TOOL_SECRET } from "./helpers.js";
 
 test("PIN rules reject trivial PINs", () => {
-  for (const bad of ["123", "1111", "1234", "9876", "0123", "12a4", "123456789"]) assert.equal(isAcceptablePin(bad), false, bad);
-  for (const ok of ["2580", "1357", "904216"]) assert.equal(isAcceptablePin(ok), true, ok);
+  for (const bad of ["123", "2580", "11111", "111111", "123456", "987654", "012345", "12a456", "123456789"]) {
+    assert.equal(isAcceptablePin(bad), false, bad);
+  }
+  for (const ok of ["258025", "135792", "904216", "90421688"]) assert.equal(isAcceptablePin(ok), true, ok);
 });
 
 test("memory search folds diacritics and only returns matches", () => {
@@ -90,14 +92,14 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("inbound: memories only after the right PIN; wrong PINs lock", async () => {
-    await user("+48500000003", { pin: "2580", inbound: true, memories: ["Klucze do piwnicy są u pani Łucji", "Dentist on Tuesday at 15:00"] });
+    const owner = await user("+48500000003", { pin: "258025", inbound: true, memories: ["Klucze do piwnicy są u pani Łucji", "Dentist on Tuesday at 15:00"] });
     const v = await ring("+48500000003");
     assert.deepEqual([v.doddy_caller, v.doddy_memory, v.doddy_pin], ["known", "on", "set"]);
     const s = v.secret__doddy_session!;
 
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/search-memories", { query: "klucze" }, s)).json(), { status: "pin_required" });
-    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "1111" }, s)).json(), { status: "wrong_pin", attemptsLeft: 4 });
-    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "2 5 8 0" }, s)).json(), { status: "verified" });
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "111111" }, s)).json(), { status: "wrong_pin", attemptsLeft: 4 });
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "2 5 8 0 2 5" }, s)).json(), { status: "verified" });
 
     const found = (await el("/webhooks/elevenlabs/tools/search-memories", { query: "gdzie są klucze?" }, s)).json();
     assert.equal(found.status, "ok");
@@ -107,23 +109,40 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     // A fresh call is not verified, and five wrong PINs lock the account's PIN.
     const s2 = (await ring("+48500000003")).secret__doddy_session!;
     let last;
-    for (let i = 0; i < 5; i++) last = (await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "0000" }, s2)).json();
+    for (let i = 0; i < 5; i++) last = (await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, s2)).json();
     assert.deepEqual(last, { status: "locked", minutes: 15 });
-    assert.equal((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "2580" }, s2)).json().status, "locked");
+    assert.equal((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s2)).json().status, "locked");
+
+    // Lockouts escalate: the next five wrong guesses after the lock ends lock for an hour, not 15 min.
+    // With notifications on, the owner is told (no caller number in the text).
+    await call("PUT", "/v1/device/push-token", owner.h, { token: "c".repeat(64), environment: "sandbox" });
+    await db.query(
+      `UPDATE call_settings SET pin_locked_until = now() - interval '1 second'
+       WHERE account_id = (SELECT account_id FROM phone_numbers WHERE e164 = '+48500000003')`);
+    for (let i = 0; i < 4; i++) {
+      assert.equal((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, s2)).json().status, "wrong_pin");
+    }
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, s2)).json(), { status: "locked", minutes: 60 });
+    const { rows: alerts } = await db.query<{ channel: string; body: string | null }>(
+      "SELECT channel, body FROM outbound_messages WHERE account_id = $1", [owner.accountId]);
+    assert.equal(alerts.length, 1);
+    assert.equal(alerts[0]!.channel, "push");
+    assert.match(alerts[0]!.body ?? "", /wrong Doddy PIN 5 times.*locked for 1 h/);
+    assert.ok(!(alerts[0]!.body ?? "").includes("+48"), "no phone number in the alert");
   });
 
   test("memory text is encrypted at rest", async () => {
-    await user("+48500000004", { pin: "2580", inbound: true, memories: ["Hasło do wifi: zielony-kot-77"] });
+    await user("+48500000004", { pin: "258025", inbound: true, memories: ["Hasło do wifi: zielony-kot-77"] });
     const { rows } = await db.query<{ ciphertext: Buffer }>("SELECT ciphertext FROM memory_copies");
     for (const r of rows) assert.ok(!r.ciphertext.toString("utf8").includes("zielony"));
   });
 
   test("notes from a call wait in the inbox, trigger a push without content, and need the PIN", async () => {
-    const { h } = await user("+48500000005", { pin: "2580", inbound: true });
+    const { h } = await user("+48500000005", { pin: "258025", inbound: true });
     await call("PUT", "/v1/device/push-token", h, { token: "12".repeat(32), environment: "sandbox" });
     const s = (await ring("+48500000005")).secret__doddy_session!;
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/save-note", { text: "Buy milk" }, s)).json(), { status: "pin_required" });
-    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "2580" }, s);
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s);
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/save-note", { text: "Call Anna about Friday" }, s)).json(), { status: "saved_for_confirmation" });
 
     const notes = (await call("GET", "/v1/call-notes", h)).json().notes;
@@ -131,8 +150,10 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(notes[0].text, "Call Anna about Friday");
     push.sent = [];
     await dispatchDue(db, { push, sms });
-    assert.equal(push.sent.length, 1);
-    assert.ok(!push.sent[0]!.body.includes("Anna"), "push must not contain the note");
+    // Only this account's device: other tests may leave their own alerts queued.
+    const mine = push.sent.filter((p) => p.target.deviceToken === "12".repeat(32));
+    assert.equal(mine.length, 1);
+    assert.ok(!mine[0]!.body.includes("Anna"), "push must not contain the note");
 
     assert.equal((await call("DELETE", `/v1/call-notes/${notes[0].id}`, h)).statusCode, 204);
     assert.equal((await call("GET", "/v1/call-notes", h)).json().notes.length, 0);
@@ -150,7 +171,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("outbound: needs consent, calls only the verified number, passes a session", async () => {
-    const { h } = await user("+48500000007", { pin: "2580" });
+    const { h } = await user("+48500000007", { pin: "258025" });
     assert.equal((await call("POST", "/v1/calls/outbound", h)).json().error, "outbound_not_enabled");
     assert.equal((await call("PUT", "/v1/calls/settings", h, { outboundConsent: true })).statusCode, 400, "needs the wording version");
     assert.equal((await call("PUT", "/v1/calls/settings", h, { outboundConsent: true, outboundConsentTextVersion: "calls-v1" })).statusCode, 204);
@@ -161,7 +182,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(placed.to, "+48500000007");
     assert.equal(placed.variables.doddy_direction, "outbound");
     const s = placed.variables.secret__doddy_session!;
-    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "2580" }, s)).json(), { status: "verified" });
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s)).json(), { status: "verified" });
 
     outbound.next = [{ kind: "unknown", code: "elevenlabs_network" }];
     assert.equal((await call("POST", "/v1/calls/outbound", h)).json().status, "unknown");
@@ -170,7 +191,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("settings report what exists; account deletion removes call data", async () => {
-    const { accountId, h } = await user("+48500000008", { pin: "2580", inbound: true, memories: ["x"] });
+    const { accountId, h } = await user("+48500000008", { pin: "258025", inbound: true, memories: ["x"] });
     const st = (await call("GET", "/v1/calls/settings", h)).json();
     assert.deepEqual(st, {
       available: { inbound: true, outbound: true }, doddyNumber: "+48221234567", phoneVerified: true,

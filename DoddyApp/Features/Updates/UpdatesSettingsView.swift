@@ -46,6 +46,9 @@ struct UpdatesSettingsView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
 
+            // Debug builds only (ADR-175): the account token goes to whatever server is set here,
+            // so a shipped build uses only the address built into ServerConfig.
+            #if DEBUG
             Section("Server (development)") {
                 TextField("https://…", text: $serverURL)
                     .font(.body.monospaced())
@@ -60,6 +63,7 @@ struct UpdatesSettingsView: View {
                         .foregroundStyle(Theme.error)
                 }
             }
+            #endif
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)

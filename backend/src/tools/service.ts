@@ -30,12 +30,26 @@ import {
 } from "./contracts.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
 import type { ToolsProvider } from "./provider.js";
+import {
+  normalizeWebSearch,
+  WEB_SEARCH_COPY,
+  WEB_SEARCH_TIMEOUT_MS,
+  WEB_SEARCH_TOOL,
+  WEB_SECTION,
+  WEB_SECTION_ID,
+  type WebSearchProvider,
+  WebSearchInput,
+} from "./websearch.js";
+
+type SectionId = ToolkitId | typeof WEB_SECTION_ID;
 
 const APPROVAL_TTL_SECONDS = 120;
 
 export interface ToolsServiceDeps {
   store: Store;
   provider: ToolsProvider;
+  /** Web search through Monid. Null or absent: the section shows "not set up" and never runs. */
+  webSearch?: WebSearchProvider | null;
   limits: Limits;
   publicBaseUrl: string;
   appReturnUrl: string;
@@ -55,6 +69,7 @@ export class CloudToolsService {
   readonly mode: "mock" | "live";
   private readonly store: Store;
   private readonly provider: ToolsProvider;
+  private readonly webSearch: WebSearchProvider | null;
   private readonly limits: Limits;
   private readonly limiter: UsageLimiter;
   private readonly now: () => number;
@@ -67,6 +82,8 @@ export class CloudToolsService {
     }
     this.store = deps.store;
     this.provider = deps.provider;
+    this.webSearch = deps.webSearch ?? null;
+    if (this.webSearch && this.webSearch.mode !== this.mode) throw new Error("web search and online accounts must both be mock or both live");
     this.limits = deps.limits;
     this.limiter = new UsageLimiter(deps.store, deps.limits);
     this.now = deps.now ?? Date.now;
@@ -85,7 +102,7 @@ export class CloudToolsService {
   // ---------------------------------------------------------------- queries
 
   catalog(userId: string): ToolsCatalog {
-    return { mode: this.mode, toolkits: TOOLKIT_IDS.map((id) => this.view(userId, id)) };
+    return { mode: this.mode, toolkits: [...TOOLKIT_IDS.map((id) => this.view(userId, id)), this.webView(userId)] };
   }
 
   receipts(userId: string): ToolReceipt[] {
@@ -104,6 +121,7 @@ export class CloudToolsService {
       id,
       title: def.title,
       access: def.access,
+      needsAccount: true,
       status,
       reason: row?.reason ?? null,
       connectedAt: row ? new Date(row.connected_at).toISOString() : null,
@@ -119,9 +137,34 @@ export class CloudToolsService {
     };
   }
 
+  /** Web search has no account: it is "connected" whenever this server has Monid set up. */
+  private webView(userId: string): ToolkitView {
+    const configured = this.webSearch?.isConfigured() === true;
+    return {
+      id: WEB_SECTION_ID,
+      title: WEB_SECTION.title,
+      access: WEB_SECTION.access,
+      needsAccount: false,
+      status: configured ? "connected" : "unavailable",
+      reason: null,
+      connectedAt: null,
+      remoteCleanup: "none",
+      tools: [
+        {
+          name: WEB_SEARCH_TOOL,
+          title: WEB_SEARCH_COPY.title,
+          blurb: WEB_SEARCH_COPY.blurb,
+          risk: "read",
+          enabled: configured && this.store.toolEnabled(userId, WEB_SEARCH_TOOL),
+        },
+      ],
+    };
+  }
+
   // ---------------------------------------------------------------- connect
 
   async connect(userId: string, toolkitId: string, body: unknown): Promise<ConnectResponse> {
+    if (toolkitId === WEB_SECTION_ID) throw new AppError("invalid_request", { message: "Web search needs no sign-in. Switch it on instead." });
     const id = toolkit(toolkitId);
     parse(EmptyRequestSchema, body);
     this.requireConfigured(id);
@@ -167,6 +210,7 @@ export class CloudToolsService {
   }
 
   async complete(userId: string, toolkitId: string, body: unknown): Promise<ToolkitResult> {
+    if (toolkitId === WEB_SECTION_ID) throw new AppError("invalid_request", { message: "Web search needs no sign-in." });
     const id = toolkit(toolkitId);
     const request = parse(CompleteRequestSchema, body);
     const title = TOOLKITS[id].title;
@@ -241,6 +285,13 @@ export class CloudToolsService {
   }
 
   async disconnect(userId: string, toolkitId: string, body: unknown): Promise<ToolkitResult> {
+    if (toolkitId === WEB_SECTION_ID) {
+      // Older app builds show a Disconnect button for every section; for web search it means "off".
+      parse(EmptyRequestSchema, body);
+      this.store.setToolEnabled(userId, WEB_SEARCH_TOOL, false, this.now());
+      const summary = "Web search has no account to disconnect; it was switched off.";
+      return { toolkit: this.webView(userId), receipt: this.receipt(userId, WEB_SECTION_ID, "disconnect", null, "succeeded", summary, null, null) };
+    }
     const id = toolkit(toolkitId);
     parse(EmptyRequestSchema, body);
     const title = TOOLKITS[id].title;
@@ -288,6 +339,14 @@ export class CloudToolsService {
 
   setSwitch(userId: string, body: unknown): ToolkitResult {
     const request = parse(SwitchRequestSchema, body);
+    if (request.tool === WEB_SEARCH_TOOL) {
+      if (request.enabled && this.webSearch?.isConfigured() !== true) {
+        throw new AppError("live_not_configured", { message: "Web search isn't set up on this server." });
+      }
+      this.store.setToolEnabled(userId, WEB_SEARCH_TOOL, request.enabled, this.now());
+      const summary = `${WEB_SEARCH_COPY.title} switched ${request.enabled ? "on" : "off"}.`;
+      return { toolkit: this.webView(userId), receipt: this.receipt(userId, WEB_SECTION_ID, "switch", WEB_SEARCH_TOOL, "succeeded", summary, null, null) };
+    }
     const tool = cloudTool(request.tool);
     if (!tool) throw new AppError("not_found", { message: "That tool doesn't exist." });
     const def = TOOLKITS[tool.toolkit];
@@ -310,6 +369,7 @@ export class CloudToolsService {
   /** Writes only. Shows exactly what would happen and returns a single-use approval for those arguments. */
   prepare(userId: string, body: unknown): PrepareResult {
     const request = parse(PrepareRequestSchema, body);
+    if (request.tool === WEB_SEARCH_TOOL) throw new AppError("invalid_request", { message: "This tool doesn't need a confirmation." });
     const tool = this.requireTool(request.tool);
     if (tool.risk !== "write" || !tool.preview) throw new AppError("invalid_request", { message: "This tool doesn't need a confirmation." });
     const args = parse(tool.input, request.arguments);
@@ -329,6 +389,7 @@ export class CloudToolsService {
 
   async run(userId: string, body: unknown): Promise<RunResult> {
     const request = parse(RunRequestSchema, body);
+    if (request.tool === WEB_SEARCH_TOOL) return this.runWebSearch(userId, request);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
     if (!isSupportedTimeZone(request.timeZone)) {
@@ -409,6 +470,49 @@ export class CloudToolsService {
     }
   }
 
+  /**
+   * Same order as account tools, minus the account: known tool -> valid arguments -> switch on ->
+   * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed)
+   * -> normalized result -> receipt. Search words are not stored anywhere, receipts included.
+   */
+  private async runWebSearch(userId: string, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
+    const args = parse(WebSearchInput, request.arguments);
+    if (request.approvalId !== undefined) throw new AppError("invalid_request");
+    if (!isSupportedTimeZone(request.timeZone)) {
+      throw new AppError("invalid_request", { message: "Use an IANA time zone such as Europe/Warsaw." });
+    }
+    const now = this.now();
+    this.limiter.reserveRequest(userId, now);
+    const blocked = (code: "capability_disabled" | "live_not_configured" | "quota_exceeded", message: string, errorCode: string = code): never => {
+      throw new AppError(code, { message, receipt: this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "blocked", `Not done: ${message}`, errorCode, null) });
+    };
+    const provider = this.webSearch;
+    if (!provider || !provider.isConfigured()) return blocked("live_not_configured", "Web search isn't set up on this server.");
+    if (!this.store.toolEnabled(userId, WEB_SEARCH_TOOL)) return blocked("capability_disabled", `${WEB_SEARCH_COPY.title} is turned off in Settings.`);
+    try {
+      this.limiter.reserveWebSearch(userId, now);
+    } catch (error) {
+      if (error instanceof AppError) return blocked("quota_exceeded", "Today's web search limit was reached.", error.code);
+      throw error;
+    }
+
+    try {
+      return await this.limiter.withSlot(userId, async () => {
+        const result = await provider.search({ query: args.query, signal: AbortSignal.timeout(WEB_SEARCH_TIMEOUT_MS) });
+        const outcome = normalizeWebSearch(result.output, args.query);
+        const receipt = this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "succeeded", outcome.summary, null, result.runId);
+        return { mode: this.mode, tool: WEB_SEARCH_TOOL, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt };
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      const appError = toAppError(error);
+      const message =
+        appError.code === "rate_limited" ? "Web search is busy right now. Try again shortly." : appError.code === "malformed_provider_result" ? "Web search sent an answer Doddy couldn't read, so nothing is shown." : "Web search couldn't be reached. Nothing is shown instead.";
+      const receipt = this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "failed", message, appError.code, null);
+      throw new AppError(appError.code, { ...appError.options, message, receipt });
+    }
+  }
+
   // ---------------------------------------------------------------- helpers
 
   private requireTool(name: string): CloudToolDefinition {
@@ -479,7 +583,7 @@ export class CloudToolsService {
 
   private receipt(
     userId: string,
-    id: ToolkitId,
+    id: SectionId,
     operation: ToolReceipt["operation"],
     tool: string | null,
     status: ReceiptStatus,

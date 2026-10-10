@@ -1,6 +1,6 @@
 # Note reminders — design v0.1 (M4a)
 
-**Status:** APPROVED by the owner 2026-10-10 with the recommended answers to D1–D5; **implemented as M4a**, device verification pending. Build evidence: `docs/implementation/M4A_NOTE_REMINDERS_STATUS.md`. ADR-173.
+**Status:** APPROVED by the owner 2026-10-10 with the recommended answers to D1–D5; **implemented as M4a**, device verification pending. Build evidence: `docs/implementation/M4A_NOTE_REMINDERS_STATUS.md`. ADR-176.
 
 **How this fits next to what already exists on this line:** Apple Reminders (M4, `ReminderAction`, voice `create_reminder`) put an item in the iPhone's Reminders app; timers and event nudges (`DeviceConnections`) are local notifications; Doddy's opt-in Updates (S1, ADR-148) and daily news (N1) are server pushes. **Note reminders** are a fourth, separate thing: a local notification about one saved note that opens that note. The rules below are about note reminders only; they do not change Updates, news, timers or M4.
 **Date:** 2026-10-10. **Visual study:** 9 artboards on the Pocket Notebook tokens, https://claude.ai/artifact/AVHEBdUynLJkNMwdkTJkn8 (private to the owner). This document is the source of truth for copy and behaviour; the artboards illustrate it.

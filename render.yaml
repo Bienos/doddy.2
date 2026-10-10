@@ -106,6 +106,9 @@ services:
         sync: false
       - key: COMPOSIO_TODOIST_TOOLKIT_VERSION
         sync: false
+      # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
+      - key: MONID_API_KEY
+        sync: false
 
   - type: web
     name: doddy-messaging

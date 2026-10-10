@@ -66,7 +66,7 @@ evidence-based receipt. Planned cards in the app do not trigger permission promp
 | 2 | **This milestone:** read-only Google Calendar through Composio; mock/live adapters; Connected Apps; secure backend; tests; docs | Owner prompt 2026-10-09 | Mock milestone complete; **live unverified** |
 | 3 | Native Apple Calendar read + Apple Reminders follow-through, tested separately; one explicit memory → reminder workflow | Stage 2 live check passed; owner approval; EventKit re-verification | Not started |
 | 4 | Next user-requested connector (Todoist or Notion) after evidence and least-privilege review. Gmail/Drive only when demand justifies the data sensitivity and Google verification | Demand evidence; scope review | Not started |
-| 5 | Source-grounded news (permitted RSS / licensed APIs); optional Monid proof of concept with endpoint rights and cost checks | Rights review | Not started |
+| 5 | Source-grounded news (permitted RSS / licensed APIs); optional Monid proof of concept with endpoint rights and cost checks | Rights review | Monid web search built (ADR-173, owner request 2026-10-10; not live-checked); news not started |
 | 6 | Opt-in monitors, scheduling, APNs; narrowly approved multi-tool workflows | Reliability + user value shown | Not started |
 
 Out of scope for every stage until separately researched: WhatsApp/Signal personal-chat import, Apple Notes database

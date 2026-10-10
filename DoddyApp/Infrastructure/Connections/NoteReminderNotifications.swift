@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import UserNotifications
 
-/// Note reminders (M4a, ADR-173) as local notifications. Only identifiers starting with
+/// Note reminders (M4a, ADR-176) as local notifications. Only identifiers starting with
 /// `MemoryReminder.notificationPrefix` are scheduled here; timers and event nudges
 /// (`DeviceConnections`) and server pushes share the same iOS queue and are never touched.
 /// No badge, no remote registration, interruption level `.active`.

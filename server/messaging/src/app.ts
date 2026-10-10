@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
@@ -31,12 +32,17 @@ export interface Deps {
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
   logger?: boolean;
+  /** Proxies in front that append to X-Forwarded-For (Render: 1). Default 1. */
+  trustProxyHops?: number;
+  /** Verify codes the whole server may start per UTC day. Default 200. */
+  verifyDailyCap?: number;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
-    // Render terminates TLS and sets X-Forwarded-For.
-    trustProxy: true,
+    // Render terminates TLS and appends to X-Forwarded-For. Trusting a fixed number of hops reads
+    // the client IP from the right, so a client-supplied X-Forwarded-For can't change it (ADR-175).
+    trustProxy: (_address: string, hop: number) => hop < (deps.trustProxyHops ?? 1),
     bodyLimit: 16 * 1024,
     logger: deps.logger === false ? false : {
       level: "info",
@@ -48,7 +54,13 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(formbody);
   await app.register(rateLimit, {
     global: false,
-    keyGenerator: (req) => req.headers.authorization ?? req.ip,
+    // Signed-in routes count per bearer token (requests with a made-up token get their own bucket
+    // but are refused by auth before they do anything). Routes without auth must set
+    // keyGenerator: byIp, or a made-up Authorization header would buy a fresh bucket.
+    keyGenerator: (req) => {
+      const auth = req.headers.authorization;
+      return auth ? "auth:" + createHash("sha256").update(auth).digest("hex") : "ip:" + req.ip;
+    },
   });
 
   app.setErrorHandler((err: Error & { statusCode?: number }, req, reply) => {

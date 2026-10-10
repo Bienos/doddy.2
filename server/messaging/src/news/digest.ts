@@ -21,7 +21,8 @@ const MAX_SEARCHES = 3;
 
 export interface DigestResult {
   digestId?: string;
-  status: "queued" | "empty" | "failed" | "skipped";
+  /** queued = sent through at least one channel; ready = kept for the app only, nothing sent. */
+  status: "queued" | "ready" | "empty" | "failed" | "skipped";
   aiWritten?: boolean;
   errorCode?: string;
 }
@@ -29,8 +30,10 @@ export interface DigestResult {
 interface Settings { timezone: string; language: "en" | "pl"; channels: Channel[] }
 
 /**
- * Builds today's digest for one account and hands it to the outbox. Every link and source in
- * the message comes from a fetched feed or search result; the AI only chooses and phrases.
+ * Builds today's digest for one account, keeps it for the app, and hands it to the outbox for the
+ * chosen channels. Every link and source comes from a fetched feed or search result; the AI only
+ * chooses and phrases. With no channel (none chosen, or the chosen ones aren't set up any more)
+ * the digest is still kept and readable in the app (ADR-174).
  */
 export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kind: "scheduled" | "manual", now = new Date()): Promise<DigestResult> {
   const { rows: st } = await db.query<Settings>(
@@ -78,7 +81,6 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
       if (ch === "push" && await canPush(db, accountId)) channels.push(ch);
       if (ch === "sms" && await smsNumber(db, accountId)) channels.push(ch);
     }
-    if (channels.length === 0) return finish({ status: "failed", aiWritten, errorCode: "no_channel" });
 
     const entries = picks.map((p) => ({ line: p.line, url: p.candidate.url, source: p.candidate.source }));
     for (const [i, p] of picks.entries()) {
@@ -89,6 +91,10 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
       await db.query(
         `INSERT INTO news_sent (account_id, url_hash) VALUES ($1, $2)
          ON CONFLICT (account_id, url_hash) DO UPDATE SET sent_at = now()`, [accountId, p.candidate.urlHash]);
+    }
+    if (channels.length === 0) {
+      // Kept for the app. no_channel only when the user chose a channel that can't be used now.
+      return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : undefined });
     }
     for (const ch of channels) {
       const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);

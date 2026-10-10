@@ -518,8 +518,8 @@ final class VoiceSessionController {
         }
     }
 
-    /// Gmail, Drive, Notion and Todoist go through Doddy's server, which checks the tool's switch, the
-    /// account connection and the grant. Reads answer at once; writes show a card first.
+    /// Gmail, Drive, Notion, Todoist and web search go through Doddy's server, which checks the tool's
+    /// switch (and, for accounts, the connection and the grant). Reads answer at once; writes show a card first.
     private func handleCloud(_ cloud: CloudToolCall, toolCallID: String) async {
         guard let client = OnlineAccountsClientFactory.make() else {
             await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)

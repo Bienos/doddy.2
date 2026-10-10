@@ -56,10 +56,10 @@ public enum CallConsent {
 }
 
 public enum CallPIN {
-    /// Mirrors the server: 4–8 digits, not one repeated digit, not a straight run like 1234 or 9876.
+    /// Mirrors the server (ADR-175): 6–8 digits, not one repeated digit, not a straight run like 123456.
     public static func isAcceptable(_ pin: String) -> Bool {
         let digits = pin.compactMap(\.wholeNumberValue)
-        guard (4...8).contains(pin.count), digits.count == pin.count, pin.allSatisfy(\.isASCII) else { return false }
+        guard (6...8).contains(pin.count), digits.count == pin.count, pin.allSatisfy(\.isASCII) else { return false }
         let allSame = digits.allSatisfy { $0 == digits[0] }
         let up = zip(digits, digits.dropFirst()).allSatisfy { ($0 + 1) % 10 == $1 }
         let down = zip(digits, digits.dropFirst()).allSatisfy { ($0 + 9) % 10 == $1 }

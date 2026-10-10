@@ -71,6 +71,8 @@ writeTool("error-permission-insufficient", (await on(t2, "check_email")).body);
 await ready(t2, "todoist", "list_todoist_tasks");
 t2.provider.setScenario(t2.store.composioUserId("00000000-0000-4000-8000-00000000000a", t2.clock.now()), "rate_limited");
 writeTool("error-rate-limited", (await runTool(t2, "list_todoist_tasks", {})).body);
+await on(t2, "web_search");
+writeTool("run-result-web-search", (await runTool(t2, "web_search", { query: "Demo Café opening hours" })).body);
 await t.close();
 await t2.close();
 process.stdout.write(`fixtures written to ${out} and ${outTools}\n`);

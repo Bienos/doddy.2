@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
@@ -5,6 +6,10 @@ import { principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
 import { ProviderError } from "../providers/types.js";
+
+/** Verify codes one phone number may receive, across all accounts. */
+const VERIFY_PER_NUMBER_HOUR = 3;
+const VERIFY_PER_NUMBER_DAY = 6;
 
 const e164 = z.string().regex(/^\+[1-9][0-9]{6,14}$/);
 const startBody = z.object({ phone: e164 });
@@ -28,6 +33,19 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!verifier) return reply.code(503).send({ error: "not_configured" });
     const body = parse(startBody, req.body, reply);
     if (!body) return;
+    // Per destination number and per server, whatever account asks: new accounts can't be used
+    // to text one number over and over, and a flood can't run up the SMS bill (ADR-175).
+    const phoneHash = createHash("sha256").update(body.phone).digest();
+    const { rows: [counts] } = await db.query<{ hour: number; day: number; server: number }>(
+      `SELECT count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 hour')::int AS hour,
+              count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 day')::int AS day,
+              count(*) FILTER (WHERE started_at > date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')::int AS server
+       FROM phone_verification_starts WHERE started_at > now() - interval '1 day'`, [phoneHash]);
+    if (counts!.hour >= VERIFY_PER_NUMBER_HOUR || counts!.day >= VERIFY_PER_NUMBER_DAY || counts!.server >= (deps.verifyDailyCap ?? 200)) {
+      return reply.code(429).send({ error: "too_many_attempts" });
+    }
+    await db.query("INSERT INTO phone_verification_starts (phone_hash) VALUES ($1)", [phoneHash]);
+    await db.query("DELETE FROM phone_verification_starts WHERE started_at < now() - interval '2 days'");
     try {
       await verifier.start(body.phone);
     } catch (err) {

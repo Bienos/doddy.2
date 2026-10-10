@@ -3,6 +3,7 @@
     "id": "gmail",
     "title": "Gmail",
     "access": "Doddy can list your recent emails (sender, subject, a short preview) and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+    "needsAccount": true,
     "status": "connected",
     "reason": null,
     "connectedAt": "2026-10-10T10:00:00.000Z",
@@ -25,7 +26,7 @@
     ]
   },
   "receipt": {
-    "operationId": "71db1d96-d7bd-45b2-be39-047d2e094fa9",
+    "operationId": "c90cb4f4-db96-420c-a888-c389039d8ee7",
     "operation": "connect",
     "toolkit": "gmail",
     "tool": null,

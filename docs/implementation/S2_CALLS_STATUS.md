@@ -4,6 +4,8 @@
 > `server/messaging/` (it was `server/`), its ADRs are 139–168 (were 036–065), the
 > `/v1/voice/token` route is gone (the app uses the Vercel `server/voice-token`), and this line's
 > M4 Reminders was replaced by the main line's. See `docs/implementation/MERGE_PLAN.md`.
+>
+> **Security fixes (ADR-175):** PINs are now 6–8 digits; lockouts escalate (15 min → 24 h) with a push to the owner; see `SECURITY_REVIEW_MESSAGING.md`.
 
 Date: 2026-10-10. Owner decisions on that date:
 - Calls in **both directions**.

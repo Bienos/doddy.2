@@ -52,9 +52,9 @@ export async function verifyPin(pin: string, stored: string): Promise<boolean> {
   return timingSafeEqual(actual, expected);
 }
 
-/** 4–8 digits, not all the same digit and not a straight run like 1234 or 9876. */
+/** 6–8 digits (ADR-175), not all the same digit and not a straight run like 123456 or 987654. */
 export function isAcceptablePin(pin: string): boolean {
-  if (!/^[0-9]{4,8}$/.test(pin)) return false;
+  if (!/^[0-9]{6,8}$/.test(pin)) return false;
   const d = [...pin].map(Number);
   const allSame = d.every((x) => x === d[0]);
   const up = d.every((x, i) => i === 0 || x === (d[i - 1]! + 1) % 10);

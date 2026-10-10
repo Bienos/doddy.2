@@ -1,5 +1,5 @@
 # M4a status — note reminders (local notifications)
-Date: 2026-10-10. Owner instructions: "approved, build M4a with your recommendations", then "build" (Remind me while saving), then "port onto newest line". Design: `docs/design/NOTE_REMINDERS.md`. ADR-173.
+Date: 2026-10-10. Owner instructions: "approved, build M4a with your recommendations", then "build" (Remind me while saving), then "port onto newest line". Design: `docs/design/NOTE_REMINDERS.md`. ADR-176.
 First built on `claude/hopeful-fermat-1a63x0` from the old default branch (V1); this is the port onto `claude/elegant-knuth-hc1aql`, where M4 Apple Reminders, timers, event nudges, push Updates and daily news already exist.
 
 ## What ships
@@ -34,4 +34,4 @@ App: `Infrastructure/Connections/NoteReminderNotifications.swift`, `Features/Not
 ## Open
 1. Voice: keep Apple Reminders for "remind me" by voice (recommended), or add a note-linked voice tool (changes the shared live agent).
 2. D6 Polish copy; whether note reminders belong in the export.
-3. Done separately (ADR-174): the voice agent prompt again says plainly that Doddy is an AI when asked.
+3. Done separately (ADR-177): the voice agent prompt again says plainly that Doddy is an AI when asked.

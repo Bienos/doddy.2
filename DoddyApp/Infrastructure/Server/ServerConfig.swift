@@ -8,8 +8,14 @@ enum ServerConfig {
     static let defaultBaseURL = ""
 
     /// Settings → Notifications and texts lets a development build point at a different server.
+    /// The address typed in Settings counts in debug builds only (ADR-175); shipped builds use
+    /// `defaultBaseURL`, so the account token can't be pointed at another server.
     static func baseURL(defaults: UserDefaults = .standard) -> URL? {
+        #if DEBUG
         let stored = defaults.string(forKey: PreferenceKey.messagingServerURL)?.trimmingCharacters(in: .whitespaces) ?? ""
+        #else
+        let stored = ""
+        #endif
         return validated(stored.isEmpty ? defaultBaseURL : stored)
     }
 
