@@ -28,8 +28,8 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | Notification | Status | Why |
 |---|---|---|
 | **Memory reminder:** a saved note, at a chosen date/time | **Proposed v1** | The only notification with a user-requested purpose today |
-| Snooze of a delivered reminder | Built: Tomorrow 09:00. **More choices designed, awaiting approval** | See "Repeating reminders and snooze" below |
-| Recurring reminders ("every Monday") | **Designed, awaiting approval** | See "Repeating reminders and snooze" below |
+| Snooze of a delivered reminder | **Built (ADR-200)**: In 1 hour, Tomorrow 09:00; This evening in the app | See "Repeating reminders and snooze" below |
+| Recurring reminders ("every Monday") | **Built (ADR-200)** | See "Repeating reminders and snooze" below |
 | Location-based ("when I get home") | **Built (ADR-196)** | See "Place reminders" below |
 | Time Sensitive interruption level | Deferred, opt-in only | Breaks through Focus; must be the user's choice per reminder |
 | Voice-session Live Activity / Dynamic Island | Separate track (V3) | Not a notification; see `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` |
@@ -108,8 +108,8 @@ Owner instruction 2026-10-10: "build location reminders next". A note reminder f
 - **Limits:** 10 place reminders (iOS watches at most 20 regions per app), inside the 50 total.
 - **Not built:** a map to drag the circle (a map would load tiles from Apple; can come later), places shared between notes, "at a place between these hours". Voice is built: ADR-198.
 
-## Repeating reminders and snooze (designed 2026-10-10, awaiting approval)
-Owner: "yes design repeating reminders and snooze". Screens 15–21 and the rules board on the Doddy Notifications canvas. Nothing here is built.
+## Repeating reminders and snooze (ADR-200)
+Owner: "yes design repeating reminders and snooze", then "approved, build it" (R1–R4 as proposed). Screens 15–21 and the rules board on the Doddy Notifications canvas. Built; status and evidence in `docs/implementation/REPEAT_SNOOZE_STATUS.md`.
 
 **Repeat (time reminders only).**
 - Choices on the sheet under the first time: **Never** (default), **Every day**, **Weekdays** (Mon–Fri), **Every week** on the first time's weekday, **Every month** on its date. Monthly is offered only for days 1–28 (see decision R1).
@@ -129,7 +129,7 @@ Owner: "yes design repeating reminders and snooze". Screens 15–21 and the rule
 - Checked like setting one: the new time counts only once iOS lists it as pending. Otherwise the old reminder stays and the receipt says "Couldn't move it. Your reminder is unchanged." A failed Lock Screen snooze shows that the next time the note opens.
 - No snooze on place reminders.
 
-**Decisions for the owner (R1–R5).**
+**Decisions (R1–R4 approved as proposed; R5 is a device check).**
 1. R1 Monthly on the 29th–31st: days 1–28 only (proposed), or "last day of the month", which needs Doddy to re-arm each month and only works if the app is opened.
 2. R2 Weekdays uses 5 of the 50 slots.
 3. R3 Lock Screen title shows the schedule ("every Monday"), not the note. Or keep plain "Reminder".

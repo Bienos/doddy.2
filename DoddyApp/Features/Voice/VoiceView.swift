@@ -347,17 +347,28 @@ struct VoiceView: View {
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.separator))
         .accessibilityElement(children: .combine)
         switch target {
-        case .time(let date, let zone):
+        case .time(let date, let zone, let repeats):
             Label {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(ReminderFormat.full(date, timeZoneID: zone))
-                        .font(.headline)
+                    if let repeats {
+                        // The card shows where the repeat really starts (iOS can't start it later).
+                        let first = ReminderSchedule.firstOccurrence(
+                            repeats, picked: date, timeZoneID: zone, now: .now, lead: NoteReminderLimits.minimumLead) ?? date
+                        Text(ReminderFormat.repeatPhrase(repeats, anchor: date, timeZoneID: zone))
+                            .font(.headline)
+                        Text("\(ReminderFormat.zoneName(zone)) · first on \(ReminderFormat.dateTime(first, timeZoneID: zone)) · until you stop it")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    } else {
+                        Text(ReminderFormat.full(date, timeZoneID: zone))
+                            .font(.headline)
+                    }
                     Text("A notification from Doddy on this iPhone, not Apple Reminders.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
             } icon: {
-                Image(systemName: "bell")
+                Image(systemName: repeats == nil ? "bell" : "repeat")
             }
             if editingNoteReminderTime {
                 DatePicker(

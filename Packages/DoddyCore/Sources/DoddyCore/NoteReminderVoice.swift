@@ -18,10 +18,13 @@ public struct NoteReminderVoiceDraft: Equatable, Sendable {
     /// The note's text as the agent quoted it.
     public let noteText: String
     public let target: NoteReminderVoiceTarget
+    /// A time reminder that repeats (ADR-200): the weekday, day and clock time come from the time.
+    public let repeats: ReminderRepeat?
 
-    public init(noteText: String, target: NoteReminderVoiceTarget) {
+    public init(noteText: String, target: NoteReminderVoiceTarget, repeats: ReminderRepeat? = nil) {
         self.noteText = noteText
         self.target = target
+        self.repeats = repeats
     }
 }
 
@@ -29,6 +32,14 @@ extension VoiceToolRequest {
     static func parseNoteReminder(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
         guard let note = args.text("note")?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty else {
             return .invalid(name: name, reason: "missing note")
+        }
+        var repeats: ReminderRepeat?
+        if let raw = args.text("repeat")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !raw.isEmpty, raw != "never" {
+            guard let rule = ReminderRepeat(rawValue: raw) else {
+                return .invalid(name: name, reason: "repeat must be daily, weekdays, weekly or monthly")
+            }
+            guard args.text("place") == nil else { return .invalid(name: name, reason: "a place reminder can't repeat") }
+            repeats = rule
         }
         switch (args.text("due"), args.text("place")) {
         case (nil, nil):
@@ -45,8 +56,14 @@ extension VoiceToolRequest {
                         kind: .unreadable, problem: "a note reminder needs a time of day, not only a day",
                         question: "what time"))
                 }
+                let zone = due.timeZoneID ?? calendar.timeZone.identifier
+                if let repeats, !ReminderSchedule.allows(repeats, picked: date, timeZoneID: zone) {
+                    return .needsClarification(name: name, ReminderClarification(
+                        kind: .unreadable, problem: "a monthly reminder can be on days 1 to 28 only",
+                        question: "which day of the month, from 1 to 28"))
+                }
                 return .remindAboutNote(NoteReminderVoiceDraft(
-                    noteText: note, target: .time(date, timeZoneID: due.timeZoneID ?? calendar.timeZone.identifier)))
+                    noteText: note, target: .time(date, timeZoneID: zone), repeats: repeats))
             }
         case (nil, let placeText?):
             let query = placeText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -105,7 +122,12 @@ extension VoiceToolReply {
     private static func phrase(_ reminder: MemoryReminder) -> String {
         switch reminder.trigger {
         case .time(let fireAt, let zone):
-            "at \(ReminderFormat.dateTime(fireAt, timeZoneID: zone, locale: Locale(identifier: "en_GB"))) (\(ReminderFormat.zoneName(zone)))"
+            if reminder.repeats != nil {
+                "\(ReminderFormat.short(reminder)) (\(ReminderFormat.zoneName(zone))), first on "
+                    + "\(ReminderFormat.dateTime(fireAt, timeZoneID: zone, locale: Locale(identifier: "en_GB"))), until the user stops it on the note"
+            } else {
+                "at \(ReminderFormat.dateTime(fireAt, timeZoneID: zone, locale: Locale(identifier: "en_GB"))) (\(ReminderFormat.zoneName(zone)))"
+            }
         case .place(let place):
             "\(ReminderFormat.place(place).lowercased()) (within \(place.radiusMeters) m, each time until the user marks it Done)"
         }

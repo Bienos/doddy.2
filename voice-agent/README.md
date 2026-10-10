@@ -36,6 +36,10 @@ version `agtvrsn_3401m4k47e2revvv01sk7xv1tb26` → `agtvrsn_5801m4k5544wevk9bz7w
 bullet and one reminder rule). Version `agtvrsn_1401m4k5nha9ffv81j7c6m6sze2n` → `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`;
 compare run against the new tool and the full prompt (no drift). For rollback, the previous version has 21 tools.
 
+**Applied to the live agent 2026-10-10 (ADR-200):** `remind_me_about_note` (`tool_7401m4k84jjgf1ctk26vj03kextq`)
+gained the `repeat` parameter and one sentence in its description, updated in place; the prompt and the agent's
+tool list are unchanged.
+
 ## App side (DoddyCore `RealtimeVoice.swift`)
 
 - `RealtimeEvent`: what any provider reports, named after Realtime server events
