@@ -3,8 +3,10 @@ Date: 2026-10-09. Owner request: "it opens app [with] double back tap, now live 
 
 ## What it does
 - Start a conversation as before (Talk to Doddy, Double Back Tap, Action Button). You can now go Home or open another app: the conversation keeps running and Doddy appears in the **Dynamic Island** (and as a banner on the **Lock Screen**).
-- Compact island: Doddy's head + a status symbol (waveform = listening, … = thinking, speaker = speaking, hand = confirm a note in the app, mic-slash = muted).
-- Long-press the island (expanded): status, elapsed time, **Mute/Unmute** and **End**.
+- Island design (ADR-210): the owner's **Lean In** board (`design/dynamic-island-v4-lean-in/`). Doddy's face with the pack's own expressions (listening smile, open mouth when speaking, brow up when thinking or waiting, calm when connecting/muted/lost), his cupped hand and an orange arc while he can hear you.
+- Compact island: face + hand on the left; on the right five voice bars (listening/speaking), three dots (thinking/connecting) or a symbol (mic-slash = muted, hand = confirm a note in the app, warning = lost).
+- Minimal (another activity is running): face + three bars or dots.
+- Long-press the island (expanded, the "big" one): "VOICE ● LIVE" and the time beside the camera; big Doddy with hand and arc, the status in 21 pt with a second line, **Mute/Unmute** and **Stop** pills, and the voice bars.
 - Lock Screen: the same, as a card that follows the phone's light/dark setting (paper in light, Night in dark). Muted: mic-slash, "Doddy can't hear you", Unmute is the main button, no orange. After End: a "Conversation ended" card with the notes you saved and the total time, removed after 2 minutes (ADR-106).
 - Tap the island to jump back into the app (e.g. to Save or Don't save a note Doddy proposed).
 - The island disappears the moment the conversation ends (End, Close, connection lost, failure). A stale one from a killed app is removed at the next launch.
@@ -38,7 +40,8 @@ Linux only: capability guard passes (now also scans `DoddyWidgets/`, `Shared/`, 
 11. **Light and dark (ADR-106).** Lock the phone mid-conversation in Light mode: paper card, dark text, orange waveform. Switch to Dark mode (Control Centre): Night card, light text, Doddy on a small paper backing. The island looks the same in both: Doddy on a paper backing on black.
 12. **Muted.** Mute from the Lock Screen: orange disappears, "Muted · Doddy can't hear you", Unmute is the filled button.
 13. **Ended card.** Save one note, then tap End on the Lock Screen: the card changes to fist-pump Doddy (sitting Doddy if nothing was saved), "Conversation ended", "Doddy isn't listening · 1 note saved · m:ss total", Open Doddy. It disappears after about 2 minutes; the island is gone at once. A failed connection instead removes the card at once.
-14. **Art.** At compact island size (26 pt) the full-body listening pose is small; judge whether it still reads as Doddy. If not, the fix is an approved head-only asset from design, not a crop made in code. The widget uses 160/240 px-tall downscales of the pack images (~12–23 KB each; the 1024×1536 originals are too large for a Live Activity). If the art looks soft, ask design for a native small export of the same poses.
+14. **Art.** The island no longer uses the full-body pose (too small at 26 pt): it draws the Lean In face from the owner's pack (ADR-210). The Lock Screen keeps the pose art at 52 pt, from 160/240 px-tall downscales of the pack images; if it looks soft, ask design for a native small export of the same poses.
+15. **Lean In island (ADR-210).** Compare the island against `design/dynamic-island-v4-lean-in/01-boards/01-voice.svg`: listening (smile, hand, orange arc, bars, "VOICE ● LIVE"), speaking (open mouth), thinking (brow up, dots), muted (calm face, no hand, no orange, mic-slash, Unmute is the cream pill), Confirm in Doddy (brow up, hand symbol), lost (calm face, yellow line, Dismiss only). Check the face is centred and nothing touches the camera; the pills are tappable (the board's 34 pt pill sits in a proposed 44 pt target, not proven); the time does not push the label off; minimal shows face + bars beside another app's activity. Text sizes are fixed points from the board, so check the largest text setting too.
 
 ## Verified on Linux — 2026-10-09 (second session, after ADR-055)
 | Step | Result |
