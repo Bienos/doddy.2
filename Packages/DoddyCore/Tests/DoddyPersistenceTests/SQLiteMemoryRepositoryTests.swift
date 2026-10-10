@@ -65,3 +65,36 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         XCTAssertEqual(memories.first?["source"] as? String, "explicit_text")
     }
 }
+
+final class SQLiteReminderActionStoreTests: XCTestCase {
+    func testActionsRoundTripAndAreErasedWithAllMemories() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let store = repo.reminderActionStore()
+        let date = Date(timeIntervalSince1970: 1_791_619_200)
+        var action = ReminderAction(
+            operationID: UUID(), state: .userConfirmed,
+            payload: ReminderPayload(title: "Zadzwonić do Anny", notes: "piątek",
+                                     due: ReminderDue(year: 2026, month: 10, day: 16, hour: 9, minute: 30, timeZoneID: "Europe/Warsaw")),
+            sourceMemoryID: UUID(), createdAt: date, updatedAt: date)
+        try await store.put(action)
+        try action.move(to: .pendingExternalWrite, at: date)
+        try await store.put(action)
+        try action.move(to: .verifiedSucceeded, at: date, externalID: "EK-123")
+        try await store.put(action)
+
+        let back = try await store.get(action.operationID)
+        XCTAssertEqual(back?.state, .verifiedSucceeded)
+        XCTAssertEqual(back?.externalID, "EK-123")
+        XCTAssertEqual(back?.payload, action.payload)
+        XCTAssertEqual(back?.sourceMemoryID, action.sourceMemoryID)
+        XCTAssertNotNil(back?.verifiedAt)
+        let pending = try await store.inStates([.pendingExternalWrite])
+        XCTAssertTrue(pending.isEmpty)
+        let recent = try await store.recent(limit: 10)
+        XCTAssertEqual(recent.count, 1)
+
+        try await repo.deleteAll()
+        let afterDelete = try await store.recent(limit: 10)
+        XCTAssertTrue(afterDelete.isEmpty, "delete-all also removes the local records of reminders")
+    }
+}

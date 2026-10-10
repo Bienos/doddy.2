@@ -43,7 +43,11 @@ struct RootView: View {
         }
         .tint(Theme.accentText)
         .preferredColorScheme(colorScheme)
-        .task { await store.reload() }
+        .task {
+            await store.reload()
+            // Finish or check any reminder write a crash or force-quit interrupted (A-22).
+            _ = try? await store.environment.reminderExecutor?.recoverInterrupted()
+        }
         // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
         .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
         .fullScreenCover(isPresented: .constant(!hasSeenFirstHello)) {

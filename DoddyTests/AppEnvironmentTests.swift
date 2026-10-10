@@ -20,6 +20,13 @@ final class AppEnvironmentTests: XCTestCase {
         }
     }
 
+    func testLiveEnvironmentWiresRemindersButNotRealEventKitInUITests() {
+        let env = AppEnvironment.live(arguments: ["-inMemoryStore"])
+        XCTAssertNotNil(env.reminderExecutor)
+        XCTAssertNotNil(env.reminderStore)
+        XCTAssertTrue(env.capabilities.isAvailable(.reminders))
+    }
+
     func testAvailableStatusCopy() {
         XCTAssertEqual(StatusCopy.text(for: .available), "Available")
         XCTAssertEqual(StatusCopy.text(for: .notImplemented(plannedMilestone: "M1")), "Not built yet · planned M1")

@@ -10,6 +10,7 @@ struct VoiceView: View {
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @State private var controller: VoiceSessionController?
+    @State private var reviewingReminder: VoiceSessionController.PendingReminder?
 
     /// Server token when a Doddy server is connected; the public agent only in debug builds.
     private var auth: VoiceAuthChoice {
@@ -55,6 +56,15 @@ struct VoiceView: View {
             self.controller = controller
             await controller.start(auth: auth, server: ServerConfig.client())
         }
+        .sheet(item: $reviewingReminder) { reminder in
+            ReminderProposalView(initialTitle: reminder.title, initialDue: reminder.due, sourceMemoryID: nil) { action in
+                Task { await controller?.finishReminder(reminder.toolCallID, action) }
+            }
+        }
+        .onChange(of: controller?.pendingReminder) { _, pending in
+            // Opens the review screen as soon as Doddy proposes a reminder.
+            if let pending, reviewingReminder == nil { reviewingReminder = pending }
+        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .background {
                 Task { await controller?.stop() }
@@ -95,6 +105,16 @@ struct VoiceView: View {
                         if let pending = controller.pendingSave {
                             saveCard(pending, controller: controller)
                                 .id("pendingSave")
+                        }
+
+                        if let reminder = controller.pendingReminder {
+                            Button {
+                                reviewingReminder = reminder
+                            } label: {
+                                HStack { Text("Review reminder: \(reminder.title)"); Spacer(); Image(systemName: "bell") }
+                            }
+                            .buttonStyle(PrimaryButtonStyle())
+                            .accessibilityIdentifier("voice.reviewReminder")
                         }
 
                         Text("While you talk, your voice and the notes Doddy looks up are sent to ElevenLabs to run the conversation. Nothing is saved unless you tap Save.")

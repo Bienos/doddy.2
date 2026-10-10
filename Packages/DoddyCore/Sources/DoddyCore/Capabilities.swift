@@ -78,6 +78,8 @@ public struct CapabilityCatalog: Sendable {
             .textUpdates: updates,
             .phoneCalls: calls,
             .newsDigests: updates,
+            // M4: on this iPhone; asks for Reminders access the first time it's used.
+            .reminders: .available,
         ]) { _, new in new })
     }
 }

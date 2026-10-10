@@ -57,7 +57,30 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                 t.column("search_text")
             }
         }
+        // M4: reminder actions (docs/architecture/MEMORY_AND_DATA.md `outbox_actions`).
+        migrator.registerMigration("v2_outbox_actions") { db in
+            try db.execute(sql: """
+                CREATE TABLE outbox_actions (
+                  operation_id TEXT PRIMARY KEY,
+                  type TEXT NOT NULL CHECK (type = 'create_apple_reminder'),
+                  state TEXT NOT NULL,
+                  payload_json TEXT NOT NULL,
+                  external_id TEXT,
+                  error_code TEXT,
+                  source_memory_id TEXT,
+                  created_at_ms INTEGER NOT NULL,
+                  updated_at_ms INTEGER NOT NULL,
+                  verified_at_ms INTEGER
+                )
+                """)
+            try db.execute(sql: "CREATE INDEX outbox_actions_state ON outbox_actions (state)")
+        }
         return migrator
+    }
+
+    /// Reminder actions share this database file and its protection.
+    public func reminderActionStore() -> SQLiteReminderActionStore {
+        SQLiteReminderActionStore(dbQueue: dbQueue)
     }
 
     // MARK: MemoryRepository
@@ -147,6 +170,9 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM memories")
             try db.execute(sql: "INSERT INTO memories_fts(memories_fts) VALUES('rebuild')")
+            // Records of reminders Doddy created hold user text too. The reminders themselves
+            // stay in Apple Reminders: deleting here never deletes them.
+            try db.execute(sql: "DELETE FROM outbox_actions")
         }
     }
 

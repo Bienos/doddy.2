@@ -12,6 +12,7 @@ struct MemoryDetailView: View {
     @State private var confirmDelete = false
     @State private var errorMessage: String?
     @State private var copied = false
+    @State private var showReminder = false
 
     var body: some View {
         Group {
@@ -81,6 +82,12 @@ struct MemoryDetailView: View {
                     }
                     .buttonStyle(SecondaryButtonStyle())
 
+                    Button { showReminder = true } label: {
+                        HStack { Text("Remind me"); Spacer(); Image(systemName: "bell") }
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("detail.remind")
+
                     Button {
                         UIPasteboard.general.string = record.currentText
                         copied = true
@@ -103,6 +110,9 @@ struct MemoryDetailView: View {
             .padding(24)
         }
         .sheet(isPresented: $showCorrection) { CorrectionView(record: record) }
+        .sheet(isPresented: $showReminder) {
+            ReminderProposalView(initialTitle: record.currentText, initialDue: .none, sourceMemoryID: record.id) { _ in }
+        }
         .confirmationDialog("Delete this memory?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { Task { await delete() } }
             Button("Cancel", role: .cancel) {}

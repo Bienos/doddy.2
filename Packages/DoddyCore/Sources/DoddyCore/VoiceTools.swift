@@ -5,6 +5,8 @@ import Foundation
 public enum VoiceToolName {
     public static let searchMemories = "search_memories"
     public static let saveMemory = "save_memory"
+    /// M4. `due` must be a local "YYYY-MM-DD" or "YYYY-MM-DDTHH:MM"; anything else is clarified on screen.
+    public static let createReminder = "create_reminder"
 }
 
 /// A parsed tool call. The model only proposes; the app decides what actually happens.
@@ -12,6 +14,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case searchMemories(query: String)
     /// Never saved directly: the app shows it and waits for the user's confirmation.
     case saveMemory(text: String)
+    /// Never written directly: the app shows a review screen and waits for the user.
+    case createReminder(title: String, due: String?)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -28,6 +32,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.saveMemory:
             guard let text = nonEmpty("text") else { return .invalid(name: name, reason: "missing text") }
             return .saveMemory(text: text)
+        case VoiceToolName.createReminder:
+            guard let title = nonEmpty("title") else { return .invalid(name: name, reason: "missing title") }
+            return .createReminder(title: title, due: nonEmpty("due"))
         default:
             return .unsupported(name: name)
         }
@@ -59,6 +66,27 @@ public enum VoiceToolReply {
 
     public static func failed(_ reason: String) -> String {
         "failed: \(reason) Nothing was saved."
+    }
+
+    /// Result of a reminder the user reviewed. Says only what was read back from Reminders.
+    public static func reminder(_ action: ReminderAction?) -> String {
+        guard let action else {
+            return "declined: the user closed the reminder without adding it. No reminder was created."
+        }
+        switch action.state {
+        case .verifiedSucceeded:
+            let when = action.payload.due.map { due -> String in
+                let date = String(format: "%04d-%02d-%02d", due.year, due.month, due.day)
+                return due.hasTime ? " due \(date) \(String(format: "%02d:%02d", due.hour!, due.minute ?? 0))" : " due \(date)"
+            } ?? ""
+            return "created: \"\(action.payload.title)\"\(when) is in Apple Reminders (checked)."
+        case .verifiedFailed where action.errorCode == "permission_denied":
+            return "not created: Doddy has no access to Reminders. Tell the user to allow it in iOS Settings."
+        case .unknownOutcome:
+            return "unclear: the reminder could not be confirmed in Reminders. Tell the user to check the Reminders app; do not say it was created."
+        default:
+            return "not created: the reminder was not added."
+        }
     }
 
     public static func unsupported(_ name: String) -> String {

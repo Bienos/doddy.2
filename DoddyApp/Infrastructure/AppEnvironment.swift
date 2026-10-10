@@ -15,6 +15,9 @@ struct AppEnvironment: Sendable {
     let privacy: PrivacyDefaults
     /// Set when the memory store could not be opened. Nothing is reset or deleted in that case.
     let storageProblem: String?
+    /// M4: Apple Reminders (nil when the local store is unavailable).
+    var reminderStore: (any ReminderActionStore)? = nil
+    var reminderExecutor: ReminderExecutor? = nil
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -31,6 +34,9 @@ struct AppEnvironment: Sendable {
             let repository = arguments.contains("-inMemoryStore")
                 ? try SQLiteMemoryRepository.inMemory()
                 : try SQLiteMemoryRepository(path: try databaseURL().path)
+            let reminderStore = repository.reminderActionStore()
+            // UI tests never touch the real Reminders database.
+            let gateway: any ReminderGateway = arguments.contains("-inMemoryStore") ? UnavailableReminderGateway() : EventKitReminderGateway()
             return AppEnvironment(
                 memoryRepository: repository,
                 recallService: RepositoryRecallService(repository: repository),
@@ -38,7 +44,9 @@ struct AppEnvironment: Sendable {
                 toolExecutor: UnavailableToolExecutor(),
                 capabilities: .s1Updates(serverConfigured: ServerConfig.baseURL() != nil),
                 privacy: .v1Voice,
-                storageProblem: nil)
+                storageProblem: nil,
+                reminderStore: reminderStore,
+                reminderExecutor: ReminderExecutor(store: reminderStore, gateway: gateway))
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

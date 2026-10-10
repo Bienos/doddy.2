@@ -81,6 +81,12 @@ struct SettingsView: View {
                         Label("Daily news", systemImage: "newspaper")
                     }
                     .accessibilityIdentifier("settings.news")
+                    NavigationLink {
+                        RemindersListView()
+                    } label: {
+                        Label("Reminders from Doddy", systemImage: "checklist")
+                    }
+                    .accessibilityIdentifier("settings.reminders")
                 }
 
                 Section("Voice") {
@@ -134,7 +140,7 @@ struct SettingsView: View {
                 Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
+                Text("This removes every memory, its search index and Doddy's records of reminders from this iPhone, and can't be undone. Reminders already in Apple Reminders, exported files and older backups aren't affected.")
             }
         }
         .foregroundStyle(Theme.ink)

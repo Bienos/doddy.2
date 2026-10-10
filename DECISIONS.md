@@ -113,3 +113,13 @@ owner-approved; the owner marks each `accepted / rejected / needs investigation`
 | 058 | One digest per local day at the user's time (unique index per day); stories not repeated for 14 days; push = short list, SMS = ≤3 stories with links ≤640 chars. Breaking alerts not built. | Owner-approved; built |
 | 059 | User-supplied feed URLs are fetched with connect-time private-address blocking, re-checked redirects, 2 MB / 10 s caps. | Applied |
 | 060 | Data to third parties for news: topics + public headlines to Anthropic; own keywords to GNews; never memories, phone or account ids. | Applied — privacy policy text pending |
+
+## M4 decisions (Apple Reminders)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 061 | Reminder actions persisted in `outbox_actions` (same SQLite file); `pending_external_write` committed before the EventKit call; success only after read-back by id. | Applied |
+| 062 | Marker `doddy://reminder/<operationId>` in the reminder's URL field is the reconciliation key; unknown outcomes are reconciled, never blindly retried; launch recovery never re-creates. | Applied |
+| 063 | Voice due times accepted only as local `YYYY-MM-DD[THH:MM]`; anything else, past or DST-skipped needs the user to pick on screen. | Applied |
+| 064 | iOS 17 full Reminders access (no write-only for reminders); EventKit only in `EventKitReminderGateway.swift` (guard). Default list only. | Applied — list picker later |
+| 065 | Deleting memories never deletes Apple reminders; delete-all removes the local action records. | Applied |

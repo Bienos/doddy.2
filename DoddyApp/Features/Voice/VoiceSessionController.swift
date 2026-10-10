@@ -27,9 +27,18 @@ final class VoiceSessionController {
         let text: String
     }
 
+    /// A reminder Doddy proposed by voice; the user reviews it on screen (M4).
+    struct PendingReminder: Equatable, Identifiable {
+        let toolCallID: String
+        let title: String
+        let due: ReminderDueParse
+        var id: String { toolCallID }
+    }
+
     private(set) var phase: Phase = .idle
     private(set) var lines: [Line] = []
     private(set) var pendingSave: PendingSave?
+    var pendingReminder: PendingReminder?
     private(set) var isMuted = false
 
     private let store: MemoryStore
@@ -202,11 +211,22 @@ final class VoiceSessionController {
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
             pendingSave = PendingSave(toolCallID: call.toolCallId, text: text)
+        case .createReminder(let title, let due):
+            // Nothing reaches Reminders until the user reviews it and taps Add.
+            pendingReminder = PendingReminder(
+                toolCallID: call.toolCallId, title: title,
+                due: ReminderDueInput.parse(due, timeZoneID: TimeZone.current.identifier, now: Date()))
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
             await reply(call.toolCallId, VoiceToolReply.failed("The request was incomplete (\(reason))."), isError: true)
         }
+    }
+
+    /// The review screen closed: tell the agent exactly what happened.
+    func finishReminder(_ toolCallID: String, _ action: ReminderAction?) async {
+        if pendingReminder?.toolCallID == toolCallID { pendingReminder = nil }
+        await reply(toolCallID, VoiceToolReply.reminder(action), isError: action?.state != .verifiedSucceeded && action != nil)
     }
 
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false) async {
