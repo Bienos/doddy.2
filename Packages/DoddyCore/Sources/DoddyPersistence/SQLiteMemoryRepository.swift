@@ -65,7 +65,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         guard let pattern = RecallMatching.ftsPattern(terms), limit > 0 else { return [] }
         let sample = MemorySource.sampleFixture.rawValue
         // Each row comes with its stored folded text, so matching doesn't fold every note again.
-        let (indexed, scanned) = try await dbQueue.read { db -> ([Hit], [Hit]) in
+        let hits = try await dbQueue.read { db -> [Hit] in
             let indexed = try Row.fetchAll(
                 db,
                 sql: """
@@ -78,7 +78,10 @@ public final class SQLiteMemoryRepository: MemoryRepository {
             ).map(Self.hit)
             // Typos and spoken numbers can't be expressed as FTS terms, so when the index finds
             // fewer than asked, the newest notes are also checked with the same word rules.
-            guard indexed.count < limit else { return (indexed, []) }
+            // The index matches every prefix and the rules are stricter ("car" vs "card"), so
+            // only index hits the rules accept count.
+            let accepted = RecallMatching.Matcher(terms).matchedWords(inFolded: indexed.map(\.folded))
+            guard accepted.filter({ !$0.isEmpty }).count < limit else { return indexed }
             let scanned = try Row.fetchAll(
                 db,
                 sql: """
@@ -87,15 +90,15 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                     """,
                 arguments: [sample, Self.scanLimit]
             ).map(Self.hit)
-            return (indexed, scanned)
+            return indexed + scanned
         }
+        // Index hits keep their rank order; scan hits follow, newest first. All notes read are
+        // judged together, so a two-letter typo only counts when no note has the word as typed.
         var seen = Set<UUID>()
-        let matcher = RecallMatching.Matcher(terms)
-        // Index hits keep their rank order; scan hits follow, newest first.
-        let candidates = (indexed + scanned).compactMap { hit -> MemoryCandidate? in
-            guard seen.insert(hit.record.id).inserted else { return nil }
-            let matched = matcher.matchedWords(inFolded: hit.folded)
-            return matched.isEmpty ? nil : MemoryCandidate(record: hit.record, matchedTerms: matched)
+        let unique = hits.filter { seen.insert($0.record.id).inserted }
+        let matched = RecallMatching.Matcher(terms).matchedWords(inFolded: unique.map(\.folded))
+        let candidates = zip(unique, matched).compactMap { hit, words -> MemoryCandidate? in
+            words.isEmpty ? nil : MemoryCandidate(record: hit.record, matchedTerms: words)
         }
         // More matched words first; ties keep the order above (sort is stable on the index).
         return Array(candidates.enumerated()

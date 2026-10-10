@@ -34,10 +34,15 @@ public enum SearchFolding {
         text.split(whereSeparator: { !($0.isLetter || $0.isNumber) }).map(String.init)
     }
 
-    /// Distinct query terms with stopwords removed.
+    /// Distinct query terms with stopwords and single letters removed. A lone letter is almost
+    /// always the "s" of "what's"/"Jake's" or an initial, and as a prefix it matches nearly every
+    /// note (ADR-212). Single digits stay: "5" can be part of a code.
     public static func queryTerms(_ query: String) -> [String] {
         var seen = Set<String>()
-        return tokens(query).filter { !stopwords.contains($0) && seen.insert($0).inserted }
+        return tokens(query).filter { token in
+            !stopwords.contains(token) && !(token.count == 1 && token.allSatisfy(\.isLetter))
+                && seen.insert(token).inserted
+        }
     }
 }
 
