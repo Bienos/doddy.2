@@ -12,12 +12,5 @@
       <pubDate>Sat, 10 Oct 2026 09:00:00 +0000</pubDate>
       <description>Doddy is an AI companion for your iPhone with a big goal. One day it should help with anything you need, and it will always ask before it acts. Here&#x27;s what it does today, what it can&#x27;t do yet, how we keep it safe, and answers to the questions people ask most.</description>
     </item>
-    <item>
-      <title>Hello, Doddy. Why our favourite first result was &#x27;I couldn&#x27;t find it&#x27;</title>
-      <link>https://doddy-eight.vercel.app/blog/hello-doddy/</link>
-      <guid>https://doddy-eight.vercel.app/blog/hello-doddy/</guid>
-      <pubDate>Sat, 10 Oct 2026 09:00:00 +0000</pubDate>
-      <description>Doddy is a hand-drawn mate for your iPhone that keeps the small things you ask it to keep. In its first real conversations it couldn&#x27;t find a note, and it said so. Here&#x27;s why we liked that, and what we fixed.</description>
-    </item>
   </channel>
 </rss>

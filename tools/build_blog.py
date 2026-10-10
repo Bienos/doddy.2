@@ -6,7 +6,10 @@ having no build step on Vercel: the generated HTML is committed.
   python3 -I tools/build_blog.py          write site/blog/
   python3 -I tools/build_blog.py --check  exit 1 if site/blog/ is out of date
 
-Front matter may add `tldr:` (a list, shown as a box above the post) and `keywords:`.
+Front matter may add `tldr:` (a list, shown as a box above the post), `keywords:`, and a banner:
+`banner_pose` (an approved pose name, e.g. waving), `banner_says` (Doddy's line in handwriting),
+`banner_card_title` / `banner_card_text` (a Save card) and `banner_tint` (orange, green or ink).
+In the body, a line `{{doddy reading "caption"}}` adds a small spot illustration.
 Markdown support is deliberately small: #/##/### headings, paragraphs, - and 1. lists (one level),
 > quotes, | tables |, ---, **bold**, *italic*, `code`, [links](url) and HTML comments (dropped).
 """
@@ -29,6 +32,26 @@ TELEGRAM = "https://t.me/+u-YA6P_MISFjYWE0"
 # Must stay byte-identical to index.html: vercel.json allows this inline script by its hash.
 ANALYTICS = ('<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>\n'
              '  <script src="/_vercel/insights/script.js" defer></script>')
+POSES = ROOT / "site" / "assets" / "poses"
+TINTS = ("orange", "green", "ink")
+
+
+def pose(name: str) -> str:
+    """URL of an approved light pose from site/assets/poses (design/interface-v1.2 copies)."""
+    if not (POSES / f"doddy-pose-{name}-light-v1.3-r1.svg").is_file():
+        sys.exit(f"unknown Doddy pose '{name}'; see site/assets/poses/")
+    return f"/assets/poses/doddy-pose-{name}-light-v1.3-r1.svg"
+
+
+# Hand-drawn doodles in Doddy's line style (ink, round caps) with the orange cue. Decorative only.
+SPARKLE = ('<svg class="doodle {cls}" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 C21 14 26 19 37 20 '
+           'C26 21 21 26 20 37 C19 26 14 21 3 20 C14 19 19 14 20 3Z"/></svg>')
+SQUIGGLE = ('<svg class="doodle {cls}" viewBox="0 0 120 24" aria-hidden="true"><path d="M4 14 C 16 2, 26 22, 38 12 '
+            'S 60 2, 72 12 S 94 22, 116 8"/></svg>')
+ARROW = ('<svg class="doodle {cls}" viewBox="0 0 90 60" aria-hidden="true"><path d="M6 8 C 20 46, 52 54, 80 40"/>'
+         '<path d="M66 34 L81 40 L71 52"/></svg>')
+SCRIBBLE = '<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg>'
+
 MONTHS = "January February March April May June July August September October November December".split()
 
 
@@ -70,7 +93,13 @@ def markdown(src: str) -> str:
         if not line.strip():
             i += 1
             continue
-        if m := re.match(r"(#{1,3})\s+(.*)", line):
+        if m := re.fullmatch(r'\{\{doddy ([a-z-]+)(?: "([^"]*)")?\}\}\s*', line):
+            caption = f'<figcaption class="says-small">{html.escape(m.group(2))}</figcaption>' if m.group(2) else ""
+            side = "left" if sum(1 for o in out if o.startswith("<figure class=\"spot")) % 2 else "right"
+            out.append(f'<figure class="spot spot--{side}"><img src="{pose(m.group(1))}" width="512" height="512" '
+                       f'alt="">{caption}</figure>')
+            i += 1
+        elif m := re.match(r"(#{1,3})\s+(.*)", line):
             level = max(2, len(m.group(1)))  # the post title is the page's only h1
             out.append(f"<h{level}>{inline(m.group(2))}</h{level}>")
             i += 1
@@ -105,7 +134,7 @@ def markdown(src: str) -> str:
             out.append(f"<{tag}>" + "".join(f"<li>{inline(t)}</li>" for t in items) + f"</{tag}>")
         else:
             para = []
-            while i < len(lines) and lines[i].strip() and not re.match(r"(#{1,3}\s|>|\||\s*([-*]|\d+\.)\s)", lines[i]):
+            while i < len(lines) and lines[i].strip() and not re.match(r"(#{1,3}\s|>|\||\{\{doddy |\s*([-*]|\d+\.)\s)", lines[i]):
                 para.append(lines[i].strip())
                 i += 1
             out.append(f"<p>{inline(' '.join(para))}</p>")
@@ -231,22 +260,74 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
 """
 
 
+def banner(p: dict) -> str:
+    """Notebook-page banner: Doddy's own line in handwriting, a Save card, and an approved pose."""
+    if not p.get("banner_pose"):
+        return ""
+    tint = p.get("banner_tint", "orange")
+    if tint not in TINTS:
+        sys.exit(f"{p['stem']}: banner_tint must be one of {TINTS}")
+    says = html.escape(p.get("banner_says", ""))
+    card = ""
+    if p.get("banner_card_text"):
+        card = f"""
+              <div class="banner-card">
+                <p class="banner-card-title">{html.escape(p.get("banner_card_title", "Save this note?"))}</p>
+                <p class="banner-card-text">{html.escape(p["banner_card_text"])}</p>
+                <p class="banner-card-actions"><span class="ghost">Don't save</span><span class="solid">Save</span></p>
+              </div>"""
+    label = f"Illustration of Doddy, the hand-drawn stick figure{', saying ' + chr(8220) + says + chr(8221) if says else ''}."
+    return f"""
+        <figure class="banner banner--{tint}" role="img" aria-label="{html.escape(label)}">
+          <div class="banner-paper" aria-hidden="true">
+            <span class="tape t1"></span><span class="tape t2"></span>
+            {SPARKLE.format(cls="d-sparkle")}{SPARKLE.format(cls="d-sparkle-sm")}{SQUIGGLE.format(cls="d-squiggle")}
+            <div class="banner-copy">
+              <p class="says banner-says">{says}{SCRIBBLE}</p>{ARROW.format(cls="d-arrow")}{card}
+            </div>
+            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="{pose(p['banner_pose'])}" width="512" height="512" alt=""></div>
+            <span class="banner-tag">Illustration</span>
+          </div>
+        </figure>"""
+
+
 def index_page(posts: list[dict]) -> str:
     if posts:
-        cards = "\n".join(f"""        <li class="post-card">
+        cards = "\n".join(f"""        <li class="post-card post-card--{p.get('banner_tint', 'orange')}">
+          <a class="post-thumb" href="/blog/{p['slug']}/" aria-hidden="true" tabindex="-1">{SPARKLE.format(cls="d-sparkle-sm")}<img src="{pose(p.get('banner_pose', 'waving'))}" width="512" height="512" loading="lazy" alt=""></a>
+          <div class="post-card-text">
           <p class="post-meta"><time datetime="{p['date']}">{nice_date(p['day'])}</time> · {p['minutes']} min read</p>
           <h2><a href="/blog/{p['slug']}/">{html.escape(p['title'])}</a></h2>
           <p>{html.escape(p['summary'])}</p>
           <a class="text-link" href="/blog/{p['slug']}/" aria-hidden="true" tabindex="-1">Read it</a>
+          </div>
         </li>""" for p in posts)
         listing = f'      <ol class="post-list" reversed>\n{cards}\n      </ol>'
     else:
         listing = '      <p class="fineprint">No posts yet.</p>'
     main = f"""    <section class="blog-head">
-      <div class="wrap">
-        <p class="pill"><span class="dot" aria-hidden="true"></span>Notes from building Doddy</p>
-        <h1 class="display-m">The Doddy blog</h1>
-        <p class="lede">What we're building, what actually works, and what broke along the way. If it hasn't been tested, we'll say so.</p>
+      <div class="wrap blog-head-grid">
+        <div class="blog-head-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Notes from building Doddy</p>
+          <h1 class="display">The Doddy <span class="hand-word">blog{SCRIBBLE}</span></h1>
+          <p class="lede">What we're building, what actually works, and what broke along the way. If it hasn't been tested, we'll say so.</p>
+        </div>
+        <figure class="blog-head-art" role="img" aria-label="Illustration of Doddy reading next to a handwritten note of his house rules.">
+          <div class="banner-paper banner--orange" aria-hidden="true">
+            <span class="tape t1"></span>
+            {SPARKLE.format(cls="d-sparkle")}{SPARKLE.format(cls="d-sparkle-sm")}
+            <div class="sticky">
+              <p class="sticky-title">House rules</p>
+              <ul>
+                <li>Ask before doing stuff</li>
+                <li>Say "I couldn't find it"</li>
+                <li>Never guess a code</li>
+              </ul>
+            </div>
+            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="{pose('reading')}" width="512" height="512" alt=""></div>
+            <img class="head-wave" src="{pose('waving')}" width="512" height="512" alt="">
+          </div>
+        </figure>
       </div>
     </section>
     <section class="blog-list" aria-label="Posts">
@@ -273,7 +354,7 @@ def post_page(p: dict) -> str:
         <header class="post-header">
           <h1 class="display-m">{html.escape(p['title'])}</h1>
           <p class="post-meta"><time datetime="{p['date']}">{nice_date(p['day'])}</time>{author} · {p['minutes']} min read</p>
-        </header>{tldr}
+        </header>{banner(p)}{tldr}
         <div class="post-body">
 {p['html']}
         </div>

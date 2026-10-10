@@ -65,3 +65,135 @@
 .tldr li { margin-bottom: 6px; }
 .tldr li::marker { color: var(--accent-text); }
 .post-body h3 { font-size: 1.2rem; margin: 28px 0 6px; }
+
+/* ---------- Illustrated notebook: banners, thumbnails, spot drawings ----------
+   Doddy is always an approved pose from /assets/poses. Paper, tape, glow and doodles are drawn in CSS/SVG. */
+
+.doodle { position: absolute; overflow: visible; pointer-events: none; }
+.doodle path { fill: none; stroke: var(--reading-ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.d-sparkle path, .d-sparkle-sm path { fill: var(--orange-cue); stroke: var(--reading-ink); stroke-width: 2; }
+.d-squiggle path { stroke: var(--orange-cue); stroke-width: 4; }
+
+.banner-paper {
+  position: relative; isolation: isolate;
+  background:
+    linear-gradient(to right, transparent 46px, color-mix(in srgb, var(--orange-cue) 38%, transparent) 46px 48px, transparent 48px),
+    repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px),
+    var(--paper);
+  border: 1px solid var(--rule); border-radius: 26px; box-shadow: var(--lift-strong);
+}
+.banner-paper .tape { top: -12px; }
+.banner--green { --wash: var(--confirmed); }
+.banner--orange { --wash: var(--orange-cue); }
+.banner--ink { --wash: var(--reading-ink); }
+
+/* Post banner */
+.banner { margin: 0 0 clamp(32px, 5vw, 48px); }
+.banner .banner-paper {
+  display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr); align-items: end; column-gap: 12px;
+  min-height: clamp(280px, 34vw, 360px); padding: clamp(28px, 4vw, 44px) clamp(18px, 3vw, 36px) 0 clamp(60px, 7vw, 84px);
+  transform: rotate(-0.6deg);
+}
+.banner-copy { position: relative; z-index: 2; align-self: center; padding-bottom: clamp(28px, 4vw, 40px); }
+/* .says on the landing page is absolutely placed and hidden below 960px; the banner needs it in flow everywhere. */
+.banner .banner-says {
+  position: relative; right: auto; top: auto; display: inline-block; white-space: normal;
+  font-size: clamp(2rem, 1.4rem + 2.2vw, 2.9rem); margin: 0 0 22px; transform: rotate(-3deg);
+}
+.banner-card {
+  position: relative; max-width: 330px; padding: 14px 16px 12px;
+  background: #fff; border: 1px solid var(--separator); border-radius: 18px; box-shadow: var(--lift);
+  transform: rotate(1.4deg);
+}
+.banner-card-title { margin: 0 0 4px; font-family: var(--display); font-weight: 700; font-size: 1rem; }
+.banner-card-text { margin: 0 0 12px; font-size: 0.9375rem; line-height: 1.4; color: var(--secondary-text); }
+.banner-card-actions { display: flex; justify-content: flex-end; gap: 8px; margin: 0; font-size: 0.8125rem; font-weight: 650; }
+.banner-card-actions span { padding: 7px 14px; border-radius: 11px; }
+.banner-card-actions .ghost { color: var(--secondary-text); background: var(--quiet-surface); }
+.banner-card-actions .solid { color: #fff; background: var(--reading-ink); box-shadow: inset 0 -3px 0 var(--orange-cue); }
+.banner-stage { position: relative; align-self: end; height: 100%; min-height: inherit; }
+.banner-glow {
+  position: absolute; z-index: -1; left: 50%; bottom: 8%; width: 115%; aspect-ratio: 1; translate: -50% 20%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--wash) 26%, transparent), color-mix(in srgb, var(--wash) 7%, transparent) 60%, transparent);
+}
+.banner-pose {
+  position: absolute; right: -34%; bottom: -12%; width: auto; height: 124%; max-width: none;
+  filter: drop-shadow(0 0 1.5px var(--paper)) drop-shadow(0 0 1.5px var(--paper));
+}
+.banner-tag {
+  position: absolute; left: clamp(60px, 7vw, 84px); bottom: 12px; font-size: 0.75rem; font-weight: 600;
+  color: var(--secondary-text); letter-spacing: 0.02em;
+}
+.banner .d-sparkle { width: 34px; top: 16%; right: 41%; }
+.banner .d-sparkle-sm { width: 18px; top: 10%; right: 37%; }
+.banner .d-squiggle { width: 96px; top: 18px; right: 8%; }
+.banner .d-arrow { position: absolute; width: 64px; left: -46px; top: 54px; transform: rotate(8deg); }
+
+@media (max-width: 640px) {
+  .banner .banner-paper { grid-template-columns: minmax(0, 1fr); padding: 26px 16px 0 58px; min-height: 0; transform: none; }
+  .banner-copy { padding-bottom: 0; }
+  .banner-card { max-width: none; padding: 12px; }
+  .banner-card-actions span { padding: 6px 10px; }
+  .banner-stage { height: 190px; min-height: 0; }
+  .banner-pose { right: -6%; height: 240px; bottom: -40px; }
+  .banner .d-arrow { display: none; }
+  .banner .d-sparkle { right: 6%; top: 8%; }
+  .banner .d-sparkle-sm, .banner .d-squiggle { display: none; }
+  .banner-tag { left: 54px; bottom: 8px; }
+}
+
+/* Blog index head */
+.blog-head { overflow: hidden; }
+.blog-head-grid { display: grid; gap: clamp(28px, 5vw, 56px); align-items: center; }
+@media (min-width: 900px) { .blog-head-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 0.95fr); } }
+.blog-head .display { font-size: clamp(3rem, 1.8rem + 5vw, 5.5rem); }
+.hand-word { position: relative; display: inline-block; font-family: var(--hand); font-weight: 700; color: var(--accent-text); font-size: 1.12em; letter-spacing: 0; transform: rotate(-3deg); }
+.blog-head-art { margin: 0; }
+.blog-head-art .banner-paper { min-height: clamp(300px, 34vw, 380px); transform: rotate(1deg); }
+.sticky {
+  position: absolute; z-index: 2; left: clamp(60px, 9%, 84px); top: 18%; width: min(230px, 52%);
+  padding: 14px 16px 10px; background: color-mix(in srgb, var(--orange-cue) 16%, #fff);
+  box-shadow: var(--lift); transform: rotate(-3deg); border-radius: 4px 4px 18px 4px;
+}
+.sticky-title { margin: 0 0 6px; font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 1; }
+.sticky ul { list-style: none; margin: 0; padding: 0; font-family: var(--hand); font-weight: 600; font-size: 1.3rem; line-height: 1.25; }
+.sticky li { position: relative; padding-left: 24px; margin-bottom: 4px; }
+.sticky li::before { content: "✓"; position: absolute; left: 0; color: var(--confirmed); font-weight: 700; }
+.blog-head-art .banner-stage { position: absolute; right: 0; bottom: 0; width: 58%; height: 100%; }
+.blog-head-art .banner-pose { right: -6%; bottom: -8%; width: 100%; height: auto; }
+.head-wave { position: absolute; left: 6%; bottom: -14px; width: 26%; filter: drop-shadow(0 0 1.5px var(--paper)); transform: scaleX(-1); }
+.blog-head-art .d-sparkle { width: 32px; right: 10%; top: 10%; }
+.blog-head-art .d-sparkle-sm { width: 18px; right: 20%; top: 18%; }
+@media (max-width: 560px) {
+  .sticky { width: 60%; left: 22px; top: 22px; }
+  .sticky ul { font-size: 1.15rem; }
+  .blog-head-art .banner-stage { width: 62%; }
+  .head-wave { display: none; }
+}
+
+/* Post cards with a drawn thumbnail */
+.post-list { max-width: 60rem; }
+.post-card { display: grid; gap: 18px 26px; align-items: center; }
+@media (min-width: 680px) { .post-card { grid-template-columns: 220px minmax(0, 1fr); } }
+.post-thumb {
+  position: relative; display: block; overflow: hidden; aspect-ratio: 4 / 3; border-radius: 18px;
+  background:
+    radial-gradient(circle at 60% 75%, color-mix(in srgb, var(--wash, var(--orange-cue)) 28%, transparent), transparent 62%),
+    repeating-linear-gradient(to bottom, transparent 0 23px, var(--rule) 23px 24px),
+    var(--canvas);
+  border: 1px solid var(--rule);
+}
+.post-card--green { --wash: var(--confirmed); }
+.post-card--ink { --wash: var(--reading-ink); }
+.post-thumb img { position: absolute; left: 50%; bottom: -14%; width: 92%; translate: -50% 0; transition: transform 300ms cubic-bezier(.2,.8,.2,1); }
+.post-card:hover .post-thumb img { transform: translateY(-4px) rotate(-2deg); }
+.post-thumb .d-sparkle-sm { width: 20px; top: 14px; right: 16px; }
+@media (prefers-reduced-motion: reduce) { .post-card:hover .post-thumb img { transform: none; } }
+
+/* Spot drawings inside a post: a small Doddy with a handwritten caption, between paragraphs. */
+.spot { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 4px 0 22px; }
+.spot img { width: clamp(110px, 22vw, 150px); height: auto; }
+.spot figcaption { margin: 0; max-width: 14rem; font-size: 1.45rem; line-height: 1.05; transform: rotate(-4deg); }
+.spot--left { flex-direction: row-reverse; }
+.spot--left figcaption { transform: rotate(3deg); text-align: right; }
+@media (max-width: 560px) { .spot figcaption { font-size: 1.25rem; } }

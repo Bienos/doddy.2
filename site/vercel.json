@@ -44,5 +44,17 @@
         }
       ]
     }
+  ],
+  "redirects": [
+    {
+      "source": "/blog/hello-doddy",
+      "destination": "/blog/",
+      "permanent": false
+    },
+    {
+      "source": "/blog/hello-doddy/",
+      "destination": "/blog/",
+      "permanent": false
+    }
   ]
 }
