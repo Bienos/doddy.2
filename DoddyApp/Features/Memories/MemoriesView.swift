@@ -130,7 +130,7 @@ private struct MemorySortMenu: View {
 }
 
 /// "All" plus one chip per type in use, with counts. Selecting the active chip again clears it.
-private struct MemoryTypeFilterRow: View {
+struct MemoryTypeFilterRow: View {
     let choices: [(category: MemoryCategory, count: Int)]
     let total: Int
     @Binding var selection: MemoryCategory?
