@@ -21,7 +21,7 @@ public enum VoiceChoice: String, CaseIterable, Sendable, Codable {
 
 extension VoiceChoice {
     /// Bundled sample (`DoddyApp/Resources/VoicePreviews/<name>.mp3`): Doddy's hello in English
-    /// and Polish, recorded once in this voice (ADR-106).
+    /// and Polish, recorded once in this voice (ADR-122).
     public var previewResourceName: String { "voice-preview-\(rawValue)" }
 }
 

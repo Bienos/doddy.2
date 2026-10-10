@@ -232,7 +232,7 @@ struct PersonalityLinkRow: View {
 }
 
 /// Settings → Voice and personality → Voice. Each row has a play button for that voice's bundled
-/// sample (at the chosen speed) and selects the voice when tapped (ADR-106).
+/// sample (at the chosen speed) and selects the voice when tapped (ADR-122).
 struct VoiceChoiceView: View {
     @Binding var voiceRaw: String
     let speed: SpeakingSpeed

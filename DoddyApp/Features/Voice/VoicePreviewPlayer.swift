@@ -3,7 +3,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Plays the bundled hello for a voice so the user can hear it before choosing (ADR-106).
+/// Plays the bundled hello for a voice so the user can hear it before choosing (ADR-122).
 /// The clips were recorded once with ElevenLabs and ship inside the app: no network and no
 /// cost per play. Speed is applied as the playback rate; expressiveness can't be applied to a
 /// recording, so it is only heard in a conversation.
