@@ -428,8 +428,11 @@ struct SettingsView: View {
         }
     }
 
+    private static let assistantUnavailable = "Ask Doddy isn't available while Doddy's storage can't be opened."
+
     private var assistantStatus: String {
         if !assistantConsent { return "Off" }
+        if environment.assistant == nil { return "Not available (storage problem)" }
         if GatewayConfiguration(string: gatewayAddress) == nil { return "Needs a gateway address" }
         if !hasInviteCode { return "Needs an invite code" }
         return "Ready (not yet tested with a real server)"
@@ -441,7 +444,10 @@ struct SettingsView: View {
     }
 
     private func saveInviteCode() async {
-        guard let credentials = environment.assistant?.credentials else { return }
+        guard let credentials = environment.assistant?.credentials else {
+            inviteError = Self.assistantUnavailable
+            return
+        }
         let code = inviteDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
             try await credentials.setInviteCode(code)
@@ -455,7 +461,10 @@ struct SettingsView: View {
     }
 
     private func removeInviteCode() async {
-        guard let credentials = environment.assistant?.credentials else { return }
+        guard let credentials = environment.assistant?.credentials else {
+            inviteError = Self.assistantUnavailable
+            return
+        }
         do {
             try await credentials.setInviteCode(nil)
             try await credentials.setToken(nil)

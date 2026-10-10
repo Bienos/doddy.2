@@ -3,16 +3,28 @@ import Foundation
 import Security
 
 /// Device id, invite code and gateway token in the Keychain. Items are readable after first unlock,
-/// never synced to iCloud and never restored to another device. Deleting the app removes them
-/// (iOS may keep Keychain items across reinstalls; "Remove" in Settings clears them explicitly).
+/// never synced to iCloud and never restored to another device. iOS keeps Keychain items after the
+/// app is deleted, so a fresh install (no marker in UserDefaults, which do go with the app) clears
+/// them first: the device id really is per install, as Settings says, and an old invite code or
+/// token doesn't come back. "Remove" in Settings clears the code and token explicitly.
 actor KeychainCredentialStore: DeviceCredentialStore {
     enum KeychainError: Error, Equatable { case status(OSStatus) }
 
     private enum Account: String { case deviceID, inviteCode, token }
     private let service: String
 
-    init(service: String = "com.bienos.doddy2.gateway") {
+    static let installMarkerKey = "assistantKeychainInstalled"
+
+    init(service: String = "com.bienos.doddy2.gateway", defaults: UserDefaults = .standard) {
         self.service = service
+        if !defaults.bool(forKey: Self.installMarkerKey) {
+            let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
+            let status = SecItemDelete(query as CFDictionary)
+            // Mark the install only once the old items are really gone, so a failure retries next launch.
+            if status == errSecSuccess || status == errSecItemNotFound {
+                defaults.set(true, forKey: Self.installMarkerKey)
+            }
+        }
     }
 
     func deviceID() throws -> UUID {

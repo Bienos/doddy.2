@@ -66,7 +66,10 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
 
         app.buttons["tab.settings"].tap()
-        XCTAssertTrue(app.staticTexts["Nothing saved. Doddy only keeps what you review and save."].waitForExistence(timeout: 5))
+        // Settings is a lazy Form under a header section; scroll until the row has been created.
+        let nothingSaved = app.staticTexts["Nothing saved. Doddy only keeps what you review and save."]
+        for _ in 0..<4 where !nothingSaved.waitForExistence(timeout: 1) { app.swipeUp() }
+        XCTAssertTrue(nothingSaved.exists)
         // Privacy sits below About you and Your memories.
         let microphone = app.staticTexts["Microphone"]
         for _ in 0..<6 {

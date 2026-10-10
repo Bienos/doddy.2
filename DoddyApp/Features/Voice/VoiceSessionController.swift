@@ -56,7 +56,15 @@ final class VoiceSessionController {
         let matches: [DeviceConnections.ContactMatch]
     }
 
-    private(set) var phase: Phase = .idle { didSet { syncIsland() } }
+    private(set) var phase: Phase = .idle {
+        didSet {
+            Self.conversationInProgress = isLive
+            syncIsland()
+        }
+    }
+    /// True while any conversation holds the microphone (the island keeps it alive in other
+    /// screens). Voice samples in Settings don't play then, so they never take over its audio.
+    static private(set) var conversationInProgress = false
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     private(set) var contactCard: ContactCard?

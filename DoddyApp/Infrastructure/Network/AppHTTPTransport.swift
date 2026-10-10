@@ -7,14 +7,19 @@ struct AppHTTPTransport: GatewayTransport {
     private let session: URLSession
 
     /// The gateway never redirects. Refusing redirects means the bearer token can't follow one elsewhere.
+    /// The async form of the delegate method: the completion-handler form's closure is `@Sendable`
+    /// in the iOS SDK, and a near-miss signature would never be called, silently following redirects.
     private final class RefuseRedirects: NSObject, URLSessionTaskDelegate, Sendable {
         func urlSession(
             _ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
-            newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void
-        ) {
-            completionHandler(nil)
+            newRequest request: URLRequest
+        ) async -> URLRequest? {
+            nil
         }
     }
+
+    /// Same ceiling as Connected Apps' transport; a gateway answer is a few KB.
+    private static let maxResponseBytes = 512 * 1024
 
     init() {
         let configuration = URLSessionConfiguration.ephemeral
@@ -44,7 +49,7 @@ struct AppHTTPTransport: GatewayTransport {
             throw .other
         }
 
-        guard let http = response as? HTTPURLResponse else { throw .other }
+        guard let http = response as? HTTPURLResponse, data.count <= Self.maxResponseBytes else { throw .other }
         var headers: [String: String] = [:]
         for (key, value) in http.allHeaderFields {
             if let key = key as? String, let value = value as? String { headers[key.lowercased()] = value }

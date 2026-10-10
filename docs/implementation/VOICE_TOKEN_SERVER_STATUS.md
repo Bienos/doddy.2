@@ -34,8 +34,8 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 | Production | Deployed from `claude/brave-keller-f8h6uq` @ `882fe97`, region `fra1`. Endpoint `https://doddy-voice-token.vercel.app/api/voice-token` |
 | Env `ELEVENLABS_AGENT_ID` | Set (plain, production + preview) |
 | Env `DODDY_ACCESS_CODES` | Set (sensitive, production): one owner code, label `owner`. The code was given to the owner as a file, not in chat or the repo |
-| Env `ELEVENLABS_API_KEY` | **Not set: owner adds it in Vercel** (Settings → Environment Variables, Sensitive, Production). Needs a redeploy afterwards |
-| Live check | `POST` with a wrong code → `500 {"error":"server_not_configured"}` (fails closed without the key); `GET` → `405` |
+| Env `ELEVENLABS_API_KEY` | Set by the owner on 2026-10-10 (Sensitive, Production). Key scope: **ElevenAgents = Read, every other endpoint No Access**; switch Agents to Write only if a real token request fails with a permission error |
+| Live check | Before the key: wrong code → `500 server_not_configured`. After the key and a production redeploy (2026-10-10, `dpl_6CbRFEZxwEJ3xU9Xo6ozmWCPPDaS`): wrong code → `401 {"error":"invalid_access_code"}`, `GET` → `405`. A real token (owner's access code from the app) is **not yet verified** |
 | Previews | Behind Vercel Authentication (SSO), so only production is usable by the app |
 | Agent authentication | Still **off**. Turn on only after the app works in "Private (token server)" mode |
 

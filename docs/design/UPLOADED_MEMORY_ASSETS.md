@@ -24,3 +24,10 @@ compared with `shasum -a 256` of the corresponding native PNG; all five pairs ma
 Dark appearance adds a light paper backing around the unchanged image. Artwork is
 decorative, can be hidden in Settings, and has no invented animation/state behaviour.
 The existing development app icon is not replaced or represented as final branding.
+
+## Widget copies (Live Activity, 10 October 2026)
+
+`DoddyWidgets/Assets.xcassets/UploadedDoddy_{Listening,Kept,Sitting}.imageset` hold `art@2x.png`
+(107×160 px) and `art@3x.png` (160×240 px): Lanczos downscales of the three files above, with no
+crop, recolour or other edit. Live Activity images must stay small; the app keeps the
+byte-identical originals. Regenerate from the originals if the ZIP files change.
