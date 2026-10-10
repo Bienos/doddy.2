@@ -138,11 +138,14 @@ public enum PlanReply {
     public static let declined = "declined: the user chose not to do this plan. Nothing was done."
     public static let unticked = "declined: the user unticked this step. Nothing was done."
 
-    public static func summary(_ results: [(step: PlanStep, reply: String)]) -> String {
+    /// `changed` are the steps the user edited on the card (ADR-205): the agent is told, so it
+    /// repeats what was actually done rather than what it first proposed.
+    public static func summary(_ results: [(step: PlanStep, reply: String)], changed: Set<Int> = []) -> String {
         var lines = ["plan: one result per step, in order. Tell the user each one. Only say a step was done if its line starts with \"added:\" or \"saved:\"."]
         for result in results {
             let text = result.reply.replacingOccurrences(of: "\n", with: " ")
-            lines.append("\(result.step.number). \(text)")
+            let note = changed.contains(result.step.number) ? " (The user changed this step on screen before it ran; use these details, not your proposal.)" : ""
+            lines.append("\(result.step.number). \(text)\(note)")
         }
         return lines.joined(separator: "\n")
     }

@@ -16,6 +16,8 @@ struct VoiceView: View {
     @State private var controller: VoiceSessionController?
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
+    /// The plan step whose "Change" sheet is open (ADR-205).
+    @State private var editingPlanStep: PlanStep?
 
     /// Read when a conversation starts, so a changed setting or access code applies next time.
     private var mode: VoiceConnectionMode {
@@ -228,6 +230,12 @@ struct VoiceView: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        // One sheet for the whole card, not one per step (ADR-205).
+        .sheet(item: $editingPlanStep) { step in
+            PlanStepEditor(step: step) { changed in
+                controller.replacePlanStep(changed)
+            }
+        }
     }
 
     @ViewBuilder
@@ -362,8 +370,17 @@ struct VoiceView: View {
             .disabled(block != nil)
             .accessibilityValue(block?.screenText ?? (ticked ? "Ticked" : "Not ticked"))
             .accessibilityIdentifier("voice.plan.step\(step.number)")
+            if block == nil {
+                Button("Change") {
+                    editingPlanStep = step
+                }
+                .buttonStyle(.borderless)
+                .frame(minHeight: 44)
+                .accessibilityLabel("Change step \(step.number)")
+                .accessibilityIdentifier("voice.plan.change\(step.number)")
+            }
         }
-        Text("Untick anything you don't want. The rest run in this order, and each one gets its own result.")
+        Text("Untick anything you don't want, or tap Change to fix a step. The rest run in this order, and each one gets its own result.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
     }

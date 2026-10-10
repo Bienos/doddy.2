@@ -1,5 +1,5 @@
 # Settings and Connections: design proposal
-**Status:** design proposal, 2026-10-10, written from main before the Connections work on this line was seen. Connections cards, Reminders, Calendar, Contacts, Timers and Online accounts are already built here (ADR-073–082, 096–105); the plan card for several apps at once is now built too (ADR-204), apart from the "Change" button on a step and grouping in "What Doddy did". "What Doddy did" (ADR-135), Pause all (ADR-134) and "What leaves this iPhone" (ADR-133) are now built.
+**Status:** design proposal, 2026-10-10, written from main before the Connections work on this line was seen. Connections cards, Reminders, Calendar, Contacts, Timers and Online accounts are already built here (ADR-073–082, 096–105); the plan card for several apps at once is now built too (ADR-204), with "Change" on each step (ADR-205); grouping plans in "What Doddy did" is still to do. "What Doddy did" (ADR-135), Pause all (ADR-134) and "What leaves this iPhone" (ADR-133) are now built.
 **Visual reference:** Pocket Notebook (`design/interface-v1.2/docs/DESIGN-SYSTEM.md`).
 **Clickable study:** `design/settings-and-connections-v0.1/index.html` (fictional data, no real permissions, accounts or writes).
 
