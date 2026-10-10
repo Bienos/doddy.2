@@ -146,10 +146,10 @@ are now 169, 170, 171, and the blog stays 138. The was/now table in `DECISIONS.m
 of the DODDY AI Constitution V1 (rules appended to `CLAUDE.md` / `AGENTS.md`, rules registry at
 `docs/trust/config/doddy_rules.yaml`, which replaces the earlier `config/` copy because `Config/`
 exists; voice spec check for "AI, not a person"), ADR-178 → **194**; and `elegant-dijkstra`'s
-business docs (`docs/business/`: monetization model v2 and a unit-economics script).
+business docs (`docs/business/`: monetization model v2 and a unit-economics script); then `hopeful-fermat`'s onboarding "What I can do" text generated from the capability catalog, ADR-179 → **195**.
 
 To stop this repeating, new sessions should start from this branch (or the default branch once
-PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit (195 after the constitution merge).
+PR #5 is merged) and take the next free ADR number from `DECISIONS.md` at the time they commit (196 after the constitution merge).
 
 **Follow-ups:**
 - ~~Phone agent: move its definition from `server/messaging/scripts/setup-phone-agent.mjs` into the

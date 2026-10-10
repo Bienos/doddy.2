@@ -27,7 +27,7 @@ Platform safety, law and hard code gates > the user's permissions and boundaries
 | DOD-05 / UX-05 preferences | `PersonalitySettings` (Codable) with a Settings screen; `PersonalityTests` | — |
 | DOD-11 privacy | Per-connection switches, "What leaves this iPhone" screen (per commit history) | Legal review still open |
 | DOD-12 regression | `voice_agent_spec.py` structure checks + the new DOD-03 check | No character regression set (sycophancy, sensitive-context humour) yet; `docs/trust/evals/` is an inventory |
-| Honest capability claims (T35/T42) | `CapabilityCatalog` | **Stale copy:** `DoddyApp/Features/Onboarding/IntroductionView.swift` line ~324 says "I can't set reminders or use other apps yet", which is wrong on this line. Not changed here; owner to decide wording |
+| Honest capability claims (T35/T42) | `CapabilityCatalog`; onboarding "What I can do" paragraph generated from it (`CapabilityIntroduction`, ADR-195) | — |
 
 ## What was not ported from `claude/confident-planck-0gf6qo`, and why
 - **`ActionLedger` + simulated adapter + approval-flow demo:** this line already enforces the same rules through per-tool cards, `ActivityLog` and `ReminderAction`. A second action architecture would compete with it.
