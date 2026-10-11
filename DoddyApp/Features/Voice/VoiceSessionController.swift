@@ -239,6 +239,7 @@ final class VoiceSessionController {
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     private let devices = DeviceConnections()
+    private let alarmWriter = AlarmKitWriter()
     private var conversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
     private(set) var provider: VoiceProvider = .elevenLabs
@@ -760,9 +761,13 @@ final class VoiceSessionController {
             writeResults[id] = result
             await reply(id, result.reply)
         case .timer(let id, let draft):
-            await reply(id, await startTimer(draft))
+            let result = await timerResult(draft, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .alarm(let id, let draft):
-            await reply(id, await setAlarm(draft))
+            let result = await alarmResult(draft, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .cancelAlarm(let id, let alarm):
             guard isOn(.timers) else {
                 connectionNeeded = .timers
@@ -1621,6 +1626,7 @@ final class VoiceSessionController {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
+            guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else.
@@ -1636,7 +1642,9 @@ final class VoiceSessionController {
             switch AlarmScheduler.support() {
             case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
             case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
-            case .available: propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+            case .available:
+                guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
+                propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
             }
         case .openMap(let place):
             propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
@@ -1814,6 +1822,8 @@ final class VoiceSessionController {
             return eventResult(addEvent(draft), draft: draft, retry: retry)
         case .createReminder(let draft):
             return reminderResult(await addReminder(draft), draft: draft, retry: retry)
+        case .setTimer(let draft):
+            return await timerResult(draft, retry: retry)
         default:
             return WriteResult(reply: await runOtherPlanStep(step, approval: approval))
         }
@@ -1830,8 +1840,6 @@ final class VoiceSessionController {
             } catch {
                 return VoiceToolReply.failed(UserFacingError.message(for: error))
             }
-        case .setTimer(let draft):
-            return await startTimer(draft)
         case .cloudTool(let call):
             return await runPlanCloud(call, approval: approval)
         case .addToList(let request):
@@ -2401,42 +2409,43 @@ final class VoiceSessionController {
         return outcome
     }
 
-    private func startTimer(_ draft: TimerDraft) async -> String {
+    /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-292); "started"
+    /// only when the iPhone lists it, with the ring time it lists.
+    private func timerResult(_ draft: TimerDraft, retry: ActionRetryDecision?) async -> WriteResult {
         guard await devices.notificationAccess() == .granted else {
-            return VoiceToolReply.notAdded("Notifications are off for Doddy.")
+            return WriteResult(reply: VoiceToolReply.notAdded("Notifications are off for Doddy."), attempted: false)
         }
-        do {
-            switch try await devices.startTimer(draft) {
-            case .verified:
-                let endsAt = Date().addingTimeInterval(TimeInterval(draft.seconds))
-                return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
-            case .unconfirmed:
-                return VoiceToolReply.addUnconfirmed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        let outcome = await TimerStartAction.start(draft, with: devices, uncheckedSince: retry?.uncheckedSince)
+        var result = WriteResult(reply: VoiceToolReply.timer(outcome, draft: draft, calendar: .current), attempted: outcome.attemptedWrite)
+        switch outcome {
+        case .started(let timer):
+            result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
+        case .alreadyRunning(let timer):
+            result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+        default:
+            break
         }
+        return result
     }
 
     /// Checked again at the tap: the switch, and that the time hasn't passed while the card waited.
-    private func setAlarm(_ draft: AlarmDraft) async -> String {
+    /// Looks at Doddy's alarms first, so asking again never sets a second one (ADR-292).
+    private func alarmResult(_ draft: AlarmDraft, retry: ActionRetryDecision?) async -> WriteResult {
         guard isOn(.timers) else {
             connectionNeeded = .timers
-            return VoiceToolReply.failed("Timers and alarms are switched off. Nothing was set.")
+            return WriteResult(reply: VoiceToolReply.failed("Timers and alarms are switched off. Nothing was set."), attempted: false)
         }
-        if draft.repeats == nil, let late = ReminderDueRules.passed(draft.first, now: Date()) {
-            return VoiceToolReply.clarification(late, tool: VoiceToolName.setAlarm)
+        let outcome = await AlarmSetAction.set(draft, with: alarmWriter, now: Date())
+        var result = WriteResult(reply: VoiceToolReply.alarm(outcome), attempted: outcome.attemptedWrite)
+        switch outcome {
+        case .set(let alarm), .alreadySet(let alarm):
+            result.receipt = ActivityReceipt(alarm: alarm, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
+        default:
+            break
         }
-        do {
-            switch try await AlarmScheduler.schedule(draft) {
-            case .verified: return VoiceToolReply.alarmSet(draft)
-            case .unconfirmed: return VoiceToolReply.alarmUnconfirmed
-            case .needsNewerIOS: return VoiceToolReply.alarmNeedsNewerIOS
-            case .notAllowed: return VoiceToolReply.alarmNotAllowed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
-        }
+        return result
     }
 
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {

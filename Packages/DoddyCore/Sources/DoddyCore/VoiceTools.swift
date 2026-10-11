@@ -637,7 +637,7 @@ public enum VoiceToolReply {
         return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\": \(list). Their details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
     }
 
-    private static func durationText(_ seconds: Int) -> String {
+    static func durationText(_ seconds: Int) -> String {
         if seconds >= 60, seconds % 60 == 0 {
             let minutes = seconds / 60
             return "\(minutes) minute\(minutes == 1 ? "" : "s")"

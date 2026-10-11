@@ -233,7 +233,8 @@ final class ActionStatusTests: XCTestCase {
         XCTAssertNotEqual(EventIdempotency.key(later), key)
         XCTAssertTrue(key?.hasPrefix("e1-") == true)
         XCTAssertNil(request(.openMap(place: "x")).operationKey)
-        XCTAssertNil(request(.setTimer(TimerDraft(seconds: 60, label: nil))).operationKey)
+        // Timers and alarms have keys too since ADR-292 (TimerAlarmActionsTests).
+        XCTAssertEqual(request(.setTimer(TimerDraft(seconds: 60, label: nil))).operationKey, TimerIdempotency.key(TimerDraft(seconds: 60, label: nil)))
     }
 
     // MARK: Calendar: look before writing

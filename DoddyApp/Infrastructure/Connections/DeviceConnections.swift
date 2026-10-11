@@ -528,18 +528,30 @@ final class DeviceConnections {
     // MARK: Timers
 
     /// Schedules a local notification for the timer and reads it back from iOS to confirm.
-    func startTimer(_ draft: TimerDraft) async throws -> AddOutcome {
+    /// Doddy's timers still waiting to ring (TimerWriter, ADR-292). The ring time is the one
+    /// written into the notification when it was set, not recomputed from its trigger.
+    func pendingTimers() async -> [PendingTimer] {
+        await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in
+            guard request.identifier.hasPrefix("doddy.timer.") else { return nil }
+            if let seconds = request.content.userInfo["firesAt"] as? Double {
+                return PendingTimer(identifier: request.identifier, firesAt: Date(timeIntervalSince1970: seconds))
+            }
+            guard let date = (request.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate() else { return nil }
+            return PendingTimer(identifier: request.identifier, firesAt: date)
+        }
+    }
+
+    /// Schedules one timer notification under `identifier` (TimerStartAction reads it back).
+    func scheduleTimer(_ draft: TimerDraft, identifier: String) async throws {
         let center = UNUserNotificationCenter.current()
         center.delegate = TimerBanners.shared
         let content = UNMutableNotificationContent()
         content.title = "Timer done"
         content.body = draft.label ?? "Your timer is done."
         content.sound = .default
-        let identifier = "doddy.timer.\(UUID().uuidString)"
+        content.userInfo = ["firesAt": Date().addingTimeInterval(TimeInterval(draft.seconds)).timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
         try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
-        let pending = await center.pendingNotificationRequests()
-        return pending.contains { $0.identifier == identifier } ? .verified : .unconfirmed
     }
 
     // MARK: Contacts
@@ -604,6 +616,7 @@ final class DeviceConnections {
 /// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).
 extension DeviceConnections: ReminderStore {}
 extension DeviceConnections: CalendarEventWriter {}
+extension DeviceConnections: TimerWriter {}
 
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.
 private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {

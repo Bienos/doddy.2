@@ -67,8 +67,8 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
-    /// The same change asked again has the same key (ADR-291): new reminders and new events,
-    /// whose adds look first and so can be retried safely. Nil for everything else.
+    /// The same change asked again has the same key (ADR-291, ADR-292): new reminders, events,
+    /// timers and alarms, whose adds look first and so can be retried safely. Nil for everything else.
     public let operationKey: String?
 
     public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil, operationKey: String? = nil) {
@@ -124,9 +124,13 @@ public struct ActivityRequest: Equatable, Sendable {
         case .setTimer(let draft):
             let minutes = draft.seconds / 60, seconds = draft.seconds % 60
             let length = minutes > 0 ? "\(minutes) min\(seconds > 0 ? " \(seconds) s" : "")" : "\(seconds) s"
-            return ActivityRequest(app: .timers, title: "Start timer", detail: [draft.label.map { "“\($0)”" }, length].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+            return ActivityRequest(
+                app: .timers, title: "Start timer", detail: [draft.label.map { "“\($0)”" }, length].compactMap { $0 }.joined(separator: " · "),
+                isLookup: false, operationKey: TimerIdempotency.key(draft))
         case .setAlarm(let draft):
-            return ActivityRequest(app: .timers, title: "Set alarm", detail: [draft.label.map { "“\($0)”" }, draft.summary].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+            return ActivityRequest(
+                app: .timers, title: "Set alarm", detail: [draft.label.map { "“\($0)”" }, draft.summary].compactMap { $0 }.joined(separator: " · "),
+                isLookup: false, operationKey: AlarmIdempotency.key(draft))
         case .openMap(let place):
             return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
         case .runShortcut(let name):
@@ -342,7 +346,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        if text.hasPrefix("added:"), text.contains("already in Reminders") || text.contains("already in Calendar") {
+        // Found already there when Doddy looked first (ADR-291, ADR-292): nothing new was written.
+        let foundFirst = ["already in Reminders", "already in Calendar", "was already set", "was already running"]
+        if text.hasPrefix("added:"), foundFirst.contains(where: text.contains) {
             return (.alreadyThere, nil)
         }
         if text.hasPrefix("added:") || text.hasPrefix("saved:") || text.hasPrefix("drafted:") { return (.done, nil) }

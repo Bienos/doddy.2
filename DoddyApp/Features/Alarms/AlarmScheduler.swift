@@ -15,13 +15,6 @@ typealias DoddyAlarm = AlarmEntry
 
 @MainActor
 enum AlarmScheduler {
-    enum Outcome: Equatable {
-        case verified
-        case unconfirmed
-        case needsNewerIOS
-        case notAllowed
-    }
-
     /// Before a card is shown: can this iPhone set an alarm at all?
     static func support() -> AlarmSupport {
         #if canImport(AlarmKit)
@@ -30,20 +23,27 @@ enum AlarmScheduler {
         return .needsNewerIOS
     }
 
-    /// Asks for permission the first time, sets the alarm, then reads AlarmKit's list back.
-    static func schedule(_ draft: AlarmDraft) async throws -> Outcome {
+    /// Asks for permission the first time and sets the alarm under `id`. Whether it is set is
+    /// read from AlarmKit's list afterwards, by AlarmSetAction (ADR-292).
+    static func schedule(_ draft: AlarmDraft, id: UUID) async throws -> AlarmScheduleAttempt {
         #if canImport(AlarmKit)
         if #available(iOS 26.0, *) {
-            let outcome = try await AlarmKitBackend.schedule(draft)
-            if case .verified(let id) = outcome {
-                AlarmBook.remember(DoddyAlarm(id: id, clock: draft.clock, label: draft.label, summary: draft.summary))
-                return .verified
-            }
-            return outcome == .notAllowed ? .notAllowed : .unconfirmed
+            return try await AlarmKitBackend.schedule(draft, id: id) ? .scheduled : .notAllowed
         }
         #endif
         return .needsNewerIOS
     }
+
+    /// Every alarm id AlarmKit lists for Doddy.
+    static func scheduledIDs() -> Set<UUID> {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) { return AlarmKitBackend.scheduledIDs() }
+        #endif
+        return []
+    }
+
+    static func remember(_ alarm: DoddyAlarm) { AlarmBook.remember(alarm) }
+    static func forget(_ id: UUID) { AlarmBook.forget(id) }
 
     /// Doddy's alarms that AlarmKit still has. Alarms that rang once and are gone drop out.
     static func current() -> [DoddyAlarm] {
@@ -71,6 +71,16 @@ enum AlarmScheduler {
     }
 }
 
+/// AlarmScheduler as AlarmSetAction needs it (ADR-292).
+@MainActor
+final class AlarmKitWriter: AlarmWriter {
+    func alarms() -> [AlarmEntry] { AlarmScheduler.current() }
+    func scheduledAlarmIDs() -> Set<UUID> { AlarmScheduler.scheduledIDs() }
+    func scheduleAlarm(_ draft: AlarmDraft, id: UUID) async throws -> AlarmScheduleAttempt { try await AlarmScheduler.schedule(draft, id: id) }
+    func remember(_ alarm: AlarmEntry) { AlarmScheduler.remember(alarm) }
+    func forget(_ id: UUID) { AlarmScheduler.forget(id) }
+}
+
 /// What Doddy remembers about its own alarms (the label and the time as asked), on this iPhone
 /// only, so the list in Settings can name them. AlarmKit is the truth about whether one exists.
 private enum AlarmBook {
@@ -80,8 +90,10 @@ private enum AlarmBook {
         let stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
         return stored.compactMap { id, fields in
             guard let uuid = UUID(uuidString: id), let summary = fields["summary"] else { return nil }
-            // Alarms set before ADR-283 kept no clock; their summary starts with it.
-            return DoddyAlarm(id: uuid, clock: fields["clock"] ?? String(summary.prefix(5)), label: fields["label"], summary: summary)
+            // Alarms set before ADR-283 kept no clock; their summary starts with it. Before ADR-292, no key.
+            return DoddyAlarm(
+                id: uuid, clock: fields["clock"] ?? String(summary.prefix(5)), label: fields["label"], summary: summary,
+                key: fields["key"])
         }
         .sorted { $0.summary < $1.summary }
     }
@@ -90,13 +102,27 @@ private enum AlarmBook {
         var stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
         var fields = ["summary": alarm.summary, "clock": alarm.clock]
         if let label = alarm.label { fields["label"] = label }
+        if let alarmKey = alarm.key { fields["key"] = alarmKey }
+        fields["noted"] = String(Date().timeIntervalSince1970)
         stored[alarm.id.uuidString] = fields
         UserDefaults.standard.set(stored, forKey: key)
     }
 
-    static func keepOnly(_ ids: Set<UUID>) {
+    static func forget(_ id: UUID) {
+        var stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
+        stored[id.uuidString] = nil
+        UserDefaults.standard.set(stored, forKey: key)
+    }
+
+    /// Drops notes of alarms AlarmKit no longer lists, except one noted in the last 10 minutes:
+    /// AlarmKit may list a just-set alarm late, and a retry must still find it (ADR-292).
+    static func keepOnly(_ ids: Set<UUID>, now: Date = Date()) {
         let stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
-        UserDefaults.standard.set(stored.filter { UUID(uuidString: $0.key).map(ids.contains) ?? false }, forKey: key)
+        UserDefaults.standard.set(stored.filter { id, fields in
+            if UUID(uuidString: id).map(ids.contains) ?? false { return true }
+            guard let noted = fields["noted"].flatMap(Double.init) else { return false }
+            return now.timeIntervalSince1970 - noted < 600
+        }, forKey: key)
     }
 }
 
@@ -104,12 +130,6 @@ private enum AlarmBook {
 @available(iOS 26.0, *)
 @MainActor
 private enum AlarmKitBackend {
-    enum Result: Equatable {
-        case verified(UUID)
-        case unconfirmed
-        case notAllowed
-    }
-
     static func support() -> AlarmSupport {
         switch AlarmManager.shared.authorizationState {
         case .denied: .notAllowed
@@ -117,20 +137,21 @@ private enum AlarmKitBackend {
         }
     }
 
-    static func schedule(_ draft: AlarmDraft) async throws -> Result {
+    /// False when alarms aren't allowed. A schedule that returns doesn't prove the alarm is listed.
+    static func schedule(_ draft: AlarmDraft, id: UUID) async throws -> Bool {
         let manager = AlarmManager.shared
         switch manager.authorizationState {
         case .authorized: break
         case .notDetermined:
-            guard try await manager.requestAuthorization() == .authorized else { return .notAllowed }
-        default: return .notAllowed
+            guard try await manager.requestAuthorization() == .authorized else { return false }
+        default: return false
         }
         let schedule: Alarm.Schedule
         if let repeats = draft.repeats {
             let days = repeats.weekdays.compactMap(weekday)
             schedule = .relative(.init(time: .init(hour: draft.hour, minute: draft.minute), repeats: .weekly(days)))
         } else {
-            guard let date = draft.first.date else { return .unconfirmed }
+            guard let date = draft.first.date else { throw AlarmDateUnreadable() }
             schedule = .fixed(date)
         }
         let title: LocalizedStringResource = draft.label.map { LocalizedStringResource(stringLiteral: $0) } ?? "Doddy alarm"
@@ -144,12 +165,15 @@ private enum AlarmKitBackend {
         let countdown = AlarmPresentation.Countdown(title: "Snoozed")
         let attributes = AlarmAttributes<DoddyAlarmMetadata>(
             presentation: AlarmPresentation(alert: alert, countdown: countdown), metadata: nil, tintColor: .orange)
-        let id = UUID()
         let configuration = AlarmManager.AlarmConfiguration<DoddyAlarmMetadata>(
             countdownDuration: Alarm.CountdownDuration(preAlert: nil, postAlert: TimeInterval(AlarmDraft.snoozeMinutes * 60)),
             schedule: schedule, attributes: attributes)
         _ = try await manager.schedule(id: id, configuration: configuration)
-        return scheduledIDs().contains(id) ? .verified(id) : .unconfirmed
+        return true
+    }
+
+    struct AlarmDateUnreadable: LocalizedError {
+        var errorDescription: String? { "The alarm's time couldn't be read." }
     }
 
     static func scheduledIDs() -> Set<UUID> {
