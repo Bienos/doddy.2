@@ -4,10 +4,12 @@ import Foundation
 /// Only navigation: a link never saves, deletes or sends anything.
 public enum DeepLink: String, CaseIterable, Sendable {
     case home, memories, settings
+    /// The parking widget (ADR-315): opens the saved spot in Maps, if there is one.
+    case parking
 
     public static let scheme = "doddy"
 
-    /// `doddy://home`, `doddy://memories`, `doddy://settings`. A bare `doddy://` opens Home.
+    /// `doddy://home`, `doddy://memories`, `doddy://settings`, `doddy://parking`. A bare `doddy://` opens Home.
     /// Anything else, including other schemes and unknown places, returns nil.
     public init?(url: URL) {
         guard url.scheme?.lowercased() == Self.scheme else { return nil }

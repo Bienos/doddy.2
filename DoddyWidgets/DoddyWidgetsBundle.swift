@@ -12,6 +12,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
         DoddyToolLiveActivity()
         PinnedNotesWidget()
         NextReminderWidget()
+        ParkingWidget()
         ListWidget()
         TalkToDoddyWidget()
         if #available(iOS 18.0, *) {

@@ -835,7 +835,10 @@ final class VoiceSessionController {
             }
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-301).
-            await reply(id, ParkingStore.save(spot) ? VoiceToolReply.parkingSaved(spot, now: Date(), calendar: .current) : VoiceToolReply.parkingNotSaved)
+            let saved = ParkingStore.save(spot)
+            // The parking widget (ADR-315) shows when it was saved and the note.
+            WidgetSync.shared.refresh()
+            await reply(id, saved ? VoiceToolReply.parkingSaved(spot, now: Date(), calendar: .current) : VoiceToolReply.parkingNotSaved)
         case .changeReminder(let id, let reminder, let draft) where draft.changesDetails:
             // A note, priority or list (ADR-302): one save, read back. Undo isn't offered for these.
             await reply(id, changeReminderDetails(reminder, draft))
@@ -2080,6 +2083,7 @@ final class VoiceSessionController {
                 return
             }
             if ParkingStore.clear() { parkingCard = nil }
+            WidgetSync.shared.refresh()
             await reply(toolCallID, ParkingStore.current() == nil ? VoiceToolReply.parkingCleared : VoiceToolReply.failed("The parking spot couldn't be removed."))
         }
     }

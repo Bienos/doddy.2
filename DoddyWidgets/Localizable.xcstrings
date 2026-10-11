@@ -342,6 +342,17 @@
         }
       }
     },
+    "Parked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaparkowano"
+          }
+        }
+      }
+    },
     "Pause or resume": {
       "extractionState": "manual",
       "localizations": {

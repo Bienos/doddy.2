@@ -6909,6 +6909,17 @@
         }
       }
     },
+    "Parked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaparkowano"
+          }
+        }
+      }
+    },
     "Passphrase": {
       "extractionState": "manual",
       "localizations": {

@@ -82,6 +82,7 @@ struct RootView: View {
     @State private var homePath: [UUID] = []
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
@@ -290,6 +291,9 @@ struct RootView: View {
             case .home: selectedTab = .home
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
+            // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
+            case .parking:
+                if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
             }
         }
     }
