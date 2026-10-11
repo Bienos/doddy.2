@@ -12,6 +12,11 @@ import Foundation
 /// SDK events.
 @MainActor
 final class VoiceLiveActivity {
+    /// The one the conversation and "Hey Doddy" listening share (ADR-254): listening starts the
+    /// activity while Doddy is open, and a conversation the wake word starts in the background
+    /// carries on in it, because iOS only lets an app start an activity in the foreground.
+    static let shared = VoiceLiveActivity()
+
     /// How long the island may show a status without hearing from the app.
     static let staleAfter: TimeInterval = 90
     /// Must be comfortably shorter than `staleAfter`.
@@ -78,8 +83,10 @@ final class VoiceLiveActivity {
         }
     }
 
-    /// Waits until the last `finish`/`end` has reached iOS.
+    /// Waits until the last update and `finish`/`end` have reached iOS (so the island's End
+    /// sees "Hey Doddy" listening that took the island back, ADR-254).
     func settle() async {
+        await updating?.value
         await ending?.value
     }
 

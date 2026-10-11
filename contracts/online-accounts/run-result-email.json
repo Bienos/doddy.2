@@ -4,6 +4,22 @@
   "text": "Found 2 emails (newest first; sender, subject, received, preview):\n- From \"Anna Demo <anna@demo.example>\": \"Lunch on Friday?\" (2026-10-09 11:30) preview: \"Are you free around 1pm? There's a new place near the office.\"\n- From \"Demo Bank <noreply@demo.example>\": \"Your statement is ready\" (2026-10-08 09:00) preview: \"Your September statement is now available.\"",
   "count": 2,
   "truncated": false,
+  "items": [
+    {
+      "kind": "email",
+      "title": "Lunch on Friday?",
+      "from": "Anna Demo <anna@demo.example>",
+      "when": "2026-10-09 11:30",
+      "urgent": false
+    },
+    {
+      "kind": "email",
+      "title": "Your statement is ready",
+      "from": "Demo Bank <noreply@demo.example>",
+      "when": "2026-10-08 09:00",
+      "urgent": false
+    }
+  ],
   "receipt": {
     "operationId": "4bb34dbe-76af-4a67-ba3f-3fb1102911c1",
     "operation": "read",

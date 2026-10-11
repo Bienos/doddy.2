@@ -12,6 +12,16 @@ adding one adapter, not rewriting the app or the agent.
 
 ## Source of truth and syncing
 
+**Applied to the live agent 2026-10-11 (ADR-254, owner: "you do it"):** done as described below; read back after
+saving. Version `agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm` (rollback) → `agtvrsn_2701m4mc8sejfzkbjmekv9nczdrp` (first
+message and placeholder) → `agtvrsn_6701m4mc9b7wekgb2jeg1c6pwnyv` (Polish preset). What was changed: `session.json` first message
+`{{opening_line}}` with placeholder "Hey, it's Doddy. what's up?" (the live text, `first_message_variable`). To apply:
+set the agent's first message (English and Polish) to `{{opening_line}}` and add the dynamic-variable placeholder
+`opening_line` with that text, so older app builds that don't send it still start. Until then the live first
+message is the fixed text and the app's `opening_line` is ignored. Read 2026-10-11: the live agent also has
+dynamic-variable placeholders this repository doesn't declare (`morning_checkin`, `saved_lists`, `translator_start`)
+and 36 language presets; keep them when applying (both lists are replaced wholesale by the API).
+
 1. Change the files here first.
 2. `python3 -I scripts/voice_agent_spec.py check` (also runs in `scripts/ci.sh`).
 3. Push to ElevenLabs: `python3 -I scripts/voice_agent_spec.py elevenlabs` prints each tool in
@@ -21,7 +31,7 @@ adding one adapter, not rewriting the app or the agent.
    `{"prompt": "...", "tools": [...]}` and run `voice_agent_spec.py compare EXPORT.json`.
 
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
-step catches it. Last synced 2026-10-10 (agent version `agtvrsn_2801m4knwd04fxfbj25wat868jtp`, ADR-204: `propose_plan`; before that `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`, ADR-198: `remind_me_about_note`; before that `agtvrsn_5801m4k5544wevk9bz7wezwneh88`, ADR-177: AI disclosure line; before that `agtvrsn_3401m4k47e2revvv01sk7xv1tb26`, ADR-173: `web_search` added; before that `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 21 live tools (22 since ADR-198) (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_5801m4jtvazveprbj3znhn66j4tt` (before web search).
+step catches it. Last synced 2026-10-10 (agent version `agtvrsn_1601m4m2szrwfb9rhx1r2vcgmc3j`, ADR-253: `said_time` on three tools and the plan example, two prompt sentences, edited in place in the live prompt, which is ahead of this branch's `instructions.md` with lists, translator, morning check-in and note-reminder `repeat` from other branches; rollback `agtvrsn_1601m4m03vmqe90rh35280g5pxp7`. Before that `agtvrsn_2801m4knwd04fxfbj25wat868jtp`, ADR-204: `propose_plan`; before that `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`, ADR-198: `remind_me_about_note`; before that `agtvrsn_5801m4k5544wevk9bz7wezwneh88`, ADR-177: AI disclosure line; before that `agtvrsn_3401m4k47e2revvv01sk7xv1tb26`, ADR-173: `web_search` added; before that `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 21 live tools (22 since ADR-198) (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_5801m4jtvazveprbj3znhn66j4tt` (before web search).
 
 **Applied to the live agent 2026-10-10 (ADR-129):** the M4 Reminders wording (ADR-126) and the calendar
 date rules (ADR-127, ADR-128) in `create_reminder`, `create_calendar_event` and the prompt. The opening line

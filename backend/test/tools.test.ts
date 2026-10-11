@@ -185,6 +185,35 @@ test("check_email returns newest first and only sender, subject, time and a shor
   assert.ok(!rig.logs.join("\n").includes("Lunch"));
 });
 
+test("check_email and list_todoist_tasks also list their items as data, without previews (ADR-231)", async () => {
+  rig = await start();
+  await ready(rig, "gmail", "check_email");
+  const email = await run(rig, "check_email", { max: 5 });
+  assert.equal(email.status, 200);
+  assert.deepEqual(email.body.items.map((i: any) => [i.kind, i.title, i.when, i.urgent]), [
+    ["email", "Lunch on Friday?", "2026-10-09 11:30", false],
+    ["email", "Your statement is ready", "2026-10-08 09:00", false],
+  ]);
+  assert.match(email.body.items[0].from, /Anna Demo/);
+  assert.ok(!JSON.stringify(email.body.items).includes("Are you free"), "no preview in the items");
+  assert.equal(email.body.items.length, email.body.count, "the same emails as the text");
+
+  await ready(rig, "todoist", "list_todoist_tasks");
+  const tasks = await run(rig, "list_todoist_tasks", { when: "today" });
+  assert.equal(tasks.status, 200);
+  assert.equal(tasks.body.items.length, tasks.body.count);
+  assert.ok(tasks.body.items.every((i: any) => i.kind === "task" && i.from === null));
+
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "empty");
+  const none = await run(rig, "check_email", {});
+  assert.deepEqual(none.body.items, [], "nothing listed is an empty list, not a missing one");
+
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+  await ready(rig, "notion", "search_notion");
+  const search = await run(rig, "search_notion", { query: "trip" });
+  assert.equal(search.body.items, undefined, "other tools don't send items");
+});
+
 test("empty and malformed provider answers become honest text or an error, never invented data", async () => {
   rig = await start();
   await ready(rig, "gmail", "check_email");

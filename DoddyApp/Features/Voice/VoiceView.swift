@@ -70,6 +70,11 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
+            // "Hey Doddy" already started this conversation (ADR-254): show it, don't start another.
+            if self.controller == nil, let started = WakeWordListener.shared.takeConversation() {
+                self.controller = started
+                return
+            }
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
             await controller.start(
@@ -172,6 +177,11 @@ struct VoiceView: View {
                                 .id("listReceipt")
                         }
 
+                        if let receipt = controller.changeReceipt {
+                            changeReceiptCard(receipt, controller: controller)
+                                .id("changeReceipt")
+                        }
+
                         if let status = controller.noteReminderStatus {
                             noteReminderStatusCard(status, controller: controller)
                                 .id("noteReminderStatus")
@@ -180,6 +190,11 @@ struct VoiceView: View {
                         if let status = controller.planStatus {
                             planStatusCard(status, controller: controller)
                                 .id("planStatus")
+                        }
+
+                        if let card = controller.saveSuggestions {
+                            saveSuggestionsCard(card, controller: controller)
+                                .id("saveSuggestions")
                         }
 
                         if pauseAllConnections {
@@ -225,6 +240,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.planStatus == nil) { _, isNil in
                     if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("planStatus", anchor: .bottom) } }
+                }
+                .onChange(of: controller.saveSuggestions == nil) { _, isNil in
+                    if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("saveSuggestions", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -334,6 +352,29 @@ struct VoiceView: View {
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .alarm(_, let draft):
+            Text("Set this alarm?")
+                .font(.headline)
+            Text(draft.clock)
+                .font(.title2.monospacedDigit())
+            Group {
+                if let repeats = draft.repeats {
+                    switch repeats {
+                    case .everyDay: Text("Every day")
+                    case .weekdays: Text("Monday to Friday")
+                    case .weekends: Text("Saturday and Sunday")
+                    }
+                } else if let date = draft.first.date {
+                    Text(date.formatted(date: .complete, time: .omitted))
+                }
+            }
+            .foregroundStyle(Theme.secondaryText)
+            if let label = draft.label {
+                Text("“\(label)”")
+            }
+            Text("It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .timer(_, let draft):
             Text("Start this timer?")
                 .font(.headline)
@@ -387,6 +428,26 @@ struct VoiceView: View {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
             }
+        case .deleteEvent(_, let event):
+            Text("Delete this event?")
+                .font(.headline)
+            Text(event.title)
+                .font(.body)
+            Text(eventWhen(event))
+                .foregroundStyle(Theme.secondaryText)
+            Text("If it repeats, only this time is deleted. This can't be undone from Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .deleteReminder(_, let reminder):
+            Text("Delete this reminder?")
+                .font(.headline)
+            Text(reminder.title)
+                .font(.body)
+            Text("In \(reminder.listTitle) · \(ReminderText.due(reminder.due))")
+                .foregroundStyle(Theme.secondaryText)
+            Text("This can't be undone from Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -479,6 +540,85 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.planReceipt")
     }
 
+    /// "Worth keeping?" after the conversation (ADR-247): the user's own sentences, none ticked.
+    /// The words can be changed before saving; changing them ticks the item.
+    private func saveSuggestionsCard(_ card: SaveSuggestionCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(card.hasResults ? "What was saved" : "Worth keeping?")
+                .font(.headline)
+            if !card.hasResults {
+                Text("Things you said that might be useful later, in your words. Tick what to save; nothing is saved otherwise. Doddy picked these on this iPhone.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(card.items) { item in
+                switch item.state {
+                case .offered where !card.hasResults, .saving:
+                    HStack(alignment: .top, spacing: 10) {
+                        Button {
+                            controller.toggleSaveSuggestion(item.id)
+                        } label: {
+                            Image(systemName: item.isTicked ? "checkmark.square.fill" : "square")
+                                .font(.title3)
+                                .foregroundStyle(item.isTicked ? Theme.accentText : Theme.secondaryText)
+                                .frame(width: 44, height: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(item.state == .saving)
+                        .accessibilityLabel(item.isTicked ? "Ticked: save this" : "Not ticked")
+                        .accessibilityIdentifier("voice.suggestion.tick.\(item.id)")
+                        TextField("Note", text: Binding(
+                            get: { item.text },
+                            set: { controller.changeSaveSuggestion(item.id, to: $0) }
+                        ), axis: .vertical)
+                            .font(.body)
+                            .disabled(item.state == .saving)
+                            .accessibilityIdentifier("voice.suggestion.text.\(item.id)")
+                    }
+                case .offered:
+                    Label(item.text, systemImage: "minus.circle")
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityLabel("Not saved: \(item.text)")
+                case .saved(let record):
+                    Label(record.currentText, systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(Theme.confirmed)
+                        .accessibilityLabel("Saved: \(record.currentText)")
+                case .failed(let message):
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label(item.text, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.error)
+                        Text("Not saved. \(message)")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            if card.hasResults {
+                Button("OK") { controller.dismissSaveSuggestions() }
+                    .buttonStyle(SecondaryButtonStyle())
+            } else {
+                HStack {
+                    Button(card.tickedCount > 1 ? "Save \(card.tickedCount) notes" : "Save note") {
+                        Task { await controller.saveTickedSuggestions() }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(card.tickedCount == 0 || card.isSaving)
+                    .accessibilityIdentifier("voice.suggestion.save")
+                    Button("Not now") { controller.dismissSaveSuggestions() }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(card.isSaving)
+                        .accessibilityIdentifier("voice.suggestion.dismiss")
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.saveSuggestions")
+    }
+
     private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {
         if case .plan = pending { return controller.planTicked.isEmpty }
         return false
@@ -489,6 +629,7 @@ struct VoiceView: View {
         case .memory: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
         case .event, .reminder: (NSLocalizedString("Add", comment: ""), NSLocalizedString("Don't add", comment: ""))
         case .timer: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Don't start", comment: ""))
+        case .alarm: (NSLocalizedString("Set alarm", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
@@ -497,6 +638,7 @@ struct VoiceView: View {
         case .translator: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
+        case .deleteEvent, .deleteReminder: (NSLocalizedString("Delete", comment: ""), NSLocalizedString("Don't delete", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         }
@@ -509,12 +651,19 @@ struct VoiceView: View {
     private func noteReminderContent(
         noteText: String, savedAt: Date?, target: VoiceSessionController.NoteReminderCardTarget, controller: VoiceSessionController
     ) -> some View {
-        Text("Remind you about this note?")
-            .font(.headline)
+        let isList = controller.isListReminder
+        Group {
+            if isList { Text("Remind you about this list?") } else { Text("Remind you about this note?") }
+        }
+        .font(.headline)
         VStack(alignment: .leading, spacing: 4) {
             Text(noteText)
                 .font(.body)
-            if let savedAt {
+            if isList {
+                Text("Your list in Doddy. The notification doesn't name it or its items.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            } else if let savedAt {
                 Text("Your note, saved \(savedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute()))")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
@@ -766,6 +915,37 @@ struct VoiceView: View {
 
     /// What a list change by voice did (ADR-216), with Undo and, when "milk" matched two items,
     /// the items to tap. Read back from the store before it is shown.
+    /// A change in Calendar or Reminders, checked, with Undo (ADR-258).
+    private func changeReceiptCard(_ receipt: ChangeReceipt, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
+                Label(receipt.message, systemImage: "checkmark.circle").foregroundStyle(Theme.confirmed)
+                Spacer()
+                Button { controller.dismissChangeReceipt() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            switch receipt.state {
+            case .available:
+                Button { Task { await controller.undoLastChange() } } label: {
+                    Label("Undo", systemImage: "arrow.uturn.backward").frame(minHeight: 44)
+                }
+                .accessibilityIdentifier("voice.undoChange")
+            case .working:
+                ProgressView("Putting it back…")
+            case .undone:
+                Label("Put back as it was. Checked.", systemImage: "arrow.uturn.backward.circle")
+                    .foregroundStyle(Theme.confirmed)
+            case .failed(let message):
+                Label(message, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
     private func listReceiptCard(_ receipt: ListReceipt, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {

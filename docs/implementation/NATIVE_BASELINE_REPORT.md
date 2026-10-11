@@ -153,9 +153,12 @@ Written on Linux without Xcode; nothing below has been compiled or run on a simu
 2. `DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd` on the
    iPhone 18 Pro / iOS 27 simulator. It must pass end to end: system **Unmute** reaches the app
    ("Fixture active"), then system **End** reaches it ("Fixture ended", "0 native activities").
-   This is the only proof of the fix. If Unmute still fails, add a log in
-   `ToggleDoddyMuteIntent.perform()` that prints `Bundle.main.bundleIdentifier`. That shows
-   which process ran the intent, or whether any did.
+   This is the only proof of the fix. If Unmute still fails, open Console.app on the Mac,
+   filter on subsystem `com.bienos.doddy2`, category `island`: both intents now write one line
+   per tap (`IslandIntentLog`, 2026-10-10), naming the bundle identifier of the process that
+   performed it and whether a conversation handler was registered there. "`…widgets`" means iOS
+   routed the tap to the extension and ADR-131's pin did not take; "handler: no" in the app
+   process means the handler was never registered; no line at all means no process ran it.
 3. `DoddyTests/IslandBaselineTests`: all four tests still pass. They call `perform()` directly,
    so they do not test routing.
 4. On a physical iPhone, later: TalkToDoddy control still opens Doddy and starts a conversation.

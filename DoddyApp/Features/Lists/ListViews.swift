@@ -100,7 +100,14 @@ struct ListDetailView: View {
     @State private var newName = ""
     @State private var confirmDelete = false
     @State private var showReminder = false
+    @State private var confirmShopping = false
     @FocusState private var addFocused: Bool
+    private let shopping = ShoppingModeController.shared
+    private let sharing = SharedListsController.shared
+    @State private var confirmSharing = false
+    @State private var confirmStopSharing = false
+    @State private var cloudShare: CloudShareSheet?
+    @State private var isSharing = false
 
     var body: some View {
         Group {
@@ -126,6 +133,23 @@ struct ListDetailView: View {
                     Text(list.summary).font(.subheadline).foregroundStyle(Theme.secondaryText)
                 }
                 .listRowBackground(Theme.canvas)
+                if let link = sharing.isShared(list.id) {
+                    SharedListStatusRow(list: list, link: link) { Task { await openPeople(list) } }
+                        .listRowBackground(Theme.canvas)
+                }
+                if shopping.isOn(for: list.id) {
+                    HStack {
+                        Label("Shopping mode is on: this list is on your Lock Screen.", systemImage: "cart")
+                            .font(.footnote)
+                        Spacer()
+                        Button("End") { shopping.end() }.frame(minHeight: 44)
+                    }
+                    .listRowBackground(Theme.canvas)
+                    .accessibilityIdentifier("list.shoppingMode")
+                }
+                if let problem = shopping.problem {
+                    Text(problem).font(.footnote).foregroundStyle(Theme.error).listRowBackground(Theme.canvas)
+                }
                 HStack(spacing: 8) {
                     TextField("Add an item", text: $newItem)
                         .textFieldStyle(.roundedBorder)
@@ -199,6 +223,8 @@ struct ListDetailView: View {
             Button("Delete list", role: .destructive) {
                 Task {
                     do {
+                        // A shared list stops being shared first (ADR-263), so nothing is left in iCloud.
+                        if sharing.isShared(list.id) != nil { try await sharing.stop(list.id) }
                         try await store.delete(id: list.id)
                         dismiss()
                     } catch {
@@ -210,6 +236,34 @@ struct ListDetailView: View {
             Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
         }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
+        .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
+            Button("Share") { Task { await startSharing(list) } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.")
+        }
+        .confirmationDialog(sharing.isShared(list.id)?.role == .participant ? "Leave this shared list?" : "Stop sharing this list?",
+                            isPresented: $confirmStopSharing, titleVisibility: .visible) {
+            Button(sharing.isShared(list.id)?.role == .participant ? "Leave" : "Stop sharing", role: .destructive) {
+                run { try await sharing.stop(list.id) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(sharing.isShared(list.id)?.role == .participant
+                 ? "The list stays on this iPhone as your own. You won't see others' changes any more."
+                 : "The copy in your iCloud is deleted and the people you invited lose the list. It stays on this iPhone.")
+        }
+        .sheet(item: $cloudShare) { sheet in
+            CloudSharingView(sheet: sheet, listName: list.name) {
+                Task { await sharing.load() }
+            }
+        }
+        .confirmationDialog("Show this list on your Lock Screen?", isPresented: $confirmShopping, titleVisibility: .visible) {
+            Button("Start shopping mode") { shopping.start(list) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.")
+        }
     }
 
     private func row(_ item: ListItem, list: DoddyList) -> some View {
@@ -247,8 +301,26 @@ struct ListDetailView: View {
             }
             .disabled(list.done.isEmpty)
             Button { showReminder = true } label: { Label("Remind me", systemImage: "bell") }
+            // Shopping mode (ADR-257): this list on the Lock Screen and in the Dynamic Island.
+            if shopping.isOn(for: list.id) {
+                Button { shopping.end() } label: { Label("End shopping mode", systemImage: "cart.badge.minus") }
+            } else {
+                Button { confirmShopping = true } label: { Label("Shopping mode", systemImage: "cart") }
+                    .disabled(list.open.isEmpty)
+            }
             ShareLink(item: list.shareText, preview: SharePreview(list.name)) {
                 Label("Share as text", systemImage: "square.and.arrow.up")
+            }
+            // Shared lists through iCloud (ADR-263), only in builds set up for it.
+            if sharing.isAvailable {
+                if let link = sharing.isShared(list.id) {
+                    Button { Task { await openPeople(list) } } label: { Label("People", systemImage: "person.2") }
+                    Button(role: .destructive) { confirmStopSharing = true } label: {
+                        Label(link.role == .owner ? "Stop sharing" : "Leave shared list", systemImage: "person.2.slash")
+                    }
+                } else {
+                    Button { confirmSharing = true } label: { Label("Share with people…", systemImage: "person.2") }
+                }
             }
             Button { newName = list.name; renaming = true } label: { Label("Rename", systemImage: "pencil") }
             Button { run { try await store.clearTicked(listID: list.id) } } label: {
@@ -261,6 +333,27 @@ struct ListDetailView: View {
         }
         .accessibilityLabel("List options")
         .accessibilityIdentifier("list.menu")
+    }
+
+    /// After Share on the confirmation: the list goes to iCloud, then Apple's screen to invite people.
+    private func startSharing(_ list: DoddyList) async {
+        guard !isSharing else { return }
+        isSharing = true
+        defer { isSharing = false }
+        errorMessage = nil
+        do {
+            cloudShare = try await sharing.share(list)
+        } catch {
+            errorMessage = SharingError.message(for: error)
+        }
+    }
+
+    private func openPeople(_ list: DoddyList) async {
+        do {
+            cloudShare = try await sharing.existingShare(list.id)
+        } catch {
+            errorMessage = SharingError.message(for: error)
+        }
     }
 
     private func add(_ list: DoddyList) async {

@@ -49,6 +49,8 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | M9 | Copy some text elsewhere, open the capture screen, tap Paste | No permission prompt. The text goes in exactly as copied, replacing a blank editor or going on a new line after existing text. Nothing is saved until Save (ADR-189) |
 | M10 | Open a voice-saved or "Other" note → Type menu → pick "Place" | The type changes at once and the type filter chips update. The text, dates and "Edited" label stay as they were (ADR-192) |
 | M11 | Search for a word used by notes of two or more types | The same chips above the matches. A chip narrows them and says "Showing N of M matches". The "may disagree" banner still counts every match (ADR-199) |
+| M12 | Correct one note three times (A → B → C → D), then open it | "Earlier versions (2)" lists C then B, each with its time. "Original capture" shows A. Relaunch: the same. Delete and Undo: the same. Search for a word only in B: no match (ADR-252) |
+| M13 | Search "netflix password" with a wifi password note saved; then ask the same by voice | Find: "1 PARTIAL MATCH" and "No saved note mentions “netflix”…" above the wifi note. Voice: Doddy says no note mentions Netflix and does not read the wifi password out as the answer (ADR-251) |
 
 ## 2b. Accessibility (PRD item 7, acceptance test A-13)
 | # | Do this | Expect |
@@ -64,6 +66,7 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | E3 | Restore a text file, an empty file and a hand-edited file with one note broken | A plain message each time and nothing added |
 | E4 | Settings → What Doddy knows → Remembered conversations | The list, a full conversation, "Brought up next time" marks, delete one with confirmation, export as text (ADR-177). Delete from inside a conversation: it goes back one screen, not two |
 | E5 | Settings → Your memories → Export as Markdown, then open the file in Notes or Files | A file named doddy-memories.md (check it is not .md.txt) with one heading per note, the words in a block quote, and the original for a corrected note (ADR-203) |
+| E6 | With the M12 note: export as JSON, text and Markdown; delete everything; restore the JSON | Each file has B and C as earlier wordings. After restore the note shows "Earlier versions (2)" again (ADR-252) |
 
 ## 4. Shortcuts, Siri and controls
 | # | Do this | Expect |
@@ -74,6 +77,11 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | S4 | "Find in Doddy" with the app **closed**, then open | Memories → Find with the words filled in and the results showing (ADR-181). Run it again with the app open |
 | S5 | Start Save to Doddy while a voice conversation is open | The note appears after the conversation closes |
 | S6 | Run Save to Doddy during first-use onboarding or while the Back Tap setup sheet is open | It waits and appears afterwards. A later Save to Doddy still works (it must not stay blocked) |
+| S7 | Save "Gate code 4821". With Doddy closed and the iPhone unlocked: "Hey Siri, ask Doddy what I saved" → "gate code" | Siri asks "What are you looking for?", then says "You saved this today: Gate code 4821." Doddy does not open. Also try "What did I save in Doddy" and the Shortcuts app tile "Ask what I saved" (ADR-248, `SIRI_READBACK_STATUS.md`) |
+| S8 | Same, with the iPhone **locked** | Siri asks you to unlock first and says nothing about the note until you do |
+| S9 | Save "Gate code 5555" too and ask again; then ask for something you never saved; then a long note | Both codes read with "Check which one is current"; "I couldn't find that in your saved memories."; a long note is cut with "open Doddy for the rest" |
+| S10 | Settings → Back Tap and Siri → turn off "Siri can read my notes aloud", ask again | "Reading notes aloud is turned off in Doddy's settings…" and no note. What leaves this iPhone shows the Siri row off |
+| S11 | Time the answer the first time after a restart | Siri answers before giving up (word search only). If it times out, record it in the result log |
 
 ## 4b. The opening and listening on open (ADR-225)
 | # | Do this | Expect |
@@ -89,6 +97,28 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | O10 | With O8 on: iOS Settings → Doddy → Microphone off; relaunch | The scene plays; no conversation opens by itself (it would only say "Microphone is off"). Tapping Talk to Doddy still explains and offers Open Settings |
 | O11 | With O8 on: tap a note reminder's "Done" from the Lock Screen (a background launch), then open Doddy | Nothing listened in the background; the scene (and the conversation) only once the app is on screen |
 
+## 4e. "Hey Doddy" (ADR-254, `HEY_DODDY_STATUS.md`)
+Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section train **Hey Doddy**, English, platform **iOS**; download the `.ppn` to the iPhone (Files → On My iPhone). Voice must already work (token server or the development agent). Turn off "Start listening when I open Doddy" first, so only the wake word starts conversations.
+
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Build: `make project`, then build. Package resolution fetches the Porcupine repository (large; first time takes a while) | The app builds with the `Porcupine` product. If `revision:` is refused by XcodeGen or SwiftPM, note the error. Compile errors most likely in `WakeWordListener.swift`: `PorcupineManager(accessKey:keywordPath:sensitivity:onDetection:errorCallback:)`, the `nonisolated` handler factories, `UIApplication.beginBackgroundTask`, and the memberwise `ContentState(status:isMuted:greeting:conversationStartedAt:)` |
+| H2 | Settings → Hey Doddy, fresh install | Switch off; "Now: Off." Nothing in the island; no microphone dot |
+| H3 | Turn it on without a key or file | iOS asks for the microphone if it never has. "Add your Picovoice AccessKey and “Hey Doddy” keyword file…"; no microphone dot |
+| H4 | Paste a wrong key (e.g. one letter changed) and choose the .ppn | "Picovoice didn't accept the AccessKey…" (or the activation message); no microphone dot. Choose a .zip or a `_pl_ios_` / `_android_` file: the matching problem text |
+| H5 | Paste the right key | "Now: Listening for “Hey Doddy” on this iPhone." The orange microphone dot shows. Go to the Home Screen: the island is in your island style with the label HEY DODDY, "Say “Hey Doddy”", "Listening on this iPhone for “Hey Doddy” only" and Stop listening (no Mute, no timer, no orange). The Lock Screen shows Doddy sitting and "Hey Doddy is on". Change the island style in Settings and check the waiting island follows it |
+| H6 | On the Home Screen, say "Hey Doddy" | Within about a second the island says **"Hey Pat, what's up?"** (your nickname; without one, the first word of your About you name; without both, "bud"), then Doddy connects and **says the same greeting out loud** (live agent first message `{{opening_line}}` since 2026-10-11). A conversation started with a tap still opens with "Hey, it's Doddy. What's up?". The timer counts from the wake word, not from when listening started. When you first speak, the island goes back to Listening/Thinking/Speaking. Note the time from "Hey Doddy" to Doddy's first word |
+| H7 | Say "bye" / tap End on the island | The conversation ends; the island shows "“Hey Doddy” paused" for a moment, then "Say “Hey Doddy”" again (not the Conversation ended card). Say "Hey Doddy" again after 5 seconds: a second conversation starts. **Key question:** does listening restart in the background after the conversation, or does the island go away and Settings say "Open Doddy"? Write down which |
+| H8 | Open Doddy while a wake conversation runs; and once after one ended with a "Worth keeping?" card | The voice screen opens on that conversation (not a second one); the card shows. After a wake conversation that ended with nothing, opening Doddy goes to Home |
+| H9 | Say "Hey Doddy" and then say nothing | The conversation ends by itself about 20 seconds after Doddy is ready; listening comes back |
+| H10 | Tap Stop listening on the island | The island goes away, the microphone dot goes off, Settings shows the switch off |
+| H11 | With it listening: (a) turn on Low Power Mode; (b) take a phone call; (c) open Voice Memos and record; (d) play a voice sample in Settings and read a note aloud | (a) "Paused: Low Power Mode is on.", dot off; listening returns when it's off and Doddy is open. (b, c) "Paused: another app or a call…", then back if iOS allows. (d) Samples and the note play through the **speaker** (not the earpiece) and listening comes back after |
+| H15 | With it listening, in Doddy: record a voice memo on a note, stop, then play it back; while it plays, start reading another note aloud and stop that first | Listening pauses while recording and playing (Settings "Now" says so), the memo records and plays normally, and listening comes back only when both the memo and the read-aloud have stopped (ADR-254 port) |
+| H16 | With the morning check-in or the tidy-up sheet open, say "Hey Doddy" | The conversation starts on the island, but the voice screen doesn't push the sheet aside. Close the sheet and leave and reopen Doddy: the voice screen opens on that conversation if it is still running |
+| H12 | Leave it listening in the background for an hour with the screen locked; note the battery % used and whether it is still listening (island) | Write the battery cost down. If iOS ended it, the island must not still say "Say “Hey Doddy”" (stale: "Not listening — open Doddy") |
+| H13 | Leave a TV or podcast playing near the iPhone for 30 minutes | Count false wake-ups. Each one should end by itself after 20 s of silence from you; after 12 in an hour the status says "Resting…" |
+| H14 | What leaves this iPhone | A Picovoice row: active only while the switch is on; the "stays on this iPhone" line for Hey Doddy; Settings → Privacy → Microphone mentions it while on |
+
 ## 5. Voice (needs a real conversation)
 | # | Do this | Expect |
 |---|---|---|
@@ -96,9 +126,14 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | V2 | Start a conversation with a non-default voice, speed and starting language | The voice and language are used. The dev agent allows the overrides. If it connects but sounds default, check the agent's override switches |
 | V3 | Set a nickname | Doddy uses it now and then (ADR-127) |
 | V4 | Turn on Private on the Talk screen, talk, end | The banner shows. The conversation is not in Remembered conversations (ADR-170) |
-| V5 | Island: start a conversation, tap Mute and Unmute on the Live Activity | The Unmute fix works and the app keeps running (ADR-128; `NATIVE_BASELINE_REPORT.md`) |
+| V5 | Island: start a conversation, press Home, long-press the island, tap Mute then Unmute | Status changes to Muted and back; the app keeps running (ADR-128; `NATIVE_BASELINE_REPORT.md`). If a tap does nothing, read the Console line (subsystem `com.bienos.doddy2`, category `island`): it names the process that ran the intent and whether a handler was there (`V3_ISLAND_STATUS.md`, "Go live") |
+| V5b | Simulator first: `DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd` on an iPhone with a Dynamic Island, plus `DoddyTests/IslandBaselineTests` | All green. This is the red check from the Codex run; it is the first thing to run after `make project` |
 | V6 | Reminders by voice (ADR-126, `M4_REMINDERS_STATUS.md`) | The device checks listed there |
 | V7 | Ask Doddy to save a note by voice, pick "Place" on the card, tap Save | The note is saved with that type (see the type filter chips). Declining and a second proposal start at "Other" again (ADR-202) |
+| V8 | With an app build that includes ADR-253 (live agent synced 2026-10-10): say "remind me next Friday to call mum", then "add the dentist tomorrow at 7", then "remind me tomorrow morning to pay rent" | Each time Doddy asks one question (which Friday, with both dates; 7 in the morning or evening; what time or no time) before any card. After the answer the card shows the chosen date. "Friday 16 October at 19:00" goes straight to the card |
+| V9 | In a conversation say "By the way, Marta's birthday is on the 12th of May" and "The plumber Adam comes on Tuesday", ask the weather, then tap End | A "Worth keeping?" card with those two sentences in your words, **none ticked**, Save disabled. Tick one, change the other's words, tap Save: both saved (check Memories), the card says "What was saved". Ask-the-weather and Doddy's own lines are never offered (ADR-247) |
+| V10 | Same, but say "My Netflix password is …" and "Remind me to call Adam at 5" | Neither is offered. Also: a Private conversation shows no card; Settings → What Doddy knows → Suggest notes after a conversation off shows no card; a note Doddy already put on a save card (saved or declined) is not offered again |
+| V11 | Tap "Not now", then leave and come back to the Talk screen | The card stays gone for that conversation. Note how ElevenLabs' transcript splits sentences and whether names come capitalised (affects which sentences are offered); record in the result log |
 
 ## 6. Ask and server
 - Ask: after the daily limit is reached, "Try again" is hidden. This needs a deployed gateway with limits set (ADR-124, ADR-125). The Redis store and real OpenAI prices are still owner tasks.
@@ -168,3 +203,13 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | Item | Xcode / iOS / device | Result | Notes |
 |---|---|---|---|
 | Build | | | |
+
+## 4f. Whole Doddy island style (ADR-264, `WHOLE_DODDY_ISLAND_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Build; open Settings → Voice → Dynamic Island style | A "Whole Doddy" row with a preview: Doddy's whole body on black with a thin cream edge, no panel. Switch the preview between Listening, Speaking, Thinking and Muted: hand at ear, open hands, kneeling, shush |
+| W2 | Choose Whole Doddy, talk to Doddy, go to the Home Screen and long-press the island | The expanded island shows the pose for each state as it changes (connecting = stretch). The pose is sharp, not blurry, and the cream edge is even |
+| W3 | Look at compact and minimal (open another app with its own activity for minimal) | A round face crop: the listening face while live, shush when muted. Not cut off, not blurry |
+| W4 | Ask Doddy to save a note, tap Save; ask for a reminder and Add | Reaching high while it waits; a fist pump only after Saved / Reminders confirmed it |
+| W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, arms out with the greeting, leaning while paused |
+| W6 | Start the translator from Home with Whole Doddy chosen | Language Bridge as before, no pose |

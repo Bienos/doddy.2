@@ -178,6 +178,37 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
+        // ADR-252: every correction of a note is kept (text and time), numbered from 1, and
+        // deleted with the note. The original stays in memories.raw_text. Notes corrected before
+        // this get one correction, their current wording: the in-between ones were never stored.
+        migrator.registerMigration("v9_memory_corrections") { db in
+            try db.execute(sql: """
+                CREATE TABLE memory_corrections (
+                    memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    number INTEGER NOT NULL CHECK (number >= 1),
+                    text TEXT NOT NULL CHECK (length(trim(text)) > 0),
+                    corrected_at_ms INTEGER NOT NULL,
+                    PRIMARY KEY (memory_id, number)
+                ) WITHOUT ROWID;
+                INSERT INTO memory_corrections (memory_id, number, text, corrected_at_ms)
+                    SELECT id, 1, current_text, updated_at_ms FROM memories
+                    WHERE user_edited = 1 AND updated_at_ms IS NOT NULL;
+                """)
+        }
+        // Shared lists (ADR-263): which local list is linked to which iCloud zone, and what both
+        // sides had at the last sync (JSON). Deleted with the list.
+        migrator.registerMigration("v10_list_shares") { db in
+            try db.execute(sql: """
+                CREATE TABLE list_shares (
+                    list_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    zone_name TEXT NOT NULL CHECK (length(zone_name) BETWEEN 1 AND 100),
+                    zone_owner TEXT NOT NULL CHECK (length(zone_owner) BETWEEN 1 AND 200),
+                    role TEXT NOT NULL CHECK (role IN (\(sqlList(ListShareRole.allCases.map(\.rawValue))))),
+                    base_json TEXT NOT NULL,
+                    synced_at_ms INTEGER NOT NULL
+                );
+                """)
+        }
         return migrator
     }
 

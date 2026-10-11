@@ -3,8 +3,10 @@ Date: 2026-10-09. Owner request: "it opens app [with] double back tap, now live 
 
 ## What it does
 - Start a conversation as before (Talk to Doddy, Double Back Tap, Action Button). You can now go Home or open another app: the conversation keeps running and Doddy appears in the **Dynamic Island** (and as a banner on the **Lock Screen**).
-- Compact island: Doddy's head + a status symbol (waveform = listening, … = thinking, speaker = speaking, hand = confirm a note in the app, mic-slash = muted).
-- Long-press the island (expanded): status, elapsed time, **Mute/Unmute** and **End**.
+- Island design (ADR-238, ADR-239): the owner's V4 boards (`design/dynamic-island-v4/`), drawn from the pack's own SVGs. Default **Lean In**; Settings → Voice → Dynamic Island style also offers Orbit, Ink Ripple, Negative Space, Editorial, Abstract Horizon and Here With You. While a note, plan or reminder is in play the island switches to Thought Pocket, Step Stones or Reminder Knot (ADR-240); while Doddy translates, to Language Bridge with the language pair only (ADR-244). Doddy's face with the pack's own expressions (listening smile, open mouth when speaking, brow up when thinking or waiting, calm when connecting/muted/lost), his cupped hand and an orange arc while he can hear you.
+- Compact island: face + hand on the left; on the right five voice bars (listening/speaking), three dots (thinking/connecting) or a symbol (mic-slash = muted, hand = confirm a note in the app, warning = lost).
+- Minimal (another activity is running): face + three bars or dots.
+- Long-press the island (expanded, the "big" one): "VOICE ● LIVE" and the time beside the camera; big Doddy with hand and arc, the status in 21 pt with a second line, **Mute/Unmute** and **Stop** pills, and the voice bars.
 - Lock Screen: the same, as a card that follows the phone's light/dark setting (paper in light, Night in dark). Muted: mic-slash, "Doddy can't hear you", Unmute is the main button, no orange. After End: a "Conversation ended" card with the notes you saved and the total time, removed after 2 minutes (ADR-106).
 - Tap the island to jump back into the app (e.g. to Save or Don't save a note Doddy proposed).
 - The island disappears the moment the conversation ends (End, Close, connection lost, failure). A stale one from a killed app is removed at the next launch.
@@ -38,7 +40,14 @@ Linux only: capability guard passes (now also scans `DoddyWidgets/`, `Shared/`, 
 11. **Light and dark (ADR-106).** Lock the phone mid-conversation in Light mode: paper card, dark text, orange waveform. Switch to Dark mode (Control Centre): Night card, light text, Doddy on a small paper backing. The island looks the same in both: Doddy on a paper backing on black.
 12. **Muted.** Mute from the Lock Screen: orange disappears, "Muted · Doddy can't hear you", Unmute is the filled button.
 13. **Ended card.** Save one note, then tap End on the Lock Screen: the card changes to fist-pump Doddy (sitting Doddy if nothing was saved), "Conversation ended", "Doddy isn't listening · 1 note saved · m:ss total", Open Doddy. It disappears after about 2 minutes; the island is gone at once. A failed connection instead removes the card at once.
-14. **Art.** At compact island size (26 pt) the full-body listening pose is small; judge whether it still reads as Doddy. If not, the fix is an approved head-only asset from design, not a crop made in code. The widget uses 160/240 px-tall downscales of the pack images (~12–23 KB each; the 1024×1536 originals are too large for a Live Activity). If the art looks soft, ask design for a native small export of the same poses.
+14. **Art.** The island no longer uses the full-body pose (too small at 26 pt): it draws the Lean In face from the owner's pack (ADR-238). The Lock Screen keeps the pose art at 52 pt, from 160/240 px-tall downscales of the pack images; if it looks soft, ask design for a native small export of the same poses.
+15. **Lean In island (ADR-238).** Compare the island against `design/dynamic-island-v4/01-boards/01-voice.svg`: listening (smile, hand, orange arc, bars, "VOICE ● LIVE"), speaking (open mouth), thinking (brow up, dots), muted (calm face, no hand, no orange, mic-slash, Unmute is the cream pill), Confirm in Doddy (brow up, hand symbol), lost (calm face, yellow line, Dismiss only). Check the face is centred and nothing touches the camera; the pills are tappable (the board's 34 pt pill sits in a proposed 44 pt target, not proven); the time does not push the label off; minimal shows face + bars beside another app's activity. Text sizes are fixed points from the board, so check the largest text setting too.
+16. **Styles (ADR-239).** Settings → Voice → Dynamic Island style: the previews show all seven; pick each in turn, start a conversation, go Home and compare the island with its board in `design/dynamic-island-v4/01-boards/` (Orbit 05, Ink Ripple 06, Negative Space 07, Editorial 09, Abstract Horizon 10, Here With You 04). Check that orange turns grey when muted, and Here With You's compact shows the time.
+17. **Moments (ADR-240).** From another app: ask Doddy to remember something → Thought Pocket "Save this note?"; tap the island, Save → "Note saved" for about 8 s, then back to the voice style. Ask for two changes at once → Step Stones "Plan ready"; confirm → "Doing the plan · Step i of N". Ask for a reminder → Reminder Knot; Add → "Adding reminder" then "Reminder set" for about 8 s. Lock the phone during each: nothing the note or reminder says appears on the island.
+18. **Focus (ADR-241).** Home → Focus, 15 min, type a line, Start. Go Home: Tiny Promise with the countdown ticking and your line. Pause from the island (time stops, "Paused"), Resume, then lock the phone: Lock Screen card with Pause/Stop. Let it run out with the app in the background: the island says "Time's up" and a "Focus done" notification arrives. Force-quit Doddy mid-focus, then tap Pause on the island: it still works (iOS starts Doddy for it). Turn notifications off for Doddy and start one: the screen says there may be no alert.
+19. **Breathing (ADR-242).** Home → Breathe, 1 min: the tide drawing and "Breathe in"/"Breathe out" switch every 4/6 s; Reduce Motion on: no scaling, words still switch. Go Home: the island shows "Breathing" and the time left, no In/Out. After the minute: "Breathing done".
+20. **Read aloud (ADR-243).** Open a note → Read aloud: iPhone voice reads it (a Polish note in a Polish voice if one is installed). Go Home: Story Spool "Reading aloud · Your note", no words of the note. Pause/Resume/Stop from the island. Start a conversation while it reads: reading stops. Force-quit while reading: within about 90 s the island says "Stopped".
+21. **Translating (ADR-244).** Home → Translate, face to face, English and French, Start; go Home. The island shows Language Bridge: "TRANSLATE ● LIVE", "Translating", "EN ⇄ FR", "EN" and "FR" in the two bubbles (centred, not clipped, black on cream; compare `design/dynamic-island-v4/02-states/language-bridge-0-expanded.svg`), compact "⇄ FR", minimal "FR" beside another app's activity. Talk both ways for a minute, with the phone locked and unlocked: **no word of what either person said ever appears on the island or the Lock Screen**, only the codes. Repeat with "Detect when they talk": "EN ⇄ ?" until they speak, then their code. Listen only, Italian: "IT → EN". Turn on "Noisy place: hold to talk": between holds the orange line is grey. Say "stop translating": the island goes back to your voice style. It never shows "Translation ready" or "Hear it". Three-letter codes (e.g. `ast` if offered) fit in the bubbles at the largest text setting.
 
 ## Verified on Linux — 2026-10-09 (second session, after ADR-055)
 | Step | Result |
@@ -50,3 +59,63 @@ Linux only: capability guard passes (now also scans `DoddyWidgets/`, `Shared/`, 
 | `swiftc -parse` on every file in `DoddyApp/`, `DoddyWidgets/`, `Shared/`, `DoddyTests/`, `DoddyUITests/` | PASS, 27 files (syntax only; ActivityKit/WidgetKit/SwiftUI cannot be type-checked on Linux) |
 | `Config/*.plist` | parse as valid plists |
 | iOS app build, widget extension build, unit + UI tests | **NOT RUN** (no Xcode here) — items 1–10 above are the owner's device checklist |
+
+## Go live (2026-10-10, owner: "go live with dynamic island")
+
+**Where it stands.** The island is not behind a flag, a setting or the offline fixture: every real
+conversation drives it (`VoiceSessionController.syncIsland`, from `phase`, `pendingAction` and
+`isMuted`). There is nothing left to switch on in code. What stops it from being called live is
+evidence: the current line has never been compiled with Xcode, and the one Mac run on an earlier
+revision (`NATIVE_BASELINE_REPORT.md`, iOS 27 simulator) rendered the island but left the system
+**Unmute** button red; the fix for that (ADR-131: `allowedExecutionTargets = .main` on iOS 27+) has not
+been compiled or run since.
+
+**Done in this session (Linux, no Xcode).**
+- The two island intents now log which process performed them and whether a conversation handler was
+  there (`IslandIntentLog`, `Shared/VoiceActivity/VoiceActivityIntents.swift`; Console subsystem
+  `com.bienos.doddy2`, category `island`). This is the step ADR-131 named for a red re-run: it tells
+  "iOS routed the tap to the widget extension" apart from "the handler was never registered" and
+  "nothing ran". Only the bundle identifier and a yes/no are logged, never conversation content.
+- Hosted macOS CI (ADR-123) is recorded as never having started a step: all 58 runs, the Ubuntu job
+  included, fail in seconds with no runner and no logs (`BUILD_AND_TEST.md`). Fixing that is an
+  account setting (billing or Actions policy), not a workflow change.
+- PR #9 ("V3: Dynamic Island Live Activity…", branch `claude/admiring-bohr-0xn7fa`) is an earlier,
+  superseded cut of this feature: different types (`DoddyShared`, `VoiceActivityBridge`), ADR numbers
+  038–041 that now belong to other decisions, and a stricter rule (conversation ends when the Live
+  Activity is not showing) that ADR-054 replaced. Merging it would conflict and regress; it should be
+  closed, not merged.
+
+**Owner steps to go live, in order.**
+1. Make the Mac build run: either get a hosted run to start (see `BUILD_AND_TEST.md`, "Hosted macOS
+   CI") or build locally: `git pull`, `make project`, set **Team** on `Doddy` and `DoddyWidgets`.
+2. Run `DoddyTests/IslandBaselineTests` (4 tests) and
+   `DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd` on an
+   iPhone simulator with a Dynamic Island. Green = ADR-131 holds. Red = read the `island` Console
+   line: "`…widgets`" means the pin did not route and the fallback is a Darwin-notification relay from
+   the extension to the app (separate ticket, not built); "handler: no" in the app process means the
+   handler path, not routing.
+3. Device checks 1–14 above on an iPhone 14 Pro or later, with the owner's ElevenLabs agent (paid
+   minutes): especially 3 (2+ minutes in another app), 8–9 (stale and heartbeat) and 13 (ended card).
+4. Only then change the ADR-053/055/106/131 rows from "unbuilt" to built, with the date, Xcode and
+   device, and record the results in `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`.
+
+**Still not "live" after that:** no TestFlight or App Store build, the dev agent is public (ADR-034),
+no legal review, and the background-audio behaviour on a real iPhone (research §3's ~50 s reports)
+is unknown until step 3.
+
+### Verified on Linux — 2026-10-10 (this session)
+| Step | Result |
+|---|---|
+| Environment | Ubuntu 24.04 x86_64, Swift 6.1.2 toolchain (downloaded for this run; not part of the repo), Node 22.22 |
+| `scripts/ci.sh --core-only` | PASS: pack integrity, capability guard, voice and phone agent specs, blog pages, Swift package tests (371 tests, 0 failures), app logic type-check (8 files), voice token server 63, backend, gateway, messaging server 13 (database tests SKIPPED: no `TEST_DATABASE_URL`) |
+| `scripts/check_forbidden_capabilities.sh` after the intent change | PASS (`import os` and the log line are allowed; no new permission, no networking) |
+| `swiftc -parse -swift-version 6` on every file in `DoddyApp/`, `DoddyWidgets/`, `Shared/`, `DoddyTests/`, `DoddyUITests/` | PASS, 85 files (syntax only) |
+| iOS app build, widget extension build, unit + UI tests, device checks | **NOT RUN** (no Xcode here; hosted CI never starts) |
+
+### Constitution evidence log (docs/trust/config/doddy_rules.yaml)
+| Rule | What enforces it here | Tests run (Linux) | Gaps / claims to limit |
+|---|---|---|---|
+| DOD-08 verified_status_and_receipts | The island shows only states from SDK events; a stale date (90 s) and heartbeat (40 s) make it say "Lost Doddy" instead of "Listening" when the app is gone (ADR-055); "Conversation ended" carries the saved count from actual Save taps | None runnable on Linux (`IslandBaselineTests` need a simulator) | Not compiled; device behaviour unknown |
+| DOD-07 scoped_action_approval | Mute and End are the only island actions; both run the conversation's own handlers; nothing is saved or sent from the island; "Confirm in Doddy" sends the user to the on-screen card | — | — |
+| DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
+| Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
