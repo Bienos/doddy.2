@@ -173,6 +173,9 @@ extension VoiceToolReply {
         return "alarms set by Doddy: \(lines.joined(separator: "; ")). (Alarms from the Clock app aren't visible to Doddy.)"
     }
 
+    /// AlarmKit's list couldn't be read (review F5): not "none set".
+    public static let alarmsUnreadable = "unknown: the iPhone couldn't read Doddy's alarms just now. Nothing changed. Ask the user to check Settings, Alarms in Doddy."
+
     public static func alarmNotFound(_ clock: String) -> String {
         "not found: Doddy has no alarm at \(clock). Nothing changed. (Doddy can't see or change the Clock app's alarms.)"
     }
