@@ -217,6 +217,14 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | BD3 | Pause all on; ask again | Paused reply; nothing read |
 | BD4 | "Remind me the day before Anna's birthday" | A create_reminder card; nothing added before the tap |
 
+## 17. Sums and unit conversions (ADR-257; needs the live agent update first)
+| # | Do this | Expect |
+|---|---|---|
+| C1 | "What's 124.50 plus 37, split three ways?" | About 53.83; nothing logged in What Doddy did |
+| C2 | "How many kilometres is 5 miles?" / "350 Fahrenheit in Celsius?" | 8.05 km / about 177 °C |
+| C3 | "Convert 20 euros to złoty" | Doddy says it can't convert currencies yet |
+| C4 | Pause all on; ask a sum | Still answered (no other app is used) |
+
 ## Result log
 | Item | Xcode / iOS / device | Result | Notes |
 |---|---|---|---|

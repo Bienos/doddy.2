@@ -1348,6 +1348,11 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
+        case .calculate(let expression):
+            // Worked out on the iPhone (ADR-257); no app, account or network.
+            await reply(call.toolCallId, VoiceToolReply.calculation(expression))
+        case .convertUnits(let request):
+            await reply(call.toolCallId, VoiceToolReply.conversion(request))
         case .upcomingBirthdays(let days):
             // Read only (ADR-256): the agent hears names with the day and month, nothing else.
             guard devices.access(for: .contacts) == .granted else {

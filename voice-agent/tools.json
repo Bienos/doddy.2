@@ -156,6 +156,34 @@
     },
     {
       "type": "function",
+      "name": "calculate",
+      "description": "Work out a sum on the user's iPhone. Use it for every calculation the user asks for (totals, splitting a bill, tips, percentages, recipe scaling) instead of doing the maths yourself, then say the result it returns. Only numbers with a dot for decimals, + - * / ^ for powers, % (a percent of the number before it) and brackets; no words, units or currency signs. For '15% of 80' send '80 * 15%'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "expression": {"type": "string", "description": "The sum, e.g. '(124.50 + 37) / 3' or '80 * 15%'. At most 200 characters."}
+        },
+        "required": ["expression"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10}
+    },
+    {
+      "type": "function",
+      "name": "convert_units",
+      "description": "Convert a measurement on the user's iPhone: length, weight, volume (US cups, pints, gallons; 'uk gal' for imperial), temperature, speed, area or time. Use it instead of converting yourself, then say the result it returns. It cannot convert currencies.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "value": {"type": "number", "description": "The amount to convert, e.g. 5 or 2.5."},
+          "from": {"type": "string", "description": "The unit it is in, as a standard symbol or English name, e.g. 'mi', 'lb', 'cup', '°F', 'km/h', 'ft2'."},
+          "to": {"type": "string", "description": "The unit to convert to, e.g. 'km', 'kg', 'ml', '°C', 'mph', 'm2'."}
+        },
+        "required": ["value", "from", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10}
+    },
+    {
+      "type": "function",
       "name": "geocode_place",
       "description": "Find the latitude and longitude of a city or town so that get_weather can be called. Use it when the user asks about the weather somewhere. If the user does not name a place, ask which city first. Returns one best match with its country, region and timezone.",
       "parameters": {

@@ -163,6 +163,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case lookupContact(name: String)
     /// Birthdays saved in Contacts in the next `days` days, read only (ADR-256).
     case upcomingBirthdays(days: Int)
+    /// Arithmetic and unit conversion, worked out on the iPhone (ADR-257).
+    case calculate(expression: String)
+    case convertUnits(UnitConversionRequest)
     case setTimer(TimerDraft)
     case openMap(place: String)
     case runShortcut(name: String)
@@ -212,6 +215,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .lookupContact(name: person)
         case VoiceToolName.upcomingBirthdays:
             return parseBirthdays(args, name: name)
+        case VoiceToolName.calculate:
+            return parseCalculate(args, name: name)
+        case VoiceToolName.convertUnits:
+            return parseConversion(args, name: name)
         case VoiceToolName.setTimer:
             return parseTimer(args, name: name)
         case VoiceToolName.openMap:
