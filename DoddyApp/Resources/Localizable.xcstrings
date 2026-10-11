@@ -2498,6 +2498,17 @@
         }
       }
     },
+    "Doddy during this Focus": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy w tym trybie skupienia"
+          }
+        }
+      }
+    },
     "Doddy follows you if you switch language while you talk.": {
       "extractionState": "manual",
       "localizations": {
@@ -3818,6 +3829,17 @@
         }
       }
     },
+    "Hey Doddy paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Hey Doddy” wstrzymane"
+          }
+        }
+      }
+    },
     "Hey.\nLet's talk.": {
       "extractionState": "manual",
       "localizations": {
@@ -4584,6 +4606,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opcje listy"
+          }
+        }
+      }
+    },
+    "List to show first": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista na początku"
           }
         }
       }
@@ -6821,6 +6854,28 @@
         }
       }
     },
+    "Pause Hey Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj „Hey Doddy”"
+          }
+        }
+      }
+    },
+    "Pause Hey Doddy and put one list first in your lists while this Focus is on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj „Hey Doddy” i pokaż jedną listę na początku, gdy ten tryb skupienia jest włączony."
+          }
+        }
+      }
+    },
     "Pause all connections": {
       "extractionState": "manual",
       "localizations": {
@@ -6850,6 +6905,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wstrzymane"
+          }
+        }
+      }
+    },
+    "Paused by your Focus. It listens again when that Focus ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymane przez tryb skupienia. Doddy znów nasłuchuje, gdy ten tryb się skończy."
           }
         }
       }
