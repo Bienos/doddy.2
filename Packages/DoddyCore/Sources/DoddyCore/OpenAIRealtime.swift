@@ -174,26 +174,25 @@ public enum OpenAIRealtimeWire {
         encode(["type": "input_audio_buffer.append", "audio": pcm16.base64EncodedString()])
     }
 
-    /// The app's answer to a tool call, then a request for Doddy to go on. Realtime has no error
-    /// flag on tool output, so an error is marked in the text.
-    public static func functionOutput(_ output: RealtimeFunctionOutput) -> [String] {
-        [
-            encode([
-                "type": "conversation.item.create",
-                "item": [
-                    "type": "function_call_output",
-                    "call_id": output.callID,
-                    "output": output.isError ? "Error: \(output.output)" : output.output,
-                ],
-            ]),
-            encode(["type": "response.create"]),
-        ]
+    /// The app's answer to a tool call. Realtime has no error flag on tool output, so an error is
+    /// marked in the text. Doddy goes on only after `createResponse()`, which the session sends
+    /// once no other response is running (OpenAI refuses a second one at the same time).
+    public static func functionOutput(_ output: RealtimeFunctionOutput) -> String {
+        encode([
+            "type": "conversation.item.create",
+            "item": [
+                "type": "function_call_output",
+                "call_id": output.callID,
+                "output": output.isError ? "Error: \(output.output)" : output.output,
+            ],
+        ])
     }
 
-    /// A message from the app (never something the user said). `respond` = Doddy answers it now
-    /// (ElevenLabs `sendMessage`); otherwise it is background context (`updateContext`).
-    public static func appMessage(_ text: String, respond: Bool) -> [String] {
-        let item = encode([
+    /// A message from the app (never something the user said). `respond` = Doddy answers it, after
+    /// `createResponse()` (ElevenLabs `sendMessage`); otherwise it is background context
+    /// (`updateContext`), sent as a system item.
+    public static func appMessage(_ text: String, respond: Bool) -> String {
+        encode([
             "type": "conversation.item.create",
             "item": [
                 "type": "message",
@@ -201,7 +200,17 @@ public enum OpenAIRealtimeWire {
                 "content": [["type": "input_text", "text": text]],
             ] as [String: Any],
         ])
-        return respond ? [item, encode(["type": "response.create"])] : [item]
+    }
+
+    /// Asks Doddy to reply to what is in the conversation now.
+    public static func createResponse() -> String {
+        encode(["type": "response.create"])
+    }
+
+    /// Silence for the voice detector: sent once when the microphone is muted mid-sentence (the
+    /// translator's hold-to-talk), so OpenAI hears the user stop instead of waiting forever.
+    public static func silence(milliseconds: Int) -> String {
+        appendAudio(Data(count: max(0, milliseconds) * sampleRate / 1000 * MemoryLayout<Int16>.size))
     }
 
     /// The user cut Doddy off: tell OpenAI how much of the item was actually heard, so the

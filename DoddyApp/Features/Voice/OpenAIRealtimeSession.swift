@@ -24,6 +24,8 @@ enum OpenAIRealtimeStartError: LocalizedError {
 @MainActor
 final class OpenAIRealtimeSession: LiveVoiceLink {
     private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-openai")
+    /// Silence sent once when the microphone is muted mid-sentence, so voice detection sees the end.
+    private static let muteSilenceMilliseconds = 800
 
     private let grant: OpenAIRealtimeGrant
     private let onEvent: @MainActor (RealtimeEvent) -> Void
@@ -32,10 +34,17 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
     private var audio: RealtimeAudioIO?
     private var receiveTask: Task<Void, Never>?
     private var ended = false
+    private var microphoneMuted = false
+    /// A response is running (from our response.create or OpenAI's own, until response.done).
+    /// OpenAI refuses a second one meanwhile, so a reply asked for then waits in `responseWanted`.
+    private var responseActive = false
+    private var responseWanted = false
     /// This response's audio has started playing (reported once per response).
     private var responseAudioStarted = false
     /// OpenAI finished the response; "done" is reported once its audio has also played out.
     private var responseFinished = false
+    /// The item the user cut off; its late audio deltas are dropped instead of played.
+    private var cutItem: String?
 
     init(grant: OpenAIRealtimeGrant, onEvent: @escaping @MainActor (RealtimeEvent) -> Void) {
         self.grant = grant
@@ -77,6 +86,7 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
                 socket.send(.string(OpenAIRealtimeWire.appendAudio(pcm))) { _ in }
             })
             receiveTask = Task { [weak self] in await self?.receiveLoop() }
+            responseActive = true
             try await socket.send(.string(greeting))
         } catch {
             await endConversation()
@@ -89,14 +99,23 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
 
     func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws {
         try await send(OpenAIRealtimeWire.functionOutput(RealtimeFunctionOutput(callID: toolCallId, output: result, isError: isError)))
+        try await askForResponse()
     }
 
     func setMuted(_ muted: Bool) async throws {
+        let wasMuted = microphoneMuted
+        microphoneMuted = muted
         audio?.setMicrophoneMuted(muted)
+        // Muted mid-sentence (hold-to-talk released): without trailing silence OpenAI's voice
+        // detection never hears the user stop, so nothing would be translated.
+        if muted, !wasMuted {
+            try await send(OpenAIRealtimeWire.silence(milliseconds: Self.muteSilenceMilliseconds))
+        }
     }
 
     func sendMessage(_ text: String) async throws {
         try await send(OpenAIRealtimeWire.appMessage(text, respond: true))
+        try await askForResponse()
     }
 
     func updateContext(_ context: String) async throws {
@@ -124,9 +143,19 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
 
     // MARK: Events
 
-    private func send(_ events: [String]) async throws {
+    private func send(_ event: String) async throws {
         guard let socket, !ended else { throw URLError(.notConnectedToInternet) }
-        for event in events { try await socket.send(.string(event)) }
+        try await socket.send(.string(event))
+    }
+
+    /// One response at a time: asked for now, or as soon as the running one is done.
+    private func askForResponse() async throws {
+        guard !responseActive else {
+            responseWanted = true
+            return
+        }
+        responseActive = true
+        try await send(OpenAIRealtimeWire.createResponse())
     }
 
     private func receiveLoop() async {
@@ -154,6 +183,7 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
         case .speechStarted:
             // The user talks over Doddy: stop his audio now and tell OpenAI what was heard.
             if let cut = audio?.interrupt(), let socket {
+                cutItem = cut.item
                 socket.send(.string(OpenAIRealtimeWire.truncate(itemID: cut.item, playedSamples: cut.samples))) { _ in }
             }
             onEvent(.userSpeechStarted)
@@ -162,10 +192,12 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
         case .userTranscript(let text):
             onEvent(.userTranscript(text))
         case .responseCreated:
+            responseActive = true
             responseAudioStarted = false
             responseFinished = false
             onEvent(.responseStarted)
         case .audioDelta(let itemID, let pcm):
+            guard itemID != cutItem else { return }
             if !responseAudioStarted {
                 responseAudioStarted = true
                 onEvent(.audioStarted)
@@ -176,6 +208,7 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
         case .functionCall(let call):
             onEvent(.functionCall(call))
         case .responseDone(let failure):
+            responseActive = false
             if let failure {
                 Task {
                     await endConversation()
@@ -183,11 +216,16 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
                 }
                 return
             }
+            if responseWanted {
+                responseWanted = false
+                Task { try? await askForResponse() }
+            }
             responseFinished = true
             if !(audio?.isPlaying ?? false) { playbackDrained() }
-        case .error(let code, let message):
-            // About something the app sent; the conversation goes on. Logged without content.
-            Self.log.error("openai error \(code ?? "-", privacy: .public): \(message, privacy: .public)")
+        case .error(let code, _):
+            // About something the app sent; the conversation goes on. The message can echo what
+            // was sent, so only the code is logged.
+            Self.log.error("openai error \(code ?? "-", privacy: .public)")
         }
     }
 
@@ -200,7 +238,9 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
 
 /// Microphone in and Doddy's voice out for the OpenAI test voice. Called on audio threads, so all
 /// state is behind `lock`. Voice processing (Apple's echo cancellation) is on, so Doddy doesn't
-/// hear himself through the speaker and interrupt his own sentence.
+/// hear himself through the speaker and interrupt his own sentence. iOS stops the engine on a route
+/// change (AirPods) or an interruption (a call, Siri); it is restarted when iOS allows, and audio
+/// that arrives while it is stopped is dropped rather than queued forever.
 final class RealtimeAudioIO: @unchecked Sendable {
     private final class Once: @unchecked Sendable { var done = false }
 
@@ -211,13 +251,17 @@ final class RealtimeAudioIO: @unchecked Sendable {
     private let playFormat = AVAudioFormat(standardFormatWithSampleRate: Double(OpenAIRealtimeWire.sampleRate), channels: 1)!
     private let onDrained: @Sendable () -> Void
     private var converter: AVAudioConverter?
+    private var observers: [NSObjectProtocol] = []
+    /// The player is attached to the engine (start got that far), so stopping it is safe.
+    private var playerAttached = false
     private var microphoneMuted = false
-    /// Buffers scheduled and not yet played.
-    private var queued = 0
-    /// The assistant item playing now, and how many of its samples have been heard.
-    private var item: String?
-    private var playedSamples = 0
-    /// Bumped by `interrupt()`, so callbacks from flushed buffers are ignored.
+    /// Item of each scheduled, not yet played buffer, oldest first.
+    private var queue: [String] = []
+    /// Samples heard per item, counted when each buffer has played.
+    private var played: [String: Int] = [:]
+    /// The item whose audio was heard last.
+    private var lastPlayedItem: String?
+    /// Bumped whenever the queue is thrown away, so callbacks of flushed buffers are ignored.
     private var generation = 0
 
     init(onDrained: @escaping @Sendable () -> Void) {
@@ -227,7 +271,7 @@ final class RealtimeAudioIO: @unchecked Sendable {
     var isPlaying: Bool {
         lock.lock()
         defer { lock.unlock() }
-        return queued > 0
+        return !queue.isEmpty
     }
 
     func start(sendAudio: @escaping @Sendable (Data) -> Void) throws {
@@ -245,6 +289,9 @@ final class RealtimeAudioIO: @unchecked Sendable {
         try input.setVoiceProcessingEnabled(true)
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: playFormat)
+        lock.lock()
+        playerAttached = true
+        lock.unlock()
 
         let inputFormat = input.outputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, let converter = AVAudioConverter(from: inputFormat, to: wireFormat) else {
@@ -258,11 +305,27 @@ final class RealtimeAudioIO: @unchecked Sendable {
         engine.prepare()
         try engine.start()
         player.play()
+
+        let center = NotificationCenter.default
+        observers = [
+            center.addObserver(forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil) { [weak self] _ in
+                self?.restart()
+            },
+            center.addObserver(forName: AVAudioSession.interruptionNotification, object: nil, queue: nil) { [weak self] note in
+                let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt
+                if raw == AVAudioSession.InterruptionType.ended.rawValue { self?.restart() }
+            },
+        ]
     }
 
     func stop() {
+        for observer in observers { NotificationCenter.default.removeObserver(observer) }
+        observers = []
         engine.inputNode.removeTap(onBus: 0)
-        player.stop()
+        lock.lock()
+        let attached = playerAttached
+        lock.unlock()
+        if attached { player.stop() }
         engine.stop()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
@@ -277,10 +340,10 @@ final class RealtimeAudioIO: @unchecked Sendable {
         player.volume = Float(max(0, min(1, volume)))
     }
 
-    /// Schedules one PCM16 chunk of an assistant item.
-    func play(pcm16: Data, item newItem: String) {
+    /// Schedules one PCM16 chunk of an assistant item. Dropped while iOS has the engine stopped.
+    func play(pcm16: Data, item: String) {
         let frames = pcm16.count / 2
-        guard frames > 0,
+        guard frames > 0, engine.isRunning,
               let buffer = AVAudioPCMBuffer(pcmFormat: playFormat, frameCapacity: AVAudioFrameCount(frames)),
               let samples = buffer.floatChannelData?[0]
         else { return }
@@ -291,11 +354,7 @@ final class RealtimeAudioIO: @unchecked Sendable {
             }
         }
         lock.lock()
-        if item != newItem {
-            item = newItem
-            playedSamples = 0
-        }
-        queued += 1
+        queue.append(item)
         let scheduledGeneration = generation
         lock.unlock()
         player.scheduleBuffer(buffer, completionCallbackType: .dataPlayedBack) { [weak self] _ in
@@ -304,34 +363,52 @@ final class RealtimeAudioIO: @unchecked Sendable {
         if !player.isPlaying { player.play() }
     }
 
-    /// Stops Doddy mid-sentence. Returns the item that was playing and how much of it was heard,
-    /// or nil when nothing was playing.
+    /// Stops Doddy mid-sentence. Returns the item being heard and how much of it was heard, or
+    /// nil when nothing was playing.
     func interrupt() -> (item: String, samples: Int)? {
         lock.lock()
-        let wasPlaying = queued > 0
-        let cut = item.map { (item: $0, samples: playedSamples) }
-        generation += 1
-        queued = 0
-        item = nil
-        playedSamples = 0
+        let hearing = queue.first ?? lastPlayedItem
+        let wasPlaying = !queue.isEmpty
+        let cut = hearing.map { (item: $0, samples: played[$0] ?? 0) }
+        flushLocked()
         lock.unlock()
         guard wasPlaying else { return nil }
         // Drops everything scheduled; their callbacks carry the old generation and are ignored.
         player.stop()
-        player.play()
+        if engine.isRunning { player.play() }
         onDrained()
         return cut
     }
 
+    /// After a route change or an interruption: whatever was queued is gone, start again.
+    private func restart() {
+        lock.lock()
+        let hadQueue = !queue.isEmpty
+        flushLocked()
+        lock.unlock()
+        player.stop()
+        if !engine.isRunning { try? engine.start() }
+        if engine.isRunning { player.play() }
+        if hadQueue { onDrained() }
+    }
+
+    private func flushLocked() {
+        generation += 1
+        queue = []
+        played = [:]
+        lastPlayedItem = nil
+    }
+
     private func finishedPlaying(frames: Int, generation scheduledGeneration: Int) {
         lock.lock()
-        guard scheduledGeneration == generation else {
+        guard scheduledGeneration == generation, !queue.isEmpty else {
             lock.unlock()
             return
         }
-        playedSamples += frames
-        queued -= 1
-        let drained = queued == 0
+        let item = queue.removeFirst()
+        played[item, default: 0] += frames
+        lastPlayedItem = item
+        let drained = queue.isEmpty
         lock.unlock()
         if drained { onDrained() }
     }

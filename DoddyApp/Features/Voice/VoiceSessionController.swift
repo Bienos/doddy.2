@@ -420,10 +420,15 @@ final class VoiceSessionController {
 
     /// Web tools of the running OpenAI conversation (empty for ElevenLabs, which runs them itself).
     private var openAIWebTools: Set<String> = []
+    /// Counts OpenAI starts, so a start that was ended and replaced while it waited for the token
+    /// server never opens a second microphone.
+    private var openAIAttempt = 0
 
     /// Same start as ElevenLabs from here on: same notes, conversations, lists and profile
     /// (`variables`), same tools and cards. Needs the token server: the OpenAI key stays there.
     private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
+        openAIAttempt += 1
+        let attempt = openAIAttempt
         guard case .tokenServer(let endpoint, let accessCode) = mode else {
             fail("The OpenAI test voice needs Doddy's token server. Add it in Settings → Voice, or switch Home back to ElevenLabs.")
             return
@@ -446,11 +451,12 @@ final class VoiceSessionController {
         do throws(VoiceTokenError) {
             grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant()
         } catch {
-            if phase == .connecting { fail(Self.openAITokenMessage(error)) }
+            if attempt == openAIAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return
         }
-        // Closed while the secret was being fetched: don't open the microphone after all.
-        guard phase == .connecting else { return }
+        // Closed (or closed and started again) while the secret was being fetched: don't open
+        // the microphone for this attempt.
+        guard attempt == openAIAttempt, phase == .connecting else { return }
 
         openAIWebTools = spec.webTools
         let ref = WeakRef(self)
@@ -461,11 +467,12 @@ final class VoiceSessionController {
             try await session.start(sessionUpdate: sessionUpdate, greeting: OpenAIRealtimeWire.greeting(greetingLine))
         } catch {
             if conversation === session { conversation = nil }
-            if isLive { fail("Couldn't connect to OpenAI's voice. Check your internet connection and try again. (\(error.localizedDescription))") }
+            if attempt == openAIAttempt, isLive { fail("Couldn't connect to OpenAI's voice. Check your internet connection and try again. (\(error.localizedDescription))") }
             return
         }
-        guard isLive else {
+        guard attempt == openAIAttempt, isLive else {
             await session.endConversation()
+            if conversation === session { conversation = nil }
             return
         }
         watchAudioInterruptions()

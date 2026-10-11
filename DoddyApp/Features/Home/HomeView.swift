@@ -237,8 +237,6 @@ struct HomeView: View {
     }
 }
 
-/// A button's entrance after the opening: up from just below, with a little bounce, each a
-/// beat after the one before. Instant (never hidden) under Reduce Motion, where `shown` stays true.
 extension HomeView {
     /// Testing only (ADR-235): switch Doddy's voice between ElevenLabs and OpenAI Realtime to
     /// compare them. Same notes, lists, tools and cards either way; it takes effect when the next
@@ -261,6 +259,8 @@ extension HomeView {
     }
 }
 
+/// A button's entrance after the opening: up from just below, with a little bounce, each a
+/// beat after the one before. Instant (never hidden) under Reduce Motion, where `shown` stays true.
 private struct SlideIn: ViewModifier {
     let shown: Bool
     let delay: Double

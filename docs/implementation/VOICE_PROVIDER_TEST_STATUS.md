@@ -53,7 +53,7 @@ Home switch ──> VoiceSessionController.start
 - **No hang-up tool** on OpenAI: tap End.
 - **Barge-in:** Doddy's audio stops when you start talking and OpenAI is told how much you heard. The
   transcript line on screen may still show the full sentence.
-- **Audio interruptions** (a call, Siri) stop the OpenAI audio engine and it doesn't restart; end and start again.
+- **Audio interruptions and route changes** (a call, Siri, AirPods connecting): iOS stops the audio engine; it is restarted when iOS gives the audio back, and Doddy's words that arrived meanwhile are dropped, not queued.
 
 ## Setup (owner)
 
@@ -91,9 +91,23 @@ read back both transcripts afterwards. Note your verdict per point; 5–10 conve
 ## Tests run (2026-10-11, Linux)
 
 - `node --test server/voice-token/test/handler.test.js`: 14 pass (6 existing + 8 new: secret shape, env model/voice, per-provider config, auth before upstream, unknown provider, explicit elevenlabs, upstream error mapping).
-- `swift test` DoddyCore (Swift 6.2 Linux): 532 pass, including 14 new in `OpenAIRealtimeTests` (provider default, token contract incl. an old server's reply refused, session.update shape against the real `tools.json`, tools without `x_doddy`, greeting from `session.json`, client events, server event parsing, privacy row, old conversation logs still load).
+- `swift test` DoddyCore (Swift 6.2 Linux): 533 pass, including 15 new in `OpenAIRealtimeTests` (provider default, token contract incl. an old server's reply refused, session.update shape against the real `tools.json`, tools without `x_doddy`, greeting from `session.json`, client events, mute silence, server event parsing, privacy row, old conversation logs still load).
+- `scripts/ci.sh --core-only`: PASS for the core scope (iOS app build NOT RUN).
 - `scripts/check_forbidden_capabilities.sh`, `voice_agent_spec.py check`, `build_strings_catalog.py --check`: pass.
 - App files: `swiftc -parse` only (syntax). **Not type-checked, not built, not run.**
+
+## Review of the uncompiled app code
+
+A second read-through (static only) found no definite compile errors and no change to the ElevenLabs path,
+and these runtime issues, all fixed before the first build:
+- engine stopped by a route change or interruption → restarted on `AVAudioEngineConfigurationChange` /
+  interruption end, and audio isn't scheduled while it is stopped (no crash, no "speaking" stuck);
+- translator hold-to-talk: 800 ms of silence is sent once on mute so OpenAI hears the user stop;
+- one response at a time: tool results and app messages ask for a reply only when none is running,
+  otherwise right after `response.done` (OpenAI refuses overlapping responses);
+- late audio of an item the user cut off is dropped; truncate counts what was heard per item;
+- a failed start doesn't stop an unattached player; a start replaced while waiting for the token server
+  never opens a second microphone; OpenAI error messages are not logged (code only).
 
 ## Not tested / pending
 

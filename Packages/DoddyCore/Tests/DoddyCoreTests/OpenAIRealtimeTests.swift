@@ -105,24 +105,32 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(event["audio"] as? String, "AQIDBA==")
     }
 
-    func testToolOutputThenAskForTheNextReply() throws {
-        let events = try OpenAIRealtimeWire.functionOutput(RealtimeFunctionOutput(callID: "call_1", output: "Saved.")).map(object)
-        XCTAssertEqual(events.map { $0["type"] as? String }, ["conversation.item.create", "response.create"])
-        let item = try XCTUnwrap(events[0]["item"] as? [String: Any])
+    func testToolOutputIsAnItemAndTheReplyIsAskedForSeparately() throws {
+        let event = try object(OpenAIRealtimeWire.functionOutput(RealtimeFunctionOutput(callID: "call_1", output: "Saved.")))
+        XCTAssertEqual(event["type"] as? String, "conversation.item.create")
+        let item = try XCTUnwrap(event["item"] as? [String: Any])
         XCTAssertEqual(item["type"] as? String, "function_call_output")
         XCTAssertEqual(item["call_id"] as? String, "call_1")
         XCTAssertEqual(item["output"] as? String, "Saved.")
-        let failed = try object(OpenAIRealtimeWire.functionOutput(RealtimeFunctionOutput(callID: "c", output: "No access.", isError: true))[0])
+        let failed = try object(OpenAIRealtimeWire.functionOutput(RealtimeFunctionOutput(callID: "c", output: "No access.", isError: true)))
         XCTAssertEqual((failed["item"] as? [String: Any])?["output"] as? String, "Error: No access.")
+        XCTAssertEqual(try object(OpenAIRealtimeWire.createResponse())["type"] as? String, "response.create")
     }
 
-    func testAppMessagesEitherAskForAReplyOrAreContextOnly() throws {
-        let reply = try OpenAIRealtimeWire.appMessage("[app] Give the briefing.", respond: true).map(object)
-        XCTAssertEqual(reply.map { $0["type"] as? String }, ["conversation.item.create", "response.create"])
-        XCTAssertEqual((reply[0]["item"] as? [String: Any])?["role"] as? String, "user")
-        let context = try OpenAIRealtimeWire.appMessage("[app] Next words are theirs.", respond: false).map(object)
-        XCTAssertEqual(context.count, 1)
-        let item = try XCTUnwrap(context[0]["item"] as? [String: Any])
+    func testSilenceIsZeroPCMOfTheRightLength() throws {
+        let event = try object(OpenAIRealtimeWire.silence(milliseconds: 500))
+        XCTAssertEqual(event["type"] as? String, "input_audio_buffer.append")
+        let pcm = try XCTUnwrap(Data(base64Encoded: event["audio"] as? String ?? ""))
+        XCTAssertEqual(pcm.count, 12_000 * 2)
+        XCTAssertTrue(pcm.allSatisfy { $0 == 0 })
+    }
+
+    func testAppMessagesAreUserItemsToAnswerOrSystemContext() throws {
+        let reply = try object(OpenAIRealtimeWire.appMessage("[app] Give the briefing.", respond: true))
+        XCTAssertEqual(reply["type"] as? String, "conversation.item.create")
+        XCTAssertEqual((reply["item"] as? [String: Any])?["role"] as? String, "user")
+        let context = try object(OpenAIRealtimeWire.appMessage("[app] Next words are theirs.", respond: false))
+        let item = try XCTUnwrap(context["item"] as? [String: Any])
         XCTAssertEqual(item["role"] as? String, "system")
         XCTAssertEqual((item["content"] as? [[String: Any]])?.first?["text"] as? String, "[app] Next words are theirs.")
     }
