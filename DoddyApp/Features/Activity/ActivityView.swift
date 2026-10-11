@@ -88,7 +88,7 @@ struct ActivityView: View {
     private func row(_ entry: ActivityEntry) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
-                Text(entry.title).font(.body.weight(.semibold))
+                Text(entry.title(.current)).font(.body.weight(.semibold))
                 Spacer(minLength: 8)
                 Text(entry.at, style: .time)
                     .font(.footnote).monospacedDigit()
@@ -97,10 +97,10 @@ struct ActivityView: View {
             if let detail = entry.detail {
                 Text(detail).font(.subheadline)
             }
-            Text(entry.statusText)
+            Text(entry.statusText(.current))
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(entry.undoState == nil ? color(entry.outcome) : Theme.secondaryText)
-            if let note = entry.note {
+            if let note = entry.note(.current) {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
             }
             if entry.canCheckInReminders {
@@ -127,9 +127,9 @@ struct ActivityView: View {
     private func planRow(_ steps: [ActivityEntry]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Label(ActivityPlanSummary.title(steps), systemImage: "list.number")
+                Label(ActivityPlanSummary.title(steps, language: .current), systemImage: "list.number")
                     .font(.body.weight(.semibold))
-                Text(ActivityPlanSummary.outcomes(steps))
+                Text(ActivityPlanSummary.outcomes(steps, language: .current))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }

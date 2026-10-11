@@ -9835,6 +9835,17 @@
         }
       }
     },
+    "Waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka"
+          }
+        }
+      }
+    },
     "Waiting for Reminders to confirm": {
       "extractionState": "manual",
       "localizations": {

@@ -468,17 +468,17 @@ struct VoiceView: View {
                 let request = step.activity(calendar: .current)
                 let result = status.results[step.number]
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(step.number). \(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
+                    Text(verbatim: "\(step.number). \(request.map { ActivityText.title($0.title, .current) } ?? step.toolName) · \(request?.app.title(.current) ?? "")")
                         .font(.body)
                     if let detail = request?.detail {
                         Text(detail)
                             .font(.subheadline)
                             .foregroundStyle(Theme.secondaryText)
                     }
-                    Text(result?.outcome.text ?? "Waiting")
+                    Text(result?.outcome.text(.current) ?? NSLocalizedString("Waiting", comment: ""))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(result.map { $0.outcome == .notDone || $0.outcome == .notSure } == true ? Theme.error : Theme.ink)
-                    if let note = result?.note {
+                    if let note = result?.note(.current) {
                         Text(note)
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)

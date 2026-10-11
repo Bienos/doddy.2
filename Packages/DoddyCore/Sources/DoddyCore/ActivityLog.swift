@@ -122,8 +122,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .runShortcut(let name):
             return ActivityRequest(app: .shortcuts, title: "Run shortcut", detail: "“\(name)”", isLookup: false)
         case .draftMessage(let draft):
-            let kind = draft.channel == .text ? "text" : "email"
-            return ActivityRequest(app: .messages, title: "Draft a \(kind)", detail: "to \(draft.recipientName)", isLookup: false)
+            return ActivityRequest(
+                app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
+                detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             return describe(cloud: call.name)
         case .addToList(let request):
