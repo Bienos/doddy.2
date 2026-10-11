@@ -40,7 +40,9 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       // The key is bound to the text and, when given, the requested time (a retry without
       // sendAt is still the same request).
       const messages = await inTransaction(db, (c) =>
-        enqueue(c, accountId, channels, body.text, sendAt, body.idempotencyKey, JSON.stringify([body.text, body.sendAt ?? null])));
+        enqueue(c, accountId, channels, body.text, sendAt, body.idempotencyKey, {
+          fingerprint: JSON.stringify([body.text, body.sendAt ?? null]), cipher: deps.cipher,
+        }));
       return reply.code(202).send({ messages });
     } catch (err) {
       if (err instanceof IdempotencyConflict) return reply.code(409).send({ error: "idempotency_mismatch" });

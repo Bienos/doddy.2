@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { TextCipher } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { canPush, enqueue, smsNumber, type Channel } from "../outbox.js";
 import { catalogById } from "./catalog.js";
@@ -13,6 +14,8 @@ export interface NewsDeps {
   feeds: FeedSource;
   search?: NewsSearch;
   writer?: DigestWriter;
+  /** Encrypts queued digest text at rest when the server has the key. */
+  cipher?: TextCipher;
 }
 
 export const MAX_TOPICS = 10;
@@ -100,7 +103,7 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
       }
       for (const ch of channels) {
         const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);
-        await enqueue(c, accountId, [ch], body, now, `news:${digestId}`);
+        await enqueue(c, accountId, [ch], body, now, `news:${digestId}`, { cipher: news.cipher });
       }
     });
     if (channels.length === 0) {

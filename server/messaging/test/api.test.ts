@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import type { Db } from "../src/db.js";
+import { TextCipher } from "../src/crypto.js";
 import { dispatchDue } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
-import { BASE_URL, dbSkip, FakePush, FakeSms, freshDb, testApp, TWILIO_TOKEN } from "./helpers.js";
+import { BASE_URL, dbSkip, FakePush, FakeSms, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
 
 const APNS_TOKEN = "ab".repeat(32);
 const PHONE = "+48500100200";
@@ -63,16 +64,21 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     assert.equal(edited.statusCode, 409, "same key with different text is refused, not silently ignored");
     assert.equal(edited.json().error, "idempotency_mismatch");
 
+    const id = (first.json() as { messages: { id: string }[] }).messages[0]!.id;
+    const { rows: queued } = await db.query("SELECT body, body_ciphertext FROM outbound_messages WHERE id = $1", [id]);
+    assert.equal(queued[0].body, null, "queued text is encrypted at rest");
+    assert.ok(!queued[0].body_ciphertext.toString("utf8").includes("dentist"));
+
     push.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal(push.sent.length, 1);
     assert.equal(push.sent[0]!.body, "Your dentist is at 15:00");
 
-    const id = (first.json() as { messages: { id: string }[] }).messages[0]!.id;
     const status = await call("GET", `/v1/updates/${id}`, a.headers);
     assert.equal(status.json().state, "sent");
-    const { rows } = await db.query("SELECT body FROM outbound_messages WHERE id = $1", [id]);
+    const { rows } = await db.query("SELECT body, body_ciphertext FROM outbound_messages WHERE id = $1", [id]);
     assert.equal(rows[0].body, null);
+    assert.equal(rows[0].body_ciphertext, null, "text erased once sent");
 
     const other = await newAccount();
     assert.equal((await call("GET", `/v1/updates/${id}`, other.headers)).statusCode, 404, "no cross-account reads");
@@ -83,7 +89,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     await call("PUT", "/v1/device/push-token", a.headers, { token: "cd".repeat(32), environment: "production" });
     await call("POST", "/v1/updates", a.headers, { text: "hi", channels: ["push"], idempotencyKey: "gone" });
     push.next = [{ kind: "rejected", code: "apns_Unregistered", deviceGone: true }];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     const r = await call("POST", "/v1/updates", a.headers, { text: "hi again", channels: ["push"], idempotencyKey: "gone2" });
     assert.equal(r.statusCode, 409);
   });
@@ -104,7 +110,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
 
     assert.equal((await call("POST", "/v1/updates", a.headers, update("s2"))).statusCode, 202);
     sms.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.deepEqual(sms.sent, [{ to: PHONE, body: "Morning! 3 things today." }]);
 
     // A queued text, then the user replies STOP before it goes out.
@@ -127,7 +133,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     // Transient refusal → back in the queue with a later send time.
     push.next = [{ kind: "transient", code: "apns_503" }];
     const t = await call("POST", "/v1/updates", a.headers, { text: "t", channels: ["push"], idempotencyKey: "t" });
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     const tid = (t.json() as { messages: { id: string }[] }).messages[0]!.id;
     const { rows: tr } = await db.query("SELECT state, attempts, send_at > now() AS later FROM outbound_messages WHERE id = $1", [tid]);
     assert.deepEqual(tr[0], { state: "queued", attempts: 1, later: true });
@@ -135,10 +141,10 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     // Unknown outcome (timeout) → 'unknown', never resent.
     push.next = [{ kind: "unknown", code: "apns_timeout" }];
     const u = await call("POST", "/v1/updates", a.headers, { text: "u", channels: ["push"], idempotencyKey: "u" });
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     const uid = (u.json() as { messages: { id: string }[] }).messages[0]!.id;
     push.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal((await call("GET", `/v1/updates/${uid}`, a.headers)).json().state, "unknown");
     assert.ok(!push.sent.some((s) => s.body === "u"));
 
@@ -146,7 +152,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     const s = await call("POST", "/v1/updates", a.headers, { text: "s", channels: ["push"], idempotencyKey: "s" });
     const sid = (s.json() as { messages: { id: string }[] }).messages[0]!.id;
     await db.query("UPDATE outbound_messages SET state = 'sending', updated_at = now() - interval '10 minutes' WHERE id = $1", [sid]);
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal((await call("GET", `/v1/updates/${sid}`, a.headers)).json().state, "unknown");
   });
 
@@ -162,12 +168,24 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     slow.send = async (_t, alert, id) => {
       sent.push(alert.body);
       // While this send is in flight, another worker's reaper marks the next one unknown.
-      await db.query("UPDATE outbound_messages SET state = 'unknown', error_code = 'worker_interrupted', body = NULL WHERE id = $1", [second]);
+      await db.query("UPDATE outbound_messages SET state = 'unknown', error_code = 'worker_interrupted', body = NULL, body_ciphertext = NULL, body_key_version = NULL WHERE id = $1", [second]);
       return { kind: "accepted", providerId: id };
     };
-    await dispatchDue(db, { push: slow });
+    await dispatchDue(db, { push: slow, cipher: testCipher });
     assert.ok(sent.includes("reap-1"));
     assert.ok(!sent.includes("reap-2"), "an unknown message is never sent afterwards");
+  });
+
+  test("a message the server can't decrypt fails without being sent", async () => {
+    const a = await newAccount();
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "fa".repeat(32), environment: "sandbox" });
+    const id = (await call("POST", "/v1/updates", a.headers, { text: "secret", channels: ["push"], idempotencyKey: "nokey" })).json().messages[0].id;
+    await db.query("UPDATE outbound_messages SET send_at = now() - interval '2 hours' WHERE id = $1", [id]);
+    const p = new FakePush();
+    await dispatchDue(db, { push: p, cipher: new TextCipher(Buffer.alloc(32, 9)) });
+    assert.ok(!p.sent.some((s) => s.target.deviceToken === "fa".repeat(32)));
+    const { rows } = await db.query("SELECT state, error_code FROM outbound_messages WHERE id = $1", [id]);
+    assert.deepEqual(rows[0], { state: "failed", error_code: "body_unreadable" });
   });
 
   test("Twilio status callback records delivery", async () => {
@@ -176,7 +194,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     await call("PUT", "/v1/phone/sms-consent", a.headers, { consent: true, textVersion: "sms-v1" });
     sms.next = [{ kind: "accepted", providerId: "SMdelivered1" }];
     const r = await call("POST", "/v1/updates", a.headers, { text: "x", channels: ["sms"], idempotencyKey: "d" });
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal((await twilioPost("/webhooks/twilio/status", { MessageSid: "SMdelivered1", MessageStatus: "delivered" })).statusCode, 204);
     const id = (r.json() as { messages: { id: string }[] }).messages[0]!.id;
     assert.equal((await call("GET", `/v1/updates/${id}`, a.headers)).json().deliveryStatus, "delivered");

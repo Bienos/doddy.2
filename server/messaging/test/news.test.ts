@@ -11,7 +11,7 @@ import { nextRunAt } from "../src/news/schedule.js";
 import { GNewsSearch, type FeedSource, type NewsSearch } from "../src/news/sources.js";
 import http from "node:http";
 import { ClaudeDigestWriter, OpenAIDigestWriter, validateLines, type DigestLine, type DigestWriter, type WriterInput } from "../src/news/writer.js";
-import { dbSkip, FakePush, freshDb, testApp } from "./helpers.js";
+import { dbSkip, FakePush, freshDb, testApp, testCipher } from "./helpers.js";
 import { runWorkerLoop } from "../src/workerLoop.js";
 
 const NOW = new Date("2026-10-10T06:00:00Z");
@@ -424,7 +424,7 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     };
     const push = new FakePush();
     let stop = false;
-    const loop = runWorkerLoop(db, { push, news: { feeds: slowFeeds } }, () => stop);
+    const loop = runWorkerLoop(db, { push, cipher: testCipher, news: { feeds: slowFeeds } }, () => stop);
     const until = async (ok: () => boolean) => {
       const end = Date.now() + 5000;
       while (!ok() && Date.now() < end) await new Promise((r) => setTimeout(r, 100));

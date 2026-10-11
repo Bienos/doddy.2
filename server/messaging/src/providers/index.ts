@@ -11,13 +11,15 @@ export function providersFrom(config: Config) {
   const twilio = config.twilio
     ? new TwilioClient(config.twilio, config.publicBaseUrl && `${config.publicBaseUrl}/webhooks/twilio/status`)
     : undefined;
+  const cipher = config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined;
   return {
     push: config.apns ? new ApnsPushSender(config.apns) : undefined,
     sms: twilio,
     verifier: twilio,
     outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
-    cipher: config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined,
+    cipher,
     news: {
+      cipher,
       feeds: new HttpFeedSource(),
       search: config.gnewsApiKey ? new GNewsSearch(config.gnewsApiKey) : undefined,
       // Anthropic first when both keys are set; OpenAI otherwise (ADR-197).

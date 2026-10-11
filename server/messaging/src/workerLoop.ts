@@ -1,4 +1,5 @@
 import { purgeExpiredSessions } from "./calls.js";
+import type { TextCipher } from "./crypto.js";
 import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
@@ -23,16 +24,16 @@ async function pause(ms: number, shouldStop: () => boolean) {
  * FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; news: NewsDeps }, shouldStop: () => boolean,
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps }, shouldStop: () => boolean,
 ): Promise<void> {
   await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)]);
 }
 
-async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender }, shouldStop: () => boolean) {
+async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {
   let lastTidy = 0;
   while (!shouldStop()) {
     try {
-      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms });
+      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher });
       if (Date.now() - lastTidy > 3_600_000) {
         lastTidy = Date.now();
         // Expired sessions are already refused by findSession; this only reclaims space.

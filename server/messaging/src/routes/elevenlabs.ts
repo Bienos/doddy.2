@@ -108,7 +108,7 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
         // Tell the owner: someone may be guessing their PIN. No caller number in the text.
         await enqueue(c, s.accountId, ["push"],
           `Someone entered a wrong Doddy PIN ${PIN_MAX_ATTEMPTS} times on a phone call. PIN entry is locked for ${minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`}. If it wasn't you, change your PIN in Doddy.`,
-          new Date(), `pin-lock:${s.accountId}:${st.locks + 1}:${Date.now()}`);
+          new Date(), `pin-lock:${s.accountId}:${st.locks + 1}:${Date.now()}`, { cipher: deps.cipher });
       }
       return lock ? { status: "locked", minutes } : { status: "wrong_pin", attemptsLeft: PIN_MAX_ATTEMPTS - attempts };
     });
@@ -172,7 +172,7 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
     if (!saved) return { status: "inbox_full" };
     // The notification never contains the note itself.
     if (deps.push && await canPush(db, s.accountId)) {
-      await enqueue(db, s.accountId, ["push"], "Doddy took a note on your call. Open Doddy to confirm it.", new Date(), `call-note:${id}`);
+      await enqueue(db, s.accountId, ["push"], "Doddy took a note on your call. Open Doddy to confirm it.", new Date(), `call-note:${id}`, { cipher: deps.cipher });
     }
     return { status: "saved_for_confirmation" };
   });

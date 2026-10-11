@@ -5,8 +5,8 @@ import type { FastifyInstance } from "fastify";
 import { isAcceptablePin } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { searchMemories } from "../src/memorySearch.js";
-import { dispatchDue } from "../src/outbox.js";
-import { dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, TOOL_SECRET } from "./helpers.js";
+import { bodyAad, dispatchDue } from "../src/outbox.js";
+import { dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, testCipher, TOOL_SECRET } from "./helpers.js";
 
 test("PIN rules reject trivial PINs", () => {
   for (const bad of ["123", "2580", "11111", "111111", "123456", "987654", "012345", "12a456", "123456789"]) {
@@ -123,12 +123,14 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
       assert.equal((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, s2)).json().status, "wrong_pin");
     }
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, s2)).json(), { status: "locked", minutes: 60 });
-    const { rows: alerts } = await db.query<{ channel: string; body: string | null }>(
-      "SELECT channel, body FROM outbound_messages WHERE account_id = $1", [owner.accountId]);
+    const { rows: alerts } = await db.query<{ id: string; channel: string; body: string | null; body_ciphertext: Buffer }>(
+      "SELECT id, channel, body, body_ciphertext FROM outbound_messages WHERE account_id = $1", [owner.accountId]);
     assert.equal(alerts.length, 1);
     assert.equal(alerts[0]!.channel, "push");
-    assert.match(alerts[0]!.body ?? "", /wrong Doddy PIN 5 times.*locked for 1 h/);
-    assert.ok(!(alerts[0]!.body ?? "").includes("+48"), "no phone number in the alert");
+    assert.equal(alerts[0]!.body, null, "queued text is not kept in plain form");
+    const text = testCipher.decrypt(alerts[0]!.body_ciphertext, bodyAad(owner.accountId, alerts[0]!.id));
+    assert.match(text, /wrong Doddy PIN 5 times.*locked for 1 h/);
+    assert.ok(!text.includes("+48"), "no phone number in the alert");
   });
 
   test("changing or removing the PIN ends memory access for calls already verified", async () => {
@@ -190,7 +192,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(notes.length, 1);
     assert.equal(notes[0].text, "Call Anna about Friday");
     push.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     // Only this account's device: other tests may leave their own alerts queued.
     const mine = push.sent.filter((p) => p.target.deviceToken === "12".repeat(32));
     assert.equal(mine.length, 1);

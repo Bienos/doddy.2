@@ -63,7 +63,7 @@ Date: 2026-10-10. Owner decisions on that date:
   4. Import the Twilio number into ElevenLabs and assign it to the agent.
   5. Set the call-start webhook.
   6. Set `ELEVENLABS_PHONE_AGENT_ID`, `ELEVENLABS_PHONE_NUMBER_ID` and `DODDY_PHONE_NUMBER`.
-- **Back up `MEMORY_ENCRYPTION_KEY`:** losing it makes memory copies and call notes unreadable. Users can re-upload copies by switching memory off and on again; pending notes would be lost.
+- **Back up `MEMORY_ENCRYPTION_KEY`:** losing it makes memory copies, call notes and queued messages unreadable (queued ones then fail as `body_unreadable` and are never sent). Users can re-upload copies by switching memory off and on again; pending notes would be lost.
 - **Legal/privacy before other users:**
   - privacy policy text for the memory copy, call transcripts at ElevenLabs (30 days) and Twilio call records;
   - EU AI Act disclosure (done in the first message);
