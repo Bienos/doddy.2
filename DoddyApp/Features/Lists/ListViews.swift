@@ -12,10 +12,14 @@ struct ListsOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if store.lists.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("No lists yet").font(.title3.weight(.medium)).accessibilityAddTraits(.isHeader)
-                    Text("Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.")
-                        .foregroundStyle(Theme.secondaryText)
+                HStack(alignment: .top, spacing: 14) {
+                    // No lists yet: he waits, cross-legged (ADR-313).
+                    WholeDoddyView(pose: .crosslegged, height: 80)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("No lists yet").font(.title3.weight(.medium)).accessibilityAddTraits(.isHeader)
+                        Text("Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
                 }
                 .accessibilityIdentifier("lists.empty")
             }
@@ -109,6 +113,8 @@ struct ListDetailView: View {
     @State private var confirmStopSharing = false
     @State private var cloudShare: CloudShareSheet?
     @State private var isSharing = false
+    /// The last open item was just ticked (ADR-313): Doddy jumps, once.
+    @State private var finishedNow = false
 
     var body: some View {
         Group {
@@ -123,6 +129,10 @@ struct ListDetailView: View {
         }
         .background(Theme.canvas)
         .foregroundStyle(Theme.ink)
+        // Only a change seen here counts: opening a list that was already finished doesn't jump.
+        .onChange(of: store.list(id: listID)?.open.count ?? 0) { old, new in
+            finishedNow = old > 0 && new == 0 && !(store.list(id: listID)?.items.isEmpty ?? true)
+        }
     }
 
     private func content(_ list: DoddyList) -> some View {
@@ -176,9 +186,17 @@ struct ListDetailView: View {
             }
             Section {
                 if list.open.isEmpty {
-                    Text(list.items.isEmpty ? "Nothing on this list yet." : "Nothing left.")
-                        .foregroundStyle(Theme.secondaryText)
-                        .listRowBackground(Theme.canvas)
+                    HStack(spacing: 14) {
+                        // Empty: he waits, cross-legged. Just finished: a jump (ADR-313).
+                        if list.items.isEmpty {
+                            WholeDoddyView(pose: .crosslegged, height: 70)
+                        } else if finishedNow {
+                            DoddyMotionView(motion: .jump, height: 70)
+                        }
+                        Text(list.items.isEmpty ? "Nothing on this list yet." : "Nothing left.")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .listRowBackground(Theme.canvas)
                 }
                 ForEach(list.open) { item in
                     row(item, list: list)
@@ -325,6 +343,10 @@ struct ListDetailView: View {
             }
             ShareLink(item: list.shareText, preview: SharePreview(list.name)) {
                 Label("Share as text", systemImage: "square.and.arrow.up")
+            }
+            // The same words as a picture, with Doddy (ADR-313).
+            ShareLink(item: ListShareCard(list: list), preview: SharePreview(list.name, image: Image("WholeDoddy_wave"))) {
+                Label("Share as a picture", systemImage: "photo")
             }
             // Shared lists through iCloud (ADR-263), only in builds set up for it.
             if sharing.isAvailable {

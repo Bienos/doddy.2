@@ -4,12 +4,13 @@ Every picture comes from the pack. Poses and frames are only cut out and downsca
 the storybook pages, scenery and the watch face are only cropped and downscaled. Nothing is
 redrawn, recoloured or generated.
 
-    python3 -I tools/whole_doddy/build_imagesets.py <pack dir> <cuts dir> <repo root>
+    python3 -I tools/whole_doddy/build_imagesets.py <pack dir> <cuts dir> <repo root> [<strips dir>]
 
 <pack dir> holds the pack's folders as downloaded: poses/ (01-transparent-poses),
 world/ (021-036) and the cut outputs in <cuts dir>:
     cut_frames.py numbered/020_doddy_talking_v03.png <cuts>/talking   (6 frames)
     cut_panels.py trans/038_trans_page_v01.png <cuts>/page            (4 panels)
+and, for ADR-313, the strips cut with `--shared` into <strips dir> (see STRIPS below).
 """
 import json
 import os
@@ -58,7 +59,7 @@ def photo_set(catalog, name, day, night=None, width=None):
     write_json(os.path.join(folder, "Contents.json"), {"images": images, "info": INFO})
 
 
-def main(pack, cuts, root):
+def main(pack, cuts, root, strips=None):
     app, widgets, watch = (os.path.join(root, c) for c in (APP, WIDGETS, WATCH))
 
     # 2. Read aloud: the belly-reading pose, same frame and sizes as the other WholeDoddy poses.
@@ -95,8 +96,44 @@ def main(pack, cuts, root):
     write_json(os.path.join(folder, "Contents.json"), {"images": [
         {"filename": "face@2x.png", "idiom": "universal", "scale": "2x"},
     ], "info": INFO})
+    if strips:
+        build_309(pack, strips, app, widgets)
     print("done")
 
 
+# ADR-313: the strips, cut with tools/whole_doddy/cut_frames.py --shared, and which frames the
+# app uses: (strip, sheet, --rows-max-y, extra flags, frames used).
+STRIPS = [
+    ("walk", "012_doddy_walk_v01", 567, [], range(1, 9)),
+    ("run", "014_doddy_run_v01", 568, [], range(1, 7)),
+    ("jump", "015_doddy_jump_v01", 596, ["--min-fraction", "0.3"], range(1, 6)),
+    ("turn", "018_doddy_turn_v01", 605, [], [3]),
+    ("pop", "019_doddy_pop_v01", 640, ["--min-fraction", "0"], range(1, 5)),
+    ("idle", "013_doddy_idle_v01", 760, [], range(1, 5)),
+]
+
+
+def build_309(pack, strips, app, widgets):
+    # Focus and breathing islands: two more poses from 01-transparent-poses.
+    for name in ("basketball_dribble", "oneleg_balance"):
+        pose = Image.open(os.path.join(pack, f"poses/doddy_{name}_v02.png")).convert("RGBA")
+        for catalog in (app, widgets):
+            scaled_set(catalog, f"WholeDoddy_{name}", pose, (200, 300))
+    # Strip frames, app only.
+    for strip, _, _, _, used in STRIPS:
+        for i in used:
+            frame = Image.open(os.path.join(strips, f"{strip}_{i}.png")).convert("RGBA")
+            scaled_set(app, f"DoddyMotion_{strip}_{i}", frame, (200, 300))
+    # Scenery: the court (day / night) for focus, the rooftop (night only) for the look-back.
+    world = os.path.join(pack, "world")
+    photo_set(app, "Scenery_court", Image.open(os.path.join(world, "025_world_court_day_v01.png")),
+              Image.open(os.path.join(world, "026_world_court_night_v01.png")), width=780)
+    photo_set(app, "Scenery_rooftop", Image.open(os.path.join(world, "034_world_rooftop_night_v01.png")), width=780)
+    # The Lock Screen widget's face: the watch face's crop, at iPhone sizes.
+    listening = Image.open(os.path.join(pack, "poses/doddy_listening_v02.png")).convert("RGBA")
+    face = listening.crop((514 - 235, 387 - 235, 514 + 235, 387 + 235))
+    scaled_set(widgets, "WidgetDoddy_face", face, (120, 120))
+
+
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:5])

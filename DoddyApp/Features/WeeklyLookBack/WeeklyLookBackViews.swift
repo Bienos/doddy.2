@@ -46,6 +46,9 @@ struct WeeklyLookBackView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     JourneyHeading(eyebrow: "Weekly look-back", title: "Your week\nwith Doddy")
+                    // Doddy on the rooftop, looking back on the week (ADR-313).
+                    SceneryBackdrop(place: .rooftop, height: 110, focus: 0.3, pose: .crosslegged)
+                        .padding(.horizontal, -24)
                     if let week {
                         content(week)
                     } else {

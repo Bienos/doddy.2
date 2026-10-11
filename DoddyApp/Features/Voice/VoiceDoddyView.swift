@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Doddy on the voice screen (ADR-299): the same Whole Doddy pose as the island for what is
-/// happening, and while he speaks the pack's talking frames in turn. The frames only follow
+/// happening, and while he speaks the pack's talking frames in turn. Since ADR-313 he walks in
+/// while connecting and runs while a plan's steps run. The frames only follow
 /// the conversation's "speaking" state; they are not synced to the audio. With Reduce Motion
 /// the first frame stays still and poses swap without a fade. Decorative: the status text
 /// beside him says the same thing. Hidden with "Hide Doddy's pictures".
@@ -29,6 +30,9 @@ struct VoiceDoddyView: View {
         switch art {
         case .pose(let pose):
             IslandPoseView(pose: pose, maxSize: size, edged: edged)
+        case .motion(let motion):
+            // Walking while connecting, running while a plan runs (ADR-313).
+            DoddyMotionView(motion: motion, height: size.height, width: size.width)
         case .talking:
             if reduceMotion {
                 IslandFigureView(assetName: VoiceScreenArt.talkingAssetName(1), figure: VoiceScreenArt.talkingFigure,

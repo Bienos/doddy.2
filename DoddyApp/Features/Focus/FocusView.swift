@@ -16,6 +16,9 @@ struct FocusView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // The court (ADR-313): Doddy dribbles while the timer runs, fist pump when done.
+                    SceneryBackdrop(place: .court, height: 110, focus: 0.15, pose: courtPose)
+                        .padding(.horizontal, -24)
                     if let session = focus.session, !session.isOver {
                         running(session)
                     } else if let session = focus.session {
@@ -38,6 +41,15 @@ struct FocusView: View {
                 if phase == .active { focus.refresh() }
             }
         }
+    }
+
+    /// The island's poses for the same moments: dribbling, cross-legged when paused, the fist pump
+    /// only when the time ran out (not when stopped early).
+    private var courtPose: IslandPose? {
+        guard let session = focus.session else { return nil }
+        if session.isPaused { return .crosslegged }
+        if case .finished = session.state { return .fistpump }
+        return session.isOver ? nil : .basketballDribble
     }
 
     private var startForm: some View {

@@ -1,6 +1,6 @@
 # Round 5 report (2026-10-11, owner: "do all of them")
 
-Branch `claude/hopeful-fermat-1a63x0`, ADR-310 to ADR-317 (`DECISIONS.md`, Round 5). The default branch took ADR-308 and ADR-309 while this round was being built and is merged in. **Nothing in this round has been compiled with Xcode.** There is no Xcode in this container, and GitHub Actions still doesn't start jobs.
+Branch `claude/hopeful-fermat-1a63x0`, ADR-310 to ADR-312 and ADR-314 to ADR-318 (`DECISIONS.md`, Round 5). The default branch took ADR-308, ADR-309 and ADR-313 while this round was being built and is merged in. **Nothing in this round has been compiled with Xcode.** There is no Xcode in this container, and GitHub Actions still doesn't start jobs.
 
 ## What was built
 
@@ -9,7 +9,7 @@ Branch `claude/hopeful-fermat-1a63x0`, ADR-310 to ADR-317 (`DECISIONS.md`, Round
 | 1 | Face ID lock and private notes | 310 | `PrivateNotes.swift`, `Features/Privacy/AppLock.swift`, filters at every way out |
 | 2 | "Save to Doddy" in the Share Sheet | 311 | new `DoddyShare` target, `ShareInbox.swift`, `Shared/Share/ShareInboxFile.swift` |
 | 3 | Doddy in iOS Focus modes | 312 | `FocusFilter.swift`, `Features/Focus/DoddyFocusFilter.swift` |
-| 4 | To-dos from a voice memo | 313 | `MemoTodos.swift`, `MemoTodosCard` in `VoiceMemoViews.swift` |
+| 4 | To-dos from a voice memo | 318 | `MemoTodos.swift`, `MemoTodosCard` in `VoiceMemoViews.swift` |
 | 5 | Rename and repeat reminders, replace notes | 314 | `ReminderDetails.swift`, `CalendarChanges.swift`, `DeviceConnections.swift`, the card |
 | 6 | Gmail reply draft | 316 | `backend/src/tools/catalog.ts` (`draft_email_reply`), app routing |
 | 7 | Read one Notion page | 316 | `backend/src/tools/catalog.ts` (`read_notion_page`), app routing |
@@ -51,7 +51,7 @@ The live voice agent has both new tools, the new `change_reminder`/`change_calen
   - add the filter to a Focus, turn the Focus on and off;
   - Hey Doddy pauses and resumes;
   - the list order.
-- **Memo to-dos (ADR-313):** a real English and Polish memo; adding to a list and to a new "To do" list.
+- **Memo to-dos (ADR-318):** a real English and Polish memo; adding to a list and to a new "To do" list.
 - **Reminders and events (ADR-314):** renaming, a repeat added and stopped, notes replaced and cleared, and the stale check after an edit in Reminders.
 - **Parking widget (ADR-315):** Home and Lock Screen; the tap opens Maps; saving and clearing update it.
 - **Gmail and Notion (ADR-316):** a real Gmail account and a real Notion workspace through Composio.

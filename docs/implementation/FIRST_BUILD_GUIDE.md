@@ -132,7 +132,7 @@ In order of risk:
   - `ForEach(week.doneByApp.indices, id: \.self)`.
 - **Currency (ADR-300):** `ExchangeRateClient` is an `actor` with a nonisolated `URLSession` delegate class. Same pattern as `AppHTTPTransport`, so low risk.
 
-### Round 5 (2026-10-11, ADR-310 to ADR-317): most likely to need a fix
+### Round 5 (2026-10-11, ADR-310 to ADR-312, ADR-314 to ADR-318): most likely to need a fix
 **First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
 - **Share extension (ADR-311):** a new target, so XcodeGen must embed it.
   - `ShareModel.extract(_ items: sending [NSExtensionItem])` is `nonisolated` and is called from `Task.detached`, because item providers aren't Sendable. Swift 6 region checks may still object; the fallback is to load the strings inside `viewDidLoad` with completion handlers.
@@ -148,7 +148,7 @@ In order of risk:
   - `LAContext.evaluatePolicy` async;
   - the `.overlay` in `RootView`;
   - `@Observable` `AppLock.shared` read inside `MemoryDetailView`, `FindMemoriesView` and `MemoriesView`.
-- **Memo to-dos (ADR-313):**
+- **Memo to-dos (ADR-318):**
   - `MemoTodosCard` uses `Picker` with `Optional(list.id)` tags and `store.createList(name:items:source:)`;
   - `String(format:)` with `%lld` and an `Int`.
 - **Parking widget (ADR-315):**

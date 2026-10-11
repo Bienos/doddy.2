@@ -245,7 +245,7 @@ struct NoteRecordingSection: View {
     }
 }
 
-/// "Looks like things to do" (ADR-313): sentences from the written-out memo that sound like
+/// "Looks like things to do" (ADR-318): sentences from the written-out memo that sound like
 /// to-dos, unticked. Ticked ones go on the chosen Doddy list when the user taps Add; what the
 /// list read back is reported. Separate from saving the note.
 struct MemoTodosCard: View {

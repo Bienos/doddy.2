@@ -90,6 +90,11 @@ struct WholeDoddyView: View {
 struct SceneryBackdrop: View {
     enum Place: String {
         case home, memory, coffee
+        /// The focus timer (ADR-313): the basketball court, day and night.
+        case court
+        /// The weekly look-back (ADR-313): the rooftop. The pack has it at night only, so it is
+        /// the same picture in light and dark appearance.
+        case rooftop
     }
 
     /// The pack's world pictures are 941 × 1672.
@@ -100,6 +105,8 @@ struct SceneryBackdrop: View {
     var height: CGFloat = 120
     /// Which part of the picture is shown: its centre, as a fraction of the picture's height.
     var focus: CGFloat = 0.25
+    /// Doddy standing in the strip (ADR-313), drawn at full strength on its bottom edge.
+    var pose: IslandPose?
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     var body: some View {
@@ -122,6 +129,9 @@ struct SceneryBackdrop: View {
                 LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.3),
                                        .init(color: .black, location: 0.7), .init(color: .clear, location: 1)],
                                startPoint: .top, endPoint: .bottom)
+            }
+            .overlay(alignment: .bottom) {
+                if let pose { WholeDoddyView(pose: pose, height: height * 0.78) }
             }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
