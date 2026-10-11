@@ -39,23 +39,26 @@ async function register(request, deps) {
       throw err;
     }
   };
-  const perAddress = await hit(`reg-ip:${clientAddress(request)}`, 20, 3600);
+  const address = clientAddress(request);
+  // Without the platform's address headers every client shares one bucket; make that visible.
+  const noAddress = address === 'unknown' ? { cause: 'noClientAddress' } : {};
+  const perAddress = await hit(`reg-ip:${address}`, 20, 3600);
   if (!perAddress) return fail('providerUnavailable', { cause: 'limitStore' });
-  if (!perAddress.allowed) return fail('rateLimited', {}, { retryAfterSeconds: perAddress.retryAfterSeconds });
+  if (!perAddress.allowed) return fail('rateLimited', noAddress, { retryAfterSeconds: perAddress.retryAfterSeconds });
 
   const body = await readJson(request, 1024);
-  if (!body.ok) return fail(body.code);
+  if (!body.ok) return fail(body.code, noAddress);
   const parsed = validateRegisterRequest(body.value);
-  if (!parsed.ok) return fail('invalidRequest');
+  if (!parsed.ok) return fail('invalidRequest', noAddress);
 
   const tag = inviteTag(parsed.value.inviteCode, config.tokenSecret);
-  if (!config.inviteTags.has(tag)) return fail('notAuthorized');
+  if (!config.inviteTags.has(tag)) return fail('notAuthorized', noAddress);
   const perInvite = await hit(`reg-inv:${tag}`, 300, 86_400);
   if (!perInvite) return fail('providerUnavailable', { cause: 'limitStore' });
   if (!perInvite.allowed) return fail('rateLimited', {}, { retryAfterSeconds: perInvite.retryAfterSeconds });
 
   const { token, expiresAtMs } = issueToken(
     { deviceId: parsed.value.deviceId, inviteTag: tag }, config.tokenSecret, Math.floor(nowMs / 1000), config.tokenTtlSeconds);
-  log({ status: 200, deviceTag: deviceTag(parsed.value.deviceId) });
+  log({ status: 200, deviceTag: deviceTag(parsed.value.deviceId), ...noAddress });
   return json(200, { schemaVersion: 1, token, expiresAtMs });
 }
