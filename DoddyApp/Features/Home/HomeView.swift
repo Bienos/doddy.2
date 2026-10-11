@@ -20,7 +20,7 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
-    /// Testing only (ADR-264): who runs Doddy's voice, ElevenLabs (default) or OpenAI Realtime.
+    /// Testing only (ADR-265): who runs Doddy's voice, ElevenLabs (default) or OpenAI Realtime.
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
     private var router: ShortcutRouter { .shared }
 
@@ -262,7 +262,7 @@ struct HomeView: View {
 }
 
 extension HomeView {
-    /// Testing only (ADR-264): switch Doddy's voice between ElevenLabs and OpenAI Realtime to
+    /// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to
     /// compare them. Same notes, lists, tools and cards either way; it takes effect when the next
     /// conversation starts, and Settings › What leaves this iPhone follows it.
     fileprivate var voiceProviderSwitch: some View {

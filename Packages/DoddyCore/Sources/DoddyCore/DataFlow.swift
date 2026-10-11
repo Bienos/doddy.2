@@ -29,7 +29,7 @@ public struct DataFlowState: Equatable, Sendable {
     public var heyDoddyOn: Bool
     /// Lists shared through iCloud, by this user or with them (ADR-263).
     public var sharedLists: Int
-    /// Home's test switch for who runs the live voice (ADR-264).
+    /// Home's test switch for who runs the live voice (ADR-265).
     public var voiceProvider: VoiceProvider
 
     public init(

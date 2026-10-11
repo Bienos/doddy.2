@@ -1,6 +1,6 @@
 import Foundation
 
-// OpenAI Realtime as a second voice provider, for side-by-side testing only (ADR-264).
+// OpenAI Realtime as a second voice provider, for side-by-side testing only (ADR-265).
 // ElevenLabs stays the default. Everything here is pure: what the app sends over the WebSocket
 // and how it reads what comes back. The socket and audio live in DoddyApp/Features/Voice.
 // Wire shapes follow the GA Realtime API (session.type "realtime", audio/pcm at 24 kHz).
@@ -43,7 +43,7 @@ public struct OpenAIRealtimeGrant: Equatable, Sendable {
 }
 
 extension VoiceTokenServer {
-    /// Request body for the token server. ElevenLabs sends none, exactly as before ADR-264.
+    /// Request body for the token server. ElevenLabs sends none, exactly as before ADR-265.
     public static func requestBody(for provider: VoiceProvider) -> Data? {
         switch provider {
         case .elevenLabs: nil
@@ -52,7 +52,7 @@ extension VoiceTokenServer {
     }
 
     /// Reply `{"token": "ek_…", "provider": "openai", "model": "…"}`. A server from before
-    /// ADR-264 ignores the body and returns an ElevenLabs token without `provider`; that is
+    /// ADR-265 ignores the body and returns an ElevenLabs token without `provider`; that is
     /// refused here rather than sent to OpenAI.
     public static func openAIGrant(status: Int, body: Data) -> Result<OpenAIRealtimeGrant, VoiceTokenError> {
         guard status == 200 else {

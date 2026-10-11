@@ -1,4 +1,4 @@
-# Voice provider test switch: ElevenLabs vs OpenAI Realtime (ADR-264)
+# Voice provider test switch: ElevenLabs vs OpenAI Realtime (ADR-265)
 
 **Status:** built for testing. Token server and DoddyCore logic tested on Linux. **The app code is not
 compiled with Xcode, has never connected to OpenAI and has never been heard on a device.**

@@ -103,7 +103,7 @@ private struct ConversationLogRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(log.startedAt.formatted(date: .abbreviated, time: .shortened))
                 .font(.headline)
-            // Which voice ran it, for comparing the two in testing (ADR-264). Older logs have none.
+            // Which voice ran it, for comparing the two in testing (ADR-265). Older logs have none.
             if let voice = log.voiceProvider {
                 Text(verbatim: "Voice: \(VoiceProvider(stored: voice).shortName)")
                     .font(.caption)

@@ -62,7 +62,7 @@ targets:
     sources:
       - path: DoddyApp
       - path: Shared
-      # Doddy's voice spec, read by the OpenAI test voice (ADR-264). The same files the live
+      # Doddy's voice spec, read by the OpenAI test voice (ADR-265). The same files the live
       # ElevenLabs agent is synced from, so both providers get the same prompt and tools.
       - path: voice-agent/instructions.md
         buildPhase: resources

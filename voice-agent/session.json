@@ -74,7 +74,7 @@
     "variables_as": "dynamic_variables (filled by the app at startConversation)"
   },
   "openai_realtime": {
-    "status": "built for testing behind Home's voice switch (ADR-264): OpenAIRealtimeWire (DoddyCore) and OpenAIRealtimeSession (app); not yet heard on a device",
+    "status": "built for testing behind Home's voice switch (ADR-265): OpenAIRealtimeWire (DoddyCore) and OpenAIRealtimeSession (app); not yet heard on a device",
     "session_update": {
       "type": "realtime",
       "instructions": "voice-agent/instructions.md with {{variables}} filled in by the app (RealtimeInstructions.render)",
@@ -85,7 +85,7 @@
         "output": {"voice": "set by the token server (OPENAI_REALTIME_VOICE, default marin); the app does not change it"}
       }
     },
-    "web_tools": "OpenAI sends every function call to the client. Tools with runs_on 'web' (place lookup, weather, Wikipedia) are not executed in the ADR-264 test: the app answers them as unavailable so Doddy says so. Running them would mean the app or the token server making those requests (x_doddy.http).",
+    "web_tools": "OpenAI sends every function call to the client. Tools with runs_on 'web' (place lookup, weather, Wikipedia) are not executed in the ADR-265 test: the app answers them as unavailable so Doddy says so. Running them would mean the app or the token server making those requests (x_doddy.http).",
     "auth": "Server mints a short-lived client secret; the API key never ships in the app (ADR-034)."
   }
 }

@@ -8,7 +8,7 @@ import UIKit
 import os
 
 /// One voice conversation with the ElevenLabs agent, or with OpenAI Realtime when Home's test
-/// switch says so (ADR-264; same prompt, notes and tools, see `LiveVoiceLink`). State shown in the
+/// switch says so (ADR-265; same prompt, notes and tools, see `LiveVoiceLink`). State shown in the
 /// UI comes only from real provider events (connected, listening, speaking, disconnected), never
 /// from timers.
 /// Tool calls are proposals. Lookups run on the phone. Anything that changes data, starts
@@ -228,7 +228,7 @@ final class VoiceSessionController {
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     private let devices = DeviceConnections()
     private var conversation: (any LiveVoiceLink)?
-    /// Who runs the conversation now (Home's test switch, read when it starts; ADR-264).
+    /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
     private(set) var provider: VoiceProvider = .elevenLabs
     private var startedAt: Date?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
@@ -458,7 +458,7 @@ final class VoiceSessionController {
         }
     }
 
-    // MARK: OpenAI Realtime (testing, ADR-264)
+    // MARK: OpenAI Realtime (testing, ADR-265)
 
     /// The bundled copy of voice-agent/ (prompt, tools, session), the same spec the live
     /// ElevenLabs agent is synced from, so both providers get the same Doddy.

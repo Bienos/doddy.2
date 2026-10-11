@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// OpenAI Realtime as a test voice provider (ADR-264). Wire shapes follow the GA Realtime API.
+/// OpenAI Realtime as a test voice provider (ADR-265). Wire shapes follow the GA Realtime API.
 final class OpenAIRealtimeTests: XCTestCase {
     private let repoRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -31,7 +31,7 @@ final class OpenAIRealtimeTests: XCTestCase {
     func testOpenAIGrantParsing() {
         let good = Data(#"{"token":"ek_1","provider":"openai","model":"gpt-realtime"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: good), .success(OpenAIRealtimeGrant(secret: "ek_1", model: "gpt-realtime")))
-        // A server from before ADR-264 ignores the body and returns an ElevenLabs token.
+        // A server from before ADR-265 ignores the body and returns an ElevenLabs token.
         let old = Data(#"{"token":"eyJ.elevenlabs.jwt"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: old), .failure(.badResponse))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: Data(#"{"token":"","provider":"openai","model":"m"}"#.utf8)), .failure(.badResponse))

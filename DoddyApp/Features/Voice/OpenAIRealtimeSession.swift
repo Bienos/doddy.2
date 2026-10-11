@@ -15,7 +15,7 @@ enum OpenAIRealtimeStartError: LocalizedError {
     }
 }
 
-/// One conversation with OpenAI Realtime, for comparing it with ElevenLabs (ADR-264, testing only).
+/// One conversation with OpenAI Realtime, for comparing it with ElevenLabs (ADR-265, testing only).
 /// A WebSocket to OpenAI opened with a one-conversation client secret from the token server; the
 /// app sends Doddy's prompt and tools itself (`OpenAIRealtimeWire.sessionUpdate`), streams the
 /// microphone as 24 kHz PCM, and plays Doddy's audio as it arrives. Tool calls go to the same

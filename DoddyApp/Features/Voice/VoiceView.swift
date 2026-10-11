@@ -123,7 +123,7 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
-                        // Testing only (ADR-264): the copy below names ElevenLabs; say plainly when it isn't.
+                        // Testing only (ADR-265): the copy below names ElevenLabs; say plainly when it isn't.
                         if controller.provider == .openAIRealtime {
                             Label("Test voice: OpenAI runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.", systemImage: "testtube.2")
                                 .font(.footnote)

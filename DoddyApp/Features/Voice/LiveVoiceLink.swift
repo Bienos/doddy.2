@@ -2,7 +2,7 @@ import ElevenLabs
 import LiveKit
 
 /// What `VoiceSessionController` needs from a live conversation, whichever provider runs it
-/// (ADR-264). The names are the ElevenLabs SDK's own, so its `Conversation` conforms with two
+/// (ADR-265). The names are the ElevenLabs SDK's own, so its `Conversation` conforms with two
 /// small shims and the ElevenLabs path is unchanged; `OpenAIRealtimeSession` is the other one.
 @MainActor
 protocol LiveVoiceLink: AnyObject {

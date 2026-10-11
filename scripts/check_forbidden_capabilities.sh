@@ -4,7 +4,7 @@
 #    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
-#    (ADR-264), whose WebSocket lives in one file in Features/Voice,
+#    (ADR-265), whose WebSocket lives in one file in Features/Voice,
 #  - the system authentication browser is used only by Connected Apps,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
