@@ -1,4 +1,4 @@
-# Voice provider test switch: ElevenLabs vs OpenAI Realtime (ADR-235)
+# Voice provider test switch: ElevenLabs vs OpenAI Realtime (ADR-264)
 
 **Status:** built for testing. Token server and DoddyCore logic tested on Linux. **The app code is not
 compiled with Xcode, has never connected to OpenAI and has never been heard on a device.**
@@ -91,7 +91,7 @@ read back both transcripts afterwards. Note your verdict per point; 5–10 conve
 ## Tests run (2026-10-11, Linux)
 
 - `node --test server/voice-token/test/handler.test.js`: 14 pass (6 existing + 8 new: secret shape, env model/voice, per-provider config, auth before upstream, unknown provider, explicit elevenlabs, upstream error mapping).
-- `swift test` DoddyCore (Swift 6.2 Linux): 533 pass, including 15 new in `OpenAIRealtimeTests` (provider default, token contract incl. an old server's reply refused, session.update shape against the real `tools.json`, tools without `x_doddy`, greeting from `session.json`, client events, mute silence, server event parsing, privacy row, old conversation logs still load).
+- `swift test` DoddyCore (Swift 6.2 Linux): 650 pass after merging the default branch, including 15 new in `OpenAIRealtimeTests` (provider default, token contract incl. an old server's reply refused, session.update shape against the real `tools.json`, tools without `x_doddy`, greeting from `session.json`, client events, mute silence, server event parsing, privacy row, old conversation logs still load).
 - `scripts/ci.sh --core-only`: PASS for the core scope (iOS app build NOT RUN).
 - `scripts/check_forbidden_capabilities.sh`, `voice_agent_spec.py check`, `build_strings_catalog.py --check`: pass.
 - App files: `swiftc -parse` only (syntax). **Not type-checked, not built, not run.**

@@ -4,12 +4,12 @@ import Security
 
 /// Fetches a one-conversation token from Doddy's token server. This is the app's only
 /// network request of its own: it sends the access code, nothing about the user or their notes.
-/// For the OpenAI test voice (ADR-235) the body also names the provider.
+/// For the OpenAI test voice (ADR-264) the body also names the provider.
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
     let accessCode: String
 
-    /// ElevenLabs conversation token. Sends no body, exactly as before ADR-235.
+    /// ElevenLabs conversation token. Sends no body, exactly as before ADR-264.
     func fetchToken() async throws(VoiceTokenError) -> String {
         let (status, data) = try await post(VoiceTokenServer.requestBody(for: .elevenLabs))
         return try VoiceTokenServer.token(status: status, body: data).get()

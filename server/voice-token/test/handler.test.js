@@ -82,7 +82,7 @@ test("access code list parsing", () => {
   ]);
 });
 
-// OpenAI Realtime test voice (ADR-235).
+// OpenAI Realtime test voice (ADR-264).
 const openAIEnv = { ...env, OPENAI_API_KEY: "openai-server-key" };
 
 function openAIRequest(body = JSON.stringify({ provider: "openai" }), code = CODE) {

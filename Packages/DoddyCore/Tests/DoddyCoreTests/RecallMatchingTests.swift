@@ -31,6 +31,36 @@ final class RecallMatchingTests: XCTestCase {
         XCTAssertEqual(matched("dentist", "density chart"), [], "two edits at 7 letters is too many")
     }
 
+    func testSingleLettersAreNotSearchedButSingleDigitsAre() {
+        XCTAssertEqual(RecallMatching.terms("What's Jake's birthday?").map(\.word), ["jake", "birthday"])
+        XCTAssertEqual(RecallMatching.terms("ile witaminy D").map(\.word), ["witaminy"])
+        XCTAssertEqual(RecallMatching.terms("room 5").map(\.word), ["room", "5"])
+        XCTAssertEqual(matched("what's my blood type", "Spare keys in the tin"), [])
+    }
+
+    func testShortWordsNeedAWholeWordOrACommonEnding() {
+        XCTAssertEqual(matched("car", "two cars outside"), ["car"])
+        XCTAssertEqual(matched("car", "library card"), [], "car is not card")
+        XCTAssertEqual(matched("kod", "nie pamiętam kodu"), ["kod"])
+        XCTAssertEqual(matched("lek", "kupić leki"), ["lek"])
+        XCTAssertEqual(matched("lek", "lekarz w piątek"), [], "a medicine is not a doctor")
+        XCTAssertEqual(matched("four", "PIN 4821"), ["four"], "digits keep the plain prefix")
+        XCTAssertEqual(matched("klucz", "Klucze są w szufladzie"), ["klucz"], "4+ letters keep the plain prefix")
+    }
+
+    func testTypoCountsOnlyWhenNoNoteHasTheWordAsTyped() {
+        let matcher = RecallMatching.Matcher(RecallMatching.terms("password"))
+        let notes = ["wifi password sunflower", "passport expires in august"].map(SearchFolding.fold)
+        XCTAssertEqual(matcher.matchedWords(inFolded: notes), [["password"], []])
+        // With no note saying "password", the typo is the best there is and still counts.
+        XCTAssertEqual(matcher.matchedWords(inFolded: [notes[1]]), [["password"]])
+        let typo = RecallMatching.Matcher(RecallMatching.terms("pasport"))
+        XCTAssertEqual(typo.matchedWords(inFolded: notes), [[], ["pasport"]])
+        // One edit always counts: Polish "polisy" for "policy", even with an English "policy" note.
+        let policy = RecallMatching.Matcher(RecallMatching.terms("policy"))
+        XCTAssertEqual(policy.matchedWords(inFolded: ["travel policy", "numer polisy"].map(SearchFolding.fold)), [["policy"], ["policy"]])
+    }
+
     func testStopwordsAndQuestionWordsAreIgnored() {
         XCTAssertEqual(RecallMatching.terms("kiedy mam urodziny?").map(\.word), ["urodziny"])
         XCTAssertEqual(RecallMatching.terms("what do you know about ten").map(\.word), [], "'ten' is Polish 'this' too")

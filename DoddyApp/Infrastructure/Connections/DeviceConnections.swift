@@ -234,32 +234,75 @@ final class DeviceConnections {
         return components
     }
 
-    /// Changes the due of, or completes, exactly the reminder the card showed (ADR-229). It must
-    /// still be open with the same title and due, or nothing is written. An alarm set for the old
-    /// due moves with it. Then it's read back from Reminders.
-    func changeReminder(_ before: ReminderSnapshot, newDue: ReminderDue?, markDone: Bool) throws -> ChangeOutcome {
+    /// Changes the due of, completes, or (Undo, ADR-258) reopens exactly the reminder the card
+    /// showed (ADR-229). It must still look as it did (title, due, open or done), or nothing is
+    /// written. An alarm set for the old due moves with it, or goes when the due is cleared. Then
+    /// it's read back from Reminders.
+    func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> ChangeOutcome {
         guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }
         guard let reminder = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder,
-              !reminder.isCompleted, (reminder.title ?? "") == before.title,
+              reminder.isCompleted == before.isCompleted, (reminder.title ?? "") == before.title,
               EventChange.sameDue(Self.snapshot(reminder).due, before.due) else {
             return .changedElsewhere
         }
-        if markDone {
+        switch change {
+        case .complete:
+            guard !reminder.isCompleted else { return .changedElsewhere }
             reminder.isCompleted = true
-        } else if let newDue {
+        case .reopen:
+            guard reminder.isCompleted else { return .changedElsewhere }
+            reminder.isCompleted = false
+        case .due(let newDue):
+            guard !reminder.isCompleted else { return .changedElsewhere }
             let oldDate = before.due.flatMap { EventChange.moment($0, local: .current) }
-            reminder.dueDateComponents = Self.components(newDue)
-            if let oldDate, let newDate = EventChange.moment(newDue, local: .current) {
-                for alarm in reminder.alarms ?? [] where alarm.absoluteDate == oldDate {
-                    alarm.absoluteDate = newDate
-                }
+            reminder.dueDateComponents = newDue.map(Self.components)
+            let newDate = newDue.flatMap { EventChange.moment($0, local: .current) }
+            for alarm in reminder.alarms ?? [] where oldDate != nil && alarm.absoluteDate == oldDate {
+                if let newDate { alarm.absoluteDate = newDate } else { reminder.removeAlarm(alarm) }
             }
         }
         try eventStore.save(reminder, commit: true)
         guard let back = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder else { return .unconfirmed }
         let snapshot = Self.snapshot(back)
-        if markDone { return snapshot.isCompleted ? .verified : .unconfirmed }
-        return !snapshot.isCompleted && EventChange.sameDue(snapshot.due, newDue) ? .verified : .unconfirmed
+        switch change {
+        case .complete: return snapshot.isCompleted ? .verified : .unconfirmed
+        case .reopen: return !snapshot.isCompleted ? .verified : .unconfirmed
+        case .due(let newDue): return !snapshot.isCompleted && EventChange.sameDue(snapshot.due, newDue) ? .verified : .unconfirmed
+        }
+    }
+
+    /// Deletes exactly the occurrence the card showed (ADR-259). It must still look as it did,
+    /// or nothing is deleted. A repeating event loses only this occurrence. Then Calendar is read
+    /// again: verified only when that occurrence is gone.
+    func deleteEvent(_ event: CalendarEventSummary) throws -> ChangeOutcome {
+        guard access(for: .calendar) == .granted else { return .changedElsewhere }
+        guard let found = rawEvents(from: event.start, to: event.end).first(where: { Self.occurrenceID($0) == event.id }),
+              Self.summary(found) == event else {
+            return .changedElsewhere
+        }
+        try eventStore.remove(found, span: .thisEvent)
+        let stillThere = rawEvents(from: event.start, to: event.end).contains { Self.occurrenceID($0) == event.id }
+        return stillThere ? .unconfirmed : .verified
+    }
+
+    /// Deletes exactly the open reminder the card showed (ADR-259), if it still looks as it did.
+    /// Verified only when Reminders no longer has it.
+    func deleteReminder(_ before: ReminderSnapshot) throws -> ChangeOutcome {
+        guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }
+        guard let reminder = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder,
+              !reminder.isCompleted, reminder.isCompleted == before.isCompleted, (reminder.title ?? "") == before.title,
+              EventChange.sameDue(Self.snapshot(reminder).due, before.due) else {
+            return .changedElsewhere
+        }
+        try eventStore.remove(reminder, commit: true)
+        return eventStore.calendarItem(withIdentifier: before.id) == nil ? .verified : .unconfirmed
+    }
+
+    /// The reminder as Reminders has it now (for Undo's starting point), or nil.
+    func reminderSnapshot(id: String) -> ReminderSnapshot? {
+        guard access(for: .reminders) == .granted,
+              let reminder = eventStore.calendarItem(withIdentifier: id) as? EKReminder else { return nil }
+        return Self.snapshot(reminder)
     }
 
     /// For "What Doddy did" → Check: is the reminder Doddy wasn't sure about in Reminders now

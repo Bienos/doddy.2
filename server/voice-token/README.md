@@ -13,7 +13,7 @@ Authorization: Bearer <access code>
 → 500 {"error": "server_not_configured"} · 502/504 upstream errors
 ```
 
-### OpenAI test voice (ADR-235)
+### OpenAI test voice (ADR-264)
 
 Home's test switch can run Doddy on OpenAI Realtime instead of ElevenLabs. The app then sends a body:
 

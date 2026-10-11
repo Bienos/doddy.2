@@ -269,7 +269,8 @@ public struct BackupRestorePlan: Equatable, Sendable {
         _ contents: BackupContents, existing: [MemoryRecord], profileIsEmpty: Bool, now: Date
     ) throws(MemoryRestoreError) -> BackupRestorePlan {
         let read = try MemoryRestore.read(contents.memoriesExport)
-        let notes = MemoryRestore.plan(read.records, existing: existing, exportedAt: read.exportedAt)
+        // Every earlier wording of the added notes comes back too (ADR-252).
+        let notes = MemoryRestore.plan(read.records, corrections: read.corrections, existing: existing, exportedAt: read.exportedAt)
         let added = Set(notes.toAdd.map(\.id))
         let items = try MemoryRestore.listItems(contents.memoriesExport).filter { added.contains($0.listID) }
         let reminders = contents.reminders.filter { added.contains($0.memoryID) && $0.nextFire(after: now) != nil }

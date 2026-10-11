@@ -23,7 +23,13 @@ public struct DataFlowState: Equatable, Sendable {
     public var memoryCopyOn: Bool
     /// The morning check-in is on (ADR-220).
     public var morningCheckInOn: Bool
-    /// Home's test switch for who runs the live voice (ADR-235).
+    /// Siri may read saved notes aloud (ADR-248).
+    public var siriReadsNotes: Bool
+    /// "Hey Doddy" listening is switched on (ADR-254).
+    public var heyDoddyOn: Bool
+    /// Lists shared through iCloud, by this user or with them (ADR-263).
+    public var sharedLists: Int
+    /// Home's test switch for who runs the live voice (ADR-264).
     public var voiceProvider: VoiceProvider
 
     public init(
@@ -32,9 +38,11 @@ public struct DataFlowState: Equatable, Sendable {
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
+        siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0,
         voiceProvider: VoiceProvider = .elevenLabs
     ) {
         self.morningCheckInOn = morningCheckInOn
+        self.sharedLists = sharedLists
         self.voiceProvider = voiceProvider
         self.rememberConversations = rememberConversations
         self.shareProfileWithVoice = shareProfileWithVoice
@@ -47,6 +55,8 @@ public struct DataFlowState: Equatable, Sendable {
         self.messagingServerSet = messagingServerSet
         self.pushOn = pushOn
         self.memoryCopyOn = memoryCopyOn
+        self.siriReadsNotes = siriReadsNotes
+        self.heyDoddyOn = heyDoddyOn
     }
 }
 
@@ -113,6 +123,13 @@ public enum DataFlow {
                 when: "Only when you make a backup file and choose where to save it.", isActive: true,
                 note: "Doddy has no copy of the passphrase or the file. Without the passphrase nobody can open it."),
             DataFlowRow(
+                id: "iCloudSharing", destination: "Your iCloud (Apple) and the people you share lists with",
+                what: "The name and items of each list you share or joined, and every change to them.",
+                when: "While a list is shared.", isActive: state.sharedLists > 0,
+                note: state.sharedLists > 0
+                    ? "Only the lists you chose. Stop sharing deletes the copy in your iCloud; Leave takes you off someone else's list."
+                    : "No list is shared, so nothing goes there."),
+            DataFlowRow(
                 id: "lookups", destination: "Open-Meteo and Wikipedia",
                 what: "A place name and its coordinates; search words.",
                 when: "Only when you ask about the weather or a fact.", isActive: true,
@@ -143,6 +160,22 @@ public enum DataFlow {
                     ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to Anthropic, and your own keywords to GNews."
                     : "No messaging server is set, so nothing goes there."),
             DataFlowRow(
+                id: "siri", destination: "Apple (Siri)",
+                what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
+                when: "Only when you say \"Ask Doddy what I saved\" with your iPhone unlocked.",
+                isActive: state.siriReadsNotes,
+                note: state.siriReadsNotes
+                    ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
+                    : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
+            DataFlowRow(
+                id: "picovoice", destination: "Picovoice (the \"Hey Doddy\" detector)",
+                what: "Your Picovoice AccessKey, so Picovoice can check it and count its use against your plan. No sound: the wake word is detected on this iPhone.",
+                when: "When \"Hey Doddy\" listening starts.",
+                isActive: state.heyDoddyOn,
+                note: state.heyDoddyOn
+                    ? "After the wake word, the conversation goes to ElevenLabs exactly as if you had tapped Talk."
+                    : "\"Hey Doddy\" is off, so nothing goes there and the microphone isn't used for it."),
+            DataFlowRow(
                 id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
                 note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
@@ -153,12 +186,16 @@ public enum DataFlow {
     public static func staysOnPhone(_ state: DataFlowState) -> [String] {
         [
             "Your saved notes, except as listed above.",
+            // ADR-252: the corrections table is read only by the note screen and exports.
+            "Earlier wordings of notes you corrected, except in files you export.",
             "What Doddy did (the activity list).",
             state.rememberConversations
                 ? "Remembered conversations, except the last few at the start of a conversation."
                 : "Conversations: none are remembered.",
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
+            "Notes suggested after a conversation: picked from your own words on this iPhone.",
+            "\"Hey Doddy\": what the microphone hears while it waits for the wake word is checked on this iPhone and not kept or sent.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }

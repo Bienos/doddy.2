@@ -1,19 +1,36 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "NSAlarmKitUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ustawia budzik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik. Jego budziki dzwonią nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz je w Ustawieniach Doddy'ego, w sekcji Budziki."
+          }
+        }
+      }
+    },
     "NSCalendarsFullAccessUsageDescription": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy reads your events for the days you ask about, and adds or changes an event only after you tap Add or Change. Turn this off in Settings, Connections."
+            "value": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy czyta Twoje wydarzenia z dni, o które pytasz, a dodaje lub zmienia wydarzenie tylko po stuknięciu Dodaj lub Zmień. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+            "value": "Doddy czyta Twoje wydarzenia z dni, o które pytasz, a dodaje, zmienia lub usuwa wydarzenie tylko po stuknięciu Dodaj, Zmień lub Usuń. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
         }
       }
@@ -58,13 +75,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy listens only while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice is sent to ElevenLabs to run the conversation, or to OpenAI if you switch Home's test voice to OpenAI. A voice memo you record on a note stays on this iPhone."
+            "value": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's test voice to OpenAI. A voice memo you record on a note stays on this iPhone."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy słucha tylko wtedy, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos jest wysyłany do ElevenLabs, żeby prowadzić rozmowę, albo do OpenAI, jeśli przełączysz testowy głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
+            "value": "Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Jeśli włączysz Hej Doddy, mikrofon słucha też na tym iPhonie słowa wywołującego; ten dźwięk nie jest zapisywany ani wysyłany. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz testowy głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
           }
         }
       }
@@ -75,13 +92,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy adds, changes or completes a reminder only after you tap Add, Change or Mark done. Turn this off in Settings, Connections."
+            "value": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy dodaje, zmienia lub kończy przypomnienie tylko po stuknięciu Dodaj, Zmień lub Oznacz jako zrobione. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+            "value": "Doddy dodaje, zmienia, kończy lub usuwa przypomnienie tylko po stuknięciu Dodaj, Zmień, Oznacz jako zrobione lub Usuń. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
         }
       }

@@ -10,6 +10,8 @@ final class MemoryStore {
     let environment: AppEnvironment
     /// Notes only. Lists (ADR-216) are `memories` rows too, but live in `lists` with their items.
     private(set) var memories: [MemoryRecord] = []
+    /// Every stored correction (ADR-252), reloaded with the memories, for history and exports.
+    private(set) var corrections: [MemoryCorrection] = []
     private(set) var lists: [DoddyList] = []
     /// Items of the list deleted a moment ago, put back together with it on Undo.
     private var recentlyDeletedItems: [ListItem] = []
@@ -43,9 +45,15 @@ final class MemoryStore {
 
     func list(id: UUID) -> DoddyList? { lists.first { $0.id == id } }
 
+    /// Every wording the note has had, from what is stored (ADR-252).
+    func history(of record: MemoryRecord) -> MemoryHistory {
+        MemoryHistory(record: record, corrections: corrections.filter { $0.memoryID == record.id })
+    }
+
     func reload() async {
         do {
             memories = try await environment.memoryRepository.list(limit: nil).filter { $0.category != .list }
+            corrections = try await environment.memoryRepository.allCorrections()
             lists = (try? await environment.listRepository.lists()) ?? []
             if let linked = try? await environment.photoRepository.allPhotos() {
                 photos = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
@@ -99,6 +107,7 @@ final class MemoryStore {
     /// The memory's note reminder row is deleted with it (same database); its notification after.
     func delete(id: UUID) async throws {
         let copy = self.record(id: id)
+        let history = corrections.filter { $0.memoryID == id }
         recentlyDeletedItems = list(id: id)?.items ?? []
         let photo = photos[id]
         let audio = recordings[id]
@@ -111,7 +120,7 @@ final class MemoryStore {
         recentlyDeletedAudio = audio
         if let reminderID { await environment.noteReminders?.memoryDeleted(reminderID: reminderID) }
         noteReminders?.clearReceipt(memoryID: id)
-        recentlyDeleted = copy.map { DeletedNote(record: $0, deletedAt: .now) }
+        recentlyDeleted = copy.map { DeletedNote(record: $0, corrections: history, deletedAt: .now) }
         await reload()
     }
 
@@ -122,7 +131,7 @@ final class MemoryStore {
             recentlyDeleted = nil
             return
         }
-        _ = try await environment.memoryRepository.restore([deleted.record])
+        _ = try await environment.memoryRepository.restore([deleted.record], corrections: deleted.corrections)
         if !recentlyDeletedItems.isEmpty {
             _ = try await environment.listRepository.restore(recentlyDeletedItems)
             recentlyDeletedItems = []
@@ -155,8 +164,10 @@ final class MemoryStore {
     }
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
-    func restore(_ records: [MemoryRecord], listItems: [ListItem] = []) async throws -> [MemoryRecord] {
-        let added = try await environment.memoryRepository.restore(records)
+    func restore(
+        _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = []
+    ) async throws -> [MemoryRecord] {
+        let added = try await environment.memoryRepository.restore(records, corrections: corrections)
         // Items go back only into lists that exist now; items already here are left alone.
         if !listItems.isEmpty { _ = try await environment.listRepository.restore(listItems) }
         await reload()

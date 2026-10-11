@@ -73,10 +73,13 @@ files=(
   DoddyApp/Infrastructure/MemoryStore+Lists.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
+  DoddyApp/Infrastructure/SiriNoteLookup.swift
   DoddyApp/Features/Ask/AskController.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
   DoddyApp/Features/Opening/OpeningModel.swift
   DoddyApp/Features/Photos/PhotoFiles.swift
+  # Only the part outside `#if canImport(AlarmKit)`: the AlarmKit code itself needs Xcode 26.
+  DoddyApp/Features/Alarms/AlarmScheduler.swift
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
   Shared/Widgets/WidgetSnapshotFile.swift
 )

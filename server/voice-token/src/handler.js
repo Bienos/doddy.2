@@ -2,7 +2,7 @@
 // ElevenLabs conversation token, so the agent can require authentication and the
 // ElevenLabs API key never ships in the app.
 //
-// Testing only (ADR-235): a body of {"provider":"openai"} asks for a one-conversation OpenAI
+// Testing only (ADR-264): a body of {"provider":"openai"} asks for a one-conversation OpenAI
 // Realtime client secret instead. The secret carries only the model and voice; Doddy's prompt,
 // notes and tools go from the phone straight to OpenAI, never through this server.
 //
@@ -100,7 +100,7 @@ async function elevenLabsToken(env, fetchImpl, finish, tester) {
   return finish(200, null, { tester }, { token });
 }
 
-/** Testing only (ADR-235): a short-lived OpenAI Realtime client secret with model and voice set. */
+/** Testing only (ADR-264): a short-lived OpenAI Realtime client secret with model and voice set. */
 async function openAISecret(env, fetchImpl, finish, tester) {
   const model = env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL;
   const voice = env.OPENAI_REALTIME_VOICE || OPENAI_DEFAULT_VOICE;
@@ -146,7 +146,7 @@ async function callUpstream(fetchImpl, url, init) {
 }
 
 /**
- * "elevenlabs" (no body, as every app build before ADR-235 sends), "openai", or null when the
+ * "elevenlabs" (no body, as every app build before ADR-264 sends), "openai", or null when the
  * body names something else or isn't JSON.
  * @param {Request} request
  */

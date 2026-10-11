@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// OpenAI Realtime as a test voice provider (ADR-235). Wire shapes follow the GA Realtime API.
+/// OpenAI Realtime as a test voice provider (ADR-264). Wire shapes follow the GA Realtime API.
 final class OpenAIRealtimeTests: XCTestCase {
     private let repoRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -31,7 +31,7 @@ final class OpenAIRealtimeTests: XCTestCase {
     func testOpenAIGrantParsing() {
         let good = Data(#"{"token":"ek_1","provider":"openai","model":"gpt-realtime"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: good), .success(OpenAIRealtimeGrant(secret: "ek_1", model: "gpt-realtime")))
-        // A server from before ADR-235 ignores the body and returns an ElevenLabs token.
+        // A server from before ADR-264 ignores the body and returns an ElevenLabs token.
         let old = Data(#"{"token":"eyJ.elevenlabs.jwt"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: old), .failure(.badResponse))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: Data(#"{"token":"","provider":"openai","model":"m"}"#.utf8)), .failure(.badResponse))
@@ -86,12 +86,15 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertThrowsError(try OpenAIRealtimeWire.realtimeTools(fromToolsJSON: Data("[]".utf8)))
     }
 
-    func testGreetingComesFromTheSessionSpec() throws {
-        let session = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/session.json"))
-        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: session, languageCode: "pl"), "Hej, tu Doddy. Co słychać?")
-        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: session, languageCode: nil), "Hey, it's Doddy. what's up?")
-        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: session, languageCode: "xx"), "Hey, it's Doddy. what's up?")
+    func testGreetingFallbackComesFromTheSessionSpecButNeverSpeaksAPlaceholder() throws {
+        let spec = Data(#"{"first_message":{"en":"Hey, it's Doddy.","pl":"Hej, tu Doddy.","de":"{{opening_line}}"}}"#.utf8)
+        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "pl"), "Hej, tu Doddy.")
+        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: nil), "Hey, it's Doddy.")
+        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "de"), "Hey, it's Doddy.")
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: Data(), languageCode: "pl"), "Hey, it's Doddy. What's up?")
+        // The repo's spec uses {{opening_line}} (ADR-254); the fallback must still be plain words.
+        let session = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/session.json"))
+        XCTAssertFalse(OpenAIRealtimeWire.greetingLine(sessionJSON: session, languageCode: "pl").contains("{{"))
         let event = try object(OpenAIRealtimeWire.greeting("Hej"))
         XCTAssertEqual(event["type"] as? String, "response.create")
         XCTAssertTrue(((event["response"] as? [String: Any])?["instructions"] as? String ?? "").hasSuffix(": Hej"))

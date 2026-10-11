@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    " (shared)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " (udostępniona)"
+          }
+        }
+      }
+    },
     "\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.": {
       "extractionState": "manual",
       "localizations": {
@@ -8,6 +19,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "„Porozmawiaj z Doddym” jest wbudowane jako skrót dla Siri, aplikacji Skróty i przycisku czynności, a od iOS 18 jako element sterujący, który możesz dodać do Centrum sterowania lub ekranu blokady (edytuj Centrum sterowania, potem Dodaj element sterujący i wyszukaj Doddy). Stuknięcie w tył i elementy sterujące ustawiasz samodzielnie; Doddy nie może ich dodać ani sprawdzić, czy są ustawione."
+          }
+        }
+      }
+    },
+    "%lld left": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zostało: %lld"
           }
         }
       }
@@ -89,6 +111,17 @@
         }
       }
     },
+    "A notification at this time says only \"Anything to move to tomorrow?\". Tap it to see open reminders from today and move the ones you pick. Needs Reminders on in Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O tej godzinie powiadomienie powie tylko „Coś przenieść na jutro?”. Stuknij je, aby zobaczyć otwarte przypomnienia z dzisiaj i przenieść te, które wybierzesz. Wymaga włączonych Przypomnień w Połączeniach."
+          }
+        }
+      }
+    },
     "A notification from Doddy on this iPhone, not Apple Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -140,6 +173,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się odczytać zapisanego ustawienia. Nic nie zostało usunięte."
+          }
+        }
+      }
+    },
+    "A shared list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniona lista"
+          }
+        }
+      }
+    },
+    "A shared list couldn't be updated. Doddy will try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zaktualizować udostępnionej listy. Doddy spróbuje ponownie."
           }
         }
       }
@@ -364,6 +419,28 @@
         }
       }
     },
+    "Alarms": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budziki"
+          }
+        }
+      }
+    },
+    "Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budziki wymagają iOS 26 lub nowszego. Na tym iPhonie Doddy może zamiast tego ustawić minutnik albo przypomnienie."
+          }
+        }
+      }
+    },
     "All day": {
       "extractionState": "manual",
       "localizations": {
@@ -371,6 +448,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cały dzień"
+          }
+        }
+      }
+    },
+    "All ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone"
+          }
+        }
+      }
+    },
+    "All ticked. Shopping mode ends by itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone. Tryb zakupów zakończy się sam."
           }
         }
       }
@@ -503,6 +602,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dowolny kanał RSS lub Atom, na przykład blog albo lokalna gazeta."
+          }
+        }
+      }
+    },
+    "Anything for\ntomorrow?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś\nna jutro?"
           }
         }
       }
@@ -1046,6 +1156,17 @@
         }
       }
     },
+    "Changed “%@”: now %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmieniono „%@”: teraz %@."
+          }
+        }
+      }
+    },
     "Check and add": {
       "extractionState": "manual",
       "localizations": {
@@ -1075,6 +1196,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź słowa, potem stuknij Zapisz."
+          }
+        }
+      }
+    },
+    "Checking tomorrow…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam jutro…"
           }
         }
       }
@@ -1383,6 +1515,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Połączenia są wstrzymane, więc Doddy nie czyta Twojego kalendarza ani przypomnień. Włącz je ponownie w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
+    "Connections are paused, so Doddy isn't reading your reminders. Turn them back on in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc Doddy nie czyta Twoich przypomnień. Włączysz je z powrotem w Ustawieniach, w sekcji Połączenia."
           }
         }
       }
@@ -1761,6 +1904,17 @@
         }
       }
     },
+    "Delete this event?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to wydarzenie?"
+          }
+        }
+      }
+    },
     "Delete this memory?": {
       "extractionState": "manual",
       "localizations": {
@@ -1768,6 +1922,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć to wspomnienie?"
+          }
+        }
+      }
+    },
+    "Delete this reminder?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to przypomnienie?"
           }
         }
       }
@@ -1911,6 +2076,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozłączyć Kalendarz Google?"
+          }
+        }
+      }
+    },
+    "Disconnecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozłączam…"
           }
         }
       }
@@ -2135,6 +2311,17 @@
         }
       }
     },
+    "Doddy reminder %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie Doddy’ego %@"
+          }
+        }
+      }
+    },
     "Doddy reminders today": {
       "extractionState": "manual",
       "localizations": {
@@ -2186,6 +2373,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy zanotował to podczas rozmów. Staną się wspomnieniami dopiero, gdy je zapiszesz."
+          }
+        }
+      }
+    },
+    "Doddy's alarms ring even in Silent mode or a Focus. Only alarms set by Doddy are shown here; the Clock app's alarms aren't.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budziki Doddy'ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy'ego, nie te z aplikacji Zegar."
           }
         }
       }
@@ -2296,6 +2494,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie zmieniaj"
+          }
+        }
+      }
+    },
+    "Don't delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie usuwaj"
           }
         }
       }
@@ -2553,6 +2762,17 @@
         }
       }
     },
+    "End shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ tryb zakupów"
+          }
+        }
+      }
+    },
     "Ended": {
       "extractionState": "manual",
       "localizations": {
@@ -2582,6 +2802,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Angielski"
+          }
+        }
+      }
+    },
+    "Evening wrap-up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieczorne podsumowanie"
           }
         }
       }
@@ -2824,6 +3055,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyszukiwanie notatek"
+          }
+        }
+      }
+    },
+    "Finding saved words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam zapisanych słów"
           }
         }
       }
@@ -3257,6 +3499,17 @@
         }
       }
     },
+    "If it repeats, only this time is deleted. This can't be undone from Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli się powtarza, usunięte zostanie tylko to jedno. Doddy nie może tego cofnąć."
+          }
+        }
+      }
+    },
     "If your iPhone doesn't list it under Back Tap": {
       "extractionState": "manual",
       "localizations": {
@@ -3411,6 +3664,39 @@
         }
       }
     },
+    "It may not have gone back. Check it in Calendar or Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mogło nie wrócić do poprzedniego stanu. Sprawdź to w Kalendarzu lub Przypomnieniach."
+          }
+        }
+      }
+    },
+    "It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz go w Ustawieniach, w sekcji Budziki."
+          }
+        }
+      }
+    },
+    "It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W międzyczasie zmieniono to gdzie indziej, więc Doddy tego nie ruszał. Sprawdź to w Kalendarzu lub Przypomnieniach."
+          }
+        }
+      }
+    },
     "It was in Keep's trash.": {
       "extractionState": "manual",
       "localizations": {
@@ -3429,6 +3715,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Było długie, więc dodano tylko pierwszą część."
+          }
+        }
+      }
+    },
+    "It's too late to undo here. Change it in Calendar or Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na cofnięcie tutaj jest już za późno. Zmień to w Kalendarzu lub Przypomnieniach."
           }
         }
       }
@@ -3455,6 +3752,17 @@
         }
       }
     },
+    "Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jej pozycje są widoczne na ekranie blokady i w Dynamic Island, dopóki nie odhaczysz wszystkich albo nie zakończysz trybu, więc każdy, kto widzi Twojego iPhone’a, może je przeczytać. Odhaczenie tam odhacza też tutaj."
+          }
+        }
+      }
+    },
     "Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving.": {
       "extractionState": "manual",
       "localizations": {
@@ -3462,6 +3770,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Słowa zostały dodane poniżej, zapisane jako tekst na tym iPhonie. Zamiana mowy na tekst popełnia błędy, więc sprawdź je przed zapisaniem."
+          }
+        }
+      }
+    },
+    "Join list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dołącz do listy"
+          }
+        }
+      }
+    },
+    "Joining adds this list to Doddy on this iPhone. Its items, and the changes anyone makes, go through iCloud to everyone who shares it. Your notes and other lists aren't shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dołączenie dodaje tę listę do Doddy’ego na tym iPhonie. Jej pozycje i zmiany wprowadzane przez kogokolwiek trafiają przez iCloud do wszystkich, którzy ją współdzielą. Twoje notatki i inne listy nie są udostępniane."
           }
         }
       }
@@ -3605,6 +3935,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ostatni test"
+          }
+        }
+      }
+    },
+    "Last updated %@. Changes from others show when Doddy is open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnia aktualizacja: %@. Zmiany innych pojawiają się, gdy Doddy jest otwarty."
           }
         }
       }
@@ -3818,6 +4159,17 @@
         }
       }
     },
+    "Live Activities are off for Doddy. Turn them on in the Settings app, under Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktywności na żywo są wyłączone dla Doddy’ego. Włącz je w aplikacji Ustawienia, w sekcji Doddy."
+          }
+        }
+      }
+    },
     "Lively": {
       "extractionState": "manual",
       "localizations": {
@@ -3825,6 +4177,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Żywiołowy"
+          }
+        }
+      }
+    },
+    "Loading notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytuję notatki"
           }
         }
       }
@@ -3917,6 +4280,17 @@
         }
       }
     },
+    "Marked “%@” done in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oznaczono „%@” jako zrobione w Przypomnieniach."
+          }
+        }
+      }
+    },
     "May disagree with another note": {
       "extractionState": "manual",
       "localizations": {
@@ -4005,6 +4379,17 @@
         }
       }
     },
+    "Monday to Friday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od poniedziałku do piątku"
+          }
+        }
+      }
+    },
     "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set.": {
       "extractionState": "manual",
       "localizations": {
@@ -4045,6 +4430,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Poranny przegląd"
+          }
+        }
+      }
+    },
+    "Move %lld to tomorrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieś na jutro (%lld)"
+          }
+        }
+      }
+    },
+    "Moved %lld to tomorrow. %lld couldn't be moved (changed in Reminders, or the time doesn't exist tomorrow); check them there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeniesiono na jutro: %lld. Nie udało się przenieść: %lld (zmienione w Przypomnieniach albo ta godzina jutro nie istnieje); sprawdź je tam."
+          }
+        }
+      }
+    },
+    "Moved %lld to tomorrow. Checked in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeniesiono na jutro: %lld. Sprawdzone w Przypomnieniach."
           }
         }
       }
@@ -4280,6 +4698,17 @@
         }
       }
     },
+    "No alarms from Doddy. Ask Doddy, for example “Wake me at seven”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak budzików od Doddy'ego. Poproś Doddy'ego, na przykład „Obudź mnie o siódmej”."
+          }
+        }
+      }
+    },
     "No contact matched.": {
       "extractionState": "manual",
       "localizations": {
@@ -4309,6 +4738,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bez folderów. Dokładnie Twoje słowa."
+          }
+        }
+      }
+    },
+    "No internet connection. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak połączenia z internetem. Spróbuj jeszcze raz."
           }
         }
       }
@@ -4489,6 +4929,17 @@
         }
       }
     },
+    "Not everything this import added could be removed. Check your notes and lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć wszystkiego, co dodał ten import. Sprawdź swoje notatki i listy."
+          }
+        }
+      }
+    },
     "Not from your notes. This is a general answer.": {
       "extractionState": "manual",
       "localizations": {
@@ -4621,6 +5072,17 @@
         }
       }
     },
+    "Nothing coming up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic się nie zbliża."
+          }
+        }
+      }
+    },
     "Nothing exact was said, so there's nothing to save.": {
       "extractionState": "manual",
       "localizations": {
@@ -4650,6 +5112,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic zgadywanego. Tylko to, co zachowałeś."
+          }
+        }
+      }
+    },
+    "Nothing left from today. Good night.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z dzisiaj nic nie zostało. Dobranoc."
           }
         }
       }
@@ -4874,6 +5347,17 @@
         }
       }
     },
+    "Notifications are off for Doddy, so the wrap-up can't ring. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia Doddy’ego są wyłączone, więc podsumowanie nie może się pojawić. Włącz je w Ustawieniach iOS."
+          }
+        }
+      }
+    },
     "Notifications are off for Doddy, so your iPhone won't alert you. When it's due, the note waits at the top of Home.": {
       "extractionState": "manual",
       "localizations": {
@@ -5083,6 +5567,17 @@
         }
       }
     },
+    "Only the notes and lists this import added are removed. Nothing else changes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuwane są tylko notatki i listy dodane przez ten import. Nic innego się nie zmienia."
+          }
+        }
+      }
+    },
     "Only the side whose button is held is heard and translated.": {
       "extractionState": "manual",
       "localizations": {
@@ -5145,6 +5640,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz raz Doddy’ego na iPhonie, żeby zobaczyć tu swoje notatki i listy."
+          }
+        }
+      }
+    },
+    "Open Doddy on your iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego na iPhonie."
+          }
+        }
+      }
+    },
+    "Open Doddy to see the list as it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
           }
         }
       }
@@ -5233,6 +5750,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz porządki teraz"
+          }
+        }
+      }
+    },
+    "Open the wrap-up now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz podsumowanie teraz"
           }
         }
       }
@@ -5743,6 +6271,17 @@
         }
       }
     },
+    "Put back as it was. Checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywrócono do poprzedniego stanu. Sprawdzone."
+          }
+        }
+      }
+    },
     "Put the phone on the table between you. Their half of the screen faces them, and Doddy first tells them, in their language, that he's an AI translator.": {
       "extractionState": "manual",
       "localizations": {
@@ -5750,6 +6289,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Połóż telefon na stole między wami. Ich połowa ekranu jest zwrócona do nich, a Doddy najpierw mówi im w ich języku, że jest tłumaczem SI."
+          }
+        }
+      }
+    },
+    "Putting it back…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywracam…"
           }
         }
       }
@@ -5996,6 +6546,17 @@
         }
       }
     },
+    "Remind you about this list?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnieć Ci o tej liście?"
+          }
+        }
+      }
+    },
     "Remind you about this note?": {
       "extractionState": "manual",
       "localizations": {
@@ -6014,6 +6575,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnienie"
+          }
+        }
+      }
+    },
+    "Reminder at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie o %@"
           }
         }
       }
@@ -6139,6 +6711,17 @@
         }
       }
     },
+    "Remove them": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń je"
+          }
+        }
+      }
+    },
     "Remove this number": {
       "extractionState": "manual",
       "localizations": {
@@ -6168,6 +6751,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć to nagranie?"
+          }
+        }
+      }
+    },
+    "Remove what this import added?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to, co dodał ten import?"
+          }
+        }
+      }
+    },
+    "Removed what this import added (%lld). Checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięto to, co dodał ten import (%lld). Sprawdzone."
           }
         }
       }
@@ -6311,6 +6916,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Próbki nie grają, gdy rozmawiasz z Doddym."
+          }
+        }
+      }
+    },
+    "Saturday and Sunday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobota i niedziela"
           }
         }
       }
@@ -6755,6 +7371,17 @@
         }
       }
     },
+    "Set alarm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustaw budzik"
+          }
+        }
+      }
+    },
     "Set reminder": {
       "extractionState": "manual",
       "localizations": {
@@ -6762,6 +7389,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ustaw przypomnienie"
+          }
+        }
+      }
+    },
+    "Set this alarm?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawić ten budzik?"
           }
         }
       }
@@ -6821,6 +7459,17 @@
         }
       }
     },
+    "Set. The wrap-up notification comes every evening.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione. Powiadomienie o podsumowaniu przyjdzie co wieczór."
+          }
+        }
+      }
+    },
     "Setting the reminder…": {
       "extractionState": "manual",
       "localizations": {
@@ -6854,6 +7503,17 @@
         }
       }
     },
+    "Share": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij"
+          }
+        }
+      }
+    },
     "Share as text": {
       "extractionState": "manual",
       "localizations": {
@@ -6876,6 +7536,28 @@
         }
       }
     },
+    "Share with people…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij innym…"
+          }
+        }
+      }
+    },
+    "Shared by %@ through iCloud.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnione przez: %@, przez iCloud."
+          }
+        }
+      }
+    },
     "Shared into Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -6894,6 +7576,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnione do Doddy’ego ze skrótu. Sprawdź, zmień, jeśli chcesz, a potem stuknij Zapisz. Nic nie zostanie zapisane, dopóki tego nie zrobisz."
+          }
+        }
+      }
+    },
+    "Shared list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniona lista"
+          }
+        }
+      }
+    },
+    "Sharing lists isn't set up in this version of Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnianie list nie jest skonfigurowane w tej wersji Doddy’ego."
+          }
+        }
+      }
+    },
+    "Shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb zakupów"
+          }
+        }
+      }
+    },
+    "Shopping mode couldn't start. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się włączyć trybu zakupów. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Shopping mode is on: this list is on your Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb zakupów jest włączony: ta lista jest na ekranie blokady."
           }
         }
       }
@@ -6986,6 +7723,17 @@
         }
       }
     },
+    "Show this list on your Lock Screen?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazać tę listę na ekranie blokady?"
+          }
+        }
+      }
+    },
     "Show what they said": {
       "extractionState": "manual",
       "localizations": {
@@ -7015,6 +7763,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Za każdym razem pokazuje kartę i czeka na Twoje stuknięcie"
+          }
+        }
+      }
+    },
+    "Sign in to iCloud in iOS Settings to keep shared lists up to date.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się do iCloud w Ustawieniach iOS, aby udostępnione listy były aktualne."
+          }
+        }
+      }
+    },
+    "Sign in to iCloud in iOS Settings to share lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się do iCloud w Ustawieniach iOS, aby udostępniać listy."
           }
         }
       }
@@ -7125,6 +7895,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zacznij słuchać, gdy otwieram Doddy’ego"
+          }
+        }
+      }
+    },
+    "Start shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz tryb zakupów"
           }
         }
       }
@@ -7257,6 +8038,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stabilnie"
+          }
+        }
+      }
+    },
+    "Still open from today or earlier. Tick the ones to move; each keeps its time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wciąż otwarte z dzisiaj lub wcześniej. Zaznacz te do przeniesienia; każde zachowa swoją godzinę."
           }
         }
       }
@@ -7547,6 +8339,17 @@
         }
       }
     },
+    "That alarm couldn't be turned off. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wyłączyć tego budzika. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
     "That backup was made by a newer Doddy. Update Doddy, then try again. Nothing was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -7664,6 +8467,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To nie jest poprawny adres https."
+          }
+        }
+      }
+    },
+    "That list is no longer shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta lista nie jest już udostępniana."
           }
         }
       }
@@ -7873,6 +8687,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się ustawić porannego podsumowania. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa i pozycje listy zostaną skopiowane do Twojego iCloud, a Ty wybierzesz, kogo zaprosić. Każdy zaproszony może widzieć, dodawać i odhaczać pozycje; ich zmiany wracają tutaj. Twoje notatki i inne listy nie są udostępniane."
           }
         }
       }
@@ -8130,6 +8955,28 @@
         }
       }
     },
+    "The wrap-up couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić podsumowania. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
+    "The wrap-up shows your open reminders from the Reminders app. Turn on Reminders in Settings, Connections; they're read on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie pokazuje otwarte przypomnienia z aplikacji Przypomnienia. Włącz Przypomnienia w Ustawieniach, w sekcji Połączenia; są czytane tylko na tym iPhonie."
+          }
+        }
+      }
+    },
     "Their half, facing them": {
       "extractionState": "manual",
       "localizations": {
@@ -8203,6 +9050,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta wersja Doddy’ego nie może niczego udostępniać widżetom (nie jest podpisana grupą aplikacji Doddy’ego), więc widżety pokazują tylko „Otwórz Doddy’ego”."
+          }
+        }
+      }
+    },
+    "This can't be undone from Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie może tego cofnąć."
           }
         }
       }
@@ -8812,6 +9670,17 @@
         }
       }
     },
+    "Turned off in Doddy's Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączone w Ustawieniach Doddy’ego."
+          }
+        }
+      }
+    },
     "Twilio sends a one-time code to check the number is yours. Texts with updates only start after you turn them on.": {
       "extractionState": "manual",
       "localizations": {
@@ -8863,6 +9732,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cofnij"
+          }
+        }
+      }
+    },
+    "Undo this import": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cofnij ten import"
           }
         }
       }
@@ -9505,6 +10385,17 @@
         }
       }
     },
+    "Working…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pracuję…"
+          }
+        }
+      }
+    },
     "Write it out in another language": {
       "extractionState": "manual",
       "localizations": {
@@ -9710,6 +10601,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój dzień\nw skrócie."
+          }
+        }
+      }
+    },
+    "Your iCloud storage is full.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój iCloud jest pełny."
+          }
+        }
+      }
+    },
+    "Your list in Doddy. The notification doesn't name it or its items.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja lista w Doddym. Powiadomienie nie podaje jej nazwy ani pozycji."
           }
         }
       }
@@ -9923,6 +10836,17 @@
         }
       }
     },
+    "iCloud didn't confirm it. Nothing is counted as done; try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud tego nie potwierdził. Nic nie jest uznane za zrobione; spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
     "iOS notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -9941,6 +10865,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "“%@” is no longer shared. It stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” nie jest już udostępniana. Zostaje na tym iPhonie."
+          }
+        }
+      }
+    },
+    "“%@” is now due %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” ma teraz termin %@."
           }
         }
       }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ProviderError } from "../errors.js";
+import type { ResultItem } from "./contracts.js";
 
 /**
  * Online accounts through Composio: the fixed list of tools Doddy may run. Each tool has a
@@ -93,6 +94,8 @@ export interface ToolOutcome {
   text: string;
   count: number;
   truncated: boolean;
+  /** Listed emails or tasks as data for app screens (ADR-231); no previews or bodies. */
+  items?: ResultItem[];
   /** One line for the receipt. No message bodies. */
   summary: string;
 }
@@ -222,13 +225,14 @@ export const CHECK_EMAIL: CloudToolDefinition = {
     messages.sort((a, b) => b.at - a.at);
     const shown = messages.slice(0, limit);
     if (shown.length === 0) {
-      return { text: "No emails matched. Say so; do not guess.", count: 0, truncated: false, summary: "Checked email: none matched." };
+      return { text: "No emails matched. Say so; do not guess.", count: 0, truncated: false, items: [], summary: "Checked email: none matched." };
     }
+    const items: ResultItem[] = shown.map((m) => ({ kind: "email", title: m.subject, from: m.from, when: m.when, urgent: false }));
     const lines = [`Found ${plural(shown.length, "email")} (newest first; sender, subject, received, preview):`];
     for (const m of shown) {
       lines.push(`- From ${JSON.stringify(m.from)}: ${JSON.stringify(m.subject)}${m.when ? ` (${m.when})` : ""}${m.preview ? ` preview: ${JSON.stringify(m.preview)}` : ""}`);
     }
-    return { text: lines.join("\n"), count: shown.length, truncated: messages.length > shown.length, summary: `Checked email: ${plural(shown.length, "message")} listed.` };
+    return { text: lines.join("\n"), count: shown.length, truncated: messages.length > shown.length, items, summary: `Checked email: ${plural(shown.length, "message")} listed.` };
   },
 };
 
@@ -422,13 +426,14 @@ export const LIST_TODOIST_TASKS: CloudToolDefinition = {
     const shown = tasks.slice(0, 15);
     const which = (args.when as string | undefined) ?? "today";
     if (shown.length === 0) {
-      return { text: `No open Todoist tasks for ${which}. Say so; do not guess.`, count: 0, truncated: false, summary: "Checked Todoist: no open tasks." };
+      return { text: `No open Todoist tasks for ${which}. Say so; do not guess.`, count: 0, truncated: false, items: [], summary: "Checked Todoist: no open tasks." };
     }
+    const items: ResultItem[] = shown.map((t) => ({ kind: "task", title: t.content, from: null, when: t.due, urgent: t.urgent }));
     const lines = [`Found ${plural(shown.length, "open Todoist task")} (${which}):`];
     for (const t of shown) lines.push(`- ${JSON.stringify(t.content)}${t.due ? ` due ${t.due}` : ""}${t.urgent ? " (priority 1)" : ""}`);
     const truncated = tasks.length > shown.length || typeof data.next_cursor === "string";
     if (truncated) lines.push("…and more in Todoist.");
-    return { text: lines.join("\n"), count: shown.length, truncated, summary: `Checked Todoist: ${plural(shown.length, "task")} listed.` };
+    return { text: lines.join("\n"), count: shown.length, truncated, items, summary: `Checked Todoist: ${plural(shown.length, "task")} listed.` };
   },
 };
 

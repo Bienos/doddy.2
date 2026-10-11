@@ -1,6 +1,6 @@
 import Foundation
 
-// OpenAI Realtime as a second voice provider, for side-by-side testing only (ADR-235).
+// OpenAI Realtime as a second voice provider, for side-by-side testing only (ADR-264).
 // ElevenLabs stays the default. Everything here is pure: what the app sends over the WebSocket
 // and how it reads what comes back. The socket and audio live in DoddyApp/Features/Voice.
 // Wire shapes follow the GA Realtime API (session.type "realtime", audio/pcm at 24 kHz).
@@ -43,7 +43,7 @@ public struct OpenAIRealtimeGrant: Equatable, Sendable {
 }
 
 extension VoiceTokenServer {
-    /// Request body for the token server. ElevenLabs sends none, exactly as before ADR-235.
+    /// Request body for the token server. ElevenLabs sends none, exactly as before ADR-264.
     public static func requestBody(for provider: VoiceProvider) -> Data? {
         switch provider {
         case .elevenLabs: nil
@@ -52,7 +52,7 @@ extension VoiceTokenServer {
     }
 
     /// Reply `{"token": "ek_…", "provider": "openai", "model": "…"}`. A server from before
-    /// ADR-235 ignores the body and returns an ElevenLabs token without `provider`; that is
+    /// ADR-264 ignores the body and returns an ElevenLabs token without `provider`; that is
     /// refused here rather than sent to OpenAI.
     public static func openAIGrant(status: Int, body: Data) -> Result<OpenAIRealtimeGrant, VoiceTokenError> {
         guard status == 200 else {
@@ -159,15 +159,17 @@ public enum OpenAIRealtimeWire {
         ])
     }
 
-    /// The greeting for a language from `voice-agent/session.json` (`first_message`), English
-    /// when the language has none or no language was picked.
+    /// Fallback greeting when the app has no opening line of its own (it normally sends
+    /// `WakeGreeting`'s, ADR-254): `voice-agent/session.json` `first_message` for the language, then
+    /// English. A `{{placeholder}}` there is never spoken; the plain English line is used instead.
     public static func greetingLine(sessionJSON: Data, languageCode: String?) -> String {
         let fallback = "Hey, it's Doddy. What's up?"
         guard let session = try? JSONSerialization.jsonObject(with: sessionJSON) as? [String: Any],
               let lines = session["first_message"] as? [String: String]
         else { return fallback }
-        if let code = languageCode, let line = lines[code] { return line }
-        return lines["en"] ?? fallback
+        let usable = lines.filter { !$0.value.contains("{{") }
+        if let code = languageCode, let line = usable[code] { return line }
+        return usable["en"] ?? fallback
     }
 
     public static func appendAudio(_ pcm16: Data) -> String {

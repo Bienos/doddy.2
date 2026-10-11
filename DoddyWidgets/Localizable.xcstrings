@@ -1,6 +1,39 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Add this reminder?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodać to przypomnienie?"
+          }
+        }
+      }
+    },
+    "All ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone"
+          }
+        }
+      }
+    },
+    "All ticked. Shopping mode ends by itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone. Tryb zakupów zakończy się sam."
+          }
+        }
+      }
+    },
     "Choose a list": {
       "extractionState": "manual",
       "localizations": {
@@ -12,13 +45,13 @@
         }
       }
     },
-    "Doddy": {
+    "Dismiss": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy"
+            "value": "Zamknij"
           }
         }
       }
@@ -111,6 +144,17 @@
         }
       }
     },
+    "Open Doddy to see the list as it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
+          }
+        }
+      }
+    },
     "Opens Doddy and starts a voice conversation. Doddy listens only while the conversation is open.": {
       "extractionState": "manual",
       "localizations": {
@@ -133,6 +177,17 @@
         }
       }
     },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymane"
+          }
+        }
+      }
+    },
     "Pinned": {
       "extractionState": "manual",
       "localizations": {
@@ -144,6 +199,28 @@
         }
       }
     },
+    "Save this note?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisać tę notatkę?"
+          }
+        }
+      }
+    },
+    "Shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb zakupów"
+          }
+        }
+      }
+    },
     "Shown ticked": {
       "extractionState": "manual",
       "localizations": {
@@ -151,6 +228,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokazane jako odhaczone"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj"
           }
         }
       }
@@ -184,6 +272,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odhacz pozycję na liście w Doddym"
+          }
+        }
+      }
+    },
+    "Translating": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumaczę"
+          }
+        }
+      }
+    },
+    "Your note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja notatka"
           }
         }
       }

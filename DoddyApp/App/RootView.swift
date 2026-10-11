@@ -17,6 +17,8 @@ enum PreferenceKey {
     /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
     static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
+    /// Settings → Voice → Dynamic Island style (`IslandStyle` raw value); display only (ADR-239).
+    static let islandStyle = "islandStyle"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
@@ -58,6 +60,13 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
+    /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
+    static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
+    /// Siri may read saved notes aloud (ADR-248). On unless turned off; the phone must be unlocked.
+    static let siriReadsNotes = "siriReadsNotes"
+    /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
+    /// the keyword file in Application Support, never here.
+    static let heyDoddyOn = "heyDoddy.on"
 }
 
 enum AppTab: Hashable {
@@ -108,16 +117,29 @@ struct RootView: View {
             .task {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
+                if scenePhase == .active { heyDoddyAppBecameActive() }
             }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { Task { await noteReminders.refreshOnForeground() } }
+                if phase == .active {
+                    Task { await noteReminders.refreshOnForeground() }
+                    FocusController.shared.refresh()
+                    BreathingController.shared.refresh()
+                    // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
+                    Task { await SharedListsController.shared.syncAll() }
+                }
+                if phase == .background { WidgetSync.shared.refresh() }
+                // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
+                switch phase {
+                case .active: heyDoddyAppBecameActive()
+                case .background: WakeWordListener.shared.appWentToBackground()
+                default: break
+                }
                 // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
                 switch phase {
                 case .background: opening.appWentToBackground()
                 case .active: opening.appBecameActive(openingConditions)
                 default: break
                 }
-                if phase == .background { WidgetSync.shared.refresh() }
             }
             // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
             .onChange(of: store.revision) { WidgetSync.shared.refresh() }
@@ -145,6 +167,19 @@ struct RootView: View {
             Theme.canvas.ignoresSafeArea()
                 .task { await profiles.load() }
         }
+    }
+
+    /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
+    /// started while Doddy was in the background, if it is running or left notes to look at.
+    private func heyDoddyAppBecameActive() {
+        let listener = WakeWordListener.shared
+        if listener.hasConversationToShow {
+            // Never over another sheet: then it opens the next time Doddy comes to the front.
+            _ = router.showWakeConversation()
+        } else {
+            listener.forgetFinishedConversation()
+        }
+        listener.appBecameActive()
     }
 
     /// What the opening's rules need to know right now (ADR-225). Read at decision time, so a
@@ -189,6 +224,17 @@ struct RootView: View {
         }
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
+        // A shared list's link (ADR-263): nothing is joined until Join.
+        .sheet(item: Binding(get: { SharedListsController.shared.invite }, set: { if $0 == nil { SharedListsController.shared.declineInvite() } })) { invite in
+            SharedListInviteView(invite: invite) { list in
+                selectedTab = .home
+                homePath = [list.id]
+            }
+        }
+        // The evening wrap-up (ADR-261), from its notification or Settings.
+        .sheet(isPresented: $router.isWrapUpPresented, onDismiss: { router.showWaitingDraft() }) {
+            EveningWrapUpView(openSettings: { selectedTab = .settings })
+        }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })
@@ -210,6 +256,8 @@ struct RootView: View {
         // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
+            // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
+            WakeWordListener.shared.refresh()
         }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.

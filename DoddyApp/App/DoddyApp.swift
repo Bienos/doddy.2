@@ -13,7 +13,7 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
-        let environment = AppEnvironment.live()
+        let environment = AppEnvironment.shared
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
         store.noteReminders = noteReminders
@@ -27,11 +27,23 @@ struct DoddyApp: App {
         // The Apple Watch app asks through the same store (ADR-232).
         PhoneWatchLink.shared.store = store
         PhoneWatchLink.shared.activate()
+        // Shopping mode (ADR-257) runs on the Lock Screen across relaunches.
+        ShoppingModeController.shared.store = store
+        // Shared lists (ADR-263) sync through the same store.
+        SharedListsController.shared.store = store
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
-        _profiles = State(initialValue: ProfileStore(environment: environment))
+        let profiles = ProfileStore(environment: environment)
+        _profiles = State(initialValue: profiles)
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
+        // A focus timer does survive one (it is saved); this also lets its island's buttons work
+        // when iOS starts the app just to run them (ADR-241). Breathing and read-aloud don't.
+        FocusController.shared.refresh()
+        ToolLiveActivity.endLeftovers(keeping: [.focus])
+        // "Hey Doddy" (ADR-254) starts conversations with the same notes and profile.
+        WakeWordListener.shared.store = store
+        WakeWordListener.shared.profiles = profiles
     }
 
     var body: some Scene {
@@ -44,9 +56,15 @@ struct DoddyApp: App {
                 // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
                 .task { await UpdatesModel().syncPushTokenIfOn() }
                 .task { await SystemNoteNotifications.registerCategory() }
+                .task { ShoppingModeController.shared.reattach() }
+                .task {
+                    await SharedListsController.shared.load()
+                    await SharedListsController.shared.syncAll()
+                }
                 // Keeps the morning check-in's words in the iPhone's current language (ADR-220).
                 .task { if MorningCheckInSettings.stored().isOn { _ = await MorningCheckInScheduler.apply(.stored()) } }
                 .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
+                .task { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }
         }
     }
 }

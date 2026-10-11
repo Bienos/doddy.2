@@ -4,23 +4,27 @@
 #    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
-#    (ADR-235), whose WebSocket lives in one file in Features/Voice,
+#    (ADR-264), whose WebSocket lives in one file in Features/Voice,
 #  - the system authentication browser is used only by Connected Apps,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
 #    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
+#  - the "Hey Doddy" wake-word engine (Picovoice Porcupine, ADR-254) only in WakeWordListener.swift,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
-#  - on-device meaning search (NaturalLanguage) only inside DoddyApp/Features/Meaning (ADR-227),
+#  - on-device meaning search (NaturalLanguage embeddings) only inside DoddyApp/Features/Meaning (ADR-227);
+#    the NaturalLanguage import also in ReadAloudController, for its language recognizer only (ADR-243),
 #  - photo text reading (Vision) and the photo picker only inside DoddyApp/Features/Photos, never the
 #    camera or the whole photo library (ADR-218),
 #  - WatchConnectivity only in DoddyApp/Features/Watch and the watch app (DoddyWatch), which has no
 #    database or networking of its own (ADR-232),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
-#  - permission keys only for the microphone, speech recognition (on-device, voice memos), calendar,
+#  - AlarmKit only inside DoddyApp/Features/Alarms (ADR-260),
+#  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
+#  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
 #    reminders, contacts and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the two reviewed ones (Gmail draft, Todoist task), no proxy execution,
@@ -30,10 +34,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyWatch Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyWatch DoddyWatchWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
-anywhere='NWConnection|import Network|import CloudKit|import FirebaseCore|import Sentry|import Analytics'
+anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
+sharing_dir=DoddyApp/Features/Sharing
+sharing_only='import CloudKit|CKContainer|CKDatabase|UICloudSharingController'
 token_client=DoddyApp/Features/Voice/VoiceTokenClient.swift
 openai_voice=DoddyApp/Features/Voice/OpenAIRealtimeSession.swift
 network_file=DoddyApp/Infrastructure/URLSessionTransport.swift
@@ -49,16 +55,20 @@ speech_only='import Speech|SFSpeech'
 watch_link_dir=DoddyApp/Features/Watch
 watch_app_dir=DoddyWatch
 watch_only='import WatchConnectivity|WCSession'
+alarms_dir=DoddyApp/Features/Alarms
+alarms_only='import AlarmKit|AlarmManager'
 connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger'
 meaning_dir=DoddyApp/Features/Meaning
-meaning_only='import NaturalLanguage|NLContextualEmbedding|NLEmbedding'
+meaning_only='NLContextualEmbedding|NLEmbedding'
+# Read aloud picks a voice by the note's language (NLLanguageRecognizer, on the iPhone, ADR-243).
+natural_language_files='^(DoddyApp/Features/Meaning/|DoddyApp/Features/Voice/ReadAloudController.swift:)'
 photos_dir=DoddyApp/Features/Photos
 photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI|PhotosPicker'
 photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsset\.fetch|UIImagePickerController|AVCaptureSession|NSCameraUsageDescription|NSPhotoLibrary(Add)?UsageDescription'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
-allowed_permissions='NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSLocationWhenInUseUsageDescription'
+allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSLocationWhenInUseUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
 code_only() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)'; }
@@ -69,6 +79,10 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
+# isn't kept or sent" stays checkable.
+wake_file=DoddyApp/Features/Voice/WakeWordListener.swift
+wake_only='import Porcupine|PorcupineManager|Porcupine\(|import ios_voice_processor|VoiceProcessor\.instance'
 
 status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
@@ -79,6 +93,9 @@ if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | gre
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
+  echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
   echo "FAIL: ElevenLabs code outside $voice_dir." >&2; status=1
@@ -111,6 +128,9 @@ if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$
 fi
 if grep -RInE --include='*.swift' "$meaning_only" "${dirs[@]}" | grep -v "^$meaning_dir/"; then
   echo "FAIL: on-device language models outside $meaning_dir (ADR-227)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' 'import NaturalLanguage' "${dirs[@]}" | grep -vE "$natural_language_files"; then
+  echo "FAIL: NaturalLanguage outside $meaning_dir and the read-aloud language check (ADR-227, ADR-243)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$photos_only" "${dirs[@]}" | grep -v "^$photos_dir/"; then
   echo "FAIL: photo reading or the photo picker outside $photos_dir." >&2; status=1
@@ -151,8 +171,14 @@ fi
 if [ -d server/messaging ] && grep -RInE "$messaging_secrets" server/messaging render.yaml --exclude-dir=node_modules --exclude-dir=dist; then
   echo "FAIL: possible secret found in server/messaging or render.yaml." >&2; status=1
 fi
-if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
-  echo "FAIL: only the microphone, speech recognition, calendar, reminders, contacts and While Using location permissions are allowed." >&2; status=1
+if grep -RInE --include='*.swift' "$sharing_only" "${dirs[@]}" | code_only | grep -v "^$sharing_dir/"; then
+  echo "FAIL: CloudKit outside $sharing_dir." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport and the OpenAI test voice, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, permissions limited to microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
+if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v "^$alarms_dir/"; then
+  echo "FAIL: AlarmKit outside $alarms_dir." >&2; status=1
+fi
+if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
+  echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location permissions are allowed." >&2; status=1
+fi
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport and the OpenAI test voice, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
 exit "$status"

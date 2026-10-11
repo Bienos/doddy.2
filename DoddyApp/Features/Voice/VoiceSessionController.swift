@@ -8,7 +8,7 @@ import UIKit
 import os
 
 /// One voice conversation with the ElevenLabs agent, or with OpenAI Realtime when Home's test
-/// switch says so (ADR-235; same prompt, notes and tools, see `LiveVoiceLink`). State shown in the
+/// switch says so (ADR-264; same prompt, notes and tools, see `LiveVoiceLink`). State shown in the
 /// UI comes only from real provider events (connected, listening, speaking, disconnected), never
 /// from timers.
 /// Tool calls are proposals. Lookups run on the phone. Anything that changes data, starts
@@ -37,6 +37,8 @@ final class VoiceSessionController {
         case event(toolCallID: String, draft: CalendarEventDraft)
         case reminder(toolCallID: String, draft: ReminderDraft)
         case timer(toolCallID: String, draft: TimerDraft)
+        /// "Set this alarm?" (ADR-260), iOS 26 and later.
+        case alarm(toolCallID: String, draft: AlarmDraft)
         case map(toolCallID: String, place: String)
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
@@ -56,15 +58,19 @@ final class VoiceSessionController {
         case changeEvent(toolCallID: String, plan: EventChangePlan)
         /// "Change this reminder?" or "Mark this reminder done?" (ADR-229).
         case changeReminder(toolCallID: String, reminder: ReminderSnapshot, draft: ReminderChangeDraft)
+        /// "Delete this event?" (ADR-259): one occurrence, exactly as Calendar has it.
+        case deleteEvent(toolCallID: String, event: CalendarEventSummary)
+        /// "Delete this reminder?" (ADR-259): one open reminder, exactly as Reminders has it.
+        case deleteReminder(toolCallID: String, reminder: ReminderSnapshot)
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
         var toolCallID: String {
             switch self {
-            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
-                 .changeEvent(let id, _), .changeReminder(let id, _, _):
+                 .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _):
                 id
             }
         }
@@ -138,7 +144,19 @@ final class VoiceSessionController {
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
-    private(set) var reminderStatus: ReminderStatus?
+    private(set) var reminderStatus: ReminderStatus? {
+        didSet {
+            // Reminders confirmed it (added, or already there): the island says so briefly (ADR-240).
+            // An unknown result is never shown as set.
+            if case .done(_, let outcome) = reminderStatus {
+                switch outcome {
+                case .added, .alreadyThere: flashIsland(.reminderSet)
+                default: break
+                }
+            }
+            syncIsland()
+        }
+    }
     private(set) var noteReminderStatus: NoteReminderStatus?
     /// Which steps of the plan card are ticked. Every step that can run starts ticked.
     private(set) var planTicked: Set<Int> = []
@@ -147,7 +165,7 @@ final class VoiceSessionController {
     /// Gmail and Todoist steps on the plan card: the server's preview and its one-time approval
     /// for exactly these arguments (ADR-209).
     private(set) var planCloud: [Int: PlanCloudApproval] = [:]
-    private(set) var planStatus: PlanStatus?
+    private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
@@ -156,9 +174,14 @@ final class VoiceSessionController {
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
+    /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
+    private(set) var changeReceipt: ChangeReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
-    private(set) var translator: TranslatorSession?
+    private(set) var translator: TranslatorSession? {
+        // The island follows the mode and its languages (ADR-244), not each line heard.
+        didSet { if oldValue?.setup != translator?.setup { syncIsland() } }
+    }
     /// The end screen after translating: the text stays in memory for five minutes for Copy or
     /// "Save the facts as a note", then it is dropped (T3).
     private(set) var translatorSummary: TranslatorSummary?
@@ -185,7 +208,16 @@ final class VoiceSessionController {
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
-    private let island = VoiceLiveActivity()
+    /// Shared with "Hey Doddy" listening, which may have started it (ADR-254).
+    private let island = VoiceLiveActivity.shared
+    /// True once this conversation has shown its state on the island, so only it ends it.
+    private var ownsIsland = false
+    /// "Hey Pat, what's up?" when the wake word started this conversation (ADR-254). Shown on
+    /// the island until the user first speaks.
+    private(set) var wakeGreeting: String? { didSet { syncIsland() } }
+    /// The wake word started this conversation: it ends by itself if the user says nothing.
+    private var startedByWakeWord = false
+    private var silentWakeTimer: Task<Void, Never>?
     /// True while iOS has paused Doddy's audio because another app took the audio session
     /// (`AVAudioSession` interruption). Real system events only, never a guess.
     private(set) var audioPausedByOtherApp = false
@@ -196,7 +228,7 @@ final class VoiceSessionController {
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     private let devices = DeviceConnections()
     private var conversation: (any LiveVoiceLink)?
-    /// Who runs the conversation now (Home's test switch, read when it starts; ADR-235).
+    /// Who runs the conversation now (Home's test switch, read when it starts; ADR-264).
     private(set) var provider: VoiceProvider = .elevenLabs
     private var startedAt: Date?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
@@ -208,6 +240,21 @@ final class VoiceSessionController {
     private(set) var privacyLocked = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
+    /// A finished moment the island shows for a few seconds ("Note saved", "Reminder set").
+    private var islandFlash: (moment: DoddyVoiceAttributes.ContentState.Moment, until: Date)? {
+        didSet { syncIsland() }
+    }
+    @ObservationIgnored private var islandFlashClear: Task<Void, Never>?
+    /// How long "Note saved" and "Reminder set" stay on the island.
+    static let islandFlashSeconds: TimeInterval = 8
+    /// Every note text Doddy put on a save card or plan in this conversation, saved or declined,
+    /// so the end-of-conversation suggestions never offer them again (ADR-247).
+    private var proposedNoteTexts: [String] = []
+    /// "Worth keeping?" after the conversation ends (ADR-247). Nothing ticked, nothing saved
+    /// until the user taps Save.
+    private(set) var saveSuggestions: SaveSuggestionCard?
+    /// Suggestions are worked out once per conversation, so a dismissed card doesn't come back.
+    private var suggestionsOffered = false
 
     init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
         self.store = store
@@ -223,18 +270,26 @@ final class VoiceSessionController {
     }
 
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
-    /// Settings → About you → "Use in voice conversations" is on.
+    /// Settings → About you → "Use in voice conversations" is on. `wakeGreeting` is set when
+    /// "Hey Doddy" started the conversation (ADR-254): Doddy says it first and the island shows it.
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
-        checkIn: MorningBriefing? = nil
+        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
+        // A note being read aloud would fight the conversation for the speaker (ADR-243).
+        ReadAloudController.shared.stop()
+        startedByWakeWord = wakeGreeting != nil
+        self.wakeGreeting = wakeGreeting
+        silentWakeTimer?.cancel()
+        silentWakeTimer = nil
         lines = []
         // A translator start sends no notes or lists, so it never carries a check-in too.
         let checkIn = preset == nil ? checkIn : nil
         checkInNeedsBriefing = checkIn != nil
         translator = nil
         listReceipt = nil
+        changeReceipt = nil
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -251,6 +306,10 @@ final class VoiceSessionController {
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
+        islandFlash = nil
+        proposedNoteTexts = []
+        saveSuggestions = nil
+        suggestionsOffered = false
         audioPausedByOtherApp = false
         audioNote = nil
 
@@ -310,6 +369,11 @@ final class VoiceSessionController {
             TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
             ListsPrompt.variableName: listsText,
             MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
+            // What Doddy says first (ADR-254): the greeting after "Hey Doddy", otherwise his
+            // usual opening. Used once the agent's first message is {{opening_line}}
+            // (voice-agent/session.json); an agent without it ignores the variable.
+            WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
+                afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
         ]
         provider = VoiceProvider(stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey))
         if provider == .openAIRealtime {
@@ -349,6 +413,7 @@ final class VoiceSessionController {
         config.onAgentReady = {
             Task { @MainActor in
                 if ref.value?.phase == .connecting { ref.value?.phase = .listening }
+                ref.value?.startSilentWakeTimer()
             }
         }
         config.onDisconnect = { _ in
@@ -393,7 +458,7 @@ final class VoiceSessionController {
         }
     }
 
-    // MARK: OpenAI Realtime (testing, ADR-235)
+    // MARK: OpenAI Realtime (testing, ADR-264)
 
     /// The bundled copy of voice-agent/ (prompt, tools, session), the same spec the live
     /// ElevenLabs agent is synced from, so both providers get the same Doddy.
@@ -445,7 +510,9 @@ final class VoiceSessionController {
             fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home back to ElevenLabs.")
             return
         }
-        let greetingLine = OpenAIRealtimeWire.greetingLine(sessionJSON: spec.session, languageCode: ConversationLanguage.stored().overrideCode)
+        // The same opening the ElevenLabs agent gets (ADR-254: the "Hey Doddy" greeting or his usual one).
+        let greetingLine = variables[WakeGreeting.variableName]
+            ?? OpenAIRealtimeWire.greetingLine(sessionJSON: spec.session, languageCode: ConversationLanguage.stored().overrideCode)
 
         let grant: OpenAIRealtimeGrant
         do throws(VoiceTokenError) {
@@ -585,6 +652,7 @@ final class VoiceSessionController {
 
     func stop() async {
         endTranslator()
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         let active = conversation
         conversation = nil
@@ -593,7 +661,10 @@ final class VoiceSessionController {
         connectionNeeded = nil
         if isLive { phase = .ended }
         keepLog()
+        offerSaveSuggestions()
         await active?.endConversation()
+        // Only now may "Hey Doddy" take the microphone again (ADR-254).
+        WakeWordListener.shared.conversationAudioReleased()
     }
 
     /// Keeps the transcript lines of this conversation on the phone, once, so the next
@@ -646,6 +717,8 @@ final class VoiceSessionController {
                 let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
                 pendingMemoryCategory = .other
                 savedThisConversation += 1
+                // Only after the store returned the saved record (ADR-240).
+                flashIsland(.noteSaved)
                 await reply(id, VoiceToolReply.saved(record))
             } catch {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
@@ -660,6 +733,8 @@ final class VoiceSessionController {
             await reply(id, VoiceToolReply.reminder(outcome))
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
+        case .alarm(let id, let draft):
+            await reply(id, await setAlarm(draft))
         case .map(let id, let place):
             guard let url = OpenLinks.map(place: place) else {
                 await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
@@ -699,6 +774,10 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan))
         case .changeReminder(let id, let reminder, let draft):
             await reply(id, changeReminder(reminder, draft))
+        case .deleteEvent(let id, let event):
+            await reply(id, deleteEvent(event))
+        case .deleteReminder(let id, let reminder):
+            await reply(id, deleteReminder(reminder))
         case .translator(let id, let setup):
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
@@ -809,6 +888,7 @@ final class VoiceSessionController {
         case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
         case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
+        case .alarm(let id, _): await reply(id, VoiceToolReply.declinedAlarm)
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
@@ -817,6 +897,7 @@ final class VoiceSessionController {
         case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
+        case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -1152,17 +1233,89 @@ final class VoiceSessionController {
         case .speaking: status = .speaking
         case .idle, .ended, .microphoneDenied, .failed: return nil
         }
-        return .init(status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted)
+        var state = DoddyVoiceAttributes.ContentState(
+            status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted,
+            greeting: wakeGreeting, conversationStartedAt: startedAt)
+        state.moment = islandMoment
+        state.islandStyle = IslandStyle(rawValue: UserDefaults.standard.string(forKey: PreferenceKey.islandStyle) ?? "") ?? .leanIn
+        return state
+    }
+
+    /// What is happening inside the conversation that has its own island (ADR-240): a card
+    /// waiting for the user, translator mode (ADR-244), a plan running, a reminder being added,
+    /// or a few seconds of "saved" / "set" after the store or Reminders confirmed it. Kinds,
+    /// counts and language codes only.
+    private var islandMoment: DoddyVoiceAttributes.ContentState.Moment? {
+        switch pendingAction {
+        case .memory: return .noteWaiting
+        case .plan(_, let steps, _): return .planWaiting(steps: steps.count)
+        case .reminder, .noteReminder: return .reminderWaiting
+        case .some: return nil
+        case nil: break
+        }
+        // Translating (ADR-244): the language codes only, never a phrase. No tool runs in this
+        // mode, so no plan, reminder or "saved" moment can be hidden by it.
+        if let setup = translator?.setup {
+            let theirs = setup.other?.code ?? "?"
+            switch setup.kind {
+            case .faceToFace: return .translating(from: setup.owner.code, to: theirs, bothWays: true)
+            case .listen: return .translating(from: theirs, to: setup.owner.code, bothWays: false)
+            }
+        }
+        if let plan = planStatus, plan.isRunning, !plan.steps.isEmpty {
+            return .planRunning(step: min(plan.results.count + 1, plan.steps.count), of: plan.steps.count)
+        }
+        if case .adding = reminderStatus { return .reminderAdding }
+        if let flash = islandFlash, flash.until > Date() { return flash.moment }
+        return nil
+    }
+
+    private func flashIsland(_ moment: DoddyVoiceAttributes.ContentState.Moment) {
+        islandFlash = (moment, Date().addingTimeInterval(Self.islandFlashSeconds))
+        islandFlashClear?.cancel()
+        islandFlashClear = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.islandFlashSeconds))
+            guard !Task.isCancelled else { return }
+            self?.islandFlash = nil
+        }
     }
 
     private func syncIsland() {
         if let state = islandState {
+            ownsIsland = true
             island.show(state, startedAt: startedAt ?? .now)
-        } else if phase == .ended {
+            return
+        }
+        // Only a conversation that showed itself on the island ends it: "Hey Doddy" listening
+        // may be using it while this one is idle (ADR-254).
+        guard ownsIsland else { return }
+        ownsIsland = false
+        // "Hey Doddy" listening carries on in the same island when it can start again.
+        if WakeWordListener.shared.takeIslandBack() { return }
+        if phase == .ended {
             island.finish(savedCount: savedThisConversation)
         } else {
             island.end()
         }
+    }
+
+    // MARK: "Hey Doddy" (ADR-254)
+
+    /// A conversation the wake word started ends by itself if the user says nothing for
+    /// `WakeGate.silentWakeTimeout` after Doddy is ready: most likely the word was heard by
+    /// mistake, and an open conversation keeps the microphone and ElevenLabs running.
+    private func startSilentWakeTimer() {
+        guard startedByWakeWord, silentWakeTimer == nil, isLive else { return }
+        silentWakeTimer = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(WakeGate.silentWakeTimeout))
+            guard !Task.isCancelled, let self, self.isLive, !self.lines.contains(where: \.fromUser) else { return }
+            await self.stop()
+        }
+    }
+
+    private func stopSilentWakeTimer() {
+        silentWakeTimer?.cancel()
+        silentWakeTimer = nil
     }
 
     // MARK: Events
@@ -1198,6 +1351,8 @@ final class VoiceSessionController {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
         }
+        // The greeting stays on the island only until the user answers.
+        if fromUser, wakeGreeting != nil { wakeGreeting = nil }
     }
 
     private func correct(_ original: String, to corrected: String) {
@@ -1210,6 +1365,7 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
@@ -1217,12 +1373,60 @@ final class VoiceSessionController {
 
     private func disconnected() {
         endTranslator()
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         conversation = nil
         pendingAction = nil
         keepLog()
         if case .failed = phase { return }
         phase = .ended
+        offerSaveSuggestions()
+    }
+
+    // MARK: End-of-conversation save suggestions (ADR-247)
+
+    /// Picks what the user said that may be worth keeping, on the phone, from their own lines only.
+    /// Not for a private conversation, not when switched off, not when notes can't be saved.
+    private func offerSaveSuggestions() {
+        guard !suggestionsOffered, phase == .ended else { return }
+        suggestionsOffered = true
+        guard !isPrivate, store.isStorageAvailable,
+              UserDefaults.standard.object(forKey: PreferenceKey.suggestSavesAfterConversation) as? Bool ?? true
+        else { return }
+        let found = SaveSuggestions.suggest(
+            userLines: lines.filter(\.fromUser).map(\.text),
+            alreadyProposed: proposedNoteTexts,
+            existingNotes: store.memories)
+        saveSuggestions = found.isEmpty ? nil : SaveSuggestionCard(found)
+    }
+
+    func toggleSaveSuggestion(_ id: Int) {
+        saveSuggestions?.toggle(id)
+    }
+
+    func changeSaveSuggestion(_ id: Int, to text: String) {
+        saveSuggestions?.setText(id, text)
+    }
+
+    /// Saves the ticked suggestions one by one through the normal checked save (read back before
+    /// it counts). A failed one says why and is never shown as saved.
+    func saveTickedSuggestions() async {
+        guard var card = saveSuggestions, card.tickedCount > 0, !card.isSaving else { return }
+        let batch = card.beginSaving()
+        saveSuggestions = card
+        for (id, text) in batch {
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                saveSuggestions?.finish(id, .success(record))
+            } catch {
+                saveSuggestions?.finish(id, .failure(SaveSuggestionFailure(message: UserFacingError.message(for: error))))
+            }
+        }
+    }
+
+    func dismissSaveSuggestions() {
+        guard saveSuggestions?.isSaving != true else { return }
+        saveSuggestions = nil
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
@@ -1251,12 +1455,13 @@ final class VoiceSessionController {
         case .searchMemories(let query):
             do {
                 let outcome = try await store.recall(query)
-                await reply(call.toolCallId, VoiceToolReply.search(outcome))
+                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
+            proposedNoteTexts.append(text)
             pendingMemoryCategory = .other
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
         case .readCalendar(let range):
@@ -1279,6 +1484,10 @@ final class VoiceSessionController {
             await proposeEventChange(draft, toolCallID: call.toolCallId)
         case .changeReminder(let draft):
             await proposeReminderChange(draft, toolCallID: call.toolCallId)
+        case .deleteCalendarEvent(let draft):
+            await proposeEventDelete(draft, toolCallID: call.toolCallId)
+        case .deleteReminder(let title):
+            await proposeReminderDelete(title, toolCallID: call.toolCallId)
         case .remindAboutNote(let draft):
             await proposeNoteReminder(draft, toolCallID: call.toolCallId)
         case .needsClarification(let name, let clarification):
@@ -1302,6 +1511,13 @@ final class VoiceSessionController {
                 return
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .setAlarm(let draft):
+            // Said now, before a card that could only fail: an older iOS, or alarms refused.
+            switch AlarmScheduler.support() {
+            case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
+            case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
+            case .available: propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+            }
         case .openMap(let place):
             propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
         case .runShortcut(let name):
@@ -1379,6 +1595,9 @@ final class VoiceSessionController {
             return
         case .plan(let parsed):
             steps = parsed
+        }
+        proposedNoteTexts += steps.compactMap { step in
+            if case .saveMemory(let text) = step.request { text } else { nil }
         }
         guard pendingAction == nil else {
             // One card at a time, as in propose(_:toolCallID:).
@@ -1595,9 +1814,17 @@ final class VoiceSessionController {
             return
         }
         await store.reload()
-        guard let record = NoteQuoteMatch.find(draft.noteText, in: store.memories) else {
-            await reply(toolCallID, VoiceToolReply.noteNotFound())
-            return
+        let record: MemoryRecord
+        if draft.isList {
+            // A list (ADR-256), matched exactly like the list tools; otherwise the agent asks.
+            guard let list = await resolveList(draft.noteText, toolCallID: toolCallID) else { return }
+            record = list.record
+        } else {
+            guard let note = NoteQuoteMatch.find(draft.noteText, in: store.memories) else {
+                await reply(toolCallID, VoiceToolReply.noteNotFound())
+                return
+            }
+            record = note
         }
         switch draft.target {
         case .time(let date, let zone):
@@ -1621,6 +1848,12 @@ final class VoiceSessionController {
                                   savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
                     toolCallID: toolCallID)
         }
+    }
+
+    /// The note-reminder card is about a list (ADR-256), read from the store by its id.
+    var isListReminder: Bool {
+        guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return false }
+        return store.list(id: memoryID) != nil
     }
 
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
@@ -1708,7 +1941,9 @@ final class VoiceSessionController {
         if EventChange.startPassed(plan, now: Date(), calendar: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
             switch try devices.changeEvent(plan) {
-            case .verified: return VoiceToolReply.eventChanged(plan.after, calendar: .current)
+            case .verified:
+                changeReceipt = ChangeReceipt(kind: .event(plan), message: ChangeReceipt.message(for: plan))
+                return VoiceToolReply.eventChanged(plan.after, calendar: .current)
             case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
             }
@@ -1724,8 +1959,13 @@ final class VoiceSessionController {
         }
         if EventChange.duePassed(draft.newDue, now: Date(), local: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
-            switch try devices.changeReminder(reminder, newDue: draft.newDue, markDone: draft.markDone) {
+            switch try devices.changeReminder(reminder, draft.markDone ? .complete : .due(draft.newDue)) {
             case .verified:
+                if let after = devices.reminderSnapshot(id: reminder.id) {
+                    changeReceipt = ChangeReceipt(
+                        kind: .reminder(before: reminder, after: after),
+                        message: ChangeReceipt.message(reminder: after, completed: draft.markDone))
+                }
                 return draft.markDone
                     ? VoiceToolReply.reminderCompleted(reminder.title)
                     : VoiceToolReply.reminderChanged(reminder.title, due: draft.newDue)
@@ -1736,6 +1976,115 @@ final class VoiceSessionController {
             return VoiceToolReply.failed(UserFacingError.message(for: error))
         }
     }
+
+    // MARK: Deleting events and reminders (ADR-259)
+
+    /// Exactly one event with the title and start the agent read; otherwise the agent asks.
+    private func proposeEventDelete(_ draft: EventChangeDraft, toolCallID: String) async {
+        guard devices.access(for: .calendar) == .granted else {
+            await notConnected(toolCallID, .calendar)
+            return
+        }
+        let events = devices.events(in: EventChange.searchRange(draft, calendar: .current))
+        switch EventChange.match(draft, in: events, calendar: .current) {
+        case .none: await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
+        case .several(let found): await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .one(let event): propose(.deleteEvent(toolCallID: toolCallID, event: event), toolCallID: toolCallID)
+        }
+    }
+
+    /// Exactly one open reminder with that title; otherwise the agent asks.
+    private func proposeReminderDelete(_ title: String, toolCallID: String) async {
+        guard devices.access(for: .reminders) == .granted else {
+            await notConnected(toolCallID, .reminders)
+            return
+        }
+        do {
+            let open = try await devices.incompleteReminders()
+            switch EventChange.matchReminder(title, in: open) {
+            case .none: await reply(toolCallID, VoiceToolReply.reminderNotFound(title))
+            case .several(let found): await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .one(let reminder): propose(.deleteReminder(toolCallID: toolCallID, reminder: reminder), toolCallID: toolCallID)
+            }
+        } catch {
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+        }
+    }
+
+    /// Checked again at the tap: permission, and that the event still looks as shown. "Deleted"
+    /// only when Calendar no longer has it.
+    private func deleteEvent(_ event: CalendarEventSummary) -> String {
+        guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
+            connectionNeeded = .calendar
+            return VoiceToolReply.failed("Calendar isn't connected. Nothing was deleted.")
+        }
+        do {
+            switch try devices.deleteEvent(event) {
+            case .verified: return VoiceToolReply.eventDeleted(event, calendar: .current)
+            case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
+    private func deleteReminder(_ reminder: ReminderSnapshot) -> String {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return VoiceToolReply.failed("Reminders isn't connected. Nothing was deleted.")
+        }
+        do {
+            switch try devices.deleteReminder(reminder) {
+            case .verified: return VoiceToolReply.reminderDeleted(reminder.title)
+            case .changedElsewhere: return VoiceToolReply.reminderChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
+    /// Undo on the change receipt (ADR-258): the same checked change, backwards. The item must
+    /// still look exactly as Doddy left it; the result is read back and Doddy is told.
+    func undoLastChange(now: Date = .now) async {
+        guard var receipt = changeReceipt, receipt.state == .available else { return }
+        guard now.timeIntervalSince(receipt.madeAt) <= ChangeReceipt.undoFor else {
+            receipt.state = .failed(NSLocalizedString("It's too late to undo here. Change it in Calendar or Reminders.", comment: ""))
+            changeReceipt = receipt
+            return
+        }
+        receipt.state = .working
+        changeReceipt = receipt
+        let outcome: DeviceConnections.ChangeOutcome
+        do {
+            switch receipt.kind {
+            case .event(let plan):
+                outcome = try devices.changeEvent(EventChange.reversed(plan))
+            case .reminder(let before, let after):
+                let change: ReminderChange = after.isCompleted != before.isCompleted
+                    ? (after.isCompleted ? .reopen : .complete) : .due(before.due)
+                outcome = try devices.changeReminder(after, change)
+            }
+        } catch {
+            receipt.state = .failed(UserFacingError.message(for: error))
+            changeReceipt = receipt
+            return
+        }
+        switch outcome {
+        case .verified:
+            receipt.state = .undone
+            await sendToAgent("The user tapped Undo on screen: \(receipt.agentUndoText) It was checked. Don't change it again unless they ask.")
+        case .changedElsewhere:
+            receipt.state = .failed(NSLocalizedString("It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.", comment: ""))
+        case .unconfirmed:
+            receipt.state = .failed(NSLocalizedString("It may not have gone back. Check it in Calendar or Reminders.", comment: ""))
+            await sendToAgent("The user tapped Undo, but the app couldn't confirm it. Don't say it was undone.")
+        }
+        changeReceipt = receipt
+    }
+
+    func dismissChangeReceipt() { changeReceipt = nil }
 
     /// Look first, write once, read back (DoddyCore `ReminderAction`). Permission is checked again
     /// at the tap, since the user may have changed it while the card waited.
@@ -1760,6 +2109,27 @@ final class VoiceSessionController {
                 return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
             case .unconfirmed:
                 return VoiceToolReply.addUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
+    /// Checked again at the tap: the switch, and that the time hasn't passed while the card waited.
+    private func setAlarm(_ draft: AlarmDraft) async -> String {
+        guard isOn(.timers) else {
+            connectionNeeded = .timers
+            return VoiceToolReply.failed("Timers and alarms are switched off. Nothing was set.")
+        }
+        if draft.repeats == nil, let late = ReminderDueRules.passed(draft.first, now: Date()) {
+            return VoiceToolReply.clarification(late, tool: VoiceToolName.setAlarm)
+        }
+        do {
+            switch try await AlarmScheduler.schedule(draft) {
+            case .verified: return VoiceToolReply.alarmSet(draft)
+            case .unconfirmed: return VoiceToolReply.alarmUnconfirmed
+            case .needsNewerIOS: return VoiceToolReply.alarmNeedsNewerIOS
+            case .notAllowed: return VoiceToolReply.alarmNotAllowed
             }
         } catch {
             return VoiceToolReply.notAdded(UserFacingError.message(for: error))
@@ -1871,9 +2241,53 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder: true
+        case .memory, .event, .reminder, .timer, .alarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
+             .deleteEvent, .deleteReminder: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false
+        }
+    }
+}
+
+/// A change Doddy made in Calendar or Reminders this conversation, shown with Undo (ADR-258).
+struct ChangeReceipt: Equatable, Identifiable {
+    enum Kind: Equatable {
+        case event(EventChangePlan)
+        /// The reminder before the change and as it was read back after it.
+        case reminder(before: ReminderSnapshot, after: ReminderSnapshot)
+    }
+    enum UndoState: Equatable {
+        case available, working, undone
+        case failed(String)
+    }
+
+    /// Undo is offered this long after the change.
+    static let undoFor: TimeInterval = 10 * 60
+
+    let id = UUID()
+    let kind: Kind
+    let message: String
+    let madeAt = Date()
+    var state: UndoState = .available
+
+    static func message(for plan: EventChangePlan) -> String {
+        let when = plan.after.allDay
+            ? plan.after.start.formatted(date: .abbreviated, time: .omitted)
+            : plan.after.start.formatted(date: .abbreviated, time: .shortened)
+        return String(format: NSLocalizedString("Changed “%@”: now %@.", comment: ""), plan.after.title, when)
+    }
+
+    static func message(reminder: ReminderSnapshot, completed: Bool) -> String {
+        completed
+            ? String(format: NSLocalizedString("Marked “%@” done in Reminders.", comment: ""), reminder.title)
+            : String(format: NSLocalizedString("“%@” is now due %@.", comment: ""), reminder.title, ReminderText.due(reminder.due))
+    }
+
+    /// For the agent, in English.
+    var agentUndoText: String {
+        switch kind {
+        case .event(let plan): "the event \"\(plan.before.title)\" is back as it was before Doddy changed it."
+        case .reminder(let before, _): "the reminder \"\(before.title)\" is back as it was before Doddy changed it."
         }
     }
 }

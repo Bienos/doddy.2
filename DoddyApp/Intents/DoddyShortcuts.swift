@@ -1,7 +1,7 @@
 import AppIntents
 
 /// Makes `TalkToDoddyIntent`, `NewNoteIntent` (Shared/Shortcuts), `SaveToDoddyIntent`,
-/// `FindInDoddyIntent` and the list intents (ADR-226) appear under Doddy in
+/// `FindInDoddyIntent`, `AskDoddyNoteIntent` (ADR-248) and the list intents (ADR-226) appear under Doddy in
 /// Shortcuts, Siri and the Action Button picker with no setup. App target only.
 struct DoddyShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
@@ -41,6 +41,17 @@ struct DoddyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Find in Doddy",
             systemImageName: "magnifyingglass")
+        // Answers out loud without opening the app; Siri asks "What are you looking for?" (ADR-248).
+        AppShortcut(
+            intent: AskDoddyNoteIntent(),
+            phrases: [
+                "Ask \(.applicationName) what I saved",
+                "What did I save in \(.applicationName)",
+                "Read my note from \(.applicationName)",
+                "Check my notes in \(.applicationName)",
+            ],
+            shortTitle: "Ask what I saved",
+            systemImageName: "text.bubble")
         // Lists (ADR-226). Phrases with \(\.$list) work once the list names are known to Siri
         // (`updateAppShortcutParameters()` runs when lists change); the items are asked for.
         AppShortcut(
