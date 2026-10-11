@@ -78,6 +78,25 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertNil(WidgetSnapshot.decoded(Data("{".utf8)))
     }
 
+    /// Review I1: built at a real `Date()` (sub-millisecond fraction), the snapshot reads back
+    /// equal, so a correct write is never taken for a failed one. About half failed before.
+    func testASnapshotMadeAtARealNowReadsBackEqual() throws {
+        let dentist = try note("Dentist: bring the referral")
+        let start = Date()
+        for step in 0..<200 {
+            let now = start.addingTimeInterval(Double(step) * 0.000_731)
+            let reminder = MemoryReminder(id: UUID(), memoryID: dentist.id, fireAt: now.addingTimeInterval(3600.000_42),
+                                          timeZoneID: "UTC", createdAt: now)
+            for isOn in [true, false] {
+                let snapshot = WidgetSnapshot.make(
+                    memories: [dentist], lists: [], pinned: PinnedNotes(ids: [dentist.id]), reminders: [reminder],
+                    showReminderText: true, isOn: isOn, now: now)
+                XCTAssertEqual(WidgetSnapshot.decoded(try snapshot.encoded()), snapshot, "now = \(now.timeIntervalSince1970)")
+                XCTAssertLessThan(abs(snapshot.writtenAt.timeIntervalSince(now)), 0.001)
+            }
+        }
+    }
+
     func testWidgetLinkOpensOneNoteOnly() {
         let id = UUID()
         XCTAssertEqual(WidgetLink.memoryID(from: WidgetLink.open(id)), id)

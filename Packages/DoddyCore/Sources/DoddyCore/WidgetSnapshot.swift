@@ -87,7 +87,14 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     }
 
     public static func off(at date: Date) -> WidgetSnapshot {
-        WidgetSnapshot(writtenAt: date, isOn: false, pinned: [], reminders: [], lists: [])
+        WidgetSnapshot(writtenAt: wholeMilliseconds(date), isOn: false, pinned: [], reminders: [], lists: [])
+    }
+
+    /// The date as the file keeps it (`millisecondsSince1970`). A `Date.now` with a finer fraction
+    /// often reads back unequal, so a correct write looked failed and widgets weren't reloaded
+    /// (review I1); whole milliseconds read back exactly.
+    public static func wholeMilliseconds(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: (date.timeIntervalSince1970 * 1000).rounded() / 1000)
     }
 
     /// Builds the snapshot from what the app has loaded. Pinned notes in pin order, skipping
@@ -102,7 +109,7 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         let upcoming = reminders.compactMap { reminder -> Reminder? in
             guard case .time(_, let zone) = reminder.trigger, let fire = reminder.nextFire(after: now),
                   let note = byID[reminder.memoryID] else { return nil }
-            return Reminder(memoryID: reminder.memoryID, fireAt: fire, timeZoneID: zone,
+            return Reminder(memoryID: reminder.memoryID, fireAt: wholeMilliseconds(fire), timeZoneID: zone,
                             text: showReminderText ? shortened(note.currentText) : nil)
         }
         .sorted { $0.fireAt < $1.fireAt }
@@ -113,7 +120,7 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
                  })
         }
         return WidgetSnapshot(
-            writtenAt: now, isOn: true, pinned: Array(notes.prefix(maxPinned)),
+            writtenAt: wholeMilliseconds(now), isOn: true, pinned: Array(notes.prefix(maxPinned)),
             reminders: Array(upcoming.prefix(maxReminders)), lists: Array(shownLists))
     }
 
