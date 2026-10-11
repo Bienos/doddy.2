@@ -9,9 +9,16 @@
 > `DATABASE_URL` (the database's Internal Database URL) and an AI key, `ANTHROPIC_API_KEY` or
 > `OPENAI_API_KEY` (ADR-197), in the service's Environment, typed in Render only.
 >
-> **2026-10-11:** the backend `doddy` moved to a new Render account (`docs/integrations/DEPLOY_RENDER.md`). The
-> messaging service and database above were **not** moved and are still in workspace SLIYD; recreate them in the new
-> workspace if that account is no longer used.
+> **2026-10-11 (owner: "recreate the messaging service on the new account"):** recreated in the new Render
+> workspace "Patryk's workspace" (the one the backend `doddy` moved to, `docs/integrations/DEPLOY_RENDER.md`),
+> Frankfurt, free plan: Postgres `doddy-messaging-db` (`dpg-db5m1kdckfvc73am3220-a`, PostgreSQL 16, **free database
+> expires 2026-11-10**) and web service `doddy-messaging` (`srv-db5m1krbc2fs739bveig`,
+> https://doddy-messaging-zw1n.onrender.com, default branch `claude/loving-dirac-uuxoux`, auto-deploy off,
+> `RUN_WORKER_IN_WEB=1`, `TRUST_PROXY_HOPS=1`, `NODE_VERSION=22`). Created with the Render API, so the build and start
+> commands `cd server/messaging` first and there is no health check path (set `/healthz` in the dashboard if wanted).
+> Verified: the build succeeds; the server then stops because `DATABASE_URL` is not set yet. Still to do by the owner,
+> typed in Render only: `DATABASE_URL` (the database's **Internal Database URL**) and an AI key (`ANTHROPIC_API_KEY`
+> or `OPENAI_API_KEY`). The old SLIYD service and database are not used any more; delete them there.
 
 Date: 2026-10-10. Turns on **one** messaging-server feature: a short daily news digest at your
 chosen time. Two ways (ADR-174):
