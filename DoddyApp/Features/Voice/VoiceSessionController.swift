@@ -990,6 +990,8 @@ final class VoiceSessionController {
     /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
+        // Ended while the lists loaded: nothing changes after End (review H9).
+        guard isLive else { return }
         do {
             let result = try await store.addToList(request.items, listID: list.id, source: .voice)
             var lines = result.added.map { ListReceipt.Line.added($0.text) }
@@ -1014,6 +1016,8 @@ final class VoiceSessionController {
     /// Ticks or removes only clear matches; items that match several are offered to tap.
     private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
+        // Ended while the lists loaded: nothing changes after End (review H9).
+        guard isLive else { return }
         let pool = tick ? list.open : list.items
         var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
         for phrase in request.items {
@@ -1533,6 +1537,8 @@ final class VoiceSessionController {
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
+        // A call still queued when the user tapped End runs nothing (review H9).
+        guard isLive else { return }
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
         // is looked up or logged.
@@ -1749,6 +1755,8 @@ final class VoiceSessionController {
             await reply(call.toolCallId, PlanReply.summary(results))
             return
         }
+        // Ended while the steps were checked: no card after End (review H9).
+        guard isLive else { return }
         // Another card may have been shown while the steps were checked (the checks wait).
         guard pendingAction == nil else {
             await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
@@ -1989,6 +1997,8 @@ final class VoiceSessionController {
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
     /// call is left without an answer.
     private func propose(_ action: PendingAction, toolCallID: String) {
+        // A proposal that finished its lookups after End shows no card (review H9).
+        guard isLive else { return }
         guard pendingAction == nil else {
             Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
             return
