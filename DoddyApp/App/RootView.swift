@@ -70,6 +70,9 @@ enum PreferenceKey {
     static let heyDoddyOn = "heyDoddy.on"
     /// The Quick start screen (ADR-324) was shown once, at the end of first use; never again.
     static let quickStartOffered = "quickStartOffered"
+    /// A voice conversation has really connected once on this iPhone (the provider said it is
+    /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326).
+    static let hadFirstConversation = "hadFirstConversation"
 }
 
 enum AppTab: Hashable {
