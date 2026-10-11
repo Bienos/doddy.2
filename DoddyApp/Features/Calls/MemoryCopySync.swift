@@ -17,12 +17,17 @@ final class MemoryCopySync {
     static let shared = MemoryCopySync()
     private(set) var status: Status = .idle
     private var pending: Task<Void, Never>?
+    /// True from the moment a change is waiting until the server confirmed the copy. A failed or
+    /// cut-off upload leaves it set, and `retryIfNeeded` sends the current list again, so a memory
+    /// deleted while offline doesn't stay on the server (DOD-06).
+    private(set) var needsRetry = false
 
     var isOn: Bool { UserDefaults.standard.bool(forKey: PreferenceKey.memoryCopyOn) }
 
     func schedule(_ records: [MemoryRecord], delay: Duration = .seconds(2)) {
         guard isOn, let client = ServerConfig.client() else { return }
         pending?.cancel()
+        needsRetry = true
         let items = MemoryCopyItem.from(records)
         pending = Task {
             // Collapses bursts of edits into one upload.
@@ -30,19 +35,53 @@ final class MemoryCopySync {
             guard !Task.isCancelled else { return }
             do {
                 let count = try await client.replaceMemoryCopy(items)
+                guard !Task.isCancelled else { return }
+                needsRetry = false
                 status = .copied(count: count, at: Date())
             } catch ServerError.notEnabled {
                 // The server has no copy switched on (e.g. the server data was deleted): stop sending.
                 UserDefaults.standard.set(false, forKey: PreferenceKey.memoryCopyOn)
+                needsRetry = false
                 status = .idle
             } catch {
+                // A newer change cancelled this one; that upload reports for both.
+                guard !Task.isCancelled else { return }
                 status = .failed(UpdatesModel.text(for: error))
             }
         }
     }
 
+    /// When Doddy comes to the front: sends the current list again if the last upload didn't go through.
+    func retryIfNeeded(_ records: [MemoryRecord]) {
+        guard needsRetry else { return }
+        schedule(records, delay: .zero)
+    }
+
+    /// Uploads now and waits for the server's answer, for callers that must say what happened
+    /// (switching the copy on, Delete all). Throws when the copy couldn't be replaced; it is then
+    /// tried again by `retryIfNeeded`. Does nothing when the copy is off.
+    func uploadNow(_ records: [MemoryRecord]) async throws {
+        guard isOn, let client = ServerConfig.client() else { return }
+        pending?.cancel()
+        needsRetry = true
+        do {
+            let count = try await client.replaceMemoryCopy(MemoryCopyItem.from(records))
+            needsRetry = false
+            status = .copied(count: count, at: Date())
+        } catch ServerError.notEnabled {
+            // No copy on the server, so there is nothing to replace.
+            UserDefaults.standard.set(false, forKey: PreferenceKey.memoryCopyOn)
+            needsRetry = false
+            status = .idle
+        } catch {
+            status = .failed(UpdatesModel.text(for: error))
+            throw error
+        }
+    }
+
     func stop() {
         pending?.cancel()
+        needsRetry = false
         status = .idle
     }
 }

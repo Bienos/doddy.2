@@ -1,8 +1,10 @@
 // POST /api/waitlist-answers — the three optional questions shown right after someone joins.
 // Body: {"id", "key", "phone", "heard", "wish"}. Every answer is optional; unknown choices are dropped.
 // Only the browser that created the signup holds the key (see api/waitlist.js).
+// The write only goes through if the stored file is still the one read here (etag), so answers sent
+// after the admin deleted the signup can't bring it back.
 import { createHash, timingSafeEqual } from "node:crypto";
-import { get, put } from "@vercel/blob";
+import { BlobNotFoundError, BlobPreconditionFailedError, get, put } from "@vercel/blob";
 
 const PHONES = ["iphone", "android", "other"];
 const HEARD = ["tiktok", "instagram", "linkedin", "friend", "search", "other"];
@@ -36,8 +38,11 @@ export async function POST(request) {
   if (!ID.test(id) || key.length < 16 || key.length > 64) return reply({ ok: false, error: "forbidden" }, 403);
 
   const pathname = `waitlist/${id}.json`;
-  const result = await get(pathname, { access: "private" }).catch(() => null);
+  // No CDN cache: a cached copy could outlive a delete or carry an old etag.
+  const result = await get(pathname, { access: "private", useCache: false }).catch(() => null);
   if (result?.statusCode !== 200) return reply({ ok: false, error: "forbidden" }, 403);
+  // Without an etag the write below would be unconditional.
+  if (!result.blob?.etag) return reply({ ok: false, error: "unavailable" }, 503);
   let record;
   try {
     record = JSON.parse(await new Response(result.stream).text());
@@ -60,9 +65,14 @@ export async function POST(request) {
       access: "private",
       addRandomSuffix: false,
       allowOverwrite: true,
+      ifMatch: result.blob.etag,
       contentType: "application/json",
     });
   } catch (err) {
+    // Deleted or changed since the read: nothing was written.
+    if (err instanceof BlobPreconditionFailedError || err instanceof BlobNotFoundError) {
+      return reply({ ok: false, error: "forbidden" }, 403);
+    }
     console.error("waitlist: answers write failed", err?.name ?? "unknown");
     return reply({ ok: false, error: "unavailable" }, 503);
   }

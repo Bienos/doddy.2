@@ -14,6 +14,20 @@ public struct ServerRequest: Equatable, Sendable {
     public let path: String
     public let body: Data?
     public let bearerToken: String?
+    /// How long the transport should wait for an answer. Starting a call or building the news
+    /// waits on the server's own provider calls, so those get longer than the default: giving up
+    /// sooner would report a failure while the call or the news is already on its way.
+    public let timeout: TimeInterval
+
+    public static let defaultTimeout: TimeInterval = 15
+
+    init(method: HTTPMethod, path: String, body: Data?, bearerToken: String?, timeout: TimeInterval = defaultTimeout) {
+        self.method = method
+        self.path = path
+        self.body = body
+        self.bearerToken = bearerToken
+        self.timeout = timeout
+    }
 }
 
 public struct ServerResponse: Equatable, Sendable {
@@ -27,8 +41,31 @@ public struct ServerResponse: Equatable, Sendable {
 }
 
 public protocol ServerTransport: Sendable {
-    /// Sends one request. Throws `ServerError.offline` when no HTTP response arrived.
+    /// Sends one request. When no HTTP response arrived, throws the underlying error (e.g. the
+    /// `URLError`) so the client can tell "never left the phone" from "may have reached the
+    /// server" (`ServerTransportFailure`). A transport that throws `ServerError.offline` instead
+    /// is read as "may have reached the server" for requests that start something.
     func send(_ request: ServerRequest) async throws -> ServerResponse
+}
+
+/// What a transport error says about whether the request reached the server (DOD-08).
+public enum ServerTransportFailure {
+    /// True only for errors raised before the request could have reached the server: no network,
+    /// no such host, connection refused, or a failed TLS handshake. A timeout or a dropped
+    /// connection may come after the server got the request, so they are not on this list.
+    public static func certainlyNotSent(_ error: any Error) -> Bool {
+        guard let error = error as? URLError else { return false }
+        switch error.code {
+        case .notConnectedToInternet, .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed,
+             .internationalRoamingOff, .callIsActive, .dataNotAllowed, .badURL, .unsupportedURL,
+             .appTransportSecurityRequiresSecureConnection, .secureConnectionFailed,
+             .serverCertificateHasBadDate, .serverCertificateUntrusted, .serverCertificateHasUnknownRoot,
+             .serverCertificateNotYetValid, .clientCertificateRejected, .clientCertificateRequired:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /// Holds the device's bearer token for the anonymous Doddy account.
@@ -153,6 +190,10 @@ private extension Character {
 public actor DoddyServerClient {
     private let transport: any ServerTransport
     private let credentials: any ServerCredentialStore
+    /// Idempotency keys of updates not yet accepted by the server, by text and channels.
+    private var pendingUpdateKeys: [UpdateBody: String] = [:]
+    /// The account being created right now, if any (see `ensureAccount`).
+    private var accountCreation: Task<String, any Error>?
 
     public init(transport: any ServerTransport, credentials: any ServerCredentialStore) {
         self.transport = transport
@@ -162,9 +203,19 @@ public actor DoddyServerClient {
     public func hasAccount() -> Bool { (try? credentials.load()) != nil }
 
     /// Creates the anonymous account on first use (no email, no name) and keeps its token.
+    /// Callers that arrive while it is being created wait for that one account: the actor is
+    /// reentrant across the request, and a second POST would leave an orphaned account.
     @discardableResult
     public func ensureAccount() async throws -> String {
         if let token = try credentials.load() { return token }
+        if let accountCreation { return try await accountCreation.value }
+        let creation = Task { try await self.createAccount() }
+        accountCreation = creation
+        defer { accountCreation = nil }
+        return try await creation.value
+    }
+
+    private func createAccount() async throws -> String {
         let response = try await send(.post, "/v1/accounts", body: nil, token: nil)
         guard response.status == 201,
               let created = try? JSONDecoder().decode(CreatedAccount.self, from: response.body)
@@ -191,10 +242,7 @@ public actor DoddyServerClient {
     }
 
     public func phoneStatus() async throws -> PhoneStatus {
-        let response = try await authorized(.get, "/v1/phone", body: nil)
-        guard response.status == 200, let status = try? JSONDecoder().decode(PhoneStatus.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return status
+        try await getJSON("/v1/phone")
     }
 
     /// Records consent to `SMSConsent.text` (with its version), or withdraws it.
@@ -207,6 +255,19 @@ public actor DoddyServerClient {
         try await expect(204, .delete, "/v1/phone")
     }
 
+    /// Sends with one idempotency key per intent: sending the same text to the same channels
+    /// again after a failure reuses the key, so if the first try did reach the server it still
+    /// goes out once (DOD-08). The key is dropped once the server has accepted the update, so a
+    /// later send of the same text is a new update.
+    public func sendUpdate(_ text: String, channels: [UpdateChannel]) async throws -> [QueuedUpdate] {
+        let intent = UpdateBody(text: text, channels: channels, idempotencyKey: "")
+        let key = pendingUpdateKeys[intent] ?? UUID().uuidString
+        pendingUpdateKeys[intent] = key
+        let queued = try await sendUpdate(text, channels: channels, idempotencyKey: key)
+        pendingUpdateKeys[intent] = nil
+        return queued
+    }
+
     public func sendUpdate(_ text: String, channels: [UpdateChannel], idempotencyKey: String) async throws -> [QueuedUpdate] {
         let body = try Self.json(UpdateBody(text: text, channels: channels, idempotencyKey: idempotencyKey))
         let response = try await authorized(.post, "/v1/updates", body: body)
@@ -216,10 +277,7 @@ public actor DoddyServerClient {
     }
 
     public func updateStatus(_ id: UUID) async throws -> UpdateStatus {
-        let response = try await authorized(.get, "/v1/updates/\(id.uuidString.lowercased())", body: nil)
-        guard response.status == 200, let status = try? JSONDecoder().decode(UpdateStatus.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return status
+        try await getJSON("/v1/updates/\(id.uuidString.lowercased())")
     }
 
     /// Erases the account and everything the server holds for it, then forgets the token.
@@ -233,6 +291,14 @@ public actor DoddyServerClient {
 
     // MARK: Plumbing
 
+    /// GETs `path` and decodes a 200 reply; anything else, an unreadable body included, is an error.
+    func getJSON<T: Decodable>(_ path: String) async throws -> T {
+        let response = try await authorized(.get, path, body: nil)
+        guard response.status == 200, let value = try? JSONDecoder().decode(T.self, from: response.body)
+        else { throw Self.error(from: response) }
+        return value
+    }
+
     func expect(_ status: Int, _ method: HTTPMethod, _ path: String) async throws {
         let response = try await authorized(method, path, body: nil)
         guard response.status == status else { throw Self.error(from: response) }
@@ -243,9 +309,16 @@ public actor DoddyServerClient {
         guard response.status == status else { throw Self.error(from: response) }
     }
 
-    func authorized(_ method: HTTPMethod, _ path: String, body: Data?) async throws -> ServerResponse {
+    /// `startsSomething`: the request starts something the user would notice twice (a call, a
+    /// news message). If it may have reached the server but no answer came back, `OutcomeUnknown`
+    /// is thrown instead of `ServerError.offline`, so the caller says "unknown" rather than
+    /// "offline, try again" (DOD-08).
+    func authorized(
+        _ method: HTTPMethod, _ path: String, body: Data?,
+        startsSomething: Bool = false, timeout: TimeInterval = ServerRequest.defaultTimeout
+    ) async throws -> ServerResponse {
         let token = try await ensureAccount()
-        let response = try await send(method, path, body: body, token: token)
+        let response = try await send(method, path, body: body, token: token, startsSomething: startsSomething, timeout: timeout)
         if response.status == 401 {
             // The account was deleted or the token revoked; a new one is created on next use.
             try? credentials.delete()
@@ -254,15 +327,24 @@ public actor DoddyServerClient {
         return response
     }
 
-    private func send(_ method: HTTPMethod, _ path: String, body: Data?, token: String?) async throws -> ServerResponse {
+    private func send(
+        _ method: HTTPMethod, _ path: String, body: Data?, token: String?,
+        startsSomething: Bool = false, timeout: TimeInterval = ServerRequest.defaultTimeout
+    ) async throws -> ServerResponse {
         do {
-            return try await transport.send(ServerRequest(method: method, path: path, body: body, bearerToken: token))
-        } catch let error as ServerError {
+            return try await transport.send(
+                ServerRequest(method: method, path: path, body: body, bearerToken: token, timeout: timeout))
+        } catch let error as ServerError where !(startsSomething && error == .offline) {
             throw error
         } catch {
+            if startsSomething && !ServerTransportFailure.certainlyNotSent(error) { throw OutcomeUnknown() }
             throw ServerError.offline
         }
     }
+
+    /// The request may have reached the server, but no answer came back. Internal: each request
+    /// that starts something turns it into its own "unknown" result.
+    struct OutcomeUnknown: Error {}
 
     static func error(from response: ServerResponse) -> ServerError {
         let body = try? JSONDecoder().decode(ErrorBody.self, from: response.body)
@@ -273,8 +355,11 @@ public actor DoddyServerClient {
         case (400, "phone_rejected"): return .phoneRejected
         case (400, "weak_pin"): return .weakPIN
         case (400, "unsafe_url"): return .unsafeURL
+        // Live: PUT /v1/news/settings answers it when news is switched on with nothing picked.
         case (400, "no_topics"): return .notEnabled("no_topics")
         case (422, "not_a_feed"): return .notAFeed
+        // The key was used before for a different update; the server sent nothing new.
+        case (409, "idempotency_mismatch"): return .invalidRequest(fields: ["idempotencyKey"])
         case (400, _): return .invalidRequest(fields: body?.fields ?? [])
         case (401, _): return .accountMissing
         case (404, "no_verified_phone"), (409, _): return .notEnabled(code)
@@ -295,7 +380,7 @@ private struct PushTokenBody: Encodable { let token: String; let environment: Pu
 private struct PhoneBody: Encodable { let phone: String }
 private struct CodeBody: Encodable { let phone: String; let code: String }
 private struct ConsentBody: Encodable { let consent: Bool; let textVersion: String? }
-private struct UpdateBody: Encodable { let text: String; let channels: [UpdateChannel]; let idempotencyKey: String }
+private struct UpdateBody: Encodable, Hashable { let text: String; let channels: [UpdateChannel]; let idempotencyKey: String }
 private struct QueuedList: Decodable { let messages: [QueuedUpdate] }
 private struct ErrorBody: Decodable { let error: String?; let fields: [String]? }
 

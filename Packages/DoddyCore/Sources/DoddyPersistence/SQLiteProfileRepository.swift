@@ -64,6 +64,10 @@ public final class SQLiteProfileRepository: ProfileRepository {
     public func forgetProfile() async throws {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM profile_fields")
+            // Read back before "forgotten" is reported (DOD-06).
+            guard try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM profile_fields") == 0 else {
+                throw ProfileStoreError.verificationFailed
+            }
         }
     }
 

@@ -66,9 +66,11 @@ public enum MemoryRestore {
         let formatVersion: Int
     }
 
-    public static func read(_ data: Data) throws(MemoryRestoreError)
+    /// `maxBytes` is larger only for the export inside an encrypted backup, which is already
+    /// limited (and authenticated) as a whole, so every backup Doddy makes can be restored.
+    public static func read(_ data: Data, maxBytes: Int = maxFileBytes) throws(MemoryRestoreError)
         -> (records: [MemoryRecord], corrections: [MemoryCorrection], exportedAt: Date?) {
-        guard data.count <= maxFileBytes else { throw .tooLarge(bytes: data.count, maximum: maxFileBytes) }
+        guard data.count <= maxBytes else { throw .tooLarge(bytes: data.count, maximum: maxBytes) }
         let decoder = JSONDecoder()
         guard let version = try? decoder.decode(VersionOnly.self, from: data).formatVersion else {
             throw .notADoddyExport
@@ -93,16 +95,16 @@ public enum MemoryRestore {
             guard let correction = slot.correction else { throw .unreadableCorrection(position: index + 1) }
             corrections.append(correction)
         }
-        return (records, corrections, envelope.exportedAtMs.map { Date(timeIntervalSince1970: Double($0) / 1000) })
+        return (records, corrections, envelope.exportedAtMs.map(EpochMilliseconds.date))
     }
 
     /// The list items in the file (ADR-216); empty for files without lists. A damaged item list
     /// is refused, so no list comes back half-filled.
-    public static func listItems(_ data: Data) throws(MemoryRestoreError) -> [ListItem] {
+    public static func listItems(_ data: Data, maxBytes: Int = maxFileBytes) throws(MemoryRestoreError) -> [ListItem] {
         struct Items: Decodable { let listItems: [ListItem]? }
-        guard data.count <= maxFileBytes else { throw .tooLarge(bytes: data.count, maximum: maxFileBytes) }
+        guard data.count <= maxBytes else { throw .tooLarge(bytes: data.count, maximum: maxBytes) }
         guard let items = try? JSONDecoder().decode(Items.self, from: data) else { throw .notADoddyExport }
-        return (items.listItems ?? []).filter { ListText.cleaned($0.text) != nil && $0.text.count <= ListLimits.itemLength }
+        return (items.listItems ?? []).filter { ListText.cleaned($0.text) != nil && ListText.fitsItemLength($0.text) }
     }
 
     public static func plan(

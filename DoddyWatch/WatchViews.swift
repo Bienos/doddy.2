@@ -16,8 +16,12 @@ struct WatchRootView: View {
                     if snapshot.isOn {
                         content(snapshot)
                     } else {
-                        Text("Notes and lists are hidden. Turn on “Show notes and lists on Apple Watch” in Doddy's Settings on your iPhone.")
-                            .font(.footnote)
+                        VStack(spacing: 6) {
+                            // Hidden from the watch: Doddy turned away, not looking (ADR-331).
+                            WatchDoddyPicture(name: "WatchDoddy_turned_away", height: 64)
+                            Text("Notes and lists are hidden. Turn on “Show notes and lists on Apple Watch” in Doddy's Settings on your iPhone.")
+                                .font(.footnote)
+                        }
                     }
                 } else {
                     VStack(spacing: 6) {
@@ -32,11 +36,13 @@ struct WatchRootView: View {
         }
     }
 
+    /// Words from notes and lists are `privacySensitive` (review I7): watchOS hides them while the
+    /// wrist is down and the screen is Always On, where anyone nearby can read it.
     @ViewBuilder
     private func content(_ snapshot: WidgetSnapshot) -> some View {
         if !snapshot.pinned.isEmpty {
             Section("Pinned") {
-                ForEach(snapshot.pinned) { note in Text(note.text).font(.footnote) }
+                ForEach(snapshot.pinned) { note in Text(note.text).font(.footnote).privacySensitive() }
             }
         }
         let upcoming = snapshot.reminders(after: .now)
@@ -44,7 +50,7 @@ struct WatchRootView: View {
             Section("Next") {
                 ForEach(Array(upcoming.enumerated()), id: \.offset) { _, reminder in
                     VStack(alignment: .leading) {
-                        Text(reminder.text ?? "A note reminder").font(.footnote)
+                        Text(reminder.text ?? "A note reminder").font(.footnote).privacySensitive()
                         Text(reminder.fireAt, style: .relative).font(.caption2).foregroundStyle(.secondary)
                     }
                 }
@@ -57,7 +63,7 @@ struct WatchRootView: View {
                         WatchListView(listID: list.id)
                     } label: {
                         HStack {
-                            Text(list.name)
+                            Text(list.name).privacySensitive()
                             Spacer()
                             Text("\(list.openCount)").foregroundStyle(.secondary)
                         }
@@ -100,6 +106,7 @@ struct WatchListView: View {
                         HStack {
                             Image(systemName: working == item.id ? "hourglass" : (item.isDone ? "checkmark.square" : "square"))
                             Text(item.text).strikethrough(item.isDone).foregroundStyle(item.isDone ? .secondary : .primary)
+                                .privacySensitive()
                         }
                     }
                     .disabled(working != nil)
@@ -188,13 +195,21 @@ struct WatchNoteEntry: View {
 
 /// Doddy in the watch app (ADR-323): a pose from the owner's pack (`WatchDoddy_*` in the watch
 /// app's catalog), with a thin cream edge so his black outline reads on the watch's black.
-/// Decorative.
+/// Decorative. Left out when "Hide character artwork" is on in Doddy on the iPhone (ADR-331);
+/// before the iPhone has sent anything that isn't known yet, so he shows.
 struct WatchDoddyPicture: View {
     let name: String
     let height: CGFloat
+    @Environment(WatchLink.self) private var link
     private let cream = Color(red: 245 / 255, green: 239 / 255, blue: 226 / 255)
 
     var body: some View {
+        if link.snapshot?.hidesPictures != true {
+            picture
+        }
+    }
+
+    private var picture: some View {
         Image(name)
             .resizable()
             .scaledToFit()

@@ -20,8 +20,16 @@ struct SettingsView: View {
     @State private var hasAccessCode = VoiceAccessCodeStore.read() != nil
     @State private var accessCodeError: String?
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
+    @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+
+    /// The privacy summary that used to be at the bottom of Home (ADR-326).
+    private var privacySummary: String {
+        memoryCopyOn
+            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+    }
     @State private var sessionTokenDraft = ""
-    @State private var hasSessionToken = KeychainSessionStore.read() != nil
+    @State private var hasSessionToken = KeychainSessionStore.hasToken
     @State private var tokenMessage: String?
     @State private var confirmDeleteAll = false
     @State private var choosingRestoreFile = false
@@ -32,6 +40,7 @@ struct SettingsView: View {
     @State private var restoreFailed = false
     @State private var deleteError: String?
     @AppStorage(PreferenceKey.suggestSavesAfterConversation) private var suggestSaves = true
+    @AppStorage(PreferenceKey.learningOn) private var learningOn = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
     @State private var editingProfile = false
     @State private var confirmForget = false
@@ -153,21 +162,21 @@ struct SettingsView: View {
                     ) {
                         Label("Export as JSON", systemImage: "square.and.arrow.up")
                     }
-                    .disabled(store.memories.isEmpty)
+                    .disabled(!hasSavedAnything)
                     ShareLink(
                         item: MemoryExport.plainText(store.memories, lists: store.lists, corrections: store.corrections, exportedAt: .now),
                         preview: SharePreview("Doddy memories (text)")
                     ) {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
-                    .disabled(store.memories.isEmpty)
+                    .disabled(!hasSavedAnything)
                     ShareLink(
                         item: MarkdownFileExport(records: store.memories, lists: store.lists, corrections: store.corrections),
                         preview: SharePreview("Doddy memories (Markdown)")
                     ) {
                         Label("Export as Markdown", systemImage: "doc.richtext")
                     }
-                    .disabled(store.memories.isEmpty)
+                    .disabled(!hasSavedAnything)
                     .accessibilityIdentifier("settings.exportMarkdown")
                     Button {
                         restoreMessage = nil
@@ -182,13 +191,13 @@ struct SettingsView: View {
                             .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
                     }
                     Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
-                        .disabled(store.memories.isEmpty)
+                        .disabled(!hasSavedAnything)
                         .accessibilityIdentifier("settings.deleteAll")
                     if let deleteError {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
+                    Text(memoriesWhereText)
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -228,11 +237,14 @@ struct SettingsView: View {
                 Section("Privacy") {
                     // ADR-310: Face ID when Doddy opens, and after a minute away.
                     AppLockToggle()
-                    // The short version that used to sit at the bottom of Home (ADR-326).
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
+                    // The short version that used to sit at the bottom of Home (ADR-326); it follows
+                    // Memory on calls as it did there.
+                    Text(privacySummary)
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("settings.privacySummary")
+                    // iPhone search (ADR-330), off until switched on.
+                    SpotlightToggle()
                     NavigationLink {
                         DataFlowView()
                     } label: {
@@ -249,9 +261,9 @@ struct SettingsView: View {
                             : "Only while talking")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs (voice); OpenAI if Ask Doddy is on" : "Off (not built)")
-                    StatusRow(title: "Sync", value: privacy.syncEnabled ? "On" : "Off (not built)")
+                    StatusRow(title: "Sync", value: privacy.syncText)
                     // DataFlow (What leaves this iPhone) restates this paragraph row by row; change both together.
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on \u{201C}Hey Doddy\u{201D}, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to ElevenLabs like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on \u{201C}Hey Doddy\u{201D}, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to ElevenLabs like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -304,13 +316,19 @@ struct SettingsView: View {
                             .accessibilityIdentifier("settings.connectedAppsToken")
                         Button("Save session token") {
                             let token = sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-                            if KeychainSessionStore.save(token) {
-                                hasSessionToken = true
-                                tokenMessage = nil
+                            // The token is kept for this server only and never sent to another (DOD-11).
+                            if let server = URL(string: connectedAppsServerURL.trimmingCharacters(in: .whitespaces)),
+                               server.scheme != nil, server.host != nil {
+                                if KeychainSessionStore.save(token, issuedBy: server) {
+                                    hasSessionToken = true
+                                    tokenMessage = nil
+                                } else {
+                                    tokenMessage = "The Keychain didn't accept the token, so it wasn't saved."
+                                }
+                                sessionTokenDraft = ""
                             } else {
-                                tokenMessage = "The Keychain didn't accept the token, so it wasn't saved."
+                                tokenMessage = "Enter the server address first. The token is kept for that server only."
                             }
-                            sessionTokenDraft = ""
                         }
                         .disabled(sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
@@ -320,7 +338,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Connected Apps server (development)")
                 } footer: {
-                    Text("Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain.")
+                    Text("Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain, for the server address set when you saved it; it is never sent to another address.")
                 }
 
                 Section("What Doddy knows") {
@@ -340,6 +358,19 @@ struct SettingsView: View {
                     Text("When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                    if let learning = store.learning, learning.isAvailable {
+                        // ADR-440: facts and routines Doddy kept, each confirmed by the user.
+                        NavigationLink {
+                            LearnedView(learning: learning)
+                        } label: {
+                            StatusRow(
+                                title: "What I've learned",
+                                value: learningOn
+                                    ? "On · \(learning.confirmedFacts.count + learning.confirmedProcedures.count)"
+                                    : "Off")
+                        }
+                        .accessibilityIdentifier("settings.learned")
+                    }
                     if let problem = conversationLogs.problem {
                         Label(problem, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
@@ -408,13 +439,16 @@ struct SettingsView: View {
                 // ADR-254: "Hey Doddy" wake word, off unless turned on.
                 HeyDoddySettingsSection()
 
-                Section("Back Tap and Siri") {
-                    StatusRow(title: "Double Back Tap", value: backTapStatus)
-                        .accessibilityIdentifier("settings.backTap.status")
-                    Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
-                        router.isSetupPresented = true
+                Section {
+                    // Back Tap exists only on iPhone (ADR-337).
+                    if DeviceSupport.hasBackTap {
+                        StatusRow(title: "Double Back Tap", value: backTapStatus)
+                            .accessibilityIdentifier("settings.backTap.status")
+                        Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
+                            router.isSetupPresented = true
+                        }
+                        .accessibilityIdentifier("settings.backTap")
                     }
-                    .accessibilityIdentifier("settings.backTap")
                     Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -424,6 +458,8 @@ struct SettingsView: View {
                     Text("Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                } header: {
+                    if DeviceSupport.hasBackTap { Text("Back Tap and Siri") } else { Text("Siri") }
                 }
 
                 Section {
@@ -579,13 +615,13 @@ struct SettingsView: View {
                 Text("When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to OpenAI to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. We ask OpenAI not to keep the reply, but we can't verify that. Voice conversations are separate. You can turn this off at any time.")
             }
             .confirmationDialog(
-                "Delete all \(store.memories.count) memories?",
+                deleteAllTitle,
                 isPresented: $confirmDeleteAll, titleVisibility: .visible
             ) {
                 Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
+                Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too.")
             }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)
@@ -613,6 +649,33 @@ struct SettingsView: View {
             .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    /// Where memories are, as switched on now (DOD-11): never "only on this iPhone" while a copy is
+    /// on the messaging server or a list is shared through iCloud.
+    private var memoriesWhereText: String {
+        let sharedLists = SharedListsController.shared.links.count
+        guard memoryCopyOn || sharedLists > 0 else {
+            return NSLocalizedString("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.", comment: "")
+        }
+        var text = NSLocalizedString("Memories are kept in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.", comment: "")
+        if memoryCopyOn {
+            text += " " + NSLocalizedString("With Memory on calls on, a copy of your notes is also on your Doddy messaging server.", comment: "")
+        }
+        if sharedLists > 0 {
+            text += " " + NSLocalizedString("Lists you share are also in iCloud and with the people you invited.", comment: "")
+        }
+        return text
+    }
+
+    /// Lists are memories too: they are exported and deleted with the notes (DOD-06).
+    private var hasSavedAnything: Bool { !store.memories.isEmpty || !store.lists.isEmpty }
+
+    /// Names everything Delete all removes, notes and lists, never notes alone.
+    private var deleteAllTitle: String {
+        String(
+            format: NSLocalizedString("Delete all %lld notes and %lld lists?", comment: ""),
+            store.memories.count, store.lists.count)
     }
 
     private var connectionSummary: String {
@@ -689,14 +752,36 @@ struct SettingsView: View {
         }
     }
 
+    /// Stops sharing the user's own shared lists first (their iCloud copy is deleted for everyone),
+    /// then deletes on this iPhone, then empties the server copy if Memory on calls is on and
+    /// waits for the server's answer. Whatever couldn't be undone outside this iPhone is said
+    /// plainly, never covered by "deleted" (DOD-06/11).
     private func deleteAll() async {
+        let stillShared = await SharedListsController.shared.stopAllOwnedShares()
+        let stillSharedNames = stillShared.compactMap { store.list(id: $0)?.name }
         do {
             try await store.deleteAll()
+            // Everything Doddy learned and the counts of corrections go with the notes (ADR-440).
+            try await store.learning?.deleteAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
-            deleteError = nil
         } catch {
             deleteError = UserFacingError.message(for: error)
+            return
         }
+        var problems: [String] = []
+        if !stillShared.isEmpty {
+            problems.append(String(
+                format: NSLocalizedString("Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.", comment: ""),
+                stillShared.count, stillSharedNames.joined(separator: ", ")))
+        }
+        do {
+            try await MemoryCopySync.shared.uploadNow([])
+        } catch {
+            problems.append(String(
+                format: NSLocalizedString("The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.", comment: ""),
+                UpdatesModel.text(for: error)))
+        }
+        deleteError = problems.isEmpty ? nil : problems.joined(separator: " ")
     }
 
     /// Reads and checks the chosen file and works out what it would add. Nothing is written

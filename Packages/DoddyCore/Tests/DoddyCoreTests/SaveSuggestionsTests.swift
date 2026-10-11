@@ -85,6 +85,10 @@ final class SaveSuggestionsTests: XCTestCase {
         XCTAssertEqual(suggest(lines), [])
     }
 
+    func testAPinOnItsOwnIsASecret() {
+        XCTAssertEqual(suggest(["My PIN is 4821.", "Mój PIN to 4821 do telefonu.", "PINs for the bank cards: 4821 and 1234."]), [])
+    }
+
     func testDoddysOwnLinesAreNeverAnInput() {
         // Only user lines are passed in; this documents that the API has no place for agent text.
         XCTAssertEqual(SaveSuggestions.suggest(userLines: [], alreadyProposed: [], existingNotes: []), [])

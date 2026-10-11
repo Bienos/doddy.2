@@ -543,13 +543,19 @@ extension ReminderOutcome {
 }
 
 extension VoiceToolReply {
-    /// The agent's copy of the outcome. The list name stays on the screen.
+    /// Ends the reply for a reminder that was already there; "What Doddy did" reads it (ActivityEntry).
+    static let alreadyInRemindersTail = " was already in Reminders, so Doddy did not add it a second time."
+
+    /// The agent's copy of the outcome. The list name stays on the screen. The title follows as
+    /// data (ToolData): one already in Reminders was read back from there.
     public static func reminder(_ outcome: ReminderOutcome) -> String {
+        func title(_ receipt: ReminderReceipt) -> String { " Its title:\n" + ToolData.block(["Title: \"\(ToolData.clean(receipt.title))\""]) }
         switch outcome {
         case .added(let receipt):
-            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due)).\(receipt.repeats.map { " Repeats \($0.text)." } ?? "")"
+            return "added: reminder \(dueClause(receipt.due)).\(receipt.repeats.map { " Repeats \($0.text)." } ?? "")" + title(receipt)
         case .alreadyThere(let receipt):
-            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due)) was already in Reminders, so Doddy did not add it a second time."
+            // The tail stays last, after the data, for "What Doddy did" (ActivityEntry).
+            return "added: reminder \(dueClause(receipt.due))." + title(receipt) + "\nThat reminder\(alreadyInRemindersTail)"
         case .notAdded(.notAllowed):
             return notAdded("Reminders isn't connected.")
         case .notAdded(.couldNotCheck):
@@ -571,8 +577,16 @@ extension VoiceToolReply {
 
     /// The same for any tool whose day or time could not be read as it was meant (`tool` is the
     /// one the agent should call again: create_reminder or create_calendar_event).
+    /// The problem quotes what the agent sent (said_time, a date it couldn't read), so it follows
+    /// as data (ToolData); the question is the app's own words.
     public static func clarification(_ clarification: ReminderClarification, tool: String) -> String {
-        "failed: not added yet: \(clarification.problem). Ask the user \(clarification.question), then call \(tool) again with their answer. Nothing was added."
+        "failed: not added yet: the day or time can't be used as sent; the problem is below. Ask the user \(clarification.question), then call \(tool) again with their answer. Nothing was added.\n"
+            + problemData(clarification)
+    }
+
+    /// `Problem: …` between the data markers.
+    static func problemData(_ clarification: ReminderClarification) -> String {
+        ToolData.block(["Problem: \(ToolData.clean(clarification.problem))"])
     }
 
     private static func dueClause(_ due: ReminderDue?) -> String {

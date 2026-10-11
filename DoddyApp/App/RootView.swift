@@ -1,3 +1,4 @@
+import CoreSpotlight
 import DoddyCore
 import SwiftUI
 
@@ -46,6 +47,10 @@ enum PreferenceKey {
     /// Settings → About you: send the approved introduction answers to voice conversations.
     /// Off by default; nothing about the user leaves the phone until they switch it on.
     static let shareProfileWithVoice = "shareProfileWithVoice"
+    /// Learning loop (ADR-440). Off until turned on: Doddy proposes facts and routines only then.
+    static let learningOn = "learning.on"
+    /// Hand confirmed facts and saved procedures to voice conversations. Off until turned on.
+    static let shareLearnedWithVoice = "learning.shareWithVoice"
     /// HTTPS address of `server/voice-token`. Empty = development public agent.
     static let voiceTokenServer = "voiceTokenServer"
     /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
@@ -86,6 +91,7 @@ struct RootView: View {
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
@@ -93,6 +99,10 @@ struct RootView: View {
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
     @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.showNoteTextInNotifications) private var showNoteText = false
+    /// "Hide character artwork" is passed on to widgets and the watch (ADR-331).
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
+    /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
+    @State private var lockCovered = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -119,7 +129,17 @@ struct RootView: View {
             }
             .preferredColorScheme(colorScheme)
             // The Face ID lock (ADR-310) covers everything until iOS says yes.
-            .overlay { if AppLock.shared.isLocked { AppLockView() } }
+            // After a real unlock the cover stays up a moment while Doddy's door opens (ADR-380).
+            .overlay { if AppLock.shared.isLocked || lockCovered { AppLockView(skip: { lockCovered = false }) } }
+            .onAppear { lockCovered = AppLock.shared.isLocked }
+            .onChange(of: AppLock.shared.isLocked) { _, locked in
+                guard !locked else { lockCovered = true; return }
+                guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; return }
+                Task {
+                    try? await Task.sleep(for: .seconds(AppLockView.doorTime))
+                    withAnimation(.easeOut(duration: 0.25)) { lockCovered = false }
+                }
+            }
             .task {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
@@ -133,11 +153,17 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
+                    // Memory on calls: a copy upload that failed or was cut off is sent again.
+                    // Private notes (ADR-310) are never in the server copy.
+                    if store.hasLoaded && store.loadError == nil {
+                        MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories))
+                    }
                     pickUpSharedItem()
                 }
                 if phase == .background {
                     WidgetSync.shared.refresh()
                     AppLock.shared.wentToBackground()
+                    QuickActions.install()
                 }
                 if phase == .active { AppLock.shared.cameBack() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
@@ -161,6 +187,7 @@ struct RootView: View {
             .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
             .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
             .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
+            .onChange(of: hideArt) { WidgetSync.shared.refresh() }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -168,9 +195,14 @@ struct RootView: View {
                 homePath = [memoryID]
                 noteReminders.pendingOpenMemoryID = nil
             }
-            // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
-            // Private notes (ADR-310) are never in the server copy for calls.
-            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories)) }
+            // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone. Only
+            // after a read that worked: a failed one can leave the list empty or stale, and uploading
+            // that would wipe or roll back the server copy (DOD-06). Private notes (ADR-310) are
+            // never in the server copy for calls.
+            .onChange(of: store.revision) {
+                guard store.hasLoaded, store.loadError == nil else { return }
+                MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
+            }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)
@@ -281,6 +313,12 @@ struct RootView: View {
             // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
             WakeWordListener.shared.refresh()
         }
+        // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
+        .onContinueUserActivity(CSSearchableItemActionType) { activity in
+            guard let memoryID = SpotlightSync.memoryID(from: activity) else { return }
+            selectedTab = .home
+            homePath = [memoryID]
+        }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
             // doddy://open/<id> from a widget opens that note or list on Home (ADR-219).
@@ -315,6 +353,10 @@ struct RootView: View {
                     .tag(AppTab.settings)
             }
             .toolbar(.hidden, for: .tabBar)
+            // iPad (ADR-337): one readable column in the middle of a wide screen.
+            .frame(maxWidth: horizontalSizeClass == .regular ? 760 : .infinity)
+            .frame(maxWidth: .infinity)
+            .background(Theme.canvas)
             if let deleted = store.recentlyDeleted {
                 UndoDeleteBar(deleted: deleted)
             }
