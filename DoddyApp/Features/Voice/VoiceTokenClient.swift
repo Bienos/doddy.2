@@ -21,6 +21,12 @@ struct VoiceTokenClient: Sendable {
         return try VoiceTokenServer.openAIGrant(status: status, body: data).get()
     }
 
+    /// The owner's Picovoice AccessKey for "Hey Doddy" (ADR-328). Starts no conversation.
+    func fetchWakeWordKey() async throws(VoiceTokenError) -> String {
+        let (status, data) = try await post(VoiceTokenServer.wakeWordKeyRequestBody)
+        return try VoiceTokenServer.wakeWordKey(status: status, body: data).get()
+    }
+
     private func post(_ body: Data?) async throws(VoiceTokenError) -> (Int, Data) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"

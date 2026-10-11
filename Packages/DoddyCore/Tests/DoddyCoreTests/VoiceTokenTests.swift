@@ -22,4 +22,17 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data()), .failure(.busy))
         XCTAssertEqual(VoiceTokenServer.token(status: 504, body: Data()), .failure(.serverProblem(status: 504)))
     }
+
+    /// ADR-328: the owner's Picovoice key from the token server.
+    func testWakeWordKeyFromTheTokenServer() {
+        let key = "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/=="
+        XCTAssertEqual(String(data: VoiceTokenServer.wakeWordKeyRequestBody, encoding: .utf8), #"{"provider":"picovoice"}"#)
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"accessKey":"  \#(key) "}"#.utf8)), .success(key))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"accessKey":"short"}"#.utf8)), .failure(.badResponse))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"token":"jwt"}"#.utf8)), .failure(.badResponse),
+                       "an ElevenLabs token is never taken for a key")
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 401, body: Data()), .failure(.accessCodeRejected))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data()), .failure(.serverNotConfigured))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 400, body: Data()), .failure(.serverProblem(status: 400)), "a server from before ADR-328")
+    }
 }

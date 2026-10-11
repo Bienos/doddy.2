@@ -146,7 +146,7 @@ public enum DataFlow {
                 note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
-                what: "Your access code.", when: "When a conversation starts.", isActive: state.tokenServerSet,
+                what: "Your access code.", when: "When a conversation starts, and once when you turn on \"Hey Doddy\" without a key of your own (to get its key).", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Notion, Todoist via Composio)",
@@ -174,7 +174,7 @@ public enum DataFlow {
                     : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
             DataFlowRow(
                 id: "picovoice", destination: "Picovoice (the \"Hey Doddy\" detector)",
-                what: "Your Picovoice AccessKey, so Picovoice can check it and count its use against your plan. No sound: the wake word is detected on this iPhone.",
+                what: "The Picovoice AccessKey (your own, or the one Doddy's token server gave this iPhone), so Picovoice can check it and count its use. No sound: the wake word is detected on this iPhone.",
                 when: "When \"Hey Doddy\" listening starts.",
                 isActive: state.heyDoddyOn,
                 note: state.heyDoddyOn

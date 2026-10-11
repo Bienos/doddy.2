@@ -67,6 +67,11 @@ enum PreferenceKey {
     /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
     /// the keyword file in Application Support, never here.
     static let heyDoddyOn = "heyDoddy.on"
+    /// Voice conversations that really connected on this iPhone (the provider said Listening),
+    /// counted once each; only for when the Hey Doddy card may show (ADR-328).
+    static let connectedConversations = "connectedConversations"
+    /// The Home card offering "Hey Doddy" was answered (Turn on or Not now); it never shows again.
+    static let heyDoddyOfferDone = "heyDoddy.offerDone"
 }
 
 enum AppTab: Hashable {

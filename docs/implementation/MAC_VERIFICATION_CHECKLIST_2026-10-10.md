@@ -291,3 +291,13 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Z5 | Settings: turn Pause all connections on and off | The crouching Doddy beside the footer only while paused |
 | Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
 | Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
+
+## 4o. "Hey Doddy" with one tap (ADR-328)
+Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
+| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
+| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
+| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
+
