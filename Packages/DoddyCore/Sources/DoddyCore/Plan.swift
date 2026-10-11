@@ -31,7 +31,7 @@ public struct PlanStep: Equatable, Sendable, Identifiable {
     public var connection: VoiceConnection? { VoiceConnection.serving(toolName) }
 
     public func activity(calendar: Calendar) -> ActivityRequest? {
-        ActivityRequest.describe(request, calendar: calendar)
+        ActivityRequest.describe(request, calendar: calendar)?.naming(toolName)
     }
 
     /// A Gmail draft or Todoist task, run through Doddy's server (ADR-209).

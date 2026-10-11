@@ -341,6 +341,24 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | W9 | Run the new previews (`Storyboards (ADR-380)`, `Face ID door`, and the strip preview, which now has `wave`) | All draw. The door cover preview shows the unlocked state's door only if Face ID is off on the preview device |
 | W10 | `DoddyArtTests` | Still pass. The new markers are `doddy.story.<name>`, `doddy.story.door`, `doddy.motion.wave` |
 
+## 4n. What I've learned (ADR-440, ADR-441, `M6_LEARNING_LOOP_STATUS.md`)
+Nothing in this section has run on a device or a simulator: the Swift logic is tested on Linux, the screens, the voice session wiring and the live voice agent are not. Items L8 and L9 also need the owner to sync the new tool and the new variable to the live ElevenLabs agent first (`voice-agent/README.md`).
+| # | Do this | Expect |
+|---|---|---|
+| L1 | Settings → What Doddy knows → What I've learned, on a fresh install | Row says "Off"; both switches off; "Corrections this week 0"; nothing listed; Export and Delete everything disabled |
+| L2 | Turn "Learn from how I use Doddy" on. Have a voice conversation and say "I prefer my reminders at nine in the morning." End it | After the "Worth keeping?" card (or instead of it), a card "Remember this about you?" with those exact words, Save, Not now, Never this. Nothing is stored until Save |
+| L3 | Tap Save; then open What I've learned; force-quit and reopen the app | "Saved…" appears after the tap, never before; the fact is listed with its kind, "confirmed <date>", "from a conversation on <date>" and an end date; it is still there after reopening |
+| L4 | Say the same sentence in a new conversation; then a different preference and tap Never this on it; say that one again later | The saved one is not offered again; the refused one never comes back; "Not now" cards sit under "Waiting for your answer" and disappear after 7 days |
+| L5 | Make a conversation private (or turn on Pause all) and say a preference | No card at all |
+| L6 | Say "my password is hunter2, I prefer tea" style sentences, and sentences about a diagnosis, religion, a salary | No card for any of them |
+| L7 | On three different days, in one conversation each, have Doddy add a reminder and then start a timer (confirm both). End the third | A card "Save this routine?" with "1. Add a reminder" and "2. Start a timer"; the name is in the iPhone's language; Save works; Rename in the row's menu changes the name |
+| L8 | Turn "Use what Doddy learned in voice conversations" on. Start a conversation and ask for the routine by its name | Doddy asks for the title and time and shows one plan card with exactly those steps. Every step still needs the tap. After running: "Used once" |
+| L9 | In a conversation ask Doddy to play a song | Doddy says it can't; What I've learned → Things I can't do yet shows "Music 1". Nothing appears in What Doddy did for it |
+| L10 | Undo an added reminder in What Doddy did; change a step on a plan card before running it; tap That's wrong on a fact | "Corrections this week" goes up by one each time. The fact moves to "Taken off" and Doddy stops mentioning it |
+| L11 | Privacy → What leaves this iPhone, with the voice switch on and then off | The voice row lists "the facts and routines you confirmed under What I've learned" only while it is on; "Stays on this iPhone" has a What Doddy learned line |
+| L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
+| L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |

@@ -39,6 +39,8 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
 4. Check for drift: export the live tools (`agents_list_tools` for the agent) and prompt into
    `{"prompt": "...", "tools": [...]}` and run `voice_agent_spec.py compare EXPORT.json`.
 
+**Not yet applied to the live agent (ADR-441, 2026-10-11):** this repository now has the `note_capability_gap` tool, the `{{learned_context}}` variable (declared in `session.json`) and two paragraphs in `instructions.md` (what Doddy learned, and when to note a gap). Until the owner applies them (the live prompt is ahead of `instructions.md`, so merge the two paragraphs rather than overwriting it), the app already sends the variable, which the live prompt ignores, and Doddy never calls the new tool. Run `compare` afterwards.
+
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
 step catches it. Each tool's `x_doddy.elevenlabs_tool_id` is its live id; a tool not yet on the live agent
 says `not_synced`, and `check` fails on a missing id or on a phone tool no Swift source answers.
@@ -238,8 +240,8 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 **Applied to the live agent 2026-10-11 (round 6, ADR-332 to ADR-335 and ADR-340).**
 - **Re-read first:** version `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` (51 tools, the same ids as after round 5). Its prompt was round 5's, with two differences:
   - the camera line is still the ADR-291 wording, as before;
-  - two lines from ADR-324 ("unlock as you go", branch `claude/lucid-johnson-pmwwg4`, not merged into this line yet) were applied by that session: the connections line ("Nothing is asked up front…") and the online-account "declined"/"iPhone doesn't allow" rule.
-  Both are kept live. `instructions.md` on this branch doesn't have the ADR-324 lines; they arrive with that branch's merge.
+  - two lines from ADR-440 ("unlock as you go", branch `claude/lucid-johnson-pmwwg4`, not merged into this line yet) were applied by that session: the connections line ("Nothing is asked up front…") and the online-account "declined"/"iPhone doesn't allow" rule.
+  Both are kept live. `instructions.md` on this branch doesn't have the ADR-440 lines; they arrive with that branch's merge.
 - **New client tools:**
   - `find_free_time` (`tool_3201m4nyakxvf7ht6vxqyywxjf43`)
   - `remind_when_to_leave` (`tool_4801m4nyams5ff79cbnt0j8vweds`)

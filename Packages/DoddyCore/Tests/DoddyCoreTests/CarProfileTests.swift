@@ -12,6 +12,8 @@ final class CarProfileTests: XCTestCase {
         XCTAssertEqual(CarProfile.decision(for: request("read_calendar", #"{"range": "today"}"#)), .run)
         XCTAssertEqual(CarProfile.decision(for: request("parking_spot", #"{"action": "find"}"#)), .run)
         XCTAssertEqual(CarProfile.decision(for: request("check_email", #"{}"#)), .run)
+        // ADR-440: writing down a category of what Doddy can't do touches none of the user's data.
+        XCTAssertEqual(CarProfile.decision(for: request("note_capability_gap", #"{"category": "music"}"#)), .run)
     }
 
     func testOnlyNotesAndListItemsAskAloud() {

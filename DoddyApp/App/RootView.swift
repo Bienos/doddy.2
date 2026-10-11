@@ -47,6 +47,10 @@ enum PreferenceKey {
     /// Settings → About you: send the approved introduction answers to voice conversations.
     /// Off by default; nothing about the user leaves the phone until they switch it on.
     static let shareProfileWithVoice = "shareProfileWithVoice"
+    /// Learning loop (ADR-440). Off until turned on: Doddy proposes facts and routines only then.
+    static let learningOn = "learning.on"
+    /// Hand confirmed facts and saved procedures to voice conversations. Off until turned on.
+    static let shareLearnedWithVoice = "learning.shareWithVoice"
     /// HTTPS address of `server/voice-token`. Empty = development public agent.
     static let voiceTokenServer = "voiceTokenServer"
     /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
