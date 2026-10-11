@@ -211,6 +211,9 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | U7 | Plan card with an event and a reminder → Add; What Doddy did | Both steps show Undo |
 | U8 | (after the live agent update) Ask Doddy to add a reminder, then say "undo that" → Remove | Card names the reminder; it's gone from Reminders; Doddy says it was undone |
 | U9 | (after the live agent update) New conversation, say "undo that" | Doddy says there's nothing to undo from this conversation |
+| U10 | Ask Doddy to add "milk, eggs" to Shopping; tick eggs yourself; What Doddy did → Undo → Remove | Milk is gone; eggs stay; row "Notes · Undone" |
+| U11 | Ask Doddy to remove "bread" from Shopping; Undo → Put back | Bread is back where it was |
+| U12 | Ask Doddy to add an item, then delete the whole list; Undo | "Not undone: it changed in the list since…" |
 
 ## 16. Birthdays from Contacts (ADR-268; needs the live agent update first)
 | # | Do this | Expect |

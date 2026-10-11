@@ -949,7 +949,9 @@ final class VoiceSessionController {
             listReceipt = ListReceipt(
                 listID: list.id, title: result.added.isEmpty ? "Nothing new for \(list.name)" : "Added to \(list.name)",
                 lines: lines, undo: result.added.isEmpty ? nil : store.listUndo)
-            await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name))
+            // What Doddy did can undo it for a day (ADR-275); kept only when something was added.
+            let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: list.id, list: list.name, items: result.added)
+            await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name), undo: undo)
         } catch {
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
         }
@@ -988,7 +990,10 @@ final class VoiceSessionController {
                 lines: changed.map { tick ? .ticked($0.text) : .removed($0.text) } + notFound.map { .note("not on the list: \($0)") },
                 undo: changed.isEmpty ? nil : store.listUndo,
                 choices: ambiguous.first.map { ListReceipt.Choices(said: $0.said, options: $0.options, tick: tick) })
-            await reply(toolCallID, VoiceToolReply.listChanged(verb: verb, changed: changed, list: list.name, notFound: notFound, ambiguous: ambiguous))
+            let undo: ActivityUndo? = changed.isEmpty ? nil
+                : tick ? .listTicked(listID: list.id, list: list.name, items: changed)
+                : .listRemoved(listID: list.id, list: list.name, items: changed)
+            await reply(toolCallID, VoiceToolReply.listChanged(verb: verb, changed: changed, list: list.name, notFound: notFound, ambiguous: ambiguous), undo: undo)
         } catch {
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
         }
@@ -1954,9 +1959,11 @@ final class VoiceSessionController {
         let result: UndoResult
         if let reason = undo.blocked(
             pauseAll: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey),
-            connectionOn: isOn(undo.connection)) {
-            if !isOn(undo.connection) { connectionNeeded = undo.connection }
+            connectionOn: undo.connection.map(isOn) ?? true) {
+            if let connection = undo.connection, !isOn(connection) { connectionNeeded = connection }
             result = .notDone(reason)
+        } else if undo.listID != nil {
+            result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)
         }

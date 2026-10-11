@@ -22,18 +22,6 @@ extension ActivityApp {
         case .web: return "Wyszukiwanie w sieci"
         }
     }
-
-    /// "w Kalendarzu", "w Przypomnieniach": where Undo checked.
-    fileprivate var polishLocative: String {
-        switch self {
-        case .calendar: "w Kalendarzu"
-        case .reminders: "w Przypomnieniach"
-        default: "w aplikacji \(title(.polish))"
-        }
-    }
-
-    /// "Kalendarz", "Przypomnienia": what to check.
-    fileprivate var polishAccusative: String { title(.polish) }
 }
 
 extension ActivityOutcome {
@@ -104,12 +92,14 @@ public enum ActivityText {
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
         }
-        for app in [ActivityApp.calendar, .reminders] {
-            notes["You undid this. Checked in \(app.title)."] = "Cofnięto. Sprawdzone \(app.polishLocative)."
-            notes["Not undone: it changed in \(app.title) since Doddy did this, so Doddy left it alone."] =
-                "Nie cofnięto: zmieniło się \(app.polishLocative) po zmianie Doddy’ego, więc Doddy tego nie ruszył."
-            notes["Doddy couldn't confirm the undo. Check \(app.title) before trying again."] =
-                "Doddy nie mógł potwierdzić cofnięcia. Sprawdź \(app.polishAccusative), zanim spróbujesz ponownie."
+        // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders or the list (ADR-275).
+        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę")]
+        for (place, locative, accusative) in places {
+            notes["You undid this. Checked in \(place)."] = "Cofnięto. Sprawdzone \(locative)."
+            notes["Not undone: it changed in \(place) since Doddy did this, so Doddy left it alone."] =
+                "Nie cofnięto: zmieniło się \(locative) po zmianie Doddy’ego, więc Doddy tego nie ruszył."
+            notes["Doddy couldn't confirm the undo. Check \(place) before trying again."] =
+                "Doddy nie mógł potwierdzić cofnięcia. Sprawdź \(accusative), zanim spróbujesz ponownie."
         }
         return notes
     }()

@@ -291,6 +291,84 @@ final class ActivityUndoTests: XCTestCase {
         XCTAssertEqual(ActivityUndo.reversed(plan), EventChange.reversed(plan))
     }
 
+    // MARK: Lists (ADR-275)
+
+    private let listID = UUID()
+
+    private func item(_ text: String, done: Bool = false, id: UUID = UUID()) -> ListItem {
+        ListItem(id: id, listID: listID, text: text, source: .voice, addedAt: date(10, 9), doneAt: done ? date(10, 10) : nil, position: 0)
+    }
+
+    private func list(_ items: [ListItem]) throws -> DoddyList {
+        DoddyList(record: try MemoryRecord(id: listID, rawText: "Shopping", source: .explicitVoice, category: .list, capturedAt: date(10, 8)), items: items)
+    }
+
+    func testAListAddIsUndoneOnlyForItemsStillOpenWithTheSameWords() throws {
+        let milk = item("milk"), eggs = item("eggs"), tea = item("tea")
+        let undo = ActivityUndo.listAdded(listID: listID, list: "Shopping", items: [milk, eggs, tea])
+        // Eggs were ticked since, and tea was reworded: only milk goes.
+        let now = try list([milk, item("eggs", done: true, id: eggs.id), item("green tea", id: tea.id), item("bread")])
+        XCTAssertEqual(undo.listItemsToUndo(in: now), [milk])
+        XCTAssertEqual(undo.listItemsToUndo(in: nil), [])
+        XCTAssertTrue(undo.listUndoChecks([milk], after: try list([item("bread")])))
+        XCTAssertFalse(undo.listUndoChecks([milk], after: now))
+        XCTAssertNil(undo.connection)
+        XCTAssertNil(undo.blocked(pauseAll: true, connectionOn: false))
+        XCTAssertEqual(undo.app, .memories)
+    }
+
+    func testATickIsUndoneOnlyForItemsStillTickedAndARemoveOnlyForItemsNotBack() throws {
+        let milk = item("milk", done: true), eggs = item("eggs", done: true)
+        let ticked = ActivityUndo.listTicked(listID: listID, list: "Shopping", items: [milk, eggs])
+        let now = try list([milk, item("eggs", id: eggs.id)])
+        XCTAssertEqual(ticked.listItemsToUndo(in: now), [milk])
+        XCTAssertTrue(ticked.listUndoChecks([milk], after: try list([item("milk", id: milk.id)])))
+        XCTAssertFalse(ticked.listUndoChecks([milk], after: now))
+
+        let bread = item("bread"), jam = item("jam")
+        let removed = ActivityUndo.listRemoved(listID: listID, list: "Shopping", items: [bread, jam])
+        XCTAssertEqual(removed.listItemsToUndo(in: try list([jam])), [bread])
+        // The list is gone: nothing can go back, so nothing is written.
+        XCTAssertEqual(removed.listItemsToUndo(in: nil), [])
+        XCTAssertTrue(removed.listUndoChecks([bread], after: try list([bread, jam])))
+        XCTAssertNil(ActivityUndo.addedEvent(eventID: "E", event: event(start: date(11, 9))).listItemsToUndo(in: nil))
+    }
+
+    func testListUndoIsKeptOnlyForDoneListRepliesAndNeverOfferedByVoice() throws {
+        let added = ListAddResult(added: [item("milk")], alreadyThere: [], tooLong: [], noRoom: [])
+        let undo = ActivityUndo.listAdded(listID: listID, list: "Shopping", items: added.added)
+        let request = ActivityRequest.describe(.addToList(ListVoiceRequest(list: "Shopping", items: ["milk"])), calendar: calendar)!
+        let row = ActivityEntry(request: request, reply: VoiceToolReply.listAdded(added, list: "Shopping"), at: now, undo: undo)
+        XCTAssertTrue(row.canUndo(now: now))
+        let nothing = ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: [])
+        XCTAssertNil(ActivityEntry(request: request, reply: VoiceToolReply.listAdded(nothing, list: "Shopping"), at: now, undo: undo).undo)
+        // "Undo that" stays with Calendar and Reminders, as the agent is told.
+        XCTAssertNil(ActivityUndo.latest(in: [row], since: now.addingTimeInterval(-60), now: now))
+
+        let done = ActivityLog.undid(row, result: .undone, at: now)
+        XCTAssertEqual(done.note, "You undid this. Checked in the list.")
+        XCTAssertEqual(done.note(.polish), "Cofnięto. Sprawdzone na liście.")
+        XCTAssertEqual(done.statusText(.polish), "Notatki · Cofnięte")
+        XCTAssertEqual(ActivityLog.undid(row, result: .leftAlone, at: now).note(.polish),
+                       "Nie cofnięto: zmieniło się na liście po zmianie Doddy’ego, więc Doddy tego nie ruszył.")
+        let back = try JSONDecoder().decode(ActivityEntry.self, from: JSONEncoder().encode(row))
+        XCTAssertEqual(back, row)
+    }
+
+    func testTheListSheetNamesTheItemsInBothLanguages() {
+        let items = ["milk", "eggs", "tea", "bread", "jam"].map { item($0) }
+        let added = ActivityUndo.listAdded(listID: listID, list: "Shopping", items: Array(items.prefix(2)))
+        XCTAssertEqual(added.question(), "Remove “milk”, “eggs” from “Shopping”?")
+        XCTAssertEqual(added.question(.polish), "Usunąć „milk”, „eggs” z listy „Shopping”?")
+        let many = ActivityUndo.listRemoved(listID: listID, list: "Zakupy", items: items)
+        XCTAssertEqual(many.question(), "Put “milk”, “eggs”, “tea” and 2 more back on “Zakupy”?")
+        XCTAssertEqual(many.question(.polish), "Przywrócić „milk”, „eggs”, „tea” i 2 więcej na listę „Zakupy”?")
+        XCTAssertEqual(many.buttonTitle(.polish), "Przywróć")
+        let ticked = ActivityUndo.listTicked(listID: listID, list: "Shopping", items: [items[0]])
+        XCTAssertEqual(ticked.buttonTitle(), "Untick")
+        XCTAssertTrue(ticked.explanation(calendar: calendar).contains("Only the ones still ticked are unticked."))
+    }
+
     // MARK: What the user is asked
 
     func testTheSheetIsInPolishOnAPolishIPhone() {

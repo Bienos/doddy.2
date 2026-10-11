@@ -119,3 +119,30 @@ Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the la
 | U9 | New conversation, say "undo that" | Doddy says there's nothing to undo from this conversation and points to What Doddy did |
 
 **Live agent updated 2026-10-11** (owner approved): see the last paragraph of `DECISIONS.md` for tool ids and versions; `voice_agent_spec.py compare` MATCH.
+
+## ADR-275 (2026-10-11, owner: "build next"): list changes by voice
+- **Before:** a voice add, tick or remove on one of Doddy's lists could be undone only from the receipt in that conversation.
+- **Now:** its row in What Doddy did offers Undo for 24 hours:
+  - **added items** are removed, only those still open with the same words;
+  - **ticked items** are unticked, only those still ticked;
+  - **removed items** are put back exactly as they were, only those not back already, and only if the list still exists.
+- **Same rules as Calendar and Reminders:**
+  - a confirmation first (the sheet names up to three items and the list, in English or Polish);
+  - nothing written when nothing is still as Doddy left it;
+  - the list read back before "Undone";
+  - "not sure" when the read-back disagrees;
+  - retry only when nothing was written.
+- **No switches:** lists need no connection switch and aren't stopped by Pause all, as before.
+- **Not by voice:** "undo that" stays Calendar and Reminders only (`ActivityUndo.latest`), so `undo_last`'s live description stays true.
+- **Code:**
+  - `ActivityUndo.listAdded/listTicked/listRemoved`, `listItemsToUndo(in:)` and `listUndoChecks` (DoddyCore);
+  - `MemoryStore.undoFromActivity` (the write and read-back);
+  - What Doddy did and the voice controller send list undos to the store, everything else to `DeviceConnections`.
+- **Tests:** 4 new `ActivityUndoTests`; a planted bug was caught; `scripts/ci.sh --core-only` PASS.
+
+| # | Do this | Expect |
+|---|---|---|
+| U10 | Ask Doddy to add "milk, eggs" to Shopping; tick eggs yourself; What Doddy did → Undo → Remove | Milk is gone; eggs stay (ticked since); row "Notes · Undone" |
+| U11 | Ask Doddy to remove "bread" from Shopping; Undo → Put back | Bread is back where it was |
+| U12 | Ask Doddy to add an item, then delete the whole list; Undo | "Not undone: it changed in the list since…"; nothing else changes |
+

@@ -21,6 +21,11 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
     /// `oldDue` is the due before Doddy's change. `markedDone` is true when Doddy ticked it off
     /// (then the due was not changed).
     case changedReminder(id: String, title: String, oldDue: ReminderDue?, newDue: ReminderDue?, markedDone: Bool)
+    /// List changes by voice (ADR-275): the exact items as Doddy left them, and the list's name
+    /// at the time (for the sheet only; the list is found by its id).
+    case listAdded(listID: UUID, list: String, items: [ListItem])
+    case listTicked(listID: UUID, list: String, items: [ListItem])
+    case listRemoved(listID: UUID, list: String, items: [ListItem])
 
     /// Undo is offered for this long after the change.
     public static let window: TimeInterval = 24 * 3_600
@@ -29,19 +34,32 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         switch self {
         case .addedEvent, .changedEvent: .calendar
         case .addedReminder, .changedReminder: .reminders
+        case .listAdded, .listTicked, .listRemoved: .memories
         }
     }
 
-    /// The switch in Settings, Connections that Undo needs, like the change it reverses.
-    public var connection: VoiceConnection {
+    /// Where it is checked, for the row's note: "Calendar", "Reminders" or "the list".
+    public var placeName: String {
+        switch self {
+        case .addedEvent, .changedEvent: "Calendar"
+        case .addedReminder, .changedReminder: "Reminders"
+        case .listAdded, .listTicked, .listRemoved: "the list"
+        }
+    }
+
+    /// The switch in Settings, Connections that Undo needs, like the change it reverses. Nil for
+    /// lists: they are Doddy's own, need no switch and aren't stopped by Pause all.
+    public var connection: VoiceConnection? {
         switch self {
         case .addedEvent, .changedEvent: .calendar
         case .addedReminder, .changedReminder: .reminders
+        case .listAdded, .listTicked, .listRemoved: nil
         }
     }
 
     /// Why Undo can't run now, checked at the tap before anything is read or written. Nil when it can.
     public func blocked(pauseAll: Bool, connectionOn: Bool) -> String? {
+        guard let connection else { return nil }
         if pauseAll { return "Connections are paused in Settings." }
         if !connectionOn { return "\(connection.title) is off in Settings, Connections." }
         return nil
@@ -60,7 +78,22 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
             markedDone ? "Mark “\(title)” not done?" : "Put back the due of “\(title)”?"
         case (.changedReminder(_, let title, _, _, let markedDone), .polish):
             markedDone ? "Oznaczyć „\(title)” jako niezrobione?" : "Przywrócić poprzedni termin „\(title)”?"
+        case (.listAdded(_, let list, let items), .english): "Remove \(Self.names(items, .english)) from “\(list)”?"
+        case (.listAdded(_, let list, let items), .polish): "Usunąć \(Self.names(items, .polish)) z listy „\(list)”?"
+        case (.listTicked(_, let list, let items), .english): "Untick \(Self.names(items, .english)) on “\(list)”?"
+        case (.listTicked(_, let list, let items), .polish): "Odznaczyć \(Self.names(items, .polish)) na liście „\(list)”?"
+        case (.listRemoved(_, let list, let items), .english): "Put \(Self.names(items, .english)) back on “\(list)”?"
+        case (.listRemoved(_, let list, let items), .polish): "Przywrócić \(Self.names(items, .polish)) na listę „\(list)”?"
         }
+    }
+
+    /// "“milk”, “eggs” and 2 more", in the sheet's language.
+    static func names(_ items: [ListItem], _ language: NotificationLanguage) -> String {
+        let (open, close) = language == .polish ? ("„", "”") : ("“", "”")
+        let shown = items.prefix(3).map { "\(open)\($0.text)\(close)" }.joined(separator: ", ")
+        let more = items.count - min(items.count, 3)
+        guard more > 0 else { return shown }
+        return language == .polish ? "\(shown) i \(more) więcej" : "\(shown) and \(more) more"
     }
 
     /// Exactly what will happen, shown under the question.
@@ -100,6 +133,18 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
             return polish
                 ? "Termin wróci na \(old) z \(new). Tylko jeśli od tamtej pory się nie zmienił."
                 : "Due goes back to \(old) from \(new). Only if it hasn't changed since."
+        case .listAdded:
+            return polish
+                ? "Doddy dodał je głosem. Usunięte zostaną tylko te, które nadal są na liście i nie są odhaczone."
+                : "Doddy added these by voice. Only the ones still on the list and not ticked are removed."
+        case .listTicked:
+            return polish
+                ? "Doddy odhaczył je głosem. Odznaczone zostaną tylko te, które nadal są odhaczone."
+                : "Doddy ticked these by voice. Only the ones still ticked are unticked."
+        case .listRemoved:
+            return polish
+                ? "Doddy usunął je głosem. Wrócą dokładnie takie, jakie były, jeśli lista nadal istnieje."
+                : "Doddy removed these by voice. They go back exactly as they were, if the list still exists."
         }
     }
 
@@ -112,6 +157,9 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case .changedReminder(_, _, _, _, let markedDone):
             if markedDone { return polish ? "Oznacz jako niezrobione" : "Mark not done" }
             return polish ? "Przywróć" : "Put back"
+        case .listAdded: return polish ? "Usuń" : "Remove"
+        case .listTicked: return polish ? "Odznacz" : "Untick"
+        case .listRemoved: return polish ? "Przywróć" : "Put back"
         }
     }
 
@@ -165,6 +213,53 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         event.allDay
             ? "\(VoiceToolReply.localText(event.start, hasTime: false, calendar: calendar)) (\(language == .polish ? "cały dzień" : "all day"))"
             : VoiceToolReply.localText(event.start, hasTime: true, calendar: calendar)
+    }
+}
+
+// MARK: Lists (ADR-275)
+
+extension ActivityUndo {
+    /// The list a list undo works on.
+    public var listID: UUID? {
+        switch self {
+        case .listAdded(let id, _, _), .listTicked(let id, _, _), .listRemoved(let id, _, _): id
+        default: nil
+        }
+    }
+
+    /// The items Undo would act on now, given the list as it is: added items still open with the
+    /// same words, ticked items still ticked, removed items not back on the list. Empty means it
+    /// all changed since (or the list is gone), so nothing is written. Nil for a non-list undo.
+    public func listItemsToUndo(in current: DoddyList?) -> [ListItem]? {
+        switch self {
+        case .listAdded(_, _, let items):
+            let open = Dictionary((current?.open ?? []).map { ($0.id, $0.text) }, uniquingKeysWith: { a, _ in a })
+            return items.filter { open[$0.id] == $0.text }
+        case .listTicked(_, _, let items):
+            let done = Dictionary((current?.done ?? []).map { ($0.id, $0.text) }, uniquingKeysWith: { a, _ in a })
+            return items.filter { done[$0.id] == $0.text }
+        case .listRemoved(_, _, let items):
+            guard let current else { return [] }
+            let there = Set(current.items.map(\.id))
+            return items.filter { !there.contains($0.id) }
+        default:
+            return nil
+        }
+    }
+
+    /// Read back after the write: the items Undo acted on are gone, open again, or back.
+    public func listUndoChecks(_ acted: [ListItem], after list: DoddyList?) -> Bool {
+        let ids = Set(acted.map(\.id))
+        switch self {
+        case .listAdded:
+            return !(list?.items ?? []).contains { ids.contains($0.id) }
+        case .listTicked:
+            return ids.isSubset(of: Set((list?.open ?? []).map(\.id)))
+        case .listRemoved:
+            return ids.isSubset(of: Set((list?.items ?? []).map(\.id)))
+        default:
+            return false
+        }
     }
 }
 
@@ -234,7 +329,7 @@ extension ActivityLog {
     /// The entry after the user tapped Undo. "Undone" only when the read-back agreed.
     public static func undid(_ entry: ActivityEntry, result: UndoResult, at date: Date) -> ActivityEntry {
         var updated = entry
-        let where_ = entry.app.title
+        let where_ = entry.undo?.placeName ?? entry.app.title
         switch result {
         case .undone:
             updated.undoState = .undone(date)
@@ -263,7 +358,9 @@ extension ActivityUndo {
     /// The newest change from this conversation that can still be undone. Never one from an
     /// earlier conversation: "undo that" means what was just done.
     public static func latest(in entries: [ActivityEntry], since start: Date, now: Date) -> ActivityEntry? {
-        entries.filter { $0.at >= start && $0.canUndo(now: now) }.max { $0.at < $1.at }
+        // "Undo that" is for Calendar and Reminders only; list changes have their own receipt
+        // and What Doddy did (ADR-275), and the agent is told so.
+        entries.filter { $0.at >= start && $0.canUndo(now: now) && $0.undo?.connection != nil }.max { $0.at < $1.at }
     }
 }
 
@@ -273,7 +370,7 @@ extension VoiceToolReply {
 
     /// What the agent hears after the user tapped the undo card. "undone" only after the read-back.
     public static func undo(_ result: UndoResult, _ undo: ActivityUndo) -> String {
-        let place = undo.app.title
+        let place = undo.placeName
         switch result {
         case .undone:
             switch undo {
@@ -284,6 +381,9 @@ extension VoiceToolReply {
                 return markedDone
                     ? "undone: \"\(title)\" is open again in Reminders. Checked."
                     : "undone: \"\(title)\" has its old due back. Checked in Reminders."
+            case .listAdded(_, let list, _): return "undone: the items were removed from \"\(list)\". Checked."
+            case .listTicked(_, let list, _): return "undone: the items are unticked on \"\(list)\". Checked."
+            case .listRemoved(_, let list, _): return "undone: the items are back on \"\(list)\". Checked."
             }
         case .leftAlone:
             return "not undone: it changed in \(place) since Doddy did it, so Doddy left it alone. Nothing changed."
@@ -304,7 +404,7 @@ extension ActivityUndo {
         switch self {
         case .changedEvent(let mine): return plan == mine
         case .changedReminder(let id, _, _, _, _): return reminderID == id
-        case .addedEvent, .addedReminder: return false
+        case .addedEvent, .addedReminder, .listAdded, .listTicked, .listRemoved: return false
         }
     }
 }

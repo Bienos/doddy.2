@@ -106,6 +106,30 @@ extension MemoryStore {
         await listChanged(undo.listID)
     }
 
+    /// Undo from What Doddy did for a list change made by voice (ADR-275): only the items still as
+    /// Doddy left them (ActivityUndo.listItemsToUndo), then the list is read back. When a write
+    /// throws, a fresh look decides: all still as Doddy left them means nothing was written.
+    func undoFromActivity(_ undo: ActivityUndo) async -> UndoResult {
+        guard let listID = undo.listID else { return .notDone("That isn't a list change.") }
+        await reload()
+        guard let items = undo.listItemsToUndo(in: list(id: listID)), !items.isEmpty else { return .leftAlone }
+        let repository = environment.listRepository
+        do {
+            switch undo {
+            case .listAdded: _ = try await repository.remove(items.map(\.id))
+            case .listTicked: _ = try await repository.setDone(items.map(\.id), done: false)
+            case .listRemoved: _ = try await repository.restore(items)
+            default: return .notDone("That isn't a list change.")
+            }
+        } catch {
+            await listChanged(listID)
+            let still = undo.listItemsToUndo(in: list(id: listID)) ?? []
+            return still.count == items.count ? .notDone(UserFacingError.listMessage(for: error)) : .notSure
+        }
+        await listChanged(listID)
+        return undo.listUndoChecks(items, after: list(id: listID)) ? .undone : .notSure
+    }
+
     private func listChanged(_ listID: UUID) async {
         await reload()
         await environment.noteReminders?.refreshContent(forMemory: listID)
