@@ -15,7 +15,7 @@ struct MemoryDetailView: View {
     @State private var errorMessage: String?
     @State private var copied = false
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
-    /// Re-read after a change, so the switch shows what was stored (ADR-308).
+    /// Re-read after a change, so the switch shows what was stored (ADR-310).
     @State private var isPrivate = false
     private let lock = AppLock.shared
 
@@ -23,7 +23,7 @@ struct MemoryDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 if store.record(id: memoryID) != nil, isPrivate, !lock.privateUnlocked {
-                    // A private note before Face ID (ADR-308): nothing of it is shown.
+                    // A private note before Face ID (ADR-310): nothing of it is shown.
                     JourneyHeading(eyebrow: "Private note", title: "Locked")
                     Text("This note is private. Its words show after Face ID or your passcode.")
                         .foregroundStyle(Theme.secondaryText)
@@ -84,7 +84,7 @@ struct MemoryDetailView: View {
                     Text("Your note, your choice. No inferred facts.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                     if let errorMessage { ProblemView(message: errorMessage) }
-                    // ADR-308: kept out of the voice agent, Siri, Ask Doddy, widgets, the watch and the call copy.
+                    // ADR-310: kept out of the voice agent, Siri, Ask Doddy, widgets, the watch and the call copy.
                     Toggle("Private", isOn: Binding(get: { isPrivate }, set: { setPrivate($0) }))
                         .frame(minHeight: 44)
                         .accessibilityIdentifier("detail.private")

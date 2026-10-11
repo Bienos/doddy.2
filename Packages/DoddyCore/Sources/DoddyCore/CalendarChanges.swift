@@ -28,7 +28,7 @@ public struct EventChangeDraft: Equatable, Sendable {
     public let newLocation: String?
     /// A line added to the end of the event's notes (ADR-281).
     public let addNote: String?
-    /// The notes replaced by this text, "" to clear them (ADR-312). The card shows the old notes.
+    /// The notes replaced by this text, "" to clear them (ADR-314). The card shows the old notes.
     public let replaceNotes: String?
 
     public init(title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?,
@@ -56,7 +56,7 @@ public struct ReminderChangeDraft: Equatable, Sendable {
     public let listName: String?
     /// The one list `listName` matched, set by the app before the card is shown.
     public var toList: ReminderListRef?
-    /// ADR-312: a new title, a new repeat or none, the notes replaced.
+    /// ADR-314: a new title, a new repeat or none, the notes replaced.
     public let newTitle: String?
     public let repeatChange: ReminderRepeatChange?
     public let replaceNotes: String?
@@ -98,7 +98,7 @@ public struct EventChangePlan: Codable, Equatable, Sendable {
     public let addNote: String?
     /// Undo of `addNote`: this exact line comes off the end of the notes again.
     public let removeNote: String?
-    /// The notes now, read on this iPhone for the card, the stale check and Undo (ADR-312).
+    /// The notes now, read on this iPhone for the card, the stale check and Undo (ADR-314).
     public let notesBefore: String?
     /// The notes replaced by this text ("" clears them); nil: not replaced.
     public let replaceNotes: String?
@@ -190,7 +190,7 @@ public enum EventChange {
         let location = draft.newLocation?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
         let newLocation = location == (locationBefore ?? "").nonEmpty ? nil : location
         let note = draft.addNote?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-        // Replacing with the same notes is no change (ADR-312).
+        // Replacing with the same notes is no change (ADR-314).
         let replace = draft.replaceNotes.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .flatMap { $0 == (notesBefore ?? "") ? nil : $0 }
         guard after != event || newLocation != nil || note != nil || replace != nil else { return nil }
@@ -369,7 +369,7 @@ extension VoiceToolRequest {
         }
         let newTitle = args.text("new_title")
         let newLocation = args.text("new_location"), addNote = args.text("add_note")
-        // ADR-312: replace or clear the notes; never together with add_note.
+        // ADR-314: replace or clear the notes; never together with add_note.
         var replaceNotes: String? = args.flag("clear_notes") ? "" : nil
         if let text = args.text("replace_notes") {
             guard replaceNotes == nil else { return .invalid(name: name, reason: "give replace_notes or clear_notes, not both") }
@@ -422,7 +422,7 @@ extension VoiceToolRequest {
             priority = value
         }
         let listName = args.text("move_to_list")
-        // ADR-312: rename, repeat (or "none" to stop), replace or clear the notes.
+        // ADR-314: rename, repeat (or "none" to stop), replace or clear the notes.
         let newTitle = args.text("new_title")?.trimmingCharacters(in: .whitespacesAndNewlines)
         if let newTitle, newTitle.isEmpty || newTitle.count > ReminderDetails.maxTitleLength {
             return .invalid(name: name, reason: "new_title must be 1 to \(ReminderDetails.maxTitleLength) characters")

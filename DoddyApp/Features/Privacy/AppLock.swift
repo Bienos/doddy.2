@@ -4,7 +4,7 @@ import LocalAuthentication
 import Observation
 import SwiftUI
 
-/// Face ID (or Touch ID, or the passcode) for Doddy (ADR-308): the optional lock on the whole app,
+/// Face ID (or Touch ID, or the passcode) for Doddy (ADR-310): the optional lock on the whole app,
 /// and the private notes' words. iOS does the checking; Doddy only learns yes or no. The only file
 /// that uses LocalAuthentication (`scripts/check_forbidden_capabilities.sh`).
 @MainActor
@@ -64,7 +64,7 @@ final class AppLock {
     }
 }
 
-/// Which notes are private, on this iPhone only (ADR-308). Every change is read back.
+/// Which notes are private, on this iPhone only (ADR-310). Every change is read back.
 enum PrivateNotesStore {
     static func current() -> PrivateNotes {
         PrivateNotes(stored: UserDefaults.standard.string(forKey: PrivateNotes.storageKey))
@@ -79,7 +79,7 @@ enum PrivateNotesStore {
     }
 }
 
-/// What covers Doddy while it is locked (ADR-308): nothing of the app shows through.
+/// What covers Doddy while it is locked (ADR-310): nothing of the app shows through.
 struct AppLockView: View {
     private let lock = AppLock.shared
 

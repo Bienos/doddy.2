@@ -157,7 +157,7 @@ public struct ActivityRequest: Equatable, Sendable {
             if draft.addNote != nil { parts.append("add a note") }
             if let priority = draft.priority { parts.append(priority.text) }
             if let list = draft.listName { parts.append("to the list “\(list)”") }
-            // ADR-312: the new title is the user's own words; notes text is not kept.
+            // ADR-314: the new title is the user's own words; notes text is not kept.
             if let title = draft.newTitle { parts.append("rename to “\(title)”") }
             if let text = draft.replaceNotes { parts.append(text.isEmpty ? "clear notes" : "replace notes") }
             switch draft.repeatChange {

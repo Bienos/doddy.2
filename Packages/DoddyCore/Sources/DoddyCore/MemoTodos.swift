@@ -1,6 +1,6 @@
 import Foundation
 
-// To-dos from a voice memo (ADR-311). After a memo is written out on the iPhone, Doddy offers the
+// To-dos from a voice memo (ADR-313). After a memo is written out on the iPhone, Doddy offers the
 // sentences that sound like things to do ("I need to call the plumber", "kup mleko") as list
 // items. Rules, not a model, on the iPhone:
 //  - only the memo's own words; the lead-in ("I need to", "muszę") is dropped and nothing else is

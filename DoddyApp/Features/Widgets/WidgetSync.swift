@@ -30,7 +30,7 @@ final class WidgetSync {
         ShoppingModeController.shared.refresh()
         // Shared lists (ADR-263) send a local change to iCloud.
         SharedListsController.shared.listsChanged()
-        // Private notes (ADR-308) never appear on widgets or the watch.
+        // Private notes (ADR-310) never appear on widgets or the watch.
         let shareable = PrivateNotesStore.current().shareable(store.memories)
         let snapshot = WidgetSnapshot.make(
             memories: shareable, lists: store.lists,

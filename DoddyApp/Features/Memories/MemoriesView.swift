@@ -86,7 +86,7 @@ struct MemoriesView: View {
                                         } label: {
                                             Label(isPinned ? "Unpin from the top" : "Pin to the top", systemImage: isPinned ? "pin.slash" : "pin")
                                         }
-                                        // A private note's words only after Face ID (ADR-308).
+                                        // A private note's words only after Face ID (ADR-310).
                                         if !hides {
                                             Button { UIPasteboard.general.string = record.currentText } label: {
                                                 Label("Copy text", systemImage: "doc.on.doc")

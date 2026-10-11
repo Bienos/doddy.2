@@ -96,7 +96,7 @@ fi
 if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:"; then
   echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $openai_voice and $rates_client." >&2; status=1
 fi
-# Face ID (ADR-308): LocalAuthentication only in the app lock.
+# Face ID (ADR-310): LocalAuthentication only in the app lock.
 if grep -RInE --include='*.swift' 'import LocalAuthentication|LAContext' "${dirs[@]}" | code_only | grep -v "^DoddyApp/Features/Privacy/AppLock.swift:"; then
   echo "FAIL: LocalAuthentication outside DoddyApp/Features/Privacy/AppLock.swift." >&2; status=1
 fi

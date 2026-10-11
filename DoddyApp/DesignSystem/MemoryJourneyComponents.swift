@@ -175,7 +175,7 @@ struct MemoryLinkCard: View {
     let record: MemoryRecord
     var matchedTerms: [String] = []
     var isPinned = false
-    /// A private note before Face ID (ADR-308): its words are not shown.
+    /// A private note before Face ID (ADR-310): its words are not shown.
     var hidesText = false
 
     var body: some View {

@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// The one shared item waiting for the app (ADR-309), in the same App Group folder as the
+/// The one shared item waiting for the app (ADR-311), in the same App Group folder as the
 /// widgets' snapshot. Written by the share extension, taken (read and removed) by the app.
 /// A build signed without the App Group has no folder: the extension then says sharing isn't
 /// set up, and the app finds nothing.

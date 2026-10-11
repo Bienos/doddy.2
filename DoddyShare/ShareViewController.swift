@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// "Save to Doddy" in the Share Sheet (ADR-309). Shows what another app shared and, after
+/// "Save to Doddy" in the Share Sheet (ADR-311). Shows what another app shared and, after
 /// "Send to Doddy", leaves it in the App Group for the app, which opens the capture screen with
 /// it. This extension saves no note, opens no database and uses no network.
 final class ShareViewController: UIViewController {

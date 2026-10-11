@@ -3,7 +3,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Doddy's filter for the user's iOS Focus modes (ADR-310), added in Settings, Focus, on a
+/// Doddy's filter for the user's iOS Focus modes (ADR-312), added in Settings, Focus, on a
 /// Focus. iOS runs `perform()` in Doddy's process when that Focus starts, and again with the
 /// default values (nothing changed) when it ends. App target only.
 struct DoddyFocusFilter: SetFocusFilterIntent {

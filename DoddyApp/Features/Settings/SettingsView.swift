@@ -226,7 +226,7 @@ struct SettingsView: View {
                 }
 
                 Section("Privacy") {
-                    // ADR-308: Face ID when Doddy opens, and after a minute away.
+                    // ADR-310: Face ID when Doddy opens, and after a minute away.
                     AppLockToggle()
                     NavigationLink {
                         DataFlowView()

@@ -115,7 +115,7 @@ struct RootView: View {
                 #endif
             }
             .preferredColorScheme(colorScheme)
-            // The Face ID lock (ADR-308) covers everything until iOS says yes.
+            // The Face ID lock (ADR-310) covers everything until iOS says yes.
             .overlay { if AppLock.shared.isLocked { AppLockView() } }
             .task {
                 await store.reload()
@@ -166,7 +166,7 @@ struct RootView: View {
                 noteReminders.pendingOpenMemoryID = nil
             }
             // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
-            // Private notes (ADR-308) are never in the server copy for calls.
+            // Private notes (ADR-310) are never in the server copy for calls.
             .onChange(of: store.revision) { MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories)) }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
@@ -181,7 +181,7 @@ struct RootView: View {
 
     /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
     /// started while Doddy was in the background, if it is running or left notes to look at.
-    /// Text or a link shared from another app with "Save to Doddy" (ADR-309): opens the capture
+    /// Text or a link shared from another app with "Save to Doddy" (ADR-311): opens the capture
     /// screen with it, as the shortcut does. Nothing is saved until Save there.
     private func pickUpSharedItem() {
         guard let item = ShareInboxFile.take() else { return }

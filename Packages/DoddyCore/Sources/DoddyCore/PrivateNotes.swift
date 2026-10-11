@@ -1,6 +1,6 @@
 import Foundation
 
-// Private notes and the Face ID lock (ADR-308). A note marked Private stays in Doddy on this
+// Private notes and the Face ID lock (ADR-310). A note marked Private stays in Doddy on this
 // iPhone but is left out of everything that takes notes elsewhere or shows them without asking:
 // the voice agent's saved notes and its search, Siri, Ask Doddy, the widgets and the watch, and
 // the opt-in server copy for phone calls. In the app its text shows only after Face ID (or the

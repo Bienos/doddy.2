@@ -52,7 +52,7 @@ public struct ReminderListRef: Codable, Equatable, Sendable {
     }
 }
 
-/// A reminder's repeat, changed by voice (ADR-312): set to a rule, or stopped.
+/// A reminder's repeat, changed by voice (ADR-314): set to a rule, or stopped.
 public enum ReminderRepeatChange: Equatable, Sendable {
     case set(CalendarRepeat)
     case stop
@@ -63,11 +63,11 @@ public struct ReminderDetailsChange: Equatable, Sendable {
     public let addNote: String?
     public let priority: ReminderPriority?
     public let toList: ReminderListRef?
-    /// A new title (ADR-312).
+    /// A new title (ADR-314).
     public let newTitle: String?
-    /// A new repeat, or none (ADR-312). Needs a due.
+    /// A new repeat, or none (ADR-314). Needs a due.
     public let repeatChange: ReminderRepeatChange?
-    /// The notes replaced by this text; "" clears them (ADR-312). The card shows the old notes.
+    /// The notes replaced by this text; "" clears them (ADR-314). The card shows the old notes.
     public let replaceNotes: String?
 
     public init(addNote: String? = nil, priority: ReminderPriority? = nil, toList: ReminderListRef? = nil,

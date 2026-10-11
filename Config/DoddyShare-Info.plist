@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Partial Info.plist for the DoddyShare extension (merged with the generated keys).
-  "Save to Doddy" in the Share Sheet (ADR-309): accepts text and one web link, and only leaves
+  "Save to Doddy" in the Share Sheet (ADR-311): accepts text and one web link, and only leaves
   them in the App Group for the app. No network, no database.
 -->
 <plist version="1.0">

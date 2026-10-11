@@ -45,7 +45,7 @@ settings:
     # widgets say "Open Doddy to set up widgets" and the app writes nothing.
     DODDY_APP_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
     DODDY_WIDGET_ENTITLEMENTS: ""
-    # "Save to Doddy" in the Share Sheet (ADR-309) also needs the App Group: with the app's App
+    # "Save to Doddy" in the Share Sheet (ADR-311) also needs the App Group: with the app's App
     # Group entitlements above, set DODDY_SHARE_ENTITLEMENTS = Config/DoddyShare.entitlements.
     # Without it the extension says sharing isn't set up and leaves nothing.
     DODDY_SHARE_ENTITLEMENTS: ""
@@ -76,7 +76,7 @@ targets:
         buildPhase: resources
     dependencies:
       - target: DoddyWidgets
-      # "Save to Doddy" in the Share Sheet (ADR-309).
+      # "Save to Doddy" in the Share Sheet (ADR-311).
       - target: DoddyShare
       # The Apple Watch app (ADR-232), embedded in the iPhone app.
       - target: DoddyWatch
@@ -143,7 +143,7 @@ targets:
         # Shared/ intents check this to skip app-only code (TalkToDoddyIntent runs in the app).
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DODDY_WIDGET_EXTENSION"
   DoddyShare:
-    # Share extension (ADR-309): "Save to Doddy" in the Share Sheet. Shows the shared text or web
+    # Share extension (ADR-311): "Save to Doddy" in the Share Sheet. Shows the shared text or web
     # link and, after Send to Doddy, leaves it in the App Group; the app opens the capture screen
     # with it. No networking, no database, saves no note.
     type: app-extension

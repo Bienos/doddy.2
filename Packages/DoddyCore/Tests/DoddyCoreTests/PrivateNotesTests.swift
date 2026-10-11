@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Private notes and the Face ID lock (ADR-308).
+/// Private notes and the Face ID lock (ADR-310).
 final class PrivateNotesTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 

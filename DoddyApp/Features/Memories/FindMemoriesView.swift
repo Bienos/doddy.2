@@ -102,7 +102,7 @@ private struct MeaningHitsView: View {
             ForEach(hits) { hit in
                 NavigationLink(value: MemoryNavigationRoute.note(hit.record.id)) {
                     Group {
-                        // A private note's words only after Face ID (ADR-308).
+                        // A private note's words only after Face ID (ADR-310).
                         if PrivateNotesStore.current().contains(hit.record.id) && !AppLock.shared.privateUnlocked {
                             Label("Private note", systemImage: "lock.fill").foregroundStyle(Theme.secondaryText)
                         } else {

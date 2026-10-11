@@ -464,7 +464,7 @@ struct VoiceView: View {
             if let note = plan.addNote {
                 Label(String(format: NSLocalizedString("Adds to its notes: “%@”", comment: ""), note), systemImage: "text.append")
             }
-            // ADR-312: the old notes as they are, and what replaces them; Undo puts them back.
+            // ADR-314: the old notes as they are, and what replaces them; Undo puts them back.
             if let text = plan.replaceNotes {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
@@ -492,7 +492,7 @@ struct VoiceView: View {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
             }
-            // ADR-302 and ADR-312: each detail as it is now and as it will be.
+            // ADR-302 and ADR-314: each detail as it is now and as it will be.
             if let title = draft.newTitle {
                 Label("Rename to “\(title)”", systemImage: "pencil")
             }

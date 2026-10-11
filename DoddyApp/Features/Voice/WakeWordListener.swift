@@ -173,7 +173,7 @@ final class WakeWordListener {
 
     private func conditions(mayStartMicrophone: Bool) -> WakeConditions {
         WakeConditions(
-            // A Focus with Doddy's filter can pause listening (ADR-310); the switch itself stays on.
+            // A Focus with Doddy's filter can pause listening (ADR-312); the switch itself stays on.
             switchedOn: isAllowedThisLaunch && UserDefaults.standard.bool(forKey: PreferenceKey.heyDoddyOn)
                 && !FocusFilterState.shared.settings.pausesHeyDoddy,
             hasAccessKey: WakeAccessKeyStore.isSaved,

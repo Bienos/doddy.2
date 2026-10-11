@@ -85,7 +85,7 @@ final class ReminderDetailsTests: XCTestCase {
     }
 }
 
-/// Rename, repeat and replace notes (ADR-312).
+/// Rename, repeat and replace notes (ADR-314).
 final class ReminderRenameRepeatTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
@@ -146,7 +146,7 @@ final class ReminderRenameRepeatTests: XCTestCase {
     }
 }
 
-/// An event's notes replaced or cleared (ADR-312), with Undo that puts them back.
+/// An event's notes replaced or cleared (ADR-314), with Undo that puts them back.
 final class EventReplaceNotesTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

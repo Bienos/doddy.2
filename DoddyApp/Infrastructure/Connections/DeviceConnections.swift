@@ -203,7 +203,7 @@ final class DeviceConnections {
         }
         // A new place (ADR-281) only if the place is still what the card showed.
         if plan.newLocation != nil, (event.location ?? "") != (plan.locationBefore ?? "") { return .changedElsewhere }
-        // Notes being replaced (ADR-312) must still be the ones the card showed.
+        // Notes being replaced (ADR-314) must still be the ones the card showed.
         if plan.replaceNotes != nil, (event.notes ?? "") != (plan.notesBefore ?? "") { return .changedElsewhere }
         var notes = event.notes
         if let line = plan.removeNote {
@@ -317,7 +317,7 @@ final class DeviceConnections {
         return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.location
     }
 
-    /// The event's notes, read on this iPhone for the card and the stale check (ADR-312). Never
+    /// The event's notes, read on this iPhone for the card and the stale check (ADR-314). Never
     /// sent to the voice agent.
     func eventNotes(_ event: CalendarEventSummary) -> String? {
         guard access(for: .calendar) == .granted else { return nil }
@@ -411,7 +411,7 @@ final class DeviceConnections {
             // ADR-302: the priority and list must also still be as the card showed them.
             guard !reminder.isCompleted, ReminderPriority.from(eventKit: reminder.priority) == before.priority,
                   before.listID == nil || reminder.calendar?.calendarIdentifier == before.listID else { return .changedElsewhere }
-            // ADR-312: notes being replaced must still be the ones the card showed.
+            // ADR-314: notes being replaced must still be the ones the card showed.
             if details.replaceNotes != nil, (reminder.notes ?? "") != (before.notes ?? "") { return .changedElsewhere }
             if let newDue { moveDue(of: reminder, from: before.due, to: newDue) }
             if let line = details.addNote { reminder.notes = EventChange.notes(reminder.notes, adding: line) }

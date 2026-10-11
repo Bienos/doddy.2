@@ -1,6 +1,6 @@
 import Foundation
 
-/// What Doddy does differently while one of the user's iOS Focus modes is on (ADR-310). The user
+/// What Doddy does differently while one of the user's iOS Focus modes is on (ADR-312). The user
 /// picks these in Settings, Focus, on the Focus itself; iOS hands them to the app when that Focus
 /// starts, and hands the defaults (nothing changed) when it ends. Separate from Doddy's own
 /// focus timer (ADR-241).

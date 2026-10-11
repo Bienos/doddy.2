@@ -1,6 +1,6 @@
 import Foundation
 
-/// What the "Save to Doddy" share extension hands to the app (ADR-309). The extension can't open
+/// What the "Save to Doddy" share extension hands to the app (ADR-311). The extension can't open
 /// Doddy's database, so it only leaves this one item in the App Group folder; the app opens the
 /// capture screen with it the next time it is active. Nothing is saved until Save there.
 /// One item at a time: a new share replaces one that wasn't picked up yet.

@@ -310,7 +310,7 @@ public struct ReminderSnapshot: Equatable, Sendable {
     public let priority: ReminderPriority
     /// The list's identifier on this iPhone; nil when not read.
     public let listID: String?
-    /// The notes, read on this iPhone for the card and the stale check of a replace (ADR-312).
+    /// The notes, read on this iPhone for the card and the stale check of a replace (ADR-314).
     /// Never sent to the voice agent.
     public let notes: String?
 

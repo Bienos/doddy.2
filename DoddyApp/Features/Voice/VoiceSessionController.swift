@@ -354,7 +354,7 @@ final class VoiceSessionController {
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
-        // Private notes (ADR-308) never reach the voice agent.
+        // Private notes (ADR-310) never reach the voice agent.
         var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
         var recent = logs.isEnabled
             ? VoiceContext.recentConversations(logs.logs)
@@ -2203,7 +2203,7 @@ final class VoiceSessionController {
             case .several(let found):
                 await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
             case .one(let reminder):
-                // A repeat needs a due (Reminders' rule, ADR-312).
+                // A repeat needs a due (Reminders' rule, ADR-314).
                 if case .set? = draft.repeatChange, reminder.due == nil, draft.newDue == nil {
                     await reply(toolCallID, VoiceToolReply.reminderRepeatNeedsDue)
                     return
