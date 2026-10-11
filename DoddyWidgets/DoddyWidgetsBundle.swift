@@ -10,10 +10,8 @@ struct DoddyWidgetsBundle: WidgetBundle {
         DoddyVoiceLiveActivity()
         ShoppingLiveActivity()
         DoddyToolLiveActivity()
-        PinnedNotesWidget()
-        NextReminderWidget()
-        ListWidget()
-        TalkToDoddyWidget()
+        // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
+        DoddyHomeWidgets().body
         if #available(iOS 18.0, *) {
             TalkToDoddyControl()
             NewNoteControl()
@@ -24,5 +22,18 @@ struct DoddyWidgetsBundle: WidgetBundle {
             AlarmLiveActivity()
         }
         #endif
+    }
+}
+
+/// The Home Screen, Lock Screen and StandBy widgets, grouped so the main bundle stays within the
+/// builder's ten entries (ADR-331).
+struct DoddyHomeWidgets: WidgetBundle {
+    var body: some Widget {
+        PinnedNotesWidget()
+        NextReminderWidget()
+        ParkingWidget()
+        ListWidget()
+        TalkToDoddyWidget()
+        DoddyRestWidget()
     }
 }

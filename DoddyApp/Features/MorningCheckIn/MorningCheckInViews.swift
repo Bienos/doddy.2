@@ -19,6 +19,9 @@ struct MorningCheckInView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     JourneyHeading(eyebrow: "Morning check-in", title: "Your day,\nat a glance.")
+                    // A strip of the coffee shop between the heading and the day; no text over it (ADR-308).
+                    SceneryBackdrop(place: .coffee, height: 110, focus: 0.2)
+                        .padding(.horizontal, -24)
                     let briefing = briefing
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Doddy reminders today").font(.headline)

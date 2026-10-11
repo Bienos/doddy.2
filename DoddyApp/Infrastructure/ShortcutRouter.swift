@@ -20,6 +20,8 @@ final class ShortcutRouter {
     var isTidyUpPresented = false
     /// The evening wrap-up screen (ADR-261), from its notification or Settings.
     var isWrapUpPresented = false
+    /// The weekly look-back (ADR-306).
+    var isLookBackPresented = false
     /// "Talk it through": the conversation that opens next starts with this briefing.
     private var checkInBriefing: MorningBriefing?
     /// Bound to the guided Back Tap setup sheet in `RootView`.
@@ -62,7 +64,7 @@ final class ShortcutRouter {
     /// Opens the conversation unless one is already open or something else is on screen; it
     /// never starts a second conversation and never pushes a sheet aside.
     func startListeningOnOpen() {
-        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isOnboardingShown, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isOnboardingShown, drafts.shown == nil else { return }
         isVoicePresented = true
     }
 
@@ -102,6 +104,13 @@ final class ShortcutRouter {
         guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isWrapUpPresented = true
+    }
+
+    /// The look-back notification was tapped, or Settings asked for it (ADR-306).
+    func weeklyLookBackOpened() {
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isLookBackPresented = true
     }
 
     /// "Talk it through" on the check-in screen. The sheet closes first; the conversation opens

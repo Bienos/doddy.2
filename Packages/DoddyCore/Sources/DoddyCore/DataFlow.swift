@@ -113,7 +113,7 @@ public enum DataFlow {
                     ? "Only while a conversation is open, and not while Home's test switch says OpenAI."
                     : "Only while a conversation is open.",
                 isActive: true,
-                note: "ElevenLabs keeps a recording and transcript of each conversation."),
+                note: "ElevenLabs keeps a recording and transcript of each conversation. Notes you mark Private are never sent."),
             DataFlowRow(
                 id: "openaiVoice", destination: "OpenAI (test voice)",
                 what: sentence(voice),
@@ -136,7 +136,7 @@ public enum DataFlow {
                 note: "Doddy has no copy of the passphrase or the file. Without the passphrase nobody can open it."),
             DataFlowRow(
                 id: "iCloudSharing", destination: "Your iCloud (Apple) and the people you share lists with",
-                what: "The name and items of each list you share or joined, and every change to them.",
+                what: "The name and items of each list you share or joined, and every change to them; a reminder's place only if you tap Share this place.",
                 when: "While a list is shared.", isActive: state.sharedLists > 0,
                 note: state.sharedLists > 0
                     ? "Only the lists you chose. Stop sharing deletes the copy in your iCloud; Leave takes you off someone else's list."
@@ -147,17 +147,22 @@ public enum DataFlow {
                 when: "Only when you ask about the weather or a fact.", isActive: true,
                 note: "ElevenLabs makes these requests for Doddy; this app doesn't contact them."),
             DataFlowRow(
-                id: "placeSearch", destination: "Apple Maps (place search)",
-                what: "The words you type to find a place, and roughly where you are if Doddy already knows.",
-                when: "Only when you search for a place for a reminder.", isActive: true,
+                id: "exchangeRates", destination: "European Central Bank (exchange rates)",
+                what: "Nothing about you: the app downloads the ECB's public daily rates file.",
+                when: "When you ask Doddy to convert money, at most every six hours.", isActive: !state.pauseAll,
+                note: state.pauseAll ? "Connections are paused, so the rates aren't fetched." : "The amount and currencies stay on this iPhone; the conversion is worked out here."),
+            DataFlowRow(
+                id: "placeSearch", destination: "Apple Maps (place search and travel time)",
+                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going.",
+                when: "Only when you search for a place for a reminder, or ask when to leave.", isActive: true,
                 note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "Your access code.", when: "When a conversation starts.", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
             DataFlowRow(
-                id: "doddyServer", destination: "Your Doddy server (Google, Notion, Todoist via Composio)",
-                what: "What you ask for: a date, a search word, or the text of a draft or task you confirm. Never your saved notes.",
+                id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
+                what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
                 when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet

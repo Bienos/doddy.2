@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Share extension: leaves one shared item in the App Group for the app (ADR-311). Nothing else. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
+	</array>
+</dict>
+</plist>

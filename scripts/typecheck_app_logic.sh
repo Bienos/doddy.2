@@ -65,6 +65,13 @@ final class PlaceLocation {
 }
 SWIFT
 
+# The one type IslandPose.swift needs from the island drawing model (ADR-313).
+cat > "$work/IslandRectStub.swift" <<'SWIFT'
+struct IslandRect: Equatable, Sendable {
+    var x: Double, y: Double, width: Double, height: Double
+}
+SWIFT
+
 files=(
   DoddyApp/Infrastructure/PersonalityPreferences.swift
   DoddyApp/Infrastructure/PinnedNotesStorage.swift
@@ -81,14 +88,19 @@ files=(
   # Only the part outside `#if canImport(AlarmKit)`: the AlarmKit code itself needs Xcode 26.
   DoddyApp/Features/Alarms/AlarmScheduler.swift
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
+  DoddyApp/Features/Parking/ParkingStore.swift
+  DoddyApp/Features/Lists/ListTemplateStore.swift
   Shared/Widgets/WidgetSnapshotFile.swift
   DoddyApp/Features/Voice/VoiceConfig.swift
   DoddyApp/Infrastructure/ActivityLogStore.swift
+  Shared/Share/ShareInboxFile.swift
+  # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.
+  Shared/IslandArt/IslandPose.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
 
 # App files that import no UI framework but aren't in the list: most use types this script can't

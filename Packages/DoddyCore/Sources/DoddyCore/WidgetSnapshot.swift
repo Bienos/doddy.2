@@ -69,6 +69,18 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         }
     }
 
+    /// Where-did-I-park for the widget (ADR-315): when it was saved and the user's own words,
+    /// never the position. A tap opens Doddy, which hands the spot to Maps.
+    public struct Parked: Codable, Equatable, Sendable {
+        public let savedAt: Date
+        public let note: String?
+
+        public init(savedAt: Date, note: String?) {
+            self.savedAt = savedAt
+            self.note = note
+        }
+    }
+
     public let version: Int
     public let writtenAt: Date
     /// False when the user turned "Show in widgets" off: the widgets say so and show nothing.
@@ -76,18 +88,30 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     public let pinned: [Note]
     public let reminders: [Reminder]
     public let lists: [List]
+    /// Absent in snapshots written before ADR-315; those still read, with no parking.
+    public let parking: Parked?
+    /// "Hide character artwork" is on in the app (ADR-331): widgets, Live Activities and the watch
+    /// leave Doddy's pictures out too. Written only when true, so snapshots from before (and with
+    /// it off) are unchanged and still read.
+    public let hidesDoddy: Bool?
 
-    public init(version: Int = currentVersion, writtenAt: Date, isOn: Bool, pinned: [Note], reminders: [Reminder], lists: [List]) {
+    public init(version: Int = currentVersion, writtenAt: Date, isOn: Bool, pinned: [Note], reminders: [Reminder], lists: [List],
+                parking: Parked? = nil, hidesDoddy: Bool = false) {
         self.version = version
         self.writtenAt = writtenAt
         self.isOn = isOn
         self.pinned = pinned
         self.reminders = reminders
         self.lists = lists
+        self.parking = parking
+        self.hidesDoddy = hidesDoddy ? true : nil
     }
 
-    public static func off(at date: Date) -> WidgetSnapshot {
-        WidgetSnapshot(writtenAt: wholeMilliseconds(date), isOn: false, pinned: [], reminders: [], lists: [])
+    /// Whether Doddy's pictures are to be left out (ADR-331).
+    public var hidesPictures: Bool { hidesDoddy == true }
+
+    public static func off(at date: Date, hidesDoddy: Bool = false) -> WidgetSnapshot {
+        WidgetSnapshot(writtenAt: wholeMilliseconds(date), isOn: false, pinned: [], reminders: [], lists: [], hidesDoddy: hidesDoddy)
     }
 
     /// The date as the file keeps it (`millisecondsSince1970`). A `Date.now` with a finer fraction
@@ -101,9 +125,9 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// ones that no longer exist; the next time reminders after `now`; lists newest first.
     public static func make(
         memories: [MemoryRecord], lists: [DoddyList], pinned: PinnedNotes, reminders: [MemoryReminder],
-        showReminderText: Bool, isOn: Bool, now: Date
+        showReminderText: Bool, isOn: Bool, now: Date, parking: ParkingSpot? = nil, hidesDoddy: Bool = false
     ) -> WidgetSnapshot {
-        guard isOn else { return .off(at: now) }
+        guard isOn else { return .off(at: now, hidesDoddy: hidesDoddy) }
         let byID = Dictionary(memories.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let notes = pinned.ids.compactMap { id in byID[id].map { Note(id: id, text: shortened($0.currentText)) } }
         let upcoming = reminders.compactMap { reminder -> Reminder? in
@@ -121,7 +145,8 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         }
         return WidgetSnapshot(
             writtenAt: wholeMilliseconds(now), isOn: true, pinned: Array(notes.prefix(maxPinned)),
-            reminders: Array(upcoming.prefix(maxReminders)), lists: Array(shownLists))
+            reminders: Array(upcoming.prefix(maxReminders)), lists: Array(shownLists),
+            parking: parking.map { Parked(savedAt: wholeMilliseconds($0.savedAt), note: $0.note.map(shortened)) }, hidesDoddy: hidesDoddy)
     }
 
     /// The first line, cut on a word boundary with "…" when longer than `maxTextLength`.

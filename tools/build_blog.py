@@ -6,10 +6,12 @@ having no build step on Vercel: the generated HTML is committed.
   python3 -I tools/build_blog.py          write site/blog/
   python3 -I tools/build_blog.py --check  exit 1 if site/blog/ is out of date
 
-Front matter may add `tldr:` (a list, shown as a box above the post), `keywords:`, and a banner:
+Front matter may add `tldr:` (a list, shown as a box above the post), `keywords:`, `og_image:` (the
+share picture, a path under site/), and a banner:
 `banner_pose` (an approved pose name, e.g. waving), `banner_says` (Doddy's line in handwriting),
-`banner_card_title` / `banner_card_text` (a Save card) and `banner_tint` (orange, green or ink).
-In the body, a line `{{doddy reading "caption"}}` adds a small spot illustration.
+`banner_card_title` / `banner_card_text` / `banner_card_buttons` ("Not now | Add"; a confirm card) and `banner_tint` (orange, green or ink).
+In the body, a line `{{doddy reading "caption"}}` adds a small spot illustration, and a line
+`![alt text](/assets/blog/x.webp "caption")` adds a full-width figure (the file must exist in site/).
 Markdown support is deliberately small: #/##/### headings, paragraphs, - and 1. lists (one level),
 > quotes, | tables |, ---, **bold**, *italic*, `code`, [links](url) and HTML comments (dropped).
 """
@@ -97,7 +99,15 @@ def markdown(src: str) -> str:
         if not line.strip():
             i += 1
             continue
-        if m := re.fullmatch(r'\{\{doddy ([a-z-]+)(?: "([^"]*)")?\}\}\s*', line):
+        if m := re.fullmatch(r'!\[([^\]]+)\]\((\S+?)(?: "([^"]*)")?\)\s*', line):
+            src = m.group(2)
+            if src.startswith("/") and not (ROOT / "site" / src.lstrip("/")).is_file():
+                sys.exit(f"image not found in site/: {src}")
+            caption = f"<figcaption>{inline(m.group(3))}</figcaption>" if m.group(3) else ""
+            out.append(f'<figure class="post-figure"><img src="{html.escape(src)}" alt="{html.escape(m.group(1))}" '
+                       f'loading="lazy" decoding="async">{caption}</figure>')
+            i += 1
+        elif m := re.fullmatch(r'\{\{doddy ([a-z-]+)(?: "([^"]*)")?\}\}\s*', line):
             caption = f'<figcaption class="says-small">{html.escape(m.group(2))}</figcaption>' if m.group(2) else ""
             side = "left" if sum(1 for o in out if o.startswith("<figure class=\"spot")) % 2 else "right"
             out.append(f'<figure class="spot spot--{side}"><img src="{pose(m.group(1))}" width="512" height="512" '
@@ -138,7 +148,7 @@ def markdown(src: str) -> str:
             out.append(f"<{tag}>" + "".join(f"<li>{inline(t)}</li>" for t in items) + f"</{tag}>")
         else:
             para = []
-            while i < len(lines) and lines[i].strip() and not re.match(r"(#{1,3}\s|>|\||\{\{doddy |\s*([-*]|\d+\.)\s)", lines[i]):
+            while i < len(lines) and lines[i].strip() and not re.match(r"(#{1,3}\s|>|\||!\[|\{\{doddy |\s*([-*]|\d+\.)\s)", lines[i]):
                 para.append(lines[i].strip())
                 i += 1
             out.append(f"<p>{inline(' '.join(para))}</p>")
@@ -190,7 +200,8 @@ def nice_date(d: date) -> str:
 
 # ---------- Pages ----------
 
-def page(title: str, description: str, path: str, main: str, og_type: str = "website", extra_head: str = "") -> str:
+def page(title: str, description: str, path: str, main: str, og_type: str = "website", extra_head: str = "",
+         og_image: str = "/assets/og-image.png") -> str:
     t, d, url = html.escape(title), html.escape(description), SITE_URL + path
     return f"""<!doctype html>
 <html lang="en">
@@ -204,7 +215,7 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
   <meta property="og:type" content="{og_type}">
   <meta property="og:title" content="{t}">
   <meta property="og:description" content="{d}">
-  <meta property="og:image" content="{SITE_URL}/assets/og-image.png">
+  <meta property="og:image" content="{SITE_URL}{og_image}">
   <meta property="og:url" content="{url}">
   <link rel="canonical" href="{url}">
   <meta name="twitter:card" content="summary_large_image">
@@ -274,12 +285,14 @@ def banner(p: dict) -> str:
         sys.exit(f"{p['stem']}: banner_tint must be one of {TINTS}")
     says = html.escape(p.get("banner_says", ""))
     card = ""
+    no, yes = (p.get("banner_card_buttons") or "Don't save | Save").split("|", 1)
+    no, yes = no.strip(), yes.strip()
     if p.get("banner_card_text"):
         card = f"""
               <div class="banner-card">
                 <p class="banner-card-title">{html.escape(p.get("banner_card_title", "Save this note?"))}</p>
                 <p class="banner-card-text">{html.escape(p["banner_card_text"])}</p>
-                <p class="banner-card-actions"><span class="ghost">Don't save</span><span class="solid">Save</span></p>
+                <p class="banner-card-actions"><span class="ghost">{html.escape(no)}</span><span class="solid">{html.escape(yes)}</span></p>
               </div>"""
     label = f"Illustration of Doddy, the hand-drawn stick figure{', saying ' + chr(8220) + says + chr(8221) if says else ''}."
     return f"""
@@ -373,7 +386,11 @@ def post_page(p: dict) -> str:
     head = f'\n  <meta property="article:published_time" content="{p['date']}">'
     if p.get("keywords"):
         head += f'\n  <meta name="keywords" content="{html.escape(p['keywords'])}">'
-    return page(f"{p['title']} · Doddy", p["summary"], f"/blog/{p['slug']}/", main, og_type="article", extra_head=head)
+    og = p.get("og_image") or "/assets/og-image.png"
+    if not (ROOT / "site" / og.lstrip("/")).is_file():
+        sys.exit(f"{p['stem']}: og_image not found in site/: {og}")
+    return page(f"{p['title']} · Doddy", p["summary"], f"/blog/{p['slug']}/", main, og_type="article",
+                extra_head=head, og_image=og)
 
 
 def feed(posts: list[dict]) -> str:

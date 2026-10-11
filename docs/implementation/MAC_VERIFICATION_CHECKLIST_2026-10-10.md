@@ -252,3 +252,57 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | C1 | Dark mode on. Talk to Doddy and lock the iPhone; then turn on Hey Doddy and lock it again | Both Lock Screen cards are cream with dark text and Doddy without a paper box. Mute / End / Stop listening read clearly |
 | C2 | Dark mode on. Start a focus timer, then shopping mode for a list, and lock the iPhone | Both cards are cream with readable text; ticking an item still works |
 
+
+## 4h. Doddy's world in the app (ADR-299, `DODDY_WORLD_IN_APP_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| X1 | Build the app, widgets and watch app. Talk to Doddy and lock the iPhone; mute; end with and without saving a note | The Lock Screen card shows the island's pose: listening, shush when muted, fist pump only if a note was saved, else cross-legged. Same with a V4 style picked |
+| X2 | Whole Doddy style. Read a note aloud; pause; let it finish; then read again and force-quit Doddy for 2 minutes | Island: Doddy reading lying down, then cross-legged, fist pump, facepalm when lost. With Lean In picked, the Story Spool board as before |
+| X3 | Find a word that isn't saved. Then make a save fail (for example, a nearly full iPhone) | Find: Doddy shrugging. A failed save: facepalm beside the message. Light and dark mode; Hide Doddy's pictures hides both |
+| X4 | Open Home, Memories and the morning check-in in light and dark mode, and at the largest text size (ADR-308) | No text over any scenery. Home: the room faint behind Doddy only, edge to edge. Memories and check-in: a faint strip of the library / coffee shop between the heading and the content, fading at top and bottom. Night pictures in dark mode; with Hide Doddy's pictures the strips leave no gap |
+| X5 | Talk to Doddy and watch the screen while he answers; then turn on Reduce Motion | Pose follows the island; while speaking the talking frames play without Doddy jumping; with Reduce Motion one still frame. Check CPU in Instruments stays low |
+| X6 | Add Talk to Doddy and Next reminder (small) widgets; try light, dark, tinted and clear Home Screens | Wave and reach in light and dark (dark: thin cream edge); tinted and clear show the symbols, no grey blobs |
+| X7 | On the watch, add the Doddy complication (circular with nothing coming up, and rectangular) on a full-colour face and a tinted face | Doddy's round face in colour on full-colour faces, and on tinted faces on watchOS 11+; monochrome faces show the symbol or name only |
+| X8 | Fresh install: go through the opening, then the welcome; go to the first question and back; turn on Reduce Motion and reopen | Four panels cross-fade once and stop on Doddy waving; going back doesn't replay; Reduce Motion shows only the wave panel. The opening (ADR-225) is unchanged |
+
+## 4i. Doddy moving, and outside the app (ADR-313, `DODDY_MOVES_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| Y1 | Whole Doddy style. Start a focus timer, pause, resume, let it finish; then a breathing session | Island: dribbling, cross-legged when paused, fist pump at the end; breathing: balancing on one leg. Lean In: the boards as before |
+| Y2 | Open Focus: before starting, while running, paused, finished, stopped early | Court strip at the top: no Doddy before starting, dribbling, cross-legged, fist pump, none after a stop. No text over the court |
+| Y3 | Open the weekly look-back in light and dark mode | Rooftop strip under the heading with Doddy cross-legged; text clean |
+| Y4 | Talk to Doddy and watch the screen while it connects; ask for a plan with several steps and confirm it | Doddy walks while connecting, runs while the steps run, talks when he speaks. Reduce Motion: still frames. Island unchanged (stretch while connecting) |
+| Y5 | Save a note from Capture; then make a save fail | Receipt: the pop plays once, then the fist pump stays. A failed save shows no pop |
+| Y6 | Tick the last item on a list; reopen the list; tick on another device for a shared list | The jump plays once when ticked here; reopening shows "Nothing left." without it. An empty list shows Doddy cross-legged |
+| Y7 | Undo an event in What Doddy did; clear the list | The undone row shows the small turned-back Doddy; empty: Doddy cross-legged |
+| Y8 | Cold-launch with the opening off (Reduce Motion off), then with it on | Opening off: Doddy stands, breathes four times, sits; once per launch. Opening on: no breaths, the hand-over unchanged |
+| Y9 | Add Talk to Doddy to the Lock Screen (circular); add "Doddy, resting" and charge the iPhone on its side at night | Lock Screen: Doddy's face, reads in the Lock Screen tint. StandBy: the stretch pose and the next reminder's time only, red at night |
+| Y10 | Set a note reminder a minute ahead; turn on Hide Doddy's pictures and set another | First notification shows the reaching pose as its picture, same words as before; the second has no picture |
+| Y11 | A list's menu → Share as a picture → Messages and Save Image | A cream card with the list name, open items (15 at most, then "and N more") and Doddy waving. Hide Doddy's pictures: no Doddy |
+| Y12 | Ask Siri "Ask Doddy what I saved" for a saved word, a missing word, and with readback off | Siri's panel shows Doddy listening, shrugging, shushing; the spoken answer is unchanged |
+
+## 4j. Alarm, shopping, notifications, Settings, watch app (ADR-323, `DODDY_MOVES_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| Z1 | iOS 26: set a Doddy alarm a minute ahead, snooze it, lock the iPhone | Cream card: Doddy stretching, "Snoozed" and the countdown; island: the same pose |
+| Z2 | Start shopping mode on a list; lock the iPhone; long-press the island | Doddy on tiptoe on the cream card and on the island; ticking items still works |
+| Z3 | Schedule the morning check-in, evening wrap-up, weekly look-back and a birthday a minute ahead; then with Hide Doddy's pictures on | Each shows its picture (stretch, cross-legged, cross-legged, wave), same words; none with Hide on |
+| Z4 | Launch with the opening off; switch tabs and back; later return after the replay time so the opening plays | Breaths, then he sits down on his box and stays there when you come back to Home; the opening lands on the usual sitting picture and he's off the box |
+| Z5 | Settings: turn Pause all connections on and off | The crouching Doddy beside the footer only while paused |
+| Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
+| Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
+
+## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Settings › turn on "Hide character artwork"; look at every widget, the Lock Screen Talk to Doddy, StandBy, a conversation's island and Lock Screen card, a focus timer, shopping mode, a snoozed alarm | No Doddy anywhere: the island shows its board, the cards and widgets their symbols or text only. Turn it off: he's back after the widgets reload |
+| H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
+| H3 | Settings › Widgets: turn "Show in widgets" off; on the watch, hide notes and lists | Widgets (small and medium, full colour): Doddy turned away beside "Turned off in Doddy's Settings."; the watch: turned away above its hidden message |
+| H4 | Build everything (app, widgets, watch app, watch widgets) | Compiles. If not, the errors are new to this checklist: the four batches before were never compiled |
+
+## 4l. Previews, watch icon and Doddy UI tests (ADR-336)
+| # | Do this | Expect |
+|---|---|---|
+| P1 | Open `DoddyApp/DesignSystem/DoddyArtPreviews.swift`, `DoddyWidgets/DoddyWidgetPreviews.swift` and the end of `DoddyWatchWidgets/DoddyWatchComplications.swift` in Xcode's canvas | Every pose, strip, scenery strip, the storybook, share card, Siri snippet, widgets, Live Activities and complications draw; use this before tapping through the app |
+| P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
+| P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |

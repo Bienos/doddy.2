@@ -28,13 +28,16 @@ public struct EventChangeDraft: Equatable, Sendable {
     public let newTitle: String?
     /// A new place (ADR-281). Replaces the old one, which the card shows (never the agent).
     public let newLocation: String?
-    /// A line added to the end of the event's notes (ADR-281). Notes are never replaced.
+    /// A line added to the end of the event's notes (ADR-281).
     public let addNote: String?
+    /// The notes replaced by this text, "" to clear them (ADR-314). The card shows the old notes.
+    public let replaceNotes: String?
 
     public init(
         title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?,
-        newLocation: String? = nil, addNote: String? = nil, newStartIsDayOnly: Bool = false
+        newLocation: String? = nil, addNote: String? = nil, replaceNotes: String? = nil, newStartIsDayOnly: Bool = false
     ) {
+        self.replaceNotes = replaceNotes
         self.newLocation = newLocation
         self.addNote = addNote
         self.title = title
@@ -51,11 +54,40 @@ public struct ReminderChangeDraft: Equatable, Sendable {
     public let title: String
     public let newDue: ReminderDue?
     public let markDone: Bool
+    /// A line to add at the end of the notes (ADR-302).
+    public let addNote: String?
+    public let priority: ReminderPriority?
+    /// The Reminders list the user named; matched on the iPhone into `toList`.
+    public let listName: String?
+    /// The one list `listName` matched, set by the app before the card is shown.
+    public var toList: ReminderListRef?
+    /// ADR-314: a new title, a new repeat or none, the notes replaced.
+    public let newTitle: String?
+    public let repeatChange: ReminderRepeatChange?
+    public let replaceNotes: String?
 
-    public init(title: String, newDue: ReminderDue?, markDone: Bool) {
+    public init(title: String, newDue: ReminderDue?, markDone: Bool, addNote: String? = nil,
+                priority: ReminderPriority? = nil, listName: String? = nil, toList: ReminderListRef? = nil,
+                newTitle: String? = nil, repeatChange: ReminderRepeatChange? = nil, replaceNotes: String? = nil) {
+        self.newTitle = newTitle
+        self.repeatChange = repeatChange
+        self.replaceNotes = replaceNotes
         self.title = title
         self.newDue = newDue
         self.markDone = markDone
+        self.addNote = addNote
+        self.priority = priority
+        self.listName = listName
+        self.toList = toList
+    }
+
+    /// The details change as the card shows it (ADR-302); empty for a due or done alone.
+    public var details: ReminderDetailsChange {
+        ReminderDetailsChange(addNote: addNote, priority: priority, toList: toList,
+                              newTitle: newTitle, repeatChange: repeatChange, replaceNotes: replaceNotes)
+    }
+    public var changesDetails: Bool {
+        addNote != nil || priority != nil || listName != nil || newTitle != nil || repeatChange != nil || replaceNotes != nil
     }
 }
 
@@ -71,9 +103,16 @@ public struct EventChangePlan: Codable, Equatable, Sendable {
     public let addNote: String?
     /// Undo of `addNote`: this exact line comes off the end of the notes again.
     public let removeNote: String?
+    /// The notes now, read on this iPhone for the card, the stale check and Undo (ADR-314).
+    public let notesBefore: String?
+    /// The notes replaced by this text ("" clears them); nil: not replaced.
+    public let replaceNotes: String?
 
     public init(before: CalendarEventSummary, after: CalendarEventSummary, locationBefore: String? = nil,
-                newLocation: String? = nil, addNote: String? = nil, removeNote: String? = nil) {
+                newLocation: String? = nil, addNote: String? = nil, removeNote: String? = nil,
+                notesBefore: String? = nil, replaceNotes: String? = nil) {
+        self.notesBefore = notesBefore
+        self.replaceNotes = replaceNotes
         self.before = before
         self.after = after
         self.locationBefore = locationBefore
@@ -83,7 +122,7 @@ public struct EventChangePlan: Codable, Equatable, Sendable {
     }
 
     /// Something besides the time and title changes.
-    public var changesDetails: Bool { newLocation != nil || addNote != nil || removeNote != nil }
+    public var changesDetails: Bool { newLocation != nil || addNote != nil || removeNote != nil || replaceNotes != nil }
 }
 
 /// What a reminder change does on the iPhone (ADR-229, ADR-258).
@@ -93,6 +132,8 @@ public enum ReminderChange: Equatable, Sendable {
     case complete
     /// Undo of a completion: the reminder is open again.
     case reopen
+    /// A note, priority or list, with a new due or nil to keep it (ADR-302), in one save.
+    case details(newDue: ReminderDue?, ReminderDetailsChange)
 }
 
 public enum EventChange {
@@ -133,7 +174,8 @@ public enum EventChange {
 
     /// The new event. A new start alone keeps the length; a new end alone keeps the start. An
     /// all-day event moved to a day stays all day. Nil when the result makes no sense.
-    public static func plan(_ draft: EventChangeDraft, for event: CalendarEventSummary, locationBefore: String? = nil, calendar: Calendar) -> EventChangePlan? {
+    public static func plan(_ draft: EventChangeDraft, for event: CalendarEventSummary, locationBefore: String? = nil,
+                            notesBefore: String? = nil, calendar: Calendar) -> EventChangePlan? {
         var start = event.start, end = event.end
         let length = event.end.timeIntervalSince(event.start)
         if let newStart = draft.newStart {
@@ -164,8 +206,12 @@ public enum EventChange {
         let location = draft.newLocation?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
         let newLocation = location == (locationBefore ?? "").nonEmpty ? nil : location
         let note = draft.addNote?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
-        guard after != event || newLocation != nil || note != nil else { return nil }
-        return EventChangePlan(before: event, after: after, locationBefore: locationBefore, newLocation: newLocation, addNote: note)
+        // Replacing with the same notes is no change (ADR-314).
+        let replace = draft.replaceNotes.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .flatMap { $0 == (notesBefore ?? "") ? nil : $0 }
+        guard after != event || newLocation != nil || note != nil || replace != nil else { return nil }
+        return EventChangePlan(before: event, after: after, locationBefore: locationBefore, newLocation: newLocation, addNote: note,
+                               notesBefore: replace == nil ? nil : notesBefore, replaceNotes: replace)
     }
 
     /// Where to look for the event: the whole day it starts on.
@@ -219,10 +265,11 @@ public enum EventChange {
         let back = CalendarEventSummary(
             id: itemID.map { occurrenceID(itemID: $0, start: plan.before.start) }, title: plan.before.title,
             start: plan.before.start, end: plan.before.end, allDay: plan.before.allDay)
-        // The place goes back; an added line comes off the notes again.
+        // The place goes back; an added line comes off the notes again; replaced notes come back.
         return EventChangePlan(
             before: now, after: back, locationBefore: plan.newLocation ?? plan.locationBefore,
-            newLocation: plan.newLocation.map { _ in plan.locationBefore ?? "" }, addNote: nil, removeNote: plan.addNote)
+            newLocation: plan.newLocation.map { _ in plan.locationBefore ?? "" }, addNote: nil, removeNote: plan.addNote,
+            notesBefore: plan.replaceNotes, replaceNotes: plan.replaceNotes.map { _ in plan.notesBefore ?? "" })
     }
 
     /// Exactly one open reminder with this title.
@@ -359,8 +406,16 @@ extension VoiceToolRequest {
         }
         let newTitle = args.text("new_title")
         let newLocation = args.text("new_location"), addNote = args.text("add_note")
-        guard newStart != nil || newEnd != nil || newTitle != nil || newLocation != nil || addNote != nil else {
-            return .invalid(name: name, reason: "give new_start, new_end, new_title, new_location or add_note")
+        // ADR-314: replace or clear the notes; never together with add_note.
+        var replaceNotes: String? = args.flag("clear_notes") ? "" : nil
+        if let text = args.text("replace_notes") {
+            guard replaceNotes == nil else { return .invalid(name: name, reason: "give replace_notes or clear_notes, not both") }
+            guard text.count <= ReminderDetails.maxReplacedNotesLength else { return .invalid(name: name, reason: "replace_notes is too long") }
+            replaceNotes = text
+        }
+        if replaceNotes != nil, addNote != nil { return .invalid(name: name, reason: "give add_note or replace_notes, not both") }
+        guard newStart != nil || newEnd != nil || newTitle != nil || newLocation != nil || addNote != nil || replaceNotes != nil else {
+            return .invalid(name: name, reason: "give new_start, new_end, new_title, new_location, add_note, replace_notes or clear_notes")
         }
         if let newTitle, newTitle.count > EventChange.maxTitleLength { return .invalid(name: name, reason: "new_title is too long") }
         if let newLocation, newLocation.count > EventChange.maxLocationLength { return .invalid(name: name, reason: "new_location is too long") }
@@ -368,7 +423,7 @@ extension VoiceToolRequest {
         return .changeCalendarEvent(EventChangeDraft(
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime,
             newStart: newStart, newEnd: newEnd, newTitle: newTitle, newLocation: newLocation, addNote: addNote,
-            newStartIsDayOnly: newStartIsDayOnly))
+            replaceNotes: replaceNotes, newStartIsDayOnly: newStartIsDayOnly))
     }
 
     /// title + start (as read_calendar returned them): the occurrence to delete (ADR-259).
@@ -382,7 +437,8 @@ extension VoiceToolRequest {
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime, newStart: nil, newEnd: nil, newTitle: nil))
     }
 
-    /// title (exact), and new_due or done: true. Never both.
+    /// title (exact), and done: true on its own, or any of new_due, add_note, priority and
+    /// move_to_list (ADR-302).
     static func parseReminderChange(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
         guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
         let done = args.flag("done")
@@ -393,7 +449,50 @@ extension VoiceToolRequest {
             case .due(let due): newDue = due
             }
         }
-        guard done != (newDue != nil) else { return .invalid(name: name, reason: "give either new_due or done: true") }
-        return .changeReminder(ReminderChangeDraft(title: title, newDue: newDue, markDone: done))
+        let addNote = args.text("add_note")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let addNote, addNote.count > ReminderDetails.maxNoteLength { return .invalid(name: name, reason: "add_note is too long") }
+        var priority: ReminderPriority?
+        if let text = args.text("priority") {
+            guard let value = ReminderPriority(rawValue: text.lowercased()) else {
+                return .invalid(name: name, reason: "priority must be high, medium, low or none")
+            }
+            priority = value
+        }
+        let listName = args.text("move_to_list")
+        // ADR-314: rename, repeat (or "none" to stop), replace or clear the notes.
+        let newTitle = args.text("new_title")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let newTitle, newTitle.isEmpty || newTitle.count > ReminderDetails.maxTitleLength {
+            return .invalid(name: name, reason: "new_title must be 1 to \(ReminderDetails.maxTitleLength) characters")
+        }
+        var repeatChange: ReminderRepeatChange?
+        if args.text("repeat")?.lowercased() == "none" {
+            guard args.text("repeat_until") == nil else { return .invalid(name: name, reason: "repeat_until goes with a repeat, not none") }
+            repeatChange = .stop
+        } else {
+            switch parseRepeat(args, name: name, first: newDue ?? ReminderDue(year: 2000, month: 1, day: 1, timeZoneID: nil), calendar: calendar) {
+            case .success(let rule): repeatChange = rule.map { .set($0) }
+            case .failure(.invalid(let reason)): return .invalid(name: name, reason: reason)
+            case .failure(.clarify(let clarification)): return .needsClarification(name: name, clarification)
+            }
+        }
+        var replaceNotes: String?
+        if args.flag("clear_notes") { replaceNotes = "" }
+        if let text = args.text("replace_notes")?.trimmingCharacters(in: .whitespacesAndNewlines) {
+            guard replaceNotes == nil else { return .invalid(name: name, reason: "give replace_notes or clear_notes, not both") }
+            guard text.count <= ReminderDetails.maxReplacedNotesLength else { return .invalid(name: name, reason: "replace_notes is too long") }
+            replaceNotes = text
+        }
+        if replaceNotes != nil, addNote != nil { return .invalid(name: name, reason: "give add_note or replace_notes, not both") }
+        let details = addNote != nil || priority != nil || listName != nil || newTitle != nil || repeatChange != nil || replaceNotes != nil
+        if done {
+            guard newDue == nil, !details else { return .invalid(name: name, reason: "done: true goes on its own; mark it done first, or change it without done") }
+        } else {
+            guard newDue != nil || details else {
+                return .invalid(name: name, reason: "give new_due, new_title, add_note, replace_notes, clear_notes, priority, repeat or move_to_list, or done: true")
+            }
+        }
+        return .changeReminder(ReminderChangeDraft(
+            title: title, newDue: newDue, markDone: done, addNote: addNote, priority: priority, listName: listName,
+            newTitle: newTitle, repeatChange: repeatChange, replaceNotes: replaceNotes))
     }
 }

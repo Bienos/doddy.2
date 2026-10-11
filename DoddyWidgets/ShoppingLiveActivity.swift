@@ -8,6 +8,7 @@ import WidgetKit
 /// that runs `ToggleListItemIntent` in the Doddy app (after the iPhone is unlocked): the app ticks
 /// it through the store, reads it back and redraws this from the list as it now is. A stale or
 /// tapped-twice item changes nothing (the intent checks the item still looks as shown).
+/// Doddy is on tiptoe, "on the way" (ADR-323), on the island and the cream card.
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
@@ -16,8 +17,13 @@ struct ShoppingLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image(systemName: "cart").font(.title3).foregroundStyle(.white).padding(.leading, 6)
-                        .accessibilityHidden(true)
+                    if WidgetDoddyArt.isHidden {
+                        Image(systemName: "cart").font(.title3).foregroundStyle(.white).padding(.leading, 6)
+                            .accessibilityHidden(true)
+                    } else {
+                        IslandPoseView(pose: .tiptoe, maxSize: CGSize(width: 44, height: 40))
+                            .padding(.leading, 6)
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(context.state.listName).font(.headline).foregroundStyle(.white).lineLimit(1)
@@ -65,6 +71,15 @@ private struct ShoppingLockScreen: View {
     let isStale: Bool
 
     var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            content
+            WidgetPose(pose: .tiptoe, height: 64)
+        }
+        .foregroundStyle(Color("Ink"))
+        .padding(14)
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Label(state.listName, systemImage: "cart").font(.headline).lineLimit(1)
@@ -84,8 +99,6 @@ private struct ShoppingLockScreen: View {
                 }
             }
         }
-        .foregroundStyle(Color("Ink"))
-        .padding(14)
     }
 }
 
