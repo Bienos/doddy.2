@@ -666,6 +666,32 @@ extension DeviceConnections: ReminderStore {}
 extension DeviceConnections: CalendarEventWriter {}
 extension DeviceConnections: TimerWriter {}
 
+/// What `VoiceSessionController` uses of `DeviceConnections`, so its tests can put in a fake
+/// Calendar and Reminders (AppTests review 2026-10-11, finding 2). The real class is the default;
+/// the signatures are the class's own. Sendable because a `@MainActor` class is; the controller
+/// hands it to DoddyCore's nonisolated `ReminderAction.add`.
+@MainActor
+/// What `VoiceSessionController` uses of the device, so a fake can stand in for it in tests.
+/// Events and timers are added through `CalendarEventWriter` and `TimerWriter`, which look first
+/// and read back (ADR-319, ADR-320).
+protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Sendable {
+    func access(for connection: VoiceConnection) -> DeviceConnections.Access
+    func notificationAccess() async -> DeviceConnections.Access
+    func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
+    func undo(_ undo: ActivityUndo) async -> UndoResult
+    func eventLocation(_ event: CalendarEventSummary) -> String?
+    func eventNotes(_ event: CalendarEventSummary) -> String?
+    func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome
+    func deleteEvent(_ event: CalendarEventSummary) throws -> DeviceConnections.ChangeOutcome
+    func deleteReminder(_ before: ReminderSnapshot) throws -> DeviceConnections.ChangeOutcome
+    func reminderSnapshot(id: String) -> ReminderSnapshot?
+    func reminderLists() -> [ReminderListRef]
+    func findContacts(named name: String) throws -> [DeviceConnections.ContactMatch]
+    func contactBirthdays() throws -> [ContactBirthday]
+}
+
+extension DeviceConnections: DeviceConnecting {}
+
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.
 private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
     private let lock = NSLock()

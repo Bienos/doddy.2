@@ -31,6 +31,27 @@ final class VoiceMemoRecorder {
     /// The microphone is recording now, as AVAudioRecorder says (Stop listening, ADR-361).
     var isCapturing: Bool { recorder?.isRecording == true }
 
+    /// Temporary recordings are named "DoddyMemo-<uuid>.m4a".
+    static let filePrefix = "DoddyMemo-"
+    private static var cleanedLeftovers = false
+
+    init() {
+        Self.deleteLeftovers()
+    }
+
+    /// Recordings left in the temporary folder by a crash or a force-quit before their note was
+    /// saved (review I8). Runs once per launch, when the first recorder of the launch is made, so
+    /// no recording of this launch can be among them.
+    static func deleteLeftovers() {
+        guard !cleanedLeftovers else { return }
+        cleanedLeftovers = true
+        let folder = FileManager.default.temporaryDirectory
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+        for name in names where name.hasPrefix(filePrefix) && name.hasSuffix(".m4a") {
+            try? FileManager.default.removeItem(at: folder.appendingPathComponent(name, isDirectory: false))
+        }
+    }
+
     /// Asks for the microphone once (the same permission as talking to Doddy), then records.
     func start() async {
         guard !isRecording else { return }
@@ -38,7 +59,7 @@ final class VoiceMemoRecorder {
             state = .failed(NSLocalizedString("The microphone is off for Doddy. Turn it on in the Settings app to record.", comment: ""))
             return
         }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("DoddyMemo-\(UUID().uuidString).m4a")
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(Self.filePrefix)\(UUID().uuidString).m4a")
         let settings: [String: Any] = [
             AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
             AVSampleRateKey: 22_050,

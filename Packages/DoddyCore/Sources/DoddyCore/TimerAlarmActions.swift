@@ -131,8 +131,9 @@ public enum AlarmScheduleAttempt: Equatable, Sendable {
 public protocol AlarmWriter: AnyObject {
     /// Doddy's alarms the iPhone still lists, with what Doddy remembered about each.
     func alarms() -> [AlarmEntry]
-    /// Every alarm id the iPhone lists for Doddy.
-    func scheduledAlarmIDs() -> Set<UUID>
+    /// Every alarm id the iPhone lists for Doddy. Nil when the list can't be read, which is not
+    /// the same as empty (review F5).
+    func scheduledAlarmIDs() -> Set<UUID>?
     /// Sets the alarm under exactly this id. A throw does not prove nothing was set.
     func scheduleAlarm(_ draft: AlarmDraft, id: UUID) async throws -> AlarmScheduleAttempt
     /// Keeps Doddy's note of an alarm (time, label, key), so it can be named and found later.
@@ -177,7 +178,9 @@ public enum AlarmSetAction {
         do {
             attempt = try await writer.scheduleAlarm(draft, id: entry.id)
         } catch {
-            if writer.scheduledAlarmIDs().contains(entry.id) { return .set(entry) }
+            // The list can't be read: it may be set, so the note stays and it isn't "not set".
+            guard let ids = writer.scheduledAlarmIDs() else { return .unknown }
+            if ids.contains(entry.id) { return .set(entry) }
             writer.forget(entry.id)
             return .notSet(describe(error, or: "The alarm couldn't be set."))
         }
@@ -189,7 +192,7 @@ public enum AlarmSetAction {
             writer.forget(entry.id)
             return .notAllowed
         case .scheduled:
-            return writer.scheduledAlarmIDs().contains(entry.id) ? .set(entry) : .unknown
+            return writer.scheduledAlarmIDs()?.contains(entry.id) == true ? .set(entry) : .unknown
         }
     }
 }
@@ -215,8 +218,9 @@ extension VoiceToolReply {
         case .started(let timer):
             return timerAdded(draft, endsAt: timer.firesAt, calendar: calendar)
         case .alreadyRunning(let timer):
-            let what = draft.label.map { "\"\($0)\", " } ?? ""
-            return "added: timer \(what)\(durationText(draft.seconds)) was already running from the earlier try and rings at \(localText(timer.firesAt, hasTime: true, calendar: calendar)), so Doddy did not start a second one."
+            let label = draft.label.map { " Its label:\n" + ToolData.block([quoted("Label", $0)]) } ?? ""
+            return "added: timer \(durationText(draft.seconds)), rings at \(localText(timer.firesAt, hasTime: true, calendar: calendar)).\(label)"
+                + "\nThat timer was already running from the earlier try, so Doddy did not start a second one."
         case .notStarted(let reason):
             return "failed: \(reason) Nothing was set."
         case .unknown:
@@ -227,11 +231,12 @@ extension VoiceToolReply {
     public static func alarm(_ outcome: AlarmSetOutcome) -> String {
         switch outcome {
         case .set(let alarm), .alreadySet(let alarm):
-            let what = alarm.label.map { "\"\($0)\" " } ?? ""
+            // A label is the agent's words, so it follows as data (ADR-381), as in alarmSet.
+            let label = alarm.label.map { " Its label:\n" + ToolData.block([quoted("Label", $0)]) } ?? ""
             if case .alreadySet = outcome {
-                return "added: alarm \(what)at \(alarm.summary) was already set, so Doddy did not set a second one."
+                return "added: alarm at \(alarm.summary).\(label)\nThat alarm was already set, so Doddy did not set a second one."
             }
-            return "added: alarm \(what)at \(alarm.summary). It rings even in Silent mode or a Focus. Checked."
+            return "added: alarm at \(alarm.summary). It rings even in Silent mode or a Focus. Checked.\(label)"
         case .notSet(let reason): return "failed: \(reason) Nothing was set."
         case .needsNewerIOS: return alarmNeedsNewerIOS
         case .notAllowed: return alarmNotAllowed

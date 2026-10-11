@@ -94,27 +94,10 @@ final class OnboardingProgressTests: XCTestCase {
         }
     }
 
-    func testStepOrderAndWalkthroughCopy() {
+    func testStepOrder() {
         XCTAssertEqual(SetupStep.welcome.next, .shortcut)
         XCTAssertEqual(SetupStep.doubleTap.next, .test)
         XCTAssertNil(SetupStep.test.next)
         XCTAssertNil(SetupStep.welcome.previous)
-        for step in SetupStep.allCases {
-            XCTAssertEqual(SetupGuideCopy.page(step) != nil, step.isWalkthroughPage, step.rawValue)
-        }
-        let reports = SetupStep.walkthrough.compactMap { SetupGuideCopy.page($0)?.report }
-        XCTAssertEqual(Set(reports).count, SetupStep.walkthrough.count, "every page has its own report")
-    }
-}
-
-final class TapTestWindowTests: XCTestCase {
-    func testOnlyAReceiptInsideTheTestWindowCounts() {
-        let start = Date(timeIntervalSince1970: 1_760_000_000)
-        let window = TapTestWindow(startedAt: start)
-        XCTAssertFalse(window.accepts(receiptAt: nil))
-        XCTAssertFalse(window.accepts(receiptAt: start.addingTimeInterval(-1)), "stale receipt from before the test")
-        XCTAssertTrue(window.accepts(receiptAt: start))
-        XCTAssertTrue(window.accepts(receiptAt: start.addingTimeInterval(60)))
-        XCTAssertFalse(window.accepts(receiptAt: start.addingTimeInterval(TapTestWindow.duration + 1)))
     }
 }

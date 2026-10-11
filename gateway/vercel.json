@@ -1,6 +1,11 @@
 {
+  "ignoreCommand": "p=$VERCEL_GIT_PREVIOUS_SHA; git cat-file -e \"$p^{commit}\" 2>/dev/null || p=HEAD^; git cat-file -e \"$p^{commit}\" 2>/dev/null && git diff --quiet \"$p\" HEAD -- .",
   "functions": {
-    "api/assist.js": { "maxDuration": 30 },
-    "api/register.js": { "maxDuration": 10 }
+    "api/assist.js": {
+      "maxDuration": 30
+    },
+    "api/register.js": {
+      "maxDuration": 10
+    }
   }
 }

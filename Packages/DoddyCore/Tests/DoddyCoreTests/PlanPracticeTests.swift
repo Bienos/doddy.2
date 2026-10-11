@@ -26,6 +26,17 @@ final class PlanPracticeTests: XCTestCase {
         }
     }
 
+    func testStepsAreDatedCorrectlyOnABuddhistOrJapaneseCalendar() {
+        for identifier in [Calendar.Identifier.buddhist, .japanese] {
+            var local = Calendar(identifier: identifier)
+            local.timeZone = calendar.timeZone
+            let steps = PlanPractice.steps(now: day(11), calendar: local)
+            XCTAssertEqual(steps.count, 4, "\(identifier)")
+            guard steps.count == 4, case .createCalendarEvent(let event) = steps[2].request else { return XCTFail("\(identifier)") }
+            XCTAssertEqual(event.start, day(17, 14), "\(identifier)")
+        }
+    }
+
     func testResultsNeverSayDone() {
         for step in PlanPractice.steps(now: day(10), calendar: calendar) {
             let ticked = PlanPractice.result(for: step, ticked: true, calendar: calendar)

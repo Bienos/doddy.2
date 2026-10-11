@@ -98,7 +98,10 @@ extension VoiceToolReply {
         switch outcome {
         case .set: return leaveBySet(plan, calendar: calendar)
         case .alreadySet:
-            return "added: a reminder to leave at \(LeaveBy.clock(plan.leaveAt, calendar: calendar)) for \(plan.placeName) was already set, so Doddy did not set a second one."
+            // The place is Apple Maps' words, so it follows as data (ADR-381).
+            return "added: a reminder to leave at \(LeaveBy.clock(plan.leaveAt, calendar: calendar)) for the place below.\n"
+                + ToolData.block([quoted("Place", plan.placeName)])
+                + "\nThat reminder was already set, so Doddy did not set a second one."
         case .notAllowed: return leaveByNotAllowed
         case .notSet: return leaveByFailed
         case .unknown:

@@ -318,7 +318,10 @@ extension VoiceToolReply {
             let when = event.allDay
                 ? "on \(localText(event.start, hasTime: false, calendar: calendar)) (all day)"
                 : "on \(localText(event.start, hasTime: true, calendar: calendar))"
-            return "added: \"\(event.title)\" \(when) was already in Calendar, so Doddy did not add it a second time."
+            // The title is the calendar's words, so it follows as data (ADR-381); Doddy's own
+            // sentence ends the reply, which is what "What Doddy did" reads.
+            return "added: an event \(when). Its title:\n" + ToolData.block([quoted("Title", event.title)])
+                + "\nThat event was already in Calendar, so Doddy did not add it a second time."
         case .notAdded(let reason):
             return notAdded(reason)
         case .unknown:

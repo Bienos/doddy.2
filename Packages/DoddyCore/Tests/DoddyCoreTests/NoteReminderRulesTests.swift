@@ -77,8 +77,10 @@ final class NoteReminderRulesTests: XCTestCase {
             let shipping = CapabilityCatalog.shipping(serverConfigured: configured)
             XCTAssertTrue(shipping.isAvailable(.noteReminders), "no server needed")
             XCTAssertTrue(shipping.isAvailable(.reminders), "Apple Reminders stay available")
-            // Exactly one claim on top of the messaging catalog.
-            for capability in Capability.allCases where capability != .noteReminders {
+            // Exactly one claim on top of the messaging catalog; shared lists are only described
+            // (limited), never claimed as available.
+            XCTAssertFalse(shipping.isAvailable(.cloudSync))
+            for capability in Capability.allCases where ![.noteReminders, .cloudSync].contains(capability) {
                 XCTAssertEqual(
                     shipping.status(of: capability),
                     CapabilityCatalog.withMessaging(serverConfigured: configured).status(of: capability), "\(capability)")

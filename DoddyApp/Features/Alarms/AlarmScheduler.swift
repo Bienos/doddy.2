@@ -34,8 +34,8 @@ enum AlarmScheduler {
         return .needsNewerIOS
     }
 
-    /// Every alarm id AlarmKit lists for Doddy.
-    static func scheduledIDs() -> Set<UUID> {
+    /// Every alarm id AlarmKit lists for Doddy; nil when the list can't be read (review F5).
+    static func scheduledIDs() -> Set<UUID>? {
         #if canImport(AlarmKit)
         if #available(iOS 26.0, *) { return AlarmKitBackend.scheduledIDs() }
         #endif
@@ -46,10 +46,11 @@ enum AlarmScheduler {
     static func forget(_ id: UUID) { AlarmBook.forget(id) }
 
     /// Doddy's alarms that AlarmKit still has. Alarms that rang once and are gone drop out.
-    static func current() -> [DoddyAlarm] {
+    /// Nil when AlarmKit's list couldn't be read: then nothing is forgotten (review F5).
+    static func currentIfReadable() -> [DoddyAlarm]? {
         #if canImport(AlarmKit)
         if #available(iOS 26.0, *) {
-            let ids = AlarmKitBackend.scheduledIDs()
+            guard let ids = AlarmKitBackend.scheduledIDs() else { return nil }
             AlarmBook.keepOnly(ids)
             return AlarmBook.all().filter { ids.contains($0.id) }
         }
@@ -57,13 +58,19 @@ enum AlarmScheduler {
         return []
     }
 
-    /// Turns one off. True only when AlarmKit no longer lists it.
+    /// As `currentIfReadable()`, with an unreadable list shown as empty (the AlarmBook is kept).
+    static func current() -> [DoddyAlarm] {
+        currentIfReadable() ?? []
+    }
+
+    /// Turns one off. True only when AlarmKit's list was read back and no longer has it.
     static func cancel(_ id: UUID) -> Bool {
         #if canImport(AlarmKit)
         if #available(iOS 26.0, *) {
             AlarmKitBackend.cancel(id)
-            let gone = !AlarmKitBackend.scheduledIDs().contains(id)
-            if gone { AlarmBook.keepOnly(AlarmKitBackend.scheduledIDs()) }
+            guard let ids = AlarmKitBackend.scheduledIDs() else { return false }
+            let gone = !ids.contains(id)
+            if gone { AlarmBook.keepOnly(ids) }
             return gone
         }
         #endif
@@ -75,7 +82,7 @@ enum AlarmScheduler {
 @MainActor
 final class AlarmKitWriter: AlarmWriter {
     func alarms() -> [AlarmEntry] { AlarmScheduler.current() }
-    func scheduledAlarmIDs() -> Set<UUID> { AlarmScheduler.scheduledIDs() }
+    func scheduledAlarmIDs() -> Set<UUID>? { AlarmScheduler.scheduledIDs() }
     func scheduleAlarm(_ draft: AlarmDraft, id: UUID) async throws -> AlarmScheduleAttempt { try await AlarmScheduler.schedule(draft, id: id) }
     func remember(_ alarm: AlarmEntry) { AlarmScheduler.remember(alarm) }
     func forget(_ id: UUID) { AlarmScheduler.forget(id) }
@@ -176,8 +183,9 @@ private enum AlarmKitBackend {
         var errorDescription: String? { "The alarm's time couldn't be read." }
     }
 
-    static func scheduledIDs() -> Set<UUID> {
-        Set(((try? AlarmManager.shared.alarms) ?? []).map(\.id))
+    /// Nil when AlarmKit's list can't be read; an empty set only when it really is empty.
+    static func scheduledIDs() -> Set<UUID>? {
+        (try? AlarmManager.shared.alarms).map { Set($0.map(\.id)) }
     }
 
     static func cancel(_ id: UUID) {

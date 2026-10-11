@@ -125,11 +125,13 @@ extension VoiceToolRequest {
 }
 
 extension VoiceToolReply {
+    /// The place's name is from Apple Maps, so it follows as data (ToolData).
     public static func leaveBySet(_ plan: LeaveByPlan, calendar: Calendar) -> String {
         "added: a reminder to leave at \(LeaveBy.clock(plan.leaveAt, calendar: calendar)) on \(LeaveBy.day(plan.leaveAt, calendar: calendar)) "
-            + "for \(plan.placeName), to arrive by \(LeaveBy.clock(plan.request.arriveBy, calendar: calendar)): "
+            + "for the place below, to arrive by \(LeaveBy.clock(plan.request.arriveBy, calendar: calendar)): "
             + "about \(plan.travelMinutes) min \(plan.request.mode.phrase) plus \(plan.request.bufferMinutes) min spare. "
-            + "Apple Maps worked out the travel time just now; traffic can change, so say so."
+            + "Apple Maps worked out the travel time just now; traffic can change, so say so.\n"
+            + ToolData.block([quoted("Place", plan.placeName)])
     }
 
     public static let leaveByDeclined = "declined: the user chose not to set the reminder. Nothing was set."
@@ -141,7 +143,8 @@ extension VoiceToolReply {
     public static let leaveByTooFar = "not added: the trip is longer than 12 hours or has no travel time. Nothing was set; say a leave reminder isn't useful for it."
 
     public static func leaveByNoPlace(_ place: String) -> String {
-        "not found: Apple Maps found no place for \"\(place)\". Nothing was set. Ask the user for the address or a clearer name."
+        "not found: Apple Maps found no place for the search below. Nothing was set. Ask the user for the address or a clearer name.\n"
+            + ToolData.block([quoted("Searched for", place)])
     }
 
     public static func leaveByNoRoute(_ mode: TravelMode) -> String {

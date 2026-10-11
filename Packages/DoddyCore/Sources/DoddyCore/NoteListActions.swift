@@ -109,7 +109,10 @@ public enum LocalCheck {
 extension VoiceToolReply {
     /// After an unconfirmed try, the same note was found already saved: nothing new was written.
     public static func noteAlreadySaved(_ record: MemoryRecord) -> String {
-        "saved: \"\(record.currentText)\" was already saved from the earlier try (saved \(timestamp(record.capturedAt))), so Doddy did not save it a second time."
+        // The note's words follow as data (ADR-381), as in `saved`.
+        "saved: one note (saved \(timestamp(record.capturedAt))). Its exact text:\n"
+            + ToolData.block(["\"\(ToolData.clean(record.currentText))\""])
+            + "\nThat note was already saved from the earlier try, so Doddy did not save it a second time."
     }
 }
 

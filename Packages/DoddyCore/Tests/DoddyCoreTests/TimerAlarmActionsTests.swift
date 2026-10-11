@@ -183,7 +183,7 @@ final class TimerAlarmActionsTests: XCTestCase {
         XCTAssertEqual(outcome(VoiceToolReply.timer(.started(timer), draft: eggs, calendar: calendar)), .done)
         let running = VoiceToolReply.timer(.alreadyRunning(timer), draft: eggs, calendar: calendar)
         XCTAssertEqual(outcome(running), .alreadyThere)
-        XCTAssertEqual(running, "added: timer \"Eggs\", 10 minutes was already running from the earlier try and rings at 2026-10-10 12:10, so Doddy did not start a second one.")
+        XCTAssertEqual(running, "added: timer 10 minutes, rings at 2026-10-10 12:10. Its label:\n<<<DATA\nLabel: \"Eggs\"\nDATA>>>\nThat timer was already running from the earlier try, so Doddy did not start a second one.")
         XCTAssertEqual(outcome(VoiceToolReply.timer(.unknown, draft: eggs, calendar: calendar)), .notSure)
         XCTAssertEqual(outcome(VoiceToolReply.timer(.notStarted("x."), draft: eggs, calendar: calendar)), .notDone)
 
@@ -213,6 +213,16 @@ final class TimerAlarmActionsTests: XCTestCase {
         XCTAssertEqual(decision, .checkFirst(since: now))
         XCTAssertEqual(decision.uncheckedSince, now)
         XCTAssertNil(ActionRetryDecision.go.uncheckedSince)
+    }
+
+    @MainActor
+    func testAnUnreadableAlarmListIsUnknownAndTheNoteIsKept() async {
+        let writer = FakeAlarmWriter()
+        writer.behaviour = .throwOnly
+        writer.unreadable = true
+        let outcome = await AlarmSetAction.set(alarm(), with: writer, now: now)
+        XCTAssertEqual(outcome, .unknown, "can't read the list: never 'not set'")
+        XCTAssertEqual(writer.book.count, 1, "the note stays, so a retry can still find it")
     }
 }
 
@@ -256,11 +266,13 @@ private final class FakeAlarmWriter: AlarmWriter {
     var attempt = AlarmScheduleAttempt.scheduled
     /// Set alarms aren't listed until `publishLate`.
     var listLate = false
+    /// AlarmKit's list can't be read (review F5).
+    var unreadable = false
     private var late: Set<UUID> = []
     private(set) var schedules = 0
 
     func alarms() -> [AlarmEntry] { book.filter { ids.contains($0.id) } }
-    func scheduledAlarmIDs() -> Set<UUID> { ids }
+    func scheduledAlarmIDs() -> Set<UUID>? { unreadable ? nil : ids }
 
     func scheduleAlarm(_ draft: AlarmDraft, id: UUID) async throws -> AlarmScheduleAttempt {
         if behaviour == .throwOnly { throw Refused() }

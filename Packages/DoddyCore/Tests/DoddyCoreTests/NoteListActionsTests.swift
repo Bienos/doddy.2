@@ -139,7 +139,8 @@ final class NoteListActionsTests: XCTestCase {
         let saved = try note("Gate code 4821", at: now)
         let again = VoiceToolReply.noteAlreadySaved(saved)
         XCTAssertEqual(ActivityEntry.outcome(of: again, isLookup: false).0, .alreadyThere)
-        XCTAssertTrue(again.hasPrefix("saved: \"Gate code 4821\" was already saved from the earlier try"))
+        XCTAssertTrue(again.contains("<<<DATA\n\"Gate code 4821\"\nDATA>>>"), "the note's words are data (ADR-381)")
+        XCTAssertTrue(again.hasSuffix("That note was already saved from the earlier try, so Doddy did not save it a second time."))
         XCTAssertEqual(ActivityEntry.outcome(of: VoiceToolReply.saved(saved), isLookup: false).0, .done)
 
         let receipt = ActivityReceipt(note: saved, readAt: now)

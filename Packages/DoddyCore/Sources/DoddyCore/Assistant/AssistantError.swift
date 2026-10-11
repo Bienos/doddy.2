@@ -22,9 +22,11 @@ public enum AssistantError: Error, Equatable, Sendable {
     case cancelled
 
     /// Worth an automatic retry. Offline, rate limits and refusals are not: they need the user or time.
+    /// Nor is a timeout: the gateway may have passed the question and notes to the model and spent
+    /// the budget, so sending it again is the user's choice (Try again), not automatic (DOD-11).
     public var isTransient: Bool {
         switch self {
-        case .providerUnavailable, .timeout: true
+        case .providerUnavailable: true
         default: false
         }
     }

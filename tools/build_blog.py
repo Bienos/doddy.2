@@ -72,6 +72,9 @@ def inline(text: str) -> str:
 
     def link(m: re.Match) -> str:
         label, url = m.group(1), html.unescape(m.group(2))
+        # Only web, mail and on-site links; anything else (javascript:, data:) stops the build.
+        if not re.match(r"(https?://|mailto:|/|#)", url):
+            sys.exit(f"FAIL: link {url!r} must start with https://, http://, mailto:, / or #")
         external = url.startswith("http")
         attrs = ' target="_blank" rel="noopener"' if external else ""
         return f'<a class="text-link" href="{html.escape(url)}"{attrs}>{label}</a>'
@@ -262,8 +265,8 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
           <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
         </ul>
       </div>
-      <p>Doddy is an AI assistant, not a person. Your notes stay on your iPhone. Voice conversations run through ElevenLabs while the voice screen is open.</p>
-      <p>This page counts visits with Vercel Web Analytics. No cookies, no cross-site tracking.</p>
+      <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
+      <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>
       <p data-ga-note hidden>If you allow it, Google Analytics also measures visits and sets cookies. <button type="button" class="foot-choice" data-analytics-choices>Analytics choices</button></p>
       <p>© 2026 Doddy</p>
     </div>

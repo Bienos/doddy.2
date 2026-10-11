@@ -19,7 +19,7 @@ final class AlarmTests: XCTestCase {
         XCTAssertNil(draft.repeats)
         XCTAssertEqual(draft.label, "gym")
         XCTAssertEqual(draft.first.date, calendar.date(from: DateComponents(year: 2026, month: 10, day: 12, hour: 7)))
-        XCTAssertEqual(VoiceToolReply.alarmSet(draft), "added: alarm \"gym\" at 07:00 on 2026-10-12. It rings even in Silent mode or a Focus. Checked.")
+        XCTAssertEqual(VoiceToolReply.alarmSet(draft), "added: alarm at 07:00 on 2026-10-12. It rings even in Silent mode or a Focus. Checked. Its label:\n<<<DATA\nLabel: \"gym\"\nDATA>>>")
 
         guard case .needsClarification = parse(#"{"time":"2026-10-11T07:00"}"#) else {
             return XCTFail("a time that has passed is asked about, not set")
@@ -75,5 +75,11 @@ final class AlarmVoiceTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.serving(VoiceToolName.cancelAlarm), .timers)
         XCTAssertTrue(ConnectionPause.applies(to: .listAlarms))
         XCTAssertEqual(ActivityRequest.describe(.listAlarms, calendar: .current)?.isLookup, true)
+    }
+
+    /// Review F5: an unreadable AlarmKit list is "unknown", never "none set".
+    func testAnUnreadableListIsUnknownNotNone() {
+        XCTAssertTrue(VoiceToolReply.alarmsUnreadable.hasPrefix("unknown:"))
+        XCTAssertFalse(VoiceToolReply.alarmsUnreadable.contains("none"))
     }
 }

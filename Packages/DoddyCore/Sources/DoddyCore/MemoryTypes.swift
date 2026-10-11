@@ -168,7 +168,7 @@ extension MemoryRecord: Codable {
                 forKey: .schemaVersion, in: c, debugDescription: "Unsupported schemaVersion \(version)")
         }
         func date(_ key: CodingKeys) throws -> Date? {
-            try c.decodeIfPresent(Int64.self, forKey: key).map { Date(timeIntervalSince1970: Double($0) / 1000) }
+            try c.decodeIfPresent(Int64.self, forKey: key).map(EpochMilliseconds.date)
         }
         do {
             try self.init(
@@ -194,12 +194,26 @@ extension MemoryRecord: Codable {
         try c.encode(currentText, forKey: .currentText)
         try c.encode(source, forKey: .source)
         try c.encode(category, forKey: .category)
-        try c.encode(capturedAt.map(Self.milliseconds), forKey: .capturedAtMs)
-        try c.encode(updatedAt.map(Self.milliseconds), forKey: .updatedAtMs)
+        try c.encode(capturedAt.map(EpochMilliseconds.rounded), forKey: .capturedAtMs)
+        try c.encode(updatedAt.map(EpochMilliseconds.rounded), forKey: .updatedAtMs)
         try c.encode(userEdited, forKey: .userEdited)
     }
+}
 
-    private static func milliseconds(_ date: Date) -> Int64 {
+/// Dates as whole milliseconds since 1970: the one conversion files and the database share.
+public enum EpochMilliseconds {
+    /// To the nearest millisecond, for files. Exact inverse of `date(_:)`, so a date read from a
+    /// file or the database is written back unchanged.
+    public static func rounded(_ date: Date) -> Int64 {
         Int64((date.timeIntervalSince1970 * 1000).rounded())
+    }
+
+    /// Rounded down, as the database keeps a new time (it never moves later).
+    public static func truncated(_ date: Date) -> Int64 {
+        Int64((date.timeIntervalSince1970 * 1000).rounded(.down))
+    }
+
+    public static func date(_ milliseconds: Int64) -> Date {
+        Date(timeIntervalSince1970: Double(milliseconds) / 1000)
     }
 }

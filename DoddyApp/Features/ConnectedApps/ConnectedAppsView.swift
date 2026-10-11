@@ -13,10 +13,12 @@ struct ConnectedAppsScreen: View {
 
     @MainActor
     static func makeModel(serverURL: String) -> ConnectedAppsModel {
-        let client = URL(string: serverURL.trimmingCharacters(in: .whitespaces)).flatMap {
-            BackendConnectedAppsClient(baseURL: $0, sessionToken: { KeychainSessionStore.read() }, transport: URLSessionTransport.shared)
+        let url = URL(string: serverURL.trimmingCharacters(in: .whitespaces))
+        let client = url.flatMap {
+            BackendConnectedAppsClient(baseURL: $0, boundToken: { KeychainSessionStore.read() }, transport: URLSessionTransport.shared)
         }
-        let configured = client != nil && KeychainSessionStore.read() != nil
+        // The token is used only with the server that issued it (`BoundSessionToken`).
+        let configured = client != nil && url.flatMap { KeychainSessionStore.read()?.token(for: $0) } != nil
         return ConnectedAppsModel(client: configured ? client : nil, authenticator: SystemWebAuthenticator())
     }
 }
@@ -27,6 +29,8 @@ struct ConnectedAppsView: View {
     @State private var confirmConnect = false
     @State private var confirmDisconnect = false
     @State private var savedEvents: Set<Int> = []
+    /// Events being saved right now, so a double tap can't save one twice (DOD-06).
+    @State private var savingEvents: Set<Int> = []
     @State private var saveError: String?
 
     init(model: ConnectedAppsModel) {
@@ -261,7 +265,7 @@ struct ConnectedAppsView: View {
                     } else {
                         Button("Save") { Task { await save(event, index: index, window: result.window) } }
                             .buttonStyle(.borderless)
-                            .disabled(!store.isStorageAvailable)
+                            .disabled(!store.isStorageAvailable || savingEvents.contains(index))
                             .accessibilityLabel("Save \(event.title) to memories")
                     }
                 }
@@ -299,6 +303,9 @@ struct ConnectedAppsView: View {
 
     /// Explicit save only: one tap, one event, stored as a note that names its source.
     private func save(_ event: CalendarEventItem, index: Int, window: EventsWindow) async {
+        guard !savingEvents.contains(index), !savedEvents.contains(index) else { return }
+        savingEvents.insert(index)
+        defer { savingEvents.remove(index) }
         do {
             _ = try await store.save(
                 text: ConnectedAppsDates.memoryText(for: event, window: window), category: .commitment, source: .sharedContent)

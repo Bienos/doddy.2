@@ -398,21 +398,24 @@ extension VoiceToolReply {
     public static let undoDeclined = "declined: the user chose to keep it. Nothing changed."
 
     /// What the agent hears after the user tapped the undo card. "undone" only after the read-back.
+    /// The title or list name follows as data (ToolData): an invite's title is someone else's text.
     public static func undo(_ result: UndoResult, _ undo: ActivityUndo) -> String {
         let place = undo.placeName
+        func title(_ text: String) -> String { " Its title:\n" + ToolData.block(["Title: \"\(ToolData.clean(text))\""]) }
+        func name(_ text: String) -> String { " Its name:\n" + ToolData.block(["Name: \"\(ToolData.clean(text))\""]) }
         switch result {
         case .undone:
             switch undo {
-            case .addedEvent(_, let event): return "undone: \"\(event.title)\" was removed from Calendar. Checked."
-            case .addedReminder(_, let title, _): return "undone: \"\(title)\" was removed from Reminders. Checked."
-            case .changedEvent(let plan): return "undone: \"\(plan.before.title)\" is back as it was. Checked in Calendar."
-            case .changedReminder(_, let title, _, _, let markedDone):
+            case .addedEvent(_, let event): return "undone: the event was removed from Calendar. Checked." + title(event.title)
+            case .addedReminder(_, let reminder, _): return "undone: the reminder was removed from Reminders. Checked." + title(reminder)
+            case .changedEvent(let plan): return "undone: the event is back as it was. Checked in Calendar." + title(plan.before.title)
+            case .changedReminder(_, let reminder, _, _, let markedDone):
                 return markedDone
-                    ? "undone: \"\(title)\" is open again in Reminders. Checked."
-                    : "undone: \"\(title)\" has its old due back. Checked in Reminders."
-            case .listAdded(_, let list, _): return "undone: the items were removed from \"\(list)\". Checked."
-            case .listTicked(_, let list, _): return "undone: the items are unticked on \"\(list)\". Checked."
-            case .listRemoved(_, let list, _): return "undone: the items are back on \"\(list)\". Checked."
+                    ? "undone: the reminder is open again in Reminders. Checked." + title(reminder)
+                    : "undone: the reminder has its old due back. Checked in Reminders." + title(reminder)
+            case .listAdded(_, let list, _): return "undone: the items were removed from the list. Checked." + name(list)
+            case .listTicked(_, let list, _): return "undone: the items are unticked on the list. Checked." + name(list)
+            case .listRemoved(_, let list, _): return "undone: the items are back on the list. Checked." + name(list)
             case .savedNote: return "undone: the note was deleted. Checked."
             }
         case .leftAlone:
