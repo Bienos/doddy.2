@@ -183,8 +183,9 @@ struct NoteImportView: View {
         defer { isImporting = false }
         let selection = chosen
         let records = selection.compactMap { NoteImport.record(for: $0, now: Date()) }
-        var notes = 0, lists = 0, notKept = 0
+        var notes = 0, lists = 0, notKept = 0, partlyImported = 0
         var added: [UUID] = []
+        let listsBefore = Set(store.lists.map(\.id))
         if !records.isEmpty {
             do {
                 let restored = try await store.restore(records)
@@ -198,14 +199,34 @@ struct NoteImportView: View {
                 added.append(try await store.importList(part).id)
                 lists += 1
             } catch {
-                notKept += 1
+                // The list may have been created before a later step (ticking its done items)
+                // failed. Then it is there, half imported: Undo must remove it too, and the
+                // receipt must not say "nothing was half-saved" (DOD-06/08).
+                await store.reload()
+                if let partial = store.lists.first(where: {
+                    !listsBefore.contains($0.id) && !added.contains($0.id) && ListMatch.key($0.name) == ListMatch.key(part.name)
+                }) {
+                    added.append(partial.id)
+                    partlyImported += 1
+                } else {
+                    notKept += 1
+                }
             }
         }
         importedIDs = added
         receipt = notes + lists == 0
             ? "Nothing was imported."
             : "Imported \(NoteImport.summary(notes: notes, lists: lists)), each checked in Doddy's storage."
-        problem = notKept == 0 ? nil : "\(notKept == 1 ? "1 item" : "\(notKept) items") couldn't be imported. Nothing was half-saved; try those again."
+        var problems: [String] = []
+        if notKept > 0 {
+            problems.append("\(notKept == 1 ? "1 item" : "\(notKept) items") couldn't be imported. Nothing was half-saved; try those again.")
+        }
+        if partlyImported > 0 {
+            problems.append(String(
+                format: NSLocalizedString("%lld lists were only partly imported: some items may not be ticked as they were. Undo removes them too.", comment: ""),
+                partlyImported))
+        }
+        problem = problems.isEmpty ? nil : problems.joined(separator: " ")
         UIAccessibility.post(notification: .announcement, argument: receipt ?? "")
     }
 
