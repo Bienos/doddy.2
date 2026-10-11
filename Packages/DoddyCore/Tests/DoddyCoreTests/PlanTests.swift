@@ -138,4 +138,30 @@ final class PlanTests: XCTestCase {
         XCTAssertEqual(blocked.screenText, "Gmail isn't connected")
         XCTAssertTrue(PlanReply.summary([(parsed[0], "drafted: ok")]).contains("\"drafted:\""))
     }
+
+    /// Review D3: every step a plan may hold, when done, starts as the summary tells the agent a
+    /// done step starts, including a list step.
+    func testTheSummaryCountsEveryDoneStepAsDone() throws {
+        let listID = UUID()
+        let milk = ListItem(id: UUID(), listID: listID, text: "milk", source: .voice, addedAt: now, doneAt: nil, position: 0)
+        let note = try MemoryRecord(id: UUID(), rawText: "Mum's number", source: .explicitVoice, capturedAt: now)
+        let receipt = ReminderReceipt(title: "Rent", listTitle: "Reminders", due: nil)
+        let event = CalendarEventDraft(title: "Lunch", start: now, end: now.addingTimeInterval(3600), allDay: false, location: nil, notes: nil)
+        let done = [
+            VoiceToolReply.listAdded(ListAddResult(added: [milk], alreadyThere: [], tooLong: [], noRoom: []), list: "Shopping"),
+            VoiceToolReply.saved(note),
+            VoiceToolReply.reminder(.added(receipt)),
+            VoiceToolReply.eventAdded(event, calendar: calendar),
+            VoiceToolReply.timerAdded(TimerDraft(seconds: 60, label: nil), endsAt: now, calendar: calendar),
+        ]
+        let summary = PlanReply.summary([])
+        for reply in done {
+            let prefix = PlanReply.donePrefixes.first { reply.hasPrefix($0) }
+            XCTAssertNotNil(prefix, reply)
+            XCTAssertTrue(summary.contains("\"\(prefix ?? "")\""), summary)
+        }
+        // Nothing added is not a done step.
+        let nothing = VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "Shopping")
+        XCTAssertFalse(PlanReply.donePrefixes.contains { nothing.hasPrefix($0) })
+    }
 }

@@ -64,14 +64,23 @@ public struct ActivityRequest: Equatable, Sendable {
     public let title: String
     /// The specifics, e.g. "“Buy milk” · due 17 Oct 2026, 09:00".
     public let detail: String?
+    /// What "What Doddy did" keeps of `detail`. Note text, searches, list names and items are not
+    /// kept (review C2): the log stays for 30 days, after the note or list may be deleted. The card
+    /// still shows `detail` in full.
+    public let logDetail: String?
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
 
     public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil) {
+        self.init(app: app, title: title, detail: detail, logDetail: detail, isLookup: isLookup, reminderKey: reminderKey)
+    }
+
+    public init(app: ActivityApp, title: String, detail: String?, logDetail: String?, isLookup: Bool, reminderKey: String? = nil) {
         self.app = app
         self.title = title
         self.detail = detail
+        self.logDetail = logDetail
         self.isLookup = isLookup
         self.reminderKey = reminderKey
     }
@@ -79,11 +88,12 @@ public struct ActivityRequest: Equatable, Sendable {
     /// Nil for requests that never reach an app (unsupported or invalid tool calls).
     public static func describe(_ request: VoiceToolRequest, calendar: Calendar) -> ActivityRequest? {
         func when(_ date: Date, hasTime: Bool) -> String { VoiceToolReply.localText(date, hasTime: hasTime, calendar: calendar) }
+        func items(_ request: ListVoiceRequest) -> String { "\(request.items.count) item\(request.items.count == 1 ? "" : "s")" }
         switch request {
         case .searchMemories(let query):
-            return ActivityRequest(app: .memories, title: "Searched your notes", detail: "“\(query)”", isLookup: true)
+            return ActivityRequest(app: .memories, title: "Searched your notes", detail: "“\(query)”", logDetail: nil, isLookup: true)
         case .saveMemory(let text):
-            return ActivityRequest(app: .memories, title: "Save a note", detail: "“\(text)”", isLookup: false)
+            return ActivityRequest(app: .memories, title: "Save a note", detail: "“\(text)”", logDetail: nil, isLookup: false)
         case .readCalendar(let range):
             return ActivityRequest(
                 app: .calendar, title: "Read your calendar",
@@ -110,7 +120,10 @@ public struct ActivityRequest: Equatable, Sendable {
                 }
             case .place(let query, let onArrival): target = "\(onArrival ? "arriving at" : "leaving") “\(query)”"
             }
-            return ActivityRequest(app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", isLookup: false)
+            let logged: String
+            if case .place(_, let onArrival) = draft.target { logged = onArrival ? "arriving at a place" : "leaving a place" } else { logged = target }
+            return ActivityRequest(
+                app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", logDetail: logged, isLookup: false)
         case .lookupContact(let name):
             return ActivityRequest(app: .contacts, title: "Looked for a contact", detail: "“\(name)”", isLookup: true)
         case .setTimer(let draft):
@@ -129,18 +142,18 @@ public struct ActivityRequest: Equatable, Sendable {
         case .cloudTool(let call):
             return describe(cloud: call.name)
         case .addToList(let request):
-            return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+            return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false)
         case .readList(let name):
-            return ActivityRequest(app: .memories, title: "Read a list", detail: "“\(name)”", isLookup: true)
+            return ActivityRequest(app: .memories, title: "Read a list", detail: "“\(name)”", logDetail: nil, isLookup: true)
         case .checkOff(let request):
-            return ActivityRequest(app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+            return ActivityRequest(app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false)
         case .removeFromList(let request):
-            return ActivityRequest(app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+            return ActivityRequest(app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", logDetail: items(request), isLookup: false)
         case .createList(let request):
-            return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", isLookup: false)
+            return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", logDetail: nil, isLookup: false)
         case .changeCalendarEvent(let draft):
             var parts: [String] = []
-            if let start = draft.newStart { parts.append("to \(when(start, hasTime: !draft.currentIsDayOnly))") }
+            if let start = draft.newStart { parts.append("to \(when(start, hasTime: !draft.newStartIsDayOnly))") }
             if let title = draft.newTitle { parts.append("renamed “\(title)”") }
             return ActivityRequest(app: .calendar, title: "Change event", detail: "“\(draft.title)” \(parts.joined(separator: ", "))", isLookup: false)
         case .changeReminder(let draft):
@@ -232,14 +245,14 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
-            id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
+            id: id, at: at, app: request.app, title: request.title, detail: request.logDetail, outcome: outcome,
             note: note, reminderKey: request.reminderKey, plan: plan)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
     public static func started(_ request: ActivityRequest, at: Date, plan: ActivityPlanRef? = nil) -> ActivityEntry {
         ActivityEntry(
-            at: at, app: request.app, title: request.title, detail: request.detail, outcome: .inProgress,
+            at: at, app: request.app, title: request.title, detail: request.logDetail, outcome: .inProgress,
             reminderKey: request.reminderKey, plan: plan)
     }
 
@@ -254,16 +267,23 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
             let (outcome, note) = Self.outcome(of: String(text[range.upperBound...]), isLookup: isLookup)
             return (outcome, note ?? "Demo data from a test server, not your account.")
         }
+        // Only the start of the reply is read: a note or a title quoted later in it can't change
+        // the outcome (review C1).
+        func starts(_ prefixes: [String]) -> Bool { prefixes.contains { text.hasPrefix($0) } }
         if text.hasPrefix("failed:") { return (.notDone, reason(in: text)) }
         if text.hasPrefix("paused:") { return (.notDone, "Connections were paused.") }
-        if text.contains("isn't connected") {
-            return (.notDone, text.components(separatedBy: ". ").first.map { $0 + "." })
+        if text.hasPrefix("refused:") { return (.notDone, "Translator mode was on, so nothing was run.") }
+        // VoiceToolReply.notConnected: "Calendar isn't connected. Tell the user …"
+        if let connection = VoiceConnection.allCases.first(where: { text.hasPrefix("\($0.title) isn't connected") }) {
+            return (.notDone, "\(connection.title) isn't connected.")
         }
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        if text.hasPrefix("added:"), text.contains("already in Reminders") { return (.alreadyThere, nil) }
-        if text.hasPrefix("added:") || text.hasPrefix("saved:") || text.hasPrefix("drafted:") { return (.done, nil) }
+        if text.hasPrefix("not found:") { return (.notDone, "Doddy couldn't find it, so nothing changed.") }
+        if starts(VoiceToolReply.nothingChangedPrefixes) { return (.notDone, nil) }
+        if text.hasPrefix("added:"), text.hasSuffix(VoiceToolReply.alreadyInRemindersTail) { return (.alreadyThere, nil) }
+        if starts(VoiceToolReply.donePrefixes) || starts(VoiceToolReply.listDonePrefixes) { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
@@ -288,9 +308,20 @@ public enum ActivityLog {
         pruned([entry] + entries, now: now)
     }
 
+    /// Also drops note text that older versions kept (review C2). The app prunes at launch and on
+    /// every new entry, and saves when anything changed, so it leaves the file too.
     public static func pruned(_ entries: [ActivityEntry], now: Date) -> [ActivityEntry] {
         let cutoff = now.addingTimeInterval(-Double(keepDays) * 86_400)
-        return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries))
+        return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries).map(withoutNoteText))
+    }
+
+    /// Notes and lists rows used to start their detail with the quoted note, search or list name
+    /// ("“Buy milk”"); `ActivityRequest.logDetail` never does.
+    static func withoutNoteText(_ entry: ActivityEntry) -> ActivityEntry {
+        guard entry.app == .memories, let detail = entry.detail, detail.hasPrefix("“") else { return entry }
+        return ActivityEntry(
+            id: entry.id, at: entry.at, app: entry.app, title: entry.title, detail: nil, outcome: entry.outcome,
+            note: entry.note, reminderKey: entry.reminderKey, checkedAt: entry.checkedAt, plan: entry.plan)
     }
 
     public static let interruptedNote = "Doddy closed before this finished. Check before asking again, so it isn't done twice."

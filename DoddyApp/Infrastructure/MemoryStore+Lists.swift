@@ -88,22 +88,26 @@ extension MemoryStore {
         await listChanged(listID)
     }
 
-    /// Takes back exactly the change `undo` describes. Items ticked since an add stay.
+    /// Takes back exactly the change `undo` describes. Items ticked since an add stay. Throws
+    /// `ListUndoError` unless every item came back as it was (read back by the repository), so
+    /// nothing says "Undone" for items that weren't (review C10).
     func undoListChange(_ undo: ListUndo) async throws {
         let repository = environment.listRepository
+        let expected: [ListItem], reversed: [ListItem]
         switch undo.change {
         case .added(let items):
             let current = Set(list(id: undo.listID)?.open.map(\.id) ?? [])
-            _ = try await repository.remove(items.map(\.id).filter(current.contains))
+            (expected, reversed) = (items, try await repository.remove(items.map(\.id).filter(current.contains)))
         case .ticked(let items):
-            _ = try await repository.setDone(items.map(\.id), done: false)
+            (expected, reversed) = (items, try await repository.setDone(items.map(\.id), done: false).filter { !$0.isDone })
         case .unticked(let items):
-            _ = try await repository.setDone(items.map(\.id), done: true)
+            (expected, reversed) = (items, try await repository.setDone(items.map(\.id), done: true).filter(\.isDone))
         case .removed(let items):
-            _ = try await repository.restore(items)
+            (expected, reversed) = (items, try await repository.restore(items))
         }
         if listUndo == undo { listUndo = nil }
         await listChanged(undo.listID)
+        try ListUndoError.check(expected: expected, reversed: reversed)
     }
 
     private func listChanged(_ listID: UUID) async {
@@ -114,6 +118,7 @@ extension MemoryStore {
 
 extension UserFacingError {
     static func listMessage(for error: any Error) -> String {
+        if let undo = error as? ListUndoError { return undo.message }
         guard let error = error as? ListError else { return message(for: error) }
         switch error {
         case .emptyName: return NSLocalizedString("Give the list a name.", comment: "")

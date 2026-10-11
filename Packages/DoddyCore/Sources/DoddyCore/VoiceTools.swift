@@ -207,6 +207,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
 
     public static func parse(name: String, parametersJSON: Data, now: Date = Date(), calendar: Calendar = .current) -> VoiceToolRequest {
         let args = Arguments(parametersJSON)
+        // Online-account arguments are checked by Doddy's server (ADR-209).
+        if !CloudToolName.all.contains(name), let (key, limit) = args.firstTooLong() {
+            return .invalid(name: name, reason: "\(key) is longer than \(limit) characters")
+        }
         switch name {
         case VoiceToolName.searchMemories:
             guard let query = args.text("query") else { return .invalid(name: name, reason: "missing query") }
@@ -393,9 +397,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
         let minutes = args.number("minutes") ?? 0
         let seconds = args.number("seconds") ?? 0
         guard minutes >= 0, seconds >= 0 else { return .invalid(name: name, reason: "negative duration") }
-        let total = Int((minutes * 60 + seconds).rounded())
+        // Checked as a Double first: Int(_:) traps on a value it can't hold (review C6).
+        let length = (minutes * 60 + seconds).rounded()
+        guard length.isFinite, length <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
+        let total = Int(length)
         guard total >= 1 else { return .invalid(name: name, reason: "missing duration") }
-        guard total <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
         return .setTimer(TimerDraft(seconds: total, label: args.text("label")))
     }
 
@@ -434,6 +440,36 @@ struct Arguments {
 
     func number(_ key: String) -> Double? {
         values[key] as? Double
+    }
+
+    /// The first text argument longer than its bound, if any (review C11). Too long is refused,
+    /// never cut: the agent hears which argument and asks the user. List items are bounded by
+    /// the list itself (ListLimits.itemLength), item by item.
+    func firstTooLong() -> (key: String, limit: Int)? {
+        for key in values.keys.sorted() {
+            guard let value = values[key] as? String else { continue }
+            let limit = VoiceTextLimits.limit(for: key)
+            if value.unicodeScalars.count > limit { return (key, limit) }
+        }
+        return nil
+    }
+}
+
+/// Bounds on text the model sends to a phone tool (review C11). A note, or a note quoted back,
+/// may be as long as a saved note; notes on an event or reminder and a message body are
+/// paragraphs; everything else (titles, names, labels, times) is a line.
+public enum VoiceTextLimits {
+    public static let line = EventChange.maxTitleLength
+    public static let paragraph = 2_000
+    public static let search = 500
+
+    public static func limit(for key: String) -> Int {
+        switch key {
+        case "text", "note": MemoryLimits.maxTextLength
+        case "notes", "body": paragraph
+        case "query", "place": search
+        default: line
+        }
     }
 }
 
@@ -482,6 +518,14 @@ public enum OpenLinks {
 /// Result prefixes ("added", "declined", "failed", "unknown", "saved", "opened") are what the
 /// agent's prompt tells it to look for, so they must not change without changing the prompt.
 public enum VoiceToolReply {
+    /// How a reply starts when the change happened and was read back. "What Doddy did" and the
+    /// plan summary both read these, so a new result verb must be added here (review C1, D3).
+    public static let donePrefixes = ["added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:"]
+    /// List results name the list first: `added to "Shopping": milk.` (listAdded, listChanged).
+    public static let listDonePrefixes = ["added to \"", "ticked on \"", "removed on \""]
+    /// Nothing changed; the agent asks the user which one, or offers something else.
+    public static let nothingChangedPrefixes = ["not changed:", "not added:", "not created:"]
+
     public static let declined = "declined: the user chose not to save this note. Nothing was saved."
     public static let declinedEvent = "declined: the user chose not to add this event. Nothing was added."
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."
@@ -511,10 +555,10 @@ public enum VoiceToolReply {
         } else {
             lines.append("Found \(candidates.count) \(noun) (exact text, newest wording):")
         }
-        for candidate in shown {
+        lines.append(ToolData.block(shown.map { candidate in
             let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
-            lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")
-        }
+            return "- \"\(ToolData.clean(candidate.record.currentText))\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)"
+        }))
         if !mayDisagree.isEmpty {
             lines.append("Notes marked [may disagree] give different numbers for the same thing. Mention each one with when it was saved and let the user decide which is current. Do not pick one.")
         }
@@ -547,12 +591,12 @@ public enum VoiceToolReply {
             return "No calendar events \(window). Say so; do not guess."
         }
         var lines = ["Found \(events.count) calendar event\(events.count == 1 ? "" : "s") \(window) (exact titles and times):"]
-        for event in events.prefix(limit) {
+        lines.append(ToolData.block(events.prefix(limit).map { event in
             let when = event.allDay
                 ? "\(localText(event.start, hasTime: false, calendar: calendar)) (all day)"
                 : "\(localText(event.start, hasTime: true, calendar: calendar))–\(localText(event.end, hasTime: true, calendar: calendar))"
-            lines.append("- \"\(event.title)\" \(when)")
-        }
+            return "- \"\(ToolData.clean(event.title))\" \(when)"
+        }))
         if events.count > limit {
             lines.append("…and \(events.count - limit) more.")
         }

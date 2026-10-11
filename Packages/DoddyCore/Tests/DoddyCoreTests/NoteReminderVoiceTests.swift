@@ -94,6 +94,26 @@ final class NoteReminderVoiceTests: XCTestCase {
         XCTAssertEqual(ActivityEntry(request: request, reply: VoiceToolReply.noteNotFound(), at: now).outcome, .notDone)
     }
 
+    /// Review C3: replacing a note's reminder is said on the card and to the agent, never silent.
+    func testReplacingAReminderIsNamed() {
+        let monday20 = Date(timeIntervalSince1970: 1_791_828_000)
+        let weekly = MemoryReminder(
+            id: UUID(), memoryID: UUID(), trigger: .time(fireAt: monday20, timeZoneID: "Europe/Warsaw"), createdAt: now, repeats: .weekly)
+        let once = MemoryReminder(
+            id: UUID(), memoryID: weekly.memoryID, fireAt: Date(timeIntervalSince1970: 1_791_702_000),
+            timeZoneID: "Europe/Warsaw", createdAt: now)
+        let reply = VoiceToolReply.noteReminderSet(once, note: "Bins", replacing: weekly)
+        XCTAssertTrue(reply.hasPrefix("added: a reminder about \"Bins\": at Sun 11 Oct, 09:00 (Warsaw time)."), reply)
+        XCTAssertTrue(reply.hasSuffix(
+            " It replaced the note's earlier reminder (every Monday at 20:00 (Warsaw time), first on Mon 12 Oct, 20:00, until the user stops it on the note), which is gone now. Tell the user."), reply)
+        XCTAssertTrue(VoiceToolReply.noteReminderInDoddyOnly(once, note: "Bins", replacing: weekly).contains("It replaced the note's earlier reminder"))
+        XCTAssertFalse(VoiceToolReply.noteReminderSet(once, note: "Bins").contains("replaced"))
+        let line = NoteReminderReplacement.cardLine(weekly, locale: Locale(identifier: "en_GB"))
+        XCTAssertTrue(line.hasPrefix("Replaces its reminder: "), line)
+        XCTAssertTrue(line.hasSuffix("(stops repeating)"), line)
+        XCTAssertFalse(NoteReminderReplacement.cardLine(once).contains("repeating"))
+    }
+
     func testRepeatArgumentIsCheckedBeforeAnyCard() throws {
         // Mon 12 Oct 2026, 20:00 Warsaw.
         let monday20 = Date(timeIntervalSince1970: 1_791_828_000)

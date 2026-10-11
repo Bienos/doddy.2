@@ -532,13 +532,16 @@ extension ReminderOutcome {
 }
 
 extension VoiceToolReply {
+    /// Ends the reply for a reminder that was already there; "What Doddy did" reads it (ActivityEntry).
+    static let alreadyInRemindersTail = " was already in Reminders, so Doddy did not add it a second time."
+
     /// The agent's copy of the outcome. The list name stays on the screen.
     public static func reminder(_ outcome: ReminderOutcome) -> String {
         switch outcome {
         case .added(let receipt):
             return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due)).\(receipt.repeats.map { " Repeats \($0.text)." } ?? "")"
         case .alreadyThere(let receipt):
-            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due)) was already in Reminders, so Doddy did not add it a second time."
+            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due))\(alreadyInRemindersTail)"
         case .notAdded(.notAllowed):
             return notAdded("Reminders isn't connected.")
         case .notAdded(.couldNotCheck):

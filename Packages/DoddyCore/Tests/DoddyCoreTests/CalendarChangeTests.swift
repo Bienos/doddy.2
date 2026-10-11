@@ -74,6 +74,30 @@ final class CalendarChangeTests: XCTestCase {
         XCTAssertTrue(trip.after.allDay)
     }
 
+    /// Review C7: "move the dentist to Monday" keeps 09:30; it never lands at midnight.
+    func testADayOnlyMoveKeepsTheTimeOfDay() throws {
+        guard case .changeCalendarEvent(let draft) = parse(VoiceToolName.changeCalendarEvent,
+            #"{"title":"Dentist","start":"2026-10-10T09:30","new_start":"2026-10-12"}"#) else { return XCTFail() }
+        XCTAssertTrue(draft.newStartIsDayOnly)
+        let event = CalendarEventSummary(id: "a", title: "Dentist", start: at(10, 9, 30), end: at(10, 10, 30), allDay: false)
+        let plan = try XCTUnwrap(EventChange.plan(draft, for: event, calendar: calendar))
+        XCTAssertEqual(plan.after.start, at(12, 9, 30))
+        XCTAssertEqual(plan.after.end, at(12, 10, 30))
+        XCTAssertFalse(plan.after.allDay)
+        XCTAssertEqual(ActivityRequest.describe(.changeCalendarEvent(draft), calendar: calendar)?.detail, "“Dentist” to 2026-10-12")
+        // A time the clocks skip that day is not shifted: there is no plan, and the agent asks.
+        let night = CalendarEventSummary(id: "b", title: "Night shift", start: at(20, 2, 30), end: at(20, 3, 30), allDay: false)
+        let toSpringForward = EventChangeDraft(
+            title: "Night shift", currentStart: night.start, currentIsDayOnly: false,
+            newStart: calendar.date(from: DateComponents(year: 2027, month: 3, day: 28))!, newEnd: nil, newTitle: nil, newStartIsDayOnly: true)
+        XCTAssertNil(EventChange.plan(toSpringForward, for: night, calendar: calendar))
+        // A written-out time still moves to that time.
+        guard case .changeCalendarEvent(let timed) = parse(VoiceToolName.changeCalendarEvent,
+            #"{"title":"Dentist","start":"2026-10-10T09:30","new_start":"2026-10-12T00:00"}"#) else { return XCTFail() }
+        XCTAssertFalse(timed.newStartIsDayOnly)
+        XCTAssertEqual(EventChange.plan(timed, for: event, calendar: calendar)?.after.start, at(12, 0))
+    }
+
     func testTheCardCanGoStaleAndReadBackComparesWallClock() throws {
         let event = CalendarEventSummary(id: "a", title: "Dentist", start: at(10, 9, 30), end: at(10, 10, 30), allDay: false)
         let move = EventChangeDraft(title: "Dentist", currentStart: at(10, 9, 30), currentIsDayOnly: false, newStart: at(12, 15), newEnd: nil, newTitle: nil)

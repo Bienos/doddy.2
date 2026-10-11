@@ -19,6 +19,41 @@ final class VoiceToolsTests: XCTestCase {
         VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8), now: now, calendar: calendar)
     }
 
+    /// Review C11: text from the model is bounded before any card or write; too long is refused,
+    /// never cut, so the user never confirms text the app shortened.
+    func testModelTextIsBounded() throws {
+        func json(_ fields: [String: Any]) throws -> String {
+            String(decoding: try JSONSerialization.data(withJSONObject: fields), as: UTF8.self)
+        }
+        let line = String(repeating: "a", count: VoiceTextLimits.line + 1)
+        let paragraph = String(repeating: "b", count: VoiceTextLimits.paragraph + 1)
+        let note = String(repeating: "c", count: MemoryLimits.maxTextLength + 1)
+        let cases: [(String, [String: Any], String)] = [
+            ("save_memory", ["text": note], "text"),
+            ("search_memories", ["query": paragraph], "query"),
+            ("create_reminder", ["title": line], "title"),
+            ("create_reminder", ["title": "Rent", "notes": paragraph + paragraph], "notes"),
+            ("create_calendar_event", ["title": line, "start": "2026-10-12T10:00"], "title"),
+            ("create_calendar_event", ["title": "Lunch", "start": "2026-10-12T10:00", "location": line], "location"),
+            ("change_reminder", ["title": line, "done": true], "title"),
+            ("delete_reminder", ["title": line], "title"),
+            ("delete_calendar_event", ["title": line, "start": "2026-10-12T10:00"], "title"),
+            ("remind_about_note", ["note": note, "due": "2026-10-12T10:00"], "note"),
+            ("draft_message", ["to": "Ola", "body": paragraph + paragraph], "body"),
+            ("open_map", ["place": paragraph], "place"),
+        ]
+        for (tool, fields, key) in cases {
+            guard case .invalid(_, let reason) = parse(tool, try json(fields)) else {
+                XCTFail("\(tool) accepted a \(key) that is too long")
+                continue
+            }
+            XCTAssertTrue(reason.hasPrefix("\(key) is longer than"), reason)
+        }
+        // Up to the bound is fine, and a whole saved note can still be saved.
+        XCTAssertEqual(parse("save_memory", try json(["text": String(note.dropLast())])), .saveMemory(text: String(note.dropLast())))
+        XCTAssertEqual(parse("delete_reminder", try json(["title": String(line.dropLast())])), .deleteReminder(title: String(line.dropLast())))
+    }
+
     func testParsing() {
         XCTAssertEqual(VoiceToolRequest.parse(name: "search_memories", parametersJSON: Data(#"{"query":"klucze"}"#.utf8)), .searchMemories(query: "klucze"))
         XCTAssertEqual(VoiceToolRequest.parse(name: "save_memory", parametersJSON: Data(#"{"text":"Keys in the tin"}"#.utf8)), .saveMemory(text: "Keys in the tin"))
@@ -240,6 +275,13 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(parse("set_timer", #"{}"#), .invalid(name: "set_timer", reason: "missing duration"))
         XCTAssertEqual(parse("set_timer", #"{"minutes":-5}"#), .invalid(name: "set_timer", reason: "negative duration"))
         XCTAssertEqual(parse("set_timer", #"{"minutes":1500}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        // Review C11: a label is a line, not a page.
+        XCTAssertEqual(parse("set_timer", "{\"minutes\":1,\"label\":\"\(String(repeating: "a", count: 201))\"}"),
+                       .invalid(name: "set_timer", reason: "label is longer than 200 characters"))
+        // Review C6: a value no Int can hold is refused, not a crash.
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1e300}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        XCTAssertEqual(parse("set_timer", #"{"seconds":1e19}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1e308,"seconds":1e308}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
     }
 
     func testMapAndShortcutNeedTheirText() {

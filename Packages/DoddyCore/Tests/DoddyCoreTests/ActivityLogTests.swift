@@ -38,6 +38,109 @@ final class ActivityLogTests: XCTestCase {
         XCTAssertEqual(entry(add, reply: "something else").outcome, .notSure)
     }
 
+    /// Review C1: every result the app phrases is read from its start, so changes, deletes, new
+    /// lists and list changes show as done, and nothing-changed replies show as didn't happen.
+    func testEveryReplyPrefixHasItsOutcome() throws {
+        let event = CalendarEventSummary(id: "a", title: "Dentist", start: now, end: now.addingTimeInterval(3600), allDay: false)
+        let move = VoiceToolRequest.changeCalendarEvent(EventChangeDraft(
+            title: "Dentist", currentStart: now, currentIsDayOnly: false, newStart: now.addingTimeInterval(86_400), newEnd: nil, newTitle: nil))
+        let change = VoiceToolRequest.changeReminder(ReminderChangeDraft(title: "Rent", newDue: nil, markDone: true))
+        let delete = VoiceToolRequest.deleteCalendarEvent(EventChangeDraft(
+            title: "Dentist", currentStart: now, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: nil))
+        let listID = UUID()
+        let milk = ListItem(id: UUID(), listID: listID, text: "milk", source: .voice, addedAt: now, doneAt: nil, position: 0)
+        let shopping = DoddyList(
+            record: try MemoryRecord(id: listID, rawText: "Shopping", source: .explicitVoice, category: .list, capturedAt: now), items: [milk])
+        let add = VoiceToolRequest.addToList(ListVoiceRequest(list: "Shopping", items: ["milk"]))
+        let tick = VoiceToolRequest.checkOff(ListVoiceRequest(list: "Shopping", items: ["milk"]))
+        let remove = VoiceToolRequest.removeFromList(ListVoiceRequest(list: "Shopping", items: ["milk"]))
+        let create = VoiceToolRequest.createList(ListVoiceRequest(list: "Shopping", items: []))
+
+        let cases: [(VoiceToolRequest, String, ActivityOutcome)] = [
+            (move, VoiceToolReply.eventChanged(event, calendar: calendar), .done),
+            (change, VoiceToolReply.reminderChanged("Rent", due: nil), .done),
+            (change, VoiceToolReply.reminderCompleted("Rent"), .done),
+            (delete, VoiceToolReply.eventDeleted(event, calendar: calendar), .done),
+            (.deleteReminder(title: "Rent"), VoiceToolReply.reminderDeleted("Rent"), .done),
+            (create, VoiceToolReply.listCreated(shopping), .done),
+            (add, VoiceToolReply.listAdded(ListAddResult(added: [milk], alreadyThere: [], tooLong: [], noRoom: []), list: "Shopping"), .done),
+            (tick, VoiceToolReply.listChanged(verb: "ticked", changed: [milk], list: "Shopping", notFound: [], ambiguous: []), .done),
+            (remove, VoiceToolReply.listChanged(verb: "removed", changed: [milk], list: "Shopping", notFound: [], ambiguous: []), .done),
+            (add, VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "Shopping"), .notDone),
+            (tick, VoiceToolReply.listChanged(verb: "ticked", changed: [], list: "Shopping", notFound: ["eggs"], ambiguous: []), .notDone),
+            (add, VoiceToolReply.listNotFound("Groceries", lists: [shopping]), .notDone),
+            (add, VoiceToolReply.listAmbiguous("Shop", lists: [shopping, shopping]), .notDone),
+            (create, VoiceToolReply.listNameTaken("Shopping"), .notDone),
+            (create, VoiceToolReply.declinedList, .declined),
+            (move, VoiceToolReply.eventNotFound("Dentist"), .notDone),
+            (move, VoiceToolReply.eventAmbiguous([event, event], calendar: calendar), .notDone),
+            (move, VoiceToolReply.changeNothingNew, .notDone),
+            (move, VoiceToolReply.eventChangeUnconfirmed, .notSure),
+            (move, VoiceToolReply.changeDeclined, .declined),
+            (change, VoiceToolReply.reminderNotFound("Rent"), .notDone),
+            (move, VoiceToolReply.translatorRefused(VoiceToolName.changeCalendarEvent), .notDone),
+            (move, VoiceToolReply.notConnected(.calendar), .notDone),
+        ]
+        for (request, reply, expected) in cases {
+            XCTAssertEqual(entry(request, reply: reply).outcome, expected, reply)
+        }
+    }
+
+    /// Review C1: "isn't connected" counts only at the start of the reply, not inside a quoted note.
+    func testQuotedTextNeverDecidesTheOutcome() throws {
+        let saved = try MemoryRecord(id: UUID(), rawText: "The printer isn't connected to wifi", source: .explicitVoice, capturedAt: now)
+        let save = entry(.saveMemory(text: saved.currentText), reply: VoiceToolReply.saved(saved))
+        XCTAssertEqual(save.outcome, .done)
+        XCTAssertNil(save.note)
+        // A reminder whose title mentions Reminders is still a new reminder.
+        let receipt = ReminderReceipt(title: "Check what is already in Reminders", listTitle: "Reminders", due: nil)
+        let add = VoiceToolRequest.createReminder(ReminderDraft(title: receipt.title, due: nil, notes: nil))
+        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminder(.added(receipt))).outcome, .done)
+        XCTAssertEqual(entry(add, reply: VoiceToolReply.reminder(.alreadyThere(receipt))).outcome, .alreadyThere)
+    }
+
+    /// Review C2: the log outlives a deleted note or "Delete all memories", so it keeps no note
+    /// text, search, list name or item; the card still shows them before the user confirms.
+    func testNotesAndListsRowsKeepNoNoteText() {
+        let at = now.addingTimeInterval(86_400)
+        let requests: [VoiceToolRequest] = [
+            .saveMemory(text: "My PIN hint is the dog's name"),
+            .searchMemories(query: "dog's name"),
+            .remindAboutNote(NoteReminderVoiceDraft(noteText: "Dog's vet", target: .time(at, timeZoneID: "Europe/Warsaw"))),
+            .remindAboutNote(NoteReminderVoiceDraft(noteText: "Dog's vet", target: .place(query: "Vet clinic", onArrival: true))),
+            .addToList(ListVoiceRequest(list: "Pharmacy", items: ["sertraline", "plasters"])),
+            .checkOff(ListVoiceRequest(list: "Pharmacy", items: ["sertraline"])),
+            .removeFromList(ListVoiceRequest(list: "Pharmacy", items: ["plasters"])),
+            .readList(name: "Pharmacy"),
+            .createList(ListVoiceRequest(list: "Pharmacy", items: [])),
+        ]
+        for request in requests {
+            let described = ActivityRequest.describe(request, calendar: calendar)!
+            XCTAssertNotNil(described.detail, "the card still shows what is asked")
+            for logged in [ActivityEntry(request: described, reply: "saved: x", at: now), ActivityEntry.started(described, at: now)] {
+                for secret in ["dog", "Dog", "Vet", "Pharmacy", "sertraline", "plasters"] {
+                    XCTAssertFalse(logged.detail?.contains(secret) ?? false, "\(described.title): \(logged.detail ?? "")")
+                }
+            }
+        }
+        let ticked = ActivityEntry(request: ActivityRequest.describe(requests[4], calendar: calendar)!, reply: "", at: now)
+        XCTAssertEqual(ticked.detail, "2 items")
+        let timed = ActivityEntry(request: ActivityRequest.describe(requests[2], calendar: calendar)!, reply: "", at: now)
+        XCTAssertEqual(timed.detail, "2026-10-11 12:00")
+        // Other apps keep their detail.
+        XCTAssertEqual(entry(.openMap(place: "Hala Koszyki"), reply: VoiceToolReply.mapOpened("Hala Koszyki")).detail, "“Hala Koszyki”")
+    }
+
+    /// Review C2: rows an older version wrote with note text lose it the next time the log is pruned.
+    func testOlderNoteTextIsDroppedWhenTheLogIsPruned() {
+        let old = ActivityEntry(at: now, app: .memories, title: "Save a note", detail: "“My PIN hint”", outcome: .done)
+        let map = ActivityEntry(at: now, app: .maps, title: "Open in Maps", detail: "“Hala Koszyki”", outcome: .opened)
+        let pruned = ActivityLog.pruned([old, map], now: now)
+        XCTAssertEqual(pruned.first { $0.id == old.id }?.detail, nil)
+        XCTAssertEqual(pruned.first { $0.id == old.id }?.outcome, .done)
+        XCTAssertEqual(pruned.first { $0.id == map.id }?.detail, "“Hala Koszyki”")
+    }
+
     func testLookupsAreLoggedButFailuresStillShow() {
         let search = VoiceToolRequest.searchMemories(query: "klucze")
         XCTAssertEqual(entry(search, reply: VoiceToolReply.search(.noMatch)).outcome, .lookedUp)
