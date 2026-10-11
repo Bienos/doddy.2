@@ -506,6 +506,13 @@ public enum CameraShortcut {
     /// Must match the name in `voice-agent/instructions.md` and `tools.json`.
     public static let name = "Doddy Camera"
 
+    /// The run card is the camera one when the agent asks for this shortcut, whatever the case
+    /// or spacing it used.
+    public static func isCamera(_ shortcutName: String) -> Bool {
+        shortcutName.trimmingCharacters(in: .whitespacesAndNewlines)
+            .compare(name, options: [.caseInsensitive]) == .orderedSame
+    }
+
     /// The owner's shared copy. Set it with `installLink(from:)` so a mistyped link fails a test.
     public static let installLink: URL? = nil
 

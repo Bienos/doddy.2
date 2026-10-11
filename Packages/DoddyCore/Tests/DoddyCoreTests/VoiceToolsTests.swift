@@ -284,6 +284,14 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertNil(CameraShortcut.installLink(from: ""))
     }
 
+    func testOnlyTheCameraShortcutGetsTheCameraHelp() {
+        XCTAssertTrue(CameraShortcut.isCamera("Doddy Camera"))
+        XCTAssertTrue(CameraShortcut.isCamera(" doddy camera\n"))
+        XCTAssertFalse(CameraShortcut.isCamera("Morning routine"))
+        XCTAssertFalse(CameraShortcut.isCamera("Doddy Camera 2"))
+        XCTAssertFalse(CameraShortcut.isCamera(""))
+    }
+
     func testCameraShortcutMatchesTheAgentSpecAndAnySharedLinkIsValid() throws {
         XCTAssertEqual(OpenLinks.shortcut(name: CameraShortcut.name)?.absoluteString,
                        "shortcuts://run-shortcut?name=Doddy%20Camera")

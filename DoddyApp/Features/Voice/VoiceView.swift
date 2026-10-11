@@ -427,6 +427,10 @@ struct VoiceView: View {
             Text("The Shortcuts app opens for a moment.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+            // "Open the camera" (ADR-300): help right here if the user hasn't made the shortcut yet.
+            if CameraShortcut.isCamera(name) {
+                CameraShortcutHelp(style: .card)
+            }
         case .message(_, let draft, let address):
             Text(draft.channel == .text ? "Open this text in Messages?" : "Open this email in Mail?")
                 .font(.headline)
