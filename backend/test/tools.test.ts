@@ -312,6 +312,29 @@ test("a write that fails is never retried and says the outcome may be unknown", 
   assert.equal(rig.provider.executed.length, 1, "no automatic retry for a write");
 });
 
+test("a write whose answer can't be read is reported as maybe done, not as failed", async () => {
+  rig = await start();
+  await ready(rig, "todoist", "add_todoist_task");
+  const args = { content: "Call the plumber" };
+  const prepared = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "add_todoist_task", arguments: args } });
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "malformed");
+  const res = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  assert.notEqual(res.status, 200);
+  assert.equal(rig.provider.executed.length, 1, "the provider ran it");
+  assert.equal(res.body.error.receipt.status, "outcome_unknown");
+  assert.match(res.body.error.receipt.summary, /may or may not have gone through/);
+});
+
+test("a write refused by the provider's rate limit is reported as not done", async () => {
+  rig = await start();
+  await ready(rig, "todoist", "add_todoist_task");
+  const args = { content: "Water plants" };
+  const prepared = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "add_todoist_task", arguments: args } });
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "rate_limited");
+  const res = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  assert.equal(res.body.error.receipt.status, "failed");
+});
+
 // ------------------------------------------------------------------ limits and privacy
 
 test("the daily tool-run limit stops further runs before any provider call", async () => {

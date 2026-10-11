@@ -454,8 +454,9 @@ export class CloudToolsService {
         this.store.updateConnectionStatus(userId, tool.toolkit, "expired", "revoked_or_expired", this.now());
         this.store.disableTools(userId, toolNames(tool.toolkit), this.now());
       }
-      // A write that failed on a timeout or provider error may still have happened: say so.
-      const unknown = op === "write" && (appError.code === "provider_timeout" || appError.code === "provider_unavailable");
+      // A write is "failed" only when the error proves the provider never ran it. Anything else
+      // (timeout, provider error, an answer Doddy couldn't read) may have happened: say so (DOD-08).
+      const unknown = op === "write" && !WRITE_NOT_RUN.has(appError.code);
       const receipt = this.receipt(
         userId,
         tool.toolkit,
@@ -607,6 +608,9 @@ export class CloudToolsService {
     return receipt;
   }
 }
+
+/** Error codes that mean a write never reached the point of running at the provider. */
+const WRITE_NOT_RUN = new Set(["rate_limited", "quota_exceeded", "busy", "connection_expired", "permission_insufficient"]);
 
 const toolNames = (id: ToolkitId) => CLOUD_TOOLS.filter((t) => t.toolkit === id).map((t) => t.name);
 
