@@ -466,22 +466,19 @@ struct IslandFigureView: View {
     }
 }
 
-/// Whole Doddy's face for compact and minimal: a circle cropped from the pose's face pose.
+/// Whole Doddy's face for compact and minimal: a small round picture of its own
+/// (`WholeDoddy_face_<pose>`, cut by tools/whole_doddy/cut_faces.py), drawn as it is. It used
+/// to be cropped from the whole pose at draw time, and the Dynamic Island's left compact side
+/// then showed an empty grey circle.
 struct IslandPoseFaceView: View {
     let pose: IslandPose
     let size: CGFloat
 
     var body: some View {
-        let face = pose.facePose
-        let head = face.head ?? (x: 0.5, y: 0.3, diameter: 0.5)
-        let width = size / CGFloat(head.diameter * 1.06)
-        let height = width * 1.5
-        Image(face.assetName)
+        Image(pose.faceAssetName)
             .resizable()
-            .frame(width: width, height: height)
-            .offset(x: size / 2 - CGFloat(head.x) * width, y: size / 2 - CGFloat(head.y) * height)
-            .frame(width: size, height: size, alignment: .topLeading)
-            .clipShape(Circle())
+            .scaledToFit()
+            .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
 }
