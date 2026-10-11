@@ -42,9 +42,15 @@ struct TidyUpView: View {
     @State private var confirmDelete: MemoryRecord?
     @State private var problem: String?
     @State private var lastDone: String?
+    @State private var isUndoing = false
+    private let sharing = SharedListsController.shared
 
+    /// Notes with a photo or a voice memo are never offered as copies (review D2): deleting one
+    /// would delete a different photo or recording.
     private var tidy: TidyUp.Suggestions {
-        TidyUp.suggestions(memories: store.memories, lists: store.lists, reminders: noteReminders.reminders, now: .now)
+        TidyUp.suggestions(
+            memories: store.memories, lists: store.lists, reminders: noteReminders.reminders, now: .now,
+            withAttachments: Set(store.photos.keys).union(store.recordings.keys))
     }
 
     var body: some View {
@@ -54,6 +60,14 @@ struct TidyUpView: View {
                     JourneyHeading(eyebrow: "Weekly tidy-up", title: "A little\ntidier.",
                                    subtitle: "Suggestions only. Nothing changes until you tap it.")
                     if let lastDone { Label(lastDone, systemImage: "checkmark.circle").foregroundStyle(Theme.confirmed) }
+                    // The app's Undo bar is hidden under this sheet (review F3), so Undo is here too,
+                    // for as long as the bar would offer it.
+                    if store.recentlyDeleted != nil {
+                        Button(isUndoing ? "Undoing…" : "Undo the delete") { Task { await undoDelete() } }
+                            .disabled(isUndoing)
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("tidy.undo")
+                    }
                     if let problem { ProblemView(message: problem) }
                     let tidy = tidy
                     let duplicates = tidy.duplicates.filter { !kept.contains($0.id) }
@@ -123,8 +137,8 @@ struct TidyUpView: View {
                                 titleVisibility: .visible, presenting: confirmDelete) { record in
                 Button("Delete", role: .destructive) { Task { await delete(record) } }
                 Button("Cancel", role: .cancel) {}
-            } message: { _ in
-                Text("You can undo for a few seconds afterwards.")
+            } message: { record in
+                Text(deleteMessage(record))
             }
         }
         .task { await store.reload(); await noteReminders.reload() }
@@ -139,11 +153,51 @@ struct TidyUpView: View {
 
     private func delete(_ record: MemoryRecord) async {
         do {
+            // A shared list stops being shared first, so no copy and no invitees are left in
+            // iCloud (review F2). Not confirmed: the list stays.
+            try await sharing.stopSharingBeforeDeleting(record.id)
+        } catch {
+            problem = SharingError.message(for: error)
+            return
+        }
+        do {
             try await store.delete(id: record.id)
             problem = nil
-            lastDone = store.record(id: record.id) == nil ? "Deleted. Undo is at the bottom of the screen for a few seconds." : nil
+            lastDone = store.record(id: record.id) == nil ? NSLocalizedString("Deleted. You can undo it for a few seconds.", comment: "") : nil
         } catch {
             problem = UserFacingError.message(for: error)
+        }
+    }
+
+    /// Undo (ADR-183) brings the note or list back, not its reminder and not its sharing, so the
+    /// question says so before the delete (review F3).
+    private func deleteMessage(_ record: MemoryRecord) -> String {
+        var parts: [String] = []
+        if let reminder = noteReminders.reminder(forMemory: record.id) {
+            parts.append("Its reminder (\(ReminderFormat.short(reminder))) is cancelled too, and undo doesn't bring the reminder back.")
+        }
+        if let warning = sharing.deleteWarning(record.id) { parts.append(warning) }
+        parts.append(NSLocalizedString("You can undo for a few seconds afterwards.", comment: ""))
+        return parts.joined(separator: " ")
+    }
+
+    /// The same undo as the app's Undo bar; said done only when the store shows it back.
+    private func undoDelete() async {
+        guard let deleted = store.recentlyDeleted, !isUndoing else { return }
+        isUndoing = true
+        defer { isUndoing = false }
+        do {
+            try await store.undoDelete()
+        } catch {
+            problem = NSLocalizedString("Couldn't bring it back. Nothing changed.", comment: "")
+            return
+        }
+        if store.record(id: deleted.record.id) != nil {
+            problem = nil
+            lastDone = NSLocalizedString("Brought back.", comment: "")
+        } else {
+            lastDone = nil
+            problem = NSLocalizedString("The time to undo has passed, so it stays deleted.", comment: "")
         }
     }
 

@@ -28,11 +28,13 @@ struct WatchRootView: View {
         }
     }
 
+    /// Words from notes and lists are `privacySensitive` (review I7): watchOS hides them while the
+    /// wrist is down and the screen is Always On, where anyone nearby can read it.
     @ViewBuilder
     private func content(_ snapshot: WidgetSnapshot) -> some View {
         if !snapshot.pinned.isEmpty {
             Section("Pinned") {
-                ForEach(snapshot.pinned) { note in Text(note.text).font(.footnote) }
+                ForEach(snapshot.pinned) { note in Text(note.text).font(.footnote).privacySensitive() }
             }
         }
         let upcoming = snapshot.reminders(after: .now)
@@ -40,7 +42,7 @@ struct WatchRootView: View {
             Section("Next") {
                 ForEach(Array(upcoming.enumerated()), id: \.offset) { _, reminder in
                     VStack(alignment: .leading) {
-                        Text(reminder.text ?? "A note reminder").font(.footnote)
+                        Text(reminder.text ?? "A note reminder").font(.footnote).privacySensitive()
                         Text(reminder.fireAt, style: .relative).font(.caption2).foregroundStyle(.secondary)
                     }
                 }
@@ -53,7 +55,7 @@ struct WatchRootView: View {
                         WatchListView(listID: list.id)
                     } label: {
                         HStack {
-                            Text(list.name)
+                            Text(list.name).privacySensitive()
                             Spacer()
                             Text("\(list.openCount)").foregroundStyle(.secondary)
                         }
@@ -96,6 +98,7 @@ struct WatchListView: View {
                         HStack {
                             Image(systemName: working == item.id ? "hourglass" : (item.isDone ? "checkmark.square" : "square"))
                             Text(item.text).strikethrough(item.isDone).foregroundStyle(item.isDone ? .secondary : .primary)
+                                .privacySensitive()
                         }
                     }
                     .disabled(working != nil)

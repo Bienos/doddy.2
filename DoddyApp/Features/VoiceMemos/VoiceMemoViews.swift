@@ -25,6 +25,7 @@ struct CaptureVoiceMemo: View {
     @State private var isWritingOut = false
     @State private var notice: String?
     @State private var problem: String?
+    @Environment(\.scenePhase) private var scenePhase
     /// Worked out once per launch, not on every redraw.
     private static let cachedLanguages = VoiceMemoTranscriber.languages()
     private var languages: [Locale] { Self.cachedLanguages }
@@ -52,6 +53,12 @@ struct CaptureVoiceMemo: View {
         }
         .onChange(of: recorder.stoppedByItself) { _, stopped in
             if stopped { finishRecording() }
+        }
+        // The app may run in the background (for talking to Doddy), where a memo kept recording
+        // for up to 5 minutes with nothing in Doddy showing it (review I9). Leaving Doddy stops
+        // the memo; what was recorded so far is kept, as with Stop.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background, recorder.isRecording { finishRecording() }
         }
         .onDisappear {
             recorder.cancel()
