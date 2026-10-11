@@ -194,8 +194,13 @@ struct ActivityView: View {
         // The entry as it is now, in case it changed while Undo ran.
         let current = activity.entries.first { $0.id == entry.id } ?? entry
         let undone = ActivityLog.undid(current, result: result, at: Date())
-        if case .undone? = undone.undoState { justUndone.insert(entry.id) }
         activity.replace(undone)
+        if case .undone? = undone.undoState {
+            // He turns once; a row redrawn later shows the turned frame still.
+            justUndone.insert(entry.id)
+            try? await Task.sleep(for: .seconds(DoddyMotion.turn.duration + 0.5))
+            justUndone.remove(entry.id)
+        }
     }
 
     private func color(_ outcome: ActivityOutcome) -> Color {

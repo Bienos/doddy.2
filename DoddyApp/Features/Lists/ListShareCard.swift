@@ -62,7 +62,9 @@ struct ListShareCardView: View {
                     }
                 }
                 if card.items.count > ListShareCard.maxItems {
-                    Text("and \(card.items.count - ListShareCard.maxItems) more").foregroundStyle(secondary)
+                    Text(String(format: NSLocalizedString("And %lld more", comment: "List share card: items not drawn"),
+                                card.items.count - ListShareCard.maxItems))
+                        .foregroundStyle(secondary)
                 }
             }
             Text("From Doddy").font(.system(size: 13, weight: .medium)).foregroundStyle(secondary)
