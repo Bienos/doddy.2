@@ -33,6 +33,24 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
      - `Features/MorningCheckIn/MorningCheckInViews.swift`: `.onChange(of: settings)` (needs `Equatable`, which it is), and `DatePicker` with a computed `Binding<Date>`.
      - `VoiceSessionController.swift`: `conversation?.agentAudioTrack?.volume` (LiveKit `RemoteAudioTrack`, SDK 3.3.1).
      - `DoddyApp/Resources/Localizable.xcstrings` is hand-generated: check that Xcode accepts it and lists `pl` under the project's localizations.
+2b. **Compile review, 2026-10-11** (six reviewers, every app, widget, watch and Shared Swift file on the default branch at
+   `5be2011`, read by hand against the repo's own definitions; nothing compiled). One confirmed error, fixed:
+   `SharedListMerge.Result` had no public initializer, so `SharedListsController.swift` could not build it (reproduced
+   and fixed on Linux with a non-`@testable` import). No duplicate types or members, no missing `PreferenceKey`s, all
+   enum switches complete, all memberwise initializers in order. If the build still fails, the reviewers' uncertain
+   spots, most likely first (all depend on SDK details that can't be seen here):
+   - `DeviceConnections.swift` ~line 85: `requestFullAccessToEvents/Reminders` and `requestAccess(for:)` on stored
+     `EKEventStore`/`CNContactStore` in a `@MainActor` class ("sending … risks data races"). Fix: `@preconcurrency import
+     EventKit` / `Contacts`.
+   - `VoiceSessionController.swift`: `ClientToolCallEvent(toolName:toolCallId:parametersData:eventId:expectsResponse:)`
+     needs a public init in ElevenLabs 3.3.1; `ElevenLabs.AgentState` may need to be plain `AgentState` (module vs type
+     name); `AudioManager.shared.sessionConfiguration` / `AudioSessionConfiguration(category:categoryOptions:mode:)`
+     depend on the LiveKit version; `.allowBluetoothHFP` may be iOS 26-only (use `.allowBluetooth` or `#available`).
+   - `LiveVoiceLink.swift` 24, 29: `sendToolResult(…, errorType:)` and `agentAudioTrack` on ElevenLabs `Conversation`.
+   - `Meaning/OnDeviceEmbedder.swift` 33: `await model.requestAssets()` on a non-Sendable `NLContextualEmbedding` inside
+     an actor. Fix: wrap it in an `@unchecked Sendable` box or request in a `nonisolated` helper.
+   - Every `#if compiler(>=6.4)` `allowedExecutionTargets` block (intents): only compiled on Xcode 27; remove if its
+     name differs there.
 3. Run the unit and UI tests. The new app test is `MemoryStoreTests.testPhotoFollowsItsNoteThroughDeleteUndoAndRemove`. The existing UI tests save one note per run in an empty store, so the duplicate warning should not change them.
 
 ## 2. Memories
