@@ -78,10 +78,12 @@ extension VoiceToolReply {
         guard !sorted.isEmpty else {
             return "No saved note has the tag #\(tag). Tell the user; do not guess. Tags are words they wrote with # in a note."
         }
+        // The tag is one word (NoteTags.tagQuery); the notes are the user's words, so they follow
+        // as data (ToolData).
         var lines = ["Found \(sorted.count) saved note\(sorted.count == 1 ? "" : "s") with #\(tag) (exact text, newest first):"]
-        for record in sorted.prefix(limit) {
-            lines.append("- \"\(record.currentText)\" (saved \(timestamp(record.capturedAt)))")
-        }
+        lines.append(ToolData.block(sorted.prefix(limit).map { record in
+            "- \"\(ToolData.clean(record.currentText))\" (saved \(timestamp(record.capturedAt)))"
+        }))
         if sorted.count > limit {
             lines.append("…and \(sorted.count - limit) more. Ask the user to narrow it down if needed.")
         }

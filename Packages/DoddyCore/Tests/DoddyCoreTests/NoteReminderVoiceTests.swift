@@ -80,7 +80,8 @@ final class NoteReminderVoiceTests: XCTestCase {
         XCTAssertEqual(
             VoiceToolReply.noteReminderSet(time, note: "Parcel code 5678"),
             "added: a reminder about the note below: at Sun 11 Oct, 09:00 (Warsaw time). It is a notification on this iPhone.\n<<<DATA\nNote: \"Parcel code 5678\"\nDATA>>>")
-        XCTAssertTrue(VoiceToolReply.noteReminderSet(place, note: "x").contains("when you arrive at post office (within 200 m"))
+        XCTAssertTrue(VoiceToolReply.noteReminderSet(place, note: "x").contains("when you arrive at the place below (within 200 m"))
+        XCTAssertTrue(VoiceToolReply.noteReminderSet(place, note: "x").hasSuffix("<<<DATA\nNote: \"x\"\nPlace: \"Post office\"\nDATA>>>"))
         XCTAssertTrue(VoiceToolReply.noteReminderInDoddyOnly(time, note: "x").contains("won't alert"))
         XCTAssertEqual(VoiceToolReply.noteReminderFailed("Precise Location is off."), "failed: Precise Location is off. Nothing was set.")
 

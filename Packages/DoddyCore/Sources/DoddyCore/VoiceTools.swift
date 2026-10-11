@@ -664,8 +664,10 @@ public enum VoiceToolReply {
         "failed: \(reason) Nothing was \(nothing.rawValue)."
     }
 
+    /// The tool's name is the agent's own text, so it follows as data (ToolData).
     public static func unsupported(_ name: String) -> String {
-        "The app does not support the tool \"\(name)\". Tell the user this isn't available yet."
+        "The app does not support the tool below. Tell the user this isn't available yet.\n"
+            + ToolData.block([quoted("Tool", name)])
     }
 
     /// Used when a function is off or its iOS permission is not granted.
@@ -691,34 +693,40 @@ public enum VoiceToolReply {
         return lines.joined(separator: "\n")
     }
 
+    /// The title is the agent's words, so it follows as data (ToolData).
     public static func eventAdded(_ draft: CalendarEventDraft, calendar: Calendar) -> String {
         let repeats = draft.repeats.map { " Repeats \($0.text)." } ?? ""
-        if draft.allDay {
-            return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day).\(repeats)"
-        }
-        return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar)).\(repeats)"
+        let when = draft.allDay
+            ? "\(localText(draft.start, hasTime: false, calendar: calendar)) (all day)"
+            : "\(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar))"
+        return "added: an event on \(when).\(repeats) Its title:\n" + ToolData.block([quoted("Title", draft.title)])
     }
 
-    /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`.
+    /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`. A label is the
+    /// agent's words, so it follows as data (ToolData).
     public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar) -> String {
-        let what = draft.label.map { "\"\($0)\", " } ?? ""
-        return "added: timer \(what)\(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+        let text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+        guard let label = draft.label else { return text }
+        return text + " Its label:\n" + ToolData.block([quoted("Label", label)])
     }
 
-    /// Maps opened on the user's tap. Nothing else is claimed.
+    /// Maps opened on the user's tap. Nothing else is claimed. The place follows as data.
     public static func mapOpened(_ place: String) -> String {
-        "opened: Apple Maps opened for \"\(place)\"."
+        "opened: Apple Maps opened for the place below.\n" + ToolData.block([quoted("Place", place)])
     }
 
     /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.
     public static func shortcutRequested(_ name: String) -> String {
-        "opened: asked Shortcuts to run \"\(name)\". Doddy can't see whether it finished."
+        "opened: asked Shortcuts to run the shortcut below. Doddy can't see whether it finished.\n"
+            + ToolData.block([quoted("Shortcut", name)])
     }
 
-    /// The draft opened in Messages or Mail. Doddy did not send it.
+    /// The draft opened in Messages or Mail. Doddy did not send it. The name is from Contacts,
+    /// so it follows as data (ToolData).
     public static func messageOpened(_ draft: MessageDraft, recipient: String) -> String {
         let app = draft.channel == .text ? "Messages" : "Mail"
-        return "opened: \(app) opened with the draft for \(recipient). Nothing was sent by Doddy; the user sends it there."
+        return "opened: \(app) opened with the draft for the contact below. Nothing was sent by Doddy; the user sends it there.\n"
+            + ToolData.block([quoted("Contact", recipient)])
     }
 
     /// The contact has no phone number or email for the channel the agent asked for. The name
@@ -744,13 +752,20 @@ public enum VoiceToolReply {
 
     /// Names only. Details stay on the user's screen.
     public static func contactMatches(_ names: [String], query: String) -> String {
+        // The search is the agent's words and the names are from Contacts: data, not instructions.
+        let searched = quoted("Searched for", query)
         guard !names.isEmpty else {
-            return "No contact matched \"\(query)\". Tell the user you couldn't find them in Contacts. Do not guess."
+            return "No contact matched the search below. Tell the user you couldn't find them in Contacts. Do not guess.\n"
+                + ToolData.block([searched])
         }
-        // Names are from Contacts: data, not instructions.
-        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\", names only:\n"
-            + ToolData.block(names.map { "- \(ToolData.clean($0))" })
+        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching the search, names only; the search, then the names:\n"
+            + ToolData.block([searched] + names.map { "- \(ToolData.clean($0))" })
             + "\nTheir details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
+    }
+
+    /// One line for a ToolData block: `Label: "text"`, the text cleaned (no markers, one line).
+    static func quoted(_ label: String, _ text: String) -> String {
+        "\(label): \"\(ToolData.clean(text))\""
     }
 
     private static func durationText(_ seconds: Int) -> String {

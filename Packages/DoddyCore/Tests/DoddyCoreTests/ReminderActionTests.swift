@@ -87,7 +87,13 @@ final class ReminderActionTests: XCTestCase {
     func testClarificationReplyStartsWithFailedAndAsksTheUser() {
         guard case .clarify(let clarification) = check("2026-10-08") else { return XCTFail() }
         let reply = VoiceToolReply.reminderClarification(clarification)
-        XCTAssertEqual(reply, "failed: not added yet: 2026-10-08 is already over (today is 2026-10-09 in Europe/Warsaw). Ask the user which day they mean, then call create_reminder again with their answer. Nothing was added.")
+        // The problem can quote what the agent sent, so it follows the first line as data.
+        XCTAssertEqual(reply, """
+            failed: not added yet: the day or time can't be used as sent; the problem is below. Ask the user which day they mean, then call create_reminder again with their answer. Nothing was added.
+            <<<DATA
+            Problem: 2026-10-08 is already over (today is 2026-10-09 in Europe/Warsaw)
+            DATA>>>
+            """)
     }
 
     // MARK: Idempotency key

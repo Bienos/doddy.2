@@ -133,13 +133,20 @@ extension VoiceToolReply {
         timeFormat.dateFormat = "HH:mm"
         func clock(_ minutes: Int) -> String { String(format: "%02d:%02d", minutes / 60, minutes % 60) }
         var lines = ["free time: gaps of at least \(request.minMinutes) minutes between \(clock(request.earliest)) and \(clock(request.latest)), local time, from the calendars on this iPhone only:"]
+        // All-day events' titles are from Calendar, so they follow as data (ToolData), by day.
+        var allDay: [String] = []
         for day in days {
             let slots = day.slots.map { "\(timeFormat.string(from: $0.start))–\(timeFormat.string(from: $0.end))" }
             var line = "- \(dayFormat.string(from: day.day)): " + (slots.isEmpty ? "no free gap" : slots.joined(separator: ", "))
             if !day.allDayTitles.isEmpty {
-                line += " (all-day: " + day.allDayTitles.map { "\"\($0)\"" }.joined(separator: ", ") + ")"
+                let count = day.allDayTitles.count
+                line += " (\(count) all-day event\(count == 1 ? "" : "s"), below)"
+                allDay.append("- \(dayFormat.string(from: day.day)): " + day.allDayTitles.map { "\"\(ToolData.clean($0))\"" }.joined(separator: ", "))
             }
             lines.append(line)
+        }
+        if !allDay.isEmpty {
+            lines.append("All-day events' titles, by day:\n" + ToolData.block(allDay))
         }
         lines.append("Say only these gaps. Events in calendars not on this iPhone aren't counted. Nothing was booked; to add an event, use create_calendar_event.")
         return lines.joined(separator: "\n")

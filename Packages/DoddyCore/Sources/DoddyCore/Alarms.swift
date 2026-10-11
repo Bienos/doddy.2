@@ -96,9 +96,11 @@ extension VoiceToolRequest {
 }
 
 extension VoiceToolReply {
+    /// A label is the agent's words, so it follows as data (ToolData).
     public static func alarmSet(_ draft: AlarmDraft) -> String {
-        let what = draft.label.map { "\"\($0)\" " } ?? ""
-        return "added: alarm \(what)at \(draft.summary). It rings even in Silent mode or a Focus. Checked."
+        let text = "added: alarm at \(draft.summary). It rings even in Silent mode or a Focus. Checked."
+        guard let label = draft.label else { return text }
+        return text + " Its label:\n" + ToolData.block([quoted("Label", label)])
     }
 
     public static let alarmNeedsNewerIOS = "failed: alarms need iOS 26 or later, and this iPhone has an older version. Nothing was set. Offer a timer (up to 24 hours) or a reminder instead."

@@ -388,9 +388,11 @@ extension VoiceToolReply {
     public static let translatorStopped = "stopped: translator mode is off. Nothing from it is kept on the iPhone. Talk with the user normally again; tools work again."
     public static let translatorNotOn = "stopped: translator mode wasn't on. Nothing changed."
 
-    /// Any tool asked for while translating.
+    /// Any tool asked for while translating. The tool's name is the agent's own text, so it
+    /// follows as data (ToolData).
     public static func translatorRefused(_ name: String) -> String {
-        "refused: translator mode is on, so the app doesn't run \(name) or any other tool. Nothing was looked up, saved or changed. Keep translating; the user can end translator mode on screen or by saying stop translating."
+        "refused: translator mode is on, so the app doesn't run the tool below or any other tool. Nothing was looked up, saved or changed. Keep translating; the user can end translator mode on screen or by saying stop translating.\n"
+            + ToolData.block([quoted("Tool", name)])
     }
 }
 
