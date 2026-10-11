@@ -52,3 +52,32 @@ Don't claim "Doddy is fully in Polish": screens built at run time, long privacy 
   - no Xcode build, so not checked whether Xcode accepts the generated InfoPlist/AppShortcuts catalogs or whether XcodeGen adds the widget and watch catalogs as resources;
   - never seen on a Polish iPhone or watch;
   - the translations need a native read-through, the privacy ones first.
+
+## Catching up (ADR-260, 2026-10-11, owner: "build next")
+- **Coverage:** 972 of 991 app strings (was 904). 68 new lines:
+  - Focus and Breathing;
+  - the Dynamic Island words: "Note saved", "Plan ready", "Time's up", "Open Doddy to …" (also in the widget catalog);
+  - read aloud;
+  - Hey Doddy settings;
+  - Siri note readback ("Ask Doddy what I saved");
+  - end-of-conversation save suggestions;
+  - the island style screen;
+  - the note history notice;
+  - the Undo hint in What Doddy did;
+  - the long privacy paragraph in Settings, which had fallen out of the table when its English changed.
+- **The Siri phrase is quoted exactly.** The Settings help and the privacy paragraph quote the Polish phrase Siri listens for, "Zapytaj aplikację Doddy, co mam zapisane" (`l10n/pl_shortcuts.json`), so a Polish user says what actually works.
+- **Birthdays added to the privacy paragraph.** The English Settings paragraph now says "contact names and birthdays (day and month)", the ADR-256 disclosure it was missing; the Polish says the same.
+- **Left in English on purpose (19):**
+  - punctuation;
+  - example URLs;
+  - the social handles;
+  - "SWISH!";
+  - the names "Dynamic Island" and "Hey Doddy" (the English wake word);
+  - the "LIVE" island badge;
+  - the developer-only Native Island test screen.
+- **Still English** (built in code, not covered by the catalog):
+  - the What Doddy did Undo button ("Undo" / "Undoing…", a ternary like the existing "Check in Reminders");
+  - the Undo sheet's question and explanation and the birthday and calculator replies (DoddyCore).
+- **Verified:** `tools/build_strings_catalog.py --check` PASS; `scripts/ci.sh --core-only` PASS (643 DoddyCore tests).
+- **Not verified:** not read by a native Polish speaker, and not checked on screen for clipped text (checklist PL1).
+
