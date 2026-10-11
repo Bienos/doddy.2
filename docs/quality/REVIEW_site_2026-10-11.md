@@ -155,3 +155,28 @@ Read-only review. No code changed.
   - **CLAUDE.md:** "never label … unbuilt native app … as implemented". The page under-claims (finding 5) and labels its screens as design previews.
   - **Accuracy:** its privacy claims are now too broad (findings 1-3).
 - **Claims to limit:** nothing here was run in a browser or deployed. The CSP and hash checks are static.
+
+---
+
+## Fix status (2026-10-11, owner approved "fix all")
+
+| # | Status | Commit |
+|---|---|---|
+| 1-3 | fixed: "stored on your iPhone" plus what leaves it when switched on (voice via ElevenLabs or OpenAI, calls and memory on calls, iCloud shared lists, connected accounts); Hey Doddy listening named (wake word detected on the iPhone); every voice provider named. Blog footers regenerated | `0eecc88` |
+| 4 | fixed: `ignoreCommand` on site, gateway and voice-token. The first version was over Vercel's 256-character limit and failed validation (`fa53ef3`); the 158-character version is checked against Vercel's schema and locally both ways. **Not verified:** whether ignored builds count toward the daily limit | `fa53ef3`, `6cfe01a` |
+| 5 | fixed: the "in testing" list matches the app and the blog | `0eecc88` |
+| 6 | **needs the owner:** "Voice hasn't been tested on a real iPhone yet" left as is | — |
+| 7 | fixed: a duplicate signup gets the same `added` reply without a key; the page shows one message | `2d931d1` |
+| 8 | fixed: answers are written with `ifMatch` on the etag read (`useCache: false`); deleted or changed in between → 403, nothing written. **Not verified** against the live Blob service | `a37ce29` |
+| 9 | documented: long random admin password; a Vercel Firewall rate-limit rule on `/api/` is recommended. **Owner:** the dashboard rule isn't set | `fa53ef3` |
+| 10 | fixed: the footer says Vercel Analytics sets no cookies and fonts load from Google Fonts. **Owner:** self-hosting the fonts after licence review | `0eecc88` |
+| 11 | fixed: `site/test/` (18 tests, `node --test` with `mock.module`), lockfile committed, step in `scripts/ci.sh`, `test/` kept out of the deploy by `.vercelignore`. A test that deletes the signup between the read and the write failed without `ifMatch` | `ded52dd` |
+
+**Tests after the fixes:**
+- `npm test --prefix site`: **18 pass, 0 fail**.
+- `node --check` on every changed site file: OK.
+- Gateway: 73 pass. Voice-token: 17 pass.
+- `tools/build_blog.py --check`: PASS.
+- CSP inline-script hashes: still match.
+
+**Not run:** a deploy, a browser check, or the live Blob service.
