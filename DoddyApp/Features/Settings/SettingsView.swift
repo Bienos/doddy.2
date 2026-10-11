@@ -228,6 +228,8 @@ struct SettingsView: View {
                 Section("Privacy") {
                     // ADR-310: Face ID when Doddy opens, and after a minute away.
                     AppLockToggle()
+                    // iPhone search (ADR-330), off until switched on.
+                    SpotlightToggle()
                     NavigationLink {
                         DataFlowView()
                     } label: {

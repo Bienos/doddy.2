@@ -1,3 +1,4 @@
+import CoreSpotlight
 import DoddyCore
 import SwiftUI
 
@@ -277,6 +278,12 @@ struct RootView: View {
             if presented { opening.conversationOpened() }
             // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
             WakeWordListener.shared.refresh()
+        }
+        // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
+        .onContinueUserActivity(CSSearchableItemActionType) { activity in
+            guard let memoryID = SpotlightSync.memoryID(from: activity) else { return }
+            selectedTab = .home
+            homePath = [memoryID]
         }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.

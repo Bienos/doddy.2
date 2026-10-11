@@ -9219,6 +9219,17 @@
         }
       }
     },
+    "Show notes in iPhone search": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazuj notatki w wyszukiwaniu iPhone’a"
+          }
+        }
+      }
+    },
     "Show notes of one type": {
       "extractionState": "manual",
       "localizations": {
@@ -12779,6 +12790,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoja notatka, Twój wybór. Bez domysłów."
+          }
+        }
+      }
+    },
+    "Your notes and lists can be found from the iPhone's search. The index stays on this iPhone. Private notes are never included, and turning this off removes them all from search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje notatki i listy można znaleźć w wyszukiwaniu iPhone’a. Indeks zostaje na tym iPhonie. Prywatne notatki nigdy nie są uwzględniane, a wyłączenie tej opcji usuwa wszystkie z wyszukiwania."
           }
         }
       }

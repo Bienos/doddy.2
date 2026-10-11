@@ -26,6 +26,9 @@ final class WidgetSync {
 
     func refresh(now: Date = .now) {
         guard let store, store.hasLoaded else { return }
+        // iPhone search (ADR-330) follows the same changes, when switched on.
+        SpotlightSync.shared.store = store
+        SpotlightSync.shared.refresh()
         // Shopping mode (ADR-257) follows the same changes, ticks from the Lock Screen included.
         ShoppingModeController.shared.refresh()
         // Shared lists (ADR-263) send a local change to iCloud.
