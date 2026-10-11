@@ -188,13 +188,6 @@ extension DoddyServerClient {
         let list: DigestList = try await getJSON("/v1/news/digests")
         return list.digests
     }
-
-    private func getJSON<T: Decodable>(_ path: String) async throws -> T {
-        let response = try await authorized(.get, path, body: nil)
-        guard response.status == 200, let value = try? JSONDecoder().decode(T.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return value
-    }
 }
 
 private struct CatalogList: Decodable { let topics: [NewsCatalogTopic] }

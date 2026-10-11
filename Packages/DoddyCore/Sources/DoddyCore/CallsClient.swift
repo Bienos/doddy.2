@@ -110,7 +110,7 @@ public struct MemoryCopyItem: Equatable, Sendable, Encodable {
 
 extension DoddyServerClient {
     public func callSettings() async throws -> CallSettings {
-        try await decoded(.get, "/v1/calls/settings")
+        try await getJSON("/v1/calls/settings")
     }
 
     public func setInboundCalls(_ on: Bool) async throws {
@@ -146,7 +146,7 @@ extension DoddyServerClient {
     }
 
     public func recentCalls() async throws -> [CallRecord] {
-        let list: CallList = try await decoded(.get, "/v1/calls")
+        let list: CallList = try await getJSON("/v1/calls")
         return list.calls
     }
 
@@ -171,18 +171,11 @@ extension DoddyServerClient {
 
     /// Throws when the inbox couldn't be loaded; an empty inbox is only ever what the server said.
     public func callInbox() async throws -> CallInbox {
-        try await decoded(.get, "/v1/call-notes")
+        try await getJSON("/v1/call-notes")
     }
 
     public func deleteCallNote(_ id: UUID) async throws {
         try await expect(204, .delete, "/v1/call-notes/\(id.uuidString.lowercased())")
-    }
-
-    private func decoded<T: Decodable>(_ method: HTTPMethod, _ path: String) async throws -> T {
-        let response = try await authorized(method, path, body: nil)
-        guard response.status == 200, let value = try? JSONDecoder().decode(T.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return value
     }
 }
 

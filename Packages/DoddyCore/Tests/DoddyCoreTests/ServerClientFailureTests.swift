@@ -117,6 +117,28 @@ final class ServerClientFailureTests: XCTestCase {
         XCTAssertEqual(try store.load(), "tok1")
     }
 
+    func testEveryReadSharesOneRuleAnUnreadableReplyIsAnError() async {
+        let garbage = ServerResponse(status: 200, body: Data("{}".utf8))
+        let transport = StepTransport(Array(repeating: .success(garbage), count: 4))
+        let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
+        let reads: [(String, () async throws -> Void)] = [
+            ("phone", { _ = try await client.phoneStatus() }),
+            ("calls", { _ = try await client.callSettings() }),
+            ("notes", { _ = try await client.callInbox() }),
+            ("news", { _ = try await client.newsDigests() }),
+        ]
+        for (name, read) in reads {
+            do {
+                try await read()
+                XCTFail("\(name): an unreadable reply must not become a value")
+            } catch {
+                XCTAssertEqual(error as? ServerError, .unexpected(status: 200), name)
+            }
+        }
+        let paths = await transport.sent.map(\.path)
+        XCTAssertEqual(paths, ["/v1/phone", "/v1/calls/settings", "/v1/call-notes", "/v1/news/digests"])
+    }
+
     func testOnlyErrorsBeforeTheRequestLeftCountAsNotSent() {
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.notConnectedToInternet)))
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.cannotConnectToHost)))

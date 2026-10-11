@@ -242,10 +242,7 @@ public actor DoddyServerClient {
     }
 
     public func phoneStatus() async throws -> PhoneStatus {
-        let response = try await authorized(.get, "/v1/phone", body: nil)
-        guard response.status == 200, let status = try? JSONDecoder().decode(PhoneStatus.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return status
+        try await getJSON("/v1/phone")
     }
 
     /// Records consent to `SMSConsent.text` (with its version), or withdraws it.
@@ -280,10 +277,7 @@ public actor DoddyServerClient {
     }
 
     public func updateStatus(_ id: UUID) async throws -> UpdateStatus {
-        let response = try await authorized(.get, "/v1/updates/\(id.uuidString.lowercased())", body: nil)
-        guard response.status == 200, let status = try? JSONDecoder().decode(UpdateStatus.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return status
+        try await getJSON("/v1/updates/\(id.uuidString.lowercased())")
     }
 
     /// Erases the account and everything the server holds for it, then forgets the token.
@@ -296,6 +290,14 @@ public actor DoddyServerClient {
     }
 
     // MARK: Plumbing
+
+    /// GETs `path` and decodes a 200 reply; anything else, an unreadable body included, is an error.
+    func getJSON<T: Decodable>(_ path: String) async throws -> T {
+        let response = try await authorized(.get, path, body: nil)
+        guard response.status == 200, let value = try? JSONDecoder().decode(T.self, from: response.body)
+        else { throw Self.error(from: response) }
+        return value
+    }
 
     func expect(_ status: Int, _ method: HTTPMethod, _ path: String) async throws {
         let response = try await authorized(method, path, body: nil)
@@ -353,6 +355,7 @@ public actor DoddyServerClient {
         case (400, "phone_rejected"): return .phoneRejected
         case (400, "weak_pin"): return .weakPIN
         case (400, "unsafe_url"): return .unsafeURL
+        // Live: PUT /v1/news/settings answers it when news is switched on with nothing picked.
         case (400, "no_topics"): return .notEnabled("no_topics")
         case (422, "not_a_feed"): return .notAFeed
         // The key was used before for a different update; the server sent nothing new.
