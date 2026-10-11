@@ -11,6 +11,15 @@ final class ShareAcceptSceneDelegate: NSObject, UIWindowSceneDelegate {
         if let metadata = connectionOptions.cloudKitShareMetadata {
             SharedListsController.shared.received(metadata)
         }
+        // Doddy opened from the icon's long-press menu (ADR-339).
+        if let shortcutItem = connectionOptions.shortcutItem {
+            QuickActions.handle(shortcutItem)
+        }
+    }
+
+    /// The icon's long-press menu while Doddy was already running (ADR-339).
+    func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem) async -> Bool {
+        QuickActions.handle(shortcutItem)
     }
 
     func windowScene(_ windowScene: UIWindowScene, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {

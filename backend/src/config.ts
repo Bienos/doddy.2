@@ -15,7 +15,7 @@ export type CompletionMode = "verifier" | "callback";
 
 export interface Limits {
   userDailyReads: number;
-  /** Online-account tool runs (Gmail, Drive, Notion, Todoist) per user per UTC day. */
+  /** Online-account tool runs (Gmail, Drive, Notion, Todoist, Outlook) per user per UTC day. */
   userDailyToolRuns: number;
   /** Web searches (Monid, paid by Doddy) per user, and for the whole service, per UTC day. */
   userDailyWebSearches: number;
@@ -62,7 +62,7 @@ export interface Config {
   authMode: AuthMode;
   sessionSigningKey: Buffer | null;
   composio: ComposioSettings | null;
-  /** Gmail, Drive, Notion, Todoist: only toolkits with both an auth config and a pinned version. */
+  /** Gmail, Drive, Notion, Todoist, Outlook: only toolkits with both an auth config and a pinned version. */
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
@@ -116,6 +116,8 @@ const EnvSchema = z.object({
   COMPOSIO_NOTION_TOOLKIT_VERSION: z.string().optional(),
   COMPOSIO_TODOIST_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_TODOIST_TOOLKIT_VERSION: z.string().optional(),
+  COMPOSIO_OUTLOOK_AUTH_CONFIG_ID: z.string().optional(),
+  COMPOSIO_OUTLOOK_TOOLKIT_VERSION: z.string().optional(),
   MONID_API_KEY: z.string().optional(),
   MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
   DODDY_LIMIT_USER_DAILY_WEB_SEARCHES: intSetting(30, 1, 10_000),

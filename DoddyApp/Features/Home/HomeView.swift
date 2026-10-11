@@ -162,7 +162,8 @@ struct HomeView: View {
 
                     TodayCard(openSettings: { selectedTab = .settings })
 
-                    if router.setup.phase == .notStarted {
+                    // Back Tap exists only on iPhone (ADR-337).
+                    if router.setup.phase == .notStarted, DeviceSupport.hasBackTap {
                         backTapCard
                     }
                     aboutYou

@@ -1,3 +1,4 @@
+import CoreSpotlight
 import DoddyCore
 import SwiftUI
 
@@ -83,6 +84,7 @@ struct RootView: View {
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
@@ -137,6 +139,7 @@ struct RootView: View {
                 if phase == .background {
                     WidgetSync.shared.refresh()
                     AppLock.shared.wentToBackground()
+                    QuickActions.install()
                 }
                 if phase == .active { AppLock.shared.cameBack() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
@@ -281,6 +284,12 @@ struct RootView: View {
             // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
             WakeWordListener.shared.refresh()
         }
+        // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
+        .onContinueUserActivity(CSSearchableItemActionType) { activity in
+            guard let memoryID = SpotlightSync.memoryID(from: activity) else { return }
+            selectedTab = .home
+            homePath = [memoryID]
+        }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
             // doddy://open/<id> from a widget opens that note or list on Home (ADR-219).
@@ -315,6 +324,10 @@ struct RootView: View {
                     .tag(AppTab.settings)
             }
             .toolbar(.hidden, for: .tabBar)
+            // iPad (ADR-337): one readable column in the middle of a wide screen.
+            .frame(maxWidth: horizontalSizeClass == .regular ? 760 : .infinity)
+            .frame(maxWidth: .infinity)
+            .background(Theme.canvas)
             if let deleted = store.recentlyDeleted {
                 UndoDeleteBar(deleted: deleted)
             }

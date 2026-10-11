@@ -6,6 +6,8 @@ import Foundation
 public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
+    /// Microsoft Outlook (ADR-340).
+    case outlook
     case web
     /// The ECB's public rates file (ADR-300).
     case exchangeRates
@@ -24,6 +26,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .drive: "Google Drive"
         case .notion: "Notion"
         case .todoist: "Todoist"
+        case .outlook: "Outlook"
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
         }
@@ -87,6 +90,15 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Searched your notes", detail: "“\(query)”", isLookup: true)
         case .saveMemory(let text):
             return ActivityRequest(app: .memories, title: "Save a note", detail: "“\(text)”", isLookup: false)
+        case .leaveBy(let request):
+            return ActivityRequest(
+                app: .maps, title: "Remind when to leave",
+                detail: "“\(request.place)” · arrive by \(when(request.arriveBy, hasTime: true))", isLookup: false)
+        case .findFreeTime(let request):
+            let range = request.range(calendar: .current)
+            return ActivityRequest(
+                app: .calendar, title: "Looked for free time",
+                detail: "\(when(range.start, hasTime: false)) to \(when(range.end, hasTime: false))", isLookup: true)
         case .readCalendar(let range):
             return ActivityRequest(
                 app: .calendar, title: "Read your calendar",
@@ -217,6 +229,10 @@ public struct ActivityRequest: Equatable, Sendable {
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
         case CloudToolName.addTodoistTask: ActivityRequest(app: .todoist, title: "Add a task", detail: nil, isLookup: false)
         case CloudToolName.webSearch: ActivityRequest(app: .web, title: "Searched the web", detail: nil, isLookup: true)
+        case CloudToolName.checkOutlookEmail: ActivityRequest(app: .outlook, title: "Checked email", detail: nil, isLookup: true)
+        case CloudToolName.readOutlookEmail: ActivityRequest(app: .outlook, title: "Read an email", detail: nil, isLookup: true)
+        case CloudToolName.draftOutlookEmail: ActivityRequest(app: .outlook, title: "Create an email draft", detail: nil, isLookup: false)
+        case CloudToolName.readOutlookCalendar: ActivityRequest(app: .outlook, title: "Read your calendar", detail: nil, isLookup: true)
         default: nil
         }
     }
