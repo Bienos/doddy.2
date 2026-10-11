@@ -1013,6 +1013,17 @@
         }
       }
     },
+    "Apple's on-device translation doesn't offer this pair yet. Doddy's voice translator can do it when you're online.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumaczenie Apple na urządzeniu nie obsługuje jeszcze tej pary. Głosowy tłumacz Doddy zrobi to, gdy będziesz online."
+          }
+        }
+      }
+    },
     "Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": {
       "extractionState": "manual",
       "localizations": {
@@ -2098,6 +2109,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Skopiowano na serwer"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiuj"
           }
         }
       }
@@ -5908,6 +5930,17 @@
         }
       }
     },
+    "Needs iOS 18": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymaga iOS 18"
+          }
+        }
+      }
+    },
     "Network": {
       "extractionState": "manual",
       "localizations": {
@@ -7818,6 +7851,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wybierz osoby, o których urodzinach Doddy ma Ci przypominać, o 9:00 w dniu urodzin. Odczytywane z Kontaktów na tym iPhonie; nic nie jest nigdzie wysyłane ani dodawane do Kalendarza."
+          }
+        }
+      }
+    },
+    "Pick two different languages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz dwa różne języki."
           }
         }
       }
@@ -10506,6 +10550,17 @@
         }
       }
     },
+    "Swap languages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamień języki"
+          }
+        }
+      }
+    },
     "Switch off in Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -12233,6 +12288,61 @@
         }
       }
     },
+    "Translate from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumacz z"
+          }
+        }
+      }
+    },
+    "Translate into": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumacz na"
+          }
+        }
+      }
+    },
+    "Translate text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przetłumacz tekst"
+          }
+        }
+      }
+    },
+    "Translate text without internet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przetłumacz tekst bez internetu"
+          }
+        }
+      }
+    },
+    "Translated by Apple on this iPhone, so it works without internet once iOS has downloaded the two languages. It may contain mistakes; for anything important, check with a person. Nothing is sent to Doddy and nothing is kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumaczy Apple na tym iPhonie, więc działa bez internetu, gdy iOS pobierze oba języki. Może zawierać błędy; w ważnych sprawach sprawdź z człowiekiem. Nic nie trafia do Doddy i nic nie jest zachowywane."
+          }
+        }
+      }
+    },
     "Translating": {
       "extractionState": "manual",
       "localizations": {
@@ -12240,6 +12350,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tłumaczę"
+          }
+        }
+      }
+    },
+    "Translating text on the iPhone without internet needs iOS 18 or later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumaczenie tekstu na iPhonie bez internetu wymaga iOS 18 lub nowszego."
+          }
+        }
+      }
+    },
+    "Translation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumaczenie"
           }
         }
       }
@@ -12471,6 +12603,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Typ"
+          }
+        }
+      }
+    },
+    "Type or paste text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz lub wklej tekst"
           }
         }
       }
@@ -13989,6 +14132,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud tego nie potwierdził. Nic nie jest uznane za zrobione; spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
+    "iOS couldn't translate it. If it asked to download languages, try again once they're downloaded.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS nie przetłumaczył tego. Jeśli prosił o pobranie języków, spróbuj ponownie po ich pobraniu."
           }
         }
       }

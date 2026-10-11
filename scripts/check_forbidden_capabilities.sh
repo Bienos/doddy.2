@@ -145,6 +145,10 @@ fi
 if grep -RInE --include='*.swift' 'import NaturalLanguage' "${dirs[@]}" | grep -vE "$natural_language_files"; then
   echo "FAIL: NaturalLanguage outside $meaning_dir and the read-aloud language check (ADR-227, ADR-243)." >&2; status=1
 fi
+# Apple's on-device translation (ADR-346): only the Translate text screen.
+if grep -RInE --include='*.swift' 'import Translation|TranslationSession|LanguageAvailability' "${dirs[@]}" | code_only | grep -v "^DoddyApp/Features/Translator/TextTranslateView.swift:"; then
+  echo "FAIL: on-device translation outside DoddyApp/Features/Translator/TextTranslateView.swift (ADR-346)." >&2; status=1
+fi
 if grep -RInE --include='*.swift' "$photos_only" "${dirs[@]}" | grep -v "^$photos_dir/"; then
   echo "FAIL: photo reading or the photo picker outside $photos_dir." >&2; status=1
 fi
@@ -203,5 +207,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), on-device translation only in Translate text, no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

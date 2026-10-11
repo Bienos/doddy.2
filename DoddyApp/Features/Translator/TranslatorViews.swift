@@ -396,6 +396,15 @@ struct TranslatorStartView: View {
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .font(.footnote)
+                // Typed text, on the iPhone, without internet (ADR-346).
+                Section {
+                    NavigationLink {
+                        TextTranslateScreen()
+                    } label: {
+                        Label("Translate text without internet", systemImage: "character.book.closed")
+                    }
+                    .accessibilityIdentifier("translator.text")
+                }
                 Section {
                     Button("Start translating") {
                         chosen = TranslatorSetup(kind: kind, owner: owner, other: other)

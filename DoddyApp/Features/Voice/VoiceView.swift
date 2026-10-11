@@ -1526,6 +1526,7 @@ struct OfflineNoteCard: View {
     @State private var text = ""
     @State private var isSaving = false
     @State private var problem: String?
+    @State private var translating = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1548,12 +1549,24 @@ struct OfflineNoteCard: View {
             .buttonStyle(PrimaryButtonStyle())
             .disabled(isSaving || text.allSatisfy(\.isWhitespace))
             if let problem { ProblemView(message: problem) }
+            // Typed text, translated on the iPhone (ADR-346).
+            Button { translating = true } label: {
+                HStack { Text("Translate text without internet"); Spacer(); Image(systemName: "character.book.closed") }
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("voice.offline.translate")
             Text("When you're back online, close this and talk to Doddy again.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .sheet(isPresented: $translating) {
+            NavigationStack {
+                TextTranslateScreen()
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { translating = false } } }
+            }
+        }
     }
 
     private func save() async {
