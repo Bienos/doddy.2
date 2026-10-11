@@ -1,17 +1,27 @@
 # Deploying the backend to Render
 
-Status 2026-10-10: **deployed, web search only.** Render workspace **SLIYD**, service **`doddy`**
-(`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com, free plan, Frankfurt, auto-deploy **off**: deploy by hand
-after pushing). `/v1/health` answers `"mode":"live"`; one live search with an owner-minted token returned 5 results
-in about 6 s. Created with the Render API, which cannot set a root directory or health check path, so the build and
-start commands `cd backend` first; set the health check path to `/v1/health` in the dashboard if wanted.
+Status 2026-10-11: **deployed again on a new Render account** (owner request). Workspace **Patryk's workspace**
+(`tea-db5kphqd0e5s73fqlpmg`), service **`doddy`** (`srv-db5kvu142hec739b9tu0`, https://doddy-yaci.onrender.com; the
+name `doddy.onrender.com` was taken), free plan, Frankfurt, branch `claude/loving-dirac-uuxoux` (first live deploy at
+commit `007de48`), auto-deploy **off**: deploy by hand after pushing. Environment set in the dashboard: Monid, the
+Composio key with the Google Calendar pair and a Gmail pair, and a new session signing key (so tokens minted for the
+old server do not work here: mint a new one, step 4). Verified on 2026-10-11 only that the server starts: the log shows
+`"event":"listening","mode":"live","auth":"signed"` and `GET /v1/health` answered
+`{"status":"ok","mode":"live","api":"v1","capabilities":["calendar.listEvents"]}`. **Not yet verified on this
+server:** a web search, a Composio connection (Calendar or Gmail), and the app talking to it.
+Created with the Render API, which cannot set a root directory or health check path, so the build and start commands
+`cd backend` first; set the health check path to `/v1/health` in the dashboard if wanted.
 Since ADR-193 the backend starts in live mode with **only a Monid key** (web search); Composio is optional.
+
+Earlier (2026-10-10): service `doddy` (`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com) in workspace **SLIYD**,
+web search verified there. That account is no longer the one in use; delete the old service there if it still runs.
 
 ## Web search only (fastest path)
 
-1. Render dashboard → workspace **SLIYD** → **New → Web Service** → repo `Bienos/doddy.2`, branch
-   `claude/elegant-knuth-hc1aql`. Do **not** use New → Blueprint: `render.yaml` also creates the paid
-   messaging services and Postgres.
+1. Render dashboard → your workspace → **New → Web Service** → repo `Bienos/doddy.2`, the default branch
+   (`claude/loving-dirac-uuxoux` on 2026-10-11). On a new Render account, first connect GitHub and give Render
+   access to `Bienos/doddy.2` (Account Settings → Git Providers), or the repo cannot be fetched. Do **not** use
+   New → Blueprint: `render.yaml` also creates the paid messaging services and Postgres.
    * Name `doddy`, region Frankfurt, plan Free, root directory `backend`
    * Build `npm ci && npm run build`, start `node dist/src/server.js`, health check path `/v1/health`
 2. Environment (Render → service → Environment). Type the secrets **there**, never in chat or git:
@@ -25,8 +35,8 @@ Since ADR-193 the backend starts in live mode with **only a Monid key** (web sea
    | `DODDY_PORT` | `10000` |
    | `DODDY_AUTH_MODE` | `signed` |
    | `DODDY_DB_PATH` | `./data/doddy.sqlite` |
-   | `DODDY_PUBLIC_BASE_URL` | the service's origin, e.g. `https://doddy.onrender.com` (no path) |
-   | `DODDY_SESSION_SIGNING_KEY` | **secret**: Render's "Generate" button, or `openssl rand -base64 32` |
+   | `DODDY_PUBLIC_BASE_URL` | the service's origin, e.g. `https://doddy-yaci.onrender.com` (no path) |
+   | `DODDY_SESSION_SIGNING_KEY` | **secret**: Render's "Generate" button, or `openssl rand -base64 32`. Must decode to at least 32 bytes: a typed password or a 32-character hex string is refused |
    | `MONID_API_KEY` | **secret**: app.monid.ai → Access → API keys (`monid_live_…`) |
 
    Leave every `COMPOSIO_*` variable out (all of them, or all three Calendar ones plus a toolkit pair later).
@@ -42,10 +52,12 @@ Checks after a search: Render logs show `POST /v1/tools/run` with status 200; ap
 
 ## Adding the accounts later (Composio)
 
-Blocked on a working Composio project key (the one in the cloud session was rejected with HTTP 401). Then run
-`npm run setup:tools -- --create` and the Calendar setup (`ONLINE_ACCOUNTS.md`), and add `COMPOSIO_API_KEY`,
-the `COMPOSIO_GOOGLECALENDAR_*` pair and any `COMPOSIO_<TOOLKIT>_*` pairs. All three Composio base values or none:
-half a setup stops the server.
+2026-10-11: on the new service the owner entered a Composio key, the Google Calendar pair and a Gmail pair, and the
+server accepted them at startup (`COMPOSIO_COMPLETION_MODE=callback`, single-owner development). That checks only the
+configuration's shape: no account has been connected or used through this server yet. For more toolkits (Drive,
+Notion, Todoist), run `npm run setup:tools -- --create` (`ONLINE_ACCOUNTS.md`; it does not cover Calendar) and add
+the printed `COMPOSIO_<TOOLKIT>_*` pairs, both values of a pair or neither. The three base values (`COMPOSIO_API_KEY`
+and the `COMPOSIO_GOOGLECALENDAR_*` pair) are all or none: half a setup stops the server.
 
 ## Free plan caveats
 

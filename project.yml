@@ -62,6 +62,14 @@ targets:
     sources:
       - path: DoddyApp
       - path: Shared
+      # Doddy's voice spec, read by the OpenAI test voice (ADR-265). The same files the live
+      # ElevenLabs agent is synced from, so both providers get the same prompt and tools.
+      - path: voice-agent/instructions.md
+        buildPhase: resources
+      - path: voice-agent/tools.json
+        buildPhase: resources
+      - path: voice-agent/session.json
+        buildPhase: resources
     dependencies:
       - target: DoddyWidgets
       # The Apple Watch app (ADR-232), embedded in the iPhone app.
@@ -92,7 +100,7 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only these permissions. Each is asked for only when the user turns the matching toggle on in Settings, Connections.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it. A voice memo you record on a note stays on this iPhone."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's test voice to OpenAI. A voice memo you record on a note stays on this iPhone."
         # Voice memos only (ADR-230): on-device recognition is required, so the audio isn't sent.
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
         INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."

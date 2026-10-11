@@ -320,10 +320,16 @@ struct IslandBottomView<Controls: View>: View {
 
     private var standard: some View {
         HStack(alignment: .center, spacing: 12) {
-            IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
-                          showsHands: scene.showsHands, maxSize: CGSize(width: 82, height: 92),
-                          labels: scene.artLabels)
-                .frame(width: 82)
+            Group {
+                if let pose = scene.pose {
+                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 100))
+                } else {
+                    IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
+                                  showsHands: scene.showsHands, maxSize: CGSize(width: 82, height: 92),
+                                  labels: scene.artLabels)
+                }
+            }
+            .frame(width: 82)
             VStack(alignment: .leading, spacing: 4) {
                 VStack(alignment: .leading, spacing: 2) {
                     title
@@ -382,7 +388,11 @@ struct IslandCompactLeadingView: View {
     let scene: IslandScene
 
     var body: some View {
-        IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
+        if let pose = scene.pose {
+            IslandPoseFaceView(pose: pose, size: 24)
+        } else {
+            IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
+        }
     }
 }
 
@@ -403,10 +413,69 @@ struct IslandMinimalView: View {
 
     var body: some View {
         ZStack(alignment: scene.minimalSignCentred ? .center : .trailing) {
-            IslandArtView(art: scene.art(.minimal), face: scene.face, live: scene.live, showsHands: false)
+            if let pose = scene.pose {
+                IslandPoseFaceView(pose: pose, size: 24)
+                    .padding(.leading, 4)
+                    .frame(width: 45, alignment: .leading)
+            } else {
+                IslandArtView(art: scene.art(.minimal), face: scene.face, live: scene.live, showsHands: false)
+            }
             IslandSignView(sign: scene.minimalSign, presentation: .minimal, live: scene.live, startedAt: startedAt)
                 .frame(width: scene.minimalSignCentred ? 36 : 16)
                 .padding(.trailing, scene.minimalSignCentred ? 0 : 2)
         }
+    }
+}
+
+/// Whole Doddy (ADR-264): the pose standing on the bottom of `maxSize`, as large as fits. The
+/// owner's drawings have black outlines, so on the black island they get a 1 pt cream edge;
+/// the pictures themselves are unchanged.
+struct IslandPoseView: View {
+    let pose: IslandPose
+    let maxSize: CGSize
+
+    var body: some View {
+        let box = pose.figure
+        // Picture width (points) so the figure fits; the picture is 2:3.
+        let width = min(maxSize.width / CGFloat(box.width), maxSize.height / (CGFloat(box.height) * 1.5))
+        let height = width * 1.5
+        Image(pose.assetName)
+            .resizable()
+            .frame(width: width, height: height)
+            .offset(x: -CGFloat(box.x) * width, y: -CGFloat(box.y) * height)
+            .frame(width: CGFloat(box.width) * width, height: CGFloat(box.height) * height, alignment: .topLeading)
+            .islandCreamEdge()
+            .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Whole Doddy's face for compact and minimal: a circle cropped from the pose's face pose.
+struct IslandPoseFaceView: View {
+    let pose: IslandPose
+    let size: CGFloat
+
+    var body: some View {
+        let face = pose.facePose
+        let head = face.head ?? (x: 0.5, y: 0.3, diameter: 0.5)
+        let width = size / CGFloat(head.diameter * 1.06)
+        let height = width * 1.5
+        Image(face.assetName)
+            .resizable()
+            .frame(width: width, height: height)
+            .offset(x: size / 2 - CGFloat(head.x) * width, y: size / 2 - CGFloat(head.y) * height)
+            .frame(width: size, height: size, alignment: .topLeading)
+            .clipShape(Circle())
+            .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// A 1 pt cream edge around a picture's opaque pixels, so black outlines read on black.
+    func islandCreamEdge() -> some View {
+        shadow(color: .islandCream, radius: 0, x: 1, y: 0)
+            .shadow(color: .islandCream, radius: 0, x: -1, y: 0)
+            .shadow(color: .islandCream, radius: 0, x: 0, y: 1)
+            .shadow(color: .islandCream, radius: 0, x: 0, y: -1)
     }
 }

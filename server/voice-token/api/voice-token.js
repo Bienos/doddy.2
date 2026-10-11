@@ -1,5 +1,5 @@
 // Vercel entry point (POST /api/voice-token). Set the Vercel project's Root Directory to
-// server/voice-token and add the three environment variables from README.md.
+// server/voice-token and add the environment variables from README.md.
 import { handleTokenRequest } from "../src/handler.js";
 
 export default {

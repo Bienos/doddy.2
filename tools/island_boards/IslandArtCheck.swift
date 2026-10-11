@@ -9,6 +9,11 @@ import Foundation
 struct IslandArtCheck {
     static func main() {
         let args = CommandLine.arguments
+        // scripts/check_island_art.sh checks each of these has an image set in both catalogs.
+        if args.contains("--pose-assets") {
+            for pose in IslandPose.allCases { print(pose.assetName) }
+            return
+        }
         let svgDir = args.firstIndex(of: "--svg").map { args[$0 + 1] }
         var failures = 0
         var drawings = 0
@@ -40,6 +45,7 @@ struct IslandArtCheck {
             print("FAIL: hands not removed"); failures += 1
         }
         failures += IslandSceneChecks.run()
+        failures += IslandSceneChecks.wholeDoddy()
         if failures > 0 {
             print("FAIL: \(failures) problem(s) in \(drawings) drawings")
             exit(1)
