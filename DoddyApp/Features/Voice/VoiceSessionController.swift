@@ -1650,6 +1650,10 @@ final class VoiceSessionController {
             }
             let events = devices.events(in: range)
             await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
+        case .upcomingRenewals(let days):
+            // Read-only (ADR-344): what the user typed in, on this iPhone.
+            let upcoming = RenewalStore.current().upcoming(now: Date(), calendar: .current)
+            await reply(call.toolCallId, VoiceToolReply.renewals(upcoming, days: days, calendar: .current, now: Date()))
         case .findFreeTime(let request):
             // Read-only (ADR-332): gaps worked out here from the iPhone's calendars.
             guard devices.access(for: .calendar) == .granted else {

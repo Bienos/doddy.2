@@ -45,6 +45,17 @@
         }
       }
     },
+    "%lld days before, at 9:00": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dni wcześniej, o 9:00"
+          }
+        }
+      }
+    },
     "%lld items": {
       "extractionState": "manual",
       "localizations": {
@@ -63,6 +74,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zostało: %lld"
+          }
+        }
+      }
+    },
+    "%lld without an amount aren't counted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozycje bez kwoty (%lld) nie są liczone."
           }
         }
       }
@@ -320,6 +342,17 @@
         }
       }
     },
+    "About %@ a month.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Około %@ miesięcznie."
+          }
+        }
+      }
+    },
     "About %lld min of travel, plus %lld min spare": {
       "extractionState": "manual",
       "localizations": {
@@ -419,6 +452,17 @@
         }
       }
     },
+    "Add a bill or subscription": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj rachunek lub subskrypcję"
+          }
+        }
+      }
+    },
     "Add a preference": {
       "extractionState": "manual",
       "localizations": {
@@ -514,6 +558,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj do listy w Doddym"
+          }
+        }
+      }
+    },
+    "Add what renews, like rent, a phone plan or a streaming service. Doddy can remind you a few days before.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj to, co się odnawia, np. czynsz, abonament telefoniczny albo serwis streamingowy. Doddy może przypomnieć kilka dni wcześniej."
           }
         }
       }
@@ -723,6 +778,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zawsze taki sam"
+          }
+        }
+      }
+    },
+    "Amount": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kwota"
           }
         }
       }
@@ -1152,6 +1218,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zanim umknie"
+          }
+        }
+      }
+    },
+    "Bill or subscription": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rachunek lub subskrypcja"
+          }
+        }
+      }
+    },
+    "Bills and subscriptions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rachunki i subskrypcje"
           }
         }
       }
@@ -2135,6 +2223,17 @@
         }
       }
     },
+    "Currency (3 letters)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waluta (3 litery)"
+          }
+        }
+      }
+    },
     "Custom": {
       "extractionState": "manual",
       "localizations": {
@@ -2780,6 +2879,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy korzysta tylko z Twoich notatek: bez kalendarza, przypomnień, kontaktów, innych aplikacji i kont online."
+          }
+        }
+      }
+    },
+    "Doddy keeps up to 100. Delete one first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przechowuje do 100. Najpierw usuń jedną pozycję."
           }
         }
       }
@@ -3433,6 +3543,17 @@
         }
       }
     },
+    "Every 3 months": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co 3 miesiące"
+          }
+        }
+      }
+    },
     "Every day": {
       "extractionState": "manual",
       "localizations": {
@@ -3440,6 +3561,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Codziennie"
+          }
+        }
+      }
+    },
+    "Every month": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co miesiąc"
           }
         }
       }
@@ -3462,6 +3594,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każde pytanie jest opcjonalne. Przejrzysz wszystko, zanim to zachowam, i możesz to zmienić lub zapomnieć w Ustawieniach."
+          }
+        }
+      }
+    },
+    "Every week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co tydzień"
+          }
+        }
+      }
+    },
+    "Every year": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co roku"
           }
         }
       }
@@ -4001,6 +4155,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Adres bramy (https://…)"
+          }
+        }
+      }
+    },
+    "Give it a name.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nadaj nazwę."
           }
         }
       }
@@ -5567,6 +5732,17 @@
         }
       }
     },
+    "Name, e.g. Netflix or rent": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa, np. Netflix albo czynsz"
+          }
+        }
+      }
+    },
     "Name, e.g. Shopping": {
       "extractionState": "manual",
       "localizations": {
@@ -5677,6 +5853,17 @@
         }
       }
     },
+    "New bill or subscription": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowy rachunek lub subskrypcja"
+          }
+        }
+      }
+    },
     "New list": {
       "extractionState": "manual",
       "localizations": {
@@ -5732,6 +5919,17 @@
         }
       }
     },
+    "Next %@, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Następnie %@, %@"
+          }
+        }
+      }
+    },
     "Next conversation": {
       "extractionState": "manual",
       "localizations": {
@@ -5739,6 +5937,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Następna rozmowa"
+          }
+        }
+      }
+    },
+    "Next on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Następnie"
           }
         }
       }
@@ -6674,6 +6883,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przy każdym połączeniu Doddy prosi o ten PIN, zanim zajrzy do Twoich notatek lub coś zanotuje, bo numer dzwoniącego można podrobić. Po pięciu błędnych próbach wpisywanie PIN-u blokuje się, za każdym razem na dłużej, a Ty dostajesz powiadomienie."
+          }
+        }
+      }
+    },
+    "On the day, at 9:00": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tym dniu, o 9:00"
           }
         }
       }
@@ -8108,6 +8328,17 @@
         }
       }
     },
+    "Remind me before": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnij wcześniej"
+          }
+        }
+      }
+    },
     "Remind me there too": {
       "extractionState": "manual",
       "localizations": {
@@ -8115,6 +8346,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypominaj mi tam też"
+          }
+        }
+      }
+    },
+    "Remind up to 14 days before.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie najwyżej 14 dni wcześniej."
           }
         }
       }
@@ -8467,6 +8709,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zmień nazwę listy"
+          }
+        }
+      }
+    },
+    "Renews": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odnawia się"
           }
         }
       }
@@ -8918,6 +9171,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano „%@” jako szablon z pozycjami: %lld. Nową listę z niego zaczniesz w Nowa lista albo prosząc Doddy’ego."
+          }
+        }
+      }
+    },
+    "Saved, but notifications are off for Doddy, so no reminder will show. You can allow them in iPhone Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano, ale powiadomienia Doddy są wyłączone, więc przypomnienie się nie pokaże. Możesz je włączyć w Ustawieniach iPhone'a."
           }
         }
       }
@@ -10733,6 +10997,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Aplikacja Skróty otworzy się na chwilę."
+          }
+        }
+      }
+    },
+    "The amount must be more than 0.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kwota musi być większa od 0."
           }
         }
       }
@@ -12992,6 +13267,17 @@
         }
       }
     },
+    "Write the currency as 3 letters, like PLN or EUR.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz walutę jako 3 litery, np. PLN albo EUR."
+          }
+        }
+      }
+    },
     "Writing it out on this iPhone…": {
       "extractionState": "manual",
       "localizations": {
@@ -13142,6 +13428,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłączyłeś powiadomienia Doddy’ego w Ustawieniach iOS. Włącz je tam, aby dostawać aktualności."
+          }
+        }
+      }
+    },
+    "You type these in. Doddy doesn't read your bank, cards or email, and nothing leaves this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te pozycje wpisujesz samodzielnie. Doddy nie czyta Twojego banku, kart ani poczty, a nic nie opuszcza tego iPhone'a."
           }
         }
       }
@@ -13483,6 +13780,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje do zachowania.\nTwoje do zmiany."
+          }
+        }
+      }
+    },
+    "every 3 months": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "co 3 miesiące"
+          }
+        }
+      }
+    },
+    "every month": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "co miesiąc"
+          }
+        }
+      }
+    },
+    "every week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "co tydzień"
+          }
+        }
+      }
+    },
+    "every year": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "co roku"
           }
         }
       }

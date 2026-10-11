@@ -14,6 +14,8 @@ enum MemoryNavigationRoute: Hashable {
     case person(String)
     /// Every warranty, soonest end first (ADR-342).
     case warranties
+    /// Bills and subscriptions (ADR-344).
+    case renewals
 }
 
 struct DoddyWordmark: View {

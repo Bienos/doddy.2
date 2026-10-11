@@ -141,6 +141,7 @@ struct MemoriesView: View {
                 case .note(let id): MemoryOrListView(id: id)
                 case .person(let name): PersonNotesView(person: name)
                 case .warranties: WarrantiesView()
+                case .renewals: RenewalsView()
                 }
             }
             .onChange(of: activeCategory) { _, active in

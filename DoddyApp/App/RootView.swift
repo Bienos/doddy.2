@@ -130,6 +130,8 @@ struct RootView: View {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     Task { await noteReminders.refreshOnForeground() }
+                    // Bills and subscriptions (ADR-344): each next date's notification.
+                    Task { await RenewalStore.reconcile() }
                     FocusController.shared.refresh()
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.

@@ -19,7 +19,7 @@ public enum CarDecision: Equatable, Sendable {
 public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
-        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .calculate, .convertUnits,
+        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .upcomingRenewals, .calculate, .convertUnits,
              .convertCurrency, .readList, .listAlarms, .needsClarification, .unsupported, .invalid:
             return .run
         case .parkingSpot(let action):

@@ -256,6 +256,19 @@
     },
     {
       "type": "function",
+      "name": "upcoming_renewals",
+      "description": "Read the bills and subscriptions the user typed into Doddy (name, next date, how often and, if they gave one, the amount), for the next few days. Use it when the user asks what renews or is due to pay soon. Only mention what the tool returned; amounts are the user's own, never checked against a bank. It changes nothing: adding or changing them is done on the screen, in Lists, Bills and subscriptions.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "days": {"type": "integer", "description": "How many days to look ahead, today included: 30 by default, up to 92."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 15}
+    },
+    {
+      "type": "function",
       "name": "calculate",
       "description": "Work out a sum on the user's iPhone. Use it for every calculation the user asks for (totals, splitting a bill, tips, percentages, recipe scaling) instead of doing the maths yourself, then say the result it returns. Only numbers with a dot for decimals, + - * / ^ for powers, % (a percent of the number before it) and brackets; no words, units or currency signs. For '15% of 80' send '80 * 15%'.",
       "parameters": {

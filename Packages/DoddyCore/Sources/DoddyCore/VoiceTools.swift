@@ -219,6 +219,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findFreeTime(FreeTimeRequest)
     /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
     case leaveBy(LeaveByRequest)
+    /// Bills and subscriptions the user typed in (ADR-344), read-only.
+    case upcomingRenewals(days: Int)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -269,6 +271,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCurrency(args, name: name)
         case VoiceToolName.parkingSpot:
             return parseParking(args, name: name)
+        case VoiceToolName.upcomingRenewals:
+            return parseRenewals(args, name: name)
         case VoiceToolName.addIngredients:
             return parseIngredients(args, name: name)
         case VoiceToolName.undoLast:

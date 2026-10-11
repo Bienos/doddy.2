@@ -37,6 +37,14 @@ struct ListsOverview: View {
             .buttonStyle(SecondaryButtonStyle())
             .disabled(!store.isStorageAvailable || store.lists.count >= ListLimits.lists)
             .accessibilityIdentifier("lists.new")
+            // Bills and subscriptions (ADR-344), typed in by the user.
+            NavigationLink(value: MemoryNavigationRoute.renewals) {
+                HStack { Image(systemName: "calendar.badge.clock").accessibilityHidden(true); Text("Bills and subscriptions"); Spacer()
+                    Image(systemName: "chevron.right").foregroundStyle(Theme.secondaryText).accessibilityHidden(true) }
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("lists.renewals")
             if !store.lists.isEmpty {
                 Label("Or just tell Doddy: “add milk to my shopping list”.", systemImage: "mic")
                     .font(.footnote)

@@ -148,6 +148,8 @@ public struct ActivityRequest: Equatable, Sendable {
             return describe(cloud: call.name)
         case .addToList(let request):
             return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .upcomingRenewals:
+            return ActivityRequest(app: .memories, title: "Read bills and subscriptions", detail: nil, isLookup: true)
         case .readList(let name):
             return ActivityRequest(app: .memories, title: "Read a list", detail: "“\(name)”", isLookup: true)
         case .checkOff(let request):
