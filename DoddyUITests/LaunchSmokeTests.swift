@@ -262,13 +262,15 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testListeningOnOpenIsOnByDefaultAndOpensTheConversation() {
-        // Default listening switch; no agent ID, so the conversation stops at "Couldn't connect"
-        // before it ever asks for the microphone or reaches ElevenLabs.
+    func testListeningOnOpenIsOnByDefaultButWaitsForTheMicrophone() {
+        // ADR-325: with the microphone never asked about, nothing opens by itself, so iOS's
+        // question can only follow a tap on Talk to Doddy. (Opening once it's allowed is covered
+        // by OpeningPolicyTests; a UI test can't grant the microphone.)
+        XCUIApplication().resetAuthorizationStatus(for: .microphone)
         let app = launch(onboardingDone: true, listen: true, extra: ["-voiceAgentID", ""])
-        XCTAssertTrue(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 5), "opened by itself")
-        XCTAssertEqual(app.staticTexts["voice.status"].label, "Couldn't connect")
-        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 3), "nothing opens before the microphone is allowed")
+        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the test voice switch is in Settings now")
 
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()

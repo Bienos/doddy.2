@@ -319,4 +319,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | # | Do this | Expect |
 |---|---|---|
 | A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
+## 4l. First-use fixes (ADR-325)
+| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
+| O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
 
