@@ -18,16 +18,17 @@ export const MAX_OUTPUT_TOKENS = 800;
 /** Reasoning models count their reasoning against max_output_tokens; keep it short so the answer fits. */
 export const isReasoningModel = (/** @type {string} */ model) => /^(gpt-5|o\d)/.test(model);
 
-/** At most this many provider calls per request (one retry); the budget reserves for all of them. */
+/** At most this many provider calls per request (one retry). */
 export const MAX_ATTEMPTS = 2;
 
 /**
  * @param {{fetch: typeof fetch, apiKey: string, model: string, timeoutMs: number, deadlineMs: number}} cfg
  * @param {{instructions: string, input: string, schema: object}} call
+ * @param {{beforeRetry?: () => Promise<boolean>}} [hooks]  beforeRetry: false = don't retry (e.g. no budget left)
  * @returns {Promise<ProviderResult & {failedAttempts: number}>}
  *   failedAttempts: earlier 5xx attempts that were retried (each may have been billed).
  */
-export async function callProvider(cfg, call) {
+export async function callProvider(cfg, call, hooks = {}) {
   const started = Date.now();
   const body = {
     model: cfg.model,
@@ -48,7 +49,8 @@ export async function callProvider(cfg, call) {
     const result = await once({ ...cfg, timeoutMs: Math.min(cfg.timeoutMs, remaining) }, body);
     // Retry once, and only on transient provider trouble. Never retry timeouts (would double the wait).
     const remainingAfter = cfg.deadlineMs - (Date.now() - started);
-    if (result.kind === 'error' && result.code === 'providerUnavailable' && (result.providerStatus ?? 0) >= 500 && remainingAfter >= MIN_RETRY_BUDGET_MS) {
+    if (result.kind === 'error' && result.code === 'providerUnavailable' && (result.providerStatus ?? 0) >= 500
+      && remainingAfter >= MIN_RETRY_BUDGET_MS && attempt + 1 < MAX_ATTEMPTS && (await hooks.beforeRetry?.() ?? true)) {
       last = result;
       continue;
     }

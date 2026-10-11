@@ -273,6 +273,22 @@ test('a retried 5xx keeps its estimate booked on top of the answer that followed
   assert.equal(retried, answered + bothDown / 2, 'one estimate for the failed attempt plus the real cost of the answer');
 });
 
+test('no retry when the budget has no room for a second attempt', async () => {
+  const spend = new MemorySpendCap();
+  const provider = fakeProvider(new Response('{}', { status: 503 }), providerOk({ answer: 'ok', sources: [] }));
+  // This request's estimate: two failed attempts book it twice. Then allow exactly one per install.
+  const one = await (async () => {
+    const s = new MemorySpendCap();
+    await run(assistRequest(body()), makeDeps({ fetch: fakeProvider(new Response('{}', { status: 503 }), new Response('{}', { status: 503 })), spend: s }).deps);
+    return s.total('all', NOW_MS) / 2;
+  })();
+  const { deps } = makeDeps({ fetch: provider, spend, env: { ...ENV, DAILY_BUDGET_PER_INSTALL_USD: String((one + 1) / 1_000_000) } });
+  const { res } = await run(assistRequest(body()), deps);
+  assert.equal(res.status, 503, 'the 5xx is returned instead of retrying past the cap');
+  assert.equal(provider.calls.length, 1);
+  assert.equal(spend.total('all', NOW_MS), one, 'the failed attempt keeps its estimate booked');
+});
+
 test('review: an unexpected internal error becomes a content-free 503, not a platform 500', async () => {
   const boom = { hit: async () => { throw new Error('limiter exploded with SECRET-DETAIL'); } };
   const { deps, logs } = makeDeps({ limiter: boom });
