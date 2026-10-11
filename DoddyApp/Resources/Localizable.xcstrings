@@ -6874,6 +6874,17 @@
         }
       }
     },
+    "Notes on this Mac": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki na tym Macu"
+          }
+        }
+      }
+    },
     "Notes saved here stay on this Mac. They aren't on your iPhone, and your iPhone's notes aren't here.": {
       "extractionState": "manual",
       "localizations": {
@@ -7095,6 +7106,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na jutro nic w kalendarzu."
+          }
+        }
+      }
+    },
+    "Nothing saved on this Mac yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na tym Macu nic jeszcze nie zapisano."
           }
         }
       }
@@ -7790,6 +7812,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
+          }
+        }
+      }
+    },
+    "Open Doddy window": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz okno Doddy’ego"
           }
         }
       }

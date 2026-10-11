@@ -200,3 +200,8 @@ In order of risk:
   - `$(TeamIdentifierPrefix)` in `Config/DoddyMac-Info.plist`, `Config/DoddyMacWidgets-Info.plist` and the App Group entitlements;
   - `WidgetCenter` in the Mac app;
   - `containerBackground(.background, for: .widget)` on macOS.
+- **New note widget and the Mac window (ADR-440, ADR-441):**
+  - `NewNoteWidget` in `DoddyWidgets/HomeWidgets.swift`: `Button(intent: NewNoteIntent())`, added to `DoddyHomeWidgets` (seven widgets in that bundle);
+  - `Window(..., id:)` next to `MenuBarExtra`, and `openWindow(id:)`;
+  - `HSplitView`, and `TextEditor` with `.scrollContentBackground(.hidden)`;
+  - `NSApplication.shared.activate()`, which is macOS 14+.

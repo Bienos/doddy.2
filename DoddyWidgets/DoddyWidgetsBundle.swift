@@ -34,6 +34,7 @@ struct DoddyHomeWidgets: WidgetBundle {
         ParkingWidget()
         ListWidget()
         TalkToDoddyWidget()
+        NewNoteWidget()
         DoddyRestWidget()
     }
 }

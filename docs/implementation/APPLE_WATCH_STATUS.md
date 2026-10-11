@@ -70,3 +70,15 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
   - DoddyCore tests including `WatchLinkTests`, `WatchListAddTests` and `WatchComplicationTests`: PASS (863 in all, 0 failures);
   - the strings `--check` (watch catalogs included): PASS.
 - No watch code changed in this round.
+
+## Reminder with Done/Later on the watch (ADR-442, deck slide 04)
+- **Already covered, no code.** The iPhone's note reminder notifications carry long-press actions:
+  - one-off reminders: Open note, In an hour, Tomorrow morning, Done;
+  - repeating reminders: Done this time;
+  - place reminders: Open, Done.
+
+  watchOS shows an iPhone notification on the watch with its actions while the iPhone is locked.
+- **NOT RUN on a watch:**
+  - that the actions appear there;
+  - that In an hour, Tomorrow and Done run on the iPhone from the watch;
+  - what "Open note" does from the watch. It is a foreground action, and may open the Doddy watch app rather than the note.

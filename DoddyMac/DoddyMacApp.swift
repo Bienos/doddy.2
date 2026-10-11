@@ -21,6 +21,13 @@ struct DoddyMacApp: App {
             }
         }
         .menuBarExtraStyle(.window)
+
+        // The bigger Doddy window (ADR-441), opened only from the menu bar window.
+        Window("Doddy", id: MacNotesWindow.id) {
+            MacNotesWindow()
+                .environment(model)
+        }
+        .defaultSize(width: 720, height: 480)
     }
 
     /// The face crop (`MenuBarDoddy`, a copy of the widgets' `WidgetDoddy_face`, 120 px) at menu bar

@@ -240,6 +240,17 @@
         }
       }
     },
+    "New note in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa notatka w Doddym"
+          }
+        }
+      }
+    },
     "Nicely done": {
       "extractionState": "manual",
       "localizations": {

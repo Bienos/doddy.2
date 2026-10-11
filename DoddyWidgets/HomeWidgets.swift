@@ -366,6 +366,58 @@ struct TalkToDoddyWidgetView: View {
     }
 }
 
+// MARK: New note
+
+/// "New note" on the Home Screen (ADR-440; the owner's review deck, slide 05, "Miejsce na
+/// następną myśl", made for iPad and on iPhone too). A tap runs `NewNoteIntent`, the control's
+/// intent: Doddy opens on an empty capture screen. Nothing is typed or recorded in the widget,
+/// and nothing is saved until Save there.
+struct NewNoteWidget: Widget {
+    static let kind = "com.bienos.doddy2.newnotewidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { _ in
+            NewNoteWidgetView().containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("New note")
+        .description("Opens Doddy ready for a new note. Nothing is saved until you tap Save.")
+        .supportedFamilies([.systemSmall, .accessoryCircular])
+    }
+}
+
+struct NewNoteWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
+    var body: some View {
+        Button(intent: NewNoteIntent()) {
+            if family == .accessoryCircular {
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Image(systemName: "square.and.pencil").font(.title2)
+                }
+                .accessibilityElement()
+                .accessibilityLabel("New note in Doddy")
+            } else {
+                VStack(spacing: 8) {
+                    // Doddy listening, ready for the note (owner's pack, ADR-264). Tinted and clear
+                    // Home Screens, and "Hide character artwork", keep the symbol.
+                    if renderingMode == .fullColor, !WidgetDoddyArt.isHidden {
+                        WidgetPose(pose: .listening, height: 76)
+                    } else {
+                        Image(systemName: "square.and.pencil").font(.largeTitle)
+                    }
+                    Label("New note", systemImage: "square.and.pencil")
+                        .font(.headline)
+                        .labelStyle(.titleOnly)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 // MARK: Doddy, resting (StandBy)
 
 /// Made for StandBy (ADR-313): Doddy stretching, eyes closed, and the time of the next note

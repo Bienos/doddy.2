@@ -52,6 +52,12 @@ Still open, needing a simulator:
 - `ShareLink` inside a context menu and a toolbar menu, and `UICloudSharingController` in a `.sheet`, may anchor oddly or show blank.
 - Home's background picture is sized by width and may look soft on a wide iPad.
 
+## "New note" Home Screen widget (ADR-440, 2026-10-11)
+- From the owner's deck, slide 05. A small widget, and a Lock Screen circle, on iPad and iPhone.
+- A tap runs `NewNoteIntent` (the "New note" control's intent): Doddy opens on an empty capture screen. Nothing is typed or recorded in the widget.
+- It shows Doddy listening (owner's pack) on full-colour Home Screens, and the pencil otherwise.
+- **NOT RUN:** whether `Button(intent:)` with an intent that opens the app behaves on iPad as it does with the "Talk to Doddy" widget.
+
 ## Constitution evidence log
 | Rule | Enforcing code | Tests | Gaps |
 |---|---|---|---|

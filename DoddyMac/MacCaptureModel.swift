@@ -13,7 +13,10 @@ final class MacCaptureModel {
     private let repository: SQLiteMemoryRepository?
     /// Set when the database can't be opened. Save is then not offered.
     let openProblem: String?
-    private(set) var recent: [MemoryRecord] = []
+    /// Every note on this Mac, newest first: the Doddy window lists them all (ADR-441).
+    private(set) var notes: [MemoryRecord] = []
+    /// The menu bar window shows the last five.
+    var recent: [MemoryRecord] { Array(notes.prefix(5)) }
     private(set) var recentProblem: String?
 
     init() {
@@ -44,13 +47,13 @@ final class MacCaptureModel {
         return outcome
     }
 
-    /// The last few notes on this Mac, so an unconfirmed save can be checked before trying again,
-    /// and the desktop widget's count (ADR-439).
+    /// The notes on this Mac, so an unconfirmed save can be checked before trying again, and the
+    /// desktop widget's count (ADR-439).
     func refresh() async {
         guard let repository else { return }
         do {
             let all = try await repository.list(limit: nil)
-            recent = Array(all.prefix(5))
+            notes = all
             recentProblem = nil
             shareCount(all.count)
         } catch {
