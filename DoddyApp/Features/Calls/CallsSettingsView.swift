@@ -51,8 +51,13 @@ struct CallsSettingsView: View {
             }
         }
 
-        if !model.notes.isEmpty {
+        if !model.notes.isEmpty || !model.unreadableNotes.isEmpty || model.notesProblem != nil {
             Section("Notes from your calls") {
+                if let problem = model.notesProblem {
+                    Label(problem, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(Theme.error)
+                    Button("Try again") { Task { await model.refresh() } }
+                }
                 ForEach(model.notes) { note in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(note.text)
@@ -63,9 +68,19 @@ struct CallsSettingsView: View {
                             Button("Save to memories") { Task { await model.keep(note, into: store) } }
                                 .buttonStyle(.borderless)
                             Spacer()
-                            Button("Discard", role: .destructive) { Task { await model.discard(note) } }
+                            Button("Discard", role: .destructive) { Task { await model.discard(note.id) } }
                                 .buttonStyle(.borderless)
                         }
+                    }
+                }
+                ForEach(model.unreadableNotes) { note in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("This note can't be read any more, so it can't be saved.")
+                        Text("Said on a call · \(DateText.full(note.createdDate))")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                        Button("Discard", role: .destructive) { Task { await model.discard(note.id) } }
+                            .buttonStyle(.borderless)
                     }
                 }
                 Text("Doddy wrote these down during calls. They become memories only when you save them.")
