@@ -142,6 +142,15 @@ public enum SharedListMerge {
         public let remoteChanged: Bool
         /// Fields changed on both sides, where iCloud's version was kept.
         public let conflicts: Int
+
+        /// Public so the app can adjust a merge result (`SharedListsController`); the memberwise
+        /// initializer of a public struct is internal to this module.
+        public init(merged: SharedListState, localChanged: Bool, remoteChanged: Bool, conflicts: Int) {
+            self.merged = merged
+            self.localChanged = localChanged
+            self.remoteChanged = remoteChanged
+            self.conflicts = conflicts
+        }
     }
 
     public static func merge(base: SharedListState?, local: SharedListState, remote: SharedListState) -> Result {
