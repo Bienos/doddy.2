@@ -514,6 +514,13 @@ public struct TranslatorRouter: Sendable {
         return words.contains("doddy")
     }
 
+    /// `isAside`, unless it was the other person: their hold-to-talk button was held, or what was
+    /// said is in a language other than the owner's.
+    public func isOwnerAside(_ said: String?, held: TranslatorDirection? = nil) -> Bool {
+        guard Self.isAside(said), let said, held != .toOther else { return false }
+        return (languageOf(said) ?? setup.owner) == setup.owner
+    }
+
     /// Their language was "detect": the first line not in the owner's language sets it.
     public mutating func learnTheirLanguage(from said: String) -> TranslatorLanguage? {
         guard setup.other == nil else { return nil }
@@ -527,7 +534,7 @@ public struct TranslatorRouter: Sendable {
 
     /// `held` is the side held down on a hold-to-talk button for what was said, if any.
     public mutating func route(agentLine: String, after said: String?, held: TranslatorDirection? = nil) -> TranslatorRoute {
-        if Self.isAside(said) { return .aside }
+        if isOwnerAside(said, held: held) { return .aside }
         guard setup.kind == .faceToFace else { return .translation(.toOwner) }
         let direction = guessDirection(agentLine, said: said, held: held)
         last = direction
@@ -714,7 +721,7 @@ public struct TranslatorSession: Sendable {
         guard !trimmed.isEmpty, !trimmed.hasPrefix(Self.appMessagePrefix) else { return }
         heard.append(trimmed)
         if careful == nil { careful = CarefulTopics.topic(in: trimmed) }
-        if !TranslatorRouter.isAside(trimmed) { _ = router.learnTheirLanguage(from: trimmed) }
+        if !router.isOwnerAside(trimmed, held: held) { _ = router.learnTheirLanguage(from: trimmed) }
     }
 
     /// One of Doddy's lines. Returns the turn it became.

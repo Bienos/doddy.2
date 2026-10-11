@@ -126,6 +126,23 @@ final class TranslatorTests: XCTestCase {
         XCTAssertFalse(TranslatorRouter.isAside("Mój kolega Doddy mówi, że jest blisko"))
     }
 
+    func testDoddyFromTheOtherPersonIsNotAQuietWord() {
+        var router = TranslatorRouter(setup: faceToFace())
+        // Said in their language: they are speaking to Doddy, so it is translated for the owner.
+        XCTAssertEqual(router.route(agentLine: "Doddy, gdzie jest dworzec?", after: "Doddy, ¿dónde está la estación, por favor?"),
+                       .translation(.toOwner))
+        // Their hold-to-talk button was held.
+        XCTAssertNotEqual(router.route(agentLine: "x", after: "Doddy, ok", held: .toOther), .aside)
+        XCTAssertEqual(router.route(agentLine: "x", after: "Doddy, ok", held: .toOwner), .aside)
+        // In listen mode, the guide naming Doddy in Italian still goes to the owner as a translation.
+        var listen = TranslatorRouter(setup: TranslatorSetup(kind: .listen, owner: lang("pl"), other: lang("it"))!)
+        XCTAssertEqual(listen.route(agentLine: "Doddy, to jest kaplica", after: "Doddy, questa è la cappella."), .translation(.toOwner))
+        // Their language not known yet: it is still learned from their first line.
+        var session = TranslatorSession(setup: faceToFace("pl", nil), startedAt: Date())
+        session.heard("Doddy, ¿dónde está la estación, por favor?")
+        XCTAssertEqual(session.setup.other, lang("es"))
+    }
+
     func testListenOnlyGoesToTheOwner() {
         var router = TranslatorRouter(setup: TranslatorSetup(kind: .listen, owner: lang("pl"), other: lang("it"))!)
         XCTAssertEqual(router.route(agentLine: "Questa cappella", after: "Questa cappella fu dipinta tra il 1508 e il 1512."), .translation(.toOwner))
