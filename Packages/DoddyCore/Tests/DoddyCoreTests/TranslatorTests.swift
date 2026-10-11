@@ -169,6 +169,15 @@ final class TranslatorTests: XCTestCase {
         XCTAssertEqual(ExactFacts.extract("15:30 i jeszcze raz 15:30"), ["15:30"])
     }
 
+    func testASentencesFirstWordAndANumberIsNotAnAddress() {
+        XCTAssertEqual(ExactFacts.extract("At 15 we leave."), [])
+        XCTAssertEqual(ExactFacts.extract("Okay. Wait 10 seconds."), [])
+        XCTAssertEqual(ExactFacts.extract("Jedziemy na Piotrkowska 120, dobrze?"), ["Piotrkowska 120"])
+        XCTAssertEqual(ExactFacts.extract("Rue de Rivoli 99, s'il vous plaît."), ["Rue de Rivoli 99"])
+        XCTAssertEqual(ExactFacts.extract("Proszę na ul. Długa 5a."), ["ul. Długa 5a"])
+        XCTAssertEqual(ExactFacts.extract("Św. Marcin 12, proszę."), ["Św. Marcin 12"])
+    }
+
     func testCarefulTopics() {
         XCTAssertEqual(CarefulTopics.topic(in: "Tome una pastilla cada ocho horas."), .health)
         XCTAssertEqual(CarefulTopics.topic(in: "Muszę iść do lekarza."), .health)

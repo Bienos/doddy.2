@@ -573,8 +573,9 @@ public enum ExactFacts {
         #"(?<![\d.,:])(?:[01]?\d|2[0-3])(?::|h)[0-5]\d(?![\d])"#,
         // Phone numbers: +48 600 100 200.
         #"\+\d[\d\s-]{7,}\d"#,
-        // Street and number: Calle Mayor 12, ul. Długa 5a, Rue de Rivoli 99.
-        #"(?:\b(?:ul\.|al\.|pl\.)\s?)?(?:\p{Lu}[\p{L}'’.-]+\s(?:(?:de|del|la|di|da|du|von|van|der)\s)?){1,3}\d{1,4}[a-zA-Z]?\b"#,
+        // Street and number: Calle Mayor 12, ul. Długa 5a, Rue de Rivoli 99, na Piotrkowska 120. A
+        // one-word name needs "ul." or a word before it, so a sentence's first word ("At 15", "Okay. Wait 10") isn't one.
+        #"(?:\b(?:ul\.|al\.|pl\.|St\.|Św\.|Av\.)\s?(?:\p{Lu}[\p{L}'’-]+\s(?:(?:de|del|la|di|da|du|von|van|der)\s)?){1,3}|(?:\p{Lu}[\p{L}'’-]+\s(?:(?:de|del|la|di|da|du|von|van|der)\s)?){2,3}|(?<=[\p{Ll}\d,;:]\s)\p{Lu}[\p{L}'’-]+\s)\d{1,4}[a-zA-Z]?\b"#,
         // Numbers with a unit: 8 h, 500 mg, 2 km, 20%.
         #"\b\d+(?:[.,]\d+)?\s?(?:mg|ml|kg|km|g|l|m|h|min|%|°C)(?![\p{L}])"#,
     ]
