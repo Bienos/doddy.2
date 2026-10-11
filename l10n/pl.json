@@ -939,5 +939,15 @@
  "Delete this event?": "Usunąć to wydarzenie?",
  "Delete this reminder?": "Usunąć to przypomnienie?",
  "This can't be undone from Doddy.": "Doddy nie może tego cofnąć.",
- "If it repeats, only this time is deleted. This can't be undone from Doddy.": "Jeśli się powtarza, usunięte zostanie tylko to jedno. Doddy nie może tego cofnąć."
+ "If it repeats, only this time is deleted. This can't be undone from Doddy.": "Jeśli się powtarza, usunięte zostanie tylko to jedno. Doddy nie może tego cofnąć.",
+ "Set this alarm?": "Ustawić ten budzik?",
+ "Alarms": "Budziki",
+ "That alarm couldn't be turned off. Try again.": "Nie udało się wyłączyć tego budzika. Spróbuj jeszcze raz.",
+ "Doddy's alarms ring even in Silent mode or a Focus. Only alarms set by Doddy are shown here; the Clock app's alarms aren't.": "Budziki Doddy'ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy'ego, nie te z aplikacji Zegar.",
+ "It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz go w Ustawieniach, w sekcji Budziki.",
+ "Set alarm": "Ustaw budzik",
+ "Saturday and Sunday": "Sobota i niedziela",
+ "Monday to Friday": "Od poniedziałku do piątku",
+ "No alarms from Doddy. Ask Doddy, for example “Wake me at seven”.": "Brak budzików od Doddy'ego. Poproś Doddy'ego, na przykład „Obudź mnie o siódmej”.",
+ "Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.": "Budziki wymagają iOS 26 lub nowszego. Na tym iPhonie Doddy może zamiast tego ustawić minutnik albo przypomnienie."
 }

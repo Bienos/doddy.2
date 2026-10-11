@@ -27,6 +27,10 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<!-- Alarms (ADR-255): AlarmKit, iOS 26 and later only. Kept here rather than as an
+	     INFOPLIST_KEY_ build setting, which older Xcode versions don't know. -->
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

@@ -35,6 +35,8 @@ final class VoiceSessionController {
         case event(toolCallID: String, draft: CalendarEventDraft)
         case reminder(toolCallID: String, draft: ReminderDraft)
         case timer(toolCallID: String, draft: TimerDraft)
+        /// "Set this alarm?" (ADR-255), iOS 26 and later.
+        case alarm(toolCallID: String, draft: AlarmDraft)
         case map(toolCallID: String, place: String)
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
@@ -63,7 +65,7 @@ final class VoiceSessionController {
 
         var toolCallID: String {
             switch self {
-            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _):
@@ -524,6 +526,8 @@ final class VoiceSessionController {
             await reply(id, VoiceToolReply.reminder(outcome))
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
+        case .alarm(let id, let draft):
+            await reply(id, await setAlarm(draft))
         case .map(let id, let place):
             guard let url = OpenLinks.map(place: place) else {
                 await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
@@ -677,6 +681,7 @@ final class VoiceSessionController {
         case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
         case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
+        case .alarm(let id, _): await reply(id, VoiceToolReply.declinedAlarm)
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
@@ -1176,6 +1181,13 @@ final class VoiceSessionController {
                 return
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .setAlarm(let draft):
+            // Said now, before a card that could only fail: an older iOS, or alarms refused.
+            switch AlarmScheduler.support() {
+            case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
+            case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
+            case .available: propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+            }
         case .openMap(let place):
             propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
         case .runShortcut(let name):
@@ -1770,6 +1782,27 @@ final class VoiceSessionController {
         }
     }
 
+    /// Checked again at the tap: the switch, and that the time hasn't passed while the card waited.
+    private func setAlarm(_ draft: AlarmDraft) async -> String {
+        guard isOn(.timers) else {
+            connectionNeeded = .timers
+            return VoiceToolReply.failed("Timers and alarms are switched off. Nothing was set.")
+        }
+        if draft.repeats == nil, let late = ReminderDueRules.passed(draft.first, now: Date()) {
+            return VoiceToolReply.clarification(late, tool: VoiceToolName.setAlarm)
+        }
+        do {
+            switch try await AlarmScheduler.schedule(draft) {
+            case .verified: return VoiceToolReply.alarmSet(draft)
+            case .unconfirmed: return VoiceToolReply.alarmUnconfirmed
+            case .needsNewerIOS: return VoiceToolReply.alarmNeedsNewerIOS
+            case .notAllowed: return VoiceToolReply.alarmNotAllowed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
         connectionNeeded = connection
         await reply(toolCallID, VoiceToolReply.notConnected(connection))
@@ -1875,7 +1908,7 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
+        case .memory, .event, .reminder, .timer, .alarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
              .deleteEvent, .deleteReminder: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false

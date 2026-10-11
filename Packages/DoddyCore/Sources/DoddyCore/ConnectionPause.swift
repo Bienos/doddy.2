@@ -16,7 +16,7 @@ public enum ConnectionPause {
             false
         case .readCalendar, .createCalendarEvent, .createReminder, .lookupContact, .setTimer,
              .openMap, .runShortcut, .draftMessage, .cloudTool, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder:
+             .deleteCalendarEvent, .deleteReminder, .setAlarm:
             true
         case .remindAboutNote(let draft):
             // A time stays inside Doddy; a place is looked up in Apple Maps, another service.

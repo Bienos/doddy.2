@@ -99,7 +99,11 @@ def usage_prompts():
     """The app target's INFOPLIST_KEY_NS…UsageDescription values, in project.yml order."""
     text = open(PROJECT, encoding="utf-8").read()
     app = text.split("\n  DoddyWidgets:")[0]
-    return dict(re.findall(r'INFOPLIST_KEY_(NS\w+UsageDescription): "((?:[^"\\]|\\.)*)"', app))
+    prompts = dict(re.findall(r'INFOPLIST_KEY_(NS\w+UsageDescription): "((?:[^"\\]|\\.)*)"', app))
+    # Keys that have no INFOPLIST_KEY_ build setting live in the app's partial Info.plist.
+    plist = open(os.path.join(ROOT, "Config", "Doddy-Info.plist"), encoding="utf-8").read()
+    prompts.update(re.findall(r"<key>(NS\w+UsageDescription)</key>\s*<string>([^<]*)</string>", plist))
+    return prompts
 
 
 def infoplist_catalog(table):

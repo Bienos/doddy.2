@@ -410,6 +410,12 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("settings.activity")
                     NavigationLink {
+                        AlarmsView()
+                    } label: {
+                        Label("Alarms", systemImage: "alarm")
+                    }
+                    .accessibilityIdentifier("settings.alarms")
+                    NavigationLink {
                         PlanPracticeView()
                     } label: {
                         Label("Try a plan card", systemImage: "checklist")

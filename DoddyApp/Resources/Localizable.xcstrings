@@ -364,6 +364,28 @@
         }
       }
     },
+    "Alarms": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budziki"
+          }
+        }
+      }
+    },
+    "Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budziki wymagają iOS 26 lub nowszego. Na tym iPhonie Doddy może zamiast tego ustawić minutnik albo przypomnienie."
+          }
+        }
+      }
+    },
     "All day": {
       "extractionState": "manual",
       "localizations": {
@@ -2267,6 +2289,17 @@
         }
       }
     },
+    "Doddy's alarms ring even in Silent mode or a Focus. Only alarms set by Doddy are shown here; the Clock app's alarms aren't.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budziki Doddy'ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy'ego, nie te z aplikacji Zegar."
+          }
+        }
+      }
+    },
     "Doddy's default": {
       "extractionState": "manual",
       "localizations": {
@@ -3543,6 +3576,17 @@
         }
       }
     },
+    "It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz go w Ustawieniach, w sekcji Budziki."
+          }
+        }
+      }
+    },
     "It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -4203,6 +4247,17 @@
         }
       }
     },
+    "Monday to Friday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od poniedziałku do piątku"
+          }
+        }
+      }
+    },
     "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set.": {
       "extractionState": "manual",
       "localizations": {
@@ -4474,6 +4529,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Następna rozmowa"
+          }
+        }
+      }
+    },
+    "No alarms from Doddy. Ask Doddy, for example “Wake me at seven”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak budzików od Doddy'ego. Poproś Doddy'ego, na przykład „Obudź mnie o siódmej”."
           }
         }
       }
@@ -6612,6 +6678,17 @@
         }
       }
     },
+    "Saturday and Sunday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobota i niedziela"
+          }
+        }
+      }
+    },
     "Save": {
       "extractionState": "manual",
       "localizations": {
@@ -7052,6 +7129,17 @@
         }
       }
     },
+    "Set alarm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustaw budzik"
+          }
+        }
+      }
+    },
     "Set reminder": {
       "extractionState": "manual",
       "localizations": {
@@ -7059,6 +7147,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ustaw przypomnienie"
+          }
+        }
+      }
+    },
+    "Set this alarm?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawić ten budzik?"
           }
         }
       }
@@ -7895,6 +7994,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ten adres nie zwrócił kanału z newsami. Poszukaj na stronie linku RSS lub Atom."
+          }
+        }
+      }
+    },
+    "That alarm couldn't be turned off. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wyłączyć tego budzika. Spróbuj jeszcze raz."
           }
         }
       }

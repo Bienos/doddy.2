@@ -291,16 +291,20 @@ struct ConnectionInfo {
                 canDo: [
                     "Read your events for today, tomorrow, the week, or a day you name",
                     "Add an event, after you tap Add",
+                    "Move, rename or delete one event, after you tap Change or Delete",
                 ],
                 leavesPhone: "Event titles and times, when Doddy uses them in a conversation.",
-                staysHere: "Locations and notes are not read or sent. Doddy never changes or deletes existing events.")
+                staysHere: "Locations and notes are not read or sent. Doddy changes or deletes an event only after you tap, one at a time.")
         case .reminders:
             ConnectionInfo(
                 symbol: "checklist",
                 examples: ["Remind me to call Marta at six", "Add buy milk to my reminders"],
-                canDo: ["Add a reminder, after you tap Add"],
+                canDo: [
+                    "Add a reminder, after you tap Add",
+                    "Move, complete or delete one open reminder, after you tap",
+                ],
                 leavesPhone: "The reminder text and due time, when Doddy adds one.",
-                staysHere: "Doddy doesn't read or change your existing reminders.")
+                staysHere: "Doddy reads your open reminders only to find the one you name. Notes on reminders aren't read.")
         case .timers:
             ConnectionInfo(
                 symbol: "timer",
@@ -308,8 +312,9 @@ struct ConnectionInfo {
                 canDo: [
                     "Start a countdown, after you tap Start",
                     "Ring with a notification when it's done, even if the app is closed",
+                    "Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)",
                 ],
-                leavesPhone: "The length and label of a timer, when Doddy starts one.",
+                leavesPhone: "The length and label of a timer, or the time and label of an alarm, when Doddy sets one.",
                 staysHere: "iPhone asks once for notification permission. Doddy doesn't keep track of the timer after it starts.")
         case .contacts:
             ConnectionInfo(

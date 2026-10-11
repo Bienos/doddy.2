@@ -47,7 +47,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
              VoiceToolName.deleteCalendarEvent: .calendar
         case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder: .reminders
         case VoiceToolName.lookupContact: .contacts
-        case VoiceToolName.setTimer: .timers
+        case VoiceToolName.setTimer, VoiceToolName.setAlarm: .timers
         case VoiceToolName.openMap: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
@@ -163,6 +163,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
     case setTimer(TimerDraft)
+    /// A real alarm (ADR-255), on iOS 26 and later.
+    case setAlarm(AlarmDraft)
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
@@ -220,6 +222,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .lookupContact(name: person)
         case VoiceToolName.setTimer:
             return parseTimer(args, name: name)
+        case VoiceToolName.setAlarm:
+            return parseAlarm(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)

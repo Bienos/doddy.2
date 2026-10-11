@@ -339,6 +339,29 @@ struct VoiceView: View {
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .alarm(_, let draft):
+            Text("Set this alarm?")
+                .font(.headline)
+            Text(draft.clock)
+                .font(.title2.monospacedDigit())
+            Group {
+                if let repeats = draft.repeats {
+                    switch repeats {
+                    case .everyDay: Text("Every day")
+                    case .weekdays: Text("Monday to Friday")
+                    case .weekends: Text("Saturday and Sunday")
+                    }
+                } else if let date = draft.first.date {
+                    Text(date.formatted(date: .complete, time: .omitted))
+                }
+            }
+            .foregroundStyle(Theme.secondaryText)
+            if let label = draft.label {
+                Text("“\(label)”")
+            }
+            Text("It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .timer(_, let draft):
             Text("Start this timer?")
                 .font(.headline)
@@ -514,6 +537,7 @@ struct VoiceView: View {
         case .memory: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
         case .event, .reminder: (NSLocalizedString("Add", comment: ""), NSLocalizedString("Don't add", comment: ""))
         case .timer: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Don't start", comment: ""))
+        case .alarm: (NSLocalizedString("Set alarm", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))

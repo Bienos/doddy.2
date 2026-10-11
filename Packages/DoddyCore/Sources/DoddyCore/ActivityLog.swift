@@ -115,6 +115,8 @@ public struct ActivityRequest: Equatable, Sendable {
             let minutes = draft.seconds / 60, seconds = draft.seconds % 60
             let length = minutes > 0 ? "\(minutes) min\(seconds > 0 ? " \(seconds) s" : "")" : "\(seconds) s"
             return ActivityRequest(app: .timers, title: "Start timer", detail: [draft.label.map { "“\($0)”" }, length].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+        case .setAlarm(let draft):
+            return ActivityRequest(app: .timers, title: "Set alarm", detail: [draft.label.map { "“\($0)”" }, draft.summary].compactMap { $0 }.joined(separator: " · "), isLookup: false)
         case .openMap(let place):
             return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
         case .runShortcut(let name):
