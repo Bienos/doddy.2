@@ -40,9 +40,10 @@ final class WatchLink: NSObject {
         guard session.activationState == .activated, session.isReachable, let data = try? request.encoded() else { return .notSent }
         return await withCheckedContinuation { continuation in
             let once = OnceReply(continuation)
-            session.sendMessageData(data, replyHandler: { reply in
+            // WatchConnectivity calls these on its own queue: @Sendable so they aren't main-actor code.
+            session.sendMessageData(data, replyHandler: { @Sendable reply in
                 once.resume(.reply(WatchReply.decoded(reply) ?? .failed))
-            }, errorHandler: { _ in
+            }, errorHandler: { @Sendable _ in
                 once.resume(.unanswered)
             })
         }

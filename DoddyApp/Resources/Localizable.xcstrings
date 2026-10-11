@@ -5897,6 +5897,17 @@
         }
       }
     },
+    "Recording couldn't start. If you're talking to Doddy or on a call, finish that first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zacząć nagrywania. Jeśli rozmawiasz z Doddym albo przez telefon, najpierw to zakończ."
+          }
+        }
+      }
+    },
     "Relaxed and neutral": {
       "extractionState": "manual",
       "localizations": {
@@ -7862,6 +7873,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pamięć notatek nie jest teraz dostępna na tym iPhonie."
+          }
+        }
+      }
+    },
+    "The microphone is off for Doddy. Turn it on in the Settings app to record.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon jest wyłączony dla Doddy’ego. Włącz go w aplikacji Ustawienia, żeby nagrywać."
           }
         }
       }

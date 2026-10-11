@@ -25,7 +25,8 @@ struct NoteImportView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var choosing = false
-    @State private var files: [(name: String, data: Data?)] = []
+    /// `data` is nil when the file couldn't be read; `tooLarge` files aren't read at all.
+    @State private var files: [(name: String, data: Data?, tooLarge: Bool)] = []
     @State private var splitParagraphs = false
     @State private var candidates: [NoteImport.Candidate] = []
     @State private var ticked: Set<UUID> = []
@@ -140,14 +141,18 @@ struct NoteImportView: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             // A file too large isn't read at all; it is listed with the reason.
-            let data = size > NoteImport.maxFileBytes ? Data(count: NoteImport.maxFileBytes + 1) : try? Data(contentsOf: url)
-            return (url.lastPathComponent, data)
+            let tooLarge = size > NoteImport.maxFileBytes
+            return (url.lastPathComponent, tooLarge ? nil : try? Data(contentsOf: url), tooLarge)
         }
         rebuild()
     }
 
     private func rebuild() {
         let read = files.flatMap { file -> [NoteImport.Candidate] in
+            if file.tooLarge {
+                return [NoteImport.Candidate(fileName: file.name, origin: NoteImport.isKeepFile(file.name) ? .googleKeep : .textFile,
+                                             content: nil, createdAt: nil, problem: .fileTooLarge)]
+            }
             guard let data = file.data else {
                 return [NoteImport.Candidate(fileName: file.name, origin: .textFile, content: nil, createdAt: nil, problem: .unreadable)]
             }

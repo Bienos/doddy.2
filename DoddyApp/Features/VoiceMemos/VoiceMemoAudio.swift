@@ -33,7 +33,7 @@ final class VoiceMemoRecorder {
     func start() async {
         guard !isRecording else { return }
         guard await AVAudioApplication.requestRecordPermission() else {
-            state = .failed("The microphone is off for Doddy. Turn it on in the Settings app to record.")
+            state = .failed(NSLocalizedString("The microphone is off for Doddy. Turn it on in the Settings app to record.", comment: ""))
             return
         }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("DoddyMemo-\(UUID().uuidString).m4a")
@@ -71,7 +71,7 @@ final class VoiceMemoRecorder {
             }
         } catch {
             try? FileManager.default.removeItem(at: url)
-            state = .failed("Recording couldn't start. If you're talking to Doddy or on a call, finish that first.")
+            state = .failed(NSLocalizedString("Recording couldn't start. If you're talking to Doddy or on a call, finish that first.", comment: ""))
         }
     }
 

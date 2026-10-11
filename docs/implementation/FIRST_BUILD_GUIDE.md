@@ -50,8 +50,23 @@ scripts/ci.sh                  # everything, including xcodebuild test on the fi
 ## Compile review of this round's Swift (no compiler available)
 The new UI files were reviewed by reading them against the iOS 17 / watchOS 10 SDK APIs and the DoddyCore signatures. Every file passes `swiftc -parse`. The non-UI files are type-checked by `scripts/typecheck_app_logic.sh` (13 files). What the review found and fixed is in "Review fixes" below. It reduces the risk of a failed first build; it does not remove it.
 
-### Review fixes
-See the commit that adds this guide. Each fix is listed there with its file.
+### Review fixes (2026-10-11)
+Two read-throughs found no certain compile errors. They checked:
+- every `PendingAction` and `VoiceToolRequest` switch for exhaustiveness;
+- every DoddyCore symbol and its access level;
+- the EventKit and App Intents requirements;
+- all 280 `NSLocalizedString` call sites.
+Small Swift 6 stand-ins of the risky patterns type-check on Linux. Fixed after the review:
+- `DoddyWatch/WatchLink.swift`: the `sendMessageData` reply and error handlers are now `@Sendable`. As written, they were main-actor closures that WatchConnectivity calls on its own queue, a likely crash on the first reply.
+- `VoiceMemoTranscriber.swift`: the recognizer and its task are kept alive until the answer comes, with a 120-second limit. Before, a freed recognizer could leave "Writing it out…" on screen for good.
+- `DeviceConnections.swift`: `.map { Self.summary($0) }` instead of passing the main-actor method itself, which some Swift 6.0 compilers reject.
+- `project.yml`: `INFOPLIST_KEY_WKApplication: YES` for the single-target watch app.
+- Smaller fixes:
+  - recorder error messages now go through the Polish catalog;
+  - oversized import files are flagged without allocating their size;
+  - the speech languages are worked out once;
+  - the watch's reminder list no longer risks duplicate ids.
+- Left as is, but watch it in the first build: `OnDeviceEmbedder.swift` passes a fresh `NLContextualEmbedding` to `requestAssets()` from inside its actor. Swift 6.2 accepts this; Swift 6.0 may call it a data-race risk. The fix, if needed, is a `nonisolated` helper that creates and loads the model and returns it as `sending`.
 
 ### Most likely to still need a fix in Xcode
 - `DoddyWatch/*`, `Features/Watch/PhoneWatchLink.swift`: `WCSessionDelegate` conformance from a `@MainActor` class with `nonisolated` methods under Swift 6; XcodeGen embedding the watch app.

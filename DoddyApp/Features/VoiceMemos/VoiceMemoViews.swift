@@ -25,7 +25,9 @@ struct CaptureVoiceMemo: View {
     @State private var isWritingOut = false
     @State private var notice: String?
     @State private var problem: String?
-    private let languages = VoiceMemoTranscriber.languages()
+    /// Worked out once per launch, not on every redraw.
+    private static let cachedLanguages = VoiceMemoTranscriber.languages()
+    private var languages: [Locale] { Self.cachedLanguages }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
