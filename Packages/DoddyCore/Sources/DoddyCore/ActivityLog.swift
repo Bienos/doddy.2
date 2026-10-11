@@ -70,13 +70,21 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
+    /// The voice tool that asked (ADR-324): an identifier for outcome events, never user text.
+    public let tool: String?
 
-    public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil) {
+    public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil, tool: String? = nil) {
         self.app = app
         self.title = title
         self.detail = detail
         self.isLookup = isLookup
         self.reminderKey = reminderKey
+        self.tool = tool
+    }
+
+    /// The same request, naming the tool that made it.
+    public func naming(_ tool: String) -> ActivityRequest {
+        ActivityRequest(app: app, title: title, detail: detail, isLookup: isLookup, reminderKey: reminderKey, tool: tool)
     }
 
     /// Nil for requests that never reach an app (unsupported or invalid tool calls).
@@ -194,6 +202,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .convertCurrency(let request):
             // Only that the rates file was fetched; the amount stays in the conversation (ADR-300).
             return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
+        case .noteCapabilityGap:
+            // A category Doddy notes for itself (ADR-324); no app is used and nothing changes.
+            return nil
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
@@ -223,6 +234,11 @@ public struct ActivityRequest: Equatable, Sendable {
 }
 
 /// Marks an entry as one step of a plan card (ADR-204), so the list can show them together.
+extension ActivityLog {
+    /// The note on an entry for a card nobody answered before the conversation ended.
+    public static let unansweredNote = "The conversation ended before you answered."
+}
+
 public struct ActivityPlanRef: Codable, Equatable, Sendable {
     public let id: UUID
     public let step: Int
@@ -255,12 +271,15 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public let undo: ActivityUndo?
     /// Set after the user tapped Undo.
     public var undoState: UndoState?
+    /// The voice tool that asked (ADR-324). Entries from before it have none.
+    public let tool: String?
 
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
         outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
-        plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil
+        plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil, tool: String? = nil
     ) {
+        self.tool = tool
         self.id = id
         self.at = at
         self.app = app
@@ -282,14 +301,14 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
-            note: note, reminderKey: request.reminderKey, plan: plan, undo: undo)
+            note: note, reminderKey: request.reminderKey, plan: plan, undo: undo, tool: request.tool)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
     public static func started(_ request: ActivityRequest, at: Date, plan: ActivityPlanRef? = nil) -> ActivityEntry {
         ActivityEntry(
             at: at, app: request.app, title: request.title, detail: request.detail, outcome: .inProgress,
-            reminderKey: request.reminderKey, plan: plan)
+            reminderKey: request.reminderKey, plan: plan, tool: request.tool)
     }
 
     /// "Check" is offered when Doddy wasn't sure a reminder went in.

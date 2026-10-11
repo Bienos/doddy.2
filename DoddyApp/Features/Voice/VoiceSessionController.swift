@@ -270,6 +270,9 @@ final class VoiceSessionController {
     private(set) var saveSuggestions: SaveSuggestionCard?
     /// Suggestions are worked out once per conversation, so a dismissed card doesn't come back.
     private var suggestionsOffered = false
+    /// This conversation's id for the learning loop (ADR-324): lets repeated sequences be told apart
+    /// by conversation. An identifier only; nothing of what was said.
+    private var conversationID = UUID().uuidString
 
     init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
         self.store = store
@@ -328,6 +331,9 @@ final class VoiceSessionController {
         proposedNoteTexts = []
         saveSuggestions = nil
         suggestionsOffered = false
+        conversationID = UUID().uuidString
+        activity.sessionID = conversationID
+        store.learning?.clearAnsweredCards()
         audioPausedByOtherApp = false
         audioNote = nil
 
@@ -361,6 +367,8 @@ final class VoiceSessionController {
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
         var listsText = ListsPrompt.render(store.lists)
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
+        // What Doddy learned and the user confirmed (ADR-324), only when they switched it on.
+        var learnedText = await store.learning?.voiceContext() ?? LearningPrompt.notShared
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
         if let preset {
@@ -369,6 +377,7 @@ final class VoiceSessionController {
             recent = VoiceContext.Rendered(text: none, includedCount: 0, truncated: false)
             profileText = none
             listsText = none
+            learnedText = none
             isPrivate = true
             privacyLocked = true
             translator = TranslatorSession(setup: preset, startedAt: Date())
@@ -385,6 +394,7 @@ final class VoiceSessionController {
             // placeholder defaults to the persona defaults, so a build that sends nothing still works.
             PersonalityPrompt.variableName: PersonalityPrompt.render(.stored(), nickname: Nickname.stored()),
             ProfilePrompt.variableName: profileText,
+            LearningPrompt.variableName: learnedText,
             TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
             ListsPrompt.variableName: listsText,
             MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
@@ -1295,6 +1305,8 @@ final class VoiceSessionController {
               steps[index].toolName == step.toolName, blocked[step.number] == nil else { return }
         steps[index] = step
         planChanged.insert(step.number)
+        // A step the user had to change is a correction (ADR-324).
+        store.learning?.recordChangedStep(tool: step.toolName, requestID: "\(id)-\(step.number)", sessionID: conversationID)
         pendingAction = .plan(toolCallID: id, steps: steps, blocked: blocked)
     }
 
@@ -1502,6 +1514,24 @@ final class VoiceSessionController {
         if case .failed = phase { return }
         phase = .ended
         offerSaveSuggestions()
+        offerLearning()
+        activity.sessionID = nil
+    }
+
+    // MARK: End-of-conversation learning card (ADR-324)
+
+    /// At most one "I noticed…" card, from sentences the "Worth keeping?" card did not already
+    /// offer and from tools repeated on three separate days. Only when learning is on, never for
+    /// a private conversation, never while connections are paused (the service checks all three).
+    private func offerLearning() {
+        guard let learning = store.learning, phase == .ended else { return }
+        let alreadyOnNoteCard = Set(saveSuggestions?.items.map(\.suggestion.text) ?? [])
+        let pool = SaveSuggestions.suggest(
+            userLines: lines.filter(\.fromUser).map(\.text), alreadyProposed: proposedNoteTexts,
+            existingNotes: store.memories, max: 8)
+        let leftover = pool.filter { !alreadyOnNoteCard.contains($0.text) }
+        let wasPrivate = isPrivate
+        Task { await learning.proposeAfterConversation(leftover: leftover, isPrivate: wasPrivate) }
     }
 
     // MARK: End-of-conversation save suggestions (ADR-247)
@@ -1562,7 +1592,7 @@ final class VoiceSessionController {
             await handlePlan(call)
             return
         }
-        asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
+        asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)?.naming(call.toolName)
         // Settings → Pause all: no other app or account is used; notes still work.
         if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
             await reply(call.toolCallId, ConnectionPause.reply)
@@ -1747,6 +1777,10 @@ final class VoiceSessionController {
             }
             endTranslator()
             await reply(call.toolCallId, VoiceToolReply.translatorStopped)
+        case .noteCapabilityGap(let category):
+            // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-324).
+            await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID)
+            await reply(call.toolCallId, LearningPrompt.gapNoted)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
@@ -1842,6 +1876,10 @@ final class VoiceSessionController {
             results.append((step, text))
         }
         planStatus?.isRunning = false
+        // A saved procedure with exactly these steps counts as used (ADR-324).
+        if !ticked.subtracting(blocked.keys).isEmpty {
+            await store.learning?.planRan(tools: steps.map(\.toolName))
+        }
         await reply(toolCallID, PlanReply.summary(results, changed: changed))
     }
 
@@ -2561,7 +2599,7 @@ final class VoiceSessionController {
         for (toolCallID, request) in asked where started[toolCallID] == nil {
             var entry = ActivityEntry(request: request, reply: "", at: Date())
             entry.outcome = .notDone
-            entry.note = "The conversation ended before you answered."
+            entry.note = ActivityLog.unansweredNote
             activity.append(entry)
             asked[toolCallID] = nil
         }
@@ -2571,7 +2609,7 @@ final class VoiceSessionController {
                 guard let request = step.activity(calendar: .current) else { continue }
                 var entry = ActivityEntry(request: request, reply: "", at: Date(), plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
                 entry.outcome = .notDone
-                entry.note = "The conversation ended before you answered."
+                entry.note = ActivityLog.unansweredNote
                 activity.append(entry)
             }
         }

@@ -17,6 +17,8 @@ public enum VoiceToolName {
     public static let draftMessage = "draft_message"
     /// Several changes on one card (`PlanProposal`, ADR-204).
     public static let proposePlan = "propose_plan"
+    /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-324).
+    public static let noteCapabilityGap = "note_capability_gap"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also
@@ -215,6 +217,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case deleteCalendarEvents(VoiceTimeRange)
     /// Open reminders due by a day, moved to another day at their own times.
     case moveReminders(dueBy: ReminderDue, to: ReminderDue)
+    /// Something Doddy can't do yet, as a category (ADR-324). Nothing runs; one local row.
+    case noteCapabilityGap(CapabilityGapCategory)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -285,6 +289,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
             return .stopTranslator
+        case VoiceToolName.noteCapabilityGap:
+            guard let raw = args.text("category") else { return .invalid(name: name, reason: "missing category") }
+            return .noteCapabilityGap(CapabilityGapCategory(rawValue: raw) ?? .unknown)
         case VoiceToolName.addToList, VoiceToolName.readList, VoiceToolName.checkOff,
              VoiceToolName.removeFromList, VoiceToolName.createList:
             return parseList(args, name: name)

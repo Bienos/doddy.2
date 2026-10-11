@@ -431,10 +431,14 @@ public struct OutcomeDetail: Equatable, Codable, Sendable {
     public let gapCategory: CapabilityGapCategory?
     public let correction: CorrectionKind?
     public let learnedItemID: UUID?
+    /// The conversation the request belonged to (an id, so the same tools in one conversation
+    /// can be seen as one sequence). Nothing of the conversation itself.
+    public let sessionID: String?
 
     public init(
         toolName: String? = nil, procedureID: UUID? = nil, stepNumber: Int? = nil,
-        gapCategory: CapabilityGapCategory? = nil, correction: CorrectionKind? = nil, learnedItemID: UUID? = nil
+        gapCategory: CapabilityGapCategory? = nil, correction: CorrectionKind? = nil, learnedItemID: UUID? = nil,
+        sessionID: String? = nil
     ) throws(LearningValidationError) {
         self.toolName = try toolName.map { (name) throws(LearningValidationError) in try LearningText.identifier(name, field: "tool") }
         self.procedureID = procedureID
@@ -442,6 +446,7 @@ public struct OutcomeDetail: Equatable, Codable, Sendable {
         self.gapCategory = gapCategory
         self.correction = correction
         self.learnedItemID = learnedItemID
+        self.sessionID = try sessionID.map { (id) throws(LearningValidationError) in try LearningText.identifier(id, field: "session_id") }
     }
 }
 

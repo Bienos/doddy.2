@@ -96,4 +96,13 @@ final class DataFlowTests: XCTestCase {
         state.rememberConversations = true
         XCTAssertFalse(DataFlow.staysOnPhone(state).contains("Conversations: none are remembered."))
     }
+
+    // ADR-324: what Doddy learned reaches a conversation only when the user switched that on.
+    func testLearnedFactsAreListedOnlyWhenSharedWithVoice() {
+        XCTAssertFalse(row("elevenlabs", base).what.contains("What I've learned"))
+        var shared = base
+        shared.learnedSharedWithVoice = true
+        XCTAssertTrue(row("elevenlabs", shared).what.contains("the facts and routines you confirmed under What I've learned"))
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("What Doddy learned") }, "proposals and counts are always on the phone")
+    }
 }

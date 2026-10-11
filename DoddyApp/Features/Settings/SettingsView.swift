@@ -32,6 +32,7 @@ struct SettingsView: View {
     @State private var restoreFailed = false
     @State private var deleteError: String?
     @AppStorage(PreferenceKey.suggestSavesAfterConversation) private var suggestSaves = true
+    @AppStorage(PreferenceKey.learningOn) private var learningOn = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
     @State private var editingProfile = false
     @State private var confirmForget = false
@@ -335,6 +336,19 @@ struct SettingsView: View {
                     Text("When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                    if let learning = store.learning, learning.isAvailable {
+                        // ADR-324: facts and routines Doddy kept, each confirmed by the user.
+                        NavigationLink {
+                            LearnedView(learning: learning)
+                        } label: {
+                            StatusRow(
+                                title: "What I've learned",
+                                value: learningOn
+                                    ? "On · \(learning.confirmedFacts.count + learning.confirmedProcedures.count)"
+                                    : "Off")
+                        }
+                        .accessibilityIdentifier("settings.learned")
+                    }
                     if let problem = conversationLogs.problem {
                         Label(problem, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
@@ -579,7 +593,7 @@ struct SettingsView: View {
                 Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
+                Text("This removes every memory and its search index from this iPhone, and everything Doddy learned from what you said, and can't be undone. Exported files and older backups aren't affected.")
             }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)
@@ -686,6 +700,8 @@ struct SettingsView: View {
     private func deleteAll() async {
         do {
             try await store.deleteAll()
+            // Everything Doddy learned and the counts of corrections go with the notes (ADR-324).
+            try await store.learning?.deleteAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
             deleteError = nil
         } catch {

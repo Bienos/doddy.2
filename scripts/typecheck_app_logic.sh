@@ -76,6 +76,9 @@ files=(
   DoddyApp/Infrastructure/PersonalityPreferences.swift
   DoddyApp/Infrastructure/PinnedNotesStorage.swift
   DoddyApp/Infrastructure/ConversationLogStore.swift
+  # The learning loop's view state and the activity log it listens to (ADR-324).
+  DoddyApp/Infrastructure/ActivityLogStore.swift
+  DoddyApp/Infrastructure/LearningStore.swift
   DoddyApp/Infrastructure/MemoryStore.swift
   DoddyApp/Infrastructure/MemoryStore+Lists.swift
   DoddyApp/Infrastructure/ProfileStore.swift

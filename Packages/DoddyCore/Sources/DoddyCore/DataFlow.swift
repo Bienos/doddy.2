@@ -31,6 +31,8 @@ public struct DataFlowState: Equatable, Sendable {
     public var sharedLists: Int
     /// Home's test switch for who runs the live voice (ADR-265).
     public var voiceProvider: VoiceProvider
+    /// Settings → What I've learned → "Use in voice conversations" (ADR-324).
+    public var learnedSharedWithVoice: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -39,8 +41,10 @@ public struct DataFlowState: Equatable, Sendable {
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
         siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0,
-        voiceProvider: VoiceProvider = .elevenLabs
+        voiceProvider: VoiceProvider = .elevenLabs,
+        learnedSharedWithVoice: Bool = false
     ) {
+        self.learnedSharedWithVoice = learnedSharedWithVoice
         self.morningCheckInOn = morningCheckInOn
         self.sharedLists = sharedLists
         self.voiceProvider = voiceProvider
@@ -80,6 +84,7 @@ public enum DataFlow {
         if state.rememberConversations { voice.append("your last few conversations") }
         if state.morningCheckInOn { voice.append("today's Doddy reminders and lists with things left, when you talk through the morning check-in") }
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
+        if state.learnedSharedWithVoice { voice.append("the facts and routines you confirmed under What I've learned") }
         if !apps.isEmpty { voice.append("calendar entries, reminders, contact names and birthdays (day and month) or drafts Doddy uses (\(names(apps)))") }
         if state.doddyServerSet && !state.pauseAll { voice.append("results from your online accounts that Doddy uses") }
 
@@ -200,6 +205,8 @@ public enum DataFlow {
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
+            // ADR-324: proposals are picked here; only what you confirm and switch on is ever handed over.
+            "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
             "\"Hey Doddy\": what the microphone hears while it waits for the wake word is checked on this iPhone and not kept or sent.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]

@@ -14,6 +14,11 @@ final class ActivityLogStore {
     private(set) var entries: [ActivityEntry] = []
     private(set) var problem: String?
     private let fileURL: URL?
+    /// The learning loop listens here (ADR-324): the entry, what it replaced (`nil` for a new
+    /// one), the other entries newest first, and the conversation the change belonged to.
+    @ObservationIgnored var onChange: ((ActivityEntry, ActivityEntry?, [ActivityEntry], String?) -> Void)?
+    /// Set by the voice session while a conversation is open; `nil` otherwise.
+    @ObservationIgnored var sessionID: String?
 
     init(fileURL: URL? = ActivityLogStore.defaultURL()) {
         self.fileURL = fileURL
@@ -23,12 +28,15 @@ final class ActivityLogStore {
     func append(_ entry: ActivityEntry) {
         entries = ActivityLog.appending(entry, to: entries, now: Date())
         save()
+        onChange?(entry, nil, entries.filter { $0.id != entry.id }, sessionID)
     }
 
     func replace(_ entry: ActivityEntry) {
         guard let index = entries.firstIndex(where: { $0.id == entry.id }) else { return }
+        let previous = entries[index]
         entries[index] = entry
         save()
+        onChange?(entry, previous, entries.filter { $0.id != entry.id }, sessionID)
     }
 
     func clear() {

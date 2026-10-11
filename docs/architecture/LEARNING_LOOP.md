@@ -1,5 +1,5 @@
 # Learning loop — Doddy gets better for one person (design, ADR-324)
-Status: **Phase A reviewed (owner, 2026-10-11: "use your proposed defaults"); Phase B (typed core, three migrations, repositories, Linux tests) built on `claude/cool-archimedes-9l8l1h`; Phase C (cards, screen, procedure runs, gap tool) NOT built.** Milestone status and test evidence: `docs/implementation/M6_LEARNING_LOOP_STATUS.md` (the pack file `MILESTONES.md` is byte-locked). Sections 8 and 9 now describe what is in the code; where it differs from the Phase A proposal, the difference is marked.
+Status: **Phase A reviewed (owner, 2026-10-11: "use your proposed defaults"); Phase B (typed core, migrations, repositories) and Phase C (proposers, service, store, cards, Settings screen, voice wiring, gap tool) built on `claude/cool-archimedes-9l8l1h`. Linux-tested: core, service and SQLite. NOT RUN: every screen, the voice session wiring, the live voice agent.** Milestone status and test evidence: `docs/implementation/M6_LEARNING_LOOP_STATUS.md` (the pack file `MILESTONES.md` is byte-locked). Sections 8, 9 and 13 describe what is in the code; where it differs from the Phase A proposal, the difference is marked.
 
 Doddy accumulates verified context about its one user, learns reusable procedures from repeated requests, records what happened and what the user corrected, and notes what it could not do. Every learned thing is **data**: proposed by a model or a rule, validated by typed code, confirmed by the user, versioned, visible, revertible. Doddy never changes its own code on the iPhone.
 
@@ -200,3 +200,24 @@ Not in Phase B (Phase C): the proposers themselves (the `SaveSuggestions` extens
 4. Capability gaps via a `note_capability_gap` agent tool with enumerated categories (yes/no); if no, gaps are rule-detected only and will undercount.
 5. Where the milestone sits (`docs/implementation/M6_LEARNING_LOOP_STATUS.md`): proposed as M6 after the M5 beta decision, so learning does not confound the beta's retention measurement. Alternative: run it inside M5 with a control group.
 6. Metric baseline: corrections per week measured for two weeks with learning off (owner's own use or the beta) before any claim that Doddy "gets better".
+
+## 13. Phase C as built (ADR-325)
+**Code.** `DoddyCore/Learning/`: `LearningService` (everything that is not a screen: recording, proposing, answering a card, "That's wrong", voice text, housekeeping, delete), `OutcomeRecorder` (activity log entry → outcome events), `LearningProposers` (`FactProposer`, `ProcedureDetector`, `ProcedureStepTemplates`), `LearningPrompt` (the `{{learned_context}}` text), `UnavailableLearning*Repository`. App: `LearningStore` (view state), `LearnedView` (Settings), `LearningCardsView` (voice screen), hooks in `ActivityLogStore`, `VoiceSessionController`, `SettingsView`, `DataFlowView`, `AppEnvironment`, `DoddyApp`.
+
+**What now happens, in order.**
+1. Every entry that "What Doddy did" adds or replaces is passed to the recorder. It writes `completed`, `declined`, `cancelled` (a card nobody answered), `corrected` (Undo) and `redone` events, with tool name, conversation id and request id only. This runs whether or not learning is on, so the baseline for the metric exists.
+2. When a conversation ends and learning is on, the service looks for one thing to propose: a tool sequence repeated on 3 separate days (first), else a preference or personal fact from sentences the "Worth keeping?" card did not already offer. The policy checks it (sensitive words, caps, paused, known evidence, tools on) and only then is it stored as `proposed` and shown.
+3. Save confirms the exact stored text, shows "Saved" only after the read-back, and the item appears in Settings. Not now leaves it under "Waiting for your answer" for 7 days. Never this keeps a refused row.
+4. With "Use what Doddy learned in voice conversations" on, the next conversation starts with the confirmed facts and routines in `{{learned_context}}` (not in translator mode, not while paused for routines). The agent asks for a routine's details and calls `propose_plan`; the plan card and per-step approvals run it; a plan whose tools equal a routine's marks it used.
+5. "That's wrong" retires the item and writes a `corrected` event only after the retirement read back. Delete removes it and its index entry. Delete all memories also empties all three tables, read back.
+6. `housekeeping` runs at launch and when the screen opens: proposals older than 7 days go, routines unused 90 days are retired, events older than 90 days go.
+
+**Differences from the Phase A proposal.**
+- Running a routine is by voice only. The plan card lives in the voice session, so Settings has no Run button.
+- The routine's name is suggested in the iPhone's language and renamed in Settings; it is not edited on the card.
+- Fact evidence is the sentence, not the conversation, so "Never this" holds across conversations. A routine sequence with any row is never proposed again on new evidence.
+- Gaps are written only when the agent calls `note_capability_gap`; no rule detects them, so they undercount (decision 4, as warned). The live agent has no such tool until the owner syncs it.
+- `sensitiveMode` is always false: the app has no character router yet. Only the content filter applies.
+- Typed Ask does not use learned facts; the gateway limits would have to be raised in step first.
+
+**Known limits.** Learned facts reach the voice service as plain text at conversation start (listed on the Privacy screen when on); ElevenLabs' retention applies to them as to notes. The never-learned list is word rules in English and Polish, not a classifier, so it will miss some phrasings and wrongly block some harmless ones. Outcome counts use the activity entry's outcome, so a change whose result was "not sure" is not counted as completed.
