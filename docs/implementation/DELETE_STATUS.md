@@ -28,7 +28,7 @@ Date: 2026-10-11. Owner: "do all of them" (item 5).
 
 ## NOT RUN
 - No Xcode build; the delete has never touched real EventKit data.
-- The live ElevenLabs agent doesn't have the two tools yet (updated at the end of this round).
+- The live agent has both tools since version `agtvrsn_8201m4mf5fqhf9087wkrjz8kjenp` (see the round report); never called from a real conversation.
 - Not known: whether `remove(span: .thisEvent)` on a detached occurrence leaves EventKit's read-back exactly as expected on every account type (iCloud, Exchange, Google).
 
 ## Constitution evidence log

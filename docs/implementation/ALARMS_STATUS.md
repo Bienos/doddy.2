@@ -33,7 +33,7 @@ Date: 2026-10-11. Owner: "do all of them" (item 6).
 - No Xcode 26 build: the AlarmKit calls (`AlarmManager`, `Alarm.Schedule`, `AlarmPresentation.Alert(title:stopButton:)`, `AlarmAttributes(presentation:metadata:tintColor:)`) are written from Apple's iOS 26 documentation and have never been compiled. On iOS 26.1+, `stopButton` may be reported as deprecated; that is a warning, not an error.
 - Never run on a device: whether the alarm rings through Silent and Focus as Apple describes, and what the system's alarm screen shows for the label.
 - Whether Xcode 16 (no AlarmKit) builds the app cleanly with the `#if canImport` fallback.
-- The live ElevenLabs agent doesn't have `set_alarm` yet (updated at the end of this round).
+- The live agent has `set_alarm` since version `agtvrsn_8201m4mf5fqhf9087wkrjz8kjenp`; never called from a real conversation.
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests | Gaps |
