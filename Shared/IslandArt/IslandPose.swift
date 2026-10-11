@@ -129,9 +129,11 @@ enum VoiceScreenArt: Hashable, Sendable {
     }
 }
 
-/// The sound wave beside Doddy on the voice screen (ADR-442). It follows the conversation's phase,
-/// not the audio: nothing here measures the microphone or Doddy's voice, so the bars are a picture
-/// of whose turn it is (you: soft and slow, Doddy: lively), never of how loud anyone is.
+/// The sound wave beside Doddy on the voice screen (ADR-442, ADR-443). The look follows the
+/// conversation's phase (you: soft and slow, Doddy: lively). When the app can measure the sound of
+/// the turn that is on (ADR-443: your microphone, or Doddy's voice as it plays), the bars' height
+/// follows that loudness too; when it can't (the OpenAI test voice, or no sound has arrived yet)
+/// they show the phase's pattern only, which is a picture of whose turn it is, not of loudness.
 /// Kept here, beside the poses, so the mapping is checked on any machine with Swift.
 enum VoiceWave {
     static let barCount = 7
@@ -159,7 +161,9 @@ enum VoiceWave {
     /// The height of one bar as a fraction (0.12 ... 1) of the wave's height, at a moment.
     /// A pure function of the bar, the mode and the time, so it can be checked and so it looks
     /// the same on every screen. With `still` (Reduce Motion) the time is ignored.
-    static func level(bar: Int, mode: Mode, at seconds: TimeInterval, still: Bool = false) -> Double {
+    /// With `signal` (0 ... 1, the measured loudness of the turn) the bars rise and fall with it,
+    /// each still moving a little differently; without it, the phase's own pattern.
+    static func level(bar: Int, mode: Mode, at seconds: TimeInterval, still: Bool = false, signal: Double? = nil) -> Double {
         let floor = 0.12
         guard barCount > 1, (0..<barCount).contains(bar) else { return floor }
         // Tallest in the middle, so it reads as one wave and not as a bar chart.
@@ -179,9 +183,34 @@ enum VoiceWave {
         case .speaking: 1
         case .flat: 0
         }
-        let value = floor + (1 - floor) * envelope * amplitude * max(0, min(1, swing))
+        let clampedSwing = max(0, min(1, swing))
+        if let signal, mode != .thinking {
+            let heard = max(0, min(1, signal))
+            let value = floor + (1 - floor) * envelope * heard * (0.55 + 0.45 * clampedSwing)
+            return max(floor, min(1, value))
+        }
+        let value = floor + (1 - floor) * envelope * amplitude * clampedSwing
         return max(floor, min(1, value))
     }
+
+    // MARK: Measured loudness (ADR-443)
+
+    /// Linear RMS of a buffer's samples (0 ... 1 for full-scale audio) to a bar signal (0 ... 1):
+    /// on a decibel scale, -50 dB (a quiet room) is 0 and -10 dB (a loud voice) is 1.
+    static func signal(rms: Double) -> Double {
+        guard rms.isFinite, rms > 0 else { return 0 }
+        let decibels = 20 * log10(rms)
+        return max(0, min(1, (decibels + 50) / 40))
+    }
+
+    /// One step of smoothing: quick to rise, slower to fall, so a word reads as a swell and not as noise.
+    static func smooth(previous: Double, next: Double) -> Double {
+        let rate = next > previous ? 0.5 : 0.12
+        return previous + (next - previous) * rate
+    }
+
+    /// A measured loudness older than this is silence (the sound stopped arriving).
+    static let signalStaleAfter: TimeInterval = 0.4
 }
 
 /// Doddy moving (ADR-313): strips from the owner's pack, cut by tools/whole_doddy/cut_frames.py

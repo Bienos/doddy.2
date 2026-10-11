@@ -352,6 +352,34 @@ enum IslandSceneChecks {
         expect(spread(.listening) > 0.1, "listening visibly moves")
         expect(VoiceWave.level(bar: -1, mode: .speaking, at: 1) == 0.12 && VoiceWave.level(bar: 99, mode: .speaking, at: 1) == 0.12,
                "a bar out of range")
+        // Measured loudness (ADR-443).
+        expect(VoiceWave.signal(rms: 0) == 0 && VoiceWave.signal(rms: -1) == 0 && VoiceWave.signal(rms: .nan) == 0, "no sound")
+        expect(VoiceWave.signal(rms: 1) == 1 && VoiceWave.signal(rms: 0.5) == 1, "loud is capped at 1")
+        expect(abs(VoiceWave.signal(rms: 0.01) - 0.25) < 0.0001, "-40 dB maps to 0.25, got \(VoiceWave.signal(rms: 0.01))")
+        expect(VoiceWave.signal(rms: 0.001) == 0, "-60 dB is below the floor")
+        let quiet = VoiceWave.signal(rms: 0.01), loud = VoiceWave.signal(rms: 0.1)
+        expect(quiet < loud, "louder reads higher")
+        // The bars follow the loudness: silence is low, loud is high, in both listening and speaking.
+        for mode in [VoiceWave.Mode.listening, .speaking] {
+            for bar in 0..<VoiceWave.barCount {
+                for step in 0..<100 {
+                    let t = Double(step) * 0.05
+                    let silent = VoiceWave.level(bar: bar, mode: mode, at: t, signal: 0)
+                    let shout = VoiceWave.level(bar: bar, mode: mode, at: t, signal: 1)
+                    expect(silent == 0.12, "\(mode) bar \(bar): silence is the floor")
+                    expect(shout >= silent && shout <= 1, "\(mode) bar \(bar): loud is not lower than silent")
+                }
+            }
+        }
+        let middle = VoiceWave.barCount / 2
+        let peak = (0..<400).map { VoiceWave.level(bar: middle, mode: .speaking, at: Double($0) * 0.025, signal: 1) }.max() ?? 0
+        expect(peak > 0.8, "a loud voice lifts the middle bar high: \(peak)")
+        expect(VoiceWave.level(bar: middle, mode: .flat, at: 1, signal: 1) == 0.12, "flat stays flat whatever the signal")
+        // Smoothing rises quickly, falls slowly, and stays between the two values.
+        let rise = VoiceWave.smooth(previous: 0, next: 1), fall = VoiceWave.smooth(previous: 1, next: 0)
+        expect(rise > 0 && rise < 1 && fall > 0 && fall < 1, "smoothing stays between")
+        expect(rise > 1 - fall, "quicker to rise than to fall")
+        expect(VoiceWave.smooth(previous: 0.4, next: 0.4) == 0.4, "steady stays steady")
         return failures
     }
 

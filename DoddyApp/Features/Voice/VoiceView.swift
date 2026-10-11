@@ -261,13 +261,13 @@ struct VoiceView: View {
 
     /// Doddy with the sound wave beside him and what is happening, above the cards (ADR-442).
     /// No written-out conversation here unless the user asks for it; the wave shows whose turn it
-    /// is (it doesn't measure the audio).
+    /// is and, in an ElevenLabs conversation, how loud (ADR-443).
     private func stage(_ controller: VoiceSessionController) -> some View {
         VStack(spacing: 8) {
             HStack(alignment: .center, spacing: 20) {
                 VoiceDoddyView(art: screenArt(controller), height: 168)
                 // Not character art, so it stays with "Hide Doddy's pictures" on.
-                VoiceWaveView(mode: waveMode(controller))
+                VoiceWaveView(mode: waveMode(controller), levels: controller.levels)
             }
             VStack(spacing: 4) {
                 Text(statusTitle(controller.phase))

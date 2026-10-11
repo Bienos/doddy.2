@@ -147,9 +147,14 @@ final class VoiceSessionController {
     private(set) var phase: Phase = .idle {
         didSet {
             Self.conversationInProgress = isLive
+            // Nothing measures the sound once the conversation is over (ADR-443).
+            if !isLive { levels.stop() }
             syncIsland()
         }
     }
+    /// How loud the turn that is on is, for the voice screen's wave (ADR-443). Numbers only; the
+    /// sound isn't kept. Running only during an ElevenLabs conversation.
+    let levels = VoiceLevelMeters()
     /// True while any conversation holds the microphone (the island keeps it alive in other
     /// screens). Voice samples in Settings don't play then, so they never take over its audio.
     static private(set) var conversationInProgress = false
@@ -514,6 +519,7 @@ final class VoiceSessionController {
                 return
             }
             conversation = started
+            levels.start()
             watchAudioInterruptions()
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
