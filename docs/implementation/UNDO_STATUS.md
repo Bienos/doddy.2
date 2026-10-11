@@ -78,7 +78,7 @@ Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the la
 | DOD-11 observable_privacy | What Undo keeps (title, times, local ids) stays in the existing on-device activity file, pruned after 30 days | `testOlderEntriesWithoutUndoStillDecodeAndUndoSurvivesSaving` | — |
 
 ## Decisions for the owner
-- **Removing items.** ADR-229 said Doddy never deletes anything. Undo now removes an event or reminder, **but only one Doddy itself added in the last 24 hours, unchanged since, after the user confirms**. Accept, or limit Undo to changes only.
+- **Removing items: accepted by the owner 2026-10-11** ("Undo may remove items"). ADR-229 said Doddy never deletes anything. Undo now removes an event or reminder, **but only one Doddy itself added in the last 24 hours, unchanged since, after the user confirms**. Accept, or limit Undo to changes only.
 - **24-hour window.** Proposed; could be shorter (e.g. 1 hour) or last until the entry is pruned.
 
 ## Next

@@ -68,4 +68,4 @@ Date: 2026-10-11. Owner: "build nex", after ADR-255. Claude's proposal list item
 
 ## Decisions for the owner
 - Sync `upcoming_birthdays` to the live agent.
-- Accept that a contact's birthday (day and month) goes to ElevenLabs when asked for.
+- ~~Accept that a contact's birthday (day and month) goes to ElevenLabs when asked for.~~ **Accepted by the owner 2026-10-11.**
