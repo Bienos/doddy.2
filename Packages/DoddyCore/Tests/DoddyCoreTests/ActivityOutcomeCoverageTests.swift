@@ -70,6 +70,38 @@ final class ActivityOutcomeCoverageTests: XCTestCase {
         }
     }
 
+    func testRoundThreeChangesAreDoneWhenTheyHappenedAndPartlyIsSaidSo() throws {
+        let start = Date(timeIntervalSince1970: 1_790_000_000)
+        let event = CalendarEventSummary(title: "Dentist", start: start, end: start.addingTimeInterval(3_600), allDay: false)
+        let reminder = ReminderSnapshot(id: "r1", title: "Buy milk", listTitle: "Reminders", due: nil, markerURL: nil)
+        let tomorrow = ReminderDue(year: 2026, month: 10, day: 13, hour: nil, minute: nil, timeZoneID: nil)
+        let deletes: [(BulkItem, BulkResult)] = [(.deleteEvent(event), .done)]
+        let moves: [(BulkItem, BulkResult)] = [(.moveReminder(reminder, to: tomorrow), .done)]
+
+        XCTAssertEqual(ActivityEntry.outcome(of: VoiceToolReply.bulkResult(deletes, verb: "deleted"), isLookup: false).0, .done)
+        XCTAssertEqual(ActivityEntry.outcome(of: VoiceToolReply.bulkResult(moves, verb: "moved"), isLookup: false).0, .done)
+        let alarm = AlarmEntry(id: UUID(), clock: "07:00", label: nil, summary: "07:00 on weekdays")
+        XCTAssertEqual(outcome(VoiceToolReply.alarmCancelled(alarm)), .done)
+        let plan = EventChangePlan(before: event, after: event, locationBefore: nil, newLocation: "Clinic")
+        XCTAssertEqual(outcome(VoiceToolReply.eventChanged(plan, calendar: Calendar(identifier: .gregorian))), .done)
+
+        // Some changed, some didn't: done, and the row says it was only some.
+        let partly = VoiceToolReply.bulkResult(moves + [(.moveReminder(reminder, to: tomorrow), .changedElsewhere)], verb: "moved")
+        let (kind, note) = ActivityEntry.outcome(of: partly, isLookup: false)
+        XCTAssertEqual(kind, .done)
+        XCTAssertEqual(note, ActivityLog.partlyNote)
+        XCTAssertEqual(ActivityText.note(ActivityLog.partlyNote, .polish), "Zmieniono tylko część z nich.")
+
+        // None changed, or nothing matched: not done; none confirmed: not sure.
+        XCTAssertEqual(outcome(VoiceToolReply.bulkResult([(.deleteEvent(event), .failed)], verb: "deleted")), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.bulkResult([(.deleteEvent(event), .unconfirmed)], verb: "deleted")), .notSure)
+        XCTAssertEqual(outcome(VoiceToolReply.bulkNothing), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.bulkTooMany(30)), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.alarmNotFound("07:00")), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.alarmAmbiguous([alarm, alarm])), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.alarmCancelUnconfirmed), .notSure)
+    }
+
     func testAListThatSaysAnItemIsAlreadyThereIsNotMistakenForOtherKinds() {
         // "added to" must not catch a reply that starts differently but mentions it.
         XCTAssertEqual(outcome("failed: couldn't save. Nothing was added to the list."), .notDone)

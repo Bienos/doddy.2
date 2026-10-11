@@ -41,13 +41,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy looks up a contact by name when you ask, and reads birthdays for the people you pick to be reminded of. The details stay on this iPhone. Turn this off in Settings, Connections."
+            "value": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy wyszukuje kontakt po imieniu, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. Szczegóły zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+            "value": "Doddy wyszukuje kontakt po imieniu albo sprawdza, czyje urodziny się zbliżają, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. W rozmowie głosowej znalezione imiona oraz dzień i miesiąc urodzin trafiają do ElevenLabs, które obsługuje głos Doddy'ego; numery, adresy e-mail i lata urodzenia zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
         }
       }

@@ -12,8 +12,9 @@ struct CandidateCharacterView: View {
     var body: some View {
         if !hideCharacterArt {
             switch assetName {
-            // Whole Doddy poses (ADR-299): hello is the wave, "on the way" is the tiptoe.
-            case "Doddy_waving": WholeDoddyView(pose: .wave, height: size)
+            // Whole Doddy poses (ADR-299): hello is the wave, played once from the pack's whole
+            // wave strip (ADR-380); "on the way" is the tiptoe.
+            case "Doddy_waving": DoddyMotionView(motion: .wave, height: size)
             case "Doddy_approaching": WholeDoddyView(pose: .tiptoe, height: size)
             case "Doddy_listening": UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: size)
             default: UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: size)

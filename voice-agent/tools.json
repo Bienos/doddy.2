@@ -173,7 +173,7 @@
     {
       "type": "function",
       "name": "undo_last",
-      "description": "Undo the newest change you made in this conversation in Calendar or Reminders: an event or reminder you added, an event you moved or renamed, or a reminder you re-timed or marked done. The app finds it and shows the user a card; nothing changes until they tap. It only puts back what Doddy did, and leaves it alone if it changed since. It can't undo a delete, notes, lists, timers, alarms, emails, tasks or anything from an earlier conversation (the user can use Settings, What Doddy did).",
+      "description": "Undo the newest change you made in this conversation in Calendar or Reminders: an event or reminder you added, an event you moved, renamed or gave a new place or an added line of notes, or a reminder you re-timed or marked done. The app finds it and shows the user a card; nothing changes until they tap. It only puts back what Doddy did, and leaves it alone if it changed since. It can't undo a delete, several changes from one card, a repeating event you added, saved notes, lists, timers, alarms, emails, tasks or anything from an earlier conversation (the user can use Settings, What Doddy did).",
       "parameters": {
         "type": "object",
         "properties": {},
@@ -193,7 +193,7 @@
         },
         "required": ["from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_8601m4n8q9x6eyjvf1a40p8ktj62"}
     },
     {
       "type": "function",
@@ -207,7 +207,7 @@
         },
         "required": ["due_by", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_3901m4n8qapwe24s7y6fk8dm3r6e"}
     },
     {
       "type": "function",
@@ -310,7 +310,7 @@
       },
       "x_doddy": {
         "runs_on": "web", "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "tool_5701m4f28p90fm186x0zhn54sy71",
-        "http": {"method": "GET", "url": "https://geocoding-api.open-meteo.com/v1/search", "query": ["name"], "constants": {"count": 1, "format": "json", "language": "pl"}, "headers": {}, "response_fields": ["results"]}
+        "http": {"method": "GET", "url": "https://geocoding-api.open-meteo.com/v1/search", "query": ["name"], "constants": {"count": 1, "format": "json"}, "headers": {}, "response_fields": ["results"]}
       }
     },
     {
@@ -403,7 +403,7 @@
         "properties": {},
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 15}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 15, "elevenlabs_tool_id": "tool_4201m4n8qbg3f40agsjckezvanvq"}
     },
     {
       "type": "function",
@@ -417,7 +417,7 @@
         },
         "required": ["time"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7901m4n8qcz5f22r1ahkr926kqqm"}
     },
     {
       "type": "function",
@@ -834,6 +834,19 @@
         "required": ["name"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4201m4kveg9ke36tmg4qx8tzq8zq"}
+    },
+    {
+      "type": "function",
+      "name": "note_capability_gap",
+      "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment, sending a message directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. The tool changes nothing and uses no app. The result starts with 'noted'. Never mention this tool or that you wrote it down unless the user asks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "category": {"type": "string", "enum": ["send_message", "payment", "music", "smart_home", "other_app_control", "web_action", "unknown"], "description": "The nearest topic of what could not be done. Use 'unknown' when none fits."}
+        },
+        "required": ["category"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "not_synced"}
     }
   ]
 }

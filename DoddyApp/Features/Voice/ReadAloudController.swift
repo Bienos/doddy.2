@@ -26,6 +26,9 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
     @ObservationIgnored private let synthesizer = AVSpeechSynthesizer()
     @ObservationIgnored private let island = ToolLiveActivity(kind: .readAloud)
     @ObservationIgnored private var startedAt = Date()
+    /// The utterance being read. A stopped one's late didCancel (note A, after note B started)
+    /// must not end B's state (review H6). Kept strongly, so its identity can't be reused meanwhile.
+    @ObservationIgnored private var current: AVSpeechUtterance?
     /// How long "Finished reading" stays on the Lock Screen.
     private static let doneCardFor: TimeInterval = 30
 
@@ -65,6 +68,7 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
         utterance.voice = Self.voice(for: record.currentText)
         startedAt = Date()
         status = .reading(record.id)
+        current = utterance
         synthesizer.speak(utterance)
         island.show(.init(isPaused: false), startedAt: startedAt, duration: 0)
     }
@@ -95,8 +99,9 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
         // didCancel finishes the clean-up.
     }
 
-    private func ended(finished: Bool) {
-        guard status != .idle else { return }
+    private func ended(finished: Bool, utterance: ObjectIdentifier) {
+        guard status != .idle, let current, ObjectIdentifier(current) == utterance else { return }
+        self.current = nil
         status = .idle
         if finished {
             island.end(final: .init(isPaused: false, isFinished: true), keepFor: Self.doneCardFor)
@@ -121,11 +126,13 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
     // MARK: AVSpeechSynthesizerDelegate (called off the main actor)
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.ended(finished: true) }
+        let id = ObjectIdentifier(utterance)
+        Task { @MainActor in self.ended(finished: true, utterance: id) }
     }
 
     nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
-        Task { @MainActor in self.ended(finished: false) }
+        let id = ObjectIdentifier(utterance)
+        Task { @MainActor in self.ended(finished: false, utterance: id) }
     }
 }
 
