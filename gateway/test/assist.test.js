@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { handleAssist } from '../src/assist.js';
+import { MemorySpendCap } from '../src/budget.js';
 import { inviteTag } from '../src/token.js';
-import { assistRequest, ENV, fakeProvider, fixture, makeDeps, providerOk, SECRET, token } from './helpers.js';
+import { assistRequest, ENV, fakeProvider, fixture, makeDeps, NOW_MS, providerOk, SECRET, token } from './helpers.js';
 
 const NOTE_ID = 'b7c9d1e2-4f35-4a6b-8c7d-9e0f1a2b3c4d';
 const body = () => structuredClone(fixture('assist_request_v1.json'));
@@ -254,6 +255,22 @@ test('A-16: logs contain no question, note, answer, token, key or full ids', asy
     assert.ok(!all.includes(forbidden), `log leaked ${forbidden}`);
   }
   assert.match(all, /"memoryCount":1/);
+});
+
+test('a retried 5xx keeps its estimate booked on top of the answer that followed', async () => {
+  const ok = () => providerOk({ answer: 'ok', sources: [] }, { input_tokens: 100, output_tokens: 10 });
+  const down = () => new Response('{}', { status: 503 });
+  const spentWith = async (...replies) => {
+    const spend = new MemorySpendCap();
+    const { deps } = makeDeps({ fetch: fakeProvider(...replies), spend });
+    await run(assistRequest(body()), deps);
+    return spend.total('all', NOW_MS);
+  };
+  const answered = await spentWith(ok());
+  const bothDown = await spentWith(down(), down());
+  const retried = await spentWith(down(), ok());
+  assert.equal(bothDown % 2, 0);
+  assert.equal(retried, answered + bothDown / 2, 'one estimate for the failed attempt plus the real cost of the answer');
 });
 
 test('review: an unexpected internal error becomes a content-free 503, not a platform 500', async () => {

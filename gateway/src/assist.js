@@ -2,7 +2,7 @@ import { costMicros, estimateMicros } from './budget.js';
 import { loadConfig } from './config.js';
 import { errorResponse, json, bearerToken, readJson } from './http.js';
 import { logEvent } from './logging.js';
-import { callProvider, MAX_OUTPUT_TOKENS } from './openai.js';
+import { callProvider, MAX_ATTEMPTS, MAX_OUTPUT_TOKENS } from './openai.js';
 import { buildInput, buildInstructions, buildSchema } from './prompt.js';
 import { StoreUnavailableError } from './store.js';
 import { deviceTag, shortTag, verifyToken } from './token.js';
@@ -100,12 +100,14 @@ async function assist(request, deps) {
   const schema = buildSchema([...aliasToId.keys()]);
   const promptBytes = Buffer.byteLength(instructions) + Buffer.byteLength(input) + Buffer.byteLength(JSON.stringify(schema));
   const estimate = estimateMicros(promptBytes, MAX_OUTPUT_TOKENS, config.prices);
+  // Worst case is every attempt billed at the estimate (a 5xx may be billed and is retried once).
+  const worstCase = estimate * MAX_ATTEMPTS;
   let reserved;
   try {
     reserved = await deps.spend.reserve([
       { scope: 'all', capMicros: config.dailyBudgetMicros },
       { scope: `dev:${claims.deviceId}`, capMicros: config.installBudgetMicros },
-    ], estimate, nowMs);
+    ], worstCase, nowMs);
   } catch (err) {
     if (err instanceof StoreUnavailableError) return fail('providerUnavailable', { ...counts, cause: 'limitStore' }, { requestId: req.requestId });
     throw err;
@@ -117,7 +119,8 @@ async function assist(request, deps) {
     { fetch: deps.fetch, apiKey: config.openaiKey, model: config.model, timeoutMs: config.providerTimeoutMs, deadlineMs: config.providerDeadlineMs },
     { instructions, input, schema },
   );
-  const spent = actualCost(result, estimate, config.prices);
+  // Each retried 5xx keeps its estimate booked, the same rule actualCost applies to a final 5xx.
+  const spent = actualCost(result, estimate, config.prices) + result.failedAttempts * estimate;
   try {
     await deps.spend.settle(reserved.reservation, spent);
   } catch (err) {

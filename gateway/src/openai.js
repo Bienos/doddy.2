@@ -18,10 +18,14 @@ export const MAX_OUTPUT_TOKENS = 800;
 /** Reasoning models count their reasoning against max_output_tokens; keep it short so the answer fits. */
 export const isReasoningModel = (/** @type {string} */ model) => /^(gpt-5|o\d)/.test(model);
 
+/** At most this many provider calls per request (one retry); the budget reserves for all of them. */
+export const MAX_ATTEMPTS = 2;
+
 /**
  * @param {{fetch: typeof fetch, apiKey: string, model: string, timeoutMs: number, deadlineMs: number}} cfg
  * @param {{instructions: string, input: string, schema: object}} call
- * @returns {Promise<ProviderResult>}
+ * @returns {Promise<ProviderResult & {failedAttempts: number}>}
+ *   failedAttempts: earlier 5xx attempts that were retried (each may have been billed).
  */
 export async function callProvider(cfg, call) {
   const started = Date.now();
@@ -37,7 +41,7 @@ export async function callProvider(cfg, call) {
 
   /** @type {ProviderResult} */
   let last = { kind: 'error', code: 'providerUnavailable' };
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 300 + Math.floor(Math.random() * 300)));
     // One deadline for the whole request, so a slow failure plus a retry cannot outlive the function's time limit.
     const remaining = cfg.deadlineMs - (Date.now() - started);
@@ -48,9 +52,9 @@ export async function callProvider(cfg, call) {
       last = result;
       continue;
     }
-    return result;
+    return { ...result, failedAttempts: attempt };
   }
-  return last;
+  return { ...last, failedAttempts: MAX_ATTEMPTS - 1 };
 }
 
 /**
