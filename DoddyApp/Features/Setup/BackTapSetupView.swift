@@ -8,6 +8,8 @@ import UIKit
 struct BackTapSetupView: View {
     let model: BackTapSetupModel
     @Environment(\.dismiss) private var dismiss
+    /// The phone storyboard has played (ADR-380), so going back to the intro doesn't replay it.
+    @State private var phonePlayed = false
 
     var body: some View {
         NavigationStack {
@@ -56,7 +58,8 @@ struct BackTapSetupView: View {
                 .font(.largeTitle.bold())
                 .accessibilityAddTraits(.isHeader)
             Text("First, let's make Doddy easy to reach. I'll walk you through Double Back Tap, one step at a time.")
-            CandidateCharacterView(assetName: "Doddy_approaching")
+            // Doddy steps out of a phone onto the desk (the pack's 037, ADR-380).
+            PanelStoryView(story: .phone, played: $phonePlayed, height: 240)
                 .frame(maxWidth: .infinity)
             Button {
                 model.send(.start)

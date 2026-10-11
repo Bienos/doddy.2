@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// "I noticed…" after a conversation (ADR-324): the exact words, where they came from, and
+/// "I noticed…" after a conversation (ADR-440): the exact words, where they came from, and
 /// Save / Not now / Never this. Shown only when "Learn from how I use Doddy" is on. "Saved"
 /// appears only after the row was read back from the store.
 struct LearningCardsView: View {

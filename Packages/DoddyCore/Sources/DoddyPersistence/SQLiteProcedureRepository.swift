@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Procedures (ADR-324): saved plan templates. The steps are JSON validated on every read by
+/// Procedures (ADR-440): saved plan templates. The steps are JSON validated on every read by
 /// `ProcedureStep`; a tool outside the plan allowlist makes the row corrupt, not runnable, and
 /// no column holds an approval.
 public final class SQLiteProcedureRepository: ProcedureRepository {

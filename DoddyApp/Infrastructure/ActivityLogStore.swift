@@ -14,7 +14,7 @@ final class ActivityLogStore {
     private(set) var entries: [ActivityEntry] = []
     private(set) var problem: String?
     private let fileURL: URL?
-    /// The learning loop listens here (ADR-324): the entry, what it replaced (`nil` for a new
+    /// The learning loop listens here (ADR-440): the entry, what it replaced (`nil` for a new
     /// one), the other entries newest first, and the conversation the change belonged to.
     @ObservationIgnored var onChange: ((ActivityEntry, ActivityEntry?, [ActivityEntry], String?) -> Void)?
     /// Set by the voice session while a conversation is open; `nil` otherwise.

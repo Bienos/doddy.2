@@ -17,7 +17,7 @@ final class DataFlowTests: XCTestCase {
         XCTAssertFalse(row("askDoddy", base).isActive)
         XCTAssertTrue(row("elevenlabs", base).isActive)
         // Place search (ADR-196) is user-started, so always listed; places themselves stay here.
-        XCTAssertEqual(row("placeSearch", base).destination, "Apple Maps (place search)")
+        XCTAssertEqual(row("placeSearch", base).destination, "Apple Maps (place search and travel time)")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Places you set for reminders") })
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains("Earlier wordings of notes you corrected, except in files you export."))
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Notes suggested after a conversation:") }, "save suggestions are on-device")
@@ -90,6 +90,21 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("messagingServer", state).what.contains("a copy of your saved notes"))
     }
 
+    func testNewsWriterIsNamedOnlyAsTheServerReportsIt() {
+        var state = base
+        state.messagingServerSet = true
+        let unknown = row("messagingServer", state)
+        XCTAssertTrue(unknown.destination.contains("Anthropic or OpenAI"))
+        XCTAssertTrue(unknown.note?.contains("headlines to Anthropic or OpenAI") == true)
+        state.newsWriterProvider = "openai"
+        let openAI = row("messagingServer", state)
+        XCTAssertTrue(openAI.destination.contains("OpenAI"))
+        XCTAssertFalse(openAI.destination.contains("Anthropic"))
+        XCTAssertFalse(openAI.note?.contains("Anthropic") == true)
+        state.newsWriterProvider = "anthropic"
+        XCTAssertFalse(row("messagingServer", state).destination.contains("OpenAI"))
+    }
+
     func testRememberedConversationsLineFollowsTheSwitch() {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains("Conversations: none are remembered."))
         var state = base
@@ -97,7 +112,7 @@ final class DataFlowTests: XCTestCase {
         XCTAssertFalse(DataFlow.staysOnPhone(state).contains("Conversations: none are remembered."))
     }
 
-    // ADR-324: what Doddy learned reaches a conversation only when the user switched that on.
+    // ADR-440: what Doddy learned reaches a conversation only when the user switched that on.
     func testLearnedFactsAreListedOnlyWhenSharedWithVoice() {
         XCTAssertFalse(row("elevenlabs", base).what.contains("What I've learned"))
         var shared = base

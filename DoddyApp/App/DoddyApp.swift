@@ -13,11 +13,13 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
+        // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
+        ServerKeychainStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
         store.noteReminders = noteReminders
-        // The learning loop (ADR-324) listens to "What Doddy did" for what was corrected.
+        // The learning loop (ADR-440) listens to "What Doddy did" for what was corrected.
         let learning = LearningStore(service: environment.learningService)
         learning.attach(to: ActivityLogStore.shared)
         store.learning = learning

@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Outcome events (ADR-324): kinds and identifiers only, never user text, kept 90 days.
+/// Outcome events (ADR-440): kinds and identifiers only, never user text, kept 90 days.
 public final class SQLiteOutcomeEventRepository: OutcomeEventRepository {
     private let dbQueue: DatabaseQueue
 

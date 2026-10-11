@@ -4,7 +4,7 @@ import Foundation
 import GRDB
 import XCTest
 
-/// The learning loop end to end on real SQLite (ADR-324 Phase C): what is recorded, what is
+/// The learning loop end to end on real SQLite (ADR-440 Phase C): what is recorded, what is
 /// proposed, what a card's Save does, "That's wrong", the voice agent's text, housekeeping, delete.
 final class LearningServiceTests: XCTestCase {
     private final class Clock: @unchecked Sendable {

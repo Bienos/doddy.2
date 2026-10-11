@@ -2,7 +2,7 @@
 import Foundation
 import XCTest
 
-/// Learning loop types, parser, policy and assembler (ADR-324). No storage here.
+/// Learning loop types, parser, policy and assembler (ADR-440). No storage here.
 final class LearningTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_760_000_000)
 

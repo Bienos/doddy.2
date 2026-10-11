@@ -104,7 +104,7 @@ public struct NewsDigest: Equatable, Sendable, Decodable, Identifiable {
     }
 
     public let id: UUID
-    /// queued (handed to notifications/texts), ready (kept for the app only, nothing sent),
+    /// queued (in the server's outbox for notifications/texts), ready (kept for the app only, nothing sent),
     /// empty (nothing new), failed, building.
     public let status: String
     public let aiWritten: Bool
@@ -117,7 +117,8 @@ public struct NewsDigest: Equatable, Sendable, Decodable, Identifiable {
     /// How this digest reached the user, never claiming more than the server recorded.
     public var deliveryText: String {
         switch status {
-        case "queued": "Sent to you"
+        // In the server's outbox; whether Apple or Twilio took it is recorded per message, not here.
+        case "queued": "Queued for your notifications or texts"
         case "ready": errorCode == "no_channel"
             ? "Only here: notifications or texts weren't on, so nothing was sent"
             : "In the app only"
@@ -136,6 +137,8 @@ public struct FeedCheck: Equatable, Sendable, Decodable {
 
 public struct NewsSendResult: Equatable, Sendable, Decodable {
     public let digestId: UUID?
+    /// A digest status (see `NewsDigest.status`), or `unknown` when the server's answer never
+    /// reached the phone: the news may still arrive, so it isn't sent again automatically.
     public let status: String
     public let aiWritten: Bool
     public let errorCode: String?
@@ -166,8 +169,16 @@ extension DoddyServerClient {
         return check
     }
 
+    /// The server fetches the feeds and waits for the AI writer (up to 60 s, retried once) before
+    /// it answers, so this waits longer than other requests. A request that may have reached the
+    /// server without an answer coming back is `unknown`: the news may still arrive.
     public func sendNewsNow() async throws -> NewsSendResult {
-        let response = try await authorized(.post, "/v1/news/send-now", body: nil)
+        let response: ServerResponse
+        do {
+            response = try await authorized(.post, "/v1/news/send-now", body: nil, startsSomething: true, timeout: 180)
+        } catch is OutcomeUnknown {
+            return NewsSendResult(digestId: nil, status: "unknown", aiWritten: false, errorCode: "outcome_unknown")
+        }
         guard response.status == 200, let result = try? JSONDecoder().decode(NewsSendResult.self, from: response.body)
         else { throw Self.error(from: response) }
         return result
@@ -176,13 +187,6 @@ extension DoddyServerClient {
     public func newsDigests() async throws -> [NewsDigest] {
         let list: DigestList = try await getJSON("/v1/news/digests")
         return list.digests
-    }
-
-    private func getJSON<T: Decodable>(_ path: String) async throws -> T {
-        let response = try await authorized(.get, path, body: nil)
-        guard response.status == 200, let value = try? JSONDecoder().decode(T.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return value
     }
 }
 

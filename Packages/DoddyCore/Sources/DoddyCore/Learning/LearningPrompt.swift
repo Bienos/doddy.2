@@ -1,6 +1,6 @@
 import Foundation
 
-/// Text for the voice agent's `{{learned_context}}` placeholder (ADR-324): confirmed facts and
+/// Text for the voice agent's `{{learned_context}}` placeholder (ADR-440): confirmed facts and
 /// procedures, sent only when Settings → What I've learned → "Use in voice conversations" is on.
 /// Otherwise the agent gets `notShared`, like the profile. Information, never instructions.
 public enum LearningPrompt {

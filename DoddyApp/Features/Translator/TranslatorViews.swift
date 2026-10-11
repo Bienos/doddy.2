@@ -303,6 +303,12 @@ struct TranslatorEndCard: View {
             }
             .buttonStyle(SecondaryButtonStyle())
             .accessibilityIdentifier("translator.copy")
+            if copied {
+                // Review H10: copied with .localOnly and an expiry, so say where and until when.
+                Text("Copied on this iPhone only, not to your other devices. The clipboard lets it go at \(summary.expiresAt.formatted(date: .omitted, time: .shortened)).")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             if !summary.facts.isEmpty {
                 switch controller.translatorFactsSaved {
                 case .success(let text)?:

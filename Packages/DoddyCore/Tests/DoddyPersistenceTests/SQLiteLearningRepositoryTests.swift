@@ -4,7 +4,7 @@ import Foundation
 import GRDB
 import XCTest
 
-/// Real SQLite, no mocks: learned facts, procedures and outcome events (ADR-324), the
+/// Real SQLite, no mocks: learned facts, procedures and outcome events (ADR-440), the
 /// v10 → v13 upgrade, read-back, expiry, deletion reaching the index, Polish diacritics.
 final class SQLiteLearningRepositoryTests: XCTestCase {
     private static let t0 = Date(timeIntervalSince1970: 1_760_000_000.123_456)

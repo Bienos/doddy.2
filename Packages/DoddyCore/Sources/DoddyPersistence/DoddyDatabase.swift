@@ -209,7 +209,7 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
-        // Learning loop (ADR-324, docs/architecture/LEARNING_LOOP.md §8). Three tables of learned
+        // Learning loop (ADR-440, docs/architecture/LEARNING_LOOP.md §8). Three tables of learned
         // data, never code. Facts and procedures carry provenance and an evidence digest; the
         // approval of a procedure step is not stored (derived from the tool name at run time).
         migrator.registerMigration("v11_learned_facts") { db in
@@ -297,15 +297,9 @@ public final class DoddyDatabase: Sendable {
         values.map { "'\($0)'" }.joined(separator: ", ")
     }
 
-    static func milliseconds(_ date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 * 1000).rounded(.down))
-    }
+    static func milliseconds(_ date: Date) -> Int64 { EpochMilliseconds.truncated(date) }
 
-    static func truncatedToMilliseconds(_ date: Date) -> Date {
-        Date(timeIntervalSince1970: Double(milliseconds(date)) / 1000)
-    }
+    static func truncatedToMilliseconds(_ date: Date) -> Date { EpochMilliseconds.date(milliseconds(date)) }
 
-    static func date(milliseconds: Int64) -> Date {
-        Date(timeIntervalSince1970: Double(milliseconds) / 1000)
-    }
+    static func date(milliseconds: Int64) -> Date { EpochMilliseconds.date(milliseconds) }
 }

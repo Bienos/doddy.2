@@ -1,6 +1,6 @@
 import Foundation
 
-/// Turns what "What Doddy did" recorded into outcome events (ADR-324, design §4.3). The log
+/// Turns what "What Doddy did" recorded into outcome events (ADR-440, design §4.3). The log
 /// entry is the source of truth about what happened; this only reads its outcome, never the
 /// detail text, and writes identifiers.
 public enum OutcomeRecorder {
@@ -45,7 +45,7 @@ public enum OutcomeRecorder {
     }
 
     /// The tool as an identifier: the entry's own tool name, or, for entries from before
-    /// ADR-324, the fixed title turned into one ("Add reminder" → "add_reminder").
+    /// ADR-440, the fixed title turned into one ("Add reminder" → "add_reminder").
     public static func toolName(_ entry: ActivityEntry) -> String {
         if let tool = entry.tool { return tool }
         let folded = entry.title.lowercased().unicodeScalars.map { scalar -> Character in

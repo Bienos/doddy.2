@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Learned facts (ADR-324) in the one local SQLite file. Every write is one transaction and is
+/// Learned facts (ADR-440) in the one local SQLite file. Every write is one transaction and is
 /// read back before success; the FTS5 index follows the table by triggers in that transaction.
 public final class SQLiteLearnedFactRepository: LearnedFactRepository {
     private let dbQueue: DatabaseQueue

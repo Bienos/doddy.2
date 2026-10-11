@@ -17,7 +17,7 @@ public enum VoiceToolName {
     public static let draftMessage = "draft_message"
     /// Several changes on one card (`PlanProposal`, ADR-204).
     public static let proposePlan = "propose_plan"
-    /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-324).
+    /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
 }
 
@@ -45,13 +45,13 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
         switch toolName {
-        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent,
+        case VoiceToolName.readCalendar, VoiceToolName.findFreeTime, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent,
              VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents: .calendar
         case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
              VoiceToolName.moveReminders: .reminders
         case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays: .contacts
         case VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm: .timers
-        case VoiceToolName.openMap: .maps
+        case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
         default: nil
@@ -217,13 +217,21 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case deleteCalendarEvents(VoiceTimeRange)
     /// Open reminders due by a day, moved to another day at their own times.
     case moveReminders(dueBy: ReminderDue, to: ReminderDue)
-    /// Something Doddy can't do yet, as a category (ADR-324). Nothing runs; one local row.
+    /// Something Doddy can't do yet, as a category (ADR-440). Nothing runs; one local row.
     case noteCapabilityGap(CapabilityGapCategory)
+    /// "When am I free?" (ADR-332): read-only, worked out on the iPhone.
+    case findFreeTime(FreeTimeRequest)
+    /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
+    case leaveBy(LeaveByRequest)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
     public static func parse(name: String, parametersJSON: Data, now: Date = Date(), calendar: Calendar = .current) -> VoiceToolRequest {
         let args = Arguments(parametersJSON)
+        // Online-account arguments are checked by Doddy's server (ADR-209).
+        if !CloudToolName.all.contains(name), let (key, limit) = args.firstTooLong() {
+            return .invalid(name: name, reason: "\(key) is longer than \(limit) characters")
+        }
         switch name {
         case VoiceToolName.searchMemories:
             guard let query = args.text("query") else { return .invalid(name: name, reason: "missing query") }
@@ -233,6 +241,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .saveMemory(text: text)
         case VoiceToolName.readCalendar:
             return parseRead(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.findFreeTime:
+            return parseFreeTime(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.remindWhenToLeave:
+            return parseLeaveBy(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createCalendarEvent:
             return parseEvent(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createReminder:
@@ -427,9 +439,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
         let minutes = args.number("minutes") ?? 0
         let seconds = args.number("seconds") ?? 0
         guard minutes >= 0, seconds >= 0 else { return .invalid(name: name, reason: "negative duration") }
-        let total = Int((minutes * 60 + seconds).rounded())
+        // Checked as a Double first: Int(_:) traps on a value it can't hold (review C6).
+        let length = (minutes * 60 + seconds).rounded()
+        guard length.isFinite, length <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
+        let total = Int(length)
         guard total >= 1 else { return .invalid(name: name, reason: "missing duration") }
-        guard total <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
         return .setTimer(TimerDraft(seconds: total, label: args.text("label")))
     }
 
@@ -470,9 +484,39 @@ struct Arguments {
         values[key] as? Double
     }
 
+    /// The first text argument longer than its bound, if any (review C11). Too long is refused,
+    /// never cut: the agent hears which argument and asks the user. List items are bounded by
+    /// the list itself (ListLimits.itemLength), item by item.
+    func firstTooLong() -> (key: String, limit: Int)? {
+        for key in values.keys.sorted() {
+            guard let value = values[key] as? String else { continue }
+            let limit = VoiceTextLimits.limit(for: key)
+            if value.unicodeScalars.count > limit { return (key, limit) }
+        }
+        return nil
+    }
+
     /// The key is present, whatever its value.
     func has(_ key: String) -> Bool {
         values[key] != nil
+    }
+}
+
+/// Bounds on text the model sends to a phone tool (review C11). A note, or a note quoted back,
+/// may be as long as a saved note; notes on an event or reminder and a message body are
+/// paragraphs; everything else (titles, names, labels, times) is a line.
+public enum VoiceTextLimits {
+    public static let line = EventChange.maxTitleLength
+    public static let paragraph = 2_000
+    public static let search = 500
+
+    public static func limit(for key: String) -> Int {
+        switch key {
+        case "text", "note": MemoryLimits.maxTextLength
+        case "notes", "body": paragraph
+        case "query", "place": search
+        default: line
+        }
     }
 }
 
@@ -552,6 +596,20 @@ public enum CameraShortcut {
 /// Result prefixes ("added", "declined", "failed", "unknown", "saved", "opened") are what the
 /// agent's prompt tells it to look for, so they must not change without changing the prompt.
 public enum VoiceToolReply {
+    /// How a reply starts when the change happened and was read back. "What Doddy did" and the
+    /// plan summary both read these, so a new result verb must be added here (review C1, D3).
+    public static let donePrefixes = [
+        "added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:",
+        // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
+        // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
+        "moved:", "turned off:", "cleared:",
+    ]
+    /// List results: `added to the list: 1 item.`, then the list's name and the items as data
+    /// (listAdded, listChanged).
+    public static let listDonePrefixes = ["added to the list:", "ticked on the list:", "removed on the list:"]
+    /// Nothing changed; the agent asks the user which one, or offers something else.
+    public static let nothingChangedPrefixes = ["not changed:", "not added:", "not created:"]
+
     public static let declined = "declined: the user chose not to save this note. Nothing was saved."
     public static let declinedEvent = "declined: the user chose not to add this event. Nothing was added."
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."
@@ -581,10 +639,10 @@ public enum VoiceToolReply {
         } else {
             lines.append("Found \(candidates.count) \(noun) (exact text, newest wording):")
         }
-        for candidate in shown {
+        lines.append(ToolData.block(shown.map { candidate in
             let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
-            lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")
-        }
+            return "- \"\(ToolData.clean(candidate.record.currentText))\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)"
+        }))
         if !mayDisagree.isEmpty {
             lines.append("Notes marked [may disagree] give different numbers for the same thing. Mention each one with when it was saved and let the user decide which is current. Do not pick one.")
         }
@@ -594,16 +652,29 @@ public enum VoiceToolReply {
         return lines.joined(separator: "\n")
     }
 
+    /// The note follows as data (ToolData).
     public static func saved(_ record: MemoryRecord) -> String {
-        "saved: \"\(record.currentText)\" (saved \(timestamp(record.capturedAt)))."
+        "saved: one note (saved \(timestamp(record.capturedAt))). Its exact text:\n"
+            + ToolData.block(["\"\(ToolData.clean(record.currentText))\""])
     }
 
     public static func failed(_ reason: String) -> String {
         "failed: \(reason) Nothing was saved."
     }
 
+    /// What a failed write left alone, so a failed change or delete doesn't say "saved" (review finding 8).
+    public enum FailedWrite: String, Sendable {
+        case saved, changed, deleted
+    }
+
+    public static func failed(_ reason: String, nothing: FailedWrite) -> String {
+        "failed: \(reason) Nothing was \(nothing.rawValue)."
+    }
+
+    /// The tool's name is the agent's own text, so it follows as data (ToolData).
     public static func unsupported(_ name: String) -> String {
-        "The app does not support the tool \"\(name)\". Tell the user this isn't available yet."
+        "The app does not support the tool below. Tell the user this isn't available yet.\n"
+            + ToolData.block([quoted("Tool", name)])
     }
 
     /// Used when a function is off or its iOS permission is not granted.
@@ -617,52 +688,60 @@ public enum VoiceToolReply {
             return "No calendar events \(window). Say so; do not guess."
         }
         var lines = ["Found \(events.count) calendar event\(events.count == 1 ? "" : "s") \(window) (exact titles and times):"]
-        for event in events.prefix(limit) {
+        lines.append(ToolData.block(events.prefix(limit).map { event in
             let when = event.allDay
                 ? "\(localText(event.start, hasTime: false, calendar: calendar)) (all day)"
                 : "\(localText(event.start, hasTime: true, calendar: calendar))–\(localText(event.end, hasTime: true, calendar: calendar))"
-            lines.append("- \"\(event.title)\" \(when)")
-        }
+            return "- \"\(ToolData.clean(event.title))\" \(when)"
+        }))
         if events.count > limit {
             lines.append("…and \(events.count - limit) more.")
         }
         return lines.joined(separator: "\n")
     }
 
+    /// The title is the agent's words, so it follows as data (ToolData).
     public static func eventAdded(_ draft: CalendarEventDraft, calendar: Calendar) -> String {
         let repeats = draft.repeats.map { " Repeats \($0.text)." } ?? ""
-        if draft.allDay {
-            return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day).\(repeats)"
-        }
-        return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar)).\(repeats)"
+        let when = draft.allDay
+            ? "\(localText(draft.start, hasTime: false, calendar: calendar)) (all day)"
+            : "\(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar))"
+        return "added: an event on \(when).\(repeats) Its title:\n" + ToolData.block([quoted("Title", draft.title)])
     }
 
-    /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`.
+    /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`. A label is the
+    /// agent's words, so it follows as data (ToolData).
     public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar) -> String {
-        let what = draft.label.map { "\"\($0)\", " } ?? ""
-        return "added: timer \(what)\(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+        let text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+        guard let label = draft.label else { return text }
+        return text + " Its label:\n" + ToolData.block([quoted("Label", label)])
     }
 
-    /// Maps opened on the user's tap. Nothing else is claimed.
+    /// Maps opened on the user's tap. Nothing else is claimed. The place follows as data.
     public static func mapOpened(_ place: String) -> String {
-        "opened: Apple Maps opened for \"\(place)\"."
+        "opened: Apple Maps opened for the place below.\n" + ToolData.block([quoted("Place", place)])
     }
 
     /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.
     public static func shortcutRequested(_ name: String) -> String {
-        "opened: asked Shortcuts to run \"\(name)\". Doddy can't see whether it finished."
+        "opened: asked Shortcuts to run the shortcut below. Doddy can't see whether it finished.\n"
+            + ToolData.block([quoted("Shortcut", name)])
     }
 
-    /// The draft opened in Messages or Mail. Doddy did not send it.
+    /// The draft opened in Messages or Mail. Doddy did not send it. The name is from Contacts,
+    /// so it follows as data (ToolData).
     public static func messageOpened(_ draft: MessageDraft, recipient: String) -> String {
         let app = draft.channel == .text ? "Messages" : "Mail"
-        return "opened: \(app) opened with the draft for \(recipient). Nothing was sent by Doddy; the user sends it there."
+        return "opened: \(app) opened with the draft for the contact below. Nothing was sent by Doddy; the user sends it there.\n"
+            + ToolData.block([quoted("Contact", recipient)])
     }
 
-    /// The contact has no phone number or email for the channel the agent asked for.
+    /// The contact has no phone number or email for the channel the agent asked for. The name
+    /// is from Contacts, so it follows as data.
     public static func noAddress(_ recipient: String, channel: MessageChannel) -> String {
         let what = channel == .text ? "phone number" : "email address"
-        return "failed: \(recipient) has no \(what) in Contacts. Nothing was opened."
+        return "failed: the contact below has no \(what) in Contacts. Nothing was opened.\n"
+            + ToolData.block(["Contact: \"\(ToolData.clean(recipient))\""])
     }
 
     /// The app could not open the other app.
@@ -680,11 +759,20 @@ public enum VoiceToolReply {
 
     /// Names only. Details stay on the user's screen.
     public static func contactMatches(_ names: [String], query: String) -> String {
+        // The search is the agent's words and the names are from Contacts: data, not instructions.
+        let searched = quoted("Searched for", query)
         guard !names.isEmpty else {
-            return "No contact matched \"\(query)\". Tell the user you couldn't find them in Contacts. Do not guess."
+            return "No contact matched the search below. Tell the user you couldn't find them in Contacts. Do not guess.\n"
+                + ToolData.block([searched])
         }
-        let list = names.joined(separator: ", ")
-        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\": \(list). Their details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
+        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching the search, names only; the search, then the names:\n"
+            + ToolData.block([searched] + names.map { "- \(ToolData.clean($0))" })
+            + "\nTheir details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
+    }
+
+    /// One line for a ToolData block: `Label: "text"`, the text cleaned (no markers, one line).
+    static func quoted(_ label: String, _ text: String) -> String {
+        "\(label): \"\(ToolData.clean(text))\""
     }
 
     private static func durationText(_ seconds: Int) -> String {
@@ -695,7 +783,7 @@ public enum VoiceToolReply {
         return "\(seconds) second\(seconds == 1 ? "" : "s")"
     }
 
-    private static func timestamp(_ date: Date?) -> String {
+    static func timestamp(_ date: Date?) -> String {
         guard let date else { return "date unavailable" }
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = .current

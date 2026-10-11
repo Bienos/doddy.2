@@ -1,6 +1,6 @@
 import Foundation
 
-// The proposers (ADR-324, design §4): rules on the iPhone. Each returns typed proposals; the
+// The proposers (ADR-440, design §4): rules on the iPhone. Each returns typed proposals; the
 // policy and the card decide what happens next. No model is involved in Phase C.
 
 /// One learned-fact proposal at most per conversation, from the same sentences the "Worth

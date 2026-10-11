@@ -73,6 +73,8 @@ final class VoiceSessionController {
         case undo(toolCallID: String, entry: ActivityEntry)
         /// "Save your parking spot here?" (ADR-301): the position read just now, and the user's note.
         case parking(toolCallID: String, spot: ParkingSpot)
+        /// "Remind me when to leave" (ADR-335): the place Maps found, the travel time and when to leave.
+        case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
 
@@ -82,7 +84,7 @@ final class VoiceSessionController {
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
-                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _),
+                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _):
                 id
             }
@@ -213,6 +215,11 @@ final class VoiceSessionController {
     private(set) var readAloudProblem: String?
     /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
     private var checkInNeedsBriefing = false
+    /// How this conversation was started, and whether it started with the saved notes, profile and
+    /// lists in the agent's context (not from Home's Translate). Translating then starts a fresh
+    /// conversation, because that context can't be taken back out (review H3).
+    private var startedMode: VoiceConnectionMode?
+    private var sharedOwnerContext = false
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
@@ -241,7 +248,8 @@ final class VoiceSessionController {
     private(set) var audioNote: String?
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
-    private let devices = DeviceConnections()
+    /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
+    private let devices: any DeviceConnecting
     private var conversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
     private(set) var provider: VoiceProvider = .elevenLabs
@@ -270,15 +278,28 @@ final class VoiceSessionController {
     private(set) var saveSuggestions: SaveSuggestionCard?
     /// Suggestions are worked out once per conversation, so a dismissed card doesn't come back.
     private var suggestionsOffered = false
-    /// This conversation's id for the learning loop (ADR-324): lets repeated sequences be told apart
+    /// This conversation's id for the learning loop (ADR-440): lets repeated sequences be told apart
     /// by conversation. An identifier only; nothing of what was said.
     private var conversationID = UUID().uuidString
 
-    init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
+    init(
+        store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared,
+        devices: any DeviceConnecting = DeviceConnections()
+    ) {
         self.store = store
         self.logs = logs
         self.activity = activity
+        self.devices = devices
     }
+
+    #if DEBUG
+    /// Test seam only (AppTests review finding 2): shows `action` as if the agent had proposed it,
+    /// with `link` standing in for the provider so a test can read the reply. The app never calls it.
+    func showCardForTesting(_ action: PendingAction, link: any LiveVoiceLink) {
+        conversation = link
+        pendingAction = action
+    }
+    #endif
 
     var isLive: Bool {
         switch phase {
@@ -295,6 +316,10 @@ final class VoiceSessionController {
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
+        // This start's number (review H1): a start that was ended and replaced while it waited
+        // never opens, keeps or hears a conversation.
+        startAttempt += 1
+        let attempt = startAttempt
         isOffline = false
         offlineSaved = nil
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
@@ -343,9 +368,10 @@ final class VoiceSessionController {
             return
         }
         guard await Self.microphoneAllowed() else {
-            phase = .microphoneDenied
+            if attempt == startAttempt { phase = .microphoneDenied }
             return
         }
+        guard attempt == startAttempt else { return }
         startedAt = Date()
         phase = .connecting
 
@@ -360,14 +386,19 @@ final class VoiceSessionController {
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
+        // Ended (or ended and started again) while the notes loaded.
+        guard attempt == startAttempt, phase == .connecting else { return }
         // Private notes (ADR-310) never reach the voice agent.
         var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
         var recent = logs.isEnabled
             ? VoiceContext.recentConversations(logs.logs)
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
         var listsText = ListsPrompt.render(store.lists)
+        if let templates = ListTemplateStore.current().promptLine { listsText += "\n" + templates }
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
-        // What Doddy learned and the user confirmed (ADR-324), only when they switched it on.
+        startedMode = mode
+        sharedOwnerContext = preset == nil
+        // What Doddy learned and the user confirmed (ADR-440), only when they switched it on.
         var learnedText = await store.learning?.voiceContext() ?? LearningPrompt.notShared
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
@@ -384,7 +415,7 @@ final class VoiceSessionController {
             translatorNeedsHello = true
         }
 
-        let ref = WeakRef(self)
+        let ref = AttemptRef(self, attempt: attempt)
         let variables: [String: String] = [
             "saved_notes": notes.text,
             "saved_notes_count": "\(notes.includedCount)",
@@ -460,7 +491,7 @@ final class VoiceSessionController {
             do throws(VoiceTokenError) {
                 auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
             } catch {
-                if phase == .connecting {
+                if attempt == startAttempt, phase == .connecting {
                     if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
                 }
                 return
@@ -469,14 +500,16 @@ final class VoiceSessionController {
             fail(reason)
             return
         }
-        // Closed while the token was being fetched: don't open the microphone after all.
-        guard phase == .connecting else { return }
+        // Closed (or closed and started again) while the token was being fetched: don't open the
+        // microphone after all.
+        guard attempt == startAttempt, phase == .connecting else { return }
 
         Self.allowOtherAppsAudio()
         do {
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
-            guard isLive else {
-                // Closed while connecting: end it so nothing keeps listening.
+            guard attempt == startAttempt, isLive else {
+                // Closed (or closed and started again) while connecting: end it so nothing keeps
+                // listening and its tool calls stop (review H1).
                 await started.endConversation()
                 return
             }
@@ -484,6 +517,8 @@ final class VoiceSessionController {
             watchAudioInterruptions()
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
+            // A replaced start's failure isn't the new conversation's.
+            guard attempt == startAttempt else { return }
             if Offline.isNoConnection(error) {
                 failOffline()
                 return
@@ -523,15 +558,15 @@ final class VoiceSessionController {
 
     /// Web tools of the running OpenAI conversation (empty for ElevenLabs, which runs them itself).
     private var openAIWebTools: Set<String> = []
-    /// Counts OpenAI starts, so a start that was ended and replaced while it waited for the token
-    /// server never opens a second microphone.
-    private var openAIAttempt = 0
+    /// Counts starts and ends, so a start that was ended and replaced while it waited (for the
+    /// token server or the provider) never opens a second microphone (review H1). `AttemptRef`
+    /// reads it, so it is fileprivate.
+    fileprivate var startAttempt = 0
 
     /// Same start as ElevenLabs from here on: same notes, conversations, lists and profile
     /// (`variables`), same tools and cards. Needs the token server: the OpenAI key stays there.
     private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
-        openAIAttempt += 1
-        let attempt = openAIAttempt
+        let attempt = startAttempt
         guard case .tokenServer(let endpoint, let accessCode) = mode else {
             fail("The OpenAI test voice needs Doddy's token server. Add it in Settings → Voice, or switch Home back to ElevenLabs.")
             return
@@ -556,15 +591,15 @@ final class VoiceSessionController {
         do throws(VoiceTokenError) {
             grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant()
         } catch {
-            if attempt == openAIAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
+            if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return
         }
         // Closed (or closed and started again) while the secret was being fetched: don't open
         // the microphone for this attempt.
-        guard attempt == openAIAttempt, phase == .connecting else { return }
+        guard attempt == startAttempt, phase == .connecting else { return }
 
         openAIWebTools = spec.webTools
-        let ref = WeakRef(self)
+        let ref = AttemptRef(self, attempt: attempt)
         let session = OpenAIRealtimeSession(grant: grant) { event in ref.value?.applyOpenAI(event) }
         // Set first, so End while connecting closes it and the first tool call can be answered.
         conversation = session
@@ -572,10 +607,10 @@ final class VoiceSessionController {
             try await session.start(sessionUpdate: sessionUpdate, greeting: OpenAIRealtimeWire.greeting(greetingLine))
         } catch {
             if conversation === session { conversation = nil }
-            if attempt == openAIAttempt, isLive { fail("Couldn't connect to OpenAI's voice. Check your internet connection and try again. (\(error.localizedDescription))") }
+            if attempt == startAttempt, isLive { fail("Couldn't connect to OpenAI's voice. Check your internet connection and try again. (\(error.localizedDescription))") }
             return
         }
-        guard attempt == openAIAttempt, isLive else {
+        guard attempt == startAttempt, isLive else {
             await session.endConversation()
             if conversation === session { conversation = nil }
             return
@@ -689,6 +724,9 @@ final class VoiceSessionController {
     }
 
     func stop() async {
+        // From here, a start still connecting ends itself and late events of this conversation
+        // are dropped (review H1).
+        startAttempt += 1
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
@@ -758,7 +796,8 @@ final class VoiceSessionController {
                 savedThisConversation += 1
                 // Only after the store returned the saved record (ADR-240).
                 flashIsland(.noteSaved)
-                await reply(id, VoiceToolReply.saved(record))
+                // What Doddy did can delete it again for a day, if it's left untouched (ADR-277).
+                await reply(id, VoiceToolReply.saved(record), undo: .savedNote(id: record.id, text: record.currentText))
             } catch {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
@@ -816,8 +855,11 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
                 return
             }
+            // A note has one reminder, so this one replaces any it has (review C3). Read before
+            // setting; the card showed it, and the reply names it to the agent.
+            let previous = store.noteReminders?.reminder(forMemory: memoryID)
             let receipt = await setNoteReminder(confirmed)
-            await reply(id, Self.noteReminderReply(receipt, note: noteText))
+            await reply(id, Self.noteReminderReply(receipt, note: noteText, replacing: previous))
         case .changeEvent(let id, let plan):
             // Kept only if the reply says the change was checked (ActivityEntry).
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
@@ -843,6 +885,13 @@ final class VoiceSessionController {
             } catch {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
+        case .leaveBy(let id, let plan):
+            // A local notification at the leave time, read back from iOS (ADR-335).
+            switch await LeaveByScheduler.schedule(plan) {
+            case .scheduled: await reply(id, VoiceToolReply.leaveBySet(plan, calendar: .current))
+            case .notAllowed: await reply(id, VoiceToolReply.leaveByNotAllowed)
+            case .failed: await reply(id, VoiceToolReply.leaveByFailed)
+            }
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-301).
             let saved = ParkingStore.save(spot)
@@ -866,6 +915,16 @@ final class VoiceSessionController {
             bulkUnticked = []
             await reply(id, runBulk(ticked, verb: verb, skipped: skipped))
         case .translator(let id, let setup):
+            // This conversation's agent already has the saved notes, profile and lists (review H3):
+            // translating goes on in a new conversation that gets none of them, as from Home's
+            // Translate. Private like a translator conversation, so nothing of this one is kept.
+            if translatorStartsNewConversation, let mode = startedMode {
+                isPrivate = true
+                await reply(id, "stopped: translator mode starts in a new conversation that has none of the user's notes, profile or lists. This conversation ends now; say nothing more.")
+                await stop()
+                await start(mode, profile: .empty, translator: setup)
+                return
+            }
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
         case .createList(let id, let name, let items):
@@ -944,10 +1003,10 @@ final class VoiceSessionController {
         return receipt
     }
 
-    private static func noteReminderReply(_ receipt: NoteReminderReceipt, note: String) -> String {
+    private static func noteReminderReply(_ receipt: NoteReminderReceipt, note: String, replacing previous: MemoryReminder?) -> String {
         switch receipt {
-        case .scheduled(let reminder): VoiceToolReply.noteReminderSet(reminder, note: note)
-        case .inAppOnly(let reminder): VoiceToolReply.noteReminderInDoddyOnly(reminder, note: note)
+        case .scheduled(let reminder): VoiceToolReply.noteReminderSet(reminder, note: note, replacing: previous)
+        case .inAppOnly(let reminder): VoiceToolReply.noteReminderInDoddyOnly(reminder, note: note, replacing: previous)
         case .failed(let message), .needsSettings(let message): VoiceToolReply.noteReminderFailed(message)
         }
     }
@@ -988,6 +1047,7 @@ final class VoiceSessionController {
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
+        case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
             await reply(id, VoiceToolReply.ingredientsDeclined)
@@ -1024,6 +1084,8 @@ final class VoiceSessionController {
     /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
+        // Ended while the lists loaded: nothing changes after End (review H9).
+        guard isLive else { return }
         do {
             let result = try await store.addToList(request.items, listID: list.id, source: .voice)
             var lines = result.added.map { ListReceipt.Line.added($0.text) }
@@ -1050,10 +1112,14 @@ final class VoiceSessionController {
     /// Ticks or removes only clear matches; items that match several are offered to tap.
     private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
+        // Ended while the lists loaded: nothing changes after End (review H9).
+        guard isLive else { return }
         let pool = tick ? list.open : list.items
         var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
         for phrase in request.items {
-            switch ListMatch.item(phrase, in: pool) {
+            // Removing takes exact matches only (review C9): "remove milk" offers "oat milk" to
+            // tap instead of deleting it. Ticking keeps partial matches.
+            switch ListMatch.item(phrase, in: pool, partial: tick) {
             case .one(let item): if !matched.contains(item) { matched.append(item) }
             case .none: notFound.append(phrase)
             case .several(let options): ambiguous.append((said: phrase, options: options))
@@ -1113,6 +1179,12 @@ final class VoiceSessionController {
             receipt.title = "Undone: \(undo.message.prefix(1).lowercased() + undo.message.dropFirst())"
             receipt.problem = nil
             listReceipt = receipt
+        } catch let error as ListUndoError {
+            // The undo ran but didn't take everything back (review C10): say exactly what it
+            // did, and don't offer it again, since running it twice could repeat what came back.
+            receipt.undo = nil
+            receipt.problem = error.message
+            listReceipt = receipt
         } catch {
             receipt.problem = "Couldn't undo. " + UserFacingError.listMessage(for: error)
             listReceipt = receipt
@@ -1143,6 +1215,11 @@ final class VoiceSessionController {
         guard case .translator(let id, _) = pendingAction,
               let setup = TranslatorSetup(kind: kind, owner: owner, other: other) else { return }
         pendingAction = .translator(toolCallID: id, setup: setup)
+    }
+
+    /// Start on the "Start translating?" card ends this conversation and starts a fresh one (review H3).
+    var translatorStartsNewConversation: Bool {
+        sharedOwnerContext && startedMode != nil
     }
 
     private func beginTranslator(_ setup: TranslatorSetup) {
@@ -1197,7 +1274,11 @@ final class VoiceSessionController {
             translatorSummary = nil
             return false
         }
-        UIPasteboard.general.string = summary.transcript
+        // This iPhone only (no Universal Clipboard), and gone from the clipboard when the five
+        // minutes end, like the text itself (review H10).
+        UIPasteboard.general.setItems(
+            [["public.utf8-plain-text": summary.transcript]],
+            options: [.localOnly: true, .expirationDate: summary.expiresAt])
         return true
     }
 
@@ -1305,7 +1386,7 @@ final class VoiceSessionController {
               steps[index].toolName == step.toolName, blocked[step.number] == nil else { return }
         steps[index] = step
         planChanged.insert(step.number)
-        // A step the user had to change is a correction (ADR-324).
+        // A step the user had to change is a correction (ADR-440).
         store.learning?.recordChangedStep(tool: step.toolName, requestID: "\(id)-\(step.number)", sessionID: conversationID)
         pendingAction = .plan(toolCallID: id, steps: steps, blocked: blocked)
     }
@@ -1502,6 +1583,16 @@ final class VoiceSessionController {
         stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
+        // After an error the SDK may keep the microphone (review H2), so the conversation is
+        // ended here as stop() does, instead of waiting for a disconnect that may not come.
+        guard let active = conversation else { return }
+        conversation = nil
+        endTranslator()
+        keepLog()
+        Task {
+            await active.endConversation()
+            WakeWordListener.shared.conversationAudioReleased()
+        }
     }
 
     private func disconnected() {
@@ -1518,7 +1609,7 @@ final class VoiceSessionController {
         activity.sessionID = nil
     }
 
-    // MARK: End-of-conversation learning card (ADR-324)
+    // MARK: End-of-conversation learning card (ADR-440)
 
     /// At most one "I noticed…" card, from sentences the "Worth keeping?" card did not already
     /// offer and from tools repeated on three separate days. Only when learning is on, never for
@@ -1581,6 +1672,8 @@ final class VoiceSessionController {
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
+        // A call still queued when the user tapped End runs nothing (review H9).
+        guard isLive else { return }
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
         // is looked up or logged.
@@ -1604,6 +1697,12 @@ final class VoiceSessionController {
         }
         switch request {
         case .searchMemories(let query):
+            // "#car": exactly the notes with that tag (ADR-333). Private notes stay out.
+            if let tag = NoteTags.tagQuery(query) {
+                let notes = NoteTags.filter(PrivateNotesStore.current().shareable(store.memories), tag: tag)
+                await reply(call.toolCallId, VoiceToolReply.taggedNotes(tag, notes: notes))
+                return
+            }
             do {
                 let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
                 await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
@@ -1622,6 +1721,15 @@ final class VoiceSessionController {
             }
             let events = devices.events(in: range)
             await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
+        case .findFreeTime(let request):
+            // Read-only (ADR-332): gaps worked out here from the iPhone's calendars.
+            guard devices.access(for: .calendar) == .granted else {
+                await notConnected(call.toolCallId, .calendar)
+                return
+            }
+            let events = devices.events(in: request.range(calendar: .current))
+            let days = FreeTime.days(request, events: events, now: Date(), calendar: .current)
+            await reply(call.toolCallId, VoiceToolReply.freeTime(days, request: request, calendar: .current))
         case .createCalendarEvent(let draft):
             propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .createReminder(let draft):
@@ -1674,6 +1782,8 @@ final class VoiceSessionController {
             await reply(call.toolCallId, VoiceToolReply.conversion(request))
         case .parkingSpot(let action):
             await handleParking(action, toolCallID: call.toolCallId)
+        case .leaveBy(let request):
+            await handleLeaveBy(request, toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
@@ -1704,10 +1814,20 @@ final class VoiceSessionController {
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .listAlarms:
-            // Read on the phone (ADR-283): times and labels Doddy set, nothing else.
-            await reply(call.toolCallId, VoiceToolReply.alarms(AlarmScheduler.current()))
+            // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
+            // list is said as such, never as "none" (voice-agent review 2).
+            guard let alarms = AlarmScheduler.currentIfReadable() else {
+                await reply(call.toolCallId, VoiceToolReply.alarmsUnreadable)
+                return
+            }
+            await reply(call.toolCallId, VoiceToolReply.alarms(alarms))
         case .cancelAlarm(let clock, let label):
-            switch AlarmMatch.match(clock: clock, label: label, in: AlarmScheduler.current()) {
+            // Unreadable is not "not found": the alarm may still ring.
+            guard let alarms = AlarmScheduler.currentIfReadable() else {
+                await reply(call.toolCallId, VoiceToolReply.alarmsUnreadable)
+                return
+            }
+            switch AlarmMatch.match(clock: clock, label: label, in: alarms) {
             case .none: await reply(call.toolCallId, VoiceToolReply.alarmNotFound(clock))
             case .several(let found): await reply(call.toolCallId, VoiceToolReply.alarmAmbiguous(found))
             case .one(let alarm): propose(.cancelAlarm(toolCallID: call.toolCallId, alarm: alarm), toolCallID: call.toolCallId)
@@ -1769,7 +1889,17 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.listFailed(UserFacingError.listMessage(for: ListError.tooManyLists(maximum: ListLimits.lists))))
                 return
             }
-            propose(.createList(toolCallID: call.toolCallId, name: request.list, items: request.items), toolCallID: call.toolCallId)
+            // From a template (ADR-334): its items first, then any the user said.
+            var items = request.items
+            if let wanted = request.template {
+                let templates = ListTemplateStore.current()
+                guard let template = templates.named(wanted) else {
+                    await reply(call.toolCallId, VoiceToolReply.templateNotFound(wanted, templates: templates))
+                    return
+                }
+                items = ListTemplates.items(from: template, plus: request.items)
+            }
+            propose(.createList(toolCallID: call.toolCallId, name: request.list, items: items), toolCallID: call.toolCallId)
         case .stopTranslator:
             guard translator != nil else {
                 await reply(call.toolCallId, VoiceToolReply.translatorNotOn)
@@ -1778,7 +1908,7 @@ final class VoiceSessionController {
             endTranslator()
             await reply(call.toolCallId, VoiceToolReply.translatorStopped)
         case .noteCapabilityGap(let category):
-            // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-324).
+            // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
             await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID)
             await reply(call.toolCallId, LearningPrompt.gapNoted)
         case .unsupported(let name):
@@ -1810,7 +1940,9 @@ final class VoiceSessionController {
             return
         }
         var blocked: [Int: PlanBlock] = [:]
-        planCloud = [:]
+        // This plan's own approvals (review H7): kept apart until its card is shown, so an
+        // overlapping propose_plan can't mix its approvals into this card or this one's into it.
+        var approvals: [Int: PlanCloudApproval] = [:]
         for step in steps {
             if let block = await planBlock(for: step) {
                 blocked[step.number] = block
@@ -1819,7 +1951,7 @@ final class VoiceSessionController {
                 // As a single card: the server checks the switch, the connection and the arguments,
                 // and returns the preview the card shows with an approval for exactly these.
                 switch await prepareCloud(call) {
-                case .ready(let approval): planCloud[step.number] = approval
+                case .ready(let approval): approvals[step.number] = approval
                 case .blocked(let block): blocked[step.number] = block
                 }
             }
@@ -1836,8 +1968,16 @@ final class VoiceSessionController {
             await reply(call.toolCallId, PlanReply.summary(results))
             return
         }
+        // Ended while the steps were checked: no card after End (review H9).
+        guard isLive else { return }
+        // Another card may have been shown while the steps were checked (the checks wait).
+        guard pendingAction == nil else {
+            await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
+            return
+        }
         planTicked = Set(steps.map(\.number)).subtracting(blocked.keys)
         planChanged = []
+        planCloud = approvals
         askedPlans[call.toolCallId] = steps
         propose(.plan(toolCallID: call.toolCallId, steps: steps, blocked: blocked), toolCallID: call.toolCallId)
     }
@@ -1876,7 +2016,7 @@ final class VoiceSessionController {
             results.append((step, text))
         }
         planStatus?.isRunning = false
-        // A saved procedure with exactly these steps counts as used (ADR-324).
+        // A saved procedure with exactly these steps counts as used (ADR-440).
         if !ticked.subtracting(blocked.keys).isEmpty {
             await store.learning?.planRan(tools: steps.map(\.toolName))
         }
@@ -1893,6 +2033,14 @@ final class VoiceSessionController {
         case .createReminder(let draft):
             let outcome = await addReminder(draft)
             return (VoiceToolReply.reminder(outcome), ActivityUndo.addedReminder(outcome, draft: draft))
+        case .saveMemory(let text):
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                savedThisConversation += 1
+                return (VoiceToolReply.saved(record), .savedNote(id: record.id, text: record.currentText))
+            } catch {
+                return (VoiceToolReply.failed(UserFacingError.message(for: error)), nil)
+            }
         default:
             return (await runOtherPlanStep(step, approval: approval), nil)
         }
@@ -2071,6 +2219,12 @@ final class VoiceSessionController {
                 await reply(toolCallID, VoiceToolReply.placeNotFound(query))
                 return
             }
+            // Refused here, not in propose(): resetting the choice for a card that isn't shown
+            // would change the place on the card that is (review H8).
+            guard pendingAction == nil else {
+                await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer."))
+                return
+            }
             selectedPlaceIndex = 0
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
                                   savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
@@ -2084,10 +2238,45 @@ final class VoiceSessionController {
         return store.list(id: memoryID) != nil
     }
 
+    /// The reminder the note on the card has now, which Set reminder replaces (review C3).
+    var noteReminderReplaces: MemoryReminder? {
+        guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return nil }
+        return store.noteReminders?.reminder(forMemory: memoryID)
+    }
+
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
     /// call is left without an answer.
     /// Parking (ADR-301). Location is read once, only for "save" and, if location is already
     /// allowed, for the distance on "find"; the agent hears no coordinates.
+    /// "Remind me when to leave" (ADR-335): one position, an Apple Maps search near it and the
+    /// travel time; the card shows what Maps found. Nothing is set until Set reminder.
+    private func handleLeaveBy(_ request: LeaveByRequest, toolCallID: String) async {
+        let location = PlaceLocation.shared
+        var readiness = await location.readiness()
+        if readiness == .notDetermined { readiness = await location.requestWhenInUse() }
+        guard readiness == .ready || readiness == .approximateOnly else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoLocation(readiness))
+            return
+        }
+        guard let here = await location.currentFix(within: 3_000)?.coordinate else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoLocation(nil))
+            return
+        }
+        guard let place = (try? await location.search(request.place, near: here))?.first else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoPlace(request.place))
+            return
+        }
+        guard let seconds = try? await location.travelTime(from: here, to: place.coordinate, mode: request.mode, arriveBy: request.arriveBy) else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoRoute(request.mode))
+            return
+        }
+        switch LeaveBy.plan(request, placeName: place.name, placeAddress: place.address, travelSeconds: seconds, now: Date()) {
+        case .success(let plan): propose(.leaveBy(toolCallID: toolCallID, plan: plan), toolCallID: toolCallID)
+        case .failure(.tooLate(let leaveAt)): await reply(toolCallID, VoiceToolReply.leaveByTooLate(leaveAt, calendar: .current))
+        case .failure(.tooFar): await reply(toolCallID, VoiceToolReply.leaveByTooFar)
+        }
+    }
+
     private func handleParking(_ action: ParkingAction, toolCallID: String) async {
         switch action {
         case .save(let note):
@@ -2127,6 +2316,8 @@ final class VoiceSessionController {
     }
 
     private func propose(_ action: PendingAction, toolCallID: String) {
+        // A proposal that finished its lookups after End shows no card (review H9).
+        guard isLive else { return }
         guard pendingAction == nil else {
             Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
             return
@@ -2170,7 +2361,7 @@ final class VoiceSessionController {
             connectionOn: undo.connection.map(isOn) ?? true) {
             if let connection = undo.connection, !isOn(connection) { connectionNeeded = connection }
             result = .notDone(reason)
-        } else if undo.listID != nil {
+        } else if undo.connection == nil {
             result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)
@@ -2256,7 +2447,7 @@ final class VoiceSessionController {
                 propose(.changeReminder(toolCallID: toolCallID, reminder: reminder, draft: draft), toolCallID: toolCallID)
             }
         } catch {
-            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed), isError: true)
         }
     }
 
@@ -2264,7 +2455,7 @@ final class VoiceSessionController {
     private func changeEvent(_ plan: EventChangePlan) -> String {
         guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
             connectionNeeded = .calendar
-            return VoiceToolReply.failed("Calendar isn't connected. Nothing changed.")
+            return VoiceToolReply.failed("Calendar isn't connected.", nothing: .changed)
         }
         if EventChange.startPassed(plan, now: Date(), calendar: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
@@ -2276,7 +2467,7 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed)
         }
     }
 
@@ -2300,7 +2491,7 @@ final class VoiceSessionController {
     private func changeReminder(_ reminder: ReminderSnapshot, _ draft: ReminderChangeDraft) -> String {
         guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
             connectionNeeded = .reminders
-            return VoiceToolReply.failed("Reminders isn't connected. Nothing changed.")
+            return VoiceToolReply.failed("Reminders isn't connected.", nothing: .changed)
         }
         if EventChange.duePassed(draft.newDue, now: Date(), local: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
@@ -2318,7 +2509,7 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.reminderChangeUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed)
         }
     }
 
@@ -2357,7 +2548,7 @@ final class VoiceSessionController {
             let (moves, skipped) = BulkChange.remindersToMove(open, dueBy: dueBy, to: to, local: .current)
             await proposeBulk(moves, verb: "moved", skipped: skipped, toolCallID: toolCallID)
         } catch {
-            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed), isError: true)
         }
     }
 
@@ -2371,7 +2562,7 @@ final class VoiceSessionController {
     /// Each ticked item on its own: checked unchanged, changed, read back (ADR-280).
     private func runBulk(_ items: [BulkItem], verb: String, skipped: [String]) -> String {
         guard isOn(.calendar) || isOn(.reminders) else {
-            return VoiceToolReply.failed("Calendar and Reminders aren't connected. Nothing changed.")
+            return VoiceToolReply.failed("Calendar and Reminders aren't connected.", nothing: .changed)
         }
         guard !items.isEmpty else { return VoiceToolReply.bulkDeclined }
         var results: [(BulkItem, BulkResult)] = []
@@ -2424,7 +2615,7 @@ final class VoiceSessionController {
             case .one(let reminder): propose(.deleteReminder(toolCallID: toolCallID, reminder: reminder), toolCallID: toolCallID)
             }
         } catch {
-            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .deleted), isError: true)
         }
     }
 
@@ -2433,7 +2624,7 @@ final class VoiceSessionController {
     private func deleteEvent(_ event: CalendarEventSummary) -> String {
         guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
             connectionNeeded = .calendar
-            return VoiceToolReply.failed("Calendar isn't connected. Nothing was deleted.")
+            return VoiceToolReply.failed("Calendar isn't connected.", nothing: .deleted)
         }
         do {
             switch try devices.deleteEvent(event) {
@@ -2442,14 +2633,14 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .deleted)
         }
     }
 
     private func deleteReminder(_ reminder: ReminderSnapshot) -> String {
         guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
             connectionNeeded = .reminders
-            return VoiceToolReply.failed("Reminders isn't connected. Nothing was deleted.")
+            return VoiceToolReply.failed("Reminders isn't connected.", nothing: .deleted)
         }
         do {
             switch try devices.deleteReminder(reminder) {
@@ -2458,7 +2649,7 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .deleted)
         }
     }
 
@@ -2664,12 +2855,29 @@ private final class WeakRef<T: AnyObject>: @unchecked Sendable {
     init(_ value: T) { self.value = value }
 }
 
+/// Like `WeakRef`, but only while `attempt` is still the controller's latest start (review H1):
+/// events of a conversation that was ended, or replaced while it connected, never reach the next one.
+private final class AttemptRef: @unchecked Sendable {
+    private weak var controller: VoiceSessionController?
+    private let attempt: Int
+
+    init(_ controller: VoiceSessionController, attempt: Int) {
+        self.controller = controller
+        self.attempt = attempt
+    }
+
+    @MainActor var value: VoiceSessionController? {
+        guard let controller, controller.startAttempt == attempt else { return nil }
+        return controller
+    }
+}
+
 private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .translator, .plan, .undo: false

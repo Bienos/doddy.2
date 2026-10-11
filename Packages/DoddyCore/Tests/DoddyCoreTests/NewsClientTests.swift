@@ -36,7 +36,9 @@ final class NewsClientTests: XCTestCase {
             let json = #"{"id":"6f1c2b1e-1d9a-4c55-9a51-0b1b6f5f1a01","status":"\#(status)","aiWritten":false,"errorCode":\#(errorJSON),"createdAt":"2026-10-10T08:00:00Z","items":[]}"#
             return try JSONDecoder().decode(NewsDigest.self, from: Data(json.utf8))
         }
-        XCTAssertEqual(try digest("queued").deliveryText, "Sent to you")
+        // Queued means handed to the server's outbox, not that Apple or Twilio took it (DOD-08).
+        XCTAssertEqual(try digest("queued").deliveryText, "Queued for your notifications or texts")
+        XCTAssertFalse(try digest("queued").deliveryText.contains("Sent"))
         XCTAssertEqual(try digest("ready").deliveryText, "In the app only")
         XCTAssertTrue(try digest("ready", "no_channel").deliveryText.contains("nothing was sent"))
         XCTAssertEqual(try digest("empty", "no_topics").deliveryText, "Nothing new that day")

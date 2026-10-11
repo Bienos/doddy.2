@@ -66,7 +66,7 @@ public struct LearningMetrics: Equatable, Sendable {
     public static let empty = LearningMetrics(correctionsThisWeek: 0, gaps: [:], proceduresUsedThisWeek: 0)
 }
 
-/// The learning loop's orchestration, apart from any screen (ADR-324): what gets recorded from
+/// The learning loop's orchestration, apart from any screen (ADR-440): what gets recorded from
 /// "What Doddy did", what is proposed when a conversation ends, what the voice agent is told,
 /// and what "That's wrong" and delete do. Every claim that something was saved or removed comes
 /// from a repository result that was read back.

@@ -96,9 +96,11 @@ extension VoiceToolRequest {
 }
 
 extension VoiceToolReply {
+    /// A label is the agent's words, so it follows as data (ToolData).
     public static func alarmSet(_ draft: AlarmDraft) -> String {
-        let what = draft.label.map { "\"\($0)\" " } ?? ""
-        return "added: alarm \(what)at \(draft.summary). It rings even in Silent mode or a Focus. Checked."
+        let text = "added: alarm at \(draft.summary). It rings even in Silent mode or a Focus. Checked."
+        guard let label = draft.label else { return text }
+        return text + " Its label:\n" + ToolData.block([quoted("Label", label)])
     }
 
     public static let alarmNeedsNewerIOS = "failed: alarms need iOS 26 or later, and this iPhone has an older version. Nothing was set. Offer a timer (up to 24 hours) or a reminder instead."
@@ -169,9 +171,14 @@ extension VoiceToolRequest {
 extension VoiceToolReply {
     public static func alarms(_ alarms: [AlarmEntry]) -> String {
         guard !alarms.isEmpty else { return "alarms: none set by Doddy. (Alarms from the Clock app aren't visible to Doddy.)" }
-        let lines = alarms.map { alarm in alarm.summary + (alarm.label.map { " (\"\($0)\")" } ?? "") }
-        return "alarms set by Doddy: \(lines.joined(separator: "; ")). (Alarms from the Clock app aren't visible to Doddy.)"
+        // Labels are the user's stored words: data, not instructions.
+        let lines = alarms.map { alarm in "- " + alarm.summary + (alarm.label.map { " (\"\(ToolData.clean($0))\")" } ?? "") }
+        return "alarms set by Doddy, each with its label if it has one:\n" + ToolData.block(lines)
+            + "\n(Alarms from the Clock app aren't visible to Doddy.)"
     }
+
+    /// AlarmKit's list couldn't be read (review F5): not "none set".
+    public static let alarmsUnreadable = "unknown: the iPhone couldn't read Doddy's alarms just now. Nothing changed. Ask the user to check Settings, Alarms in Doddy."
 
     public static func alarmNotFound(_ clock: String) -> String {
         "not found: Doddy has no alarm at \(clock). Nothing changed. (Doddy can't see or change the Clock app's alarms.)"

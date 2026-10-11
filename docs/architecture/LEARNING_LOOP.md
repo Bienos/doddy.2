@@ -1,4 +1,4 @@
-# Learning loop — Doddy gets better for one person (design, ADR-324)
+# Learning loop — Doddy gets better for one person (design, ADR-440)
 Status: **Phase A reviewed (owner, 2026-10-11: "use your proposed defaults"); Phase B (typed core, migrations, repositories) and Phase C (proposers, service, store, cards, Settings screen, voice wiring, gap tool) built on `claude/cool-archimedes-9l8l1h`. Linux-tested: core, service and SQLite. NOT RUN: every screen, the voice session wiring, the live voice agent.** Milestone status and test evidence: `docs/implementation/M6_LEARNING_LOOP_STATUS.md` (the pack file `MILESTONES.md` is byte-locked). Sections 8, 9 and 13 describe what is in the code; where it differs from the Phase A proposal, the difference is marked.
 
 Doddy accumulates verified context about its one user, learns reusable procedures from repeated requests, records what happened and what the user corrected, and notes what it could not do. Every learned thing is **data**: proposed by a model or a rule, validated by typed code, confirmed by the user, versioned, visible, revertible. Doddy never changes its own code on the iPhone.
@@ -201,7 +201,7 @@ Not in Phase B (Phase C): the proposers themselves (the `SaveSuggestions` extens
 5. Where the milestone sits (`docs/implementation/M6_LEARNING_LOOP_STATUS.md`): proposed as M6 after the M5 beta decision, so learning does not confound the beta's retention measurement. Alternative: run it inside M5 with a control group.
 6. Metric baseline: corrections per week measured for two weeks with learning off (owner's own use or the beta) before any claim that Doddy "gets better".
 
-## 13. Phase C as built (ADR-325)
+## 13. Phase C as built (ADR-441)
 **Code.** `DoddyCore/Learning/`: `LearningService` (everything that is not a screen: recording, proposing, answering a card, "That's wrong", voice text, housekeeping, delete), `OutcomeRecorder` (activity log entry → outcome events), `LearningProposers` (`FactProposer`, `ProcedureDetector`, `ProcedureStepTemplates`), `LearningPrompt` (the `{{learned_context}}` text), `UnavailableLearning*Repository`. App: `LearningStore` (view state), `LearnedView` (Settings), `LearningCardsView` (voice screen), hooks in `ActivityLogStore`, `VoiceSessionController`, `SettingsView`, `DataFlowView`, `AppEnvironment`, `DoddyApp`.
 
 **What now happens, in order.**

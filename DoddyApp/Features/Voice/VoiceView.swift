@@ -367,6 +367,11 @@ struct VoiceView: View {
                 Label(Self.repeatText(repeats), systemImage: "repeat")
                     .foregroundStyle(Theme.secondaryText)
             }
+            // Written to the event as its notes, so shown before Add (review H4).
+            if let notes = draft.notes, !notes.isEmpty {
+                Label(notes, systemImage: "text.alignleft")
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .reminder(_, let draft):
             Text("Add this reminder?")
                 .font(.headline)
@@ -379,6 +384,11 @@ struct VoiceView: View {
             }
             if let repeats = draft.repeats {
                 Label(Self.repeatText(repeats), systemImage: "repeat")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            // Written to the reminder as its notes, so shown before Add (review H4).
+            if let notes = draft.notes, !notes.isEmpty {
+                Label(notes, systemImage: "text.alignleft")
                     .foregroundStyle(Theme.secondaryText)
             }
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
@@ -626,6 +636,25 @@ struct VoiceView: View {
             Text("Kept only on this iPhone, and replaces any spot saved before. Doddy hears when you saved it, not where.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .leaveBy(_, let plan):
+            // ADR-335: what Apple Maps found, so a wrong place can be turned down.
+            Text("Remind you when to leave?")
+                .font(.headline)
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(plan.placeName)
+                    if !plan.placeAddress.isEmpty {
+                        Text(plan.placeAddress).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
+                }
+            } icon: { Image(systemName: "mappin.and.ellipse") }
+            Label(String(format: NSLocalizedString("Arrive by %@", comment: ""), plan.request.arriveBy.formatted(date: .abbreviated, time: .shortened)), systemImage: "flag")
+            Label(String(format: NSLocalizedString("About %lld min of travel, plus %lld min spare", comment: ""), plan.travelMinutes, plan.request.bufferMinutes), systemImage: "car")
+            Label(String(format: NSLocalizedString("Leave at %@", comment: ""), plan.leaveAt.formatted(date: .omitted, time: .shortened)), systemImage: "bell")
+                .font(.headline)
+            Text("Apple Maps worked out the travel time just now, from where your iPhone is; traffic can change. Your position isn't kept.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -839,6 +868,7 @@ struct VoiceView: View {
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         case .undo(_, let entry): (entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
         case .parking: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
+        case .leaveBy: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
         }
@@ -874,6 +904,12 @@ struct VoiceView: View {
         .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.separator))
         .accessibilityElement(children: .combine)
+        // A note has one reminder: name the one this replaces before the tap (review C3).
+        if let previous = controller.noteReminderReplaces {
+            Label(NoteReminderReplacement.cardLine(previous), systemImage: "arrow.triangle.2.circlepath")
+                .font(.footnote)
+                .accessibilityIdentifier("voice.noteReminder.replaces")
+        }
         switch target {
         case .time(let date, let zone, let repeats):
             Label {
@@ -1229,6 +1265,12 @@ struct VoiceView: View {
              : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
+        if controller.translatorStartsNewConversation {
+            // Review H3: the notes, profile and lists this conversation started with stay behind.
+            Label("Start ends this conversation and starts a new one for translating, without your notes, profile or lists. This conversation isn't kept either.", systemImage: "arrow.clockwise")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
         Button("Change languages") { changingTranslator = true }
             .buttonStyle(SecondaryButtonStyle())
             .sheet(isPresented: $changingTranslator) {

@@ -5,7 +5,7 @@ import CryptoKit
 import Crypto
 #endif
 
-// Learning loop (ADR-324, docs/architecture/LEARNING_LOOP.md). Everything Doddy learns about its
+// Learning loop (ADR-440, docs/architecture/LEARNING_LOOP.md). Everything Doddy learns about its
 // one user is data: proposed by a rule or a model, validated by these types, confirmed by the
 // user on a card, stored with provenance, visible, revertible. Nothing here is an instruction:
 // a stored row changes no permission, approval or risk tier.
@@ -247,7 +247,7 @@ public struct LearnedFactRevision: Equatable, Sendable {
 
 /// Every tool a procedure may contain is a change, so every step is shown on the plan card and
 /// runs only after the tap, each time. There is no other value, and no stored row can supply
-/// one: the approval is derived here from the tool name, never read from the row (ADR-324).
+/// one: the approval is derived here from the tool name, never read from the row (ADR-440).
 public enum ProcedureApproval: Equatable, Sendable {
     case card
 

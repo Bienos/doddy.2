@@ -45,7 +45,7 @@ struct AppEnvironment: Sendable {
     /// Which note carries which recording (ADR-230), and the folder of recordings next to the database.
     var audioRepository: any AudioRepository = UnavailableAudioRepository()
     var audioFiles: AudioFiles = .unavailable
-    /// The learning loop (ADR-324): learned facts, procedures and outcome events, in the same file.
+    /// The learning loop (ADR-440): learned facts, procedures and outcome events, in the same file.
     /// `nil` when the memory store is not open.
     var learningService: LearningService?
 

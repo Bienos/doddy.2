@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → What Doddy knows → What I've learned (ADR-324, docs/architecture/LEARNING_LOOP.md §7).
+/// Settings → What Doddy knows → What I've learned (ADR-440, docs/architecture/LEARNING_LOOP.md §7).
 /// Every fact and routine Doddy kept, where it came from and until when; edit, delete or say
 /// "That's wrong"; export; delete everything. Nothing here is sent anywhere. Rows are what the
 /// repositories returned after a read-back.

@@ -2,7 +2,7 @@
 import Foundation
 import XCTest
 
-/// Phase C core pieces (ADR-324): outcome recording from the activity log, the capability gap
+/// Phase C core pieces (ADR-440): outcome recording from the activity log, the capability gap
 /// tool, the proposers, the repeated-sequence detector, and the voice agent's learned context.
 final class LearningIntegrationTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_760_000_000)

@@ -77,6 +77,36 @@ struct WholeDoddyView: View {
             // The figure's width at this height (the picture is 2:3).
             let width = shown * CGFloat(box.width / box.height) / 1.5
             IslandPoseView(pose: pose, maxSize: CGSize(width: width, height: shown), edged: colorScheme == .dark)
+                .doddyArtMarker("doddy.pose.\(pose.rawValue)")
+        }
+    }
+}
+
+/// UI tests only (ADR-336): launched with `-doddyArtMarkers YES`, each Doddy picture becomes one
+/// accessibility element named for what it shows (`doddy.pose.shrug`, `doddy.motion.pop`), so a
+/// test can check which picture is on screen. Off in normal use: the pictures stay decorative
+/// and hidden from VoiceOver.
+enum DoddyArtMarkers {
+    static var isOn: Bool { UserDefaults.standard.bool(forKey: "doddyArtMarkers") }
+}
+
+extension View {
+    func doddyArtMarker(_ identifier: String) -> some View {
+        modifier(DoddyArtMarker(identifier: identifier))
+    }
+}
+
+private struct DoddyArtMarker: ViewModifier {
+    let identifier: String
+
+    func body(content: Content) -> some View {
+        if DoddyArtMarkers.isOn {
+            content
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(identifier)
+                .accessibilityIdentifier(identifier)
+        } else {
+            content
         }
     }
 }

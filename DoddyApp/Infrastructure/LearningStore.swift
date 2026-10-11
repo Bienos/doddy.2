@@ -16,7 +16,7 @@ struct LearningCard: Identifiable, Equatable {
     var id: UUID { item.id }
 }
 
-/// Main-actor view state over `LearningService` (ADR-324). Everything shown is what the
+/// Main-actor view state over `LearningService` (ADR-440). Everything shown is what the
 /// repositories returned; the proposers and the policy live in DoddyCore and are tested there.
 /// Learning is off until the user turns it on (Settings → What Doddy knows → What I've learned);
 /// counting corrections is not a profile of the user (kinds and tool names only, 90 days, never
