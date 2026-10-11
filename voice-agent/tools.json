@@ -146,7 +146,7 @@
         "properties": {},
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6501m4n80qyqee09pksxpdztmy18"}
     },
     {
       "type": "function",
@@ -191,7 +191,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_4501m4n80mxyfb3b0fhbeveh5ddb"}
     },
     {
       "type": "function",
@@ -204,7 +204,7 @@
         },
         "required": ["expression"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "tool_7001m4n80pe0f7wrkgp6kcv9h5wj"}
     },
     {
       "type": "function",
@@ -219,7 +219,7 @@
         },
         "required": ["value", "from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "tool_3801m4n80q65ekpb1zc8mhst0zp0"}
     },
     {
       "type": "function",

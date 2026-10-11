@@ -69,3 +69,5 @@ Date: 2026-10-11. Owner: "build nex", after ADR-264. Claude's proposal list item
 ## Decisions for the owner
 - Sync `upcoming_birthdays` to the live agent.
 - ~~Accept that a contact's birthday (day and month) goes to ElevenLabs when asked for.~~ **Accepted by the owner 2026-10-11.**
+
+**Live agent updated 2026-10-11** (owner approved): see the last paragraph of `DECISIONS.md` for tool ids and versions; `voice_agent_spec.py compare` MATCH.

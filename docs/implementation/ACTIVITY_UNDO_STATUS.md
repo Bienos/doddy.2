@@ -117,3 +117,5 @@ Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the la
 | U7 | Plan card with an event and a reminder → Add; What Doddy did | Both steps show Undo |
 | U8 | Ask Doddy to add a reminder, then say "undo that" → Remove | Card names the reminder; it's gone from Reminders; Doddy says it was undone |
 | U9 | New conversation, say "undo that" | Doddy says there's nothing to undo from this conversation and points to What Doddy did |
+
+**Live agent updated 2026-10-11** (owner approved): see the last paragraph of `DECISIONS.md` for tool ids and versions; `voice_agent_spec.py compare` MATCH.

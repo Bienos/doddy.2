@@ -73,3 +73,5 @@ Language models often get arithmetic wrong. With these two tools the agent passe
 ## Decisions for the owner
 - **Currencies:** they need live exchange rates from an outside service. Choosing a provider, its terms, and how stale a rate may be is an owner decision.
 - Sync the two tools to the live agent.
+
+**Live agent updated 2026-10-11** (owner approved): see the last paragraph of `DECISIONS.md` for tool ids and versions; `voice_agent_spec.py compare` MATCH.
