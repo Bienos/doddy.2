@@ -115,6 +115,26 @@ final class VoiceSessionController {
         case done(ConfirmedNoteReminder, NoteReminderReceipt)
     }
 
+    /// "Let Doddy use Reminders?" (ADR-324). The request waits; nothing is switched on until the
+    /// tap, and every step is checked before the next one shows.
+    struct UnlockCard: Equatable {
+        enum Stage: Equatable {
+            /// Waiting for the tap on the current step.
+            case asking
+            /// The step is running: the iOS prompt, the system browser or Doddy's server.
+            case working
+            /// iOS refused, now or earlier. The agent was told; the card shows how to allow it.
+            case blocked(VoiceConnection)
+            /// A step didn't go through. The agent was told; the card stays until dismissed.
+            case failed(String)
+        }
+        let toolCallID: String
+        let toolName: String
+        let parametersData: Data
+        var plan: UnlockPlan
+        var stage: Stage = .asking
+    }
+
     /// Contacts found by a lookup. Shown on screen only; the agent receives names.
     struct ContactCard: Equatable {
         let query: String
@@ -185,8 +205,17 @@ final class VoiceSessionController {
     private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
-    /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
+    /// A function that turned out to be off or blocked after a tap (iOS took a permission back
+    /// mid-way). The screen offers Settings. A request being handled uses `unlock` instead.
     private(set) var connectionNeeded: VoiceConnection?
+    /// Unlock as you go (ADR-324): what the agent's request needs that the user hasn't allowed
+    /// yet, with the request kept to run again after the tap. One card, one or two taps.
+    private(set) var unlock: UnlockCard? { didSet { syncIsland() } }
+    /// Connect and switch calls for the unlock card, through the same model as Settings,
+    /// Online accounts. Made on first use; nil until a server is set up.
+    private(set) var unlockAccounts: OnlineAccountsModel?
+    /// The tool call being handled right now, kept so a refusal can ask to unlock and run it again.
+    private var currentCall: ClientToolCallEvent?
     private(set) var isMuted = false { didSet { syncIsland() } }
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
@@ -324,6 +353,9 @@ final class VoiceSessionController {
         noteReminderStatus = nil
         planStatus = nil
         connectionNeeded = nil
+        unlock = nil
+        unlockAccounts = nil
+        currentCall = nil
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
@@ -691,6 +723,8 @@ final class VoiceSessionController {
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
+        unlock = nil
+        currentCall = nil
         if isLive { phase = .ended }
         keepLog()
         offerSaveSuggestions()
@@ -1340,7 +1374,7 @@ final class VoiceSessionController {
         case .idle, .ended, .microphoneDenied, .failed: return nil
         }
         var state = DoddyVoiceAttributes.ContentState(
-            status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted,
+            status: pendingAction == nil && unlock == nil ? status : .needsConfirmation, isMuted: isMuted,
             greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
         state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
@@ -1574,6 +1608,7 @@ final class VoiceSessionController {
             return
         }
         asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)
+        currentCall = call
         // Settings → Pause all: no other app or account is used; notes still work.
         if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
             await reply(call.toolCallId, ConnectionPause.reply)
@@ -2018,6 +2053,11 @@ final class VoiceSessionController {
                 await reply(toolCallID, VoiceToolReply.cloudResult(result))
             }
         } catch {
+            // Switched off or not connected: ask to unlock right here, then run this again (ADR-324).
+            if let need = UnlockNeed.from(error, tool: cloud.name), let call = currentCall, call.toolCallId == toolCallID {
+                await askToUnlock(need, call: call, serverError: error)
+                return
+            }
             await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
         }
     }
@@ -2591,8 +2631,174 @@ final class VoiceSessionController {
     }
 
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
+        // A request being handled asks to unlock right here and runs again after the tap (ADR-324).
+        if let call = currentCall, call.toolCallId == toolCallID {
+            await askToUnlock(.connection(connection), call: call)
+            return
+        }
         connectionNeeded = connection
         await reply(toolCallID, VoiceToolReply.notConnected(connection))
+    }
+
+    // MARK: Unlock as you go (ADR-324)
+
+    /// Shows the card for what `call` needs. The agent's call waits for the tap, like any card;
+    /// the steps come from the device's permission state or the server's catalog, never from the
+    /// agent's words. A connection iOS already refused gets no step, only the way to iPhone Settings.
+    private func askToUnlock(_ need: UnlockNeed, call: ClientToolCallEvent, serverError: OnlineAccountsError? = nil) async {
+        guard pendingAction == nil, unlock == nil else {
+            await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."), isError: true)
+            return
+        }
+        var card = UnlockCard(toolCallID: call.toolCallId, toolName: call.toolName, parametersData: call.parametersData, plan: UnlockPlan(need: need, steps: []))
+        switch need {
+        case .connection(let connection):
+            let access = connection == .timers ? await devices.notificationAccess() : devices.access(for: connection)
+            if access == .denied {
+                card.stage = .blocked(connection)
+                unlock = card
+                await reply(call.toolCallId, VoiceToolReply.unlockBlocked(connection), isError: true)
+                return
+            }
+            card.plan = UnlockPlan(need: need, steps: [.allowConnection(connection)])
+            unlock = card
+        case .onlineTool(let tool):
+            guard let model = unlockAccountsModel() else {
+                await reply(call.toolCallId, VoiceToolReply.cloudFailed(.notConfigured, tool: tool), isError: true)
+                return
+            }
+            card.stage = .working
+            unlock = card
+            await model.refresh()
+            let steps = UnlockPlan.onlineSteps(
+                for: tool, catalog: model.catalog, accountNotConnected: serverError.map(UnlockNeed.saysNotConnected) ?? false)
+            guard !steps.isEmpty, unlock?.toolCallID == call.toolCallId else {
+                // The catalog says it is allowed, so the refusal was something else: report that.
+                unlock = nil
+                let error = serverError ?? .server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: nil)
+                await reply(call.toolCallId, VoiceToolReply.cloudFailed(error, tool: tool), isError: true)
+                return
+            }
+            card.plan = UnlockPlan(need: need, steps: steps)
+            card.stage = .asking
+            unlock = card
+        }
+    }
+
+    private func unlockAccountsModel() -> OnlineAccountsModel? {
+        if let model = unlockAccounts { return model }
+        guard let client = OnlineAccountsClientFactory.make() else { return nil }
+        let model = OnlineAccountsModel(client: client, authenticator: SystemWebAuthenticator())
+        unlockAccounts = model
+        return model
+    }
+
+    /// The user tapped the current step's button. Each step is checked before the next one shows;
+    /// after the last, the request runs again exactly as the agent asked, so a write still gets
+    /// its own card. Allowing here sets the same switch Settings would, and Settings takes it back.
+    func allowUnlockStep() async {
+        guard var card = unlock, card.stage == .asking, let step = card.plan.current else { return }
+        card.stage = .working
+        unlock = card
+        switch step {
+        case .allowConnection(let connection):
+            // iOS asks only if it never did. The switch stays off if iOS refuses.
+            let access = await devices.request(connection)
+            UserDefaults.standard.set(access == .granted, forKey: connection.preferenceKey)
+            guard access == .granted else {
+                card.stage = .blocked(connection)
+                unlock = card
+                await reply(card.toolCallID, VoiceToolReply.unlockBlocked(connection), isError: true)
+                return
+            }
+        case .connectAccount(let toolkit, _):
+            guard let model = unlockAccountsModel() else {
+                await failUnlock(card, step, reason: "Online accounts aren't set up in this version of the app.")
+                return
+            }
+            await model.connect(toolkit)
+            // A demo server shows no sign-in page: the card asks for the tap instead (completeUnlockDemo).
+            if model.demoAttempt != nil {
+                card.stage = .asking
+                unlock = card
+                return
+            }
+            guard model.toolkit(toolkit)?.status == .connected else {
+                await failUnlock(card, step, reason: model.message)
+                return
+            }
+        case .switchOnTool(let tool, _):
+            guard let model = unlockAccountsModel() else {
+                await failUnlock(card, step, reason: "Online accounts aren't set up in this version of the app.")
+                return
+            }
+            await model.setSwitch(tool, enabled: true)
+            guard model.isEnabled(tool) else {
+                await failUnlock(card, step, reason: model.message)
+                return
+            }
+        }
+        await finishUnlockStep(card)
+    }
+
+    /// Demo servers only: the tap that stands in for the sign-in page (mock mode is labelled on the card).
+    func completeUnlockDemo(approve: Bool) async {
+        guard var card = unlock, let model = unlockAccounts, model.demoAttempt != nil,
+              case .connectAccount(let toolkit, _)? = card.plan.current, let step = card.plan.current else { return }
+        card.stage = .working
+        unlock = card
+        await model.completeDemo(approve: approve)
+        guard model.toolkit(toolkit)?.status == .connected else {
+            await failUnlock(card, step, reason: model.message ?? "Connecting was canceled.")
+            return
+        }
+        await finishUnlockStep(card)
+    }
+
+    private func finishUnlockStep(_ card: UnlockCard) async {
+        var card = card
+        card.plan.advance()
+        // Connecting can bring back a switch that was already on; then there is nothing left to tap.
+        if case .switchOnTool(let tool, _)? = card.plan.current, unlockAccounts?.isEnabled(tool) == true {
+            card.plan.advance()
+        }
+        guard card.plan.isComplete else {
+            card.stage = .asking
+            unlock = card
+            return
+        }
+        unlock = nil
+        // The conversation ended while the user was away (the system browser): what was allowed
+        // stays allowed, but the old request isn't run on its own.
+        guard isLive else { return }
+        // The same call with the same arguments: the agent isn't asked again.
+        await handle(ClientToolCallEvent(toolName: card.toolName, toolCallId: card.toolCallID, parametersData: card.parametersData, eventId: 0, expectsResponse: true))
+    }
+
+    private func failUnlock(_ card: UnlockCard, _ step: UnlockStep, reason: String?) async {
+        var card = card
+        card.stage = .failed(reason ?? "It didn't go through.")
+        unlock = card
+        await reply(card.toolCallID, VoiceToolReply.unlockFailed(step, reason: reason), isError: true)
+    }
+
+    /// Not now. Nothing is switched on, nothing is remembered about it, and the request stays undone.
+    func declineUnlock() async {
+        guard let card = unlock else { return }
+        unlock = nil
+        if unlockAccounts?.demoAttempt != nil { await unlockAccounts?.cancelDemo() }
+        if case .asking = card.stage {
+            await reply(card.toolCallID, VoiceToolReply.unlockDeclined(card.plan.need))
+        }
+    }
+
+    /// After a blocked or failed step the agent already has its answer; the card just goes away.
+    func dismissUnlock() {
+        guard let card = unlock else { return }
+        switch card.stage {
+        case .blocked, .failed: unlock = nil
+        case .asking, .working: return
+        }
     }
 
     /// Called after the Connections sheet closes: the prompt goes away once the switch is on.

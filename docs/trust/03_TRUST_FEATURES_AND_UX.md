@@ -38,6 +38,8 @@ Do not ask users to “trust AI.” Give them tools to **inspect it, control it,
 
 **Required implementation:** policy enforcement in client/service/tool gateway, scoped tokens and API authorisation. Never trust a generated statement of consent as the sole security control.
 
+**When consent is asked (owner, 2026-10-11, ADR-324):** never up front. A capability is unlocked by a card in the conversation at the moment a request needs it, for that one thing, and stays unlocked until revoked here. See `docs/product/UNLOCK_AS_YOU_GO.md`.
+
 ### UX-04 — Reality Check (`How Doddy knows`)
 **Concern → benefit:** “AI invents facts” → transparent sources and uncertainty.
 

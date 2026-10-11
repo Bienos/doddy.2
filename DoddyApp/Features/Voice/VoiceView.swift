@@ -174,6 +174,11 @@ struct VoiceView: View {
                                 .id("pendingAction")
                         }
 
+                        if let card = controller.unlock {
+                            unlockCard(card, controller: controller)
+                                .id("unlock")
+                        }
+
                         if let status = controller.reminderStatus {
                             reminderStatusCard(status, controller: controller)
                                 .id("reminderStatus")
@@ -237,6 +242,9 @@ struct VoiceView: View {
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
                     if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                }
+                .onChange(of: controller.unlock) { _, card in
+                    if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("unlock", anchor: .bottom) } }
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
                     if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
@@ -1061,6 +1069,126 @@ struct VoiceView: View {
         .accessibilityElement(children: .contain)
     }
 
+    /// Unlock as you go (ADR-324): the request waits while the card asks for exactly what it
+    /// needs, one tap per step (connect, then the one switch). Nothing is on until the tap; after
+    /// the last tap the request runs again by itself. Settings takes any of it back.
+    @ViewBuilder
+    private func unlockCard(_ card: VoiceSessionController.UnlockCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            switch card.stage {
+            case .blocked(let connection):
+                Label(String(format: NSLocalizedString("iPhone doesn't allow %@ for Doddy", comment: "Unlock card, iOS refused"), connection.title), systemImage: ConnectionInfo.of(connection).symbol)
+                    .font(.headline)
+                Text("Doddy can't ask iPhone again. You can allow it in iPhone Settings, then ask me again.")
+                    .foregroundStyle(Theme.secondaryText)
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                } label: {
+                    Label("Open iPhone Settings", systemImage: "gear")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .accessibilityIdentifier("voice.unlock.openSettings")
+                Button("OK") { controller.dismissUnlock() }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.unlock.ok")
+            case .failed(let reason):
+                Label("That didn't go through", systemImage: "exclamationmark.circle")
+                    .font(.headline)
+                Text(reason)
+                    .foregroundStyle(Theme.secondaryText)
+                Text("Nothing was switched on. You can ask again whenever you like.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                Button("OK") { controller.dismissUnlock() }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.unlock.ok")
+            case .asking, .working:
+                let working = card.stage == .working
+                if controller.unlockAccounts?.isDemo == true, case .onlineTool = card.plan.need {
+                    Label("Demo — no real account is connected", systemImage: "theatermasks")
+                        .font(.footnote)
+                }
+                Label(String(format: NSLocalizedString("Let Doddy use %@?", comment: "Unlock card title"), card.plan.need.title), systemImage: unlockSymbol(card.plan.need))
+                    .font(.headline)
+                Text(unlockPurpose(card, controller: controller))
+                    .foregroundStyle(Theme.secondaryText)
+                if card.plan.steps.count > 1 {
+                    ForEach(card.plan.steps) { step in
+                        let done = card.plan.isDone(step)
+                        Label(step.action, systemImage: done ? "checkmark.circle.fill" : "circle")
+                            .foregroundStyle(done ? Theme.secondaryText : Theme.ink)
+                            .accessibilityLabel(done ? "\(step.action), done" : step.action)
+                    }
+                }
+                if controller.unlockAccounts?.demoAttempt != nil, case .connectAccount(_, let title)? = card.plan.current {
+                    Text("Demo connection: no \(title) account is involved and the data is made up.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    Button {
+                        Task { await controller.completeUnlockDemo(approve: true) }
+                    } label: {
+                        Label("Connect demo \(title)", systemImage: "checkmark")
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(working)
+                    .accessibilityIdentifier("voice.unlock.allow")
+                } else if let step = card.plan.current {
+                    Button {
+                        Task { await controller.allowUnlockStep() }
+                    } label: {
+                        if working {
+                            ProgressView()
+                        } else {
+                            Label(step.action, systemImage: "checkmark")
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(working)
+                    .accessibilityIdentifier("voice.unlock.allow")
+                }
+                Button("Not now") {
+                    Task { await controller.declineUnlock() }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(working)
+                .accessibilityIdentifier("voice.unlock.notNow")
+                Text("Only this, only because you asked. You can take it back any time in Settings.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.unlock")
+    }
+
+    private func unlockSymbol(_ need: UnlockNeed) -> String {
+        switch need {
+        case .connection(let connection): ConnectionInfo.of(connection).symbol
+        case .onlineTool: "link"
+        }
+    }
+
+    /// What it is for, in plain words: the Connections copy for an iPhone function, the server's
+    /// own blurb for an online tool (never the agent's words).
+    private func unlockPurpose(_ card: VoiceSessionController.UnlockCard, controller: VoiceSessionController) -> String {
+        switch card.plan.need {
+        case .connection(let connection):
+            let info = ConnectionInfo.of(connection)
+            let first = info.canDo.first.map { $0 + ". " } ?? ""
+            return "\(first)Leaves your iPhone: \(info.leavesPhone)"
+        case .onlineTool(let tool):
+            let catalog = controller.unlockAccounts?.catalog
+            let toolkit = catalog?.toolkits.first { $0.tools.contains { $0.name == tool } }
+            let blurb = toolkit?.tools.first { $0.name == tool }?.blurb ?? "Doddy would use \"\(CloudToolName.title(tool))\" for this request."
+            if let access = toolkit?.access, card.plan.steps.contains(where: { if case .connectAccount = $0 { true } else { false } }) {
+                return "\(blurb) \(access)"
+            }
+            return blurb
+        }
+    }
+
     private func connectionCard(_ connection: VoiceConnection) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("\(connection.title) is off", systemImage: ConnectionInfo.of(connection).symbol)
@@ -1361,7 +1489,7 @@ struct VoiceView: View {
         }
         let planRunning = controller.planStatus.map { $0.isRunning && !$0.steps.isEmpty } ?? false
         return .shown(phase, muted: controller.isMuted && controller.isLive,
-                      awaitingConfirmation: controller.pendingAction != nil, planRunning: planRunning)
+                      awaitingConfirmation: controller.pendingAction != nil || controller.unlock != nil, planRunning: planRunning)
     }
 
         private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {
