@@ -13377,6 +13377,17 @@
         }
       }
     },
+    "What you said": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co powiedziałeś"
+          }
+        }
+      }
+    },
     "What you told me": {
       "extractionState": "manual",
       "localizations": {

@@ -166,6 +166,7 @@ final class VoiceSessionController {
     static var microphone: MicrophoneSnapshot.Conversation {
         guard let current, current.isLive else { return .none }
         if current.phase == .connecting { return .connecting }
+        if current.longTurn.isListening { return .longTurn }
         return current.isMuted ? .muted : .listening
     }
     private(set) var lines: [Line] = []
@@ -226,6 +227,15 @@ final class VoiceSessionController {
     private(set) var translatorFactsSaved: Result<String, TranslatorSaveError>?
     /// Noisy place: the microphone is muted except while a hold-to-talk button is held (T4).
     private(set) var holdToTalk = false
+    /// "Listen until I finish" (OP-019, ADR-364): the user ends the turn; only the words are sent.
+    private(set) var longTurn: LongTurnPhase = .off {
+        didSet { ListeningIndicatorModel.shared.refresh() }
+    }
+    @ObservationIgnored private let longTurnRecorder = LongTurnRecorder()
+    /// The recording waiting to be written out (again); deleted once sent or dropped.
+    @ObservationIgnored private var longTurnFile: URL?
+    @ObservationIgnored private var mutedBeforeLongTurn = false
+    @ObservationIgnored private var longTurnLimit: Task<Void, Never>?
     private(set) var heldSide: TranslatorDirection?
     /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
     private var translatorNeedsHello = false
@@ -771,6 +781,7 @@ final class VoiceSessionController {
         startAttempt += 1
         userAskedToEnd = true
         if sessionEnd == nil { sessionEnd = reason }
+        dropLongTurn()
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
@@ -820,13 +831,163 @@ final class VoiceSessionController {
     }
 
     func toggleMute() async {
-        guard let conversation else { return }
+        // During "Listen until I finish" the microphone stays muted until Done or Cancel.
+        guard let conversation, longTurn == .off else { return }
         do {
             try await conversation.setMuted(!isMuted)
             isMuted.toggle()
         } catch {
             // Keep the previous state; the UI shows what is actually set.
         }
+    }
+
+    // MARK: Listen until I finish (OP-019, ADR-364)
+
+    /// Mutes the conversation so the voice service hears nothing and can't end the turn, and
+    /// records the turn on this iPhone until Done.
+    func startLongTurn() async {
+        guard isLive, let conversation, longTurn == .off, translator == nil else { return }
+        mutedBeforeLongTurn = isMuted
+        if !isMuted {
+            do { try await conversation.setMuted(true) } catch {
+                longTurn = .draft(LongTurn.draft(for: .recordingFailed))
+                return
+            }
+            isMuted = true
+        }
+        guard longTurnRecorder.start() else {
+            await restoreMuteAfterLongTurn()
+            longTurn = .draft(LongTurn.draft(for: .recordingFailed))
+            return
+        }
+        longTurn = .listening(since: Date())
+        // At the limit it finishes as if Done was tapped.
+        longTurnLimit = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(LongTurn.maxSeconds))
+            guard !Task.isCancelled else { return }
+            await self?.finishLongTurn()
+        }
+    }
+
+    /// Done: the user has finished. Written out on this iPhone, then only the words are sent.
+    func finishLongTurn() async {
+        guard longTurn.isListening else { return }
+        longTurnLimit?.cancel()
+        longTurnLimit = nil
+        guard let file = longTurnRecorder.stop() else {
+            await restoreMuteAfterLongTurn()
+            longTurn = .draft(LongTurn.draft(for: .recordingFailed))
+            return
+        }
+        guard file.seconds >= LongTurn.minSeconds else {
+            try? FileManager.default.removeItem(at: file.url)
+            await restoreMuteAfterLongTurn()
+            longTurn = .draft(LongTurn.draft(for: .tooShort))
+            return
+        }
+        longTurnFile = file.url
+        await writeOutLongTurn()
+    }
+
+    /// Cancel while listening: the recording is deleted and nothing is sent.
+    func cancelLongTurn() async {
+        guard longTurn.isListening else { return }
+        dropLongTurn()
+        await restoreMuteAfterLongTurn()
+    }
+
+    /// Try again on a draft: writes the recording out again, or sends the text it holds.
+    func retryLongTurn() async {
+        guard case .draft(let draft) = longTurn else { return }
+        if !draft.text.allSatisfy(\.isWhitespace) {
+            await sendLongTurn(draft.text)
+        } else if draft.canWriteOutAgain, longTurnFile != nil {
+            await writeOutLongTurn()
+        }
+    }
+
+    func editLongTurn(_ text: String) {
+        guard case .draft(var draft) = longTurn else { return }
+        draft.text = text
+        longTurn = .draft(draft)
+    }
+
+    /// Discard on a draft: the recording and the text go; nothing is sent.
+    func discardLongTurn() async {
+        guard case .draft = longTurn else { return }
+        dropLongTurn()
+        await restoreMuteAfterLongTurn()
+    }
+
+    private func writeOutLongTurn() async {
+        guard let file = longTurnFile else { return }
+        longTurn = .writingOut
+        let available = VoiceMemoTranscriber.languages().map(\.identifier)
+        guard let identifier = LongTurn.locale(conversationCode: ConversationLanguage.stored().overrideCode, onDevice: available) else {
+            await draftLongTurn(LongTurn.draft(for: .notOnDevice))
+            return
+        }
+        switch await VoiceMemoTranscriber.transcribe(file, locale: Locale(identifier: identifier)) {
+        case .text(let result):
+            if let message = LongTurn.message(result.text) {
+                await sendLongTurn(message)
+            } else {
+                await draftLongTurn(LongTurn.draft(for: .nothingHeard))
+            }
+        case .noSpeech: await draftLongTurn(LongTurn.draft(for: .nothingHeard))
+        case .notOnDevice: await draftLongTurn(LongTurn.draft(for: .notOnDevice))
+        case .notAllowed: await draftLongTurn(LongTurn.draft(for: .notAllowed))
+        case .failed: await draftLongTurn(LongTurn.draft(for: .writeOutFailed))
+        }
+    }
+
+    /// The words go as one message, shown as the user's line; then the recording is deleted.
+    private func sendLongTurn(_ text: String) async {
+        guard let message = LongTurn.message(text) else {
+            await draftLongTurn(LongTurn.draft(for: .nothingHeard))
+            return
+        }
+        guard isLive, let conversation else {
+            await draftLongTurn(LongTurn.draft(for: .couldNotSend, text: message))
+            return
+        }
+        do {
+            try await conversation.sendMessage(message)
+        } catch {
+            await draftLongTurn(LongTurn.draft(for: .couldNotSend, text: message))
+            return
+        }
+        lines.append(Line(fromUser: true, text: message))
+        dropLongTurn()
+        await restoreMuteAfterLongTurn()
+    }
+
+    /// Not sent: kept as a draft on the screen, and the microphone goes back to how the user had
+    /// it, so the conversation carries on while the draft waits.
+    private func draftLongTurn(_ draft: LongTurnDraft) async {
+        // A recording that can't be written out again isn't kept a moment longer.
+        if !draft.canWriteOutAgain, let file = longTurnFile {
+            try? FileManager.default.removeItem(at: file)
+            longTurnFile = nil
+        }
+        longTurn = .draft(draft)
+        await restoreMuteAfterLongTurn()
+    }
+
+    /// Stops any recording and deletes the file. Used by every way out, the end included.
+    private func dropLongTurn() {
+        longTurnLimit?.cancel()
+        longTurnLimit = nil
+        longTurnRecorder.cancel()
+        if let file = longTurnFile { try? FileManager.default.removeItem(at: file) }
+        longTurnFile = nil
+        if longTurn != .off { longTurn = .off }
+    }
+
+    /// The microphone goes back to how the user had it before the long turn.
+    private func restoreMuteAfterLongTurn() async {
+        guard let conversation, isMuted, !mutedBeforeLongTurn else { return }
+        if (try? await conversation.setMuted(false)) != nil { isMuted = false }
     }
 
     /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
@@ -1704,6 +1865,7 @@ final class VoiceSessionController {
         keepRecoveryDraft()
         phase = .failed(message)
         pendingAction = nil
+        dropLongTurn()
         // The lines and unanswered cards are kept now, not only at the next Close (ADR-360).
         keepLog()
         // After an error the SDK may keep the microphone (review H2), so the conversation is
@@ -1723,6 +1885,7 @@ final class VoiceSessionController {
     private func disconnected(_ kind: VoiceSessionEnd.Disconnect) {
         if sessionEnd == nil { sessionEnd = VoiceSessionEnd.afterDisconnect(kind, userAsked: userAskedToEnd) }
         let wasLive = isLive
+        dropLongTurn()
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()

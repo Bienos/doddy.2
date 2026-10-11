@@ -34,6 +34,9 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
         /// What the user says isn't sent. The microphone itself may still be open (the OpenAI test
         /// voice keeps capturing and drops it), so this still counts as open.
         case muted
+        /// "Listen until I finish" (ADR-364): the conversation is muted and the iPhone records the
+        /// turn itself, to write it out on the device.
+        case longTurn
     }
 
     public var conversation: Conversation
@@ -74,7 +77,7 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
 /// has it, so it never says "listening" when nothing is.
 public struct ListeningIndicator: Equatable, Sendable {
     public enum Kind: Equatable, Sendable {
-        case connecting, conversation, muted, voiceMemo, heyDoddy
+        case connecting, conversation, muted, longTurn, voiceMemo, heyDoddy
     }
 
     /// In the order they are shown; the first decides the symbol.
@@ -87,6 +90,7 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .connecting: kinds.append(.connecting)
         case .listening: kinds.append(.conversation)
         case .muted: kinds.append(.muted)
+        case .longTurn: kinds.append(.longTurn)
         }
         if snapshot.voiceMemoRecording { kinds.append(.voiceMemo) }
         if snapshot.heyDoddyRunning || snapshot.heyDoddy == .listening { kinds.append(.heyDoddy) }
@@ -107,6 +111,7 @@ public struct ListeningIndicator: Equatable, Sendable {
         switch kinds[0] {
         case .connecting, .conversation: "mic.fill"
         case .muted: "mic.slash.fill"
+        case .longTurn: "waveform"
         case .voiceMemo: "record.circle"
         case .heyDoddy: "ear"
         }
@@ -122,6 +127,7 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .connecting: return polish ? "Doddy się łączy" : "Doddy is connecting"
         case .conversation: return polish ? "Doddy słucha" : "Doddy is listening"
         case .muted: return polish ? "Mikrofon wyciszony" : "Microphone muted"
+        case .longTurn: return polish ? "Słucham, aż skończysz" : "Listening until you finish"
         case .voiceMemo: return polish ? "Nagrywanie notatki głosowej" : "Recording a voice memo"
         case .heyDoddy: return polish ? "Czeka na „Hey Doddy”" : "Listening for “Hey Doddy”"
         }
@@ -136,6 +142,8 @@ public struct ListeningIndicator: Equatable, Sendable {
             return polish ? "Twój głos trafia do usługi głosowej, dopóki trwa rozmowa." : "Your voice goes to the voice service while you talk."
         case .muted:
             return polish ? "To, co mówisz, nie jest wysyłane. „Przestań słuchać” kończy rozmowę." : "What you say isn't sent. Stop listening ends the conversation."
+        case .longTurn:
+            return polish ? "Nagrywane na tym iPhonie; po Gotowe wysyłane są tylko słowa." : "Recorded on this iPhone; only the words are sent when you tap Done."
         case .voiceMemo:
             return polish ? "Tylko na tym iPhonie." : "On this iPhone only."
         case .heyDoddy:

@@ -1354,7 +1354,20 @@ struct VoiceView: View {
     }
 
     private func controls(_ controller: VoiceSessionController) -> some View {
-        HStack(spacing: 12) {
+        VStack(spacing: 12) {
+            // "Listen until I finish" (ADR-364); not in translator mode, which has its own hold-to-talk.
+            if controller.isLive && controller.translator == nil || controller.longTurn != .off {
+                LongTurnPanel(controller: controller)
+            }
+            HStack(spacing: 12) { mainControls(controller) }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .background(Theme.canvas)
+    }
+
+    @ViewBuilder
+    private func mainControls(_ controller: VoiceSessionController) -> some View {
             if controller.isLive {
                 Button {
                     Task { await controller.toggleMute() }
@@ -1362,6 +1375,7 @@ struct VoiceView: View {
                     Label(controller.isMuted ? "Unmute" : "Mute", systemImage: controller.isMuted ? "mic.slash" : "mic")
                 }
                 .buttonStyle(SecondaryButtonStyle())
+                .disabled(controller.longTurn != .off)
                 Button {
                     Task { await controller.stop() }
                 } label: {
@@ -1377,10 +1391,6 @@ struct VoiceView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 12)
-        .background(Theme.canvas)
     }
 
     /// Doddy's pose on this screen (ADR-299), the island's for the same moment.
@@ -1519,5 +1529,81 @@ struct RecoveryDraftCard: View {
         isSaving = true
         defer { isSaving = false }
         problem = await controller.saveRecovery()
+    }
+}
+
+/// "Listen until I finish" (OP-019, ADR-364): the button, the listening card with Done, writing
+/// out, and a turn that couldn't be sent, kept as a draft to retry, type or drop.
+struct LongTurnPanel: View {
+    let controller: VoiceSessionController
+    private var language: NotificationLanguage { .current }
+
+    var body: some View {
+        switch controller.longTurn {
+        case .off:
+            Button {
+                Task { await controller.startLongTurn() }
+            } label: {
+                Label { Text(verbatim: LongTurn.startLabel(language)) } icon: { Image(systemName: "hand.raised") }
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("voice.longTurn.start")
+        case .listening(let since):
+            VStack(alignment: .leading, spacing: 10) {
+                Label { Text(verbatim: LongTurn.listeningTitle(language)).font(.headline) } icon: { Image(systemName: "waveform") }
+                Text(verbatim: LongTurn.listeningDetail(language))
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                TimelineView(.periodic(from: since, by: 1)) { context in
+                    Text(verbatim: "\(LongTurn.clock(context.date.timeIntervalSince(since))) / \(LongTurn.clock(LongTurn.maxSeconds))")
+                        .font(.footnote.monospacedDigit()).foregroundStyle(Theme.secondaryText)
+                }
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await controller.finishLongTurn() }
+                    } label: {
+                        HStack { Text("Done"); Spacer(); Image(systemName: "checkmark") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityIdentifier("voice.longTurn.done")
+                    Button("Cancel") { Task { await controller.cancelLongTurn() } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .padding(14)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+            .accessibilityIdentifier("voice.longTurn.listening")
+        case .writingOut:
+            HStack(spacing: 10) {
+                ProgressView()
+                Text(verbatim: LongTurn.writingOut(language)).font(.footnote)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        case .draft(let draft):
+            VStack(alignment: .leading, spacing: 10) {
+                ProblemView(message: LongTurn.problem(draft.problem, language))
+                TextField("What you said", text: Binding(get: { draft.text }, set: { controller.editLongTurn($0) }), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("voice.longTurn.text")
+                HStack(spacing: 12) {
+                    if !draft.text.allSatisfy(\.isWhitespace) {
+                        Button {
+                            Task { await controller.retryLongTurn() }
+                        } label: {
+                            HStack { Text("Send"); Spacer(); Image(systemName: "arrow.up") }
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                    } else if draft.canWriteOutAgain {
+                        Button("Try again") { Task { await controller.retryLongTurn() } }
+                            .buttonStyle(PrimaryButtonStyle())
+                    }
+                    Button("Discard") { Task { await controller.discardLongTurn() } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .padding(14)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+            .accessibilityIdentifier("voice.longTurn.draft")
+        }
     }
 }

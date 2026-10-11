@@ -426,3 +426,13 @@ These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_
 | UN4 | Open the capture screen with an unfinished note waiting; tap Start a new note instead, type, Cancel › Keep it for later | Two unfinished notes; Home says "1 more"; each opens in turn |
 | UN5 | Share text with "Save to Doddy" while an unfinished note waits | The shared text shows alone with "You also have an unfinished note…"; the old one is still there afterwards |
 | UN6 | Settings › Delete all memories with an unfinished note waiting | The Home card is gone too; Polish iPhone: the card and capture notices are Polish |
+
+## 4s. Listen until I finish (ADR-364, `LONG_TURN_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| LT1 | In a conversation tap Listen until I finish; talk for 30 s with two long pauses; tap Done | Doddy doesn't answer during the pauses; your words appear as one line; Doddy answers them |
+| LT2 | Same, with music playing loudly nearby | Nothing is answered until Done; the words are yours (check the orange dot stays on while recording) |
+| LT3 | Polish conversation language; talk in Polish; Done | Written out in Polish; Polish card and buttons |
+| LT4 | Turn off Speech Recognition for Doddy in Settings; try again | The draft card says it's off; type the words and tap Send; Doddy answers |
+| LT5 | Start, then tap End mid-recording | Nothing sent; no DoddyTurn-*.m4a left in the app's tmp folder (Xcode › Devices › container) |
+| LT6 | Start, wait past 3:00 | It finishes by itself and sends what it heard |
