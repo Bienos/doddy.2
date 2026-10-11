@@ -168,9 +168,10 @@ extension DoddyVoiceAttributes.ContentState {
             live: live,
             // Lean In's hand at his ear means "listening", so it goes when he can't hear you.
             showsHands: style == .leanIn ? live : true,
-            label: "VOICE",
-            time: .elapsed,
-            title: stale ? "Lost Doddy — open the app" : title,
+            // "Hey Doddy" waiting (ADR-254) is not a conversation: no timer, its own label.
+            label: isWakeMode ? "HEY DODDY" : "VOICE",
+            time: isWakeMode ? .text("") : .elapsed,
+            title: stale ? (isWakeMode ? "Not listening — open Doddy" : "Lost Doddy — open the app") : title,
             bigTitle: nil,
             subtitle: stale ? "The app stopped in the background" : islandLine,
             subtitleIsWarning: stale,

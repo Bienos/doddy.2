@@ -1,7 +1,7 @@
 {
  "NSMicrophoneUsageDescription": {
-  "en": "Doddy listens only while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice is sent to ElevenLabs to run the conversation. A voice memo you record on a note stays on this iPhone.",
-  "pl": "Doddy słucha tylko wtedy, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos jest wysyłany do ElevenLabs, żeby prowadzić rozmowę. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
+  "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it. A voice memo you record on a note stays on this iPhone.",
+  "pl": "Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Jeśli włączysz Hej Doddy, mikrofon słucha też na tym iPhonie słowa wywołującego; ten dźwięk nie jest zapisywany ani wysyłany. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
  },
  "NSSpeechRecognitionUsageDescription": {
   "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",

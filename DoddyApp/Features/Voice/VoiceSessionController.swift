@@ -198,7 +198,16 @@ final class VoiceSessionController {
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
-    private let island = VoiceLiveActivity()
+    /// Shared with "Hey Doddy" listening, which may have started it (ADR-254).
+    private let island = VoiceLiveActivity.shared
+    /// True once this conversation has shown its state on the island, so only it ends it.
+    private var ownsIsland = false
+    /// "Hey Pat, what's up?" when the wake word started this conversation (ADR-254). Shown on
+    /// the island until the user first speaks.
+    private(set) var wakeGreeting: String? { didSet { syncIsland() } }
+    /// The wake word started this conversation: it ends by itself if the user says nothing.
+    private var startedByWakeWord = false
+    private var silentWakeTimer: Task<Void, Never>?
     /// True while iOS has paused Doddy's audio because another app took the audio session
     /// (`AVAudioSession` interruption). Real system events only, never a guess.
     private(set) var audioPausedByOtherApp = false
@@ -249,14 +258,19 @@ final class VoiceSessionController {
     }
 
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
-    /// Settings → About you → "Use in voice conversations" is on.
+    /// Settings → About you → "Use in voice conversations" is on. `wakeGreeting` is set when
+    /// "Hey Doddy" started the conversation (ADR-254): Doddy says it first and the island shows it.
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
-        checkIn: MorningBriefing? = nil
+        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
         ReadAloudController.shared.stop()
+        startedByWakeWord = wakeGreeting != nil
+        self.wakeGreeting = wakeGreeting
+        silentWakeTimer?.cancel()
+        silentWakeTimer = nil
         lines = []
         // A translator start sends no notes or lists, so it never carries a check-in too.
         let checkIn = preset == nil ? checkIn : nil
@@ -343,6 +357,11 @@ final class VoiceSessionController {
                 TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
                 ListsPrompt.variableName: listsText,
                 MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
+                // What Doddy says first (ADR-254): the greeting after "Hey Doddy", otherwise his
+                // usual opening. Used once the agent's first message is {{opening_line}}
+                // (voice-agent/session.json); an agent without it ignores the variable.
+                WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
+                    afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
             ],
             userId: Self.userID())
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
@@ -377,6 +396,7 @@ final class VoiceSessionController {
         config.onAgentReady = {
             Task { @MainActor in
                 if ref.value?.phase == .connecting { ref.value?.phase = .listening }
+                ref.value?.startSilentWakeTimer()
             }
         }
         config.onDisconnect = { _ in
@@ -478,6 +498,7 @@ final class VoiceSessionController {
 
     func stop() async {
         endTranslator()
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         let active = conversation
         conversation = nil
@@ -488,6 +509,8 @@ final class VoiceSessionController {
         keepLog()
         offerSaveSuggestions()
         await active?.endConversation()
+        // Only now may "Hey Doddy" take the microphone again (ADR-254).
+        WakeWordListener.shared.conversationAudioReleased()
     }
 
     /// Keeps the transcript lines of this conversation on the phone, once, so the next
@@ -1049,7 +1072,9 @@ final class VoiceSessionController {
         case .speaking: status = .speaking
         case .idle, .ended, .microphoneDenied, .failed: return nil
         }
-        var state = DoddyVoiceAttributes.ContentState(status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted)
+        var state = DoddyVoiceAttributes.ContentState(
+            status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted,
+            greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
         state.islandStyle = IslandStyle(rawValue: UserDefaults.standard.string(forKey: PreferenceKey.islandStyle) ?? "") ?? .leanIn
         return state
@@ -1096,12 +1121,40 @@ final class VoiceSessionController {
 
     private func syncIsland() {
         if let state = islandState {
+            ownsIsland = true
             island.show(state, startedAt: startedAt ?? .now)
-        } else if phase == .ended {
+            return
+        }
+        // Only a conversation that showed itself on the island ends it: "Hey Doddy" listening
+        // may be using it while this one is idle (ADR-254).
+        guard ownsIsland else { return }
+        ownsIsland = false
+        // "Hey Doddy" listening carries on in the same island when it can start again.
+        if WakeWordListener.shared.takeIslandBack() { return }
+        if phase == .ended {
             island.finish(savedCount: savedThisConversation)
         } else {
             island.end()
         }
+    }
+
+    // MARK: "Hey Doddy" (ADR-254)
+
+    /// A conversation the wake word started ends by itself if the user says nothing for
+    /// `WakeGate.silentWakeTimeout` after Doddy is ready: most likely the word was heard by
+    /// mistake, and an open conversation keeps the microphone and ElevenLabs running.
+    private func startSilentWakeTimer() {
+        guard startedByWakeWord, silentWakeTimer == nil, isLive else { return }
+        silentWakeTimer = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(WakeGate.silentWakeTimeout))
+            guard !Task.isCancelled, let self, self.isLive, !self.lines.contains(where: \.fromUser) else { return }
+            await self.stop()
+        }
+    }
+
+    private func stopSilentWakeTimer() {
+        silentWakeTimer?.cancel()
+        silentWakeTimer = nil
     }
 
     // MARK: Events
@@ -1137,6 +1190,8 @@ final class VoiceSessionController {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
         }
+        // The greeting stays on the island only until the user answers.
+        if fromUser, wakeGreeting != nil { wakeGreeting = nil }
     }
 
     private func correct(_ original: String, to corrected: String) {
@@ -1149,6 +1204,7 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
@@ -1156,6 +1212,7 @@ final class VoiceSessionController {
 
     private func disconnected() {
         endTranslator()
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         conversation = nil
         pendingAction = nil

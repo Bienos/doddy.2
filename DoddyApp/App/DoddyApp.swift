@@ -29,13 +29,17 @@ struct DoddyApp: App {
         PhoneWatchLink.shared.activate()
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
-        _profiles = State(initialValue: ProfileStore(environment: environment))
+        let profiles = ProfileStore(environment: environment)
+        _profiles = State(initialValue: profiles)
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
         // A focus timer does survive one (it is saved); this also lets its island's buttons work
         // when iOS starts the app just to run them (ADR-241). Breathing and read-aloud don't.
         FocusController.shared.refresh()
         ToolLiveActivity.endLeftovers(keeping: [.focus])
+        // "Hey Doddy" (ADR-254) starts conversations with the same notes and profile.
+        WakeWordListener.shared.store = store
+        WakeWordListener.shared.profiles = profiles
     }
 
     var body: some Scene {

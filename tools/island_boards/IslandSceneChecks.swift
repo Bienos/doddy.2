@@ -39,6 +39,36 @@ enum IslandSceneChecks {
         thinking.islandStyle = .hereWithYou
         expect(thinking.islandScene(isStale: false).scenario == 1, "here with you thinking board")
 
+        // "Hey Doddy" waiting (ADR-254) is not a conversation, on every style: not live, no timer,
+        // its own label; a stale one says nothing is listening any more.
+        for style in IslandStyle.allCases {
+            var s = State.wakeListening
+            s.islandStyle = style
+            let scene = s.islandScene(isStale: false)
+            expect(scene.board == style.board && !scene.live, "\(style) wake listening not live")
+            expect(scene.label == "HEY DODDY" && scene.time == .text(""), "\(style) wake label, no timer")
+            expect(scene.title == "Say “Hey Doddy”", "\(style) wake title")
+        }
+        let wakeStale = State.wakeListening.islandScene(isStale: true)
+        expect(wakeStale.title == "Not listening — open Doddy" && !wakeStale.live, "wake stale")
+        expect(State.wakePaused.islandScene(isStale: false).title == "“Hey Doddy” paused", "wake paused")
+        // The greeting replaces Connecting and Listening only; Muted and Thinking win over it.
+        var greeted = State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")
+        expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while connecting")
+        expect(greeted.islandScene(isStale: false).label == "VOICE", "greeting is a conversation")
+        greeted.status = .thinking
+        expect(greeted.islandScene(isStale: false).title == "Thinking…", "greeting gone once thinking")
+        let greetedMuted = State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")
+        expect(greetedMuted.islandScene(isStale: false).title == "Muted", "muted beats greeting")
+        let wakeConversation = State(
+            status: .listening, isMuted: false, greeting: "Hej Pat, co słychać?",
+            conversationStartedAt: Date(timeIntervalSince1970: 5))
+        if let data = try? JSONEncoder().encode(wakeConversation) {
+            expect((try? JSONDecoder().decode(State.self, from: data)) == wakeConversation, "greeting round trip")
+        } else {
+            expect(false, "encode greeting")
+        }
+
         // Moments.
         var note = State(status: .needsConfirmation, isMuted: false)
         note.moment = .noteWaiting
