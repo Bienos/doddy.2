@@ -4,7 +4,7 @@ Branch `claude/hopeful-fermat-1a63x0`. Owner's list of nine; item 1 was left to 
 ## Shipped (written and checked on Linux; nothing compiled with Xcode)
 | # | Feature | ADR | Status doc |
 |---|---|---|---|
-| 1 | Join `claude/sleepy-gates-f9najr`: left to `claude/peaceful-hopper-v3gx75`; the owner's choices are recorded for it | 255 | DECISIONS.md |
+| 1 | Join `claude/sleepy-gates-f9najr`: left to the other session, which ported its unique features (PR #23, #24); the overlap choices weren't needed | 255 | DECISIONS.md |
 | 2 | List reminders at a place or time, by voice | 256 | `LIST_REMINDERS_STATUS.md` |
 | 3 | Shopping mode (Live Activity for a list) | 257 | `SHOPPING_MODE_STATUS.md` |
 | 4 | Undo for voice changes and imports | 258 | `UNDO_STATUS.md` |
@@ -36,7 +36,7 @@ Branch `claude/hopeful-fermat-1a63x0`. Owner's list of nine; item 1 was left to 
   - `set_alarm` `tool_2701m4mf3jrre9ts0cksqvg7e2s5`;
   - `remind_me_about_note` gained `list` (its `said_time` kept).
 - The stored prompt was read back from the update.
-- **Drift to reconcile at the join:** the live agent's `said_time` parameters and prompt lines aren't in this branch's `voice-agent/` spec. This branch's app ignores unknown arguments. The change tools' live descriptions lack the "use delete_… for that" pointer sentence that the spec has.
+- **Spec and live agent after the join:** the default branch brought `said_time` into `voice-agent/`, so the spec and the live agent now agree, except that the spec's change-tool descriptions have a "use delete_… for that" pointer sentence the live tools don't.
 
 ## Security and privacy
 - New data leaving the phone, only when the user opts in: a shared list's name and items go to the user's iCloud and to the people they invite. The data-flow screen and Privacy paragraph say so. It's off unless the build is set up for iCloud.
@@ -50,7 +50,7 @@ Branch `claude/hopeful-fermat-1a63x0`. Owner's list of nine; item 1 was left to 
 3. Fix GitHub Actions billing, or do a Mac build (`FIRST_BUILD_GUIDE.md`). Everything above waits on a first compile.
 
 ## Next recommended step
-The first real Xcode build (Way A or B in `FIRST_BUILD_GUIDE.md`), then the device checks. After that, the join of `claude/peaceful-hopper-v3gx75`, following ADR-255. Its vectors migration goes after `v9_list_shares`.
+The first real Xcode build (Way A or B in `FIRST_BUILD_GUIDE.md`), then the device checks. The other lines are already in: this branch was joined with the default branch after PR #23 (`peaceful-hopper`) and PR #24 ("Hey Doddy") had merged; this round's decisions became ADR-255 to ADR-263 and its migration `v10_list_shares`.
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests run | Gaps | Claims to limit |

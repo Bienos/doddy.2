@@ -70,6 +70,11 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
+            // "Hey Doddy" already started this conversation (ADR-254): show it, don't start another.
+            if self.controller == nil, let started = WakeWordListener.shared.takeConversation() {
+                self.controller = started
+                return
+            }
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
             await controller.start(
@@ -187,6 +192,11 @@ struct VoiceView: View {
                                 .id("planStatus")
                         }
 
+                        if let card = controller.saveSuggestions {
+                            saveSuggestionsCard(card, controller: controller)
+                                .id("saveSuggestions")
+                        }
+
                         if pauseAllConnections {
                             pausedCard
                                 .id("connectionsPaused")
@@ -230,6 +240,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.planStatus == nil) { _, isNil in
                     if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("planStatus", anchor: .bottom) } }
+                }
+                .onChange(of: controller.saveSuggestions == nil) { _, isNil in
+                    if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("saveSuggestions", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -525,6 +538,85 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("voice.planReceipt")
+    }
+
+    /// "Worth keeping?" after the conversation (ADR-247): the user's own sentences, none ticked.
+    /// The words can be changed before saving; changing them ticks the item.
+    private func saveSuggestionsCard(_ card: SaveSuggestionCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(card.hasResults ? "What was saved" : "Worth keeping?")
+                .font(.headline)
+            if !card.hasResults {
+                Text("Things you said that might be useful later, in your words. Tick what to save; nothing is saved otherwise. Doddy picked these on this iPhone.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(card.items) { item in
+                switch item.state {
+                case .offered where !card.hasResults, .saving:
+                    HStack(alignment: .top, spacing: 10) {
+                        Button {
+                            controller.toggleSaveSuggestion(item.id)
+                        } label: {
+                            Image(systemName: item.isTicked ? "checkmark.square.fill" : "square")
+                                .font(.title3)
+                                .foregroundStyle(item.isTicked ? Theme.accentText : Theme.secondaryText)
+                                .frame(width: 44, height: 44)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(item.state == .saving)
+                        .accessibilityLabel(item.isTicked ? "Ticked: save this" : "Not ticked")
+                        .accessibilityIdentifier("voice.suggestion.tick.\(item.id)")
+                        TextField("Note", text: Binding(
+                            get: { item.text },
+                            set: { controller.changeSaveSuggestion(item.id, to: $0) }
+                        ), axis: .vertical)
+                            .font(.body)
+                            .disabled(item.state == .saving)
+                            .accessibilityIdentifier("voice.suggestion.text.\(item.id)")
+                    }
+                case .offered:
+                    Label(item.text, systemImage: "minus.circle")
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityLabel("Not saved: \(item.text)")
+                case .saved(let record):
+                    Label(record.currentText, systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(Theme.confirmed)
+                        .accessibilityLabel("Saved: \(record.currentText)")
+                case .failed(let message):
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label(item.text, systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(Theme.error)
+                        Text("Not saved. \(message)")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            if card.hasResults {
+                Button("OK") { controller.dismissSaveSuggestions() }
+                    .buttonStyle(SecondaryButtonStyle())
+            } else {
+                HStack {
+                    Button(card.tickedCount > 1 ? "Save \(card.tickedCount) notes" : "Save note") {
+                        Task { await controller.saveTickedSuggestions() }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(card.tickedCount == 0 || card.isSaving)
+                    .accessibilityIdentifier("voice.suggestion.save")
+                    Button("Not now") { controller.dismissSaveSuggestions() }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(card.isSaving)
+                        .accessibilityIdentifier("voice.suggestion.dismiss")
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.saveSuggestions")
     }
 
     private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {

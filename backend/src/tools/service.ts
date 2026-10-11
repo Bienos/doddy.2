@@ -445,7 +445,11 @@ export class CloudToolsService {
         const outcome = tool.normalize(result.raw, args, { timeZone: request.timeZone });
         if (row.status === "error") this.store.updateConnectionStatus(userId, tool.toolkit, "connected", null, this.now());
         const receipt = this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", outcome.summary, null, result.providerReference);
-        return { mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt };
+        return {
+          mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated,
+          ...(outcome.items ? { items: outcome.items } : {}),
+          receipt,
+        };
       });
     } catch (error) {
       if (error instanceof AppError) throw error;

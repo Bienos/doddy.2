@@ -39,7 +39,7 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
 
 ## Files
 - **Core:** `SharedLists.swift` (`SharedListState`, `SharedListItem`, `SharedListMerge`, `ListShare`, `ListShareRepository`), `Lists.swift` (`replaceShared` requirement), `DataFlow.swift`.
-- **Persistence:** migration `v9_list_shares`; `SQLiteListShareRepository`; `SQLiteListRepository.replaceShared`.
+- **Persistence:** migration `v10_list_shares` (after the default branch's `v9_memory_corrections`); `SQLiteListShareRepository`; `SQLiteListRepository.replaceShared`.
 - **App, only CloudKit code** (`DoddyApp/Features/Sharing`):
   - `ListCloud.swift`: records, fetch, push, share, stop, accept;
   - `SharedListsController.swift`: share, join, sync, stop;

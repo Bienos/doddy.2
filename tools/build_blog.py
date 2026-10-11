@@ -31,7 +31,8 @@ SITE_URL = "https://doddy-eight.vercel.app"
 TELEGRAM = "https://t.me/+u-YA6P_MISFjYWE0"
 # Must stay byte-identical to index.html: vercel.json allows this inline script by its hash.
 ANALYTICS = ('<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>\n'
-             '  <script src="/_vercel/insights/script.js" defer></script>')
+             '  <script src="/_vercel/insights/script.js" defer></script>\n'
+             '  <script src="/analytics.js" defer></script>')
 POSES = ROOT / "site" / "assets" / "poses"
 TINTS = ("orange", "green", "ink")
 
@@ -252,6 +253,7 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
       </div>
       <p>Doddy is an AI assistant, not a person. Your notes stay on your iPhone. Voice conversations run through ElevenLabs while the voice screen is open.</p>
       <p>This page counts visits with Vercel Web Analytics. No cookies, no cross-site tracking.</p>
+      <p data-ga-note hidden>If you allow it, Google Analytics also measures visits and sets cookies. <button type="button" class="foot-choice" data-analytics-choices>Analytics choices</button></p>
       <p>© 2026 Doddy</p>
     </div>
   </footer>

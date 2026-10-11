@@ -55,7 +55,8 @@
           "end": {"type": "string", "description": "End in the user's local time as YYYY-MM-DDTHH:MM, with no time zone or offset. Leave out for a one-hour event."},
           "all_day": {"type": "boolean", "description": "True for an all-day event. Leave out otherwise."},
           "location": {"type": "string", "description": "Place, only if the user said one."},
-          "notes": {"type": "string", "description": "Extra details, only if the user gave some."}
+          "notes": {"type": "string", "description": "Extra details, only if the user gave some."},
+          "said_time": {"type": "string", "description": "The user's own words for when, exactly as they said them and in their language, with every day and time word they used, e.g. 'next Friday at 7', 'jutro rano', 'w sobotę o 19'. Never reword or fix them. The app checks the date against these words and may answer 'failed: not added yet' with one question to ask."}
         },
         "required": ["title", "start"]
       },
@@ -70,7 +71,8 @@
         "properties": {
           "title": {"type": "string", "description": "The reminder in the user's words and language, e.g. 'Call Marta' or 'Zapłacić czynsz'."},
           "due": {"type": "string", "description": "When it is due, in the user's local time as YYYY-MM-DDTHH:MM, or YYYY-MM-DD for a day without a time. Always write the full day, never a time alone, and no time zone or offset. It must be later than now. Leave out if the user gave no time."},
-          "notes": {"type": "string", "description": "Extra details, only if the user gave some."}
+          "notes": {"type": "string", "description": "Extra details, only if the user gave some."},
+          "said_time": {"type": "string", "description": "The user's own words for when, exactly as they said them and in their language, with every day and time word they used, e.g. 'next Friday at 7', 'jutro rano', 'w sobotę o 19'. Never reword or fix them. The app checks the date against these words and may answer 'failed: not added yet' with one question to ask. Leave out if the user gave no time."}
         },
         "required": ["title"]
       },
@@ -147,7 +149,8 @@
           "due": {"type": "string", "description": "When to remind, in the user's local time as YYYY-MM-DDTHH:MM, with the full day and a time of day, no time zone or offset. It must be later than now. Leave out for a place reminder."},
           "place": {"type": "string", "description": "For a place reminder: words to find the place in Apple Maps, as specific as the user gave them, e.g. 'InPost Marszałkowska Warszawa'. The user picks the exact place on screen. Leave out for a time reminder."},
           "when_leaving": {"type": "boolean", "description": "For a place reminder: true if the user wants it when they leave the place; leave out for when they arrive."},
-          "repeat": {"type": "string", "enum": ["daily", "weekdays", "weekly", "monthly"], "description": "Only with due, only if the user asked for it to repeat: daily, weekdays (Monday to Friday), weekly (on due's weekday) or monthly (on due's day, 1 to 28). Leave out for a one-time reminder."}
+          "repeat": {"type": "string", "enum": ["daily", "weekdays", "weekly", "monthly"], "description": "Only with due, only if the user asked for it to repeat: daily, weekdays (Monday to Friday), weekly (on due's weekday) or monthly (on due's day, 1 to 28). Leave out for a one-time reminder."},
+          "said_time": {"type": "string", "description": "The user's own words for when, exactly as they said them and in their language, with every day and time word they used, e.g. 'next Friday at 7', 'jutro rano', 'w sobotę o 19'. Never reword or fix them. The app checks the date against these words and may answer 'failed: not added yet' with one question to ask. Leave out for a place reminder."}
         },
         "required": []
       },
@@ -270,7 +273,7 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "steps": {"type": "string", "description": "A JSON array of steps, in the order they should run. Each step is an object with \"tool\" (save_memory, create_calendar_event, create_reminder, set_timer, draft_email, add_todoist_task or add_to_list) and that tool's own parameters, written exactly as for the tool on its own. Example: [{\"tool\":\"create_reminder\",\"title\":\"Bring the spare key\",\"due\":\"2026-10-17T12:00\"},{\"tool\":\"set_timer\",\"minutes\":10,\"label\":\"pasta\"}]"}
+          "steps": {"type": "string", "description": "A JSON array of steps, in the order they should run. Each step is an object with \"tool\" (save_memory, create_calendar_event, create_reminder, set_timer, draft_email, add_todoist_task or add_to_list) and that tool's own parameters, written exactly as for the tool on its own. Example: [{\"tool\":\"create_reminder\",\"title\":\"Bring the spare key\",\"due\":\"2026-10-17T12:00\",\"said_time\":\"Saturday at noon\"},{\"tool\":\"set_timer\",\"minutes\":10,\"label\":\"pasta\"}]"}
         },
         "required": ["steps"]
       },

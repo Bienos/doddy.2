@@ -142,7 +142,19 @@ final class VoiceSessionController {
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
-    private(set) var reminderStatus: ReminderStatus?
+    private(set) var reminderStatus: ReminderStatus? {
+        didSet {
+            // Reminders confirmed it (added, or already there): the island says so briefly (ADR-240).
+            // An unknown result is never shown as set.
+            if case .done(_, let outcome) = reminderStatus {
+                switch outcome {
+                case .added, .alreadyThere: flashIsland(.reminderSet)
+                default: break
+                }
+            }
+            syncIsland()
+        }
+    }
     private(set) var noteReminderStatus: NoteReminderStatus?
     /// Which steps of the plan card are ticked. Every step that can run starts ticked.
     private(set) var planTicked: Set<Int> = []
@@ -151,7 +163,7 @@ final class VoiceSessionController {
     /// Gmail and Todoist steps on the plan card: the server's preview and its one-time approval
     /// for exactly these arguments (ADR-209).
     private(set) var planCloud: [Int: PlanCloudApproval] = [:]
-    private(set) var planStatus: PlanStatus?
+    private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
@@ -164,7 +176,10 @@ final class VoiceSessionController {
     private(set) var changeReceipt: ChangeReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
-    private(set) var translator: TranslatorSession?
+    private(set) var translator: TranslatorSession? {
+        // The island follows the mode and its languages (ADR-244), not each line heard.
+        didSet { if oldValue?.setup != translator?.setup { syncIsland() } }
+    }
     /// The end screen after translating: the text stays in memory for five minutes for Copy or
     /// "Save the facts as a note", then it is dropped (T3).
     private(set) var translatorSummary: TranslatorSummary?
@@ -191,7 +206,16 @@ final class VoiceSessionController {
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
-    private let island = VoiceLiveActivity()
+    /// Shared with "Hey Doddy" listening, which may have started it (ADR-254).
+    private let island = VoiceLiveActivity.shared
+    /// True once this conversation has shown its state on the island, so only it ends it.
+    private var ownsIsland = false
+    /// "Hey Pat, what's up?" when the wake word started this conversation (ADR-254). Shown on
+    /// the island until the user first speaks.
+    private(set) var wakeGreeting: String? { didSet { syncIsland() } }
+    /// The wake word started this conversation: it ends by itself if the user says nothing.
+    private var startedByWakeWord = false
+    private var silentWakeTimer: Task<Void, Never>?
     /// True while iOS has paused Doddy's audio because another app took the audio session
     /// (`AVAudioSession` interruption). Real system events only, never a guess.
     private(set) var audioPausedByOtherApp = false
@@ -212,6 +236,21 @@ final class VoiceSessionController {
     private(set) var privacyLocked = false
     /// Notes the user tapped Save on in this conversation, for the island's "ended" card.
     private var savedThisConversation = 0
+    /// A finished moment the island shows for a few seconds ("Note saved", "Reminder set").
+    private var islandFlash: (moment: DoddyVoiceAttributes.ContentState.Moment, until: Date)? {
+        didSet { syncIsland() }
+    }
+    @ObservationIgnored private var islandFlashClear: Task<Void, Never>?
+    /// How long "Note saved" and "Reminder set" stay on the island.
+    static let islandFlashSeconds: TimeInterval = 8
+    /// Every note text Doddy put on a save card or plan in this conversation, saved or declined,
+    /// so the end-of-conversation suggestions never offer them again (ADR-247).
+    private var proposedNoteTexts: [String] = []
+    /// "Worth keeping?" after the conversation ends (ADR-247). Nothing ticked, nothing saved
+    /// until the user taps Save.
+    private(set) var saveSuggestions: SaveSuggestionCard?
+    /// Suggestions are worked out once per conversation, so a dismissed card doesn't come back.
+    private var suggestionsOffered = false
 
     init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
         self.store = store
@@ -227,12 +266,19 @@ final class VoiceSessionController {
     }
 
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
-    /// Settings → About you → "Use in voice conversations" is on.
+    /// Settings → About you → "Use in voice conversations" is on. `wakeGreeting` is set when
+    /// "Hey Doddy" started the conversation (ADR-254): Doddy says it first and the island shows it.
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
-        checkIn: MorningBriefing? = nil
+        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
+        // A note being read aloud would fight the conversation for the speaker (ADR-243).
+        ReadAloudController.shared.stop()
+        startedByWakeWord = wakeGreeting != nil
+        self.wakeGreeting = wakeGreeting
+        silentWakeTimer?.cancel()
+        silentWakeTimer = nil
         lines = []
         // A translator start sends no notes or lists, so it never carries a check-in too.
         let checkIn = preset == nil ? checkIn : nil
@@ -256,6 +302,10 @@ final class VoiceSessionController {
         connectionNeeded = nil
         isMuted = false
         savedThisConversation = 0
+        islandFlash = nil
+        proposedNoteTexts = []
+        saveSuggestions = nil
+        suggestionsOffered = false
         audioPausedByOtherApp = false
         audioNote = nil
 
@@ -316,6 +366,11 @@ final class VoiceSessionController {
                 TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
                 ListsPrompt.variableName: listsText,
                 MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
+                // What Doddy says first (ADR-254): the greeting after "Hey Doddy", otherwise his
+                // usual opening. Used once the agent's first message is {{opening_line}}
+                // (voice-agent/session.json); an agent without it ignores the variable.
+                WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
+                    afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
             ],
             userId: Self.userID())
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
@@ -350,6 +405,7 @@ final class VoiceSessionController {
         config.onAgentReady = {
             Task { @MainActor in
                 if ref.value?.phase == .connecting { ref.value?.phase = .listening }
+                ref.value?.startSilentWakeTimer()
             }
         }
         config.onDisconnect = { _ in
@@ -451,6 +507,7 @@ final class VoiceSessionController {
 
     func stop() async {
         endTranslator()
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         let active = conversation
         conversation = nil
@@ -459,7 +516,10 @@ final class VoiceSessionController {
         connectionNeeded = nil
         if isLive { phase = .ended }
         keepLog()
+        offerSaveSuggestions()
         await active?.endConversation()
+        // Only now may "Hey Doddy" take the microphone again (ADR-254).
+        WakeWordListener.shared.conversationAudioReleased()
     }
 
     /// Keeps the transcript lines of this conversation on the phone, once, so the next
@@ -512,6 +572,8 @@ final class VoiceSessionController {
                 let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
                 pendingMemoryCategory = .other
                 savedThisConversation += 1
+                // Only after the store returned the saved record (ADR-240).
+                flashIsland(.noteSaved)
                 await reply(id, VoiceToolReply.saved(record))
             } catch {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
@@ -1027,17 +1089,89 @@ final class VoiceSessionController {
         case .speaking: status = .speaking
         case .idle, .ended, .microphoneDenied, .failed: return nil
         }
-        return .init(status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted)
+        var state = DoddyVoiceAttributes.ContentState(
+            status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted,
+            greeting: wakeGreeting, conversationStartedAt: startedAt)
+        state.moment = islandMoment
+        state.islandStyle = IslandStyle(rawValue: UserDefaults.standard.string(forKey: PreferenceKey.islandStyle) ?? "") ?? .leanIn
+        return state
+    }
+
+    /// What is happening inside the conversation that has its own island (ADR-240): a card
+    /// waiting for the user, translator mode (ADR-244), a plan running, a reminder being added,
+    /// or a few seconds of "saved" / "set" after the store or Reminders confirmed it. Kinds,
+    /// counts and language codes only.
+    private var islandMoment: DoddyVoiceAttributes.ContentState.Moment? {
+        switch pendingAction {
+        case .memory: return .noteWaiting
+        case .plan(_, let steps, _): return .planWaiting(steps: steps.count)
+        case .reminder, .noteReminder: return .reminderWaiting
+        case .some: return nil
+        case nil: break
+        }
+        // Translating (ADR-244): the language codes only, never a phrase. No tool runs in this
+        // mode, so no plan, reminder or "saved" moment can be hidden by it.
+        if let setup = translator?.setup {
+            let theirs = setup.other?.code ?? "?"
+            switch setup.kind {
+            case .faceToFace: return .translating(from: setup.owner.code, to: theirs, bothWays: true)
+            case .listen: return .translating(from: theirs, to: setup.owner.code, bothWays: false)
+            }
+        }
+        if let plan = planStatus, plan.isRunning, !plan.steps.isEmpty {
+            return .planRunning(step: min(plan.results.count + 1, plan.steps.count), of: plan.steps.count)
+        }
+        if case .adding = reminderStatus { return .reminderAdding }
+        if let flash = islandFlash, flash.until > Date() { return flash.moment }
+        return nil
+    }
+
+    private func flashIsland(_ moment: DoddyVoiceAttributes.ContentState.Moment) {
+        islandFlash = (moment, Date().addingTimeInterval(Self.islandFlashSeconds))
+        islandFlashClear?.cancel()
+        islandFlashClear = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.islandFlashSeconds))
+            guard !Task.isCancelled else { return }
+            self?.islandFlash = nil
+        }
     }
 
     private func syncIsland() {
         if let state = islandState {
+            ownsIsland = true
             island.show(state, startedAt: startedAt ?? .now)
-        } else if phase == .ended {
+            return
+        }
+        // Only a conversation that showed itself on the island ends it: "Hey Doddy" listening
+        // may be using it while this one is idle (ADR-254).
+        guard ownsIsland else { return }
+        ownsIsland = false
+        // "Hey Doddy" listening carries on in the same island when it can start again.
+        if WakeWordListener.shared.takeIslandBack() { return }
+        if phase == .ended {
             island.finish(savedCount: savedThisConversation)
         } else {
             island.end()
         }
+    }
+
+    // MARK: "Hey Doddy" (ADR-254)
+
+    /// A conversation the wake word started ends by itself if the user says nothing for
+    /// `WakeGate.silentWakeTimeout` after Doddy is ready: most likely the word was heard by
+    /// mistake, and an open conversation keeps the microphone and ElevenLabs running.
+    private func startSilentWakeTimer() {
+        guard startedByWakeWord, silentWakeTimer == nil, isLive else { return }
+        silentWakeTimer = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(WakeGate.silentWakeTimeout))
+            guard !Task.isCancelled, let self, self.isLive, !self.lines.contains(where: \.fromUser) else { return }
+            await self.stop()
+        }
+    }
+
+    private func stopSilentWakeTimer() {
+        silentWakeTimer?.cancel()
+        silentWakeTimer = nil
     }
 
     // MARK: Events
@@ -1073,6 +1207,8 @@ final class VoiceSessionController {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
         }
+        // The greeting stays on the island only until the user answers.
+        if fromUser, wakeGreeting != nil { wakeGreeting = nil }
     }
 
     private func correct(_ original: String, to corrected: String) {
@@ -1085,6 +1221,7 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
@@ -1092,12 +1229,60 @@ final class VoiceSessionController {
 
     private func disconnected() {
         endTranslator()
+        stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         conversation = nil
         pendingAction = nil
         keepLog()
         if case .failed = phase { return }
         phase = .ended
+        offerSaveSuggestions()
+    }
+
+    // MARK: End-of-conversation save suggestions (ADR-247)
+
+    /// Picks what the user said that may be worth keeping, on the phone, from their own lines only.
+    /// Not for a private conversation, not when switched off, not when notes can't be saved.
+    private func offerSaveSuggestions() {
+        guard !suggestionsOffered, phase == .ended else { return }
+        suggestionsOffered = true
+        guard !isPrivate, store.isStorageAvailable,
+              UserDefaults.standard.object(forKey: PreferenceKey.suggestSavesAfterConversation) as? Bool ?? true
+        else { return }
+        let found = SaveSuggestions.suggest(
+            userLines: lines.filter(\.fromUser).map(\.text),
+            alreadyProposed: proposedNoteTexts,
+            existingNotes: store.memories)
+        saveSuggestions = found.isEmpty ? nil : SaveSuggestionCard(found)
+    }
+
+    func toggleSaveSuggestion(_ id: Int) {
+        saveSuggestions?.toggle(id)
+    }
+
+    func changeSaveSuggestion(_ id: Int, to text: String) {
+        saveSuggestions?.setText(id, text)
+    }
+
+    /// Saves the ticked suggestions one by one through the normal checked save (read back before
+    /// it counts). A failed one says why and is never shown as saved.
+    func saveTickedSuggestions() async {
+        guard var card = saveSuggestions, card.tickedCount > 0, !card.isSaving else { return }
+        let batch = card.beginSaving()
+        saveSuggestions = card
+        for (id, text) in batch {
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                saveSuggestions?.finish(id, .success(record))
+            } catch {
+                saveSuggestions?.finish(id, .failure(SaveSuggestionFailure(message: UserFacingError.message(for: error))))
+            }
+        }
+    }
+
+    func dismissSaveSuggestions() {
+        guard saveSuggestions?.isSaving != true else { return }
+        saveSuggestions = nil
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
@@ -1126,12 +1311,13 @@ final class VoiceSessionController {
         case .searchMemories(let query):
             do {
                 let outcome = try await store.recall(query)
-                await reply(call.toolCallId, VoiceToolReply.search(outcome))
+                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
+            proposedNoteTexts.append(text)
             pendingMemoryCategory = .other
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
         case .readCalendar(let range):
@@ -1265,6 +1451,9 @@ final class VoiceSessionController {
             return
         case .plan(let parsed):
             steps = parsed
+        }
+        proposedNoteTexts += steps.compactMap { step in
+            if case .saveMemory(let text) = step.request { text } else { nil }
         }
         guard pendingAction == nil else {
             // One card at a time, as in propose(_:toolCallID:).

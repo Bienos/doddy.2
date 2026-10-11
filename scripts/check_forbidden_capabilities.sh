@@ -10,9 +10,11 @@
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
 #    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
+#  - the "Hey Doddy" wake-word engine (Picovoice Porcupine, ADR-254) only in WakeWordListener.swift,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
-#  - on-device meaning search (NaturalLanguage) only inside DoddyApp/Features/Meaning (ADR-227),
+#  - on-device meaning search (NaturalLanguage embeddings) only inside DoddyApp/Features/Meaning (ADR-227);
+#    the NaturalLanguage import also in ReadAloudController, for its language recognizer only (ADR-243),
 #  - photo text reading (Vision) and the photo picker only inside DoddyApp/Features/Photos, never the
 #    camera or the whole photo library (ADR-218),
 #  - WatchConnectivity only in DoddyApp/Features/Watch and the watch app (DoddyWatch), which has no
@@ -55,7 +57,9 @@ alarms_dir=DoddyApp/Features/Alarms
 alarms_only='import AlarmKit|AlarmManager'
 connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger'
 meaning_dir=DoddyApp/Features/Meaning
-meaning_only='import NaturalLanguage|NLContextualEmbedding|NLEmbedding'
+meaning_only='NLContextualEmbedding|NLEmbedding'
+# Read aloud picks a voice by the note's language (NLLanguageRecognizer, on the iPhone, ADR-243).
+natural_language_files='^(DoddyApp/Features/Meaning/|DoddyApp/Features/Voice/ReadAloudController.swift:)'
 photos_dir=DoddyApp/Features/Photos
 photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI|PhotosPicker'
 photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsset\.fetch|UIImagePickerController|AVCaptureSession|NSCameraUsageDescription|NSPhotoLibrary(Add)?UsageDescription'
@@ -73,6 +77,10 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
+# isn't kept or sent" stays checkable.
+wake_file=DoddyApp/Features/Voice/WakeWordListener.swift
+wake_only='import Porcupine|PorcupineManager|Porcupine\(|import ios_voice_processor|VoiceProcessor\.instance'
 
 status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
@@ -83,6 +91,9 @@ if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | gre
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
+  echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
   echo "FAIL: ElevenLabs code outside $voice_dir." >&2; status=1
@@ -115,6 +126,9 @@ if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$
 fi
 if grep -RInE --include='*.swift' "$meaning_only" "${dirs[@]}" | grep -v "^$meaning_dir/"; then
   echo "FAIL: on-device language models outside $meaning_dir (ADR-227)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' 'import NaturalLanguage' "${dirs[@]}" | grep -vE "$natural_language_files"; then
+  echo "FAIL: NaturalLanguage outside $meaning_dir and the read-aloud language check (ADR-227, ADR-243)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$photos_only" "${dirs[@]}" | grep -v "^$photos_dir/"; then
   echo "FAIL: photo reading or the photo picker outside $photos_dir." >&2; status=1

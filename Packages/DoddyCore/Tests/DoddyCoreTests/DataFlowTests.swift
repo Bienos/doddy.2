@@ -11,7 +11,7 @@ final class DataFlowTests: XCTestCase {
         DataFlow.rows(state).first { $0.id == id }!
     }
 
-    func testOffSwitchesShowAsNotSent() {
+    func testOffSwitchesShowAsNotSent() throws {
         XCTAssertFalse(row("tokenServer", base).isActive)
         XCTAssertFalse(row("doddyServer", base).isActive)
         XCTAssertFalse(row("askDoddy", base).isActive)
@@ -19,7 +19,31 @@ final class DataFlowTests: XCTestCase {
         // Place search (ADR-196) is user-started, so always listed; places themselves stay here.
         XCTAssertEqual(row("placeSearch", base).destination, "Apple Maps (place search)")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Places you set for reminders") })
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains("Earlier wordings of notes you corrected, except in files you export."))
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Notes suggested after a conversation:") }, "save suggestions are on-device")
+        let siriOff = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "siri" })
+        XCTAssertFalse(siriOff.isActive, "off unless the app says the switch is on")
+        var siriState = base
+        siriState.siriReadsNotes = true
+        let siriOn = try XCTUnwrap(DataFlow.rows(siriState).first { $0.id == "siri" })
+        XCTAssertTrue(siriOn.isActive)
+        XCTAssertTrue(siriOn.what.contains("the note Siri reads back"))
         XCTAssertEqual(row("elevenlabs", base).what, "Your voice, the conversation, your saved notes, your list names (items only when Doddy reads or changes a list) and your personality settings.")
+    }
+
+    /// ADR-254: Picovoice only gets the AccessKey, and only while "Hey Doddy" is on; the sound it
+    /// listens to stays on the iPhone.
+    func testHeyDoddyRowFollowsTheSwitch() {
+        let off = row("picovoice", base)
+        XCTAssertFalse(off.isActive)
+        XCTAssertTrue(off.note?.contains("off") ?? false)
+        var state = base
+        state.heyDoddyOn = true
+        let on = row("picovoice", state)
+        XCTAssertTrue(on.isActive)
+        XCTAssertTrue(on.what.contains("AccessKey"))
+        XCTAssertTrue(on.what.contains("No sound"))
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("\"Hey Doddy\":") })
     }
 
     func testVoiceRowGrowsWithWhatIsSwitchedOn() {

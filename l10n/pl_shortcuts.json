@@ -17,5 +17,9 @@
  "Read ${list} in ${applicationName}": "Przeczytaj listę ${list} w aplikacji ${applicationName}",
  "Read a list in ${applicationName}": "Przeczytaj listę w aplikacji ${applicationName}",
  "Tick something on ${list} in ${applicationName}": "Odhacz coś na liście ${list} w aplikacji ${applicationName}",
- "Tick off an item in ${applicationName}": "Odhacz pozycję w aplikacji ${applicationName}"
+ "Tick off an item in ${applicationName}": "Odhacz pozycję w aplikacji ${applicationName}",
+ "Ask ${applicationName} what I saved": "Zapytaj aplikację ${applicationName}, co mam zapisane",
+ "What did I save in ${applicationName}": "Co mam zapisane w aplikacji ${applicationName}",
+ "Read my note from ${applicationName}": "Przeczytaj moją notatkę z aplikacji ${applicationName}",
+ "Check my notes in ${applicationName}": "Sprawdź moje notatki w aplikacji ${applicationName}"
 }

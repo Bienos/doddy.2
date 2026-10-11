@@ -66,6 +66,14 @@ final class ShortcutRouter {
         isVoicePresented = true
     }
 
+    /// Shows the conversation "Hey Doddy" started while Doddy was in the background (ADR-254).
+    /// Same rules as listening on open: never over another sheet. Returns whether it opened.
+    func showWakeConversation() -> Bool {
+        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isOnboardingShown, drafts.shown == nil else { return false }
+        isVoicePresented = true
+        return true
+    }
+
     /// Opens the conversation in translator mode, unless one is already open.
     func openTranslator(_ setup: TranslatorSetup) {
         guard !isVoicePresented, drafts.shown == nil else { return }

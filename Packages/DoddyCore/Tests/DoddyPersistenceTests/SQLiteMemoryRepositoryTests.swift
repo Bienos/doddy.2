@@ -105,6 +105,35 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         XCTAssertEqual(none, .noMatch)
     }
 
+    /// ADR-250: the "s" of "what's", short prefixes and typos between two real words no longer
+    /// bring up unrelated notes; real typos and short words with endings still find theirs.
+    func testUnrelatedNotesStayOutOfTheResults() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let wifi = try await repo.save(NewMemory(text: "Wifi password at mum's house: Sunflower-2291", capturedAt: t0))
+        let passport = try await repo.save(NewMemory(text: "Passport expires in August 2027.", capturedAt: t0))
+        let library = try await repo.save(NewMemory(text: "Library card number 004512.", capturedAt: t0))
+        let parking = try await repo.save(NewMemory(text: "Parked the car on level 3.", capturedAt: t0))
+        let recall = RepositoryRecallService(repository: repo)
+
+        func ids(_ question: String) async throws -> Set<UUID> {
+            guard case .matches(let hits) = try await recall.recall(question, limit: 20) else { return [] }
+            return Set(hits.map(\.memoryID))
+        }
+
+        var none = try await recall.recall("What's my blood type?", limit: 20)
+        XCTAssertEqual(none, .noMatch, "the s of what's matched every note")
+        none = try await recall.recall("What's Peter's email?", limit: 20)
+        XCTAssertEqual(none, .noMatch)
+        var found = try await ids("netflix password")
+        XCTAssertEqual(found, [wifi.id], "password is not a typo of passport when a note says password")
+        found = try await ids("pasport")
+        XCTAssertEqual(found, [passport.id], "a real typo still finds the note")
+        found = try await ids("where is the car")
+        XCTAssertEqual(found, [parking.id], "car does not find card")
+        found = try await ids("library card")
+        XCTAssertEqual(found, [library.id])
+    }
+
     func testRestoreAddsExportedNotesExactlyOnceAndKeepsNotesAlreadyHere() async throws {
         let source = try SQLiteMemoryRepository.inMemory()
         let keys = try await source.save(NewMemory(text: "Spare keys in the blue tin", capturedAt: t0))

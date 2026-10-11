@@ -17,6 +17,13 @@ public enum SearchFolding {
         "w", "z", "na", "do", "co", "to", "jak", "gdzie", "sie", "ze", "jest", "byl", "byla", "mi", "mnie",
         "kiedy", "jaki", "jaka", "jakie", "jakiego", "mam", "moj", "moja", "moje", "mojej", "mojego",
         "czy", "ten", "ta", "tego", "o", "od", "po", "dla", "ile", "sa", "juz", "jeszcze", "pamietasz",
+        // Question filler: how people ask about a note, not what the note says (ADR-251).
+        // Left in, a note never contains them, so every answer would look partial.
+        "say", "said", "says", "told", "anything", "something", "put", "leave", "save", "saved",
+        "remember", "find",
+        "ma", "mial", "miala", "przez", "cos", "czegos", "gdzies", "ktory", "ktora", "ktore",
+        "powiedzial", "powiedziala", "mowil", "mowila", "zapisalem", "zapisalam",
+        "zostawilem", "zostawilam", "polozylem", "polozylam",
     ]
 
     public static func fold(_ text: String) -> String {
@@ -34,10 +41,15 @@ public enum SearchFolding {
         text.split(whereSeparator: { !($0.isLetter || $0.isNumber) }).map(String.init)
     }
 
-    /// Distinct query terms with stopwords removed.
+    /// Distinct query terms with stopwords and single letters removed. A lone letter is almost
+    /// always the "s" of "what's"/"Jake's" or an initial, and as a prefix it matches nearly every
+    /// note (ADR-250). Single digits stay: "5" can be part of a code.
     public static func queryTerms(_ query: String) -> [String] {
         var seen = Set<String>()
-        return tokens(query).filter { !stopwords.contains($0) && seen.insert($0).inserted }
+        return tokens(query).filter { token in
+            !stopwords.contains(token) && !(token.count == 1 && token.allSatisfy(\.isLetter))
+                && seen.insert(token).inserted
+        }
     }
 }
 
@@ -67,19 +79,36 @@ public enum MemoryExport {
         let memories: [MemoryRecord]
         /// Items of the `list` records (ADR-216); left out when there are none.
         let listItems: [ListItem]?
+        /// Every correction of the exported notes (ADR-252); left out when there are none. Added
+        /// within format 1: older readers ignore it and restore the notes without their history.
+        let corrections: [MemoryCorrection]?
     }
 
-    public static func json(_ records: [MemoryRecord], listItems: [ListItem] = [], exportedAt: Date) throws -> Data {
+    public static func json(
+        _ records: [MemoryRecord], listItems: [ListItem] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+    ) throws -> Data {
+        let ids = Set(records.map(\.id))
+        let history = corrections.filter { ids.contains($0.memoryID) }
+            .sorted { ($0.memoryID.uuidString, $0.number) < ($1.memoryID.uuidString, $1.number) }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(
             formatVersion: formatVersion,
             exportedAtMs: Int64((exportedAt.timeIntervalSince1970 * 1000).rounded()),
             memories: records,
-            listItems: listItems.isEmpty ? nil : listItems))
+            listItems: listItems.isEmpty ? nil : listItems,
+            corrections: history.isEmpty ? nil : history))
     }
 
-    public static func plainText(_ records: [MemoryRecord], lists: [DoddyList] = [], exportedAt: Date) -> String {
+    /// Wordings between the original and the current one, oldest first (ADR-252).
+    static func inBetween(_ record: MemoryRecord, _ byNote: [UUID: [MemoryCorrection]]) -> [MemoryVersion] {
+        MemoryHistory(record: record, corrections: byNote[record.id] ?? []).versions.filter { !$0.isOriginal && !$0.isCurrent }
+    }
+
+    public static func plainText(
+        _ records: [MemoryRecord], lists: [DoddyList] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+    ) -> String {
+        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
         var lines = ["DODDY memories — exported \(iso.string(from: exportedAt))", "\(records.count) memories", ""]
         for record in records {
@@ -88,6 +117,9 @@ public enum MemoryExport {
             lines.append("Source: \(record.source.rawValue) · Category: \(record.category.rawValue)")
             if record.userEdited {
                 lines.append("Corrected: \(record.updatedAt.map(iso.string(from:)) ?? "date unavailable")")
+                for version in inBetween(record, byNote).reversed() {
+                    lines.append("Earlier (\(version.savedAt.map(iso.string(from:)) ?? "date unavailable")): \(version.text)")
+                }
                 lines.append("Original: \(record.rawText)")
             }
             lines.append("ID: \(record.id.uuidString)")

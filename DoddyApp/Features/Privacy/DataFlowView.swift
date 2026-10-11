@@ -14,6 +14,8 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+    @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
+    @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
 
     private var state: DataFlowState {
         let defaults = UserDefaults.standard
@@ -33,6 +35,8 @@ struct DataFlowView: View {
             pushOn: pushOn,
             memoryCopyOn: memoryCopyOn,
             morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
+            siriReadsNotes: siriReadsNotes,
+            heyDoddyOn: heyDoddyOn,
             sharedLists: SharedListsController.shared.links.count)
     }
 
