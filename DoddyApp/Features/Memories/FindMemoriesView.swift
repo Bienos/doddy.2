@@ -101,7 +101,14 @@ private struct MeaningHitsView: View {
                 .font(.footnote).foregroundStyle(Theme.secondaryText)
             ForEach(hits) { hit in
                 NavigationLink(value: MemoryNavigationRoute.note(hit.record.id)) {
-                    Text(hit.record.currentText).lineLimit(3)
+                    Group {
+                        // A private note's words only after Face ID (ADR-308).
+                        if PrivateNotesStore.current().contains(hit.record.id) && !AppLock.shared.privateUnlocked {
+                            Label("Private note", systemImage: "lock.fill").foregroundStyle(Theme.secondaryText)
+                        } else {
+                            Text(hit.record.currentText).lineLimit(3)
+                        }
+                    }
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator))

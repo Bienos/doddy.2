@@ -30,15 +30,17 @@ final class WidgetSync {
         ShoppingModeController.shared.refresh()
         // Shared lists (ADR-263) send a local change to iCloud.
         SharedListsController.shared.listsChanged()
+        // Private notes (ADR-308) never appear on widgets or the watch.
+        let shareable = PrivateNotesStore.current().shareable(store.memories)
         let snapshot = WidgetSnapshot.make(
-            memories: store.memories, lists: store.lists,
+            memories: shareable, lists: store.lists,
             pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
             reminders: reminders?.reminders ?? [],
             showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
             isOn: Self.isOn, now: now)
         // The Apple Watch gets the same content, under its own switch (ADR-232).
         PhoneWatchLink.shared.send(WidgetSnapshot.make(
-            memories: store.memories, lists: store.lists,
+            memories: shareable, lists: store.lists,
             pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
             reminders: reminders?.reminders ?? [],
             showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),

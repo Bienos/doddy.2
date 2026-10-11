@@ -219,7 +219,9 @@ struct AskView: View {
 
     private func send() {
         guard let wiring = store.environment.assistant else { return }
-        let service = wiring.service(gatewayAddress: gatewayAddress, recall: store.environment.recallService)
+        // Private notes (ADR-308) are never sent to the Ask Doddy gateway.
+        let recall = ShareableRecallService(base: store.environment.recallService) { PrivateNotesStore.current().ids }
+        let service = wiring.service(gatewayAddress: gatewayAddress, recall: recall)
         let locale = Locale.current.language.languageCode?.identifier ?? "en"
         controller.send(using: service, policy: policy, locale: locale)
     }

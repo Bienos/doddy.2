@@ -155,6 +155,17 @@
         }
       }
     },
+    "A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna notatka zostaje na tym iPhonie i nie trafia do głosu Doddy’ego, Siri, Zapytaj Doddy’ego, widżetów, zegarka ani kopii do rozmów. Jej słowa widać po Face ID."
+          }
+        }
+      }
+    },
     "A project, hobby or routine. Share only what would help.": {
       "extractionState": "manual",
       "localizations": {
@@ -903,6 +914,17 @@
         }
       }
     },
+    "Asks for Face ID or your passcode when Doddy opens and after a minute away. Private notes always ask before showing their words.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prosi o Face ID lub kod, gdy otwierasz Doddy’ego i po minucie nieobecności. Prywatne notatki zawsze pytają, zanim pokażą swoje słowa."
+          }
+        }
+      }
+    },
     "At a place": {
       "extractionState": "manual",
       "localizations": {
@@ -1240,6 +1262,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zmień"
+          }
+        }
+      }
+    },
+    "Change Doddy's lock": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień blokadę Doddy’ego"
           }
         }
       }
@@ -2509,6 +2542,17 @@
         }
       }
     },
+    "Doddy is locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy jest zablokowany"
+          }
+        }
+      }
+    },
     "Doddy is speaking": {
       "extractionState": "manual",
       "localizations": {
@@ -2658,7 +2702,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Budziki Doddy'ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy'ego, nie te z aplikacji Zegar."
+            "value": "Budziki Doddy’ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy’ego, nie te z aplikacji Zegar."
           }
         }
       }
@@ -4159,17 +4203,6 @@
         }
       }
     },
-    "Its notes are only added to, never replaced.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Do notatek wydarzenia tylko się dopisuje, nigdy ich nie zastępuje."
-          }
-        }
-      }
-    },
     "Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving.": {
       "extractionState": "manual",
       "localizations": {
@@ -4716,6 +4749,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lokalizacja dla przypomnień w miejscu"
+          }
+        }
+      }
+    },
+    "Lock Doddy with Face ID": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blokuj Doddy’ego przez Face ID"
+          }
+        }
+      }
+    },
+    "Locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zablokowana"
           }
         }
       }
@@ -5298,7 +5353,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Brak budzików od Doddy'ego. Poproś Doddy'ego, na przykład „Obudź mnie o siódmej”."
+            "value": "Brak budzików od Doddy’ego. Poproś Doddy’ego, na przykład „Obudź mnie o siódmej”."
           }
         }
       }
@@ -5534,6 +5589,17 @@
         }
       }
     },
+    "Not changed: Face ID didn't confirm it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez zmian: Face ID tego nie potwierdził."
+          }
+        }
+      }
+    },
     "Not confirmed": {
       "extractionState": "manual",
       "localizations": {
@@ -5695,17 +5761,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notatki i listy są ukryte. Włącz „Pokazuj notatki i listy na Apple Watch” w Ustawieniach Doddy’ego na iPhonie."
-          }
-        }
-      }
-    },
-    "Notes are only added to. Undo isn't available for a note, priority or list change.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Do notatek można tylko dopisywać. Cofnięcie nie działa dla notatki, priorytetu ani zmiany listy."
           }
         }
       }
@@ -7125,6 +7180,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i zachowuje własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
+          }
+        }
+      }
+    },
+    "Private note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna notatka"
           }
         }
       }
@@ -8900,6 +8966,17 @@
         }
       }
     },
+    "Show your private note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż swoją prywatną notatkę"
+          }
+        }
+      }
+    },
     "Shown ticked": {
       "extractionState": "manual",
       "localizations": {
@@ -9622,6 +9699,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ten kod jest nieprawidłowy. Sprawdź SMS-a i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "That couldn't be saved on this iPhone. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się tego zapisać na tym iPhonie. Spróbuj ponownie."
           }
         }
       }
@@ -10451,6 +10539,17 @@
         }
       }
     },
+    "This iPhone has no passcode or Face ID set up, so Doddy can't lock.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie ma ustawionego kodu ani Face ID, więc Doddy nie może się zablokować."
+          }
+        }
+      }
+    },
     "This iPhone's Doddy messaging account no longer exists. Try again to start a new one.": {
       "extractionState": "manual",
       "localizations": {
@@ -10546,6 +10645,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta notatka została usunięta."
+          }
+        }
+      }
+    },
+    "This note is private. Its words show after Face ID or your passcode.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta notatka jest prywatna. Jej słowa widać po Face ID lub kodzie."
           }
         }
       }
@@ -11144,6 +11254,17 @@
         }
       }
     },
+    "Undo isn't available for these changes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cofnięcie nie działa dla tych zmian."
+          }
+        }
+      }
+    },
     "Undo this import": {
       "extractionState": "manual",
       "localizations": {
@@ -11162,6 +11283,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cofanie…"
+          }
+        }
+      }
+    },
+    "Unlock": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odblokuj"
           }
         }
       }

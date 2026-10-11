@@ -114,6 +114,8 @@ struct RootView: View {
                 #endif
             }
             .preferredColorScheme(colorScheme)
+            // The Face ID lock (ADR-308) covers everything until iOS says yes.
+            .overlay { if AppLock.shared.isLocked { AppLockView() } }
             .task {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
@@ -127,7 +129,11 @@ struct RootView: View {
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
                 }
-                if phase == .background { WidgetSync.shared.refresh() }
+                if phase == .background {
+                    WidgetSync.shared.refresh()
+                    AppLock.shared.wentToBackground()
+                }
+                if phase == .active { AppLock.shared.cameBack() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
                 switch phase {
                 case .active: heyDoddyAppBecameActive()
@@ -157,7 +163,8 @@ struct RootView: View {
                 noteReminders.pendingOpenMemoryID = nil
             }
             // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
-            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
+            // Private notes (ADR-308) are never in the server copy for calls.
+            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories)) }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)

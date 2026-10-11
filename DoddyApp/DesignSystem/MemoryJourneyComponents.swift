@@ -164,11 +164,17 @@ struct MemoryLinkCard: View {
     let record: MemoryRecord
     var matchedTerms: [String] = []
     var isPinned = false
+    /// A private note before Face ID (ADR-308): its words are not shown.
+    var hidesText = false
 
     var body: some View {
         NavigationLink(value: MemoryNavigationRoute.note(record.id)) {
             VStack(alignment: .leading, spacing: 14) {
-                Text(record.currentText).lineLimit(3).font(.body)
+                if hidesText {
+                    Label("Private note", systemImage: "lock.fill").font(.body).foregroundStyle(Theme.secondaryText)
+                } else {
+                    Text(record.currentText).lineLimit(3).font(.body)
+                }
                 HStack(alignment: .top) {
                     Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))\(record.userEdited ? " · Edited" : "")")
                         .font(.caption).foregroundStyle(Theme.secondaryText)

@@ -354,7 +354,8 @@ final class VoiceSessionController {
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
-        var notes = VoiceContext.savedNotes(store.memories)
+        // Private notes (ADR-308) never reach the voice agent.
+        var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
         var recent = logs.isEnabled
             ? VoiceContext.recentConversations(logs.logs)
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
@@ -1571,7 +1572,7 @@ final class VoiceSessionController {
         switch request {
         case .searchMemories(let query):
             do {
-                let outcome = try await store.recall(query)
+                let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
                 await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
