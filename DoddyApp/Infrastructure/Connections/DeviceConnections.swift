@@ -133,7 +133,7 @@ final class DeviceConnections {
         CalendarEventSummary.occurrenceID(itemID: event.calendarItemIdentifier, start: event.startDate)
     }
 
-    /// The event's identifier comes back with a verified add, so Undo can find exactly this event (ADR-264).
+    /// The event's identifier comes back with a verified add, so Undo can find exactly this event (ADR-265).
     func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: AddOutcome, eventID: String?) {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
@@ -174,7 +174,7 @@ final class DeviceConnections {
         return readBack ? .verified : .unconfirmed
     }
 
-    // MARK: Undo (ADR-264)
+    // MARK: Undo (ADR-265)
 
     /// Puts back exactly what Doddy did, only if it still looks exactly as Doddy left it. Nothing
     /// else is ever removed or changed. "Undone" only after a read-back agrees. When a write
@@ -497,7 +497,7 @@ final class DeviceConnections {
         }
     }
 
-    /// Name and birthday of every contact that has one (ADR-265). Nothing else is read.
+    /// Name and birthday of every contact that has one (ADR-266). Nothing else is read.
     /// Only the day and month reach the agent (`VoiceToolReply.birthdays`); the year stays here.
     func birthdays() throws -> [ContactBirthday] {
         let keys: [CNKeyDescriptor] = [

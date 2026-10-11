@@ -1,6 +1,6 @@
 import Foundation
 
-// "What Doddy did" in the iPhone's language (ADR-271). Rows are kept as Doddy wrote them, in
+// "What Doddy did" in the iPhone's language (ADR-272). Rows are kept as Doddy wrote them, in
 // English (the activity file and old rows don't change); they are translated when shown. App names
 // and results come from fixed lists. Titles and Doddy's own fixed notes are looked up; anything
 // else — the user's own words in the detail, a reason an app or server gave — is shown exactly as
@@ -68,7 +68,7 @@ public enum ActivityText {
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
         "Draft an email": "Szkic e-maila",
-        // Written before ADR-271 fixed the article; old rows still say it.
+        // Written before ADR-272 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
         "Checked email": "Sprawdzono pocztę",
         "Create an email draft": "Utwórz szkic e-maila",
@@ -84,7 +84,7 @@ public enum ActivityText {
         "Start a list": "Załóż listę",
         "Change event": "Zmień wydarzenie",
         "Change reminder": "Zmień przypomnienie",
-        // From the default line (ADR-259, ADR-260), joined in the ADR-264 merge.
+        // From the default line (ADR-259, ADR-260), joined in the ADR-265 merge.
         "Delete event": "Usuń wydarzenie",
         "Delete reminder": "Usuń przypomnienie",
         "Set alarm": "Ustaw budzik",

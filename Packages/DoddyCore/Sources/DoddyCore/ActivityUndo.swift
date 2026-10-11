@@ -1,6 +1,6 @@
 import Foundation
 
-// Undo in "What Doddy did" (ADR-264). For a day after Doddy added or changed an event or a
+// Undo in "What Doddy did" (ADR-265). For a day after Doddy added or changed an event or a
 // reminder, its row offers Undo. Undo only ever reverses what Doddy itself did:
 //  - an event or reminder Doddy added is removed, and only if it still looks exactly as Doddy
 //    left it (same title and time; a reminder still open and carrying Doddy's marker);
@@ -253,7 +253,7 @@ extension ActivityLog {
     }
 }
 
-// MARK: "Undo that" by voice (ADR-267)
+// MARK: "Undo that" by voice (ADR-268)
 
 extension VoiceToolName {
     public static let undoLast = "undo_last"
@@ -295,7 +295,7 @@ extension VoiceToolReply {
     }
 }
 
-// MARK: The two Undo buttons agree (ADR-264 merge)
+// MARK: The two Undo buttons agree (ADR-265 merge)
 
 extension ActivityUndo {
     /// The same change as an on-screen Undo receipt (ADR-258 on the default line): the same event

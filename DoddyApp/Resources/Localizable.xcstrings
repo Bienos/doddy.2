@@ -2113,13 +2113,13 @@
         }
       }
     },
-    "Designs: the owner's Dynamic Island pack (V4). While a note, plan or reminder waits for you, or while Doddy translates, the island switches to its own design whatever you pick here.": {
+    "Designs: the owner's Dynamic Island pack (V4); Whole Doddy uses the owner's pose pack. While a note, plan or reminder waits for you, or while Doddy translates, the island switches to its own design whatever you pick here. In Whole Doddy, Doddy's pose changes instead, except while translating.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Projekty: pakiet Dynamic Island właściciela (V4). Gdy notatka, plan lub przypomnienie czeka na Ciebie albo gdy Doddy tłumaczy, wyspa przełącza się na własny wygląd, niezależnie od tego, co tu wybierzesz."
+            "value": "Projekty: pakiet Dynamic Island właściciela (V4); Whole Doddy korzysta z pakietu póz właściciela. Gdy notatka, plan lub przypomnienie czeka na Ciebie albo gdy Doddy tłumaczy, wyspa przełącza się na własny wygląd, niezależnie od tego, co tu wybierzesz. W stylu Whole Doddy zmienia się wtedy poza Doddy’ego, z wyjątkiem tłumaczenia."
           }
         }
       }

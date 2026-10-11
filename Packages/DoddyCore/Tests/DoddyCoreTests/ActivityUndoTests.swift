@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Undo in "What Doddy did" (ADR-264): offered only for changes Doddy made and checked, within a
+/// Undo in "What Doddy did" (ADR-265): offered only for changes Doddy made and checked, within a
 /// day, and only ever reverses exactly what Doddy did.
 final class ActivityUndoTests: XCTestCase {
     private var calendar: Calendar = {
@@ -46,7 +46,7 @@ final class ActivityUndoTests: XCTestCase {
     }
 
     func testVerifiedChangesAreDoneAndUnverifiedOnesAreNot() {
-        // Before ADR-264 a checked change was listed as "Not sure it happened".
+        // Before ADR-265 a checked change was listed as "Not sure it happened".
         let change = VoiceToolRequest.changeReminder(ReminderChangeDraft(title: "Call mum", newDue: nil, markDone: true))
         XCTAssertEqual(entry(change, reply: VoiceToolReply.reminderCompleted("Call mum"), undo: nil).outcome, .done)
         XCTAssertEqual(entry(change, reply: VoiceToolReply.reminderChanged("Call mum", due: nil), undo: nil).outcome, .done)
@@ -219,7 +219,7 @@ final class ActivityUndoTests: XCTestCase {
         XCTAssertFalse(ActivityEntry(request: request, reply: PlanReply.unticked, at: now, plan: ref, undo: undo).canUndo(now: now))
     }
 
-    // MARK: "Undo that" by voice (ADR-267)
+    // MARK: "Undo that" by voice (ADR-268)
 
     func testUndoThatFindsTheNewestUndoableChangeFromThisConversationOnly() {
         let undo = ActivityUndo.addedEvent(eventID: "E1", event: event(start: date(11, 9)))
@@ -268,7 +268,7 @@ final class ActivityUndoTests: XCTestCase {
         }
     }
 
-    // MARK: The two Undo buttons agree (ADR-264 merge with the default line's ADR-258)
+    // MARK: The two Undo buttons agree (ADR-265 merge with the default line's ADR-258)
 
     func testUndoOnTheVoiceScreenMarksTheSameRowUndone() {
         let before = event(start: date(11, 9), id: CalendarEventSummary.occurrenceID(itemID: "I", start: date(11, 9)))

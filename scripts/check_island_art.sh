@@ -31,8 +31,21 @@ swiftc -swift-version 6 -parse-as-library -I "$work" -o "$work/island-check" \
     Shared/IslandArt/IslandPathParser.swift \
     Shared/IslandArt/IslandBoardArt.generated.swift \
     Shared/IslandArt/IslandScene.swift \
+    Shared/IslandArt/IslandPose.swift \
     Shared/VoiceActivity/DoddyVoiceAttributes.swift \
     Shared/ToolActivity/DoddyToolAttributes.swift \
     tools/island_boards/IslandSceneChecks.swift \
     tools/island_boards/IslandArtCheck.swift
+# Whole Doddy (ADR-264): every pose has its picture in the app and the widget catalogs.
+missing=0
+for name in $("$work/island-check" --pose-assets); do
+    for catalog in DoddyApp/Resources/Assets.xcassets DoddyWidgets/Assets.xcassets; do
+        for file in Contents.json art@2x.png art@3x.png; do
+            if [ ! -f "$catalog/$name.imageset/$file" ]; then
+                echo "FAIL: $catalog/$name.imageset/$file is missing"; missing=1
+            fi
+        done
+    done
+done
+[ "$missing" -eq 0 ] || exit 1
 "$work/island-check" "$@"

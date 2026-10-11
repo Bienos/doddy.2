@@ -162,12 +162,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case needsClarification(name: String, ReminderClarification)
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
-    /// Birthdays saved in Contacts in the next `days` days, read only (ADR-265).
+    /// Birthdays saved in Contacts in the next `days` days, read only (ADR-266).
     case upcomingBirthdays(days: Int)
-    /// Arithmetic and unit conversion, worked out on the iPhone (ADR-266).
+    /// Arithmetic and unit conversion, worked out on the iPhone (ADR-267).
     case calculate(expression: String)
     case convertUnits(UnitConversionRequest)
-    /// "Undo that": the newest undoable change from this conversation, after a card (ADR-267).
+    /// "Undo that": the newest undoable change from this conversation, after a card (ADR-268).
     case undoLast
     case setTimer(TimerDraft)
     /// A real alarm (ADR-260), on iOS 26 and later.

@@ -199,7 +199,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 |---|---|---|
 | PL1 | iPhone language Polish; go through Home, New note, Memories, Lists, Settings | Polish everywhere listed in `POLISH_SCREENS_STATUS.md`; note clipped buttons and any English left on a main screen |
 
-## 15. Undo in What Doddy did (ADR-264)
+## 15. Undo in What Doddy did (ADR-265)
 | # | Do this | Expect |
 |---|---|---|
 | U1 | Ask Doddy to add an event; Settings → What Doddy did → Undo → Remove | The event is gone from Calendar; the row says "Calendar · Undone" |
@@ -212,7 +212,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | U8 | (after the live agent update) Ask Doddy to add a reminder, then say "undo that" → Remove | Card names the reminder; it's gone from Reminders; Doddy says it was undone |
 | U9 | (after the live agent update) New conversation, say "undo that" | Doddy says there's nothing to undo from this conversation |
 
-## 16. Birthdays from Contacts (ADR-265; needs the live agent update first)
+## 16. Birthdays from Contacts (ADR-266; needs the live agent update first)
 | # | Do this | Expect |
 |---|---|---|
 | BD1 | Give two contacts birthdays this week (one without a year); ask "whose birthday is this week?" | Doddy names both with the day; never a year or age |
@@ -220,7 +220,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | BD3 | Pause all on; ask again | Paused reply; nothing read |
 | BD4 | "Remind me the day before Anna's birthday" | A create_reminder card; nothing added before the tap |
 
-## 17. Sums and unit conversions (ADR-266; needs the live agent update first)
+## 17. Sums and unit conversions (ADR-267; needs the live agent update first)
 | # | Do this | Expect |
 |---|---|---|
 | C1 | "What's 124.50 plus 37, split three ways?" | About 53.83; nothing logged in What Doddy did |
@@ -232,3 +232,13 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Item | Xcode / iOS / device | Result | Notes |
 |---|---|---|---|
 | Build | | | |
+
+## 4f. Whole Doddy island style (ADR-264, `WHOLE_DODDY_ISLAND_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Build; open Settings → Voice → Dynamic Island style | A "Whole Doddy" row with a preview: Doddy's whole body on black with a thin cream edge, no panel. Switch the preview between Listening, Speaking, Thinking and Muted: hand at ear, open hands, kneeling, shush |
+| W2 | Choose Whole Doddy, talk to Doddy, go to the Home Screen and long-press the island | The expanded island shows the pose for each state as it changes (connecting = stretch). The pose is sharp, not blurry, and the cream edge is even |
+| W3 | Look at compact and minimal (open another app with its own activity for minimal) | A round face crop: the listening face while live, shush when muted. Not cut off, not blurry |
+| W4 | Ask Doddy to save a note, tap Save; ask for a reminder and Add | Reaching high while it waits; a fist pump only after Saved / Reminders confirmed it |
+| W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, arms out with the greeting, leaning while paused |
+| W6 | Start the translator from Home with Whole Doddy chosen | Language Bridge as before, no pose |
