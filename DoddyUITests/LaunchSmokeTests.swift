@@ -14,6 +14,8 @@ final class LaunchSmokeTests: XCTestCase {
         // Overrides UserDefaults for this launch only.
         app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
         if onboardingDone { app.launchArguments += ["-onboardingDone", "YES"] }
+        // The Quick start (ADR-324) shows once per install; UserDefaults outlive the in-memory store.
+        if !onboardingDone { app.launchArguments += ["-quickStartOffered", "NO"] }
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         // The opening (ADR-225) is on by default; most tests start straight on Home.
         if !opening { app.launchArguments += ["-openingScene", "NO"] }
@@ -30,6 +32,13 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["intro.begin"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["intro.skip"].exists)
         app.buttons["intro.skip"].tap()
+
+        // Quick start (ADR-324): the notifications are offered; with nothing saved, the profile isn't.
+        XCTAssertTrue(app.buttons["quickStart.notNow"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["quickStart.morning"].exists)
+        XCTAssertEqual(app.switches["quickStart.evening"].value as? String, "0", "Reminders is off on a fresh install")
+        XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
+        app.buttons["quickStart.notNow"].tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "A little less to carry.")
@@ -54,6 +63,12 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["profile.save"].waitForExistence(timeout: 5))
         app.buttons["profile.remove.help"].tap()
         app.buttons["profile.save"].tap()
+
+        // Sharing the saved answers with the voice is offered, but never pre-ticked (ADR-324).
+        let share = app.switches["quickStart.profile"]
+        for _ in 0..<3 where !share.waitForExistence(timeout: 2) { app.swipeUp() }
+        XCTAssertEqual(share.value as? String, "0")
+        app.buttons["quickStart.notNow"].tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")

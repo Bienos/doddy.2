@@ -68,6 +68,8 @@ enum PreferenceKey {
     /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
     /// the keyword file in Application Support, never here.
     static let heyDoddyOn = "heyDoddy.on"
+    /// The Quick start screen (ADR-324) was shown once, at the end of first use; never again.
+    static let quickStartOffered = "quickStartOffered"
 }
 
 enum AppTab: Hashable {
