@@ -166,6 +166,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Arithmetic and unit conversion, worked out on the iPhone (ADR-257).
     case calculate(expression: String)
     case convertUnits(UnitConversionRequest)
+    /// "Undo that": the newest undoable change from this conversation, after a card (ADR-258).
+    case undoLast
     case setTimer(TimerDraft)
     case openMap(place: String)
     case runShortcut(name: String)
@@ -219,6 +221,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCalculate(args, name: name)
         case VoiceToolName.convertUnits:
             return parseConversion(args, name: name)
+        case VoiceToolName.undoLast:
+            return .undoLast
         case VoiceToolName.setTimer:
             return parseTimer(args, name: name)
         case VoiceToolName.openMap:

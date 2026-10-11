@@ -1,4 +1,4 @@
-# Undo in "What Doddy did": status (ADR-255)
+# Undo in "What Doddy did", and "undo that" by voice: status (ADR-255, ADR-258)
 Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the last action" as the first next build.
 
 ## What ships
@@ -84,3 +84,34 @@ Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the la
 ## Next
 - "Undo that" by voice (a new agent tool; needs a live agent update).
 - Undo for plan-card steps, notes saved by voice, and list changes.
+
+## ADR-258 (2026-10-11, owner: "build next"): plan steps and "undo that" by voice
+- **Plan-card steps.** An event or reminder added by a step of a plan card now gets Undo in What Doddy did, exactly like one from its own card. `runPlanStep` returns what Undo needs, and `logPlanStep` keeps it. As before, an unticked or blocked step never ran, so it gets no Undo.
+- **"Undo that" by voice:** a new phone tool, `undo_last` (no parameters, 36 tools in total).
+  - **What it picks:** the newest row **from this conversation** that can still be undone. Never one from an earlier conversation; for those the agent points to Settings, What Doddy did.
+  - **The card** on the conversation screen shows the same question and explanation as the Settings sheet. Buttons: Remove / Put back / Mark not done, and "Keep it".
+  - **At the tap:**
+    - the row is read again (it may have been undone in Settings, or the day passed);
+    - Pause all and the switch are checked;
+    - then the same `DeviceConnections.undo`.
+  - **The row** records the result (`ActivityLog.undid`). No new row is added.
+  - **What the agent hears:** "undone: …" only after the read-back. Otherwise "not undone: … left it alone", "failed: not undone. …" or "unknown: … check".
+  - **Other limits:** "Nothing to undo" when there's nothing from this conversation. Blocked by Pause all and by translator mode.
+- **Prompt:** one tools line ("undo_last …; say it was undone only when the result starts with undone"). The cannot-do line now reads "delete events or reminders (except undoing one you just added, with undo_last)".
+- **Polish:** the card's buttons are translated ("Cofnij", "Zostaw"); the question and explanation come from DoddyCore in English.
+- **Tests:** `ActivityUndoTests` now has 16 tests (4 new):
+  - an added reminder only when Doddy wrote it;
+  - a plan step keeps Undo;
+  - "undo that" scope (this conversation, newest, never a not-sure or already-undone row);
+  - the replies.
+- A planted bug (dropping the "this conversation" rule) was caught. `scripts/ci.sh --core-only` PASS (640 DoddyCore tests; voice agent spec 36 tools).
+- **NOT RUN:**
+  - the live agent has no `undo_last` yet;
+  - iOS app not built: the card and `VoiceSessionController` are syntax-checked only.
+- **Mac checklist:** U7–U9.
+
+| # | Do this | Expect |
+|---|---|---|
+| U7 | Plan card with an event and a reminder → Add; What Doddy did | Both steps show Undo |
+| U8 | Ask Doddy to add a reminder, then say "undo that" → Remove | Card names the reminder; it's gone from Reminders; Doddy says it was undone |
+| U9 | New conversation, say "undo that" | Doddy says there's nothing to undo from this conversation and points to What Doddy did |

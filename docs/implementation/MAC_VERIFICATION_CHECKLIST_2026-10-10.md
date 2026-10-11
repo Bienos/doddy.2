@@ -208,6 +208,9 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | U4 | Ask Doddy to move an event; Undo → Put back | Old time and name back; row "Undone" |
 | U5 | Ask Doddy to mark a reminder done; Undo → Mark not done | Open again in Reminders |
 | U6 | Turn on Pause all; Undo | "Not undone: Connections are paused in Settings. Nothing changed."; Undo still offered |
+| U7 | Plan card with an event and a reminder → Add; What Doddy did | Both steps show Undo |
+| U8 | (after the live agent update) Ask Doddy to add a reminder, then say "undo that" → Remove | Card names the reminder; it's gone from Reminders; Doddy says it was undone |
+| U9 | (after the live agent update) New conversation, say "undo that" | Doddy says there's nothing to undo from this conversation |
 
 ## 16. Birthdays from Contacts (ADR-256; needs the live agent update first)
 | # | Do this | Expect |

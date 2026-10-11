@@ -56,13 +56,15 @@ final class VoiceSessionController {
         case changeReminder(toolCallID: String, reminder: ReminderSnapshot, draft: ReminderChangeDraft)
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
+        /// "Undo that" (ADR-258): the newest undoable change from this conversation, from What Doddy did.
+        case undo(toolCallID: String, entry: ActivityEntry)
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
-                 .changeEvent(let id, _), .changeReminder(let id, _, _):
+                 .changeEvent(let id, _), .changeReminder(let id, _, _), .undo(let id, _):
                 id
             }
         }
@@ -578,9 +580,7 @@ final class VoiceSessionController {
             let outcome = await addReminder(draft)
             reminderStatus = .done(draft, outcome)
             // Undo removes only a reminder Doddy wrote, found by its marker (ADR-255).
-            var undo: ActivityUndo?
-            if case .added = outcome { undo = .addedReminder(key: ReminderWrite(draft).key, title: draft.title, due: draft.due) }
-            await reply(id, VoiceToolReply.reminder(outcome), undo: undo)
+            await reply(id, VoiceToolReply.reminder(outcome), undo: ActivityUndo.addedReminder(outcome, draft: draft))
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
         case .map(let id, let place):
@@ -621,6 +621,8 @@ final class VoiceSessionController {
         case .changeEvent(let id, let plan):
             // Kept only if the reply says the change was checked (ActivityEntry).
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
+        case .undo(let id, let entry):
+            await reply(id, await undoFromVoice(entry))
         case .changeReminder(let id, let reminder, let draft):
             let undo = ActivityUndo.changedReminder(
                 id: reminder.id, title: reminder.title, oldDue: reminder.due,
@@ -744,6 +746,7 @@ final class VoiceSessionController {
         case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
+        case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -1348,6 +1351,13 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
+        case .undoLast:
+            // Only a change from this conversation, Doddy's own and checked; nothing runs before the tap.
+            guard let start = startedAt, let entry = ActivityUndo.latest(in: activity.entries, since: start, now: Date()) else {
+                await reply(call.toolCallId, VoiceToolReply.nothingToUndo)
+                return
+            }
+            propose(.undo(toolCallID: call.toolCallId, entry: entry), toolCallID: call.toolCallId)
         case .calculate(let expression):
             // Worked out on the iPhone (ADR-257); no app, account or network.
             await reply(call.toolCallId, VoiceToolReply.calculation(expression))
@@ -1504,6 +1514,7 @@ final class VoiceSessionController {
             let ref = ActivityPlanRef(id: planID, step: step.number, count: steps.count)
             var startedEntry: ActivityEntry?
             let text: String
+            var undo: ActivityUndo?
             if let block = blocked[step.number] {
                 text = block.reply
             } else if !ticked.contains(step.number) {
@@ -1515,17 +1526,34 @@ final class VoiceSessionController {
                     activity.append(entry)
                     startedEntry = entry
                 }
-                text = await runPlanStep(step, approval: approvals[step.number])
+                let ran = await runPlanStep(step, approval: approvals[step.number])
+                text = ran.0
+                undo = ran.1
             }
-            planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry)
+            planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry, undo: undo)
             results.append((step, text))
         }
         planStatus?.isRunning = false
         await reply(toolCallID, PlanReply.summary(results, changed: changed))
     }
 
+    /// A step's reply, and what Undo needs when it added an event or reminder and read it back
+    /// (ADR-258): the same as from its single card.
+    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> (String, ActivityUndo?) {
+        if let block = await planBlock(for: step) { return (block.reply, nil) }
+        switch step.request {
+        case .createCalendarEvent(let draft):
+            return addEvent(draft)
+        case .createReminder(let draft):
+            let outcome = await addReminder(draft)
+            return (VoiceToolReply.reminder(outcome), ActivityUndo.addedReminder(outcome, draft: draft))
+        default:
+            return (await runOtherPlanStep(step, approval: approval), nil)
+        }
+    }
+
     /// Checked again at the tap: the user may have paused or switched off the app while the card waited.
-    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
+    private func runOtherPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
         if let block = await planBlock(for: step) { return block.reply }
         switch step.request {
         case .saveMemory(let text):
@@ -1537,7 +1565,7 @@ final class VoiceSessionController {
                 return VoiceToolReply.failed(UserFacingError.message(for: error))
             }
         case .createCalendarEvent(let draft):
-            // Plan steps don't offer Undo yet (ADR-255): the reply only.
+            // Run by runPlanStep, with Undo; kept so every step kind still has one path here.
             return addEvent(draft).0
         case .createReminder(let draft):
             return VoiceToolReply.reminder(await addReminder(draft))
@@ -1619,9 +1647,9 @@ final class VoiceSessionController {
     }
 
     @discardableResult
-    private func logPlanStep(_ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil) -> ActivityEntry? {
+    private func logPlanStep(_ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil, undo: ActivityUndo? = nil) -> ActivityEntry? {
         guard let request = step.activity(calendar: .current) else { return nil }
-        let entry = ActivityEntry(id: started?.id ?? UUID(), request: request, reply: text, at: started?.at ?? Date(), plan: plan)
+        let entry = ActivityEntry(id: started?.id ?? UUID(), request: request, reply: text, at: started?.at ?? Date(), plan: plan, undo: undo)
         if started != nil { activity.replace(entry) } else { activity.append(entry) }
         return entry
     }
@@ -1726,6 +1754,27 @@ final class VoiceSessionController {
         } catch {
             return (VoiceToolReply.notAdded(UserFacingError.message(for: error)), nil)
         }
+    }
+
+    /// The user tapped the undo card (ADR-258). The same checks and write as Undo in What Doddy
+    /// did: the row as it is now, Pause all, the switch, then DeviceConnections' guarded undo.
+    private func undoFromVoice(_ entry: ActivityEntry) async -> String {
+        // It may have been undone in Settings, or the day may have passed, while the card waited.
+        guard let current = activity.entries.first(where: { $0.id == entry.id }), let undo = current.undo,
+              current.canUndo(now: Date()) else {
+            return VoiceToolReply.nothingToUndo
+        }
+        let result: UndoResult
+        if let reason = undo.blocked(
+            pauseAll: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey),
+            connectionOn: isOn(undo.connection)) {
+            if !isOn(undo.connection) { connectionNeeded = undo.connection }
+            result = .notDone(reason)
+        } else {
+            result = await devices.undo(undo)
+        }
+        activity.replace(ActivityLog.undid(current, result: result, at: Date()))
+        return VoiceToolReply.undo(result, undo)
     }
 
     // MARK: Changing events and reminders (ADR-229)
@@ -1951,8 +2000,9 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder: true
-        // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
-        case .map, .shortcut, .message, .translator, .plan: false
+        // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
+        // is recorded on the row it undoes (ADR-258).
+        case .map, .shortcut, .message, .translator, .plan, .undo: false
         }
     }
 }

@@ -400,6 +400,14 @@ struct VoiceView: View {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
             }
+        case .undo(_, let entry):
+            if let undo = entry.undo {
+                Text(undo.question)
+                    .font(.headline)
+                Text(undo.explanation(calendar: .current))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -591,6 +599,7 @@ struct VoiceView: View {
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
+        case .undo(_, let entry): (entry.undo?.buttonTitle ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
         }
     }
 

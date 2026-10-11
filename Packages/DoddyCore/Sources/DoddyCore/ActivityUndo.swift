@@ -83,6 +83,13 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         }
     }
 
+    /// Undo for a reminder Doddy just added: only when Doddy wrote it and read it back, never
+    /// when it was already there (then it is the user's) or Doddy isn't sure.
+    public static func addedReminder(_ outcome: ReminderOutcome, draft: ReminderDraft) -> ActivityUndo? {
+        guard case .added = outcome else { return nil }
+        return .addedReminder(key: ReminderWrite(draft).key, title: draft.title, due: draft.due)
+    }
+
     /// The plan that moves an event back. The event is found by its current occurrence (Doddy's
     /// "after"), which must still look exactly like that; it then becomes Doddy's "before".
     public static func reversed(_ plan: EventChangePlan) -> EventChangePlan {
@@ -210,3 +217,46 @@ extension ActivityLog {
         return updated
     }
 }
+
+// MARK: "Undo that" by voice (ADR-258)
+
+extension VoiceToolName {
+    public static let undoLast = "undo_last"
+}
+
+extension ActivityUndo {
+    /// The newest change from this conversation that can still be undone. Never one from an
+    /// earlier conversation: "undo that" means what was just done.
+    public static func latest(in entries: [ActivityEntry], since start: Date, now: Date) -> ActivityEntry? {
+        entries.filter { $0.at >= start && $0.canUndo(now: now) }.max { $0.at < $1.at }
+    }
+}
+
+extension VoiceToolReply {
+    public static let nothingToUndo = "nothing to undo: Doddy hasn't added or changed anything in Calendar or Reminders in this conversation that can still be undone. Nothing changed. Older changes can be undone in Settings, What Doddy did."
+    public static let undoDeclined = "declined: the user chose to keep it. Nothing changed."
+
+    /// What the agent hears after the user tapped the undo card. "undone" only after the read-back.
+    public static func undo(_ result: UndoResult, _ undo: ActivityUndo) -> String {
+        let place = undo.app.title
+        switch result {
+        case .undone:
+            switch undo {
+            case .addedEvent(_, let event): return "undone: \"\(event.title)\" was removed from Calendar. Checked."
+            case .addedReminder(_, let title, _): return "undone: \"\(title)\" was removed from Reminders. Checked."
+            case .changedEvent(let plan): return "undone: \"\(plan.before.title)\" is back as it was. Checked in Calendar."
+            case .changedReminder(_, let title, _, _, let markedDone):
+                return markedDone
+                    ? "undone: \"\(title)\" is open again in Reminders. Checked."
+                    : "undone: \"\(title)\" has its old due back. Checked in Reminders."
+            }
+        case .leftAlone:
+            return "not undone: it changed in \(place) since Doddy did it, so Doddy left it alone. Nothing changed."
+        case .notDone(let reason):
+            return "failed: not undone. \(reason) Nothing changed."
+        case .notSure:
+            return "unknown: Doddy couldn't confirm the undo. Ask the user to check \(place) before trying again."
+        }
+    }
+}
+

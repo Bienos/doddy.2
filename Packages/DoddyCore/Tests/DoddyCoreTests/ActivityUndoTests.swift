@@ -196,6 +196,78 @@ final class ActivityUndoTests: XCTestCase {
         XCTAssertEqual(ActivityUndo.addedEvent(eventID: "E", event: event(start: date(11, 9))).connection, .calendar)
     }
 
+    func testOnlyAReminderDoddyWroteAndReadBackCanBeRemoved() {
+        let draft = ReminderDraft(title: "Buy milk", due: nil, notes: nil)
+        let receipt = ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: nil)
+        XCTAssertEqual(
+            ActivityUndo.addedReminder(.added(receipt), draft: draft),
+            .addedReminder(key: ReminderWrite(draft).key, title: "Buy milk", due: nil))
+        XCTAssertNil(ActivityUndo.addedReminder(.alreadyThere(receipt), draft: draft))
+        XCTAssertNil(ActivityUndo.addedReminder(.unknown, draft: draft))
+        XCTAssertNil(ActivityUndo.addedReminder(.notAdded(.notAllowed), draft: draft))
+    }
+
+    func testAPlanStepKeepsUndoLikeASingleCard() {
+        let added = event(start: date(11, 9))
+        let undo = ActivityUndo.addedEvent(eventID: "E1", event: added)
+        let request = ActivityRequest(app: .calendar, title: "Add event", detail: nil, isLookup: false)
+        let ref = ActivityPlanRef(id: UUID(), step: 2, count: 3)
+        let step = ActivityEntry(request: request, reply: "added: \"Dentist\" on Sun 11 Oct 2026, 09:00.", at: now, plan: ref, undo: undo)
+        XCTAssertEqual(step.plan, ref)
+        XCTAssertTrue(step.canUndo(now: now))
+        // An unticked or blocked step never ran, so there is nothing to put back.
+        XCTAssertFalse(ActivityEntry(request: request, reply: PlanReply.unticked, at: now, plan: ref, undo: undo).canUndo(now: now))
+    }
+
+    // MARK: "Undo that" by voice (ADR-258)
+
+    func testUndoThatFindsTheNewestUndoableChangeFromThisConversationOnly() {
+        let undo = ActivityUndo.addedEvent(eventID: "E1", event: event(start: date(11, 9)))
+        let start = now.addingTimeInterval(-600)
+        func row(_ minutesAgo: Double, outcome: ActivityOutcome = .done, undo: ActivityUndo? = undo) -> ActivityEntry {
+            ActivityEntry(at: now.addingTimeInterval(-minutesAgo * 60), app: .calendar, title: "Add event", detail: nil, outcome: outcome, undo: undo)
+        }
+        let earlierConversation = row(30)
+        let first = row(8)
+        let newest = row(2)
+        let lookup = row(1, outcome: .lookedUp, undo: nil)
+        let notSure = row(1, outcome: .notSure)
+        var undone = row(0.5)
+        undone.undoState = .undone(now)
+
+        let entries = [lookup, notSure, undone, newest, first, earlierConversation]
+        XCTAssertEqual(ActivityUndo.latest(in: entries, since: start, now: now), newest)
+        XCTAssertEqual(ActivityUndo.latest(in: [first, earlierConversation], since: start, now: now), first)
+        // Something from an earlier conversation is never "that".
+        XCTAssertNil(ActivityUndo.latest(in: [earlierConversation, lookup, notSure, undone], since: start, now: now))
+        XCTAssertNil(ActivityUndo.latest(in: [], since: start, now: now))
+    }
+
+    func testUndoThatIsPausedLoggedOnItsRowAndAnswersOnlyWhatHappened() {
+        XCTAssertEqual(VoiceToolRequest.parse(name: "undo_last", parametersJSON: Data("{}".utf8)), .undoLast)
+        XCTAssertTrue(ConnectionPause.applies(to: .undoLast))
+        XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
+        XCTAssertFalse(TranslatorPolicy.allows(.undoLast))
+
+        let added = ActivityUndo.addedEvent(eventID: "E1", event: event(start: date(11, 9)))
+        XCTAssertEqual(VoiceToolReply.undo(.undone, added), "undone: \"Dentist\" was removed from Calendar. Checked.")
+        let ticked = ActivityUndo.changedReminder(id: "R1", title: "Call mum", oldDue: nil, newDue: nil, markedDone: true)
+        XCTAssertEqual(VoiceToolReply.undo(.undone, ticked), "undone: \"Call mum\" is open again in Reminders. Checked.")
+        XCTAssertEqual(
+            VoiceToolReply.undo(.leftAlone, ticked),
+            "not undone: it changed in Reminders since Doddy did it, so Doddy left it alone. Nothing changed.")
+        XCTAssertEqual(
+            VoiceToolReply.undo(.notDone("Connections are paused in Settings."), added),
+            "failed: not undone. Connections are paused in Settings. Nothing changed.")
+        XCTAssertEqual(
+            VoiceToolReply.undo(.notSure, added),
+            "unknown: Doddy couldn't confirm the undo. Ask the user to check Calendar before trying again.")
+        // Only "undone" may be reported as done; nothing else starts with it.
+        for result: UndoResult in [.leftAlone, .notDone("x"), .notSure] {
+            XCTAssertFalse(VoiceToolReply.undo(result, added).hasPrefix("undone"))
+        }
+    }
+
     // MARK: What the user is asked
 
     func testTheSheetNamesExactlyWhatWillHappen() {
