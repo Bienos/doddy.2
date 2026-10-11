@@ -126,12 +126,18 @@ public enum CloudToolName {
     public static let searchNotion = "search_notion"
     public static let listTodoistTasks = "list_todoist_tasks"
     public static let addTodoistTask = "add_todoist_task"
+    /// Todoist complete and move (ADR-303): the card shows the task as Todoist has it.
+    public static let completeTodoistTask = "complete_todoist_task"
+    public static let moveTodoistTask = "move_todoist_task"
+    /// One whole email, the newest that matches, when the user asks (ADR-304). Off until switched on.
+    public static let readEmail = "read_email"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"
 
-    public static let all: Set<String> = [checkEmail, draftEmail, findDriveFile, searchNotion, listTodoistTasks, addTodoistTask, webSearch]
+    public static let all: Set<String> = [checkEmail, draftEmail, readEmail, findDriveFile, searchNotion, listTodoistTasks, addTodoistTask,
+                                          completeTodoistTask, moveTodoistTask, webSearch]
     /// These change something in the user's account and wait for a tap on the card.
-    public static let writes: Set<String> = [draftEmail, addTodoistTask]
+    public static let writes: Set<String> = [draftEmail, addTodoistTask, completeTodoistTask, moveTodoistTask]
 
     public static func isWrite(_ name: String) -> Bool { writes.contains(name) }
 
@@ -144,6 +150,9 @@ public enum CloudToolName {
         case searchNotion: "Search Notion"
         case listTodoistTasks: "List my tasks"
         case addTodoistTask: "Add a task"
+        case completeTodoistTask: "Complete a task"
+        case moveTodoistTask: "Move a task"
+        case readEmail: "Read an email"
         case webSearch: "Search the web"
         default: name
         }
@@ -151,7 +160,7 @@ public enum CloudToolName {
 
     public static func account(_ name: String) -> String {
         switch name {
-        case checkEmail, draftEmail: "Gmail"
+        case checkEmail, draftEmail, readEmail: "Gmail"
         case findDriveFile: "Google Drive"
         case searchNotion: "Notion"
         case webSearch: "Web search"

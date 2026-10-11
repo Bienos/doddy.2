@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// How to get the "Doddy Camera" Shortcut that "open the camera" runs (ADR-291, ADR-300).
+/// How to get the "Doddy Camera" Shortcut that "open the camera" runs (ADR-291, ADR-309).
 /// `.full` is the section in Settings → Connections → Shortcuts; `.card` sits under Run on the
 /// voice card, where the user needs it, and stays small so it doesn't compete with Run.
 /// With the owner's shared link it is one tap to add; without it, the steps to make it.

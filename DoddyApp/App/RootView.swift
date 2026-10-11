@@ -235,6 +235,8 @@ struct RootView: View {
         .sheet(isPresented: $router.isWrapUpPresented, onDismiss: { router.showWaitingDraft() }) {
             EveningWrapUpView(openSettings: { selectedTab = .settings })
         }
+        // The weekly look-back (ADR-306), from its notification or Settings.
+        .sheet(isPresented: $router.isLookBackPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyLookBackView() }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })

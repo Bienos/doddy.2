@@ -254,7 +254,7 @@ struct ConnectionSheet: View {
         }
     }
 
-    /// "Open the camera" needs the user's "Doddy Camera" Shortcut (ADR-291, ADR-300).
+    /// "Open the camera" needs the user's "Doddy Camera" Shortcut (ADR-291, ADR-309).
     private var cameraShortcut: some View {
         section("Open the camera") {
             CameraShortcutHelp(style: .full)

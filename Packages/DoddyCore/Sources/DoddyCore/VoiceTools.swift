@@ -173,6 +173,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Arithmetic and unit conversion, worked out on the iPhone (ADR-270).
     case calculate(expression: String)
     case convertUnits(UnitConversionRequest)
+    /// Converted with the ECB's daily rates, fetched by the app (ADR-300).
+    case convertCurrency(CurrencyConversionRequest)
+    /// Save, find or clear the one parking spot kept on this iPhone (ADR-301).
+    case parkingSpot(ParkingAction)
+    /// A dish's ingredients on one card with ticks, added to a list on a tap (ADR-305).
+    case addIngredients(IngredientsProposal)
     /// "Undo that": the newest undoable change from this conversation, after a card (ADR-271).
     case undoLast
     case setTimer(TimerDraft)
@@ -251,6 +257,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCalculate(args, name: name)
         case VoiceToolName.convertUnits:
             return parseConversion(args, name: name)
+        case VoiceToolName.convertCurrency:
+            return parseCurrency(args, name: name)
+        case VoiceToolName.parkingSpot:
+            return parseParking(args, name: name)
+        case VoiceToolName.addIngredients:
+            return parseIngredients(args, name: name)
         case VoiceToolName.undoLast:
             return .undoLast
         case VoiceToolName.setTimer:

@@ -237,3 +237,59 @@ extension ListShare {
     /// CloudKit's stand-in for "the current user" in record ids.
     public static let currentUserPlaceholder = "__defaultOwner__"
 }
+
+// MARK: A shared list's place reminder for everyone (ADR-307)
+
+/// A place one person on a shared list chose to share, so the others can be reminded there too.
+/// Shared only when that person taps Share this place; each other person sets their own reminder
+/// with Remind me too (iOS watches the place on their iPhone, as for any place reminder, ADR-196).
+/// Nobody's whereabouts are shared: only the place that was picked, its name and radius.
+public struct SharedListPlace: Equatable, Sendable {
+    public let place: ReminderPlace
+    /// The iCloud user record name of whoever shared it; names come from the share.
+    public let sharedBy: String?
+
+    public init(place: ReminderPlace, sharedBy: String?) {
+        self.place = place
+        self.sharedBy = sharedBy
+    }
+
+    /// From what iCloud holds; nil unless every field is there and makes sense.
+    public static func validated(name: String?, latitude: Double?, longitude: Double?, radiusMeters: Int?, onArrival: Bool?, sharedBy: String?) -> SharedListPlace? {
+        guard let name, let latitude, let longitude, let radiusMeters, let onArrival,
+              let place = try? ReminderPlace(name: name, latitude: latitude, longitude: longitude, radiusMeters: radiusMeters, onArrival: onArrival)
+        else { return nil }
+        return SharedListPlace(place: place, sharedBy: sharedBy)
+    }
+
+    /// Two reminders count as the same place within this distance, arriving or leaving alike.
+    public static let sameSpotMeters: Double = 50
+
+    public static func isSame(_ a: ReminderPlace, _ b: ReminderPlace) -> Bool {
+        a.onArrival == b.onArrival
+            && Parking.distance(from: (a.latitude, a.longitude), to: (b.latitude, b.longitude)) <= sameSpotMeters
+    }
+}
+
+/// What the list screen offers about a shared place.
+public enum SharedPlaceOffer: Equatable, Sendable {
+    /// Not shared, or nothing to offer.
+    case nothing
+    /// This iPhone has a place reminder for the list and nobody's place is shared: offer to share it.
+    case canShare(ReminderPlace)
+    /// Someone else shared a place this iPhone isn't reminded at: offer Remind me too.
+    case remindMeToo(SharedListPlace, by: String?)
+    /// The shared place is this iPhone's own reminder (shared from here, or already set the same).
+    case shared(SharedListPlace, byMe: Bool)
+
+    /// `mine`: this iPhone's place reminder for the list, if any. `names`: user record name → name.
+    public static func make(isShared: Bool, shared: SharedListPlace?, mine: ReminderPlace?, me: String?, names: [String: String]) -> SharedPlaceOffer {
+        guard isShared else { return .nothing }
+        guard let shared else { return mine.map { .canShare($0) } ?? .nothing }
+        let byMe = shared.sharedBy != nil && shared.sharedBy == me
+        if byMe || mine.map({ SharedListPlace.isSame($0, shared.place) }) == true {
+            return .shared(shared, byMe: byMe)
+        }
+        return .remindMeToo(shared, by: shared.sharedBy.flatMap { names[$0] })
+    }
+}

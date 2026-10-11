@@ -20,6 +20,7 @@ extension ActivityApp {
         case .messages: return "Wiadomości i e-mail"
         case .gmail, .drive, .notion, .todoist: return title
         case .web: return "Wyszukiwanie w sieci"
+        case .exchangeRates: return "Kursy walut"
         }
     }
 }
@@ -76,6 +77,15 @@ public enum ActivityText {
         "Delete event": "Usuń wydarzenie",
         "Delete reminder": "Usuń przypomnienie",
         "Set alarm": "Ustaw budzik",
+        // Round 4 (ADR-300 onwards).
+        "Converted currency": "Przeliczono walutę",
+        "Save parking spot": "Zapisz miejsce parkowania",
+        "Found parking spot": "Odczytano miejsce parkowania",
+        "Clear parking spot": "Usuń miejsce parkowania",
+        "Read an email": "Przeczytano e-mail",
+        "Complete a task": "Ukończ zadanie",
+        "Move a task": "Przesuń zadanie",
+        "Add ingredients to a list": "Dodaj składniki do listy",
     ]
 
     /// Doddy's own fixed notes, in Polish. Built from the same text the app writes, so they match.

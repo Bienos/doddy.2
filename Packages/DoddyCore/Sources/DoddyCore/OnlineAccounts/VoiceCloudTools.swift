@@ -57,6 +57,9 @@ extension VoiceToolReply {
                 return "failed: \(account) or Doddy's usage limit says to wait. Tell the user to try again later. Nothing was done."
             case "provider_timeout", "provider_unavailable":
                 return isWrite || receipt?.status == .outcomeUnknown ? maybeDone : "failed: \(account) couldn't be reached. Nothing was changed."
+            case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask:
+                // Refused before any card (ADR-303): Todoist doesn't have that open task.
+                return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
             case "malformed_provider_result":
                 return isWrite ? maybeDone : "failed: \(account) sent an answer Doddy couldn't read, so there is nothing to report."
             default:
