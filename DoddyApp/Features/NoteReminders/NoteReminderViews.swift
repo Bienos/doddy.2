@@ -124,6 +124,7 @@ struct NoteReminderReceiptView: View {
     var atTimeInstead: (() -> Void)? = nil
 
     @Environment(\.openURL) private var openURL
+    @Environment(NoteReminderStore.self) private var reminders
 
     /// "Reminder set for …", "Reminder set: every Monday at 20:00.", or after a snooze "Moved to …".
     static func headline(_ reminder: MemoryReminder) -> String {
@@ -153,13 +154,28 @@ struct NoteReminderReceiptView: View {
             case .inAppOnly(let reminder):
                 Label("Saved in Doddy for \(ReminderFormat.short(reminder)).", systemImage: "bell.slash")
                     .font(.headline)
-                Text("Notifications are off for Doddy, so your iPhone won't alert you. When it's due, the note waits at the top of Home.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.secondaryText)
-                Button("Open Settings") {
-                    if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
+                // Said from iOS's answer now, not assumed (review F9): after "Not now" iOS was never
+                // asked, so notifications aren't "off".
+                switch reminders.authorization {
+                case .notDetermined:
+                    Text("Doddy hasn't asked to send notifications yet, so your iPhone won't alert you. When it's due, the note waits at the top of Home.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                    Button("Allow notifications") { Task { await reminders.requestAuthorization() } }
+                        .frame(minHeight: 44)
+                case .denied:
+                    Text("Notifications are off for Doddy, so your iPhone won't alert you. When it's due, the note waits at the top of Home.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
+                    }
+                    .frame(minHeight: 44)
+                case .allowed:
+                    Text("Notifications are allowed now, so Doddy has asked iOS to alert you when it's due.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
                 }
-                .frame(minHeight: 44)
             case .needsSettings(let message):
                 Label(message, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(Theme.error)
