@@ -2883,6 +2883,17 @@
         }
       }
     },
+    "Doddy starts counting again from your next ticks. Your lists don't change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zacznie liczyć od nowa od kolejnych odhaczeń. Twoje listy się nie zmienią."
+          }
+        }
+      }
+    },
     "Doddy stops reading your calendar right away and asks Google to remove its access. Memories you saved yourself stay.": {
       "extractionState": "manual",
       "localizations": {
@@ -3884,6 +3895,28 @@
         }
       }
     },
+    "Forget what I usually get here": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapomnij, co zwykle tu kupuję"
+          }
+        }
+      }
+    },
+    "Forget what you usually get on this list?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapomnieć, co zwykle trafia na tę listę?"
+          }
+        }
+      }
+    },
     "Forget your name and preferences?": {
       "extractionState": "manual",
       "localizations": {
@@ -3935,6 +3968,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Z Google Keep: w Google Takeout wyeksportuj Keep. W aplikacji Pliki stuknij plik .zip, aby go rozpakować, otwórz folder Keep i wybierz pliki .json. Możesz też wybrać pliki .txt i .md."
+          }
+        }
+      }
+    },
+    "From what you ticked off on lists called this before. It stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na podstawie tego, co było odhaczane na listach o tej nazwie. Zostaje na tym iPhonie."
           }
         }
       }
@@ -4331,6 +4375,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zamiar"
+          }
+        }
+      }
+    },
+    "It couldn't be forgotten. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zapomnieć. Spróbuj ponownie."
           }
         }
       }
@@ -11001,6 +11056,28 @@
         }
       }
     },
+    "The usual": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co zwykle"
+          }
+        }
+      }
+    },
+    "The usual…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co zwykle…"
+          }
+        }
+      }
+    },
     "The voice Doddy was given": {
       "extractionState": "manual",
       "localizations": {
@@ -13472,6 +13549,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "ktoś inny"
+          }
+        }
+      }
+    },
+    "ticked %lld times": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "odhaczone %lld razy"
           }
         }
       }

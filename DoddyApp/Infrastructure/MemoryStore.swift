@@ -55,6 +55,8 @@ final class MemoryStore {
             memories = try await environment.memoryRepository.list(limit: nil).filter { $0.category != .list }
             corrections = try await environment.memoryRepository.allCorrections()
             lists = (try? await environment.listRepository.lists()) ?? []
+            // "The usual" (ADR-343): ticks are counted once, on this iPhone.
+            UsualItemsStore.record(lists)
             if let linked = try? await environment.photoRepository.allPhotos() {
                 photos = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
                 // Once per launch, and only after the links were read: files left behind by a

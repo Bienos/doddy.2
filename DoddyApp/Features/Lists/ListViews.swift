@@ -105,6 +105,8 @@ struct ListDetailView: View {
     @State private var newName = ""
     @State private var confirmDelete = false
     @State private var showReminder = false
+    /// The usual (ADR-343).
+    @State private var usualFor: DoddyList?
     @State private var confirmShopping = false
     @FocusState private var addFocused: Bool
     private let shopping = ShoppingModeController.shared
@@ -261,6 +263,7 @@ struct ListDetailView: View {
             Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
         }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
+        .sheet(item: $usualFor) { UsualItemsSheet(list: $0) }
         .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
             Button("Share") { Task { await startSharing(list) } }
             Button("Cancel", role: .cancel) {}
@@ -383,6 +386,9 @@ struct ListDetailView: View {
                     Button { confirmSharing = true } label: { Label("Share with people…", systemImage: "person.2") }
                 }
             }
+            // The usual (ADR-343): items ticked at least twice on lists with this name.
+            Button { usualFor = list } label: { Label("The usual…", systemImage: "arrow.clockwise.circle") }
+                .disabled(UsualItemsStore.current().suggestions(for: list).isEmpty)
             // List templates (ADR-334): the items as written, ticks not kept.
             Button { saveTemplate(list) } label: { Label("Save as template", systemImage: "square.on.square") }
                 .disabled(list.items.isEmpty)

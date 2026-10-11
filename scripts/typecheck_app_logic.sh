@@ -90,6 +90,7 @@ files=(
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
   DoddyApp/Features/Parking/ParkingStore.swift
   DoddyApp/Features/Lists/ListTemplateStore.swift
+  DoddyApp/Features/Lists/UsualItemsStore.swift
   DoddyApp/Features/Warranties/WarrantyStore.swift
   Shared/Widgets/WidgetSnapshotFile.swift
   Shared/Share/ShareInboxFile.swift
