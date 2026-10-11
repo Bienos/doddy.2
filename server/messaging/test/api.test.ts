@@ -3,7 +3,7 @@ import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import type { Db } from "../src/db.js";
 import { TextCipher } from "../src/crypto.js";
-import { dispatchDue } from "../src/outbox.js";
+import { dispatchDue, MAX_ATTEMPTS } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
 import { BASE_URL, dbSkip, FakePush, FakeSms, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
 
@@ -25,8 +25,12 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     await db?.end();
   });
 
+  // Each test account comes from its own address, so the per-IP signup limit (10/hour) is
+  // exercised by its own test below rather than by how many tests this suite has.
+  let accounts = 0;
   async function newAccount() {
-    const r = await app.inject({ method: "POST", url: "/v1/accounts" });
+    accounts++;
+    const r = await app.inject({ method: "POST", url: "/v1/accounts", remoteAddress: `10.77.${accounts >> 8}.${accounts & 255}` });
     assert.equal(r.statusCode, 201);
     const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
     return { accountId, headers: { authorization: `Bearer ${deviceToken}` } };
@@ -186,6 +190,33 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     assert.ok(!p.sent.some((s) => s.target.deviceToken === "fa".repeat(32)));
     const { rows } = await db.query("SELECT state, error_code FROM outbound_messages WHERE id = $1", [id]);
     assert.deepEqual(rows[0], { state: "failed", error_code: "body_unreadable" });
+  });
+
+  test("transient refusals stop after MAX_ATTEMPTS and end as failed", async () => {
+    const a = await newAccount();
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "ab12".repeat(16), environment: "sandbox" });
+    const id = (await call("POST", "/v1/updates", a.headers, { text: "retry", channels: ["push"], idempotencyKey: "retry" })).json().messages[0].id;
+    await db.query("UPDATE outbound_messages SET attempts = $2 - 1, send_at = now() - interval '3 hours' WHERE id = $1", [id, MAX_ATTEMPTS]);
+    const p = new FakePush();
+    p.next = [{ kind: "transient", code: "apns_503" }];
+    await dispatchDue(db, { push: p, cipher: testCipher });
+    const { rows } = await db.query("SELECT state, attempts, error_code FROM outbound_messages WHERE id = $1", [id]);
+    assert.deepEqual(rows[0], { state: "failed", attempts: MAX_ATTEMPTS, error_code: "apns_503" });
+  });
+
+  test("a number proven by another account takes its queued texts with it", async () => {
+    const old = await newAccount();
+    const phone = "+48500100999";
+    await call("POST", "/v1/phone/verification/check", old.headers, { phone, code: "123456" });
+    await call("PUT", "/v1/phone/sms-consent", old.headers, { consent: true, textVersion: "sms-v1" });
+    const q = await call("POST", "/v1/updates", old.headers, { text: "for old owner", channels: ["sms"], idempotencyKey: "moved",
+      sendAt: new Date(Date.now() + 3_600_000).toISOString() });
+    assert.equal(q.statusCode, 202);
+    const fresh = await newAccount();
+    assert.equal((await call("POST", "/v1/phone/verification/check", fresh.headers, { phone, code: "123456" })).statusCode, 200);
+    const { rows } = await db.query("SELECT state, error_code FROM outbound_messages WHERE id = $1", [q.json().messages[0].id]);
+    assert.deepEqual(rows[0], { state: "cancelled", error_code: "sms_not_enabled" });
+    assert.equal((await call("GET", "/v1/phone", fresh.headers)).json().smsEnabled, false, "new owner starts without consent");
   });
 
   test("Twilio status callback records delivery", async () => {
