@@ -67,7 +67,7 @@ The live voice agent has both new tools, the new `change_reminder`/`change_calen
 | A change is said to happen only when verified | **Reminders:** rename, repeat and notes are read back after the save, with a stale check on notes before it. **Lists:** memo to-dos report what the list read back. **Share:** the inbox is read back after the write. **Private set:** read back after each change. | `ReminderRenameRepeatTests`, `EventReplaceNotesTests`, `ShareInboxTests`, `PrivateNotesTests` | EventKit, the App Group and UserDefaults are not run on a device. |
 | Never claim memory saved without storage | The share extension saves nothing; Save in the app does. Memo to-dos say "adding them doesn't save the note". | `ShareInboxTests` | |
 | Tool, web, email and document content is data | The Notion page text is cut, cleaned and framed as information. The agent prompt says so for `read_notion_page`. | backend Notion tests | The model's behaviour isn't testable here. |
-| Privacy | **Private notes:** filtered out of the agent, Siri, Ask Doddy, widgets, the watch, the call copy and the look-back. **Parking widget:** the snapshot has no position. **Share and Focus:** nothing leaves the iPhone. The privacy paragraph (EN/PL) and data-flow rows are updated. | `PrivateNotesTests`, `WidgetSnapshotTests` | **"Private" is not encryption.** The note's words are still in Doddy's database and in a backup file, which the toggle text doesn't say is excluded. Don't describe it as more than hidden and kept from those places. |
+| Privacy | **Private notes:** filtered out of the agent, Siri, Ask Doddy, widgets, the watch, the call copy and the look-back. **Parking widget:** the snapshot has no position. **Share and Focus:** nothing leaves the iPhone. The privacy paragraph (EN/PL) and data-flow rows are updated. | `PrivateNotesTests`, `WidgetSnapshotTests` | **"Private" is not encryption.** The note's words are still in Doddy's database (iOS file protection) and in the passphrase-encrypted backup file, as the owner chose. Don't describe it as more than hidden and kept from those places. |
 | No proprietary assets or fonts | None added. The widget uses SF Symbols. | | |
 | Character | No new Doddy art. | | |
 
@@ -81,9 +81,9 @@ Don't say "implemented", "tested" or "privacy guaranteed" about any of this. It 
 
 ## Decisions needed from the owner
 
-1. **CarPlay:** is a spoken "yes" enough to approve a local, undoable note or list item in the car? Send the entitlement request (`CARPLAY_PLAN.md`)?
-2. **Private notes in backups:** keep them in the encrypted backup file (today's behaviour), or leave them out?
-3. **Share extension:** turn on `DODDY_SHARE_ENTITLEMENTS` with the App Group for the next device build?
+1. **CarPlay:** answered 2026-10-11, **yes**, a spoken "yes" is enough for a local, undoable note or list item. Still to do: the owner sends the entitlement request (`CARPLAY_PLAN.md`).
+2. **Private notes in backups:** answered 2026-10-11, **keep them, encrypted.** The backup file is already sealed with the passphrase (ADR-222), so nothing changed.
+3. **Share extension:** answered 2026-10-11, **on.** The App Group is now the default for the app, widgets, share extension and watch.
 
 ## Next recommended step
 

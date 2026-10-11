@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Quick start (ADR-319): once, after the introduction. The notifications start ticked (the evening
+/// Quick start (ADR-324): once, after the introduction. The notifications start ticked (the evening
 /// wrap-up only with Reminders connected) and the profile switch doesn't; nothing changes until "Turn these on", and every result shown
 /// afterwards is what iOS or the store read back.
 struct QuickStartView: View {

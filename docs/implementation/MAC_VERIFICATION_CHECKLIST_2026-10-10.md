@@ -281,7 +281,18 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Y11 | A list's menu → Share as a picture → Messages and Save Image | A cream card with the list name, open items (15 at most, then "and N more") and Doddy waving. Hide Doddy's pictures: no Doddy |
 | Y12 | Ask Siri "Ask Doddy what I saved" for a saved word, a missing word, and with readback off | Siri's panel shows Doddy listening, shrugging, shushing; the spoken answer is unchanged |
 
-## 4j. Quick start (ADR-319, `QUICK_START_STATUS.md`)
+## 4j. Alarm, shopping, notifications, Settings, watch app (ADR-323, `DODDY_MOVES_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| Z1 | iOS 26: set a Doddy alarm a minute ahead, snooze it, lock the iPhone | Cream card: Doddy stretching, "Snoozed" and the countdown; island: the same pose |
+| Z2 | Start shopping mode on a list; lock the iPhone; long-press the island | Doddy on tiptoe on the cream card and on the island; ticking items still works |
+| Z3 | Schedule the morning check-in, evening wrap-up, weekly look-back and a birthday a minute ahead; then with Hide Doddy's pictures on | Each shows its picture (stretch, cross-legged, cross-legged, wave), same words; none with Hide on |
+| Z4 | Launch with the opening off; switch tabs and back; later return after the replay time so the opening plays | Breaths, then he sits down on his box and stays there when you come back to Home; the opening lands on the usual sitting picture and he's off the box |
+| Z5 | Settings: turn Pause all connections on and off | The crouching Doddy beside the footer only while paused |
+| Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
+| Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
+
+## 4k. Quick start (ADR-324, `QUICK_START_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | Q1 | Fresh install; skip the introduction | Quick start with three rows (08:00 weekdays, 21:00, Sunday 18:00 in the iPhone's clock style): morning and tidy-up ticked, the wrap-up **not** ticked (Reminders is off on a fresh install); no profile row. **Not now** goes to Home; Settings shows all three still off |

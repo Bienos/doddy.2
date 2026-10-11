@@ -1,7 +1,7 @@
 import Foundation
 
 // The weekly look-back (ADR-306). Off by default. Once a week, on the day and at the time the
-// user picks (Sunday 19:00 to start, an hour after the tidy-up; ADR-319), a notification says only "Your week with Doddy". Its screen
+// user picks (Sunday 19:00 to start, an hour after the tidy-up; ADR-324), a notification says only "Your week with Doddy". Its screen
 // is built on this iPhone from what is already here: the notes saved in the last seven days, list
 // items ticked off, changes Doddy made and checked ("What Doddy did", done only), and, if Calendar
 // or Reminders are on in Connections, what is coming up in the next seven days. Counts and the

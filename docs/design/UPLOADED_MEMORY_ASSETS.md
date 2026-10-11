@@ -122,3 +122,19 @@ jumps between frames. Nothing is redrawn or recoloured.
 The notification picture, the list share card and Siri's panel use image sets already listed above
 (`WholeDoddy_reaching_high`, `_wave`, and the poses). Not used: the foreground layers (024, 027,
 030, 033, 035), which sit below the part of each picture the strips show.
+
+## Alarm, shopping, notifications, Settings and the watch app (ADR-323, 11 October 2026)
+
+Owner: "do all except 8 and 9". Same pack; `build_imagesets.py` (with the strips folder) rebuilds these
+too, and the earlier sets come out byte-identical.
+
+| Image set(s) | Pack file | SHA-256 of the original | What was done |
+| --- | --- | --- | --- |
+| `DoddyMotion_sit_1` … `_5` | 017_doddy_sit_v01.png | 3dfd164d649d4ee62bb68a3578b3f483d773c540f14d00200f727918fd7d7ca6 | `cut_frames.py --shared --rows-max-y 582` (above the ground line); Lanczos to 200×300 / 300×450 |
+| `DoddyMotion_turn_1`, `_2` | 018_doddy_turn_v01.png | abbcaf3b2f9be352bdf9b3e4accffd1b2121486ab83cd544342198be2018bed3 | as `_3` (ADR-313) |
+| `WholeDoddy_sneaky_crouch` (app, widgets) | 01-transparent-poses/doddy_sneaky_crouch_v02.png | 06a0fa781670c90896309307a045ab658bcb78be22cd00443fe505cf755b55b3 | Lanczos to 200×300 and 300×450 |
+| `WatchDoddy_crosslegged` (watch app) | 01-transparent-poses/doddy_crosslegged_v02.png | f9496932f6944096c626301c00cc49070ea4fc71cbbf6516d27807c12ca58db6 | Lanczos to 120×180 (@2x) |
+| `WatchDoddy_fistpump` (watch app) | 01-transparent-poses/doddy_fistpump_v02.png | c7a1fd158652d6420c67ce51d2e60e6b4808392fc131c108c7e348acf80a0561 | as above |
+
+The alarm, shopping and notification pictures use image sets already listed (`WholeDoddy_yawn_stretch`,
+`_tiptoe`, `_crosslegged`, `_wave`). In the pack's sit strip Doddy sits on a cardboard box.

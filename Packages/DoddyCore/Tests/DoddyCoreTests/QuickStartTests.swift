@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Quick start (ADR-319): what is pre-ticked, the owner's times, and what is never changed.
+/// Quick start (ADR-324): what is pre-ticked, the owner's times, and what is never changed.
 final class QuickStartTests: XCTestCase {
     func testNotificationsArePreTickedButSharingTheProfileIsNot() {
         let suggested = QuickStartChoices.suggested(remindersConnected: true)
