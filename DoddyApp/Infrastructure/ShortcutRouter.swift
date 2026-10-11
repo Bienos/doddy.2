@@ -45,13 +45,6 @@ final class ShortcutRouter {
         self.setup = setup
     }
 
-    /// The guided Back Tap test is waiting for the shortcut: it needs the app in front to take
-    /// the receipt, so the island-only start must not claim the tap.
-    var isBackTapTestActive: Bool {
-        if case .testing = setup.phase { return true }
-        return false
-    }
-
     /// Called from `TalkToDoddyIntent.perform()`. If a tap test is active the invocation is its
     /// receipt and the setup sheet takes over; otherwise the voice conversation opens.
     func talkToDoddyInvoked(at now: Date = .now) {
