@@ -26,14 +26,16 @@ export const DEFAULT_INSTALL_BUDGET_USD = 0.25;
 
 /**
  * Shared rate-limit/budget store (ADR-124). Upstash names first, Vercel KV names as a fallback.
- * Half a configuration is an error, never a silent fallback to per-instance memory.
+ * Half a configuration is an error, never a silent fallback to per-instance memory. A Vercel
+ * production deployment always requires the store: per-instance budgets there would multiply the
+ * daily cap by the number of warm instances (review 2026-10-11, finding 1).
  * @param {Record<string, string | undefined>} env
  * @returns {{store: {url: string, token: string} | null, problems: string[], required: boolean}}
  */
 export function sharedStoreEnv(env) {
   const url = (env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL || '').trim();
   const token = (env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN || '').trim();
-  const required = (env.REQUIRE_SHARED_LIMITS ?? '').trim() === '1';
+  const required = (env.REQUIRE_SHARED_LIMITS ?? '').trim() === '1' || (env.VERCEL_ENV ?? '').trim() === 'production';
   const problems = [];
   if (url && !/^https:\/\/[^\s/]+/.test(url)) problems.push('UPSTASH_REDIS_REST_URL');
   if (url && !token) problems.push('UPSTASH_REDIS_REST_TOKEN');

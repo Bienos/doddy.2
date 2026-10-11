@@ -306,6 +306,14 @@ test('config: REQUIRE_SHARED_LIMITS=1 without a store -> every endpoint answers 
   assert.equal((await handleRegister(registerRequest(), deps)).status, 503);
 });
 
+test('config: a Vercel production deployment without a store refuses to serve (no per-instance budgets)', () => {
+  const loaded = loadConfig({ ...ENV, VERCEL_ENV: 'production' });
+  assert.equal(loaded.ok, false);
+  assert.deepEqual(!loaded.ok && loaded.missing, ['UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN']);
+  assert.equal(loadConfig({ ...ENV, VERCEL_ENV: 'preview' }).ok, true, 'preview and local dev keep memory limits');
+  assert.equal(loadConfig({ ...SHARED_ENV, VERCEL_ENV: 'production' }).ok, true);
+});
+
 test('config: half a store configuration, a non-https URL or a bad budget is refused, never a silent fallback', () => {
   const cases = [
     [{ UPSTASH_REDIS_REST_URL: STORE_URL }, ['UPSTASH_REDIS_REST_TOKEN']],
