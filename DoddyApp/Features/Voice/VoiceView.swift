@@ -70,6 +70,11 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
+            // "Hey Doddy" already started this conversation (ADR-254): show it, don't start another.
+            if self.controller == nil, let started = WakeWordListener.shared.takeConversation() {
+                self.controller = started
+                return
+            }
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
             await controller.start(

@@ -4,7 +4,9 @@ import SwiftUI
 import WidgetKit
 
 /// Dynamic Island and Lock Screen for a running conversation: Doddy, what he is doing right now
-/// (from real SDK events), whether he is live, how long you have been talking, and Mute / End.
+/// (from real SDK events), how long you have been talking, and Mute / End.
+/// With "Hey Doddy" on (ADR-254) the same activity first says the iPhone is listening for the
+/// wake word, with only Stop listening; after the wake word it greets the user ("Hey Pat, what's up?").
 /// Tapping it opens the app (e.g. to Save or Don't save a proposed note).
 /// When the app has not refreshed the activity for `VoiceLiveActivity.staleAfter` (iOS ended
 /// it in the background), iOS marks it stale and this view says so instead of "Listening".
@@ -16,13 +18,14 @@ import WidgetKit
 struct DoddyVoiceLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DoddyVoiceAttributes.self) { context in
-            LockScreenView(shown: Shown(context), startedAt: context.attributes.startedAt)
+            LockScreenView(shown: Shown(context), startedAt: context.state.conversationStart(activityStartedAt: context.attributes.startedAt))
                 .activityBackgroundTint(Palette.card)
                 .activitySystemActionForegroundColor(Palette.ink)
         } dynamicIsland: { context in
             let shown = Shown(context)
             let scene = context.state.islandScene(isStale: context.isStale)
-            let startedAt = context.attributes.startedAt
+            // After "Hey Doddy" (ADR-254) the timer counts from the conversation, not the listening.
+            let startedAt = context.state.conversationStart(activityStartedAt: context.attributes.startedAt)
             // The owner's V4 boards (design/dynamic-island-v4): the style picked in Settings
             // (ADR-239), or Thought Pocket / Step Stones / Reminder Knot for a moment (ADR-240).
             // Label and time beside the camera; drawing, status, buttons and sign below it.
@@ -64,7 +67,11 @@ private struct Shown {
         isStale = context.isStale && !context.state.isEnded
     }
 
-    var title: String { isStale ? "Lost Doddy — open the app" : state.title }
+    var title: String {
+        guard isStale else { return state.title }
+        // A stale "Hey Doddy" activity: iOS ended the app, so nothing is listening any more.
+        return state.isWakeMode ? "Not listening — open Doddy" : "Lost Doddy — open the app"
+    }
     var detail: String? { isStale ? nil : state.detail }
     /// Orange only while Doddy is live and can hear you; never when muted, stale or ended.
     var showsLiveCue: Bool { !isStale && state.isLiveCue }
@@ -95,6 +102,8 @@ private struct DoddyArt: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var assetName: String {
+        // Waiting for "Hey Doddy" is not a conversation: Doddy sits until he is called.
+        if shown.state.isWakeMode { return "UploadedDoddy_Sitting" }
         guard shown.state.isEnded else { return "UploadedDoddy_Listening" }
         return shown.state.savedCount > 0 ? "UploadedDoddy_Kept" : "UploadedDoddy_Sitting"
     }
@@ -122,14 +131,16 @@ private struct ElapsedTime: View {
 
 /// Mute and Stop on the island, as the boards' pills. Stop ends the conversation (End intent).
 /// The boards' Pause, Open and Cancel are not used: a conversation can't be paused, and
-/// tapping the island already opens Doddy.
+/// tapping the island already opens Doddy. While "Hey Doddy" waits (ADR-254) there is only
+/// Stop listening, which turns it off.
 private struct IslandControls: View {
     let shown: Shown
 
     var body: some View {
         HStack(spacing: 6) {
             // Mute needs the conversation's process; a stale island has none to talk to.
-            if !shown.isStale, !shown.state.isEnded {
+            // "Hey Doddy" listening has nothing to mute.
+            if !shown.isStale, !shown.state.isEnded, !shown.state.isWakeMode {
                 Button(intent: ToggleDoddyMuteIntent()) {
                     // While muted, Unmute is the cream pill so getting Doddy back is one obvious tap.
                     IslandPillLabel(title: shown.state.isMuted ? "Unmute" : "Mute",
@@ -139,7 +150,7 @@ private struct IslandControls: View {
                 .buttonStyle(.plain)
             }
             Button(intent: EndDoddyConversationIntent()) {
-                IslandPillLabel(title: shown.isStale ? "Dismiss" : "Stop",
+                IslandPillLabel(title: shown.isStale ? "Dismiss" : (shown.state.isWakeMode ? "Stop listening" : "Stop"),
                                 systemImage: shown.isStale ? "xmark" : "stop.fill")
             }
             .buttonStyle(.plain)
@@ -152,18 +163,29 @@ private struct Controls: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            // Mute needs the conversation's process; a stale activity has none to talk to.
-            if !shown.isStale {
+            // Mute needs the conversation's process; a stale island has none to talk to.
+            // "Hey Doddy" listening has nothing to mute: Stop listening turns it off.
+            if !shown.isStale && !shown.state.isWakeMode {
                 muteButton
             }
             Button(intent: EndDoddyConversationIntent()) {
-                Label(shown.isStale ? "Dismiss" : "End", systemImage: shown.isStale ? "xmark" : "phone.down.fill")
+                Label(endTitle, systemImage: endSymbol)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .tint(Palette.error)
         }
         .font(.callout.weight(.semibold))
+    }
+
+    private var endTitle: String {
+        if shown.isStale { return "Dismiss" }
+        return shown.state.isWakeMode ? "Stop listening" : "End"
+    }
+
+    private var endSymbol: String {
+        if shown.isStale { return "xmark" }
+        return shown.state.isWakeMode ? "xmark.circle" : "phone.down.fill"
     }
 
     /// While muted, Unmute is the main button, so getting Doddy back is one obvious tap.
@@ -196,7 +218,7 @@ private struct LockScreenView: View {
             HStack(spacing: 12) {
                 DoddyArt(shown: shown, size: 52)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(shown.state.isEnded ? shown.title : "Talking to Doddy")
+                    Text(shown.state.isEnded ? shown.title : (shown.state.isWakeMode ? "Hey Doddy is on" : "Talking to Doddy"))
                         .font(.headline)
                         .foregroundStyle(Palette.ink)
                     statusLine
@@ -251,6 +273,14 @@ private struct LockScreenView: View {
             Text(shown.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Palette.error)
+        } else if shown.state.isWakeMode {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(shown.title)
+                    .foregroundStyle(Palette.accentText)
+                Text(shown.detail ?? "")
+                    .foregroundStyle(Palette.secondary)
+            }
+            .font(.subheadline)
         } else if let detail = shown.detail {
             Text("\(shown.title) · \(detail)")
                 .font(.subheadline)

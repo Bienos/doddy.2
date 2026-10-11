@@ -10,6 +10,7 @@
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
 #    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
+#  - the "Hey Doddy" wake-word engine (Picovoice Porcupine, ADR-254) only in WakeWordListener.swift,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - on-device meaning search (NaturalLanguage embeddings) only inside DoddyApp/Features/Meaning (ADR-227);
@@ -70,6 +71,10 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
+# isn't kept or sent" stays checkable.
+wake_file=DoddyApp/Features/Voice/WakeWordListener.swift
+wake_only='import Porcupine|PorcupineManager|Porcupine\(|import ios_voice_processor|VoiceProcessor\.instance'
 
 status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
@@ -80,6 +85,9 @@ if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | gre
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
+  echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
   echo "FAIL: ElevenLabs code outside $voice_dir." >&2; status=1

@@ -25,6 +25,8 @@ public struct DataFlowState: Equatable, Sendable {
     public var morningCheckInOn: Bool
     /// Siri may read saved notes aloud (ADR-248).
     public var siriReadsNotes: Bool
+    /// "Hey Doddy" listening is switched on (ADR-254).
+    public var heyDoddyOn: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -32,7 +34,7 @@ public struct DataFlowState: Equatable, Sendable {
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
-        siriReadsNotes: Bool = false
+        siriReadsNotes: Bool = false, heyDoddyOn: Bool = false
     ) {
         self.morningCheckInOn = morningCheckInOn
         self.rememberConversations = rememberConversations
@@ -47,6 +49,7 @@ public struct DataFlowState: Equatable, Sendable {
         self.pushOn = pushOn
         self.memoryCopyOn = memoryCopyOn
         self.siriReadsNotes = siriReadsNotes
+        self.heyDoddyOn = heyDoddyOn
     }
 }
 
@@ -137,6 +140,14 @@ public enum DataFlow {
                     ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
                     : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
             DataFlowRow(
+                id: "picovoice", destination: "Picovoice (the \"Hey Doddy\" detector)",
+                what: "Your Picovoice AccessKey, so Picovoice can check it and count its use against your plan. No sound: the wake word is detected on this iPhone.",
+                when: "When \"Hey Doddy\" listening starts.",
+                isActive: state.heyDoddyOn,
+                note: state.heyDoddyOn
+                    ? "After the wake word, the conversation goes to ElevenLabs exactly as if you had tapped Talk."
+                    : "\"Hey Doddy\" is off, so nothing goes there and the microphone isn't used for it."),
+            DataFlowRow(
                 id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
                 note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
@@ -156,6 +167,7 @@ public enum DataFlow {
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
+            "\"Hey Doddy\": what the microphone hears while it waits for the wake word is checked on this iPhone and not kept or sent.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }
