@@ -32,6 +32,8 @@ git checkout claude/hopeful-fermat-1a63x0
 brew install xcodegen node python
 xcodebuild -version            # record this
 make project                   # xcodegen generate --spec project.yml -> Doddy.xcodeproj
+make project-iphone            # iPhone/iPad without the watch app -> DoddyiPhone.xcodeproj (ADR-457)
+make project-mac               # Mac menu bar app and widget only  -> DoddyMac.xcodeproj
 scripts/ci.sh                  # everything, including xcodebuild test on the first iPhone simulator
 ```
 - To pick the simulator: `DODDY_DESTINATION="platform=iOS Simulator,name=iPhone 16" scripts/ci.sh`.
@@ -212,3 +214,4 @@ In order of risk:
   - the bundle's `if #unavailable(iOS 18.0)`: if `WidgetBundleBuilder` rejects it, use `if #available { … } else { … }` or a nested bundle;
   - `NSPanel` with `NSHostingView`;
   - `if #available(iOS 26.0, *)` inside `DeviceSupport.hasLiveActivities`.
+- **Per-platform projects (ADR-457):** `project-iphone.yml` uses XcodeGen `include:` and `dependencies:REPLACE`/`schemes:REPLACE`; `project-mac.yml` stands alone. Generated with XcodeGen 2.44.1 on Linux. Check that Xcode opens all three, and that `DoddyiPhone` builds without the watch app.

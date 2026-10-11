@@ -1,5 +1,8 @@
 # Consolidated DESIGN + ENGINEERING rules (read first)
 
+**Start here:** `STATUS.md`, then `docs/platforms/<platform>.md`. The platforms build from separate specs (`project.yml`, `project-iphone.yml`, `project-mac.yml`).
+
+
 This document accompanies `READ_ME_FIRST.md`. **The original agent rules follow below and remain applicable.**
 
 - Use `prompts/00_CLAUDE_MASTER_START.md` for the FIRST action only. New repo `Bienos/doddy.2`; old repo is strictly read-only.

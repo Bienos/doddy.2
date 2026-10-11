@@ -2,13 +2,16 @@
 # `Doddy.xcodeproj` is GENERATED from this file and is intentionally not committed:
 # no Xcode was available to open or build a generated project when M0 was authored.
 # Generate on a Mac with:  make project      (needs `brew install xcodegen`)
+# One project per platform (docs/platforms/README.md):
+#   project.yml         iPhone + iPad app, its extensions, and the Apple Watch app embedded in it
+#                       (what ships; schemes Doddy and DoddyWatch)        -> Doddy.xcodeproj
+#   project-iphone.yml  the same without the Watch app, for iPhone/iPad work -> DoddyiPhone.xcodeproj
+#   project-mac.yml     the Mac menu bar app and its widget, nothing else    -> DoddyMac.xcodeproj
 name: Doddy
 options:
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
-    # The Mac menu bar prototype (ADR-435).
-    macOS: "14.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
 packages:
@@ -55,12 +58,6 @@ settings:
     # Watch complications (ADR-262) read the snapshot from the watch's App Group (used by the
     # watch app and its widget extension).
     DODDY_WATCH_ENTITLEMENTS: Config/DoddyWatch.entitlements
-    # The Mac menu bar app and its desktop widget (ADR-435, ADR-439) share an App Group for the
-    # note count only; on by default, like the iPhone's (choose the team in Xcode). To build
-    # with "Sign to Run Locally" and no team, set these two to Config/DoddyMac.entitlements and
-    # Config/DoddyMacWidgets.entitlements: the widget then shows no count.
-    DODDY_MAC_ENTITLEMENTS: Config/DoddyMac-AppGroup.entitlements
-    DODDY_MAC_WIDGET_ENTITLEMENTS: Config/DoddyMacWidgets-AppGroup.entitlements
     # Shared lists through iCloud (ADR-263), off by default (needs a paid team with iCloud). To
     # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
     # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or
@@ -73,6 +70,8 @@ targets:
     platform: iOS
     sources:
       - path: DoddyApp
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
       - path: Shared
       # Doddy's voice spec, read by the OpenAI test voice (ADR-265). The same files the live
       # ElevenLabs agent is synced from, so both providers get the same prompt and tools.
@@ -188,6 +187,8 @@ targets:
     platform: watchOS
     sources:
       - path: DoddyWatch
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
       - path: Shared/Widgets/WidgetSnapshotFile.swift
     dependencies:
       # Watch face complications and the Smart Stack (ADR-262), embedded in the watch app.
@@ -220,6 +221,8 @@ targets:
     platform: watchOS
     sources:
       - path: DoddyWatchWidgets
+        # Agent notes for this folder, not app content.
+        excludes: ["CLAUDE.md"]
       - path: Shared/Widgets/WidgetSnapshotFile.swift
     dependencies:
       - package: DoddyCore
@@ -235,60 +238,6 @@ targets:
         INFOPLIST_FILE: Config/DoddyWatchWidgets-Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
         TARGETED_DEVICE_FAMILY: "4"
-        SKIP_INSTALL: YES
-  DoddyMac:
-    # Doddy in the Mac menu bar (ADR-435), the first Mac prototype from the owner's Watch, iPad
-    # and Mac review. Type a note, Save or Cancel; saved in its own SQLite database on that Mac
-    # (sandbox container), read back before "Saved". No network, no microphone, no sync with the
-    # iPhone. Not embedded in or needed by the iPhone app; build it with the DoddyMac scheme.
-    type: application
-    platform: macOS
-    sources:
-      - path: DoddyMac
-      - path: DoddyMacWidgets/MacGroupFolder.swift
-    dependencies:
-      # The desktop widget with the note count (ADR-439), embedded in the app.
-      - target: DoddyMacWidgets
-      - package: DoddyCore
-        product: DoddyCore
-      - package: DoddyCore
-        product: DoddyPersistence
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac
-        PRODUCT_NAME: Doddy
-        CODE_SIGN_ENTITLEMENTS: $(DODDY_MAC_ENTITLEMENTS)
-        INFOPLIST_FILE: Config/DoddyMac-Info.plist
-        ENABLE_HARDENED_RUNTIME: YES
-        MARKETING_VERSION: "0.0.1"
-        CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Doddy
-        # Menu bar only: no Dock icon, no main window.
-        INFOPLIST_KEY_LSUIElement: YES
-        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
-  DoddyMacWidgets:
-    # The Mac desktop widget (ADR-439): how many notes are saved on that Mac, from the count file
-    # the menu bar app writes in their App Group. A number and a time, never a note's words. No
-    # database, no network.
-    type: app-extension
-    platform: macOS
-    sources:
-      - path: DoddyMacWidgets
-    dependencies:
-      - package: DoddyCore
-        product: DoddyCore
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac.widgets
-        PRODUCT_NAME: DoddyMacWidgets
-        CODE_SIGN_ENTITLEMENTS: $(DODDY_MAC_WIDGET_ENTITLEMENTS)
-        ENABLE_HARDENED_RUNTIME: YES
-        MARKETING_VERSION: "0.0.1"
-        CURRENT_PROJECT_VERSION: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_FILE: Config/DoddyMacWidgets-Info.plist
-        INFOPLIST_KEY_CFBundleDisplayName: Doddy
         SKIP_INSTALL: YES
   DoddyTests:
     type: bundle.unit-test
@@ -325,7 +274,9 @@ schemes:
       targets:
         - DoddyTests
         - DoddyUITests
-  DoddyMac:
+  # The Apple Watch app on its own (no iPhone app build), for quick watch-only compiles.
+  # It still needs the iPhone app to run: it only shows what the iPhone sends (ADR-232).
+  DoddyWatch:
     build:
       targets:
-        DoddyMac: all
+        DoddyWatch: all

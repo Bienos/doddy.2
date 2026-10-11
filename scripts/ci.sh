@@ -29,6 +29,11 @@ run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
 run_step "Phone agent spec" python3 -I scripts/voice_agent_spec.py check --agent phone
 run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Polish string catalog up to date" python3 -I tools/build_strings_catalog.py --check
+if python3 -I -c "import yaml" 2>/dev/null; then
+  run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
+else
+  not_run "Per-platform Xcode specs in step" "PyYAML not installed (apt install python3-yaml or pip install pyyaml)"
+fi
 
 if command -v swift >/dev/null 2>&1; then
   swift --version

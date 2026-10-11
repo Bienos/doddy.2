@@ -1,5 +1,8 @@
 # Consolidated DESIGN + ENGINEERING rules (read first)
 
+**Start here:** read `STATUS.md` (one page: the known-good build, each platform's state, unmerged branches), then only the page for your platform in `docs/platforms/`. Don't read `DECISIONS.md` whole; search it for an ADR number.
+
+
 This document accompanies `READ_ME_FIRST.md`. **The original agent rules follow below and remain applicable.**
 
 - Use `prompts/00_CLAUDE_MASTER_START.md` for the FIRST action only. New repo `Bienos/doddy.2`; old repo is strictly read-only.

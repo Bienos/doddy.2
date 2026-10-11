@@ -24,7 +24,7 @@ Date: 2026-10-11. Source: the owner's deck "Doddy-Watch-iPad-Mac-Review" (Google
 ## Files
 - **App:** `DoddyMac/DoddyMacApp.swift`, `MacCaptureModel.swift`, `MacCaptureView.swift`; `DoddyMac/Localizable.xcstrings`, generated with 7 Polish lines.
 - **Core:** `Packages/DoddyCore/Sources/DoddyCore/QuickCapture.swift`; tests in `Packages/DoddyCore/Tests/DoddyPersistenceTests/QuickCaptureTests.swift`.
-- **Config:** `Config/DoddyMac.entitlements` (sandbox only). `project.yml`: macOS 14 deployment target, the `DoddyMac` target (bundle id `<app>.mac`), the `DoddyMac` scheme. It is not a dependency of the iPhone app.
+- **Config:** `Config/DoddyMac.entitlements` (sandbox only). `project-mac.yml` (its own project since ADR-457; it was `project.yml` before): macOS 14 deployment target, the `DoddyMac` target (bundle id `<app>.mac`), the `DoddyMac` scheme. It is not a dependency of the iPhone app.
 - **Guard and strings:** `scripts/check_forbidden_capabilities.sh`; `tools/build_strings_catalog.py` (Mac catalog); `l10n/pl.json`.
 
 ## Verified (Linux, Swift 6.1.2)
