@@ -14,6 +14,7 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
 
     private var state: DataFlowState {
         let defaults = UserDefaults.standard
@@ -32,7 +33,8 @@ struct DataFlowView: View {
             messagingServerSet: ServerConfig.baseURL() != nil,
             pushOn: pushOn,
             memoryCopyOn: memoryCopyOn,
-            morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey))
+            morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
+            voiceProvider: VoiceProvider(stored: voiceProvider))
     }
 
     var body: some View {

@@ -103,6 +103,12 @@ private struct ConversationLogRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(log.startedAt.formatted(date: .abbreviated, time: .shortened))
                 .font(.headline)
+            // Which voice ran it, for comparing the two in testing (ADR-235). Older logs have none.
+            if let voice = log.voiceProvider {
+                Text(verbatim: "Voice: \(VoiceProvider(stored: voice).shortName)")
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Text(preview)
                 .lineLimit(2)
                 .foregroundStyle(Theme.secondaryText)
@@ -130,6 +136,9 @@ private struct ConversationLogDetailView: View {
             Section {
                 StatusRow(title: "Started", value: log.startedAt.formatted(date: .abbreviated, time: .shortened))
                 StatusRow(title: "Ended", value: log.endedAt.formatted(date: .omitted, time: .shortened))
+                if let voice = log.voiceProvider {
+                    StatusRow(title: "Voice", value: VoiceProvider(stored: voice).shortName)
+                }
                 StatusRow(title: "Next conversation", value: isSentNextTime ? "Brought up" : "Not brought up")
             }
             Section("What was said") {

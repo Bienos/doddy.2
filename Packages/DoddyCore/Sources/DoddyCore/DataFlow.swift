@@ -23,15 +23,19 @@ public struct DataFlowState: Equatable, Sendable {
     public var memoryCopyOn: Bool
     /// The morning check-in is on (ADR-220).
     public var morningCheckInOn: Bool
+    /// Home's test switch for who runs the live voice (ADR-235).
+    public var voiceProvider: VoiceProvider
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
         connectionsOn: Set<VoiceConnection>, pauseAll: Bool, doddyServerSet: Bool,
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
-        morningCheckInOn: Bool = false
+        morningCheckInOn: Bool = false,
+        voiceProvider: VoiceProvider = .elevenLabs
     ) {
         self.morningCheckInOn = morningCheckInOn
+        self.voiceProvider = voiceProvider
         self.rememberConversations = rememberConversations
         self.shareProfileWithVoice = shareProfileWithVoice
         self.tokenServerSet = tokenServerSet
@@ -78,12 +82,26 @@ public enum DataFlow {
         var ask = "Typed questions"
         if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
 
+        let openAIVoice = state.voiceProvider == .openAIRealtime
         return [
             DataFlowRow(
                 id: "elevenlabs", destination: "ElevenLabs (Doddy's voice)",
                 what: sentence(voice),
-                when: "Only while a conversation is open.", isActive: true,
+                when: openAIVoice
+                    ? "Only while a conversation is open, and not while Home's test switch says OpenAI."
+                    : "Only while a conversation is open.",
+                isActive: true,
                 note: "ElevenLabs keeps a recording and transcript of each conversation."),
+            DataFlowRow(
+                id: "openaiVoice", destination: "OpenAI (test voice)",
+                what: sentence(voice),
+                when: "Only while a conversation is open and Home's test switch says OpenAI.",
+                isActive: openAIVoice && state.tokenServerSet,
+                note: !openAIVoice
+                    ? "Home's test switch says ElevenLabs, so nothing goes to OpenAI for voice."
+                    : state.tokenServerSet
+                        ? "Weather and Wikipedia don't work with this voice. How long OpenAI keeps the audio and transcript isn't verified in this build."
+                        : "OpenAI voice needs the token server, so nothing goes there yet."),
             DataFlowRow(
                 id: "translator", destination: "ElevenLabs (translator mode)",
                 what: "The other person's voice too, and everything said while translating. Opened from Translate on Home, your notes, conversations and profile aren't sent. Started in a conversation, what Doddy already had in it stays there, and he is told never to repeat it to them.",

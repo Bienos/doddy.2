@@ -19,6 +19,8 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
+    /// Testing only (ADR-235): who runs Doddy's voice, ElevenLabs (default) or OpenAI Realtime.
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
     private var router: ShortcutRouter { .shared }
 
     var body: some View {
@@ -70,6 +72,9 @@ struct HomeView: View {
                         .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
                         .accessibilityIdentifier("home.talk")
                         .modifier(SlideIn(shown: buttonsShown, delay: 0))
+
+                        voiceProviderSwitch
+                            .modifier(SlideIn(shown: buttonsShown, delay: 0))
 
                         Button { showAsk = true } label: {
                             HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
@@ -234,6 +239,28 @@ struct HomeView: View {
 
 /// A button's entrance after the opening: up from just below, with a little bounce, each a
 /// beat after the one before. Instant (never hidden) under Reduce Motion, where `shown` stays true.
+extension HomeView {
+    /// Testing only (ADR-235): switch Doddy's voice between ElevenLabs and OpenAI Realtime to
+    /// compare them. Same notes, lists, tools and cards either way; it takes effect when the next
+    /// conversation starts, and Settings › What leaves this iPhone follows it.
+    fileprivate var voiceProviderSwitch: some View {
+        let provider = VoiceProvider(stored: voiceProvider)
+        return VStack(alignment: .leading, spacing: 6) {
+            Picker("Test voice", selection: $voiceProvider) {
+                ForEach(VoiceProvider.allCases) { option in
+                    Text(verbatim: option.shortName).tag(option.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("home.voiceProvider")
+            Text(verbatim: provider == .openAIRealtime
+                ? "Testing: OpenAI runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
+                : "Testing: ElevenLabs runs your next conversation.")
+                .font(.caption2).foregroundStyle(Theme.secondaryText)
+        }
+    }
+}
+
 private struct SlideIn: ViewModifier {
     let shown: Bool
     let delay: Double

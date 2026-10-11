@@ -2,16 +2,33 @@ import DoddyCore
 import Foundation
 import Security
 
-/// Fetches a one-conversation ElevenLabs token from Doddy's token server. This is the app's only
+/// Fetches a one-conversation token from Doddy's token server. This is the app's only
 /// network request of its own: it sends the access code, nothing about the user or their notes.
+/// For the OpenAI test voice (ADR-235) the body also names the provider.
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
     let accessCode: String
 
+    /// ElevenLabs conversation token. Sends no body, exactly as before ADR-235.
     func fetchToken() async throws(VoiceTokenError) -> String {
+        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .elevenLabs))
+        return try VoiceTokenServer.token(status: status, body: data).get()
+    }
+
+    /// OpenAI Realtime client secret (testing only).
+    func fetchOpenAIGrant() async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
+        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime))
+        return try VoiceTokenServer.openAIGrant(status: status, body: data).get()
+    }
+
+    private func post(_ body: Data?) async throws(VoiceTokenError) -> (Int, Data) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
         request.setValue("Bearer \(accessCode)", forHTTPHeaderField: "Authorization")
+        if let body {
+            request.httpBody = body
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
         let data: Data
         let response: URLResponse
         do {
@@ -19,8 +36,7 @@ struct VoiceTokenClient: Sendable {
         } catch {
             throw .offline
         }
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        return try VoiceTokenServer.token(status: status, body: data).get()
+        return ((response as? HTTPURLResponse)?.statusCode ?? 0, data)
     }
 }
 
