@@ -1027,5 +1027,12 @@
  "Turn on Contacts in Settings, Connections, to see birthdays here.": "Włącz Kontakty w Ustawieniach, w sekcji Połączenia, aby zobaczyć tu urodziny.",
  "Set for %lld people. Checked.": "Ustawione dla osób: %lld. Sprawdzone.",
  "Notifications are off for Doddy, so birthdays can't be reminded. Turn them on in iOS Settings.": "Powiadomienia Doddy’ego są wyłączone, więc nie może przypominać o urodzinach. Włącz je w Ustawieniach iOS.",
- "The birthday reminders couldn't be set. Try again.": "Nie udało się ustawić przypomnień o urodzinach. Spróbuj jeszcze raz."
+ "The birthday reminders couldn't be set. Try again.": "Nie udało się ustawić przypomnień o urodzinach. Spróbuj jeszcze raz.",
+ "You're offline": "Jesteś offline",
+ "You're offline. Doddy's voice needs the internet.": "Jesteś offline. Głos Doddy’ego potrzebuje internetu.",
+ "Doddy's voice needs the internet. You can still write or dictate a note here; it's saved on this iPhone.": "Głos Doddy’ego potrzebuje internetu. Możesz tu nadal napisać lub podyktować notatkę; zostanie zapisana na tym iPhonie.",
+ "Saved on this iPhone: “%@”": "Zapisano na tym iPhonie: „%@”",
+ "Save note": "Zapisz notatkę",
+ "When you're back online, close this and talk to Doddy again.": "Gdy wrócisz do sieci, zamknij to i porozmawiaj z Doddym ponownie.",
+ "The note couldn't be confirmed. Check your notes.": "Nie udało się potwierdzić notatki. Sprawdź swoje notatki."
 }

@@ -278,6 +278,8 @@ final class VoiceSessionController {
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
+        isOffline = false
+        offlineSaved = nil
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
         ReadAloudController.shared.stop()
         startedByWakeWord = wakeGreeting != nil
@@ -404,7 +406,10 @@ final class VoiceSessionController {
             Task { @MainActor in await ref.value?.handle(call) }
         }
         config.onError = { error in
-            Task { @MainActor in ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
+            let offline = Offline.isNoConnection(error)
+            Task { @MainActor in
+                if offline { ref.value?.failOffline() } else { ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
+            }
         }
 
         config.onAgentReady = {
@@ -425,7 +430,9 @@ final class VoiceSessionController {
             do throws(VoiceTokenError) {
                 auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
             } catch {
-                if phase == .connecting { fail(VoiceTokenServer.message(for: error)) }
+                if phase == .connecting {
+                    if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
+                }
                 return
             }
         case .notSetUp(let reason):
@@ -447,6 +454,10 @@ final class VoiceSessionController {
             watchAudioInterruptions()
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
+            if Offline.isNoConnection(error) {
+                failOffline()
+                return
+            }
             // An agent that doesn't allow the voice overrides refuses the conversation.
             let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
                 ? ""
@@ -1238,6 +1249,32 @@ final class VoiceSessionController {
         }
         guard let index = lines.lastIndex(where: { !$0.fromUser && $0.text == original }) else { return }
         lines[index].text = corrected
+    }
+
+    // MARK: Offline (ADR-273)
+
+    /// The conversation couldn't start or stopped because there's no internet.
+    private(set) var isOffline = false
+    /// The note saved while offline, as read back; shown on the offline card.
+    private(set) var offlineSaved: String?
+
+    private func failOffline() {
+        isOffline = true
+        fail(NSLocalizedString("You're offline. Doddy's voice needs the internet.", comment: ""))
+    }
+
+    /// Saves a note written or dictated while offline, on this iPhone, read back by the store.
+    /// Returns what went wrong, or nil.
+    func saveOfflineNote(_ text: String) async -> String? {
+        do {
+            try MemoryTextValidator.validate(text)
+            let record = try await store.save(text: text, category: .other, source: .explicitText)
+            guard store.record(id: record.id) != nil else { return NSLocalizedString("The note couldn't be confirmed. Check your notes.", comment: "") }
+            offlineSaved = record.currentText
+            return nil
+        } catch {
+            return UserFacingError.message(for: error)
+        }
     }
 
     private func fail(_ message: String) {

@@ -261,7 +261,11 @@ struct VoiceView: View {
                 .buttonStyle(SecondaryButtonStyle())
             }
         case .failed(let message):
-            ProblemView(message: message)
+            if controller.isOffline {
+                OfflineNoteCard(controller: controller)
+            } else {
+                ProblemView(message: message)
+            }
         default:
             EmptyView()
         }
@@ -1193,5 +1197,50 @@ struct VoiceView: View {
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
         case .failed: NSLocalizedString("Couldn't connect", comment: "")
         }
+    }
+}
+
+/// Offline (ADR-273): what still works without the internet. A note written or dictated here is
+/// saved on this iPhone after Save and read back; nothing is queued to send later.
+struct OfflineNoteCard: View {
+    let controller: VoiceSessionController
+    @State private var text = ""
+    @State private var isSaving = false
+    @State private var problem: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("You're offline", systemImage: "wifi.slash").font(.headline)
+            Text("Doddy's voice needs the internet. You can still write or dictate a note here; it's saved on this iPhone.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+            if let saved = controller.offlineSaved {
+                Label(String(format: NSLocalizedString("Saved on this iPhone: “%@”", comment: ""), saved), systemImage: "checkmark.circle")
+                    .accessibilityIdentifier("voice.offline.saved")
+            }
+            TextField("Your note", text: $text, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("voice.offline.note")
+            Button {
+                Task { await save() }
+            } label: {
+                HStack { Text("Save note"); Spacer(); Image(systemName: "square.and.arrow.down") }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(isSaving || text.allSatisfy(\.isWhitespace))
+            if let problem { ProblemView(message: problem) }
+            Text("When you're back online, close this and talk to Doddy again.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        problem = await controller.saveOfflineNote(text)
+        if problem == nil { text = "" }
     }
 }

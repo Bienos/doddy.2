@@ -2542,6 +2542,17 @@
         }
       }
     },
+    "Doddy's voice needs the internet. You can still write or dictate a note here; it's saved on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego potrzebuje internetu. Możesz tu nadal napisać lub podyktować notatkę; zostanie zapisana na tym iPhonie."
+          }
+        }
+      }
+    },
     "Don't add": {
       "extractionState": "manual",
       "localizations": {
@@ -7294,6 +7305,17 @@
         }
       }
     },
+    "Save note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz notatkę"
+          }
+        }
+      }
+    },
     "Save session token": {
       "extractionState": "manual",
       "localizations": {
@@ -7389,6 +7411,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano na tym iPhonie. Otwórz Wspomnienia › Listy, aby zobaczyć całą listę."
+          }
+        }
+      }
+    },
+    "Saved on this iPhone: “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano na tym iPhonie: „%@”"
           }
         }
       }
@@ -9054,6 +9087,17 @@
         }
       }
     },
+    "The note couldn't be confirmed. Check your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić notatki. Sprawdź swoje notatki."
+          }
+        }
+      }
+    },
     "The note stays.": {
       "extractionState": "manual",
       "localizations": {
@@ -10682,6 +10726,17 @@
         }
       }
     },
+    "When you're back online, close this and talk to Doddy again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy wrócisz do sieci, zamknij to i porozmawiaj z Doddym ponownie."
+          }
+        }
+      }
+    },
     "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.": {
       "extractionState": "manual",
       "localizations": {
@@ -10953,6 +11008,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłączyłeś powiadomienia Doddy’ego w Ustawieniach iOS. Włącz je tam, aby dostawać aktualności."
+          }
+        }
+      }
+    },
+    "You're offline": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jesteś offline"
+          }
+        }
+      }
+    },
+    "You're offline. Doddy's voice needs the internet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jesteś offline. Głos Doddy’ego potrzebuje internetu."
           }
         }
       }
