@@ -1440,6 +1440,16 @@ final class VoiceSessionController {
         stopWatchingAudioInterruptions()
         phase = .failed(message)
         pendingAction = nil
+        // After an error the SDK may keep the microphone (review H2), so the conversation is
+        // ended here as stop() does, instead of waiting for a disconnect that may not come.
+        guard let active = conversation else { return }
+        conversation = nil
+        endTranslator()
+        keepLog()
+        Task {
+            await active.endConversation()
+            WakeWordListener.shared.conversationAudioReleased()
+        }
     }
 
     private func disconnected() {
