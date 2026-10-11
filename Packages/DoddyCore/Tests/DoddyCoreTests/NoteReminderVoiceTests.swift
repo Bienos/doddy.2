@@ -32,6 +32,16 @@ final class NoteReminderVoiceTests: XCTestCase {
             .remindAboutNote(NoteReminderVoiceDraft(noteText: "Parcel code 5678", target: .place(query: "post office", onArrival: true))))
     }
 
+    /// ADR-251: a list is named instead of a note; never both.
+    func testAListCanBeNamedInsteadOfANote() {
+        XCTAssertEqual(
+            parse(#"{"list":"Shopping","place":"Lidl Puławska"}"#),
+            .remindAboutNote(NoteReminderVoiceDraft(
+                noteText: "Shopping", target: .place(query: "Lidl Puławska", onArrival: true), isList: true)))
+        guard case .invalid = parse(#"{"list":"Shopping","note":"milk","place":"Lidl"}"#) else { return XCTFail("note or list, not both") }
+        guard case .invalid = parse(#"{"list":"  ","place":"Lidl"}"#) else { return XCTFail("an empty list name isn't a list") }
+    }
+
     func testUnclearRequestsGoBackToTheAgentWithoutACard() {
         guard case .invalid = parse(#"{"note":"x"}"#) else { return XCTFail("needs due or place") }
         guard case .invalid = parse(#"{"note":"x","due":"2026-10-11T09:00","place":"home"}"#) else { return XCTFail("not both") }

@@ -5996,6 +5996,17 @@
         }
       }
     },
+    "Remind you about this list?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnieć Ci o tej liście?"
+          }
+        }
+      }
+    },
     "Remind you about this note?": {
       "extractionState": "manual",
       "localizations": {
@@ -9710,6 +9721,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój dzień\nw skrócie."
+          }
+        }
+      }
+    },
+    "Your list in Doddy. The notification doesn't name it or its items.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja lista w Doddym. Powiadomienie nie podaje jej nazwy ani pozycji."
           }
         }
       }

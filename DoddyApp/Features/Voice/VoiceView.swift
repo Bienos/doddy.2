@@ -509,12 +509,19 @@ struct VoiceView: View {
     private func noteReminderContent(
         noteText: String, savedAt: Date?, target: VoiceSessionController.NoteReminderCardTarget, controller: VoiceSessionController
     ) -> some View {
-        Text("Remind you about this note?")
-            .font(.headline)
+        let isList = controller.isListReminder
+        Group {
+            if isList { Text("Remind you about this list?") } else { Text("Remind you about this note?") }
+        }
+        .font(.headline)
         VStack(alignment: .leading, spacing: 4) {
             Text(noteText)
                 .font(.body)
-            if let savedAt {
+            if isList {
+                Text("Your list in Doddy. The notification doesn't name it or its items.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            } else if let savedAt {
                 Text("Your note, saved \(savedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute()))")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)

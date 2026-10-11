@@ -1453,9 +1453,17 @@ final class VoiceSessionController {
             return
         }
         await store.reload()
-        guard let record = NoteQuoteMatch.find(draft.noteText, in: store.memories) else {
-            await reply(toolCallID, VoiceToolReply.noteNotFound())
-            return
+        let record: MemoryRecord
+        if draft.isList {
+            // A list (ADR-251), matched exactly like the list tools; otherwise the agent asks.
+            guard let list = await resolveList(draft.noteText, toolCallID: toolCallID) else { return }
+            record = list.record
+        } else {
+            guard let note = NoteQuoteMatch.find(draft.noteText, in: store.memories) else {
+                await reply(toolCallID, VoiceToolReply.noteNotFound())
+                return
+            }
+            record = note
         }
         switch draft.target {
         case .time(let date, let zone):
@@ -1479,6 +1487,12 @@ final class VoiceSessionController {
                                   savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
                     toolCallID: toolCallID)
         }
+    }
+
+    /// The note-reminder card is about a list (ADR-251), read from the store by its id.
+    var isListReminder: Bool {
+        guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return false }
+        return store.list(id: memoryID) != nil
     }
 
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
