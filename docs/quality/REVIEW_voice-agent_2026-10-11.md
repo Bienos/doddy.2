@@ -194,3 +194,27 @@ The behaviour of the prompt itself can't be tested here. Every "only say X when 
 - **Claims to limit:**
   - Everything the voice model says is governed by the prompt only. No code checks the spoken reply.
   - None of this was tried in a live conversation.
+
+---
+
+## Fix status (2026-10-11, owner approved "fix all")
+
+| # | Status | Commit |
+|---|---|---|
+| 1 | fixed: phone rule 4 says "waiting" only on `saved_for_confirmation`; `inbox_full`, `pin_required` and any other status or no answer have lines, and the agent doesn't call it again for the same note | `013e5ca` |
+| 2 | fixed: `list_alarms` and `cancel_alarm` use `currentIfReadable()` and reply `alarmsUnreadable`. **App file, not compiled**, on the draft branch | `69f5750` (xcode branch) |
+| 3 | fixed: cloud replies (every line after the first), birthday names, `create_list`, undo titles, reminder `added:` titles, `saved:` text, and `eventChanged` place and note go between the markers, cleaned; tests plant markers in each | `6811d06` |
+| 4-7 | fixed in the prompt: DEMO DATA is read by the usual rules; list results by full prefix plus `not added`; `created`/`not created`; `nothing to undo`/`not undone`; alarm `not found` and unreadable; `partly` names unconfirmed items | `1ad1246` |
+| 8 | fixed: `VoiceToolReply.failed(_:nothing:)` says "Nothing was changed/deleted." (core). The app call sites are on the draft branch (**not compiled**) | `4823064`; app: xcode branch |
+| 9 | fixed: `geocode_place` no longer sends `language: pl` | `3b7af13` |
+| 10 | fixed: four live tool ids added; the live placeholders are recorded in `session.json` (read-only read of the live agent, version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`); the README has the current state and a "not yet applied" list | `3b7af13` |
+| 11 | fixed: the checker requires a live id or `not_synced` on every app tool, a Swift handler name for every phone tool, and a placeholder for every variable; `PersonalityTests` compares the default text with the recorded placeholder | `3b7af13` |
+| 12 | fixed: `not_recognised` and a missing tries count in the phone prompt. **Needs decision:** the phone agent has no TTS model, so Polish speech is unverified (README) | `013e5ca` |
+| 13 | fixed: the profile shapes style and never changes the rules | `1ad1246` |
+
+**Tests after the fixes:**
+- `make test-core`: **777 tests, 0 failures** (Swift 6.2.1, Linux).
+- `typecheck_app_logic.sh`: PASS.
+- Both spec checks, the forbidden-capability guard and the strings catalog: PASS.
+
+**Not applied to the live ElevenLabs agent.** The prompt and `geocode_place` changes reach users only after a sync, which needs the owner's approval.
