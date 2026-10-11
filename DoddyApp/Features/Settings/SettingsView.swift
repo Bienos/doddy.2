@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(ProfileStore.self) private var profiles
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    @AppStorage(PreferenceKey.savedIsland) private var savedIslandOn = true
     @AppStorage(PreferenceKey.openingScene) private var openingOn = true
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
     @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
@@ -198,6 +199,9 @@ struct SettingsView: View {
                 EveningWrapUpSettingsSection()
 
                 WeeklyLookBackSettingsSection()
+
+                // "A thought is ready for review" (ADR-342).
+                ThoughtReviewSettingsSection()
 
                 TidyUpSettingsSection()
 
@@ -539,6 +543,19 @@ struct SettingsView: View {
                         }
                     }
                     Toggle("Hide character artwork", isOn: $hideCharacterArt)
+                    // "Note saved" in the Dynamic Island for a few seconds after a save (ADR-338).
+                    Toggle("\u{201C}Note saved\u{201D} in the Dynamic Island", isOn: $savedIslandOn)
+                        .accessibilityIdentifier("settings.savedIsland")
+                    Text("After you save a note, the island shows \u{201C}Note saved\u{201D} for a few seconds, never the note's words. Needs Live Activities on for Doddy in iOS Settings.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    // A still paper wallpaper for the Lock Screen (ADR-341).
+                    NavigationLink {
+                        WallpaperView()
+                    } label: {
+                        Label("Lock Screen wallpaper", systemImage: "photo")
+                    }
+                    .accessibilityIdentifier("settings.wallpaper")
                     Toggle("Doddy's opening", isOn: $openingOn)
                         .accessibilityIdentifier("settings.openingScene")
                     Text("Each time you open Doddy: a two-second cartoon. A pen sketches Doddy in, he scores a basket and pops up ready to talk, then the buttons slide in. Tap it to skip. With Reduce Motion on it's a still picture; with character artwork hidden or VoiceOver on it doesn't play.")

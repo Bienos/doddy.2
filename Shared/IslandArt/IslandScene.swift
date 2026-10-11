@@ -315,17 +315,22 @@ extension DoddyToolAttributes {
         return shown
     }
 
-    /// Whole Doddy's pose for a tool (ADR-299, ADR-313): dribbling while focusing, balancing on
-    /// one leg while breathing, reading lying on his front. Done, waiting and lost are the same
-    /// poses as in a conversation (fist pump, cross-legged, facepalm).
+    /// Whole Doddy's pose for a tool (ADR-299, ADR-313, ADR-337): dribbling while focusing,
+    /// balancing on one leg while breathing, reading lying on his front, kneeling to watch a
+    /// timer, stretching sleepily through a wind-down. Done, waiting and lost are the same poses
+    /// as in a conversation (fist pump, cross-legged, facepalm); a wind-down ends cross-legged,
+    /// not with a fist pump, since it is bedtime.
     func wholeDoddyPose(_ state: ContentState, isStale: Bool) -> IslandPose {
         if isStale && kind == .readAloud { return .facepalm }
-        if state.isFinished || isStale { return .fistpump }
+        if state.isFinished || isStale { return kind == .windDown ? .crosslegged : .fistpump }
         if state.isPaused { return .crosslegged }
         switch kind {
         case .focus: return .basketballDribble
         case .breathing: return .onelegBalance
         case .readAloud: return .bellyReading
+        case .timer: return .kneelingInspect
+        case .windDown: return .yawnStretch
+        case .noteSaved: return .fistpump
         }
     }
 
@@ -358,6 +363,34 @@ extension DoddyToolAttributes {
             return scene(.tinyPromise, 0, label: "FOCUS", time: .text(minutes), title: "Focusing",
                          bigTitle: .countdown(end), subtitle: state.label ?? "One thing at a time",
                          compact: .countdown(end), minimal: .countdown(end), centred: true)
+        case .timer, .windDown:
+            // The kitchen timer and the wind-down (ADR-337) use the focus board (Tiny Promise):
+            // the pack has no timer board of its own, and the words tell them apart.
+            let isWindDown = kind == .windDown
+            let label = isWindDown ? "WIND DOWN" : "TIMER"
+            let length = Self.length(duration)
+            if over {
+                return scene(.tinyPromise, 0, label: label, time: .text("Done"),
+                             title: isWindDown ? "Wind-down over" : "Time's up",
+                             subtitle: isWindDown ? "Time to put the phone down" : (state.label ?? "Timer finished"),
+                             compact: .check, minimal: .check, centred: true)
+            }
+            if state.isPaused {
+                let left = Self.clock(state.remaining)
+                return scene(.tinyPromise, 1, label: label, time: .text("Paused"), title: "Paused, \(left) left",
+                             bigTitle: .bigText(left), subtitle: isWindDown ? "Ready when you are" : (state.label ?? "Ready when you are"),
+                             compact: .text(left), minimal: .text("\(Int((state.remaining / 60).rounded(.up)))m"), centred: true)
+            }
+            let end = state.endsAt ?? now
+            return scene(.tinyPromise, 0, label: label, time: .text(length),
+                         title: isWindDown ? "Winding down" : "Timer",
+                         bigTitle: .countdown(end),
+                         subtitle: isWindDown ? "Phone down when it ends" : (state.label ?? "Counting down"),
+                         compact: .countdown(end), minimal: .countdown(end), centred: true)
+        case .noteSaved:
+            // The same card as the conversation's "Note saved" moment (ADR-240): never the words.
+            return scene(.thoughtPocket, 1, label: "NOTE", time: .text("Saved"), title: "Note saved",
+                         subtitle: "Kept in Doddy on this iPhone", compact: .check, minimal: .none)
         case .breathing:
             if over {
                 return scene(.calmTide, 1, label: "BREATHE", time: .text("Done"), title: "Breathing done",
@@ -384,6 +417,19 @@ extension DoddyToolAttributes {
             }
             return shown
         }
+    }
+
+    /// A note-saved island is finished from the start: it only ever shows the done card.
+    var isMomentary: Bool { kind == .noteSaved }
+
+    /// "10 min", "1 h 30 min" or "45 s": a countdown's length, as `CountdownSession.lengthText`
+    /// says it (kept here too because the island files don't link DoddyCore).
+    static func length(_ seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds.rounded()))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        if h > 0 { return m > 0 ? "\(h) h \(m) min" : "\(h) h" }
+        if m > 0 { return s > 0 && m < 5 ? "\(m) min \(s) s" : "\(m) min" }
+        return "\(s) s"
     }
 
     /// "12:48" for a time left.

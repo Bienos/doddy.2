@@ -574,19 +574,8 @@ final class DeviceConnections {
     // MARK: Timers
 
     /// Schedules a local notification for the timer and reads it back from iOS to confirm.
-    func startTimer(_ draft: TimerDraft) async throws -> AddOutcome {
-        let center = UNUserNotificationCenter.current()
-        center.delegate = TimerBanners.shared
-        let content = UNMutableNotificationContent()
-        content.title = "Timer done"
-        content.body = draft.label ?? "Your timer is done."
-        content.sound = .default
-        let identifier = "doddy.timer.\(UUID().uuidString)"
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
-        try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
-        let pending = await center.pendingNotificationRequests()
-        return pending.contains { $0.identifier == identifier } ? .verified : .unconfirmed
-    }
+    // Timers by voice start a `CountdownController` countdown (ADR-337), which schedules and
+    // reads back the "done" notification itself.
 
     // MARK: Contacts
 

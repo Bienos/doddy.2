@@ -146,11 +146,12 @@ struct HomeView: View {
                         // of the same actions in ViewThatFits' accessibility tree.
                         Group {
                             if textSize.isAccessibilitySize {
-                                VStack(spacing: 10) { saveAction; findAction; focusAction; breatheAction }
+                                VStack(spacing: 10) { saveAction; findAction; focusAction; breatheAction; timerAction; windDownAction }
                             } else {
                                 VStack(spacing: 10) {
                                     HStack(spacing: 10) { saveAction; findAction }
                                     HStack(spacing: 10) { focusAction; breatheAction }
+                                    HStack(spacing: 10) { timerAction; windDownAction }
                                 }
                             }
                         }
@@ -185,6 +186,9 @@ struct HomeView: View {
                 switch tool {
                 case .focus: FocusView()
                 case .breathe: BreathingView()
+                // The kitchen timer and the wind-down (ADR-337).
+                case .timer: CountdownView(purpose: .timer)
+                case .windDown: CountdownView(purpose: .windDown)
                 }
             }
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
@@ -225,6 +229,23 @@ struct HomeView: View {
     private var breatheAction: some View {
         Button { tool = .breathe } label: { HomeActionTile(title: "Breathe", icon: "wind") }
             .buttonStyle(.plain).accessibilityIdentifier("home.breathe")
+    }
+
+    /// The kitchen timer and the wind-down (ADR-337); both show on the island and in StandBy.
+    private var timerAction: some View {
+        Button { tool = .timer } label: {
+            HomeActionTile(title: CountdownController.shared.session(.timer).map { $0.isOver ? "Timer" : "Timer · on" } ?? "Timer",
+                           icon: "timer.circle")
+        }
+        .buttonStyle(.plain).accessibilityIdentifier("home.timer")
+    }
+
+    private var windDownAction: some View {
+        Button { tool = .windDown } label: {
+            HomeActionTile(title: CountdownController.shared.session(.windDown).map { $0.isOver ? "Wind down" : "Wind down · on" } ?? "Wind down",
+                           icon: "moon")
+        }
+        .buttonStyle(.plain).accessibilityIdentifier("home.windDown")
     }
 
     private var findAction: some View {
@@ -347,7 +368,7 @@ private struct SlideIn: ViewModifier {
 }
 
 private enum HomeTool: String, Identifiable {
-    case focus, breathe
+    case focus, breathe, timer, windDown
     var id: String { rawValue }
 }
 

@@ -54,7 +54,8 @@ final class WidgetSync {
         // Same content as last time: no write, no widget reload (the time stamp alone isn't news).
         if let lastWritten, lastWritten.isOn == snapshot.isOn, lastWritten.pinned == snapshot.pinned,
            lastWritten.reminders == snapshot.reminders, lastWritten.lists == snapshot.lists,
-           lastWritten.parking == snapshot.parking, lastWritten.hidesDoddy == snapshot.hidesDoddy { return }
+           lastWritten.parking == snapshot.parking, lastWritten.hidesDoddy == snapshot.hidesDoddy,
+           lastWritten.shelf == snapshot.shelf { return }
         do {
             try WidgetSnapshotFile.write(snapshot)
             lastWritten = snapshot

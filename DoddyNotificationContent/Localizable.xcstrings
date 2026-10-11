@@ -1,0 +1,50 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "A thought to review": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Myśl do powtórki"
+          }
+        }
+      }
+    },
+    "At a place": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W miejscu"
+          }
+        }
+      }
+    },
+    "Note reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie o notatce"
+          }
+        }
+      }
+    },
+    "Repeating reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie cykliczne"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

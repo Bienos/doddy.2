@@ -182,6 +182,8 @@ struct CaptureView: View {
             self.memo = nil
         }
         saved = record
+        // "Note saved" in the island (ADR-338): after the save, never before; never its words.
+        SavedNoteIsland.flash()
     }
 }
 

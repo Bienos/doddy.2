@@ -2485,20 +2485,18 @@ final class VoiceSessionController {
         return outcome
     }
 
+    /// A timer by voice (ADR-065) is the same countdown as Home's timer (ADR-337): it shows on
+    /// the island and the Lock Screen, and its "done" notification is read back from iOS.
     private func startTimer(_ draft: TimerDraft) async -> String {
         guard await devices.notificationAccess() == .granted else {
             return VoiceToolReply.notAdded("Notifications are off for Doddy.")
         }
-        do {
-            switch try await devices.startTimer(draft) {
-            case .verified:
-                let endsAt = Date().addingTimeInterval(TimeInterval(draft.seconds))
-                return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
-            case .unconfirmed:
-                return VoiceToolReply.addUnconfirmed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        switch await CountdownController.shared.start(seconds: draft.seconds, purpose: .timer, label: draft.label) {
+        case .verified:
+            let endsAt = Date().addingTimeInterval(TimeInterval(draft.seconds))
+            return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
+        case .unconfirmed:
+            return VoiceToolReply.addUnconfirmed
         }
     }
 

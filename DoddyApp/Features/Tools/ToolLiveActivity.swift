@@ -1,13 +1,14 @@
 @preconcurrency import ActivityKit
 import Foundation
 
-/// Starts, updates and ends one tool's Live Activity (focus, breathing, read-aloud), like
-/// `VoiceLiveActivity` does for a conversation. Optional: if Live Activities are off for Doddy,
+/// Starts, updates and ends one tool's Live Activity (focus, breathing, read-aloud, the timer
+/// and wind-down of ADR-337, the "Note saved" card of ADR-338), like `VoiceLiveActivity` does
+/// for a conversation. Optional: if Live Activities are off for Doddy,
 /// or the request fails, the tool still works in the app.
 ///
 /// Stale dates keep the island honest when the app is not running:
-/// - focus and breathing: the end time, so once it passes iOS marks it stale and the island
-///   says the time is up instead of a running countdown;
+/// - focus, breathing, timer and wind-down: the end time, so once it passes iOS marks it stale
+///   and the island says the time is up instead of a running countdown;
 /// - read-aloud: 90 s ahead, pushed forward by a heartbeat while the app is reading, so a
 ///   killed app can't leave "Reading aloud" behind.
 @MainActor
@@ -103,8 +104,11 @@ final class ToolLiveActivity {
     private func staleDate(for state: DoddyToolAttributes.ContentState) -> Date? {
         if state.isFinished || state.isPaused && kind != .readAloud { return nil }
         switch kind {
-        case .focus, .breathing: return state.endsAt
+        // Countdowns (focus, breathing, timer, wind-down): stale at the end means "time's up".
+        case .focus, .breathing, .timer, .windDown: return state.endsAt
         case .readAloud: return Date().addingTimeInterval(Self.heartbeatStaleAfter)
+        // Finished from the start (ADR-338); ended by the app after a few seconds.
+        case .noteSaved: return nil
         }
     }
 

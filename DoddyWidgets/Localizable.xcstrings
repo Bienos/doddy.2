@@ -1,6 +1,28 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%lld saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane: %lld"
+          }
+        }
+      }
+    },
+    "%lld this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tym tygodniu: %lld"
+          }
+        }
+      }
+    },
     "Add this reminder?": {
       "extractionState": "manual",
       "localizations": {
@@ -210,6 +232,17 @@
         }
       }
     },
+    "New note in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa notatka w Doddy"
+          }
+        }
+      }
+    },
     "Nicely done": {
       "extractionState": "manual",
       "localizations": {
@@ -217,6 +250,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dobra robota"
+          }
+        }
+      }
+    },
+    "None this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic w tym tygodniu"
           }
         }
       }
@@ -250,6 +294,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz Doddy’ego"
+          }
+        }
+      }
+    },
+    "Open Doddy once": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz raz Doddy"
           }
         }
       }
@@ -591,6 +646,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoja notatka"
+          }
+        }
+      }
+    },
+    "saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zapisane"
           }
         }
       }

@@ -184,6 +184,21 @@ extension TimerBanners {
             }
             return
         }
+        // "A thought is ready for review" (ADR-342) opens that note; opening it is what the
+        // review log records. Nothing else changes.
+        if ThoughtReview.isReview(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier,
+               let memoryString = response.notification.request.content.userInfo[ThoughtReview.memoryIDKey] as? String,
+               let memoryID = UUID(uuidString: memoryString) {
+                await MainActor.run {
+                    ThoughtReviewScheduler.opened(memoryID)
+                    NoteReminderRouter.shared.reminders?.pendingOpenMemoryID = memoryID
+                }
+            }
+            return
+        }
+        // A timer's or wind-down's "done" (ADR-337) just opens Doddy.
+        if CountdownSession.isCountdown(notificationID: requestID) { return }
         // The morning check-in (ADR-220) opens its screen; nothing else happens until the user taps.
         if MorningCheckIn.isCheckIn(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

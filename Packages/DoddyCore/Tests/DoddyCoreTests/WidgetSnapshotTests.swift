@@ -131,4 +131,22 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(WidgetTick.outcome(after: [eggs], itemID: eggs.id, wantedDone: true), .failed, "not read back as ticked")
         XCTAssertEqual(WidgetTick.outcome(after: [], itemID: eggs.id, wantedDone: false), .failed)
     }
+
+    func testShelfCountsNotesNotListsAndOldSnapshotsStillRead() throws {
+        let thisWeek = try note("Locker 4512", at: -2 * 86_400)
+        let older = try note("Spare keys", at: -30 * 86_400)
+        let list = try note("Shopping", category: .list, at: -3600)
+        let snapshot = WidgetSnapshot.make(
+            memories: [thisWeek, older, list], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+            showReminderText: false, isOn: true, now: now)
+        XCTAssertEqual(snapshot.shelf, .init(noteCount: 2, savedThisWeek: 1, lastSavedAt: thisWeek.capturedAt))
+        XCTAssertNil(WidgetSnapshot.off(at: now).shelf, "off leaves no counts either")
+        // A snapshot from before ADR-340 has no shelf and still reads.
+        let older_json = Data(#"{"version":1,"writtenAt":1800000000000,"isOn":true,"pinned":[],"reminders":[],"lists":[]}"#.utf8)
+        let decoded = WidgetSnapshot.decoded(older_json)
+        XCTAssertNotNil(decoded)
+        XCTAssertNil(decoded?.shelf)
+        let json = String(decoding: try snapshot.encoded(), as: UTF8.self)
+        XCTAssertFalse(json.contains("Locker"), "the shelf carries counts, never words")
+    }
 }

@@ -40,7 +40,9 @@ struct DoddyApp: App {
         // A focus timer does survive one (it is saved); this also lets its island's buttons work
         // when iOS starts the app just to run them (ADR-241). Breathing and read-aloud don't.
         FocusController.shared.refresh()
-        ToolLiveActivity.endLeftovers(keeping: [.focus])
+        // Countdown timers (ADR-337) survive a relaunch the same way.
+        CountdownController.shared.refresh()
+        ToolLiveActivity.endLeftovers(keeping: [.focus, .timer, .windDown])
         // "Hey Doddy" (ADR-254) starts conversations with the same notes and profile.
         WakeWordListener.shared.store = store
         WakeWordListener.shared.profiles = profiles
@@ -67,6 +69,8 @@ struct DoddyApp: App {
                 .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
                 .task { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }
                 .task { if WeeklyLookBackSettings.stored().isOn { _ = await WeeklyLookBackScheduler.apply(.stored()) } }
+                // "A thought is ready for review" (ADR-342): the next one, from the notes as they are now.
+                .task { _ = await ThoughtReviewScheduler.refresh(store: store) }
                 .task { await BirthdayScheduler.refresh() }
         }
     }

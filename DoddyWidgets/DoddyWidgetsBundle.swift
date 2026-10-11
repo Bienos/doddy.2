@@ -2,8 +2,8 @@ import SwiftUI
 import WidgetKit
 
 /// Widget extension: the voice conversation's Live Activity, the tools' Live Activity (focus,
-/// breathing, read-aloud), the Home and Lock Screen widgets (ADR-219) and, on iOS 18+, the
-/// Talk to Doddy and New note controls.
+/// breathing, read-aloud, timer, wind-down, "Note saved"), the Home and Lock Screen widgets
+/// (ADR-219, ADR-339, ADR-340) and, on iOS 18+, the Talk to Doddy and New note controls.
 @main
 struct DoddyWidgetsBundle: WidgetBundle {
     var body: some Widget {
@@ -35,5 +35,8 @@ struct DoddyHomeWidgets: WidgetBundle {
         ListWidget()
         TalkToDoddyWidget()
         DoddyRestWidget()
+        // New note and the saved-thought shelf (ADR-339, ADR-340): eight entries, under the ten.
+        NewNoteWidget()
+        SavedNotesWidget()
     }
 }

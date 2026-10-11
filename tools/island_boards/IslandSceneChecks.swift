@@ -406,6 +406,47 @@ enum IslandSceneChecks {
         let decoded = try? JSONDecoder().decode(DoddyToolAttributes.ContentState.self, from: old)
         expect(decoded != nil && decoded?.islandStyle == nil, "older content decodes")
         expect(DoddyToolAttributes.clock(3725) == "1:02:05" && DoddyToolAttributes.clock(59.2) == "1:00", "clock")
+
+        // Kitchen timer and wind-down (ADR-337): the focus board with their own words.
+        let timer = DoddyToolAttributes(kind: .timer, startedAt: now, duration: 600)
+        let t = timer.islandScene(.init(isPaused: false, endsAt: end, label: "Pasta"), isStale: false, now: now)
+        expect(t.board == .tinyPromise && t.scenario == 0 && t.live && t.label == "TIMER", "timer running")
+        expect(t.bigTitle == .countdown(end) && t.subtitle == "Pasta" && t.time == .text("10 min"), "timer countdown, label, length")
+        let tPaused = timer.islandScene(.init(isPaused: true, endsAt: nil, remaining: 125), isStale: false, now: now)
+        expect(tPaused.scenario == 1 && !tPaused.live && tPaused.bigTitle == .bigText("2:05"), "timer paused")
+        let tUp = timer.islandScene(.init(isPaused: false, endsAt: end), isStale: true, now: now)
+        expect(tUp.title == "Time's up" && !tUp.live && tUp.compactSign == .check, "timer stale means the time is up")
+        expect(timer.islandScene(.init(isPaused: false, endsAt: end, label: "Pasta", isFinished: true), isStale: false, now: now)
+                   .subtitle == "Pasta", "the label stays on the done card")
+        let wind = DoddyToolAttributes(kind: .windDown, startedAt: now, duration: 900)
+        let w = wind.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now)
+        expect(w.label == "WIND DOWN" && w.title == "Winding down" && w.time == .text("15 min") && w.bigTitle == .countdown(end), "wind-down running")
+        let wOver = wind.islandScene(.init(isPaused: false, endsAt: nil, isFinished: true), isStale: false, now: now)
+        expect(wOver.title == "Wind-down over" && !wOver.live, "wind-down over")
+        expect(DoddyToolAttributes.length(5400) == "1 h 30 min" && DoddyToolAttributes.length(45) == "45 s"
+               && DoddyToolAttributes.length(150) == "2 min 30 s", "length words")
+        func wholeTool(_ a: DoddyToolAttributes, _ s: DoddyToolAttributes.ContentState, stale: Bool = false) -> IslandPose? {
+            var s = s
+            s.islandStyle = .wholeDoddy
+            return a.islandScene(s, isStale: stale, now: now).pose
+        }
+        expect(wholeTool(timer, .init(isPaused: false, endsAt: end)) == .kneelingInspect, "timer kneels to watch")
+        expect(wholeTool(timer, .init(isPaused: false, endsAt: end), stale: true) == .fistpump, "timer up")
+        expect(wholeTool(wind, .init(isPaused: false, endsAt: end)) == .yawnStretch, "wind-down stretches")
+        expect(wholeTool(wind, .init(isPaused: false, isFinished: true)) == .crosslegged, "wind-down ends cross-legged, no fist pump")
+        expect(wholeTool(wind, .init(isPaused: true, remaining: 60)) == .crosslegged, "wind-down paused")
+        expect(timer.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).pose == nil, "timer without a style keeps the board")
+        // "Note saved" (ADR-338): the conversation's saved card, finished from the start, never the words.
+        let saved = DoddyToolAttributes(kind: .noteSaved, startedAt: now, duration: 0)
+        let sv = saved.islandScene(.init(isPaused: false, isFinished: true), isStale: false, now: now)
+        expect(sv.board == .thoughtPocket && sv.scenario == 1 && !sv.live && sv.title == "Note saved" && sv.compactSign == .check, "note saved card")
+        expect(sv.subtitle == "Kept in Doddy on this iPhone" && sv.minimalSign == .none, "note saved words")
+        expect(wholeTool(saved, .init(isPaused: false, isFinished: true)) == .fistpump, "note saved fist pump")
+        expect(saved.isMomentary && !timer.isMomentary, "only note saved is momentary")
+        // The new kinds decode in an older widget build's terms: unknown kinds would fail, so the
+        // raw values are fixed here.
+        expect(DoddyToolAttributes.Kind(rawValue: "timer") == .timer && DoddyToolAttributes.Kind(rawValue: "windDown") == .windDown
+               && DoddyToolAttributes.Kind(rawValue: "noteSaved") == .noteSaved, "kind raw values")
         return failures
     }
 }

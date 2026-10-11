@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the DoddyNotificationContent extension (merged with the generated keys).
+  The expanded paper notification (ADR-343): draws a long-pressed note reminder or "thought to
+  review" notification on Doddy's paper, from the notification's own title, words and picture.
+  No App Group, no network, no database, no permissions.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.usernotifications.content-extension</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).NotificationViewController</string>
+		<key>NSExtensionAttributes</key>
+		<dict>
+			<!-- Only these categories, which the app registers (SystemNoteNotifications,
+			     ThoughtReviewScheduler). Timers, check-ins and the other notifications keep
+			     iOS's own expanded view. -->
+			<key>UNNotificationExtensionCategory</key>
+			<array>
+				<string>DODDY_NOTE_REMINDER</string>
+				<string>DODDY_NOTE_REPEATING_REMINDER</string>
+				<string>DODDY_NOTE_PLACE_REMINDER</string>
+				<string>DODDY_THOUGHT_REVIEW</string>
+			</array>
+			<key>UNNotificationExtensionInitialContentSizeRatio</key>
+			<real>0.35</real>
+			<!-- The card carries the title and words itself; iOS's own copy below it is hidden. -->
+			<key>UNNotificationExtensionDefaultContentHidden</key>
+			<true/>
+			<key>UNNotificationExtensionUserInteractionEnabled</key>
+			<false/>
+		</dict>
+	</dict>
+</dict>
+</plist>

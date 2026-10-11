@@ -37,7 +37,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyShare DoddyWatch DoddyWatchWidgets Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyShare DoddyNotificationContent DoddyWatch DoddyWatchWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
@@ -194,7 +194,7 @@ fi
 if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v -e "^$alarms_dir/" -e "^Shared/Alarms/DoddyAlarmMetadata.swift:" -e "^DoddyWidgets/AlarmLiveActivity.swift:"; then
   echo "FAIL: AlarmKit outside $alarms_dir." >&2; status=1
 fi
-if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
+if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare DoddyNotificationContent Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
 [ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft and Todoist add, complete and move, and no proxy execution."

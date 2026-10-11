@@ -366,6 +366,138 @@ struct TalkToDoddyWidgetView: View {
     }
 }
 
+// MARK: New note (ADR-339)
+
+/// The capture tile: on the Home Screen and as a Lock Screen circle. A tap runs `NewNoteIntent`,
+/// which opens Doddy's empty capture screen; nothing is saved until Save, as with the control.
+struct NewNoteWidget: Widget {
+    static let kind = "com.bienos.doddy2.newnotewidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { _ in
+            NewNoteWidgetView().containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("New note")
+        .description("Opens Doddy ready for a new note. Nothing is saved until you tap Save.")
+        .supportedFamilies([.systemSmall, .accessoryCircular])
+    }
+}
+
+struct NewNoteWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
+
+    var body: some View {
+        Button(intent: NewNoteIntent()) {
+            if family == .accessoryCircular {
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Image(systemName: "square.and.pencil").font(.title2)
+                }
+                .accessibilityElement()
+                .accessibilityLabel("New note in Doddy")
+            } else {
+                VStack(spacing: 8) {
+                    // Doddy leaning in, pen ready (ADR-313 art rules); symbol on tinted Home Screens.
+                    if renderingMode == .fullColor, !WidgetDoddyArt.isHidden {
+                        WidgetPose(pose: .leaning, height: 76)
+                    } else {
+                        Image(systemName: "square.and.pencil").font(.largeTitle)
+                    }
+                    Text("New note").font(.headline)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: Saved-thought shelf (ADR-340)
+
+/// How many notes are saved and how many this week, never their words. A tap opens Memories.
+/// Lists and private notes aren't counted; "Show in widgets" off shows nothing.
+struct SavedNotesWidget: Widget {
+    static let kind = "com.bienos.doddy2.shelf"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { entry in
+            SavedNotesView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Saved thoughts")
+        .description("How many notes you've saved, and how many this week. Never the notes themselves.")
+        .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+struct SavedNotesView: View {
+    @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
+    let entry: SnapshotEntry
+
+    private var shelf: WidgetSnapshot.Shelf? { entry.snapshot?.shelf }
+
+    var body: some View {
+        Group {
+            if let message = WidgetCopy.message(for: entry.snapshot) {
+                if family == .systemSmall { WidgetMessage(text: message) } else { Text(message).font(.caption2) }
+            } else if let shelf {
+                counts(shelf)
+            } else {
+                // A snapshot from before this widget: the app writes the counts at its next launch.
+                if family == .systemSmall { WidgetMessage(text: "Open Doddy once to fill this widget.") }
+                else { Text("Open Doddy once").font(.caption2) }
+            }
+        }
+        .widgetURL(DeepLink.memories.url)
+    }
+
+    @ViewBuilder
+    private func counts(_ shelf: WidgetSnapshot.Shelf) -> some View {
+        switch family {
+        case .accessoryInline:
+            Label(Self.savedText(shelf.noteCount), systemImage: "tray.full")
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 0) {
+                    Text("\(shelf.noteCount)").font(.title3.weight(.semibold)).monospacedDigit()
+                    Text("saved").font(.caption2)
+                }
+            }
+            .accessibilityElement()
+            .accessibilityLabel(Self.savedText(shelf.noteCount))
+        case .accessoryRectangular:
+            VStack(alignment: .leading, spacing: 2) {
+                Label(Self.savedText(shelf.noteCount), systemImage: "tray.full").font(.headline)
+                Text(Self.weekText(shelf.savedThisWeek)).font(.caption)
+                if let last = shelf.lastSavedAt {
+                    Text("Last: \(last, format: .relative(presentation: .named))").font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+        default:
+            VStack(alignment: .leading, spacing: 6) {
+                if renderingMode == .fullColor {
+                    HStack { Spacer(); WidgetPose(pose: .crosslegged, height: 54) }
+                }
+                Text("\(shelf.noteCount)").font(.system(size: 34, weight: .semibold)).monospacedDigit()
+                Text(shelf.noteCount == 1 ? "thought saved" : "thoughts saved").font(.caption)
+                Text(Self.weekText(shelf.savedThisWeek)).font(.caption2).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        }
+    }
+
+    static func savedText(_ count: Int) -> String {
+        String(format: NSLocalizedString("%lld saved", comment: ""), count)
+    }
+
+    static func weekText(_ count: Int) -> String {
+        count == 0 ? NSLocalizedString("None this week", comment: "")
+                   : String(format: NSLocalizedString("%lld this week", comment: ""), count)
+    }
+}
+
 // MARK: Doddy, resting (StandBy)
 
 /// Made for StandBy (ADR-313): Doddy stretching, eyes closed, and the time of the next note
@@ -386,12 +518,15 @@ struct DoddyRestWidget: Widget {
 
 struct DoddyRestView: View {
     @Environment(\.widgetRenderingMode) private var renderingMode
+    /// StandBy at night (ADR-337): iOS dims and reddens the screen; Doddy's picture is left out
+    /// then, so only the time shows and the bedside stays dark.
+    @Environment(\.isLuminanceReduced) private var isNight
     let entry: SnapshotEntry
 
     var body: some View {
         VStack(spacing: 6) {
             // A tinted Home Screen flattens the drawing into one colour; there it is left out.
-            if renderingMode != .accented {
+            if renderingMode != .accented, !isNight {
                 WidgetPose(pose: .yawnStretch, height: 92)
             }
             if let message = WidgetCopy.message(for: entry.snapshot) {
@@ -491,6 +626,7 @@ extension WidgetSnapshot {
                 .init(id: UUID(), text: "Eggs", isDone: false),
                 .init(id: UUID(), text: "Bread", isDone: true),
             ])],
-            parking: .init(savedAt: .now.addingTimeInterval(-5400), note: "Level 2, row C"))
+            parking: .init(savedAt: .now.addingTimeInterval(-5400), note: "Level 2, row C"),
+            shelf: .init(noteCount: 24, savedThisWeek: 3, lastSavedAt: .now.addingTimeInterval(-7200)))
     }()
 }

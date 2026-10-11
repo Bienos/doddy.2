@@ -78,6 +78,8 @@ targets:
       - target: DoddyWidgets
       # "Save to Doddy" in the Share Sheet (ADR-311).
       - target: DoddyShare
+      # The expanded paper notification (ADR-343).
+      - target: DoddyNotificationContent
       # The Apple Watch app (ADR-232), embedded in the iPhone app.
       - target: DoddyWatch
       - package: DoddyCore
@@ -164,6 +166,27 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Config/DoddyShare-Info.plist
         INFOPLIST_KEY_CFBundleDisplayName: Save to Doddy
+        SKIP_INSTALL: YES
+  DoddyNotificationContent:
+    # Notification content extension (ADR-343): the expanded view of a long-pressed note reminder
+    # or "thought to review" notification, drawn on Doddy's paper from the notification's own
+    # title, words and picture. No App Group, no network, no database, no permissions.
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DoddyNotificationContent
+    dependencies:
+      - package: DoddyCore
+        product: DoddyDesignTokens
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).notificationcontent
+        PRODUCT_NAME: DoddyNotificationContent
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyNotificationContent-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
         SKIP_INSTALL: YES
   DoddyWatch:
     # Apple Watch app (ADR-232): shows the snapshot the iPhone sends (pinned notes, next note
