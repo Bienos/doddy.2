@@ -153,21 +153,21 @@ struct SettingsView: View {
                     ) {
                         Label("Export as JSON", systemImage: "square.and.arrow.up")
                     }
-                    .disabled(store.memories.isEmpty)
+                    .disabled(!hasSavedAnything)
                     ShareLink(
                         item: MemoryExport.plainText(store.memories, lists: store.lists, corrections: store.corrections, exportedAt: .now),
                         preview: SharePreview("Doddy memories (text)")
                     ) {
                         Label("Export as text", systemImage: "doc.plaintext")
                     }
-                    .disabled(store.memories.isEmpty)
+                    .disabled(!hasSavedAnything)
                     ShareLink(
                         item: MarkdownFileExport(records: store.memories, lists: store.lists, corrections: store.corrections),
                         preview: SharePreview("Doddy memories (Markdown)")
                     ) {
                         Label("Export as Markdown", systemImage: "doc.richtext")
                     }
-                    .disabled(store.memories.isEmpty)
+                    .disabled(!hasSavedAnything)
                     .accessibilityIdentifier("settings.exportMarkdown")
                     Button {
                         restoreMessage = nil
@@ -182,7 +182,7 @@ struct SettingsView: View {
                             .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
                     }
                     Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
-                        .disabled(store.memories.isEmpty)
+                        .disabled(!hasSavedAnything)
                         .accessibilityIdentifier("settings.deleteAll")
                     if let deleteError {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
@@ -565,13 +565,13 @@ struct SettingsView: View {
                 Text("When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to OpenAI to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. We ask OpenAI not to keep the reply, but we can't verify that. Voice conversations are separate. You can turn this off at any time.")
             }
             .confirmationDialog(
-                "Delete all \(store.memories.count) memories?",
+                deleteAllTitle,
                 isPresented: $confirmDeleteAll, titleVisibility: .visible
             ) {
                 Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
+                Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
             }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)
@@ -599,6 +599,16 @@ struct SettingsView: View {
             .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    /// Lists are memories too: they are exported and deleted with the notes (DOD-06).
+    private var hasSavedAnything: Bool { !store.memories.isEmpty || !store.lists.isEmpty }
+
+    /// Names everything Delete all removes, notes and lists, never notes alone.
+    private var deleteAllTitle: String {
+        String(
+            format: NSLocalizedString("Delete all %lld notes and %lld lists?", comment: ""),
+            store.memories.count, store.lists.count)
     }
 
     private var connectionSummary: String {
