@@ -767,6 +767,12 @@ struct VoiceView: View {
         .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.separator))
         .accessibilityElement(children: .combine)
+        // A note has one reminder: name the one this replaces before the tap (review C3).
+        if let previous = controller.noteReminderReplaces {
+            Label(NoteReminderReplacement.cardLine(previous), systemImage: "arrow.triangle.2.circlepath")
+                .font(.footnote)
+                .accessibilityIdentifier("voice.noteReminder.replaces")
+        }
         switch target {
         case .time(let date, let zone, let repeats):
             Label {

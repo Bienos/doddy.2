@@ -812,8 +812,11 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
                 return
             }
+            // A note has one reminder, so this one replaces any it has (review C3). Read before
+            // setting; the card showed it, and the reply names it to the agent.
+            let previous = store.noteReminders?.reminder(forMemory: memoryID)
             let receipt = await setNoteReminder(confirmed)
-            await reply(id, Self.noteReminderReply(receipt, note: noteText))
+            await reply(id, Self.noteReminderReply(receipt, note: noteText, replacing: previous))
         case .changeEvent(let id, let plan):
             await reply(id, changeEvent(plan))
         case .changeReminder(let id, let reminder, let draft):
@@ -915,10 +918,10 @@ final class VoiceSessionController {
         return receipt
     }
 
-    private static func noteReminderReply(_ receipt: NoteReminderReceipt, note: String) -> String {
+    private static func noteReminderReply(_ receipt: NoteReminderReceipt, note: String, replacing previous: MemoryReminder?) -> String {
         switch receipt {
-        case .scheduled(let reminder): VoiceToolReply.noteReminderSet(reminder, note: note)
-        case .inAppOnly(let reminder): VoiceToolReply.noteReminderInDoddyOnly(reminder, note: note)
+        case .scheduled(let reminder): VoiceToolReply.noteReminderSet(reminder, note: note, replacing: previous)
+        case .inAppOnly(let reminder): VoiceToolReply.noteReminderInDoddyOnly(reminder, note: note, replacing: previous)
         case .failed(let message), .needsSettings(let message): VoiceToolReply.noteReminderFailed(message)
         }
     }
@@ -1996,6 +1999,12 @@ final class VoiceSessionController {
     var isListReminder: Bool {
         guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return false }
         return store.list(id: memoryID) != nil
+    }
+
+    /// The reminder the note on the card has now, which Set reminder replaces (review C3).
+    var noteReminderReplaces: MemoryReminder? {
+        guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return nil }
+        return store.noteReminders?.reminder(forMemory: memoryID)
     }
 
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
