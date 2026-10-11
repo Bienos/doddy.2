@@ -669,6 +669,8 @@ protocol DeviceConnecting: ReminderStore, Sendable {
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
+    func eventNotes(_ event: CalendarEventSummary) -> String?
+    func reminderLists() -> [ReminderListRef]
     func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome
     func deleteEvent(_ event: CalendarEventSummary) throws -> DeviceConnections.ChangeOutcome
     func deleteReminder(_ before: ReminderSnapshot) throws -> DeviceConnections.ChangeOutcome

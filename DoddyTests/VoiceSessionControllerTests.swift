@@ -191,6 +191,8 @@ private final class FakeDevices: DeviceConnecting {
     }
 
     func eventLocation(_ event: CalendarEventSummary) -> String? { nil }
+    func eventNotes(_ event: CalendarEventSummary) -> String? { nil }
+    func reminderLists() -> [ReminderListRef] { [] }
 
     func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome {
         writeCount += 1
