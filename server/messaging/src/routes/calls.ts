@@ -136,9 +136,18 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date }>(
       "SELECT id, ciphertext, created_at FROM call_notes WHERE account_id = $1 ORDER BY created_at", [accountId]);
     const cipher = deps.cipher;
-    return {
-      notes: rows.map((r) => ({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at })),
-    };
+    // A note that won't decrypt (e.g. after a key change) must not hide the others; it is listed
+    // separately (older apps ignore the field) so it can still be discarded.
+    const notes: { id: string; text: string; createdAt: Date }[] = [];
+    const unreadable: { id: string; createdAt: Date }[] = [];
+    for (const r of rows) {
+      try {
+        notes.push({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at });
+      } catch {
+        unreadable.push({ id: r.id, createdAt: r.created_at });
+      }
+    }
+    return { notes, unreadable };
   });
 
   app.delete("/v1/call-notes/:id", { preHandler: auth }, async (req, reply) => {

@@ -159,6 +159,25 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await call("GET", "/v1/call-notes", h)).json().notes.length, 0);
   });
 
+  test("a note that won't decrypt is listed apart and can still be discarded", async () => {
+    const { accountId, h } = await user("+48500000015", { pin: "258025", inbound: true });
+    const s = (await ring("+48500000015")).secret__doddy_session!;
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s);
+    await el("/webhooks/elevenlabs/tools/save-note", { text: "Readable" }, s);
+    await el("/webhooks/elevenlabs/tools/save-note", { text: "Broken" }, s);
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM call_notes WHERE account_id = $1 ORDER BY created_at DESC LIMIT 1", [accountId]);
+    const broken = rows[0]!.id;
+    await db.query("UPDATE call_notes SET ciphertext = $2 WHERE id = $1", [broken, Buffer.alloc(40, 1)]);
+
+    const r = await call("GET", "/v1/call-notes", h);
+    assert.equal(r.statusCode, 200);
+    assert.deepEqual(r.json().notes.map((n: { text: string }) => n.text), ["Readable"]);
+    assert.deepEqual(r.json().unreadable.map((n: { id: string }) => n.id), [broken]);
+    assert.equal((await call("DELETE", `/v1/call-notes/${broken}`, h)).statusCode, 204);
+    assert.equal((await call("GET", "/v1/call-notes", h)).json().unreadable.length, 0);
+  });
+
   test("memory copy: snapshot replaces everything; turning it off deletes every copy", async () => {
     const { accountId, h } = await user("+48500000006", { memories: ["one", "two", "three"] });
     const count = async () => (await db.query("SELECT 1 FROM memory_copies WHERE account_id = $1", [accountId])).rowCount;
