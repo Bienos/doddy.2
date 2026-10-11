@@ -287,3 +287,10 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
 | O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
 
+## 4l. Home's first visit (ADR-321)
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Fresh install, finish onboarding | Home: under Talk to Doddy, "Try saying: “Remember the gate code is 4821.” …"; no Back Tap card; no Today card. Bottom: "Doddy is an AI, not a person." and What leaves this iPhone |
+| H2 | Tap What leaves this iPhone; Done. Then Settings › Privacy | The row-by-row screen opens as a sheet and closes. Settings › Privacy starts with the paragraph that used to be on Home |
+| H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count |
+

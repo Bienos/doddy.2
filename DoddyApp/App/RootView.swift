@@ -67,6 +67,9 @@ enum PreferenceKey {
     /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
     /// the keyword file in Application Support, never here.
     static let heyDoddyOn = "heyDoddy.on"
+    /// A voice conversation has really connected once on this iPhone (the provider said it is
+    /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-321).
+    static let hadFirstConversation = "hadFirstConversation"
 }
 
 enum AppTab: Hashable {

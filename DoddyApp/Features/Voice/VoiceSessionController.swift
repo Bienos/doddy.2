@@ -146,6 +146,11 @@ final class VoiceSessionController {
         didSet {
             Self.conversationInProgress = isLive
             syncIsland()
+            // Listening comes only from the provider's own event, so this marks a conversation
+            // that really connected, not a tap that failed (ADR-321).
+            if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
+                UserDefaults.standard.set(true, forKey: PreferenceKey.hadFirstConversation)
+            }
         }
     }
     /// True while any conversation holds the microphone (the island keeps it alive in other

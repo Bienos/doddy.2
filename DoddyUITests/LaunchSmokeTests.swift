@@ -9,11 +9,14 @@ final class LaunchSmokeTests: XCTestCase {
 
     @MainActor
     private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false,
-                        listen: Bool = false, extra: [String] = []) -> XCUIApplication {
+                        listen: Bool = false, firstVisit: Bool = false, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         // Overrides UserDefaults for this launch only.
         app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
         if onboardingDone { app.launchArguments += ["-onboardingDone", "YES"] }
+        // Most tests are about someone who has talked to Doddy before; Home's first visit
+        // (ADR-321) holds back the Back Tap and Today cards until then.
+        app.launchArguments += ["-hadFirstConversation", firstVisit ? "NO" : "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         // The opening (ADR-225) is on by default; most tests start straight on Home.
         if !opening { app.launchArguments += ["-openingScene", "NO"] }
@@ -84,6 +87,23 @@ final class LaunchSmokeTests: XCTestCase {
         }
         XCTAssertTrue(microphone.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Only while talking"].exists)
+    }
+
+    @MainActor
+    func testFirstVisitHomeKeepsToTalkingAndLinksToPrivacy() {
+        // ADR-321: before the first conversation, a hint under Talk and no setup cards.
+        let app = launch(onboardingDone: true, backTapSetup: "notStarted", firstVisit: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["home.firstHint"].exists)
+        XCTAssertFalse(app.buttons["home.backTap.setup"].exists, "held back until the first conversation")
+        XCTAssertFalse(app.buttons["today.openSettings"].exists, "nothing connected yet, so no Today card")
+
+        let link = app.buttons["home.dataFlow"]
+        for _ in 0..<6 where !(link.exists && link.isHittable) { app.swipeUp() }
+        link.tap()
+        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForNonExistence(timeout: 5))
     }
 
     @MainActor

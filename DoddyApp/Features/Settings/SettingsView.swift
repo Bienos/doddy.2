@@ -228,6 +228,11 @@ struct SettingsView: View {
                 Section("Privacy") {
                     // ADR-310: Face ID when Doddy opens, and after a minute away.
                     AppLockToggle()
+                    // The short version that used to sit at the bottom of Home (ADR-321).
+                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("settings.privacySummary")
                     NavigationLink {
                         DataFlowView()
                     } label: {

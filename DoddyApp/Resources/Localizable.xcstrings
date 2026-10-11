@@ -2575,6 +2575,17 @@
         }
       }
     },
+    "Doddy is an AI, not a person.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to AI, nie człowiek."
+          }
+        }
+      }
+    },
     "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": {
       "extractionState": "manual",
       "localizations": {
@@ -11327,6 +11338,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Spróbuj ponownie"
+          }
+        }
+      }
+    },
+    "Try saying: “Remember the gate code is 4821.” I'll ask before I keep anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz na przykład: „Zapamiętaj, że kod do bramy to 4821”. Zapytam, zanim cokolwiek zachowam."
           }
         }
       }

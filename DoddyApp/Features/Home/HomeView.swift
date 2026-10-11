@@ -23,6 +23,12 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
+    /// First visit (ADR-321): until a conversation has really connected, Home keeps to Talk to
+    /// Doddy and holds back the Back Tap and Today cards.
+    @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
+    @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
+    @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
+    @State private var showDataFlow = false
     private var router: ShortcutRouter { .shared }
 
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
@@ -103,6 +109,14 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.talk")
                         .modifier(SlideIn(shown: buttonsShown, delay: 0))
 
+                        if !hadFirstConversation && store.environment.capabilities.isAvailable(.voiceInput) {
+                            Text("Try saying: \u{201C}Remember the gate code is 4821.\u{201D} I'll ask before I keep anything.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.secondaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityIdentifier("home.firstHint")
+                        }
+
                         Button { showAsk = true } label: {
                             HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
                         }
@@ -137,19 +151,28 @@ struct HomeView: View {
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                         .frame(maxWidth: .infinity)
 
-                    TodayCard(openSettings: { selectedTab = .settings })
+                    // Today only points to Settings until something is connected; on the first
+                    // visit that is one more thing to read before talking (ADR-321).
+                    if hadFirstConversation || calendarOn || remindersOn {
+                        TodayCard(openSettings: { selectedTab = .settings })
+                    }
 
-                    if router.setup.phase == .notStarted {
+                    if router.setup.phase == .notStarted && hadFirstConversation {
                         backTapCard
                     }
                     aboutYou
 
                     recent
 
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityIdentifier("home.status")
+                    // The longer summary is in Settings › Privacy (ADR-321).
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Doddy is an AI, not a person.")
+                            .accessibilityIdentifier("home.status")
+                        Button("What leaves this iPhone") { showDataFlow = true }
+                            .accessibilityIdentifier("home.dataFlow")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -158,6 +181,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
+            .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
@@ -324,4 +348,20 @@ private struct HomeActionTile: View {
 @MainActor
 enum HomeIdle {
     static var played = false
+}
+
+/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-321).
+private struct DataFlowSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DataFlowView()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+        }
+    }
 }
