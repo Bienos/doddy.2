@@ -1,0 +1,22 @@
+{
+  "images": [
+    {
+      "filename": "day.jpg",
+      "idiom": "universal"
+    },
+    {
+      "filename": "night.jpg",
+      "idiom": "universal",
+      "appearances": [
+        {
+          "appearance": "luminosity",
+          "value": "dark"
+        }
+      ]
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

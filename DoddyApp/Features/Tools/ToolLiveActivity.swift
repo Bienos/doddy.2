@@ -39,6 +39,7 @@ final class ToolLiveActivity {
     }
 
     func show(_ state: DoddyToolAttributes.ContentState, startedAt: Date, duration: TimeInterval) {
+        let state = Self.styled(state)
         let content = ActivityContent(state: state, staleDate: staleDate(for: state))
         if let activity {
             guard state != shown else { return }
@@ -76,7 +77,7 @@ final class ToolLiveActivity {
         Task {
             await pending?.value
             if let final, keepFor > 0 {
-                await activity.end(ActivityContent(state: final, staleDate: nil),
+                await activity.end(ActivityContent(state: Self.styled(final), staleDate: nil),
                                    dismissalPolicy: .after(Date().addingTimeInterval(keepFor)))
             } else {
                 await activity.end(nil, dismissalPolicy: .immediate)
@@ -90,6 +91,13 @@ final class ToolLiveActivity {
         for activity in Activity<DoddyToolAttributes>.activities where !kept.contains(activity.attributes.kind) {
             Task { await activity.end(nil, dismissalPolicy: .immediate) }
         }
+    }
+
+    /// The state with the island style picked in Settings (ADR-299), read when it is sent.
+    private static func styled(_ state: DoddyToolAttributes.ContentState) -> DoddyToolAttributes.ContentState {
+        var state = state
+        state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
+        return state
     }
 
     private func staleDate(for state: DoddyToolAttributes.ContentState) -> Date? {

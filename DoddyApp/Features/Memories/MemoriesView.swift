@@ -47,7 +47,7 @@ struct MemoriesView: View {
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("memories.notesOrLists")
                     if let problem = store.environment.storageProblem ?? store.loadError {
-                        ProblemView(message: problem)
+                        ProblemView(message: problem, showsDoddy: true)
                     } else if !store.hasLoaded {
                         ProgressView("Loading notes")
                     } else if showsLists {
@@ -93,6 +93,8 @@ struct MemoriesView: View {
                     }
                 }
                 .padding(24)
+                // The memory library behind the heading (ADR-299).
+                .background(alignment: .top) { SceneryBackdrop(place: .memory) }
             }
             .background(Theme.canvas).foregroundStyle(Theme.ink)
             .toolbar(.hidden, for: .navigationBar, .tabBar)

@@ -268,6 +268,42 @@ enum IslandSceneChecks {
         return failures
     }
 
+    /// The voice screen's Doddy (ADR-299): the island's pose for the same moment, talking frames
+    /// while he speaks.
+    static func voiceScreen() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: voice screen: \(message)"); failures += 1 }
+        }
+        func art(_ phase: VoiceScreenArt.Phase, muted: Bool = false, waiting: Bool = false) -> VoiceScreenArt {
+            VoiceScreenArt.shown(phase, muted: muted, awaitingConfirmation: waiting)
+        }
+        expect(art(.connecting) == .pose(.yawnStretch), "connecting")
+        expect(art(.listening) == .pose(.listening), "listening")
+        expect(art(.thinking) == .pose(.kneelingInspect), "thinking")
+        expect(art(.speaking) == .talking, "speaking talks")
+        expect(art(.speaking, muted: true) == .pose(.shush), "muted")
+        expect(art(.listening, waiting: true) == .pose(.reachingHigh), "a card waits for a tap")
+        expect(art(.ended, waiting: true) == .pose(.fistpump), "ended")
+        expect(art(.failed, muted: true) == .pose(.facepalm), "failed beats muted")
+        expect(art(.microphoneOff) == .pose(.shush), "no microphone")
+        // The same poses as the island for the same moments (ADR-264).
+        let pairs: [(VoiceScreenArt.Phase, State.Status)] = [(.connecting, .connecting), (.listening, .listening),
+                                                              (.thinking, .thinking)]
+        for (phase, status) in pairs {
+            let island = State(status: status, isMuted: false).wholeDoddyPose(stale: false)
+            expect(art(phase) == .pose(island ?? .wave), "\(phase) matches the island")
+        }
+        // Frames loop 1...6 and every frame shows for the same time.
+        let d = VoiceScreenArt.talkingFrameDuration
+        let frames = (0..<13).map { VoiceScreenArt.talkingFrame(at: Double($0) * d + d / 2) }
+        expect(frames == [1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1], "frames loop: \(frames)")
+        expect(VoiceScreenArt.talkingFrame(at: -5) == 1, "a time before zero")
+        let box = VoiceScreenArt.talkingFigure
+        expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= 1 && box.y + box.height <= 1, "talking box")
+        return failures
+    }
+
     static func tools() -> Int {
         var failures = 0
         func expect(_ ok: Bool, _ message: String) {
@@ -299,6 +335,26 @@ enum IslandSceneChecks {
         expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).compactSign == .bars, "reading")
         let lost = read.islandScene(.init(isPaused: false), isStale: true, now: now)
         expect(!lost.live && lost.subtitleIsWarning, "read aloud lost")
+        // Whole Doddy reads lying on his front (ADR-299); other styles and older builds keep the board.
+        func readPose(_ state: DoddyToolAttributes.ContentState, stale: Bool = false) -> IslandPose? {
+            var s = state
+            s.islandStyle = .wholeDoddy
+            return read.islandScene(s, isStale: stale, now: now).pose
+        }
+        expect(readPose(.init(isPaused: false)) == .bellyReading, "whole doddy reads")
+        expect(readPose(.init(isPaused: true)) == .crosslegged, "whole doddy paused")
+        expect(readPose(.init(isPaused: false, isFinished: true)) == .fistpump, "whole doddy finished reading")
+        expect(readPose(.init(isPaused: false), stale: true) == .facepalm, "whole doddy lost")
+        expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).pose == nil, "no style, no pose")
+        var leanIn = DoddyToolAttributes.ContentState(isPaused: false)
+        leanIn.islandStyle = .leanIn
+        expect(read.islandScene(leanIn, isStale: false, now: now).pose == nil, "lean in keeps the board")
+        expect(focus.islandScene(.init(isPaused: false, endsAt: end, islandStyle: .wholeDoddy), isStale: false, now: now).pose == nil,
+               "focus keeps its board")
+        // Content from an older build (no style) still decodes.
+        let old = Data(#"{"isPaused":false,"remaining":0,"isFinished":false}"#.utf8)
+        let decoded = try? JSONDecoder().decode(DoddyToolAttributes.ContentState.self, from: old)
+        expect(decoded != nil && decoded?.islandStyle == nil, "older content decodes")
         expect(DoddyToolAttributes.clock(3725) == "1:02:05" && DoddyToolAttributes.clock(59.2) == "1:00", "clock")
         return failures
     }

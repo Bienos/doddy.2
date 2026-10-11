@@ -346,21 +346,27 @@ extension DoddyToolAttributes {
             return scene(.calmTide, 0, label: "BREATHE", time: .countdown(end), title: "Breathing",
                          subtitle: "Open Doddy to follow along", compact: .countdown(end), minimal: .none)
         case .readAloud:
+            var shown: IslandScene
             if lost {
-                return scene(.storySpool, 1, label: "READ ALOUD", time: .text(""), title: "Stopped",
-                             subtitle: "Open Doddy to read it again", warning: true,
-                             compact: .symbol("exclamationmark.triangle.fill", .warning), minimal: .none)
+                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text(""), title: "Stopped",
+                              subtitle: "Open Doddy to read it again", warning: true,
+                              compact: .symbol("exclamationmark.triangle.fill", .warning), minimal: .none)
+            } else if over {
+                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text("Done"), title: "Finished reading",
+                              subtitle: "Your note", compact: .check, minimal: .none)
+            } else if state.isPaused {
+                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text("Paused"), title: "Paused",
+                              subtitle: "Pick up where you left off", compact: .symbol("pause.fill", .secondary), minimal: .none)
+            } else {
+                shown = scene(.storySpool, 0, label: "READ ALOUD", time: .text("Note"), title: "Reading aloud",
+                              subtitle: "Your note", compact: .bars, minimal: .bars)
             }
-            if over {
-                return scene(.storySpool, 1, label: "READ ALOUD", time: .text("Done"), title: "Finished reading",
-                             subtitle: "Your note", compact: .check, minimal: .none)
+            // Whole Doddy (ADR-299): he reads lying on his front; done, lost and waiting are the
+            // same poses as in a conversation (fist pump, facepalm, cross-legged).
+            if state.islandStyle == .wholeDoddy {
+                shown.pose = lost ? .facepalm : over ? .fistpump : state.isPaused ? .crosslegged : .bellyReading
             }
-            if state.isPaused {
-                return scene(.storySpool, 1, label: "READ ALOUD", time: .text("Paused"), title: "Paused",
-                             subtitle: "Pick up where you left off", compact: .symbol("pause.fill", .secondary), minimal: .none)
-            }
-            return scene(.storySpool, 0, label: "READ ALOUD", time: .text("Note"), title: "Reading aloud",
-                         subtitle: "Your note", compact: .bars, minimal: .bars)
+            return shown
         }
     }
 
