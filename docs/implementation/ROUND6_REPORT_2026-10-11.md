@@ -1,6 +1,6 @@
 # Round 6 report (2026-10-11, owner: "do all of them, skip the camera one")
 
-Branch `claude/hopeful-fermat-1a63x0`, ADR-330 and ADR-332 to ADR-339 (`DECISIONS.md`, Round 6). The default branch took ADR-331 (hide character art) while this round was being built and is merged in. Camera document scanning was skipped, as asked; ADR-224 stands. **Nothing in this round has been compiled with Xcode.** There is no Xcode in this container, and GitHub Actions still doesn't start jobs.
+Branch `claude/hopeful-fermat-1a63x0`, ADR-330, ADR-332 to ADR-335 and ADR-337 to ADR-340 (`DECISIONS.md`, Round 6). The default branch took ADR-331 (hide character art) and ADR-336 (previews and UI tests) while this round was being built and is merged in. Camera document scanning was skipped, as asked; ADR-224 stands. **Nothing in this round has been compiled with Xcode.** There is no Xcode in this container, and GitHub Actions still doesn't start jobs.
 
 ## What was built
 
@@ -11,7 +11,7 @@ Branch `claude/hopeful-fermat-1a63x0`, ADR-330 and ADR-332 to ADR-339 (`DECISION
 | 3 | Tags in notes (#word) | 333 | `NoteTags.swift`, the tag row and filter in `MemoriesView`, `#tag` search by voice |
 | 4 | List templates | 334 | `ListTemplates.swift`, `ListTemplateStore.swift`, "Save as template", "Start from a template", `create_list` `template` |
 | 5 | "Remind me when to leave" | 335 | `LeaveBy.swift`, `Infrastructure/Connections/TravelTime.swift`, `Features/LeaveBy/LeaveByScheduler.swift`, the card |
-| 6 | Outlook (Microsoft 365 and Outlook.com) | 336 | `backend/src/tools/catalog.ts` and the mock, `CloudToolName`, Online accounts, the guard |
+| 6 | Outlook (Microsoft 365 and Outlook.com) | 340 | `backend/src/tools/catalog.ts` and the mock, `CloudToolName`, Online accounts, the guard |
 | 7 | iPad | 337 | `project.yml` (device family 1,2), one readable column in `RootView`, Back Tap hidden |
 | 8 | Rules for Doddy in the car (CarPlay groundwork) | 338 | `CarProfile.swift` |
 | 9 | Quick actions on the app icon | 339 | `QuickActions.swift`, `Features/QuickActions/QuickActions.swift`, the scene delegate |
@@ -44,7 +44,7 @@ The live voice agent has the six new tools, the updated `search_memories` and `c
   - a real place by car, on foot and by public transport (transit ETAs aren't available everywhere);
   - the notification fires at the time on the card and says traffic may have changed;
   - "too late", "no route" and location off.
-- **Outlook (ADR-336):** a real Microsoft 365 account and an Outlook.com account through Composio.
+- **Outlook (ADR-340):** a real Microsoft 365 account and an Outlook.com account through Composio.
   - Do `OUTLOOK_LIST_MESSAGES`, `OUTLOOK_CREATE_DRAFT` and `OUTLOOK_GET_CALENDAR_VIEW` return the fields the mock assumes?
   - Which scopes does Composio's Outlook auth config actually ask for?
 - **iPad (ADR-337):** iPad portrait and landscape, Split View, Slide Over; no Back Tap card or rows; the share extension and widgets on iPad.
@@ -71,7 +71,7 @@ Don't say "implemented", "tested" or "privacy guaranteed" about any of this. It 
 
 - **Spotlight (ADR-330):** off until the user turns it on. When on, note and list text (shortened) goes into iOS's own on-device search index, so it can show in Home Screen search, including on the Lock Screen if the user's iOS settings allow search there. Private notes are never indexed. Turning it off deletes Doddy's whole domain from the index.
 - **Leave-by (ADR-335):** for each request, the iPhone's position (once, While Using; approximate is enough) and the destination go to Apple Maps for the place search and travel time. Nothing goes to Doddy's server. The notification text holds the place name and times.
-- **Outlook (ADR-336):** like Gmail, through Doddy's server and Composio. **Mock-only so far.** The draft needs `Mail.ReadWrite`, which Microsoft grants as read *and* write over the whole mailbox. Doddy only ever creates drafts, and the guard enforces that in code, but the grant itself is wider than drafts. Anything wider still (e.g. `Mail.Send`) blocks every Outlook tool.
+- **Outlook (ADR-340):** like Gmail, through Doddy's server and Composio. **Mock-only so far.** The draft needs `Mail.ReadWrite`, which Microsoft grants as read *and* write over the whole mailbox. Doddy only ever creates drafts, and the guard enforces that in code, but the grant itself is wider than drafts. Anything wider still (e.g. `Mail.Send`) blocks every Outlook tool.
 - **Tags, templates, free time, quick actions, iPad, car rules:** nothing leaves the iPhone.
 
 ## Security and privacy risks

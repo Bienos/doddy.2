@@ -6,7 +6,7 @@ import Foundation
 public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
-    /// Microsoft Outlook (ADR-336).
+    /// Microsoft Outlook (ADR-340).
     case outlook
     case web
     /// The ECB's public rates file (ADR-300).

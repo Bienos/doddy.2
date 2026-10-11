@@ -215,7 +215,7 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Version:** `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89` → `agtvrsn_7001m4nt39q1fhwrhtsyqdegf35g`, 51 tools. The stored prompt was read back.
 - **Mixed versions:** an installed app from before this round answers "unsupported" to the two new tools and doesn't act on the new `change_reminder`/`change_calendar_event` fields. A backend without round 5 refuses the two online-account tools as unknown.
 
-**Applied to the live agent 2026-10-11 (round 6, ADR-332 to ADR-336).**
+**Applied to the live agent 2026-10-11 (round 6, ADR-332 to ADR-335 and ADR-340).**
 - **Re-read first:** version `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` (51 tools, the same ids as after round 5). Its prompt was round 5's, with two differences:
   - the camera line is still the ADR-291 wording, as before;
   - two lines from ADR-324 ("unlock as you go", branch `claude/lucid-johnson-pmwwg4`, not merged into this line yet) were applied by that session: the connections line ("Nothing is asked up front…") and the online-account "declined"/"iPhone doesn't allow" rule.

@@ -170,7 +170,7 @@ if [ -d "$backend_src" ]; then
     | grep -E 'GMAIL_|GOOGLEDRIVE_|NOTION_|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)'; then
     echo "FAIL: a write tool beyond the reviewed Gmail draft and the Todoist add, complete and move is referenced in the backend." >&2; status=1
   fi
-  # Outlook (ADR-336): the only write is OUTLOOK_CREATE_DRAFT, in the catalog and its mock. Nothing
+  # Outlook (ADR-340): the only write is OUTLOOK_CREATE_DRAFT, in the catalog and its mock. Nothing
   # that sends, deletes, moves, replies, flags or changes the calendar.
   if grep -RInE 'OUTLOOK_(SEND|DELETE|MOVE|UPDATE|CREATE|REPLY|FORWARD|COPY|PATCH|FLAG|MARK|ADD|REMOVE|ACCEPT|DECLINE|CANCEL|TENTATIVE|SNOOZE|DISMISS|BATCH)' "$backend_src" \
     | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:([^O]|O[^U])*OUTLOOK_CREATE_DRAFT([^A-Z0-9_]|$)([^O]|O[^U])*$"; then

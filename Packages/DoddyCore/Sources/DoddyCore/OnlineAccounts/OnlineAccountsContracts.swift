@@ -135,7 +135,7 @@ public enum CloudToolName {
     public static let draftEmailReply = "draft_email_reply"
     /// One Notion page's text, the best match among pages shared with Doddy (round 5). Off until switched on.
     public static let readNotionPage = "read_notion_page"
-    /// Microsoft Outlook (ADR-336): the same reads and draft as Gmail, plus reading its calendar.
+    /// Microsoft Outlook (ADR-340): the same reads and draft as Gmail, plus reading its calendar.
     public static let checkOutlookEmail = "check_outlook_email"
     public static let readOutlookEmail = "read_outlook_email"
     public static let draftOutlookEmail = "draft_outlook_email"

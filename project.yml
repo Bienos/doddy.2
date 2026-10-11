@@ -188,9 +188,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
         CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
-        # The watch app's catalog holds Doddy's pictures only (ADR-323); no watch app icon yet,
-        # so actool must not look for one (ADR-331). Add an icon set before App Store submission.
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # The watch app's icon is the iPhone's candidate icon, byte-identical (ADR-050, ADR-336):
+        # DoddyWatch/Assets.xcassets/AppIcon. It changes with the iPhone's when the owner decides.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_FILE: Config/DoddyWatch-Info.plist
         PRODUCT_NAME: DoddyWatch
         MARKETING_VERSION: "0.0.1"
