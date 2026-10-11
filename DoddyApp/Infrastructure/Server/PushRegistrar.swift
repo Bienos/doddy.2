@@ -68,6 +68,11 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         PushRegistrar.shared.didRegister(deviceToken)
     }
 
+    /// Silent notifications: iCloud saying a shared list changed (ADR-268). Nothing else uses them.
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
+        await SharedListsController.shared.handleRemoteNotification(userInfo) ? .newData : .noData
+    }
+
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {
         PushRegistrar.shared.didFail(error)
     }

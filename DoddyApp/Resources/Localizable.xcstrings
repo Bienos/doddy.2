@@ -3994,6 +3994,17 @@
         }
       }
     },
+    "Last updated %@. Changes from others arrive straight away.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnia aktualizacja: %@. Zmiany innych pojawiają się od razu."
+          }
+        }
+      }
+    },
     "Last updated %@. Changes from others show when Doddy is open.": {
       "extractionState": "manual",
       "localizations": {

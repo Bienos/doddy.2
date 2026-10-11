@@ -125,6 +125,33 @@ struct ListCloud {
         return changed
     }
 
+    // MARK: Updates straight away (ADR-268)
+
+    static func subscriptionID(_ role: ListShareRole) -> String { "doddy-lists-\(role.rawValue)" }
+
+    /// Asks iCloud to wake Doddy with a silent notification when anything in this database
+    /// changes. The notification carries no list content; Doddy then syncs as usual. Read back.
+    func subscribe(_ role: ListShareRole) async throws -> Bool {
+        let subscription = CKDatabaseSubscription(subscriptionID: Self.subscriptionID(role))
+        let info = CKSubscription.NotificationInfo()
+        info.shouldSendContentAvailable = true
+        subscription.notificationInfo = info
+        let result = try await database(role).modifySubscriptions(saving: [subscription], deleting: [])
+        for outcome in result.saveResults.values { _ = try outcome.get() }
+        return (try? await database(role).subscription(for: Self.subscriptionID(role))) != nil
+    }
+
+    /// Stops the wake-ups once no list of that kind is shared any more.
+    func unsubscribe(_ role: ListShareRole) async {
+        _ = try? await database(role).modifySubscriptions(saving: [], deleting: [Self.subscriptionID(role)])
+    }
+
+    /// True for a silent notification from iCloud about Doddy's lists.
+    static func isListNotification(_ userInfo: [AnyHashable: Any]) -> Bool {
+        guard let notification = CKNotification(fromRemoteNotificationDictionary: userInfo) as? CKDatabaseNotification else { return false }
+        return notification.subscriptionID?.hasPrefix("doddy-lists-") == true
+    }
+
     // MARK: Sharing
 
     /// Puts the list in a new zone in the user's own iCloud and shares the zone. Nobody is

@@ -31,6 +31,10 @@ final class SharedListsController {
         }
     }
 
+    /// iCloud wakes Doddy when a shared list changes (ADR-268). False: changes arrive when
+    /// Doddy comes to the front (the build has no push entitlement, or registering failed).
+    private(set) var liveUpdates = false
+
     private var syncAgain = false
     private let cloud = ListCloud.make()
 
@@ -63,6 +67,7 @@ final class SharedListsController {
         let link = ListShare(listID: list.id, zoneName: zoneID.zoneName, zoneOwner: zoneID.ownerName, role: .owner, base: state, syncedAt: .now)
         try await repository.save(link)
         links[list.id] = link
+        await startLiveUpdates()
         return CloudShareSheet(share: share, container: cloud.container)
     }
 
@@ -79,6 +84,31 @@ final class SharedListsController {
         guard try await cloud.stop(link) else { throw SharingError.unconfirmed }
         try await repository.remove(listID: listID)
         links[listID] = nil
+        if !links.values.contains(where: { $0.role == link.role }) { await cloud.unsubscribe(link.role) }
+    }
+
+    // MARK: Updates straight away (ADR-268)
+
+    /// While any list is shared: register for silent notifications (no permission prompt; the
+    /// device token is not sent anywhere, iCloud uses it directly) and subscribe each database
+    /// that has a shared list. Needs the push entitlement; without it, nothing changes and
+    /// updates keep arriving when Doddy is opened.
+    func startLiveUpdates() async {
+        guard let cloud, !links.isEmpty else { liveUpdates = false; return }
+        guard (try? await PushRegistrar.shared.currentDeviceToken()) != nil else { liveUpdates = false; return }
+        var subscribed = true
+        for role in Set(links.values.map(\.role)) {
+            subscribed = ((try? await cloud.subscribe(role)) ?? false) && subscribed
+        }
+        liveUpdates = subscribed
+    }
+
+    /// A silent notification arrived. True when it was iCloud about the lists (then they sync).
+    func handleRemoteNotification(_ userInfo: [AnyHashable: Any]) async -> Bool {
+        guard isAvailable, ListCloud.isListNotification(userInfo) else { return false }
+        await load()
+        await syncAll()
+        return true
     }
 
     // MARK: Joining
@@ -108,6 +138,7 @@ final class SharedListsController {
             role: .participant, base: joined.state, syncedAt: .now)
         try await repository.save(link)
         links[list.id] = link
+        await startLiveUpdates()
         return list
     }
 

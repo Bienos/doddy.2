@@ -1009,5 +1009,6 @@
  "It rings even in Silent mode or a Focus, with Snooze for 9 minutes. Turn it off in Settings, Alarms, or ask Doddy.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z drzemką na 9 minut. Wyłączysz go w Ustawieniach, w sekcji Budziki, albo prosząc Doddy’ego.",
  "Turn off this alarm?": "Wyłączyć ten budzik?",
  "A repeating alarm stops for every day, not just the next one.": "Powtarzający się budzik wyłącza się na wszystkie dni, nie tylko na najbliższy.",
- "Snoozed": "Drzemka"
+ "Snoozed": "Drzemka",
+ "Last updated %@. Changes from others arrive straight away.": "Ostatnia aktualizacja: %@. Zmiany innych pojawiają się od razu."
 }
