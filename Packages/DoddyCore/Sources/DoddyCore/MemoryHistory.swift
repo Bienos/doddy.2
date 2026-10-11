@@ -45,7 +45,7 @@ extension MemoryCorrection: Codable {
         try c.encode(memoryID, forKey: .memoryId)
         try c.encode(number, forKey: .number)
         try c.encode(text, forKey: .text)
-        try c.encode(Int64((correctedAt.timeIntervalSince1970 * 1000).rounded()), forKey: .correctedAtMs)
+        try c.encode(EpochMilliseconds.rounded(correctedAt), forKey: .correctedAtMs)
     }
 }
 

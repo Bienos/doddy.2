@@ -171,7 +171,9 @@ extension VoiceToolReply {
             }
             return text
         case .failure(.unknownCurrency(let code)):
-            return "failed: the European Central Bank publishes no rate for \"\(code)\". Use a three-letter code; it has: \(rates.codes.joined(separator: ", ")). Nothing was converted."
+            // The code is the agent's words; the ECB's own codes are three capital letters (parse).
+            return "failed: the European Central Bank publishes no rate for the currency below. Use a three-letter code; it has: \(rates.codes.joined(separator: ", ")). Nothing was converted.\n"
+                + ToolData.block([quoted("Currency", code)])
         case .failure(.notFinite):
             return "failed: the amount is too large to convert."
         case .failure(.negative):

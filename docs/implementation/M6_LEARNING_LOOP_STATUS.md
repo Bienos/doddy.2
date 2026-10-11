@@ -1,0 +1,49 @@
+# M6 — Learning loop: status
+Status: **Phase B and Phase C built; Linux-tested for everything that is not a screen. Screens, voice wiring and the live voice agent NOT RUN.** ADR-440. Owner on 2026-10-11: "use your proposed defaults and start Phase B" — the six decisions in the design doc §12 are accepted as proposed. `docs/implementation/MILESTONES.md` is an imported pack file (byte-locked by `scripts/verify_imported_pack.py`), so this milestone lives here, like M4a, S1 and N1.
+
+**Place in the sequence:** after M2 (real text model), M4 (real actions) and the M5 beta decision, so learning does not confound the beta's retention measurement. Owner may instead run it inside M5 with a control group (design doc §12, decision 5).
+
+**Goal:** Doddy gets better for one person as **data, never code**: verified facts confirmed word for word, procedures as saved plan templates over the existing ADR-204 allowlist with every step still approved on the plan card, outcome events without user text, capability gaps as local categories. Design: `docs/architecture/LEARNING_LOOP.md`.
+
+**Phases**
+- A — design review: `LEARNING_LOOP.md`, ADR-440, schema proposal, policy map. Done 2026-10-11; defaults accepted by the owner the same day.
+- B — typed core (`Packages/DoddyCore/Sources/DoddyCore/Learning/`), migrations `v11`–`v13` and three SQLite repositories with read-back (`Packages/DoddyCore/Sources/DoddyPersistence/SQLite{LearnedFact,Procedure,OutcomeEvent}Repository.swift`), Linux tests. **Built 2026-10-11.** The defaults live in `LearningLimits.standard` (3 proposals a day, 1 per conversation, 7-day proposal expiry, 90-day procedure retirement, 90-day outcome retention), `LearnedFactKind.expiryDays` (preference 365, routine 180, fact/person/place none with review after 365) and `SensitiveContentFilter`.
+- C — proposers, `LearningService`, `LearningStore`, proposal cards (`LearningCardsView`), the Settings screen (`LearnedView`), procedure runs through the voice agent's plan card, `note_capability_gap`, data-flow disclosure, Polish strings. **Built 2026-10-11** (ADR-441, design doc §13). Voice-only routine runs; no Run button; gaps only when the agent calls the tool; typed Ask unchanged.
+
+**Metric:** user corrections per week, computed locally from `outcome_events` of kinds `corrected`, `redone` and `cancelled`. **Baseline needed:** two weeks with learning off (owner's own use or the beta) before any "gets better" claim.
+
+**Exit:** save → restart → read back for facts and procedures; delete reaches the FTS tables and the next request; a hand-edited procedure row cannot skip an approval card or use an off connection; a sensitive sentence is never proposed; the same evidence is never proposed twice; corrections per week on a device compared with the baseline. No cloud, sync, embeddings, telemetry or new providers.
+
+**Evidence (Phase B, 2026-10-11, Linux x86_64, Swift 6.1 release toolchain downloaded into the session, same version as CI's `swift:6.1-noble`):**
+```
+$ swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined --filter "LearningTests|SQLiteLearningRepositoryTests"
+Executed 19 tests, with 0 failures (0 unexpected)   # LearningTests
+Executed 12 tests, with 0 failures (0 unexpected)   # SQLiteLearningRepositoryTests
+Executed 31 tests, with 0 failures (0 unexpected)
+```
+Full package and guards, same session:
+```
+$ swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
+Executed 801 tests, with 0 failures (0 unexpected) in 14.391 seconds
+$ scripts/typecheck_app_logic.sh        PASS: 18 app files type-check
+$ python3 -I scripts/verify_imported_pack.py   PASS: 259 imported pack files match
+$ scripts/check_forbidden_capabilities.sh      PASS
+``` What the tests cover: v10 → v13 upgrade of an existing file keeps its notes; propose → confirm (exact text only, once) → reopen → read back; preference/routine expiry, "still true?" reconfirm, revise with history, retire; delete and delete-all reach the FTS tables and the revisions; Polish diacritics found with and without accents; conflicting facts both returned; same evidence refused twice, "never this" sticks, unanswered proposals pruned; procedure confirm/use/edit (version 2)/retire-unused/revive/delete; a hand-edited row claiming `"approval":"none"` still shows the card and a row naming `open_map` is reported corrupt; outcome events record, count, prune, export with no text; parser refuses keys outside the contract; policy caps, pause, sensitive mode, sensitive text (EN/PL), tool allowlist and off-tools; assembler budget, scope, pause and status.
+
+**Phase C evidence (same session and toolchain):**
+```
+$ swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
+Executed 825 tests, with 0 failures (0 unexpected)
+$ scripts/typecheck_app_logic.sh        PASS: 20 app files type-check (adds LearningStore and ActivityLogStore)
+$ python3 -I scripts/voice_agent_spec.py check          PASS (52 tools; --agent phone: 3 tools)
+$ python3 -I tools/build_strings_catalog.py --check     PASS (1249 of 1278 UI strings)
+$ python3 -I scripts/verify_imported_pack.py            PASS
+$ scripts/check_forbidden_capabilities.sh               PASS
+$ python3 -I tools/build_blog.py --check                PASS
+$ scripts/check_island_art.sh                           PASS
+```
+New tests: `LearningIntegrationTests` (13: recorder, redo window, undo once, the gap tool, fact proposer, detector, voice text, Polish names), `LearningServiceTests` (10, real SQLite: off/private/paused, card Save/Never/again, caps, 7-day expiry, a routine from three days through confirm, use and the agent text, "Never this" surviving a later day, "That's wrong", metrics and gaps, 90-day retirement, delete all), one data-flow test.
+
+**NOT RUN:** the iOS app and every SwiftUI file (`LearnedView`, `LearningCardsView`, the edits in `SettingsView`, `VoiceView`, `DoddyApp`, `AppEnvironment`, `DataFlowView`), the edits in `VoiceSessionController`, the real activity log hooks, notification and voice behaviour, VoiceOver and Dynamic Type, and the live ElevenLabs agent (the new tool and variable are not applied; see `voice-agent/README.md`). Mac checklist 4k (L1–L13) lists what to try. **Not claimed:** that Doddy learns anything for a real person yet, or that the corrections-per-week number is meaningful: it needs the two-week baseline first.
+
+**After merging the default branch (2026-10-11):** the default branch was 190 commits ahead. Conflicts in ten files were resolved keeping both sides. Two things changed because of other work: the ADRs are now 440 (design and storage) and 441 (app wiring), because 324 and 325 belong to other open pull requests; and the new tool is `"elevenlabs_tool_id": "not_synced"` with a `learned_context` placeholder in `session.json`, as the default branch's spec check now requires. The car rules (`CarProfile`, ADR-338) get one decision for the new tool: it runs, because it writes an internal category and none of the user's data. Owner: say if you want it refused in the car instead. Result: 920 package tests pass, 0 failures; type-check of 22 app files, voice agent spec (58 tools), string catalog (1282 of 1338), pack, capability, blog and island checks pass. Still NOT RUN: every SwiftUI file and the app target.

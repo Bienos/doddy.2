@@ -30,6 +30,8 @@ public enum VoiceConnectionMode: Equatable, Sendable {
 
 public enum VoiceTokenError: Error, Equatable, Sendable {
     case accessCodeRejected
+    /// Too many conversations started with this access code; the server says how long to wait.
+    case rateLimited(retryAfterSeconds: Int?)
     case busy
     case serverNotConfigured
     case serverProblem(status: Int)
@@ -47,7 +49,8 @@ public enum VoiceTokenServer {
         return url
     }
 
-    public static func token(status: Int, body: Data) -> Result<String, VoiceTokenError> {
+    /// `retryAfter` is the reply's Retry-After header (seconds), read only for a 429.
+    public static func token(status: Int, body: Data, retryAfter: String? = nil) -> Result<String, VoiceTokenError> {
         switch status {
         case 200:
             guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
@@ -55,6 +58,9 @@ public enum VoiceTokenServer {
             else { return .failure(.badResponse) }
             return .success(token)
         case 401: return .failure(.accessCodeRejected)
+        case 429:
+            let seconds = retryAfter.flatMap { Int($0.trimmingCharacters(in: .whitespaces)) }.flatMap { $0 > 0 ? $0 : nil }
+            return .failure(.rateLimited(retryAfterSeconds: seconds))
         case 503: return .failure(.busy)
         case 500: return .failure(.serverNotConfigured)
         default: return .failure(.serverProblem(status: status))
@@ -81,6 +87,12 @@ public enum VoiceTokenServer {
         switch error {
         case .accessCodeRejected:
             "Your access code wasn't accepted. Check it in Settings → Voice."
+        case .rateLimited(let seconds?) where seconds > 90:
+            "You've started a lot of conversations with this access code. Try again in about \((seconds + 59) / 60) minutes; your notes still work."
+        case .rateLimited(let seconds?) where seconds > 0:
+            "You've started a lot of conversations with this access code. Try again in a minute or two; your notes still work."
+        case .rateLimited:
+            "You've started a lot of conversations with this access code. Try again later; your notes still work."
         case .busy:
             "Doddy's voice is busy or has reached today's limit. Try again later; your notes still work."
         case .serverNotConfigured:

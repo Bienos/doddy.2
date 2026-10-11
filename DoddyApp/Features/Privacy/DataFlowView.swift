@@ -39,7 +39,8 @@ struct DataFlowView: View {
             siriReadsNotes: siriReadsNotes,
             heyDoddyOn: heyDoddyOn,
             sharedLists: SharedListsController.shared.links.count,
-            voiceProvider: VoiceProvider(stored: voiceProvider))
+            voiceProvider: VoiceProvider(stored: voiceProvider),
+            learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice))
     }
 
     var body: some View {

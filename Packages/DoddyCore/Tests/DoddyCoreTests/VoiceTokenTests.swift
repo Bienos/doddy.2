@@ -35,4 +35,15 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data()), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 400, body: Data()), .failure(.serverProblem(status: 400)), "a server from before ADR-328")
     }
+
+    func testRateLimitSaysHowLongToWaitInsteadOfTryAgainInAMoment() {
+        let body = Data(#"{"error":"rate_limited"}"#.utf8)
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body, retryAfter: "1800"), .failure(.rateLimited(retryAfterSeconds: 1800)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body), .failure(.rateLimited(retryAfterSeconds: nil)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body, retryAfter: "soon"), .failure(.rateLimited(retryAfterSeconds: nil)))
+        let wait = VoiceTokenServer.message(for: .rateLimited(retryAfterSeconds: 1800))
+        XCTAssertTrue(wait.contains("about 30 minutes"), wait)
+        XCTAssertFalse(wait.contains("in a moment"))
+        XCTAssertFalse(VoiceTokenServer.message(for: .rateLimited(retryAfterSeconds: nil)).contains("in a moment"))
+    }
 }

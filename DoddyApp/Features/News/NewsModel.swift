@@ -35,13 +35,18 @@ final class NewsModel {
 
     var isServerConfigured: Bool { client != nil }
 
+    /// Loads the saved settings into the draft the first time only. Coming back to this screen
+    /// (for example from Notifications and texts) keeps unsaved edits; after Save the draft is
+    /// replaced with what the server saved (DOD-08).
     func refresh() async {
         guard let client else { return }
         await run {
-            let settings = try await client.newsSettings()
-            self.apply(settings)
-            self.catalog = try await client.newsCatalog(language: settings.language)
-            self.digests = (try? await client.newsDigests()) ?? []
+            if self.loaded == nil {
+                self.apply(try await client.newsSettings())
+            }
+            // The saved language, as before: the draft's topics were picked from that catalog.
+            self.catalog = try await client.newsCatalog(language: self.loaded?.language ?? self.language)
+            self.digests = (try? await client.newsDigests()) ?? self.digests
         }
     }
 
@@ -63,6 +68,18 @@ final class NewsModel {
 
     func save() async {
         guard let client else { return }
+        // A half-filled own topic would be left out without a word, then "Saved." shown. Rows with
+        // neither a name nor keywords are empty and simply skipped.
+        if let incomplete = ownTopics.first(where: { topic in
+            let hasLabel = !topic.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return hasLabel != !NewsTopic.keywords(from: topic.keywordsText).isEmpty
+        }) {
+            let label = incomplete.label.trimmingCharacters(in: .whitespacesAndNewlines)
+            message = label.isEmpty
+                ? NSLocalizedString("One of your own topics has keywords but no name. Name it or remove it. Nothing was saved.", comment: "")
+                : String(format: NSLocalizedString("Add keywords to \u{201C}%@\u{201D}, or remove it. Nothing was saved.", comment: ""), label)
+            return
+        }
         let parts = Calendar.current.dateComponents([.hour, .minute], from: sendTime)
         let topics = selectedCatalog.compactMap { id in catalog.first { $0.id == id }.map { NewsTopic(catalogId: $0.id, label: $0.label) } }
             + ownTopics.compactMap { t in
@@ -98,6 +115,8 @@ final class NewsModel {
                 ? "It's below. Nothing was sent: notifications or texts aren't on for this iPhone."
                 : "It's below\(result.aiWritten ? "" : " (headlines only)")."
             case "empty": NSLocalizedString("Nothing new for your topics right now.", comment: "")
+            // The request may have reached the server, but no answer came back (DOD-08).
+            case "unknown": NSLocalizedString("Couldn't confirm whether your news was built. It may still arrive, and Doddy won't send it again on its own. Wait a few minutes before trying again.", comment: "")
             default: "Couldn't build your news right now. Try again later."
             }
             self.digests = (try? await client.newsDigests()) ?? self.digests

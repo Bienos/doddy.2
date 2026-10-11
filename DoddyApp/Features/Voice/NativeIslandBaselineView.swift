@@ -36,6 +36,9 @@ struct NativeIslandBaselineView: View {
                 Section("System observation") {
                     Text("\(nativeActivityCount) native activities")
                         .accessibilityIdentifier("island.fixture.nativeCount")
+                    // Read by the UI test, so it skips instead of failing where iOS has Live Activities off.
+                    Text(verbatim: ActivityAuthorizationInfo().areActivitiesEnabled ? "Live Activities on" : "Live Activities off")
+                        .accessibilityIdentifier("island.fixture.activitiesEnabled")
                     Text("Go Home to see the actual widget. Mute and End use the production LiveActivityIntent handlers, connected here only to this fixture.")
                 }
             }

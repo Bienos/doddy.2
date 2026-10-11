@@ -40,6 +40,21 @@ final class MorningCheckInTests: XCTestCase {
         XCTAssertFalse(MorningCheckIn.isCheckIn(notificationID: "doddy.note-reminder.x"))
     }
 
+    func testTodayEndsAtMidnightOnClockChangeDays() throws {
+        let note = try MemoryRecord(id: UUID(), rawText: "Late call", source: .explicitText, category: .other, capturedAt: date(8))
+        func briefing(now: Date, fireAt: Date) -> MorningBriefing {
+            let reminder = MemoryReminder(id: UUID(), memoryID: note.id, fireAt: fireAt, timeZoneID: "Europe/Warsaw", createdAt: now)
+            return MorningBriefing.make(now: now, memories: [note], lists: [], reminders: [reminder], calendar: calendar)
+        }
+        func at(_ month: Int, _ day: Int, _ hour: Int, _ minute: Int = 0) -> Date {
+            calendar.date(from: DateComponents(year: 2026, month: month, day: day, hour: hour, minute: minute))!
+        }
+        // 25 October 2026 has 25 hours in Warsaw: 23:30 is still today.
+        XCTAssertEqual(briefing(now: at(10, 25, 8), fireAt: at(10, 25, 23, 30)).reminders.count, 1)
+        // 29 March 2026 has 23 hours: 00:30 the next day is not today.
+        XCTAssertEqual(briefing(now: at(3, 29, 8), fireAt: at(3, 30, 0, 30)).reminders.count, 0)
+    }
+
     func testBriefingHasTodaysRemindersAndOpenListsOnly() throws {
         let now = date(8)
         let dentist = try MemoryRecord(id: UUID(), rawText: "Dentist at Mokotów", source: .explicitText, category: .other, capturedAt: now)

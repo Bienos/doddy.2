@@ -79,8 +79,9 @@ final class NoteReminderVoiceTests: XCTestCase {
             createdAt: now)
         XCTAssertEqual(
             VoiceToolReply.noteReminderSet(time, note: "Parcel code 5678"),
-            "added: a reminder about \"Parcel code 5678\": at Sun 11 Oct, 09:00 (Warsaw time). It is a notification on this iPhone.")
-        XCTAssertTrue(VoiceToolReply.noteReminderSet(place, note: "x").contains("when you arrive at post office (within 200 m"))
+            "added: a reminder about the note below: at Sun 11 Oct, 09:00 (Warsaw time). It is a notification on this iPhone.\n<<<DATA\nNote: \"Parcel code 5678\"\nDATA>>>")
+        XCTAssertTrue(VoiceToolReply.noteReminderSet(place, note: "x").contains("when you arrive at the place below (within 200 m"))
+        XCTAssertTrue(VoiceToolReply.noteReminderSet(place, note: "x").hasSuffix("<<<DATA\nNote: \"x\"\nPlace: \"Post office\"\nDATA>>>"))
         XCTAssertTrue(VoiceToolReply.noteReminderInDoddyOnly(time, note: "x").contains("won't alert"))
         XCTAssertEqual(VoiceToolReply.noteReminderFailed("Precise Location is off."), "failed: Precise Location is off. Nothing was set.")
 
@@ -92,6 +93,26 @@ final class NoteReminderVoiceTests: XCTestCase {
         XCTAssertEqual(ActivityEntry(request: request, reply: VoiceToolReply.noteReminderSet(place, note: "x"), at: now).outcome, .done)
         XCTAssertEqual(ActivityEntry(request: request, reply: VoiceToolReply.declinedNoteReminder, at: now).outcome, .declined)
         XCTAssertEqual(ActivityEntry(request: request, reply: VoiceToolReply.noteNotFound(), at: now).outcome, .notDone)
+    }
+
+    /// Review C3: replacing a note's reminder is said on the card and to the agent, never silent.
+    func testReplacingAReminderIsNamed() {
+        let monday20 = Date(timeIntervalSince1970: 1_791_828_000)
+        let weekly = MemoryReminder(
+            id: UUID(), memoryID: UUID(), trigger: .time(fireAt: monday20, timeZoneID: "Europe/Warsaw"), createdAt: now, repeats: .weekly)
+        let once = MemoryReminder(
+            id: UUID(), memoryID: weekly.memoryID, fireAt: Date(timeIntervalSince1970: 1_791_702_000),
+            timeZoneID: "Europe/Warsaw", createdAt: now)
+        let reply = VoiceToolReply.noteReminderSet(once, note: "Bins", replacing: weekly)
+        XCTAssertTrue(reply.hasPrefix("added: a reminder about the note below: at Sun 11 Oct, 09:00 (Warsaw time)."), reply)
+        XCTAssertTrue(reply.hasSuffix(
+            " It replaced the note's earlier reminder (every Monday at 20:00 (Warsaw time), first on Mon 12 Oct, 20:00, until the user stops it on the note), which is gone now. Tell the user.\n<<<DATA\nNote: \"Bins\"\nDATA>>>"), reply)
+        XCTAssertTrue(VoiceToolReply.noteReminderInDoddyOnly(once, note: "Bins", replacing: weekly).contains("It replaced the note's earlier reminder"))
+        XCTAssertFalse(VoiceToolReply.noteReminderSet(once, note: "Bins").contains("replaced"))
+        let line = NoteReminderReplacement.cardLine(weekly, locale: Locale(identifier: "en_GB"))
+        XCTAssertTrue(line.hasPrefix("Replaces its reminder: "), line)
+        XCTAssertTrue(line.hasSuffix("(stops repeating)"), line)
+        XCTAssertFalse(NoteReminderReplacement.cardLine(once).contains("repeating"))
     }
 
     func testRepeatArgumentIsCheckedBeforeAnyCard() throws {
@@ -115,7 +136,7 @@ final class NoteReminderVoiceTests: XCTestCase {
             id: UUID(), memoryID: UUID(), trigger: .time(fireAt: monday20, timeZoneID: "Europe/Warsaw"), createdAt: now, repeats: .weekly)
         XCTAssertEqual(
             VoiceToolReply.noteReminderSet(reminder, note: "Bins"),
-            "added: a reminder about \"Bins\": every Monday at 20:00 (Warsaw time), first on Mon 12 Oct, 20:00, until the user stops it on the note. It is a notification on this iPhone.")
+            "added: a reminder about the note below: every Monday at 20:00 (Warsaw time), first on Mon 12 Oct, 20:00, until the user stops it on the note. It is a notification on this iPhone.\n<<<DATA\nNote: \"Bins\"\nDATA>>>")
         let request = ActivityRequest.describe(
             .remindAboutNote(NoteReminderVoiceDraft(noteText: "Bins", target: .time(monday20, timeZoneID: "Europe/Warsaw"), repeats: .weekly)),
             calendar: warsaw)!

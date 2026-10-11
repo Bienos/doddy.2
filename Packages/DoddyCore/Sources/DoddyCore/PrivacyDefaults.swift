@@ -7,7 +7,24 @@ public struct PrivacyDefaults: Equatable, Sendable {
     public let contentTelemetryEnabled: Bool
     public let analyticsEnabled: Bool
     public let cloudAIEnabled: Bool
+    /// Notes sync between the user's devices. Not built.
     public let syncEnabled: Bool
+    /// A list the user shares goes to their iCloud and the people they invite (ADR-263).
+    public let sharesListsThroughICloud: Bool
+
+    init(
+        accountRequired: Bool, networkRequestsMade: Bool, microphoneUsed: Bool, contentTelemetryEnabled: Bool,
+        analyticsEnabled: Bool, cloudAIEnabled: Bool, syncEnabled: Bool, sharesListsThroughICloud: Bool = false
+    ) {
+        self.accountRequired = accountRequired
+        self.networkRequestsMade = networkRequestsMade
+        self.microphoneUsed = microphoneUsed
+        self.contentTelemetryEnabled = contentTelemetryEnabled
+        self.analyticsEnabled = analyticsEnabled
+        self.cloudAIEnabled = cloudAIEnabled
+        self.syncEnabled = syncEnabled
+        self.sharesListsThroughICloud = sharesListsThroughICloud
+    }
 
     public static let m0 = PrivacyDefaults(
         accountRequired: false, networkRequestsMade: false, microphoneUsed: false,
@@ -15,10 +32,20 @@ public struct PrivacyDefaults: Equatable, Sendable {
 
     /// V1 voice: the microphone and the ElevenLabs connection are used only while a voice
     /// conversation is open. Saved notes stay on the device; the notes, calendar entries and
-    /// contact names the agent uses during a conversation are sent to it.
+    /// contact names the agent uses during a conversation are sent to it. This is also what the
+    /// shipping app states, so it includes the lists the user shares through iCloud.
     public static let v1Voice = PrivacyDefaults(
         accountRequired: false, networkRequestsMade: true, microphoneUsed: true,
-        contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: true, syncEnabled: false)
+        contentTelemetryEnabled: false, analyticsEnabled: false, cloudAIEnabled: true, syncEnabled: false,
+        sharesListsThroughICloud: true)
+
+    /// The Settings → Privacy "Sync" row. Shared lists and the server copies are not a sync of
+    /// notes, but "Off" alone would hide that lists you share do leave through iCloud.
+    public var syncText: String {
+        if syncEnabled { return "On" }
+        guard sharesListsThroughICloud else { return "Off (not built)" }
+        return "Only lists you share, through iCloud. Notes don't sync between devices"
+    }
 
     /// M2: adds typed questions to the Doddy gateway and OpenAI, only after the user turns Ask Doddy on.
     /// Same flags as V1; the difference is which services receive data (see Settings copy).
@@ -27,7 +54,7 @@ public struct PrivacyDefaults: Equatable, Sendable {
     /// True when nothing leaves the device and nothing listens.
     public var isFullyLocal: Bool {
         !(accountRequired || networkRequestsMade || microphoneUsed || contentTelemetryEnabled
-            || analyticsEnabled || cloudAIEnabled || syncEnabled)
+            || analyticsEnabled || cloudAIEnabled || syncEnabled || sharesListsThroughICloud)
     }
 }
 

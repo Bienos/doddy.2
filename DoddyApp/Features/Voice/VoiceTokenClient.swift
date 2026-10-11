@@ -37,8 +37,12 @@ struct VoiceTokenClient: Sendable {
         }
         let data: Data
         let response: URLResponse
+        // One ephemeral session per fetch, as before, but released when it is done (review H11):
+        // a URLSession that is never invalidated is never freed.
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.finishTasksAndInvalidate() }
         do {
-            (data, response) = try await URLSession(configuration: .ephemeral).data(for: request)
+            (data, response) = try await session.data(for: request)
         } catch {
             throw .offline
         }

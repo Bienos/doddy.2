@@ -31,6 +31,11 @@ public struct DataFlowState: Equatable, Sendable {
     public var sharedLists: Int
     /// Home's test switch for who runs the live voice (ADR-265).
     public var voiceProvider: VoiceProvider
+    /// Settings → What I've learned → "Use in voice conversations" (ADR-440).
+    public var learnedSharedWithVoice: Bool
+    /// Who writes the daily news on the messaging server, as it reported it
+    /// (`NewsSettings.Available.writerProvider`: "anthropic" or "openai"). Nil until it is known.
+    public var newsWriterProvider: String?
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -39,8 +44,12 @@ public struct DataFlowState: Equatable, Sendable {
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
         siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0,
-        voiceProvider: VoiceProvider = .elevenLabs
+        voiceProvider: VoiceProvider = .elevenLabs,
+        learnedSharedWithVoice: Bool = false,
+        newsWriterProvider: String? = nil
     ) {
+        self.learnedSharedWithVoice = learnedSharedWithVoice
+        self.newsWriterProvider = newsWriterProvider
         self.morningCheckInOn = morningCheckInOn
         self.sharedLists = sharedLists
         self.voiceProvider = voiceProvider
@@ -80,6 +89,7 @@ public enum DataFlow {
         if state.rememberConversations { voice.append("your last few conversations") }
         if state.morningCheckInOn { voice.append("today's Doddy reminders and lists with things left, when you talk through the morning check-in") }
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
+        if state.learnedSharedWithVoice { voice.append("the facts and routines you confirmed under What I've learned") }
         if !apps.isEmpty { voice.append("calendar entries, reminders, contact names and birthdays (day and month) or drafts Doddy uses (\(names(apps)))") }
         if state.doddyServerSet && !state.pauseAll { voice.append("results from your online accounts that Doddy uses") }
 
@@ -88,6 +98,13 @@ public enum DataFlow {
         messaging.append("your phone number, only if you confirm it with a code for texts or calls")
         messaging.append("the news topics and feeds you pick, if you turn on daily news")
         if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
+
+        // The server can use either provider (ADR-197); name one only when the server said which.
+        let writer = switch state.newsWriterProvider {
+        case "anthropic": "Anthropic"
+        case "openai": "OpenAI"
+        default: "Anthropic or OpenAI, as the server is set up"
+        }
 
         var ask = "Typed questions"
         if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
@@ -140,16 +157,16 @@ public enum DataFlow {
                 when: "When you ask Doddy to convert money, at most every six hours.", isActive: !state.pauseAll,
                 note: state.pauseAll ? "Connections are paused, so the rates aren't fetched." : "The amount and currencies stay on this iPhone; the conversion is worked out here."),
             DataFlowRow(
-                id: "placeSearch", destination: "Apple Maps (place search)",
-                what: "The words you type to find a place, and roughly where you are if Doddy already knows.",
-                when: "Only when you search for a place for a reminder.", isActive: true,
+                id: "placeSearch", destination: "Apple Maps (place search and travel time)",
+                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going.",
+                when: "Only when you search for a place for a reminder, or ask when to leave.", isActive: true,
                 note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "Your access code.", when: "When a conversation starts, and once when you turn on \"Hey Doddy\" without a key of your own (to get its key).", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
             DataFlowRow(
-                id: "doddyServer", destination: "Your Doddy server (Google, Notion, Todoist via Composio)",
+                id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
                 what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
                 when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
                 isActive: state.doddyServerSet,
@@ -157,12 +174,12 @@ public enum DataFlow {
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
             DataFlowRow(
-                id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, Anthropic, GNews)",
+                id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
                 when: "When you turn on notifications, texts, phone calls or daily news, and while they are on.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
-                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to Anthropic, and your own keywords to GNews."
+                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews."
                     : "No messaging server is set, so nothing goes there."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
@@ -200,6 +217,8 @@ public enum DataFlow {
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
+            // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
+            "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
             "\"Hey Doddy\": what the microphone hears while it waits for the wake word is checked on this iPhone and not kept or sent.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
