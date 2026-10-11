@@ -1,9 +1,10 @@
 import Foundation
 
 /// The looks the voice island can take (ADR-239): the owner's V4 boards that have a voice
-/// conversation state. Chosen in Settings → Voice → Dynamic Island style; Lean In by default.
+/// conversation state, and Whole Doddy (ADR-255), his whole body from the owner's pose pack.
+/// Chosen in Settings → Voice → Dynamic Island style; Lean In by default.
 enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
-    case leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou
+    case leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou, wholeDoddy
 
     var board: IslandBoard {
         switch self {
@@ -14,6 +15,8 @@ enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
         case .editorial: .editorial
         case .abstractHorizon: .abstractHorizon
         case .hereWithYou: .hereWithYou
+        // Drawn from `IslandPose`; Lean In's board only backs its signs and sizes.
+        case .wholeDoddy: .leanIn
         }
     }
 
@@ -27,6 +30,7 @@ enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
         case .editorial: "Editorial"
         case .abstractHorizon: "Abstract Horizon"
         case .hereWithYou: "Here With You"
+        case .wholeDoddy: "Whole Doddy"
         }
     }
 
@@ -40,6 +44,7 @@ enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
         case .editorial: "Big type does the work, with a small Doddy in the corner."
         case .abstractHorizon: "Doddy above two soft horizon lines, with an orange marker."
         case .hereWithYou: "Two small hands and a conversation loop: here, without taking over."
+        case .wholeDoddy: "Doddy's whole body from your pose pack: his pose shows what he's doing."
         }
     }
 }
@@ -113,6 +118,8 @@ struct IslandScene: Equatable, Sendable {
     var minimalSignCentred = false
     /// Words on the expanded drawing, in black on its cream shapes.
     var artLabels: [IslandArtLabel] = []
+    /// Whole Doddy (ADR-255): drawn instead of the board's art when set.
+    var pose: IslandPose?
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
@@ -124,10 +131,44 @@ extension DoddyVoiceAttributes.ContentState {
     func islandScene(isStale: Bool) -> IslandScene {
         let stale = isStale && !isEnded
         let live = !stale && isLiveCue && status != .connecting
-        if !stale, let moment, let scene = momentScene(moment, live: live) {
-            return scene
+        var scene: IslandScene
+        if !stale, let moment, let shown = momentScene(moment, live: live) {
+            scene = shown
+        } else {
+            scene = voiceScene(stale: stale, live: live)
         }
-        return voiceScene(stale: stale, live: live)
+        if islandStyle == .wholeDoddy { scene.pose = wholeDoddyPose(stale: stale) }
+        return scene
+    }
+
+    /// Whole Doddy's pose for this state (ADR-255). One pose means one thing everywhere. Nil
+    /// keeps the moment's own board: translating stays on Language Bridge.
+    func wholeDoddyPose(stale: Bool) -> IslandPose? {
+        if stale { return .facepalm }
+        if let moment {
+            switch moment {
+            case .noteWaiting, .reminderWaiting, .reminderAdding: return .reachingHigh
+            case .noteSaved, .reminderSet: return .fistpump
+            case .planWaiting, .planRunning: return .tiptoe
+            case .translating: return nil
+            }
+        }
+        if isEnded { return .fistpump }
+        if showsMuted { return .shush }
+        let greets = !(greeting ?? "").isEmpty
+        switch status {
+        case .connecting: return greets ? .onelegBalance : .yawnStretch
+        case .listening: return greets ? .onelegBalance : .listening
+        case .thinking: return .kneelingInspect
+        case .speaking: return .shrug
+        case .needsConfirmation: return .reachingHigh
+        case .wakeListening: return .crosslegged
+        case .wakePaused: return .leaning
+        case .ended: return .fistpump
+        #if DEBUG
+        case .testFixture: return .listening
+        #endif
+        }
     }
 
     private var face: IslandFace {

@@ -197,6 +197,71 @@ enum IslandSceneChecks {
         return failures
     }
 
+    /// Whole Doddy (ADR-255): one pose per state, the same rules for every conversation.
+    static func wholeDoddy() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: whole doddy: \(message)"); failures += 1 }
+        }
+        func pose(_ state: State, stale: Bool = false) -> IslandPose? {
+            var s = state
+            s.islandStyle = .wholeDoddy
+            return s.islandScene(isStale: stale).pose
+        }
+        expect(pose(State(status: .connecting, isMuted: false)) == .yawnStretch, "connecting stretches")
+        expect(pose(State(status: .listening, isMuted: false)) == .listening, "listening")
+        expect(pose(State(status: .thinking, isMuted: false)) == .kneelingInspect, "thinking")
+        expect(pose(State(status: .speaking, isMuted: false)) == .shrug, "speaking")
+        expect(pose(State(status: .listening, isMuted: true)) == .shush, "muted beats listening")
+        expect(pose(State(status: .speaking, isMuted: false), stale: true) == .facepalm, "stale")
+        expect(pose(State.wakeListening) == .crosslegged, "hey doddy waiting")
+        expect(pose(State.wakePaused) == .leaning, "hey doddy paused")
+        expect(pose(State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")) == .onelegBalance, "greeting")
+        expect(pose(State(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")) == .shrug, "greeting gone once speaking")
+        expect(pose(State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")) == .shush, "muted beats greeting")
+        var ended = State(status: .ended, isMuted: false)
+        ended.savedCount = 1
+        expect(pose(ended) == .fistpump, "ended")
+        let moments: [(State.Moment, IslandPose?)] = [
+            (.noteWaiting, .reachingHigh), (.noteSaved, .fistpump), (.reminderWaiting, .reachingHigh),
+            (.reminderAdding, .reachingHigh), (.reminderSet, .fistpump), (.planWaiting(steps: 3), .tiptoe),
+            (.planRunning(step: 1, of: 3), .tiptoe), (.translating(from: "en", to: "pl", bothWays: true), nil)
+        ]
+        for (moment, expected) in moments {
+            var s = State(status: .listening, isMuted: false)
+            s.moment = moment
+            expect(pose(s) == expected, "\(moment)")
+        }
+        // Translating keeps Language Bridge's own drawing; a stale moment is the stale pose.
+        var translating = State(status: .listening, isMuted: false)
+        translating.moment = .translating(from: "en", to: "pl", bothWays: true)
+        translating.islandStyle = .wholeDoddy
+        expect(translating.islandScene(isStale: false).board == .languageBridge, "translating board")
+        var saved = State(status: .listening, isMuted: false)
+        saved.moment = .noteSaved
+        expect(pose(saved, stale: true) == .facepalm, "stale moment")
+        // Every other style draws its board, never a pose.
+        for style in IslandStyle.allCases where style != .wholeDoddy {
+            var s = State(status: .listening, isMuted: false)
+            s.islandStyle = style
+            expect(s.islandScene(isStale: false).pose == nil, "\(style) has no pose")
+        }
+        // The style round-trips and an unknown one still falls back to Lean In.
+        var styled = State(status: .listening, isMuted: false)
+        styled.islandStyle = .wholeDoddy
+        if let data = try? JSONEncoder().encode(styled) {
+            expect((try? JSONDecoder().decode(State.self, from: data))?.islandStyle == .wholeDoddy, "style round trip")
+        }
+        // Pictures: each figure box inside its picture; every face pose has a head inside it.
+        for p in IslandPose.allCases {
+            let b = p.figure
+            expect(b.x >= 0 && b.y >= 0 && b.x + b.width <= 1 && b.y + b.height <= 1 && b.width > 0.2 && b.height > 0.3, "\(p) figure box")
+            guard let head = p.facePose.head else { expect(false, "\(p) face pose \(p.facePose) has no head"); continue }
+            expect(head.diameter > 0.2 && head.diameter < 0.7 && head.x > 0.2 && head.x < 0.8 && head.y > 0 && head.y < 0.5, "\(p) head")
+        }
+        return failures
+    }
+
     static func tools() -> Int {
         var failures = 0
         func expect(_ ok: Bool, _ message: String) {
