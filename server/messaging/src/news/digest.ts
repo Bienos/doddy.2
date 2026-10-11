@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Db } from "../db.js";
+import { inTransaction, type Db } from "../db.js";
 import { canPush, enqueue, smsNumber, type Channel } from "../outbox.js";
 import { catalogById } from "./catalog.js";
 import { pushBody, smsBody } from "./compose.js";
@@ -87,22 +87,25 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
     }
 
     const entries = picks.map((p) => ({ line: p.line, url: p.candidate.url, source: p.candidate.source }));
-    for (const [i, p] of picks.entries()) {
-      await db.query(
-        `INSERT INTO news_digest_items (digest_id, position, title, line, url, source, published_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [digestId, i, p.candidate.title, p.line, p.candidate.url, p.candidate.source, p.candidate.publishedAt]);
-      await db.query(
-        `INSERT INTO news_sent (account_id, url_hash) VALUES ($1, $2)
-         ON CONFLICT (account_id, url_hash) DO UPDATE SET sent_at = now()`, [accountId, p.candidate.urlHash]);
-    }
+    // One transaction: stories count as sent only if the digest was really kept and queued.
+    await inTransaction(db, async (c) => {
+      for (const [i, p] of picks.entries()) {
+        await c.query(
+          `INSERT INTO news_digest_items (digest_id, position, title, line, url, source, published_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [digestId, i, p.candidate.title, p.line, p.candidate.url, p.candidate.source, p.candidate.publishedAt]);
+        await c.query(
+          `INSERT INTO news_sent (account_id, url_hash) VALUES ($1, $2)
+           ON CONFLICT (account_id, url_hash) DO UPDATE SET sent_at = now()`, [accountId, p.candidate.urlHash]);
+      }
+      for (const ch of channels) {
+        const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);
+        await enqueue(c, accountId, [ch], body, now, `news:${digestId}`);
+      }
+    });
     if (channels.length === 0) {
       // Kept for the app. no_channel only when the user chose a channel that can't be used now.
       return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : undefined });
-    }
-    for (const ch of channels) {
-      const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);
-      await enqueue(db, accountId, [ch], body, now, `news:${digestId}`);
     }
     return finish({ status: "queued", aiWritten });
   } catch {

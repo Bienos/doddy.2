@@ -365,6 +365,25 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     assert.equal(sent.status, "queued");
   });
 
+  test("if queueing fails, the stories are not marked as sent", async () => {
+    const { accountId, h } = await user();
+    await put(h, settings());
+    await db.query(`CREATE FUNCTION test_refuse_outbound() RETURNS trigger LANGUAGE plpgsql AS
+      $$ BEGIN RAISE EXCEPTION 'refused for test'; END $$`);
+    await db.query(`CREATE TRIGGER test_refuse BEFORE INSERT ON outbound_messages FOR EACH ROW
+      WHEN (NEW.account_id = '${accountId}') EXECUTE FUNCTION test_refuse_outbound()`);
+    try {
+      const r = await buildDigest(db, news, accountId, "manual", NOW);
+      assert.equal(r.status, "failed");
+      for (const t of ["news_sent", "outbound_messages"]) {
+        assert.equal((await db.query(`SELECT 1 FROM ${t} WHERE account_id = $1`, [accountId])).rowCount, 0, t);
+      }
+      assert.equal((await db.query("SELECT 1 FROM news_digest_items WHERE digest_id = $1", [r.digestId])).rowCount, 0);
+    } finally {
+      await db.query("DROP TRIGGER test_refuse ON outbound_messages; DROP FUNCTION test_refuse_outbound()");
+    }
+  });
+
   test("account deletion removes news data", async () => {
     const { accountId, h } = await user();
     await put(h, settings());
