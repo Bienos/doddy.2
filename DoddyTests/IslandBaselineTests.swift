@@ -10,9 +10,51 @@ final class IslandBaselineTests: XCTestCase {
         XCTAssertEqual(state.symbolName, "hand.tap.fill")
         let data = try JSONEncoder().encode(state)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        // savedCount is a number of notes the user tapped Save on, never their text.
-        XCTAssertEqual(Set(json.keys), ["status", "isMuted", "savedCount"])
+        // savedCount is a number of notes the user tapped Save on, never their text; islandStyle is
+        // the look picked in Settings (ADR-239). Nil fields (moment, greeting, …) aren't written.
+        XCTAssertEqual(Set(json.keys), ["status", "isMuted", "savedCount", "islandStyle"])
         XCTAssertEqual(json["status"] as? String, "needsConfirmation")
+    }
+
+    /// In-conversation moments (ADR-240) carry only their kind, counts and language codes, so the
+    /// lock screen never gets what a note, plan step or reminder says.
+    func testMomentsCarryOnlyKindsCountsAndLanguageCodes() throws {
+        let moments: [DoddyVoiceAttributes.ContentState.Moment] = [
+            .noteWaiting, .noteSaved, .planWaiting(steps: 2), .planRunning(step: 1, of: 2),
+            .reminderWaiting, .reminderAdding, .reminderSet, .translating(from: "en", to: "?", bothWays: true),
+        ]
+        for moment in moments {
+            var state = DoddyVoiceAttributes.ContentState(status: .listening, isMuted: false)
+            state.moment = moment
+            let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(state)) as? [String: Any])
+            XCTAssertEqual(Set(json.keys), ["status", "isMuted", "savedCount", "islandStyle", "moment"], "\(moment)")
+            // Every string anywhere in the payload is a fixed value: the status, the style, or a
+            // language code of at most two letters ("?" while unknown).
+            let fixed = Set(["listening", state.islandStyle.rawValue])
+            for text in strings(in: json) where !fixed.contains(text) {
+                XCTAssertLessThanOrEqual(text.count, 2, "\(moment) carries text: \(text)")
+            }
+        }
+    }
+
+    /// The "Hey Doddy" greeting (ADR-254) is the only free text the payload can carry, and only when set.
+    func testGreetingIsWrittenOnlyWhenSet() throws {
+        var state = DoddyVoiceAttributes.ContentState(status: .listening, isMuted: false)
+        let plain = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(state)) as? [String: Any])
+        XCTAssertNil(plain["greeting"])
+        state.greeting = "Hey Pat, what's up?"
+        let greeted = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(state)) as? [String: Any])
+        XCTAssertEqual(greeted["greeting"] as? String, "Hey Pat, what's up?")
+        XCTAssertEqual(Set(greeted.keys), ["status", "isMuted", "savedCount", "islandStyle", "greeting"])
+    }
+
+    private func strings(in value: Any) -> [String] {
+        switch value {
+        case let text as String: return [text]
+        case let dictionary as [String: Any]: return dictionary.values.flatMap { strings(in: $0) }
+        case let array as [Any]: return array.flatMap { strings(in: $0) }
+        default: return []
+        }
     }
 
     @MainActor
