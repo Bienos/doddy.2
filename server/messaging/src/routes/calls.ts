@@ -38,25 +38,28 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
 
   app.get("/v1/calls/settings", { preHandler: auth }, async (req) => {
     const { accountId } = principal(req);
+    // One round trip; the settings row may not exist yet.
     const { rows } = await db.query<{
-      inbound_enabled: boolean; pin_set: boolean; pin_locked: boolean; outbound: boolean; memory_on: boolean;
+      inbound_enabled: boolean | null; pin_set: boolean | null; pin_locked: boolean | null; outbound: boolean | null;
+      memory_on: boolean | null; copies: number; phone: boolean;
     }>(
-      `SELECT inbound_enabled, pin_hash IS NOT NULL AS pin_set, coalesce(pin_locked_until > now(), false) AS pin_locked,
-              outbound_consent_at IS NOT NULL AS outbound, memory_copy_enabled_at IS NOT NULL AS memory_on
-       FROM call_settings WHERE account_id = $1`, [accountId]);
-    const s = rows[0];
-    const count = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM memory_copies WHERE account_id = $1", [accountId]);
-    const phone = await db.query("SELECT 1 FROM phone_numbers WHERE account_id = $1", [accountId]);
+      `SELECT s.inbound_enabled, s.pin_hash IS NOT NULL AS pin_set, coalesce(s.pin_locked_until > now(), false) AS pin_locked,
+              s.outbound_consent_at IS NOT NULL AS outbound, s.memory_copy_enabled_at IS NOT NULL AS memory_on,
+              (SELECT count(*)::int FROM memory_copies WHERE account_id = $1) AS copies,
+              EXISTS (SELECT 1 FROM phone_numbers WHERE account_id = $1) AS phone
+       FROM (SELECT $1::uuid AS account_id) a LEFT JOIN call_settings s ON s.account_id = a.account_id`, [accountId]);
+    const r = rows[0]!;
+    const s = r.inbound_enabled === null ? undefined : r;
     return {
       // What the server can actually do; the app shows "needs setup" otherwise.
       available: { inbound: !!(deps.toolSecret && deps.cipher), outbound: !!(deps.outbound && deps.toolSecret && deps.cipher) },
       doddyNumber: deps.doddyPhoneNumber ?? null,
-      phoneVerified: (phone.rowCount ?? 0) > 0,
+      phoneVerified: r.phone,
       inboundEnabled: s?.inbound_enabled ?? false,
       pinSet: s?.pin_set ?? false,
       pinLocked: s?.pin_locked ?? false,
       outboundConsent: s?.outbound ?? false,
-      memoryCopy: { enabled: s?.memory_on ?? false, count: count.rows[0]?.n ?? 0 },
+      memoryCopy: { enabled: s?.memory_on ?? false, count: r.copies },
     };
   });
 

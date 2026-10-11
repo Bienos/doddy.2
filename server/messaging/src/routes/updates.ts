@@ -3,7 +3,7 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
-import { canPush, enqueue, IdempotencyConflict, smsNumber, type Channel } from "../outbox.js";
+import { enqueue, IdempotencyConflict, usableChannels, type Channel } from "../outbox.js";
 
 const MAX_DAYS_AHEAD = 30;
 
@@ -30,11 +30,11 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     }
     const channels = body.channels as Channel[];
     for (const ch of channels) {
-      if (ch === "push" && !deps.push) return reply.code(503).send({ error: "push_not_configured" });
-      if (ch === "sms" && !deps.sms) return reply.code(503).send({ error: "sms_not_configured" });
-      if (ch === "push" && !(await canPush(db, accountId))) return reply.code(409).send({ error: "push_not_enabled" });
-      if (ch === "sms" && !(await smsNumber(db, accountId))) return reply.code(409).send({ error: "sms_not_enabled" });
+      if (!deps[ch]) return reply.code(503).send({ error: `${ch}_not_configured` });
     }
+    const usable = await usableChannels(db, accountId, channels);
+    const missing = channels.find((ch) => !usable.includes(ch));
+    if (missing) return reply.code(409).send({ error: `${missing}_not_enabled` });
     try {
       // One transaction: a conflict on the second channel must not leave the first one queued.
       // The key is bound to the text and, when given, the requested time (a retry without

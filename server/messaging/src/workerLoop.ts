@@ -6,8 +6,9 @@ import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue } from "./outbox.js";
 import type { PushSender, SmsSender } from "./providers/types.js";
 
-export const log = (msg: string, extra: object = {}) =>
-  console.log(JSON.stringify({ time: new Date().toISOString(), msg, ...extra }));
+import { log } from "./log.js";
+
+export { log };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

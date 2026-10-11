@@ -1,6 +1,7 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type pg from "pg";
-import type { TextCipher } from "./crypto.js";
+import { sha256, type TextCipher } from "./crypto.js";
+import { log } from "./log.js";
 import type { Db } from "./db.js";
 import type { PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 
@@ -28,6 +29,15 @@ export async function smsNumber(db: Queryable, accountId: string): Promise<strin
   return rows[0]?.e164;
 }
 
+/** The wanted channels that can reach this account right now (set up and consented), in order. */
+export async function usableChannels(db: Queryable, accountId: string, wanted: readonly Channel[]): Promise<Channel[]> {
+  const out: Channel[] = [];
+  for (const ch of wanted) {
+    if (ch === "push" ? await canPush(db, accountId) : await smsNumber(db, accountId)) out.push(ch);
+  }
+  return out;
+}
+
 export interface QueuedMessage { id: string; channel: Channel; state: string }
 
 /** The same idempotency key was used before with a different payload (DOD-07). */
@@ -53,7 +63,7 @@ export async function enqueue(
   db: Queryable, accountId: string, channels: Channel[], body: string, sendAt: Date, idempotencyKey: string,
   opts: EnqueueOptions = {},
 ): Promise<QueuedMessage[]> {
-  const payloadHash = createHash("sha256").update(opts.fingerprint ?? body).digest();
+  const payloadHash = sha256(opts.fingerprint ?? body);
   const out: QueuedMessage[] = [];
   for (const channel of channels) {
     const id = randomUUID();
@@ -190,7 +200,7 @@ async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelle
        WHERE id = $1 AND state = 'sending'`,
       [msg.id, state, code, providerId]);
     // The row was reaped meanwhile: the real outcome would otherwise vanish without a trace.
-    if (!r.rowCount) console.log(JSON.stringify({ time: new Date().toISOString(), msg: "outcome after reap", id: msg.id, outcome: state, code }));
+    if (!r.rowCount) log("outcome after reap", { id: msg.id, outcome: state, code });
   };
   switch (o.kind) {
     case "accepted": await final("sent", null, o.providerId); break;

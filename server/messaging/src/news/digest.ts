@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { TextCipher } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
-import { canPush, enqueue, smsNumber, type Channel } from "../outbox.js";
+import { log } from "../log.js";
+import { enqueue, usableChannels, type Channel } from "../outbox.js";
 import { catalogById } from "./catalog.js";
 import { pushBody, smsBody } from "./compose.js";
 import type { NewsItem } from "./feeds.js";
@@ -77,17 +78,13 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
         // A code only (writer_*, or the HTTP status), never story text or keys.
         const code = err instanceof Error && /^writer_[a-z0-9_]+$/.test(err.message) ? err.message
           : `writer_error${typeof (err as { status?: unknown })?.status === "number" ? `_${(err as { status: number }).status}` : ""}`;
-        console.log(JSON.stringify({ time: new Date().toISOString(), msg: "news writer failed, plain headlines used", code }));
+        log("news writer failed, plain headlines used", { code });
         picks = []; // fall back to plain headlines below
       }
     }
     if (picks.length === 0) picks = candidates.slice(0, 3).map((c) => ({ candidate: c, line: shorten(c.title, 140) }));
 
-    const channels: Channel[] = [];
-    for (const ch of settings.channels) {
-      if (ch === "push" && await canPush(db, accountId)) channels.push(ch);
-      if (ch === "sms" && await smsNumber(db, accountId)) channels.push(ch);
-    }
+    const channels = await usableChannels(db, accountId, settings.channels);
 
     const entries = picks.map((p) => ({ line: p.line, url: p.candidate.url, source: p.candidate.source }));
     // One transaction: stories count as sent only if the digest was really kept and queued.

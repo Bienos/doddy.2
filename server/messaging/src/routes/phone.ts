@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
+import { sha256 } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
 import { ProviderError } from "../providers/types.js";
@@ -35,7 +35,7 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!body) return;
     // Per destination number and per server, whatever account asks: new accounts can't be used
     // to text one number over and over, and a flood can't run up the SMS bill (ADR-175).
-    const phoneHash = createHash("sha256").update(body.phone).digest();
+    const phoneHash = sha256(body.phone);
     const allowed = await inTransaction(db, async (c) => {
       // The caps include a server-wide one, so count and insert under one lock.
       await c.query("SELECT pg_advisory_xact_lock(4242002)");
