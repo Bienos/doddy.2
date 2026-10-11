@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var hasAccessCode = VoiceAccessCodeStore.read() != nil
     @State private var accessCodeError: String?
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
+    @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.read() != nil
     @State private var tokenMessage: String?
@@ -188,7 +189,7 @@ struct SettingsView: View {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
+                    Text("\(memoriesWhereText) Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -571,7 +572,7 @@ struct SettingsView: View {
                 Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
+                Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected.")
             }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)
@@ -599,6 +600,23 @@ struct SettingsView: View {
             .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    /// Where memories are, as switched on now (DOD-11): never "only on this iPhone" while a copy is
+    /// on the messaging server or a list is shared through iCloud.
+    private var memoriesWhereText: String {
+        let sharedLists = SharedListsController.shared.links.count
+        guard memoryCopyOn || sharedLists > 0 else {
+            return NSLocalizedString("Memories live only in this app on this iPhone, protected by iOS Data Protection.", comment: "")
+        }
+        var text = NSLocalizedString("Memories are kept in this app on this iPhone, protected by iOS Data Protection.", comment: "")
+        if memoryCopyOn {
+            text += " " + NSLocalizedString("With Memory on calls on, a copy of your notes is also on your Doddy messaging server.", comment: "")
+        }
+        if sharedLists > 0 {
+            text += " " + NSLocalizedString("Lists you share are also in iCloud and with the people you invited.", comment: "")
+        }
+        return text
     }
 
     /// Lists are memories too: they are exported and deleted with the notes (DOD-06).
@@ -685,14 +703,34 @@ struct SettingsView: View {
         }
     }
 
+    /// Stops sharing the user's own shared lists first (their iCloud copy is deleted for everyone),
+    /// then deletes on this iPhone, then empties the server copy if Memory on calls is on and
+    /// waits for the server's answer. Whatever couldn't be undone outside this iPhone is said
+    /// plainly, never covered by "deleted" (DOD-06/11).
     private func deleteAll() async {
+        let stillShared = await SharedListsController.shared.stopAllOwnedShares()
+        let stillSharedNames = stillShared.compactMap { store.list(id: $0)?.name }
         do {
             try await store.deleteAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
-            deleteError = nil
         } catch {
             deleteError = UserFacingError.message(for: error)
+            return
         }
+        var problems: [String] = []
+        if !stillShared.isEmpty {
+            problems.append(String(
+                format: NSLocalizedString("Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.", comment: ""),
+                stillShared.count, stillSharedNames.joined(separator: ", ")))
+        }
+        do {
+            try await MemoryCopySync.shared.uploadNow([])
+        } catch {
+            problems.append(String(
+                format: NSLocalizedString("The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.", comment: ""),
+                UpdatesModel.text(for: error)))
+        }
+        deleteError = problems.isEmpty ? nil : problems.joined(separator: " ")
     }
 
     /// Reads and checks the chosen file and works out what it would add. Nothing is written
