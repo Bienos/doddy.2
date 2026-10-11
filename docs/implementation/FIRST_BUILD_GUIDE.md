@@ -159,7 +159,7 @@ In order of risk:
   - `EKEvent.notes` replaced, with a stale check before the save.
 
 
-### Round 6 (2026-10-11, ADR-330, ADR-332 to ADR-339): most likely to need a fix
+### Round 6 (2026-10-11, ADR-330, ADR-332 to ADR-335, ADR-337 to ADR-340): most likely to need a fix
 **First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
 - **iPad (ADR-337):**
   - `TARGETED_DEVICE_FAMILY "1,2"` on the app, widget and share extension. Check that the Live Activities, AlarmKit and watch parts still build for iPad (they run only where iOS allows them).
@@ -174,3 +174,16 @@ In order of risk:
 - **Quick actions (ADR-339):** the async `windowScene(_:performActionFor:)` on the existing scene delegate; `connectionOptions.shortcutItem` on cold launch.
 - **Memories tags (ADR-333):** `MemoryTagRow` with `ForEach(tags, id: \.tag)` over tuples.
 - **List templates (ADR-334):** `.swipeActions` inside a `Form` section in `NewListSheet`.
+
+### Round 7 (2026-10-11, ADR-341 to ADR-350): most likely to need a fix
+**First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
+- **Merge with "unlock as you go" (ADR-324):** its card (`UnlockCard`, `askToUnlock`) sits beside the leave-by and diary cards in `VoiceSessionController` and `VoiceView`. Check the `PendingAction` `switch`es (`toolCallID`, confirm, decline, `changesSomething`, the card body and button labels) and that `askToUnlock`'s `guard pendingAction == nil, unlock == nil` doesn't block the new `.diary` card.
+- **Translate text (ADR-346):** `import Translation`, `TranslationSession.Configuration`, `.translationTask(_:action:)` and `LanguageAvailability().status(from:to:)` are iOS 18 and are only in `TextTranslateView.swift` behind `if #available(iOS 18.0, *)`. The deployment target is iOS 17: check the `@available` placement on the private struct and the `ContentUnavailableView` label closure.
+- **Leave-by countdown (ADR-347):** `LeaveByActivityAttributes` is in `Shared/LeaveBy`, which both the app and `DoddyWidgets` compile. `LeaveByLiveActivity` (widget) and `LeaveByCountdownActivity` (app) have different names on purpose; check the `Activity.request` generic. `NSSupportsLiveActivities` is already in `Config/Doddy-Info.plist` (shopping mode needs it too).
+- **Doddy on a Mac (ADR-349):** `SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD` and `ProcessInfo.isiOSAppOnMac` (inside `#if canImport(UIKit)` in `DeviceSupport.swift`). Check whether the frameworks the iPad app links (ActivityKit, AlarmKit, WatchConnectivity) load on a Mac, or need weak linking or a guard; nothing has been run there.
+- **Bills and subscriptions (ADR-344):** `RenewalStore.reconcile` removes and re-adds notifications on every foreground; check it doesn't run twice at launch (`.task` and `scenePhase`), and the iOS limit of 64 pending notifications next to note reminders.
+- **Warranties (ADR-342) and diary (ADR-345):** `Form` with `DatePicker(in: ...Date.now)`, `Stepper`; the diary file is written with `.completeFileProtection` (unreadable while locked; a read while locked returns an empty diary, not an error).
+- **People (ADR-341):** `NavigationLink(value: MemoryNavigationRoute.person(_:))` from a chip; the route enum now has `person`, `warranties`, `renewals` and `diary` and every `navigationDestination` must handle them.
+- **Accessibility (ADR-350):** `.accessibilityAction`, `.accessibilityShowsLargeContentViewer { }`, `ScaledSystemFont` (`@ScaledMetric` inside a `ViewModifier`), `.accessibilityAddTraits(.isToggle)`. Then turn on VoiceOver and walk Home, Notes, Lists, Today, the voice cards and the translator hold button.
+- **The usual (ADR-343):** `UsualItemsStore.record(lists)` runs inside `MemoryStore.reload()` on the main actor; check it stays cheap with many lists.
+

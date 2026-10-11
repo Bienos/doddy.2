@@ -86,6 +86,33 @@ final class SaidTimeTests: XCTestCase {
         XCTAssertEqual(kind("tomorrow at 9", due(11)), .saidDifferently, "a time was said but none was sent")
     }
 
+    /// Review C5: an evening word settles hours and minutes, so the answer the agent gets is
+    /// accepted and the question doesn't come back; an English "5:30" alone asks.
+    func testHoursAndMinutesFollowTheEveningWord() throws {
+        XCTAssertNil(kind("7:30 tonight", due(10, 19, 30)))
+        XCTAssertEqual(kind("7:30 tonight", due(10, 7, 30)), .saidDifferently)
+        XCTAssertNil(kind("o 7:30 wieczorem", due(10, 19, 30)))
+        XCTAssertNil(kind("jutro o 7:30 wieczorem", due(11, 19, 30)))
+        XCTAssertNil(kind("tomorrow at 7:30 in the morning", due(11, 7, 30)))
+        XCTAssertNil(kind("tomorrow at 7:30 pm", due(11, 19, 30)))
+        let unmarked = try XCTUnwrap(SaidTime.check("tomorrow at 5:30", due: due(11, 5, 30), now: now, timeRequired: true))
+        XCTAssertEqual(unmarked.kind, .ambiguousTime)
+        XCTAssertEqual(unmarked.question, "whether they mean 05:30 or 17:30")
+        XCTAssertEqual(kind("tomorrow at 5:30", due(11, 17, 30)), .ambiguousTime)
+        // Written with a leading zero, or said in Polish, it is the 24-hour clock.
+        XCTAssertNil(kind("tomorrow at 05:30", due(11, 5, 30)))
+        XCTAssertNil(kind("jutro o 5:30", due(11, 5, 30)))
+    }
+
+    /// Review C8: the midnight that ends today is 00:00 tomorrow.
+    func testTonightAtMidnightIsTheEndOfToday() {
+        XCTAssertNil(kind("tonight at midnight", due(11, 0, 0)))
+        XCTAssertNil(kind("dziś o północy", due(11, 0, 0)))
+        XCTAssertEqual(kind("tonight at midnight", due(12, 0, 0)), .saidDifferently)
+        XCTAssertEqual(kind("tonight at 11pm", due(11, 23)), .saidDifferently, "only midnight crosses into tomorrow")
+        XCTAssertNil(kind("tomorrow at midnight", due(11, 0, 0)), "unchanged")
+    }
+
     func testRelativeTimesAndWordsItDoesNotRead() {
         XCTAssertNil(kind("in 2 hours", due(10, 15, 2)))
         XCTAssertNil(kind("za 30 minut", due(10, 13, 32)))

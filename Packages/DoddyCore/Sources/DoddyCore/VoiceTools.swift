@@ -228,6 +228,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
 
     public static func parse(name: String, parametersJSON: Data, now: Date = Date(), calendar: Calendar = .current) -> VoiceToolRequest {
         let args = Arguments(parametersJSON)
+        // Online-account arguments are checked by Doddy's server (ADR-209).
+        if !CloudToolName.all.contains(name), let (key, limit) = args.firstTooLong() {
+            return .invalid(name: name, reason: "\(key) is longer than \(limit) characters")
+        }
         switch name {
         case VoiceToolName.searchMemories:
             guard let query = args.text("query") else { return .invalid(name: name, reason: "missing query") }
@@ -436,9 +440,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
         let minutes = args.number("minutes") ?? 0
         let seconds = args.number("seconds") ?? 0
         guard minutes >= 0, seconds >= 0 else { return .invalid(name: name, reason: "negative duration") }
-        let total = Int((minutes * 60 + seconds).rounded())
+        // Checked as a Double first: Int(_:) traps on a value it can't hold (review C6).
+        let length = (minutes * 60 + seconds).rounded()
+        guard length.isFinite, length <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
+        let total = Int(length)
         guard total >= 1 else { return .invalid(name: name, reason: "missing duration") }
-        guard total <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
         return .setTimer(TimerDraft(seconds: total, label: args.text("label")))
     }
 
@@ -479,9 +485,39 @@ struct Arguments {
         values[key] as? Double
     }
 
+    /// The first text argument longer than its bound, if any (review C11). Too long is refused,
+    /// never cut: the agent hears which argument and asks the user. List items are bounded by
+    /// the list itself (ListLimits.itemLength), item by item.
+    func firstTooLong() -> (key: String, limit: Int)? {
+        for key in values.keys.sorted() {
+            guard let value = values[key] as? String else { continue }
+            let limit = VoiceTextLimits.limit(for: key)
+            if value.unicodeScalars.count > limit { return (key, limit) }
+        }
+        return nil
+    }
+
     /// The key is present, whatever its value.
     func has(_ key: String) -> Bool {
         values[key] != nil
+    }
+}
+
+/// Bounds on text the model sends to a phone tool (review C11). A note, or a note quoted back,
+/// may be as long as a saved note; notes on an event or reminder and a message body are
+/// paragraphs; everything else (titles, names, labels, times) is a line.
+public enum VoiceTextLimits {
+    public static let line = EventChange.maxTitleLength
+    public static let paragraph = 2_000
+    public static let search = 500
+
+    public static func limit(for key: String) -> Int {
+        switch key {
+        case "text", "note": MemoryLimits.maxTextLength
+        case "notes", "body": paragraph
+        case "query", "place": search
+        default: line
+        }
     }
 }
 
@@ -561,6 +597,20 @@ public enum CameraShortcut {
 /// Result prefixes ("added", "declined", "failed", "unknown", "saved", "opened") are what the
 /// agent's prompt tells it to look for, so they must not change without changing the prompt.
 public enum VoiceToolReply {
+    /// How a reply starts when the change happened and was read back. "What Doddy did" and the
+    /// plan summary both read these, so a new result verb must be added here (review C1, D3).
+    public static let donePrefixes = [
+        "added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:",
+        // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
+        // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
+        "moved:", "turned off:", "cleared:",
+    ]
+    /// List results: `added to the list: 1 item.`, then the list's name and the items as data
+    /// (listAdded, listChanged).
+    public static let listDonePrefixes = ["added to the list:", "ticked on the list:", "removed on the list:"]
+    /// Nothing changed; the agent asks the user which one, or offers something else.
+    public static let nothingChangedPrefixes = ["not changed:", "not added:", "not created:"]
+
     public static let declined = "declined: the user chose not to save this note. Nothing was saved."
     public static let declinedEvent = "declined: the user chose not to add this event. Nothing was added."
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."
@@ -590,10 +640,10 @@ public enum VoiceToolReply {
         } else {
             lines.append("Found \(candidates.count) \(noun) (exact text, newest wording):")
         }
-        for candidate in shown {
+        lines.append(ToolData.block(shown.map { candidate in
             let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
-            lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")
-        }
+            return "- \"\(ToolData.clean(candidate.record.currentText))\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)"
+        }))
         if !mayDisagree.isEmpty {
             lines.append("Notes marked [may disagree] give different numbers for the same thing. Mention each one with when it was saved and let the user decide which is current. Do not pick one.")
         }
@@ -603,12 +653,23 @@ public enum VoiceToolReply {
         return lines.joined(separator: "\n")
     }
 
+    /// The note follows as data (ToolData).
     public static func saved(_ record: MemoryRecord) -> String {
-        "saved: \"\(record.currentText)\" (saved \(timestamp(record.capturedAt)))."
+        "saved: one note (saved \(timestamp(record.capturedAt))). Its exact text:\n"
+            + ToolData.block(["\"\(ToolData.clean(record.currentText))\""])
     }
 
     public static func failed(_ reason: String) -> String {
         "failed: \(reason) Nothing was saved."
+    }
+
+    /// What a failed write left alone, so a failed change or delete doesn't say "saved" (review finding 8).
+    public enum FailedWrite: String, Sendable {
+        case saved, changed, deleted
+    }
+
+    public static func failed(_ reason: String, nothing: FailedWrite) -> String {
+        "failed: \(reason) Nothing was \(nothing.rawValue)."
     }
 
     public static func unsupported(_ name: String) -> String {
@@ -626,12 +687,12 @@ public enum VoiceToolReply {
             return "No calendar events \(window). Say so; do not guess."
         }
         var lines = ["Found \(events.count) calendar event\(events.count == 1 ? "" : "s") \(window) (exact titles and times):"]
-        for event in events.prefix(limit) {
+        lines.append(ToolData.block(events.prefix(limit).map { event in
             let when = event.allDay
                 ? "\(localText(event.start, hasTime: false, calendar: calendar)) (all day)"
                 : "\(localText(event.start, hasTime: true, calendar: calendar))–\(localText(event.end, hasTime: true, calendar: calendar))"
-            lines.append("- \"\(event.title)\" \(when)")
-        }
+            return "- \"\(ToolData.clean(event.title))\" \(when)"
+        }))
         if events.count > limit {
             lines.append("…and \(events.count - limit) more.")
         }
@@ -668,10 +729,12 @@ public enum VoiceToolReply {
         return "opened: \(app) opened with the draft for \(recipient). Nothing was sent by Doddy; the user sends it there."
     }
 
-    /// The contact has no phone number or email for the channel the agent asked for.
+    /// The contact has no phone number or email for the channel the agent asked for. The name
+    /// is from Contacts, so it follows as data.
     public static func noAddress(_ recipient: String, channel: MessageChannel) -> String {
         let what = channel == .text ? "phone number" : "email address"
-        return "failed: \(recipient) has no \(what) in Contacts. Nothing was opened."
+        return "failed: the contact below has no \(what) in Contacts. Nothing was opened.\n"
+            + ToolData.block(["Contact: \"\(ToolData.clean(recipient))\""])
     }
 
     /// The app could not open the other app.
@@ -692,8 +755,10 @@ public enum VoiceToolReply {
         guard !names.isEmpty else {
             return "No contact matched \"\(query)\". Tell the user you couldn't find them in Contacts. Do not guess."
         }
-        let list = names.joined(separator: ", ")
-        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\": \(list). Their details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
+        // Names are from Contacts: data, not instructions.
+        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\", names only:\n"
+            + ToolData.block(names.map { "- \(ToolData.clean($0))" })
+            + "\nTheir details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
     }
 
     private static func durationText(_ seconds: Int) -> String {

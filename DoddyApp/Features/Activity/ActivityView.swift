@@ -188,8 +188,8 @@ struct ActivityView: View {
             pauseAll: defaults.bool(forKey: ConnectionPause.preferenceKey),
             connectionOn: undo.connection.map { defaults.bool(forKey: $0.preferenceKey) } ?? true) {
             result = .notDone(reason)
-        } else if undo.listID != nil {
-            // Lists are Doddy's own (ADR-276): the store reverses and reads them back.
+        } else if undo.connection == nil {
+            // Lists and notes are Doddy's own (ADR-276, ADR-277): the store reverses and reads them back.
             result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)

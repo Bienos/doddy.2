@@ -21,6 +21,9 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Places you set for reminders") })
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains("Earlier wordings of notes you corrected, except in files you export."))
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Notes suggested after a conversation:") }, "save suggestions are on-device")
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Your diary, in a file of its own") }, "the diary is on-device and unreadable by voice")
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Your warranties, bills and subscriptions") })
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Text you translate without internet") })
         let siriOff = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "siri" })
         XCTAssertFalse(siriOff.isActive, "off unless the app says the switch is on")
         var siriState = base
@@ -88,6 +91,21 @@ final class DataFlowTests: XCTestCase {
         state.memoryCopyOn = true
         XCTAssertTrue(row("messagingServer", state).what.contains("this iPhone's notification token"))
         XCTAssertTrue(row("messagingServer", state).what.contains("a copy of your saved notes"))
+    }
+
+    func testNewsWriterIsNamedOnlyAsTheServerReportsIt() {
+        var state = base
+        state.messagingServerSet = true
+        let unknown = row("messagingServer", state)
+        XCTAssertTrue(unknown.destination.contains("Anthropic or OpenAI"))
+        XCTAssertTrue(unknown.note?.contains("headlines to Anthropic or OpenAI") == true)
+        state.newsWriterProvider = "openai"
+        let openAI = row("messagingServer", state)
+        XCTAssertTrue(openAI.destination.contains("OpenAI"))
+        XCTAssertFalse(openAI.destination.contains("Anthropic"))
+        XCTAssertFalse(openAI.note?.contains("Anthropic") == true)
+        state.newsWriterProvider = "anthropic"
+        XCTAssertFalse(row("messagingServer", state).destination.contains("OpenAI"))
     }
 
     func testRememberedConversationsLineFollowsTheSwitch() {

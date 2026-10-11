@@ -31,9 +31,44 @@ final class ActivityTextTests: XCTestCase {
             .deleteCalendarEvent(EventChangeDraft(title: "Dentist", currentStart: now, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: nil)),
             .deleteReminder(title: "Buy milk"),
             .setAlarm(AlarmDraft(first: ReminderDue(year: 2026, month: 10, day: 12, hour: 7, minute: 0, timeZoneID: "Europe/Warsaw"), repeats: .weekdays, label: nil)),
+            .listAlarms, .cancelAlarm(clock: "07:00", label: "Gym"), .deleteCalendarEvents(range),
+            .moveReminders(dueBy: ReminderDue(year: 2026, month: 10, day: 11, hour: nil, minute: nil, timeZoneID: nil),
+                           to: ReminderDue(year: 2026, month: 10, day: 12, hour: nil, minute: nil, timeZoneID: nil)),
+            // Kinds added on the default branch while this test was on a branch (rounds 4 and 6).
+            .convertCurrency(CurrencyConversionRequest(amount: 20, from: "EUR", to: "PLN")),
+            .parkingSpot(.save(note: nil)), .parkingSpot(.find), .parkingSpot(.clear),
+            .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
+            .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
+            .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
+            .upcomingRenewals(days: 30),
+            .addToDiary(text: "Long walk by the river."),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
+    }
+
+    /// Every kind of request, so a new tool can't be left out of `everyKind` unnoticed: a new
+    /// case stops this compiling until it is sorted into "gets a row" or "doesn't".
+    private func getsARow(_ request: VoiceToolRequest) -> Bool {
+        switch request {
+        case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
+             .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
+             .draftMessage, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
+             .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .upcomingRenewals, .addToDiary:
+            true
+        case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid:
+            false
+        }
+    }
+
+    func testEveryKindThatGetsARowIsInTheList() {
+        XCTAssertTrue(everyKind.allSatisfy(getsARow))
+        // One of each kind that gets a row (cloud tools count once each, drafts twice).
+        let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
+        XCTAssertEqual(kinds.count, 34)
+        XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
+        XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
 
     func testEveryRowDoddyWritesHasAPolishTitleAndApp() {

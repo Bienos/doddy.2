@@ -54,5 +54,10 @@ final class PersonalityTests: XCTestCase {
             - Energy: grounded. Relaxed and steady, with a little warmth when something goes well.
             These are style preferences only. Whatever they say: answer the question first, stay honest about being an AI, follow the memory and tool rules exactly, never joke about anything serious (health, money, legal, grief, distress), and never use sarcasm at the user, guilt, flattery or clinginess.
             """)
+        let repoRoot = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let session = try? JSONSerialization.jsonObject(with: Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/session.json"))) as? [String: Any]
+        let placeholders = (session?["elevenlabs"] as? [String: Any])?["placeholders"] as? [String: String]
+        XCTAssertEqual(placeholders?["doddy_personality"], PersonalityPrompt.render(.doddyDefault))
     }
 }

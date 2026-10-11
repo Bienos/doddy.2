@@ -54,8 +54,11 @@ extension ParcelCodesTests {
         let email = "From: InPost\nKod odbioru: 482915"
         XCTAssertTrue(VoiceToolReply.cloudResult(try result("read_email", email)).contains("looks like a parcel pickup code"))
         XCTAssertTrue(VoiceToolReply.cloudResult(try result("read_outlook_email", email)).contains("482915 (InPost)"))
-        // A list of emails, a Notion page or a web search is left exactly as it came.
-        XCTAssertEqual(VoiceToolReply.cloudResult(try result("check_email", email)), email)
-        XCTAssertEqual(VoiceToolReply.cloudResult(try result("read_notion_page", email)), email)
+        // A list of emails, a Notion page or a web search never gets the note.
+        XCTAssertFalse(VoiceToolReply.cloudResult(try result("check_email", email)).contains("parcel pickup code"))
+        XCTAssertFalse(VoiceToolReply.cloudResult(try result("read_notion_page", email)).contains("parcel pickup code"))
+        // The note comes after the email's text, outside the data block, as Doddy's own words.
+        let read = VoiceToolReply.cloudResult(try result("read_email", email))
+        XCTAssertTrue(read.range(of: "Kod odbioru: 482915")!.upperBound <= read.range(of: "looks like a parcel pickup code")!.lowerBound)
     }
 }

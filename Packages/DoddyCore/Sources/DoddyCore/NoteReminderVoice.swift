@@ -103,6 +103,15 @@ public enum NoteQuoteMatch {
     }
 }
 
+/// A note has at most one reminder, so a voice reminder replaces the one it has (review C3). The
+/// card names that reminder before the user taps Set reminder, and the reply names it to the agent.
+public enum NoteReminderReplacement {
+    /// The card's line: "Replaces its reminder: Every Monday at 20:00 · Warsaw (stops repeating)".
+    public static func cardLine(_ previous: MemoryReminder, locale: Locale = .current) -> String {
+        "Replaces its reminder: \(ReminderFormat.summary(previous, locale: locale))\(previous.repeats == nil ? "" : " (stops repeating)")"
+    }
+}
+
 extension VoiceToolReply {
     public static let declinedNoteReminder = "declined: the user chose not to set this reminder. Nothing was set."
 
@@ -114,13 +123,24 @@ extension VoiceToolReply {
         "failed: Apple Maps found no place for \"\(query)\". Ask the user for a more specific place, e.g. with a street or town. Nothing was set."
     }
 
-    /// `summary` is `ReminderFormat.summary` of the stored reminder.
-    public static func noteReminderSet(_ reminder: MemoryReminder, note: String) -> String {
-        "added: a reminder about \"\(note)\": \(phrase(reminder)). It is a notification on this iPhone."
+    /// `summary` is `ReminderFormat.summary` of the stored reminder. `previous` is the reminder
+    /// the note had before, which this one replaced (review C3).
+    /// The note's stored text follows as data (ToolData).
+    public static func noteReminderSet(_ reminder: MemoryReminder, note: String, replacing previous: MemoryReminder? = nil) -> String {
+        "added: a reminder about the note below: \(phrase(reminder)). It is a notification on this iPhone.\(replaced(previous))\n" + noteData(note)
     }
 
-    public static func noteReminderInDoddyOnly(_ reminder: MemoryReminder, note: String) -> String {
-        "added: a reminder about \"\(note)\": \(phrase(reminder)), kept in Doddy only. Notifications are off for Doddy, so the iPhone won't alert; it shows on Doddy's Home when due. Tell the user this."
+    public static func noteReminderInDoddyOnly(_ reminder: MemoryReminder, note: String, replacing previous: MemoryReminder? = nil) -> String {
+        "added: a reminder about the note below: \(phrase(reminder)), kept in Doddy only. Notifications are off for Doddy, so the iPhone won't alert; it shows on Doddy's Home when due. Tell the user this.\(replaced(previous))\n" + noteData(note)
+    }
+
+    private static func noteData(_ note: String) -> String {
+        ToolData.block(["Note: \"\(ToolData.clean(note))\""])
+    }
+
+    private static func replaced(_ previous: MemoryReminder?) -> String {
+        guard let previous else { return "" }
+        return " It replaced the note's earlier reminder (\(phrase(previous))), which is gone now. Tell the user."
     }
 
     public static func noteReminderFailed(_ reason: String) -> String {

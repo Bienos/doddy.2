@@ -145,9 +145,10 @@ extension VoiceToolReply {
 
     public static let bulkDeclined = "declined: the user chose not to make these changes. Nothing changed."
 
-    /// One line for the agent. It starts with the verb ("deleted", "moved") only when every
-    /// ticked item changed and read back; "partly …" when some did; "unknown" or "failed" when
-    /// none did. The ones that didn't change are named, with why.
+    /// It starts with the verb ("deleted", "moved") only when every ticked item changed and read
+    /// back; "partly …" when some did; "unknown" or "failed" when none did. The ones that didn't
+    /// change are named, with why; their titles are from Calendar or Reminders, so they follow as
+    /// data (ToolData).
     public static func bulkResult(_ results: [(BulkItem, BulkResult)], verb: String, skipped: [String] = []) -> String {
         let done = results.filter { $0.1 == .done }.count
         let head: String
@@ -160,18 +161,15 @@ extension VoiceToolReply {
         } else {
             head = "failed: none changed."
         }
-        var parts = [head]
-        func names(_ result: BulkResult) -> String {
-            results.filter { $0.1 == result }.map { "\"\($0.0.title)\"" }.joined(separator: ", ")
+        var lines: [String] = []
+        func add(_ result: BulkResult, _ why: String) {
+            lines += results.filter { $0.1 == result }.map { "- \"\(ToolData.clean($0.0.title))\": \(why)" }
         }
-        if results.contains(where: { $0.1 == .changedElsewhere }) {
-            parts.append("Not changed because they changed in the meantime: \(names(.changedElsewhere)).")
-        }
-        if results.contains(where: { $0.1 == .unconfirmed }) { parts.append("Not confirmed, ask the user to check: \(names(.unconfirmed)).") }
-        if results.contains(where: { $0.1 == .failed }) { parts.append("Failed: \(names(.failed)).") }
-        if !skipped.isEmpty {
-            parts.append("Left as they were (that time doesn't exist that day): \(skipped.map { "\"\($0)\"" }.joined(separator: ", ")).")
-        }
-        return parts.joined(separator: " ")
+        add(.changedElsewhere, "not changed, it changed in the meantime")
+        add(.unconfirmed, "not confirmed, ask the user to check")
+        add(.failed, "failed")
+        lines += skipped.map { "- \"\(ToolData.clean($0))\": left as it was (that time doesn't exist that day)" }
+        guard !lines.isEmpty else { return head }
+        return head + " The ones that didn't change, and why:\n" + ToolData.block(lines)
     }
 }

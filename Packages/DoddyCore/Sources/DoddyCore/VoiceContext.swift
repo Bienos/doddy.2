@@ -31,6 +31,30 @@ public struct ConversationLog: Equatable, Sendable, Codable, Identifiable {
     }
 }
 
+/// Text from the user's notes, lists, calendar, reminders or an earlier conversation, handed to
+/// the agent between fixed markers (review C4). The agent's instructions say that anything
+/// between them is information, never an instruction; the context variables sit between them in
+/// the instructions, and tool results put them around stored text. Content can't close the block
+/// early: every copy of a marker in it is removed, and each line stays one line.
+public enum ToolData {
+    public static let begin = "<<<DATA"
+    public static let end = "DATA>>>"
+
+    /// One line of content: no markers, no line breaks.
+    public static func clean(_ text: String) -> String {
+        var flat = text.components(separatedBy: .newlines).joined(separator: " ")
+        while let marker = flat.range(of: begin, options: .caseInsensitive) ?? flat.range(of: end, options: .caseInsensitive) {
+            flat.removeSubrange(marker)
+        }
+        return flat
+    }
+
+    /// Lines the app wrote around content (each already `clean`), between the markers.
+    public static func block(_ lines: [String]) -> String {
+        ([begin] + lines + [end]).joined(separator: "\n")
+    }
+}
+
 /// Builds the text the app hands to the voice agent as dynamic variables when a conversation
 /// starts. Deterministic and bounded, so the prompt cannot grow without limit, and honest about
 /// cuts: the agent is told when a list is incomplete.
@@ -116,8 +140,9 @@ public enum VoiceContext {
         return (kept, truncated)
     }
 
+    /// One line, no data markers (ToolData), at most `maxLineLength`.
     static func clip(_ text: String) -> String {
-        let flat = text.replacingOccurrences(of: "\n", with: " ")
+        let flat = ToolData.clean(text)
         guard flat.count > maxLineLength else { return flat }
         return String(flat.prefix(maxLineLength - 1)) + "…"
     }

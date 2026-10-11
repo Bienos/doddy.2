@@ -243,7 +243,8 @@ struct ListDetailView: View {
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom) {
             if let undo = store.listUndo, undo.listID == listID {
-                ListUndoBar(undo: undo)
+                // A new identity per change, so a failed undo isn't carried to the next one (review F7).
+                ListUndoBar(undo: undo).id(undo.id)
             }
         }
         .toolbar {
@@ -258,17 +259,19 @@ struct ListDetailView: View {
             Button("Delete list", role: .destructive) {
                 Task {
                     do {
-                        // A shared list stops being shared first (ADR-263), so nothing is left in iCloud.
-                        if sharing.isShared(list.id) != nil { try await sharing.stop(list.id) }
+                        // A shared list stops being shared first (ADR-263, review I3), so nothing
+                        // is left in iCloud.
+                        try await sharing.stopSharingBeforeDeleting(list.id)
                         try await store.delete(id: list.id)
                         dismiss()
                     } catch {
-                        errorMessage = UserFacingError.listMessage(for: error)
+                        errorMessage = SharingError.message(for: error)
                     }
                 }
             }
         } message: {
             Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
+                + Text(verbatim: sharing.deleteWarning(list.id).map { " " + $0 } ?? "")
         }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
         .sheet(item: $usualFor) { UsualItemsSheet(list: $0) }
@@ -290,9 +293,13 @@ struct ListDetailView: View {
                  : "The copy in your iCloud is deleted and the people you invited lose the list. It stays on this iPhone.")
         }
         .sheet(item: $cloudShare) { sheet in
-            CloudSharingView(sheet: sheet, listName: list.name) {
-                Task { await sharing.load() }
-            }
+            CloudSharingView(sheet: sheet, listName: list.name, onStopped: {
+                // Apple's "Stop Sharing" removes only the share, so the copy in iCloud and the
+                // link go here too (review I5).
+                Task { await stopAfterSharingScreen(list) }
+            }, onFailed: { error in
+                errorMessage = SharingError.message(for: error)
+            })
         }
         .confirmationDialog("Show this list on your Lock Screen?", isPresented: $confirmShopping, titleVisibility: .visible) {
             Button("Start shopping mode") { shopping.start(list) }
@@ -426,6 +433,14 @@ struct ListDetailView: View {
         }
     }
 
+    private func stopAfterSharingScreen(_ list: DoddyList) async {
+        do {
+            try await sharing.stop(list.id)
+        } catch {
+            errorMessage = SharingError.message(for: error)
+        }
+    }
+
     private func openPeople(_ list: DoddyList) async {
         do {
             cloudShare = try await sharing.existingShare(list.id)
@@ -471,18 +486,23 @@ struct ListDetailView: View {
 struct ListUndoBar: View {
     @Environment(MemoryStore.self) private var store
     let undo: ListUndo
-    @State private var failed = false
+    /// Why the undo didn't happen, in words (review C10); nil until it fails.
+    @State private var failure: String?
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(failed ? "Couldn't undo. Nothing changed." : undo.message)
+            Text(failure ?? undo.message)
                 .font(.subheadline)
                 .lineLimit(2)
             Spacer(minLength: 8)
-            if !failed {
+            if failure == nil {
                 Button("Undo") {
                     Task {
-                        do { try await store.undoListChange(undo) } catch { failed = true }
+                        do {
+                            try await store.undoListChange(undo)
+                        } catch {
+                            failure = UserFacingError.listMessage(for: error)
+                        }
                     }
                 }
                 .font(.subheadline.weight(.semibold))

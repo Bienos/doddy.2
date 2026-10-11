@@ -105,7 +105,9 @@ public struct MorningBriefing: Equatable, Sendable {
         now: Date, memories: [MemoryRecord], lists: [DoddyList], reminders: [MemoryReminder],
         calendar: Calendar = .current
     ) -> MorningBriefing {
-        let end = calendar.startOfDay(for: now).addingTimeInterval(24 * 3600)
+        // The next midnight, not 24 hours on: a clock-change day has 23 or 25.
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(24 * 3600)
         let byID = Dictionary(memories.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let today = reminders.compactMap { reminder -> ReminderLine? in
             guard let fire = reminder.nextFire(after: now), fire < end, let note = byID[reminder.memoryID] else { return nil }
@@ -134,17 +136,18 @@ public enum MorningCheckInPrompt {
         day.timeZone = timeZone
         day.locale = Locale(identifier: "en_GB")
         day.dateFormat = "EEEE d MMMM"
-        var lines = ["The user started a morning check-in for \(day.string(from: briefing.day))."]
+        // Reminder text and list names are the user's words: between the data markers (review C4).
+        var lines: [String] = []
         if briefing.reminders.isEmpty {
             lines.append("Doddy reminders today: none.")
         } else {
-            lines.append("Doddy reminders today: " + briefing.reminders.map { "\(time.string(from: $0.time)) \($0.text)" }.joined(separator: "; ") + ".")
+            lines.append("Doddy reminders today: " + briefing.reminders.map { "\(time.string(from: $0.time)) \(ToolData.clean($0.text))" }.joined(separator: "; ") + ".")
         }
         if briefing.lists.isEmpty {
             lines.append("Lists with things left: none.")
         } else {
-            lines.append("Lists with things left: " + briefing.lists.map { "\($0.name) (\($0.openCount))" }.joined(separator: "; ") + ".")
+            lines.append("Lists with things left: " + briefing.lists.map { "\(ToolData.clean($0.name)) (\($0.openCount))" }.joined(separator: "; ") + ".")
         }
-        return lines.joined(separator: " ")
+        return "The user started a morning check-in for \(day.string(from: briefing.day)).\n" + ToolData.block(lines)
     }
 }

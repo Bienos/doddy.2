@@ -171,8 +171,14 @@ public enum PlanReply {
 
     /// `changed` are the steps the user edited on the card (ADR-205): the agent is told, so it
     /// repeats what was actually done rather than what it first proposed.
+    /// How a plan step's result starts when it was done: the single-step results for the tools a
+    /// plan may use, including a list step's `added to "Shopping": …` (review D3).
+    public static let donePrefixes = ["added:", "added to", "saved:", "drafted:"]
+
     public static func summary(_ results: [(step: PlanStep, reply: String)], changed: Set<Int> = []) -> String {
-        var lines = ["plan: one result per step, in order. Tell the user each one. Only say a step was done if its line starts with \"added:\", \"saved:\" or \"drafted:\"."]
+        let done = donePrefixes.map { "\"\($0)\"" }
+        let doneText = done.dropLast().joined(separator: ", ") + " or " + done[done.count - 1]
+        var lines = ["plan: one result per step, in order. Tell the user each one. Only say a step was done if its line starts with \(doneText)."]
         for result in results {
             let text = result.reply.replacingOccurrences(of: "\n", with: " ")
             let note = changed.contains(result.step.number) ? " (The user changed this step on screen before it ran; use these details, not your proposal.)" : ""
