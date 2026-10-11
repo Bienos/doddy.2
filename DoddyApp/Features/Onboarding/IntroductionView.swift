@@ -16,6 +16,8 @@ struct IntroductionView: View {
     @State private var draft = ProfileDraft()
     @State private var didSeedDraft = false
     @State private var showCapabilities = false
+    /// The welcome's storybook has turned its pages (ADR-299).
+    @State private var storyPlayed = false
 
     private let keys = ProfileKey.allCases
 
@@ -61,7 +63,7 @@ struct IntroductionView: View {
                 ProblemView(message: problem)
             }
 
-            CandidateCharacterView(assetName: "Doddy_waving")
+            StorybookView(played: $storyPlayed)
                 .frame(maxWidth: .infinity)
 
             Button { phase = .question(0) } label: {

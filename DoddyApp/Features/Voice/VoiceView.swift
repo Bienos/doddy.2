@@ -109,7 +109,7 @@ struct VoiceView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack(alignment: .center, spacing: 16) {
-                            CandidateCharacterView(assetName: "Doddy_listening", size: 96)
+                            VoiceDoddyView(art: screenArt(controller))
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(statusTitle(controller.phase))
                                     .font(.title2.bold())
@@ -1296,7 +1296,22 @@ struct VoiceView: View {
         .background(Theme.canvas)
     }
 
-    private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {
+    /// Doddy's pose on this screen (ADR-299), the island's for the same moment.
+    private func screenArt(_ controller: VoiceSessionController) -> VoiceScreenArt {
+        let phase: VoiceScreenArt.Phase = switch controller.phase {
+        case .idle, .connecting: .connecting
+        case .listening: .listening
+        case .thinking: .thinking
+        case .speaking: .speaking
+        case .ended: .ended
+        case .microphoneDenied: .microphoneOff
+        case .failed: .failed
+        }
+        return .shown(phase, muted: controller.isMuted && controller.isLive,
+                      awaitingConfirmation: controller.pendingAction != nil)
+    }
+
+        private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {
         switch phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")

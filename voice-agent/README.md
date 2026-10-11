@@ -17,6 +17,8 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
+**Partly applied to the live agent 2026-10-11 (ADR-291, open camera):** `run_shortcut` (`tool_1601m4gj37f5etbres37pgtvrq3c`) has the new `name` sentence, updated in place and read back. The two prompt edits (the "Opening the camera" line after `run_shortcut`, and "open the camera" in the last strict timer/map/shortcut rule) are **not live yet**: the prompt write was refused in that session. Put them into the live prompt in place, since the live prompt is ahead of `instructions.md`; it was `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx` when read.
+
 **Applied to the live agent 2026-10-11 (ADR-254, owner: "you do it"):** done as described below; read back after
 saving. Version `agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm` (rollback) → `agtvrsn_2701m4mc8sejfzkbjmekv9nczdrp` (first
 message and placeholder) → `agtvrsn_6701m4mc9b7wekgb2jeg1c6pwnyv` (Polish preset). What was changed: `session.json` first message
@@ -194,6 +196,6 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
   - `change_reminder` gained `add_note`, `priority` and `move_to_list`.
   - `check_email` points to `read_email`.
   - `list_todoist_tasks` explains the `[id …]` ids.
-- **Prompt:** `instructions.md` as committed with this change.
+- **Prompt:** `instructions.md` as committed with round 4. After the merge with the default branch, `instructions.md` also has the "Opening the camera" line (ADR-291, another session). That session recorded it as not yet applied to the live agent, so the live prompt is `instructions.md` without that one line, until that session applies it.
 - **Version:** `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` → `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx`, 49 tools. The stored prompt was read back.
 - **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools. A backend without round 4 refuses the three online-account tools as unknown.
