@@ -31,7 +31,7 @@ enum BackupCopy {
         case .passphraseTooShort(let minimum)?:
             return "Use at least \(minimum) characters. A few words you'll remember works well."
         case .tooLarge?:
-            return NSLocalizedString("This backup would be too large for one file. Make one without photos.", comment: "")
+            return NSLocalizedString("This backup would be too large for one file. Make one without photos or voice memos.", comment: "")
         case .notABackup?:
             return NSLocalizedString("That file isn't a Doddy backup. Nothing was added.", comment: "")
         case .newerFormat?:
@@ -61,7 +61,7 @@ struct BackupSettingsSection: View {
             Button { showRestore = true } label: { Label("Restore from a backup file", systemImage: "arrow.down.doc") }
                 .disabled(!store.isStorageAvailable)
                 .accessibilityIdentifier("settings.restoreBackup")
-            Text("One file with your notes, lists, photos, time reminders and About you answers, locked with a passphrase you choose. You keep it, in Files or iCloud Drive. Without the passphrase nobody can open it, and Doddy can't recover it for you.")
+            Text("One file with your notes, lists, photos, voice memos, time reminders and About you answers, locked with a passphrase you choose. You keep it, in Files or iCloud Drive. Without the passphrase nobody can open it, and Doddy can't recover it for you.")
                 .font(.footnote).foregroundStyle(Theme.secondaryText)
         }
         .sheet(isPresented: $showMake) { MakeBackupView() }
@@ -77,6 +77,7 @@ struct MakeBackupView: View {
     @State private var passphrase = ""
     @State private var again = ""
     @State private var includePhotos = true
+    @State private var includeRecordings = true
     @State private var isWorking = false
     @State private var problem: String?
     @State private var document: BackupDocument?
@@ -102,6 +103,7 @@ struct MakeBackupView: View {
                         SecureField("Passphrase", text: $passphrase).textContentType(.newPassword)
                         SecureField("Passphrase again", text: $again).textContentType(.newPassword)
                         Toggle("Include photos", isOn: $includePhotos)
+                        Toggle("Include voice memos", isOn: $includeRecordings)
                     } footer: {
                         Text("At least \(BackupLimits.minimumPassphraseLength) characters. Write it down somewhere safe: if it's lost, this backup can't be opened by anyone, Doddy included.")
                     }
@@ -145,6 +147,13 @@ struct MakeBackupView: View {
                 photos.append(.init(memoryID: note.id, width: photo.width, height: photo.height, addedAt: photo.addedAt, jpeg: jpeg))
             }
         }
+        var recordings: [BackupContents.Recording] = []
+        if includeRecordings {
+            for note in store.memories {
+                guard let audio = store.recording(for: note.id), let m4a = await store.recordingData(audio) else { continue }
+                recordings.append(.init(memoryID: note.id, durationMilliseconds: audio.durationMilliseconds, addedAt: audio.addedAt, m4a: m4a))
+            }
+        }
         do {
             let export = try MemoryExport.json(
                 store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items), exportedAt: .now)
@@ -152,7 +161,7 @@ struct MakeBackupView: View {
                 createdAt: .now, memoriesExport: export,
                 reminders: BackupContents.reminders(noteReminders.reminders, now: .now),
                 profile: Dictionary(uniqueKeysWithValues: profiles.profile.fields.map { ($0.key.rawValue, $0.value.value) }),
-                photos: photos)
+                photos: photos, recordings: recordings)
             let words = passphrase
             // Sealed, then opened again with the same passphrase and compared, before it is offered.
             let sealed = try await Task.detached(priority: .userInitiated) { () throws -> Data in
@@ -265,6 +274,7 @@ struct RestoreBackupView: View {
         var parts = ["\(plan.notes.toAdd.count) notes and lists"]
         if !plan.listItems.isEmpty { parts.append("\(plan.listItems.count) list items") }
         if !plan.photos.isEmpty { parts.append("\(plan.photos.count) photos") }
+        if !plan.recordings.isEmpty { parts.append("\(plan.recordings.count) voice memos") }
         if !plan.reminders.isEmpty { parts.append("\(plan.reminders.count) reminders") }
         if plan.profile != nil { parts.append("your About you answers") }
         return parts.joined(separator: ", ") + "."
@@ -278,10 +288,15 @@ struct RestoreBackupView: View {
         do {
             let added = try await store.restore(plan.notes.toAdd, listItems: plan.listItems)
             let addedIDs = Set(added.map(\.id))
-            var photos = 0, reminders = 0, notKept = 0
+            var photos = 0, recordings = 0, reminders = 0, notKept = 0
             for photo in plan.photos where addedIDs.contains(photo.memoryID) {
                 if (try? await store.attachPhoto(jpeg: photo.jpeg, width: photo.width, height: photo.height, to: photo.memoryID)) != nil {
                     photos += 1
+                } else { notKept += 1 }
+            }
+            for recording in plan.recordings where addedIDs.contains(recording.memoryID) {
+                if (try? await store.attachRecording(m4a: recording.m4a, durationMilliseconds: recording.durationMilliseconds, to: recording.memoryID)) != nil {
+                    recordings += 1
                 } else { notKept += 1 }
             }
             for reminder in plan.reminders where addedIDs.contains(reminder.memoryID) {
@@ -298,6 +313,7 @@ struct RestoreBackupView: View {
             }
             var lines = ["Added \(added.count) notes and lists"]
             if photos > 0 { lines.append("\(photos) photos") }
+            if recordings > 0 { lines.append("\(recordings) voice memos") }
             if reminders > 0 { lines.append("\(reminders) reminders") }
             if profileAdded { lines.append("your About you answers") }
             receipt = lines.joined(separator: ", ") + "."

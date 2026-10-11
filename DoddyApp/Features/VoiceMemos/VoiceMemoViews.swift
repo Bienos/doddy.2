@@ -210,7 +210,7 @@ struct NoteRecordingSection: View {
                     Label("This note's recording is missing on this iPhone.", systemImage: "waveform.slash")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                 }
-                Text("Kept only on this iPhone, never sent anywhere. Not in exports or backup files.")
+                Text("Kept only on this iPhone, never sent anywhere. Not in exports; in a backup file only if you include it.")
                     .font(.caption).foregroundStyle(Theme.secondaryText)
                 if let problem { ProblemView(message: problem) }
                 Button(role: .destructive) { confirmRemove = true } label: {

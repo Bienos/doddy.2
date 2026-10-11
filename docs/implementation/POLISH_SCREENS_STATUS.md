@@ -47,6 +47,7 @@ Don't claim "Doddy is fully in Polish": screens built at run time, long privacy 
   - the longest privacy paragraph.
 - **Whether Siri accepts Polish phrases** depends on Siri supporting Polish on the device. That is not verified here. The short titles show in Polish in Shortcuts and Spotlight either way.
 - **Verified (Linux):** `--check` passes. `scripts/ci.sh --core-only` passes. `swiftc -parse` passes on every changed Swift file.
+- **Owner, 2026-10-11:** a native speaker reviews the Polish before release (ADR-234). The privacy texts and the AI disclosure go first. Until then, every Polish line counts as a draft.
 - **NOT RUN:**
   - no Xcode build, so not checked whether Xcode accepts the generated InfoPlist/AppShortcuts catalogs or whether XcodeGen adds the widget and watch catalogs as resources;
   - never seen on a Polish iPhone or watch;

@@ -29,6 +29,12 @@ Date: 2026-10-10. Owner: "do all of them" (item 9), and "A file you keep (Recomm
   - The largest file is 200 MB; above that, the user is asked to make one without photos.
 - **Privacy screen:** "What leaves this iPhone" has a row "Where you save a backup file".
 
+## Voice memos in the file (ADR-234, 2026-10-11)
+- **Make a backup file:** "Include voice memos" (on by default, like photos). Each note's recording goes in with its length and date.
+- **Restore:** recordings come back only for notes the restore adds and only when their length is valid. Each one is written to a temporary file, then attached and read back like a new recording. The receipt counts only those read back.
+- **Older backup files** have no recordings and still open (`testBackupsMadeBeforeVoiceMemosStillOpen`). The file format version is unchanged; the field is optional.
+- **Not run on a device:** large recordings near the 200 MB file limit. If the file would be too large, the message now says to leave out photos or voice memos.
+
 ## Files
 - **Core:** `EncryptedBackup.swift`, containing `BackupLimits`, `BackupContents`, `BackupError`, `EncryptedBackup` (encrypt, decrypt, PBKDF2) and `BackupRestorePlan`. `DataFlow.swift` has the backup row.
 - **App:** `Features/Backup/BackupViews.swift`, containing `BackupSettingsSection`, `MakeBackupView`, `RestoreBackupView` and `BackupDocument`. Settings shows the section.

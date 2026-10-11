@@ -281,7 +281,6 @@
  "Notifications and texts stop. Your memories on this iPhone stay.": "Powiadomienia i SMS-y zostaną wyłączone. Twoje wspomnienia na tym iPhonie zostają.",
  "Notifications are off for Doddy, so your iPhone won't alert you. When it's due, the note waits at the top of Home.": "Powiadomienia Doddy’ego są wyłączone, więc iPhone Cię nie zaalarmuje. Gdy nadejdzie pora, notatka poczeka na górze ekranu Start.",
  "OK": "OK",
- "One file with your notes, lists, photos, time reminders and About you answers, locked with a passphrase you choose. You keep it, in Files or iCloud Drive. Without the passphrase nobody can open it, and Doddy can't recover it for you.": "Jeden plik z notatkami, listami, zdjęciami, przypomnieniami o godzinie i odpowiedziami z „O Tobie”, zabezpieczony wybranym przez Ciebie hasłem. Przechowujesz go Ty, w Plikach lub iCloud Drive. Bez hasła nikt go nie otworzy, a Doddy nie odzyska go za Ciebie.",
  "One less thing\\nto remember.": "O jedną rzecz\nmniej do pamiętania.",
  "Online accounts": "Konta online",
  "Only for you": "Tylko dla Ciebie",
@@ -575,7 +574,6 @@
  "Don't keep this recording": "Nie zachowuj tego nagrania",
  "Words already added stay in the note until you change them.": "Dodane już słowa zostają w notatce, dopóki ich nie zmienisz.",
  "This note's recording is missing on this iPhone.": "Nagrania tej notatki nie ma na tym iPhonie.",
- "Kept only on this iPhone, never sent anywhere. Not in exports or backup files.": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach ani w plikach kopii zapasowej.",
  "Remove recording": "Usuń nagranie",
  "Remove this recording?": "Usunąć to nagranie?",
  "The recording is deleted from this iPhone. The note's words stay.": "Nagranie zostanie usunięte z tego iPhone’a. Słowa notatki zostają.",
@@ -701,7 +699,6 @@
  "Location Services are off on this iPhone. Nothing was set. Turn them on in Settings, Privacy & Security.": "Usługi lokalizacji są wyłączone na tym iPhonie. Nic nie zostało ustawione. Włącz je w Ustawieniach, Prywatność i ochrona.",
  "Location Services off": "Usługi lokalizacji wyłączone",
  "Mark done": "Oznacz jako zrobione",
- "Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; voice memos aren't in backup files either. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": "Notatki są tylko w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; notatek głosowych nie ma też w plikach kopii zapasowej. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj.",
  "Microphone is off": "Mikrofon jest wyłączony",
  "Monday morning": "Poniedziałek rano",
  "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set.": "Comiesięczne przypomnienia mogą być w dniach od 1 do 28, żeby każdy miesiąc miał ten dzień. Nic nie zostało ustawione.",
@@ -845,7 +842,6 @@
  "The watch shows your pinned notes, next note reminders and lists, and can tick items and save new notes. It does that through your iPhone, which must be nearby; nothing is saved on the watch.": "Zegarek pokazuje przypięte notatki, najbliższe przypomnienia o notatkach i listy, a także może odhaczać pozycje i zapisywać nowe notatki. Robi to przez iPhone’a, który musi być w pobliżu; na zegarku nic nie jest zapisywane.",
  "There are no words in it.": "Nie ma w nim żadnych słów.",
  "Thinking…": "Myślę…",
- "This backup would be too large for one file. Make one without photos.": "Ta kopia zapasowa byłaby za duża na jeden plik. Zrób ją bez zdjęć.",
  "This build of Doddy can't receive notifications (it needs an Apple developer team with Push Notifications). Daily news still works in the app.": "Ta wersja Doddy’ego nie może odbierać powiadomień (potrzebny jest zespół deweloperski Apple z powiadomieniami push). Codzienne newsy nadal działają w aplikacji.",
  "This evening": "Dziś wieczorem",
  "This file couldn't be read.": "Nie udało się odczytać tego pliku.",
@@ -901,5 +897,10 @@
  "Your voice note": "Twoja notatka głosowa",
  "\\\"Talk to Doddy\\\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.": "„Porozmawiaj z Doddym” jest wbudowane jako skrót dla Siri, aplikacji Skróty i przycisku czynności, a od iOS 18 jako element sterujący, który możesz dodać do Centrum sterowania lub ekranu blokady (edytuj Centrum sterowania, potem Dodaj element sterujący i wyszukaj Doddy). Stuknięcie w tył i elementy sterujące ustawiasz samodzielnie; Doddy nie może ich dodać ani sprawdzić, czy są ustawione.",
  "The microphone is off for Doddy. Turn it on in the Settings app to record.": "Mikrofon jest wyłączony dla Doddy’ego. Włącz go w aplikacji Ustawienia, żeby nagrywać.",
- "Recording couldn't start. If you're talking to Doddy or on a call, finish that first.": "Nie udało się zacząć nagrywania. Jeśli rozmawiasz z Doddym albo przez telefon, najpierw to zakończ."
+ "Recording couldn't start. If you're talking to Doddy or on a call, finish that first.": "Nie udało się zacząć nagrywania. Jeśli rozmawiasz z Doddym albo przez telefon, najpierw to zakończ.",
+ "One file with your notes, lists, photos, voice memos, time reminders and About you answers, locked with a passphrase you choose. You keep it, in Files or iCloud Drive. Without the passphrase nobody can open it, and Doddy can't recover it for you.": "Jeden plik z Twoimi notatkami, listami, zdjęciami, notatkami głosowymi, przypomnieniami o czasie i odpowiedziami z sekcji O Tobie, zablokowany hasłem, które wybierasz. Trzymasz go u siebie, w Plikach lub na iCloud Drive. Bez hasła nikt go nie otworzy, a Doddy nie może go dla Ciebie odzyskać.",
+ "This backup would be too large for one file. Make one without photos or voice memos.": "Ta kopia zapasowa byłaby za duża na jeden plik. Zrób ją bez zdjęć lub notatek głosowych.",
+ "Kept only on this iPhone, never sent anywhere. Not in exports; in a backup file only if you include it.": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach; w pliku kopii zapasowej tylko wtedy, gdy je dołączysz.",
+ "Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": "Notatki są tylko w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj.",
+ "Include voice memos": "Dołącz notatki głosowe"
 }

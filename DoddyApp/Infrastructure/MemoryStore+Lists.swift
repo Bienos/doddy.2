@@ -183,6 +183,22 @@ extension MemoryStore {
         }
     }
 
+    /// The recording's bytes, for the encrypted backup file (ADR-234). nil when the file is missing.
+    func recordingData(_ audio: MemoryAudio) async -> Data? {
+        guard let url = recordingURL(audio) else { return nil }
+        return await Task.detached(priority: .userInitiated) { try? Data(contentsOf: url) }.value
+    }
+
+    /// A recording from a backup file: written to a temporary file, then attached and read back
+    /// exactly like one just recorded. The temporary file is removed either way.
+    @discardableResult
+    func attachRecording(m4a: Data, durationMilliseconds: Int, to memoryID: UUID) async throws -> MemoryAudio {
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("DoddyRestore-\(UUID().uuidString).m4a")
+        try m4a.write(to: temporary, options: [.atomic])
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        return try await attachRecording(from: temporary, durationMilliseconds: durationMilliseconds, to: memoryID)
+    }
+
     /// Removes the recording from its note; the note's words stay.
     func removeRecording(from memoryID: UUID) async throws {
         if let removed = try await environment.audioRepository.detach(memoryID: memoryID) {

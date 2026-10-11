@@ -3345,6 +3345,17 @@
         }
       }
     },
+    "Include voice memos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dołącz notatki głosowe"
+          }
+        }
+      }
+    },
     "Intention": {
       "extractionState": "manual",
       "localizations": {
@@ -3510,17 +3521,6 @@
         }
       }
     },
-    "Kept only on this iPhone, never sent anywhere. Not in exports or backup files.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach ani w plikach kopii zapasowej."
-          }
-        }
-      }
-    },
     "Kept only on this iPhone, never sent anywhere. Not in exports.": {
       "extractionState": "manual",
       "localizations": {
@@ -3528,6 +3528,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko na tym iPhonie, nigdy nigdzie niewysyłane. Nie ma go w eksportach."
+          }
+        }
+      }
+    },
+    "Kept only on this iPhone, never sent anywhere. Not in exports; in a backup file only if you include it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach; w pliku kopii zapasowej tylko wtedy, gdy je dołączysz."
           }
         }
       }
@@ -3928,13 +3939,13 @@
         }
       }
     },
-    "Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; voice memos aren't in backup files either. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": {
+    "Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Notatki są tylko w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; notatek głosowych nie ma też w plikach kopii zapasowej. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj."
+            "value": "Notatki są tylko w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj."
           }
         }
       }
@@ -4984,13 +4995,13 @@
         }
       }
     },
-    "One file with your notes, lists, photos, time reminders and About you answers, locked with a passphrase you choose. You keep it, in Files or iCloud Drive. Without the passphrase nobody can open it, and Doddy can't recover it for you.": {
+    "One file with your notes, lists, photos, voice memos, time reminders and About you answers, locked with a passphrase you choose. You keep it, in Files or iCloud Drive. Without the passphrase nobody can open it, and Doddy can't recover it for you.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jeden plik z notatkami, listami, zdjęciami, przypomnieniami o godzinie i odpowiedziami z „O Tobie”, zabezpieczony wybranym przez Ciebie hasłem. Przechowujesz go Ty, w Plikach lub iCloud Drive. Bez hasła nikt go nie otworzy, a Doddy nie odzyska go za Ciebie."
+            "value": "Jeden plik z Twoimi notatkami, listami, zdjęciami, notatkami głosowymi, przypomnieniami o czasie i odpowiedziami z sekcji O Tobie, zablokowany hasłem, które wybierasz. Trzymasz go u siebie, w Plikach lub na iCloud Drive. Bez hasła nikt go nie otworzy, a Doddy nie może go dla Ciebie odzyskać."
           }
         }
       }
@@ -8163,13 +8174,13 @@
         }
       }
     },
-    "This backup would be too large for one file. Make one without photos.": {
+    "This backup would be too large for one file. Make one without photos or voice memos.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ta kopia zapasowa byłaby za duża na jeden plik. Zrób ją bez zdjęć."
+            "value": "Ta kopia zapasowa byłaby za duża na jeden plik. Zrób ją bez zdjęć lub notatek głosowych."
           }
         }
       }
