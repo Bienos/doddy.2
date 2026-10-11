@@ -12,7 +12,7 @@ export async function handleRegister(request, deps) {
   try {
     return await register(request, deps);
   } catch {
-    logEvent({ evt: 'register', code: 'providerUnavailable' }, deps.logSink);
+    logEvent({ evt: 'register', code: 'providerUnavailable', cause: 'unexpected' }, deps.logSink);
     return errorResponse('providerUnavailable');
   }
 }

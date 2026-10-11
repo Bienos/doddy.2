@@ -262,6 +262,7 @@ test('review: an unexpected internal error becomes a content-free 503, not a pla
   const { res, json } = await run(assistRequest(body()), deps);
   assert.deepEqual([res.status, json.error.code], [503, 'providerUnavailable']);
   assert.ok(!logs.join('').includes('SECRET-DETAIL'));
+  assert.equal(JSON.parse(logs.at(-1)).cause, 'unexpected', 'a gateway bug is told apart from a provider outage');
 });
 
 test('review: one invite cannot exceed its daily total by minting many device ids', async () => {

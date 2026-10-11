@@ -33,7 +33,8 @@ export async function handleAssist(request, deps) {
   try {
     return await assist(request, deps);
   } catch {
-    logEvent({ evt: 'assist', code: 'providerUnavailable' }, deps.logSink);
+    // cause=unexpected tells a gateway bug apart from a provider outage in the logs.
+    logEvent({ evt: 'assist', code: 'providerUnavailable', cause: 'unexpected' }, deps.logSink);
     return errorResponse('providerUnavailable');
   }
 }
