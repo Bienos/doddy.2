@@ -4,14 +4,14 @@ import SwiftUI
 import WidgetKit
 
 /// Dynamic Island and Lock Screen for a running conversation: Doddy, what he is doing right now
-/// (from real SDK events), how long you have been talking, and Mute / End.
+/// (from real SDK events), whether he is live, how long you have been talking, and Mute / End.
 /// Tapping it opens the app (e.g. to Save or Don't save a proposed note).
 /// When the app has not refreshed the activity for `VoiceLiveActivity.staleAfter` (iOS ended
 /// it in the background), iOS marks it stale and this view says so instead of "Listening".
 ///
 /// The Lock Screen card follows the phone's light/dark setting (paper card in light, Night card
-/// in dark, colours from this target's asset catalog). The Dynamic Island is always black.
-/// Character art: see `DoddyArt`.
+/// in dark, colours from this target's asset catalog), with the approved pose art (`DoddyArt`).
+/// The Dynamic Island is always black and follows the owner's V4 boards (`Shared/IslandArt`).
 /// No words from the conversation appear here: the Lock Screen is visible to anyone.
 struct DoddyVoiceLiveActivity: Widget {
     var body: some WidgetConfiguration {
@@ -21,44 +21,34 @@ struct DoddyVoiceLiveActivity: Widget {
                 .activitySystemActionForegroundColor(Palette.ink)
         } dynamicIsland: { context in
             let shown = Shown(context)
+            let scene = context.state.islandScene(isStale: context.isStale)
+            let startedAt = context.attributes.startedAt
+            // The owner's V4 boards (design/dynamic-island-v4): the style picked in Settings
+            // (ADR-239), or Thought Pocket / Step Stones / Reminder Knot for a moment (ADR-240).
+            // Label and time beside the camera; drawing, status, buttons and sign below it.
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    DoddyArt(shown: shown, size: 52, onIsland: true)
-                        .padding(.leading, 4)
-                }
-                DynamicIslandExpandedRegion(.center) {
-                    VStack(spacing: 2) {
-                        Text(shown.title)
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                        Text("Doddy")
-                            .font(.caption)
-                            .foregroundStyle(Palette.onIslandSecondary)
-                    }
-                    .accessibilityElement(children: .combine)
+                    IslandLabelView(scene: scene)
+                        .padding(.leading, 8)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    StatusGlyph(shown: shown)
-                        .font(.title3)
-                        .padding(.trailing, 6)
+                    IslandTimeView(scene: scene, startedAt: startedAt)
+                        .padding(.trailing, 8)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 6) {
-                        ElapsedTime(startedAt: context.attributes.startedAt)
-                            .font(.caption)
-                            .foregroundStyle(Palette.onIslandSecondary)
-                        Controls(shown: shown, onIsland: true)
+                    IslandBottomView(scene: scene, startedAt: startedAt) {
+                        IslandControls(shown: shown)
                     }
-                    .padding(.top, 2)
+                    .padding(.horizontal, 4)
                 }
             } compactLeading: {
-                DoddyArt(shown: shown, size: 26, onIsland: true)
+                IslandCompactLeadingView(scene: scene)
             } compactTrailing: {
-                StatusGlyph(shown: shown)
+                IslandCompactTrailingView(scene: scene, startedAt: startedAt)
             } minimal: {
-                DoddyArt(shown: shown, size: 22, onIsland: true)
+                IslandMinimalView(scene: scene, startedAt: startedAt)
             }
-            .keylineTint(Palette.orange)
+            .keylineTint(scene.live ? Color.islandOrange : Color.islandSecondary)
         }
     }
 }
@@ -76,7 +66,6 @@ private struct Shown {
 
     var title: String { isStale ? "Lost Doddy — open the app" : state.title }
     var detail: String? { isStale ? nil : state.detail }
-    var symbolName: String { isStale ? "exclamationmark.triangle.fill" : state.symbolName }
     /// Orange only while Doddy is live and can hear you; never when muted, stale or ended.
     var showsLiveCue: Bool { !isStale && state.isLiveCue }
 }
@@ -91,9 +80,6 @@ private enum Palette {
     static let accentText = Color("AccentText")
     static let confirmed = Color("Confirmed")
     static let error = Color("Error")
-    /// On the always-black Dynamic Island.
-    static let onIslandSecondary = Color(red: 0xC5 / 255, green: 0xBC / 255, blue: 0xAD / 255)
-    static let onIslandAccent = Color(red: 0xFF / 255, green: 0xB5 / 255, blue: 0x6B / 255)
     /// Same paper as `UploadedCharacterView`'s dark-mode backing.
     static let paperBacking = Color(red: 245 / 255, green: 239 / 255, blue: 226 / 255)
 }
@@ -101,13 +87,11 @@ private enum Palette {
 /// Doddy himself, from the owner's approved numbered pack (`UploadedDoddy_*`, byte-identical to
 /// the ZIP; see docs/design/UPLOADED_MEMORY_ASSETS.md): listening while the conversation runs;
 /// once it has ended, the fist-pump "kept" pose if a note was saved, else sitting.
-/// The drawings are cream and black with no dark variant, so on the black island and on the
-/// dark Lock Screen they sit on a light paper backing, as `UploadedCharacterView` does in the app.
+/// Lock Screen only. The drawings are cream and black with no dark variant, so on the dark
+/// Lock Screen they sit on a light paper backing, as `UploadedCharacterView` does in the app.
 private struct DoddyArt: View {
     let shown: Shown
     let size: CGFloat
-    /// The island is black in light and dark mode, so it always takes the paper backing.
-    var onIsland = false
     @Environment(\.colorScheme) private var colorScheme
 
     private var assetName: String {
@@ -116,7 +100,7 @@ private struct DoddyArt: View {
     }
 
     var body: some View {
-        let backed = onIsland || colorScheme == .dark
+        let backed = colorScheme == .dark
         Image(decorative: assetName)
             .resizable()
             .scaledToFit()
@@ -124,24 +108,6 @@ private struct DoddyArt: View {
             .frame(width: size, height: size)
             .background(backed ? Palette.paperBacking : .clear, in: RoundedRectangle(cornerRadius: size * 0.28))
             .accessibilityHidden(true)
-    }
-}
-
-/// The trailing status symbol on the island.
-private struct StatusGlyph: View {
-    let shown: Shown
-
-    var body: some View {
-        Image(systemName: shown.symbolName)
-            .foregroundStyle(color)
-            .accessibilityLabel(shown.title)
-    }
-
-    private var color: Color {
-        if shown.isStale { return .yellow }
-        if shown.showsLiveCue { return Palette.orange }
-        if shown.state.status == .needsConfirmation { return Palette.onIslandAccent }
-        return Palette.onIslandSecondary
     }
 }
 
@@ -154,13 +120,39 @@ private struct ElapsedTime: View {
     }
 }
 
+/// Mute and Stop on the island, as the boards' pills. Stop ends the conversation (End intent).
+/// The boards' Pause, Open and Cancel are not used: a conversation can't be paused, and
+/// tapping the island already opens Doddy.
+private struct IslandControls: View {
+    let shown: Shown
+
+    var body: some View {
+        HStack(spacing: 6) {
+            // Mute needs the conversation's process; a stale island has none to talk to.
+            if !shown.isStale, !shown.state.isEnded {
+                Button(intent: ToggleDoddyMuteIntent()) {
+                    // While muted, Unmute is the cream pill so getting Doddy back is one obvious tap.
+                    IslandPillLabel(title: shown.state.isMuted ? "Unmute" : "Mute",
+                                    systemImage: shown.state.isMuted ? "mic.fill" : "mic.slash.fill",
+                                    prominent: shown.state.isMuted)
+                }
+                .buttonStyle(.plain)
+            }
+            Button(intent: EndDoddyConversationIntent()) {
+                IslandPillLabel(title: shown.isStale ? "Dismiss" : "Stop",
+                                systemImage: shown.isStale ? "xmark" : "stop.fill")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
 private struct Controls: View {
     let shown: Shown
-    let onIsland: Bool
 
     var body: some View {
         HStack(spacing: 10) {
-            // Mute needs the conversation's process; a stale island has none to talk to.
+            // Mute needs the conversation's process; a stale activity has none to talk to.
             if !shown.isStale {
                 muteButton
             }
@@ -169,7 +161,7 @@ private struct Controls: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
-            .tint(onIsland ? .red : Palette.error)
+            .tint(Palette.error)
         }
         .font(.callout.weight(.semibold))
     }
@@ -185,12 +177,12 @@ private struct Controls: View {
         if muted {
             button
                 .buttonStyle(.borderedProminent)
-                .tint(onIsland ? .white : Palette.ink)
-                .foregroundStyle(onIsland ? .black : Palette.card)
+                .tint(Palette.ink)
+                .foregroundStyle(Palette.card)
         } else {
             button
                 .buttonStyle(.bordered)
-                .tint(onIsland ? .white : Palette.ink)
+                .tint(Palette.ink)
         }
     }
 }
@@ -232,7 +224,7 @@ private struct LockScreenView: View {
                         .background(Palette.secondary.opacity(0.15), in: Capsule())
                 }
             } else {
-                Controls(shown: shown, onIsland: false)
+                Controls(shown: shown)
             }
         }
         .padding(16)

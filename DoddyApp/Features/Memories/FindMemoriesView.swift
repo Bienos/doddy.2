@@ -159,8 +159,24 @@ private struct RecallResultsView: View {
         VStack(alignment: .leading, spacing: 20) {
             switch outcome {
             case .some(.matches(let candidates)):
-                Text(candidates.count == 1 ? "ONE POSSIBLE MATCH" : "\(candidates.count) POSSIBLE MATCHES")
+                // When no note covers the whole question, say which words no note has instead of
+                // presenting these as the answer (ADR-251). The notes stay listed.
+                let coverage = RecallCoverage(question: query, candidates: candidates)
+                let kind = coverage.isPartial ? "PARTIAL" : "POSSIBLE"
+                Text(candidates.count == 1 ? "ONE \(kind) MATCH" : "\(candidates.count) \(kind) MATCHES")
                     .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                if coverage.isPartial {
+                    let copy = RecallCopy.partial(coverage)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(copy.headline).font(.subheadline.weight(.semibold))
+                        Text(copy.detail).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("memories.partialMatch")
+                }
                 // Types among these matches. The "may disagree" check below always looks at every
                 // match, so the banner counts them all; if the filter hides some of those notes,
                 // the banner says how many (ADR-199).

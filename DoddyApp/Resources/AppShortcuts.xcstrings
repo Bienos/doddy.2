@@ -34,6 +34,28 @@
         }
       }
     },
+    "Ask ${applicationName} what I saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj aplikację ${applicationName}, co mam zapisane"
+          }
+        }
+      }
+    },
+    "Check my notes in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź moje notatki w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
     "Find in ${applicationName}": {
       "extractionState": "manual",
       "localizations": {
@@ -122,6 +144,17 @@
         }
       }
     },
+    "Read my note from ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytaj moją notatkę z aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
     "Save a note in ${applicationName}": {
       "extractionState": "manual",
       "localizations": {
@@ -184,6 +217,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odhacz coś na liście ${list} w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "What did I save in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co mam zapisane w aplikacji ${applicationName}"
           }
         }
       }

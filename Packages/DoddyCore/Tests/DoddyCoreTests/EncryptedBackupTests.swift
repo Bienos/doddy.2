@@ -107,6 +107,26 @@ final class EncryptedBackupTests: XCTestCase {
         XCTAssertNil(here.profile)
     }
 
+    /// ADR-252: a corrected note's earlier wordings travel in the backup and come back with it.
+    func testCorrectionsComeBackWithTheirNote() throws {
+        let note = try MemoryRecord(
+            id: UUID(), rawText: "Size 43", currentText: "Size 42.5", source: .explicitText, capturedAt: now,
+            updatedAt: now.addingTimeInterval(120), userEdited: true)
+        let history = [
+            try MemoryCorrection(memoryID: note.id, number: 1, text: "Size 42", correctedAt: now.addingTimeInterval(60)),
+            try MemoryCorrection(memoryID: note.id, number: 2, text: "Size 42.5", correctedAt: now.addingTimeInterval(120)),
+        ]
+        let export = try MemoryExport.json([note], corrections: history, exportedAt: now)
+        let contents = BackupContents(createdAt: now, memoriesExport: export, reminders: [], profile: [:], photos: [])
+        let opened = try EncryptedBackup.decrypt(try EncryptedBackup.encrypt(contents, passphrase: passphrase), passphrase: passphrase)
+        let plan = try BackupRestorePlan.make(opened, existing: [], profileIsEmpty: false, now: now)
+        XCTAssertEqual(plan.notes.toAdd, [note])
+        XCTAssertEqual(plan.notes.corrections, history)
+        // Already on this iPhone: its own history stays, nothing from the file is added.
+        let here = try BackupRestorePlan.make(opened, existing: [note], profileIsEmpty: false, now: now)
+        XCTAssertEqual(here.notes.corrections, [])
+    }
+
     func testBackupsMadeBeforeVoiceMemosStillOpen() throws {
         let (contents, _, _) = try contents()
         var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(contents)) as? [String: Any])

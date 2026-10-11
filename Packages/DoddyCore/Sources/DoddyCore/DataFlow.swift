@@ -23,13 +23,16 @@ public struct DataFlowState: Equatable, Sendable {
     public var memoryCopyOn: Bool
     /// The morning check-in is on (ADR-220).
     public var morningCheckInOn: Bool
+    /// Siri may read saved notes aloud (ADR-248).
+    public var siriReadsNotes: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
         connectionsOn: Set<VoiceConnection>, pauseAll: Bool, doddyServerSet: Bool,
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
-        morningCheckInOn: Bool = false
+        morningCheckInOn: Bool = false,
+        siriReadsNotes: Bool = false
     ) {
         self.morningCheckInOn = morningCheckInOn
         self.rememberConversations = rememberConversations
@@ -43,6 +46,7 @@ public struct DataFlowState: Equatable, Sendable {
         self.messagingServerSet = messagingServerSet
         self.pushOn = pushOn
         self.memoryCopyOn = memoryCopyOn
+        self.siriReadsNotes = siriReadsNotes
     }
 }
 
@@ -125,6 +129,14 @@ public enum DataFlow {
                     ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to Anthropic, and your own keywords to GNews."
                     : "No messaging server is set, so nothing goes there."),
             DataFlowRow(
+                id: "siri", destination: "Apple (Siri)",
+                what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
+                when: "Only when you say \"Ask Doddy what I saved\" with your iPhone unlocked.",
+                isActive: state.siriReadsNotes,
+                note: state.siriReadsNotes
+                    ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
+                    : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
+            DataFlowRow(
                 id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
                 note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
@@ -135,12 +147,15 @@ public enum DataFlow {
     public static func staysOnPhone(_ state: DataFlowState) -> [String] {
         [
             "Your saved notes, except as listed above.",
+            // ADR-252: the corrections table is read only by the note screen and exports.
+            "Earlier wordings of notes you corrected, except in files you export.",
             "What Doddy did (the activity list).",
             state.rememberConversations
                 ? "Remembered conversations, except the last few at the start of a conversation."
                 : "Conversations: none are remembered.",
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
+            "Notes suggested after a conversation: picked from your own words on this iPhone.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }

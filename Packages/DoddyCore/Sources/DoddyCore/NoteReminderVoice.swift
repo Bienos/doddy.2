@@ -56,6 +56,10 @@ extension VoiceToolRequest {
                         kind: .unreadable, problem: "a note reminder needs a time of day, not only a day",
                         question: "what time"))
                 }
+                // The user's own words for when, if the agent passed them (ADR-253).
+                if let said = args.text("said_time"), let question = SaidTime.check(said, due: due, now: now, timeRequired: true) {
+                    return .needsClarification(name: name, question)
+                }
                 let zone = due.timeZoneID ?? calendar.timeZone.identifier
                 if let repeats, !ReminderSchedule.allows(repeats, picked: date, timeZoneID: zone) {
                     return .needsClarification(name: name, ReminderClarification(

@@ -17,6 +17,8 @@ enum PreferenceKey {
     /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
     static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
+    /// Settings → Voice → Dynamic Island style (`IslandStyle` raw value); display only (ADR-239).
+    static let islandStyle = "islandStyle"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
@@ -58,6 +60,10 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
+    /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
+    static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
+    /// Siri may read saved notes aloud (ADR-248). On unless turned off; the phone must be unlocked.
+    static let siriReadsNotes = "siriReadsNotes"
 }
 
 enum AppTab: Hashable {
@@ -110,14 +116,18 @@ struct RootView: View {
                 await noteReminders.refreshOnForeground()
             }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { Task { await noteReminders.refreshOnForeground() } }
+                if phase == .active {
+                    Task { await noteReminders.refreshOnForeground() }
+                    FocusController.shared.refresh()
+                    BreathingController.shared.refresh()
+                }
+                if phase == .background { WidgetSync.shared.refresh() }
                 // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
                 switch phase {
                 case .background: opening.appWentToBackground()
                 case .active: opening.appBecameActive(openingConditions)
                 default: break
                 }
-                if phase == .background { WidgetSync.shared.refresh() }
             }
             // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
             .onChange(of: store.revision) { WidgetSync.shared.refresh() }

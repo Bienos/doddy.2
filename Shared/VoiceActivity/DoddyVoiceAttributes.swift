@@ -27,6 +27,32 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         var savedCount: Int = 0
         /// Set with `.ended`, for the "2:31 total" line.
         var endedAt: Date?
+        /// Something happening inside the conversation that has its own island (ADR-240).
+        /// Only its kind and counts, never what a note or reminder says.
+        var moment: Moment?
+        /// The look the user picked in Settings (ADR-239).
+        var islandStyle: IslandStyle = .leanIn
+
+        enum Moment: Codable, Hashable {
+            /// "Save this note?" waits for the user's tap in the app.
+            case noteWaiting
+            /// A note was written to the store (shown for a few seconds after it really saved).
+            case noteSaved
+            /// A plan card waits for the user's tap.
+            case planWaiting(steps: Int)
+            /// The confirmed plan is running; `step` is the one in progress (1-based).
+            case planRunning(step: Int, of: Int)
+            /// A reminder card waits for the user's tap.
+            case reminderWaiting
+            /// Add was tapped; Reminders has not answered yet.
+            case reminderAdding
+            /// Reminders confirmed it (added, or already there). Never shown for an unknown result.
+            case reminderSet
+            /// Translator mode is on (ADR-244): the language pair as codes ("en", "fr", or "?" while
+            /// their language is not known yet), never anything said. `bothWays` is face to face;
+            /// listen only translates one way, `from` the room `to` the owner.
+            case translating(from: String, to: String, bothWays: Bool)
+        }
     }
 
     /// When the conversation started, for the elapsed-time counter.
@@ -34,15 +60,19 @@ struct DoddyVoiceAttributes: ActivityAttributes {
 }
 
 extension DoddyVoiceAttributes.ContentState {
-    private enum CodingKeys: String, CodingKey { case status, isMuted, savedCount, endedAt }
+    private enum CodingKeys: String, CodingKey { case status, isMuted, savedCount, endedAt, moment, islandStyle }
 
-    /// Content written by a build from before `savedCount`/`endedAt` existed still decodes.
+    /// Content written by an older build (without `savedCount`, `endedAt`, `moment` or
+    /// `islandStyle`) still decodes. An unknown style or moment from a newer build falls back
+    /// to Lean In and no moment rather than failing.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         status = try container.decode(Status.self, forKey: .status)
         isMuted = try container.decode(Bool.self, forKey: .isMuted)
         savedCount = try container.decodeIfPresent(Int.self, forKey: .savedCount) ?? 0
         endedAt = try container.decodeIfPresent(Date.self, forKey: .endedAt)
+        moment = (try? container.decodeIfPresent(Moment.self, forKey: .moment)) ?? nil
+        islandStyle = (try? container.decodeIfPresent(IslandStyle.self, forKey: .islandStyle)) ?? .leanIn
     }
 
     var isEnded: Bool { status == .ended }

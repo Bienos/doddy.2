@@ -272,6 +272,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case .clarify(let clarification): return .needsClarification(name: name, clarification)
         }
         guard let start = startDue.date(in: calendar) else { return .invalid(name: name, reason: "missing start") }
+        // The user's own words for when, if the agent passed them (ADR-253).
+        if let said = args.text("said_time") {
+            let day = ReminderDue(year: startDue.year, month: startDue.month, day: startDue.day, timeZoneID: startDue.timeZoneID)
+            let allDay = args.flag("all_day")
+            if let question = SaidTime.check(said, due: allDay ? day : startDue, now: now, timeRequired: !allDay) {
+                return .needsClarification(name: name, question)
+            }
+        }
         if args.flag("all_day") {
             let dayStart = calendar.startOfDay(for: start)
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
@@ -315,6 +323,19 @@ public enum VoiceToolRequest: Equatable, Sendable {
             switch ReminderDueRules.check(dueText, now: now, calendar: calendar) {
             case .due(let checked): due = checked
             case .clarify(let clarification): return .needsClarification(name: name, clarification)
+            }
+        }
+        // The user's own words for when, if the agent passed them (ADR-253).
+        if let said = args.text("said_time") {
+            guard let due else {
+                // Words about a time but no due: ask rather than add a reminder without one.
+                return .needsClarification(name: name, ReminderClarification(
+                    kind: .saidDifferently,
+                    problem: "the user said \"\(said)\" but the request has no due date",
+                    question: "which day, and what time if any, they want it"))
+            }
+            if let question = SaidTime.check(said, due: due, now: now, timeRequired: false) {
+                return .needsClarification(name: name, question)
             }
         }
         return .createReminder(ReminderDraft(title: title, due: due, notes: args.text("notes")))
@@ -421,13 +442,27 @@ public enum VoiceToolReply {
     public static let declinedShortcut = "declined: the user chose not to run the shortcut. Nothing was run."
     public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
-    public static func search(_ outcome: RecallOutcome, limit: Int = 5) -> String {
+    /// `question` is the query the search ran with; it lets the reply say when the notes cover
+    /// only part of it (ADR-251). An empty question skips that check.
+    public static func search(_ outcome: RecallOutcome, question: String = "", limit: Int = 5) -> String {
         guard case .matches(let candidates) = outcome, !candidates.isEmpty else {
             return "No saved note matched. Tell the user you couldn't find it in their saved memories. Do not guess."
         }
         let shown = candidates.prefix(limit)
         let mayDisagree = RecallConflicts.flagged(Array(shown))
-        var lines = ["Found \(candidates.count) saved note\(candidates.count == 1 ? "" : "s") (exact text, newest wording):"]
+        let noun = "saved note\(candidates.count == 1 ? "" : "s")"
+        let coverage = RecallCoverage(question: question, candidates: candidates)
+        var lines: [String] = []
+        if coverage.isPartial {
+            let missing = coverage.missing.map { "\"\($0.label)\"" }.joined(separator: ", ")
+            lines.append("Found \(candidates.count) \(noun), but none contains every key word of the search.")
+            lines.append(missing.isEmpty
+                ? "Each note matches only some of the words."
+                : "No saved note contains: \(missing). If a missing word is only a translation of a word that was found, ignore it. Otherwise tell the user plainly that no saved note mentions it, and that these notes match only part of what they asked. Do not present them as the answer.")
+            lines.append("Partial matches (exact text, newest wording):")
+        } else {
+            lines.append("Found \(candidates.count) \(noun) (exact text, newest wording):")
+        }
         for candidate in shown {
             let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
             lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")

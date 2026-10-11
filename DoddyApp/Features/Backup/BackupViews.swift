@@ -156,7 +156,8 @@ struct MakeBackupView: View {
         }
         do {
             let export = try MemoryExport.json(
-                store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items), exportedAt: .now)
+                store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items),
+                corrections: store.corrections, exportedAt: .now)
             let contents = BackupContents(
                 createdAt: .now, memoriesExport: export,
                 reminders: BackupContents.reminders(noteReminders.reminders, now: .now),
@@ -286,7 +287,7 @@ struct RestoreBackupView: View {
         isWorking = true
         defer { isWorking = false }
         do {
-            let added = try await store.restore(plan.notes.toAdd, listItems: plan.listItems)
+            let added = try await store.restore(plan.notes.toAdd, corrections: plan.notes.corrections, listItems: plan.listItems)
             let addedIDs = Set(added.map(\.id))
             var photos = 0, recordings = 0, reminders = 0, notKept = 0
             for photo in plan.photos where addedIDs.contains(photo.memoryID) {

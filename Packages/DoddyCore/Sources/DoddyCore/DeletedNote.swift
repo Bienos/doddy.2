@@ -7,10 +7,13 @@ public struct DeletedNote: Equatable, Sendable {
     public static let undoWindow: TimeInterval = 10
 
     public let record: MemoryRecord
+    /// Its history (ADR-252), so undo brings every earlier wording back too.
+    public let corrections: [MemoryCorrection]
     public let deletedAt: Date
 
-    public init(record: MemoryRecord, deletedAt: Date) {
+    public init(record: MemoryRecord, corrections: [MemoryCorrection] = [], deletedAt: Date) {
         self.record = record
+        self.corrections = corrections
         self.deletedAt = deletedAt
     }
 

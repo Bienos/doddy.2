@@ -33,9 +33,28 @@ public protocol MemoryRepository: Sendable {
     /// A record whose id is already stored is left untouched. One transaction: every added
     /// record is read back before success, otherwise nothing is added. Returns what was added.
     func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord]
+    /// The same, also adding each added note's corrections when they are its whole history
+    /// (ADR-252). Notes already here keep their own.
+    func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord]
+    /// Every correction of one note, oldest first (ADR-252). The original is the note's `rawText`.
+    func corrections(of id: UUID) async throws -> [MemoryCorrection]
+    /// Every stored correction, for exports.
+    func allCorrections() async throws -> [MemoryCorrection]
 }
 
 extension MemoryRepository {
+    public func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord] {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
+    public func corrections(of id: UUID) async throws -> [MemoryCorrection] {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
+    public func allCorrections() async throws -> [MemoryCorrection] {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
     public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
     }

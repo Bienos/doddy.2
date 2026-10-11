@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Add this reminder?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodać to przypomnienie?"
+          }
+        }
+      }
+    },
     "Choose a list": {
       "extractionState": "manual",
       "localizations": {
@@ -12,13 +23,13 @@
         }
       }
     },
-    "Doddy": {
+    "Dismiss": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy"
+            "value": "Zamknij"
           }
         }
       }
@@ -133,6 +144,17 @@
         }
       }
     },
+    "Paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymane"
+          }
+        }
+      }
+    },
     "Pinned": {
       "extractionState": "manual",
       "localizations": {
@@ -144,6 +166,17 @@
         }
       }
     },
+    "Save this note?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisać tę notatkę?"
+          }
+        }
+      }
+    },
     "Shown ticked": {
       "extractionState": "manual",
       "localizations": {
@@ -151,6 +184,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokazane jako odhaczone"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj"
           }
         }
       }
@@ -184,6 +228,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odhacz pozycję na liście w Doddym"
+          }
+        }
+      }
+    },
+    "Translating": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tłumaczę"
+          }
+        }
+      }
+    },
+    "Your note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja notatka"
           }
         }
       }
