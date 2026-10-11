@@ -134,16 +134,26 @@ public final class SQLiteListRepository: ListRepository {
     }
 
     public func restore(_ items: [ListItem]) async throws -> [ListItem] {
-        try await dbQueue.write { db in
-            var restored: [ListItem] = []
-            for item in items {
-                guard try Self.list(item.listID, db) != nil, try Self.item(item.id, db) == nil else { continue }
-                try Self.write(item, db)
-                guard try Self.item(item.id, db) == item else { throw MemoryStoreError.verificationFailed }
-                restored.append(item)
-            }
-            return restored
+        try await dbQueue.write { db in try Self.restore(items, db) }
+    }
+
+    /// Puts items back as they were, into lists that exist; an item whose id is stored is
+    /// skipped. A list never goes past `ListLimits.itemsPerList` (the rest are skipped), and an
+    /// item whose place was taken meanwhile goes after the last one. Each is read back.
+    static func restore(_ items: [ListItem], _ db: Database) throws -> [ListItem] {
+        var restored: [ListItem] = []
+        for item in items {
+            guard let list = try list(item.listID, db), try self.item(item.id, db) == nil,
+                  list.items.count < ListLimits.itemsPerList
+            else { continue }
+            let placed = !list.items.contains(where: { $0.position == item.position }) ? item : ListItem(
+                id: item.id, listID: item.listID, text: item.text, source: item.source, addedAt: item.addedAt,
+                doneAt: item.doneAt, position: (list.items.map(\.position).max() ?? -1) + 1)
+            try write(placed, db)
+            guard try self.item(item.id, db) == placed else { throw MemoryStoreError.verificationFailed }
+            restored.append(placed)
         }
+        return restored
     }
 
     public func allItems() async throws -> [ListItem] {
@@ -164,7 +174,7 @@ public final class SQLiteListRepository: ListRepository {
         var added: [ListItem] = [], alreadyThere: [String] = [], tooLong: [String] = [], noRoom: [String] = []
         for raw in texts {
             guard let text = ListText.cleaned(raw) else { continue }
-            if text.count > ListLimits.itemLength { tooLong.append(text); continue }
+            if !ListText.fitsItemLength(text) { tooLong.append(text); continue }
             if ListMatch.isDuplicate(text, of: openTexts) { alreadyThere.append(text); continue }
             if count >= ListLimits.itemsPerList { noRoom.append(text); continue }
             let item = ListItem(id: UUID(), listID: listID, text: text, source: source, addedAt: date, doneAt: nil, position: position)

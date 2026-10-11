@@ -126,7 +126,9 @@ public protocol ListRepository: Sendable {
     func remove(_ itemIDs: [UUID]) async throws -> [ListItem]
     func clearDone(listID: UUID) async throws -> [ListItem]
     func untickAll(listID: UUID) async throws -> [ListItem]
-    /// Puts removed items back exactly as they were (Undo). Items whose list is gone are skipped.
+    /// Puts removed items back as they were (Undo). Items whose list is gone, or whose list is
+    /// full, are skipped; an item whose place was taken meanwhile goes after the last one.
+    /// Returns the items as stored.
     func restore(_ items: [ListItem]) async throws -> [ListItem]
     /// Every item of every list, for export.
     func allItems() async throws -> [ListItem]
@@ -158,6 +160,12 @@ public enum ListText {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
             .split(whereSeparator: \.isNewline).joined(separator: " ")
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Whether an item fits `ListLimits.itemLength` as the database counts it: in Unicode code
+    /// points, not visible characters, so a line of emoji can't break the database rule.
+    public static func fitsItemLength(_ text: String) -> Bool {
+        text.unicodeScalars.count <= ListLimits.itemLength
     }
 
     public static func checkedName(_ name: String) throws(ListError) -> String {

@@ -119,6 +119,40 @@ final class SQLiteListRepositoryTests: XCTestCase {
         } catch ListError.notFound {}
     }
 
+    /// Review B5: the database counts code points, so 50 family emoji (250 code points) are too
+    /// long; they are reported, and the rest of the voice add is still saved.
+    func testEmojiItemTooLongForTheDatabaseIsReportedNotRolledBack() async throws {
+        let (_, lists, _) = try make()
+        let list = try await lists.create(name: "Shopping", items: [], source: .voice)
+        let emoji = String(repeating: "👨‍👩‍👧", count: 50)
+        let result = try await lists.add(["milk", emoji, "eggs"], to: list.id, source: .voice)
+        XCTAssertEqual(result.added.map(\.text), ["milk", "eggs"])
+        XCTAssertEqual(result.tooLong, [emoji])
+        let stored = try await lists.list(id: list.id)
+        XCTAssertEqual(stored?.items.map(\.text), ["milk", "eggs"])
+
+        // An export with such an item (e.g. edited by hand) restores the rest of the list.
+        let item = ListItem(id: UUID(), listID: list.id, text: emoji, source: .typed, addedAt: clock, doneAt: nil, position: 9)
+        let data = try MemoryExport.json([list.record], listItems: (stored?.items ?? []) + [item], exportedAt: clock)
+        XCTAssertEqual(try MemoryRestore.listItems(data).map(\.text), ["milk", "eggs"])
+    }
+
+    /// Review B7: an export is one snapshot. Lists deleted while exports run never leave an
+    /// item in the file whose list is missing from it.
+    func testExportIsOneSnapshotWhileListsAreDeleted() async throws {
+        let (_, lists, memories) = try make()
+        for round in 0..<30 {
+            let list = try await lists.create(name: "List \(round)", items: ["a", "b"], source: .typed)
+            async let deleted: Void = memories.delete(id: list.id)
+            async let exported = memories.export()
+            let data = try await exported
+            try await deleted
+            let file = try MemoryRestore.read(data)
+            let notes = Set(file.records.map(\.id))
+            XCTAssertTrue(try MemoryRestore.listItems(data).allSatisfy { notes.contains($0.listID) }, "round \(round)")
+        }
+    }
+
     func testReminderTextForAListShowsOpenItems() async throws {
         let (database, lists, _) = try make()
         let list = try await lists.create(name: "Shopping", items: ["milk", "eggs"], source: .voice)
@@ -151,6 +185,75 @@ extension SQLiteListRepositoryTests {
         let back = try await lists.list(id: list.id)
         XCTAssertEqual(back?.open.map(\.text), ["charger"])
         XCTAssertEqual(back?.done.map(\.text), ["passport"])
+    }
+
+    /// Review B1: a restore never puts items back into a list that is already here, so an item
+    /// the user deleted after the export stays deleted.
+    func testRestoreAddsItemsOnlyIntoListsItAdds() async throws {
+        let (_, lists, memories) = try make()
+        let packing = try await lists.create(name: "Packing", items: ["charger", "passport"], source: .typed)
+        let shopping = try await lists.create(name: "Shopping", items: ["milk"], source: .typed)
+        let data = try await memories.export()
+        _ = try await lists.remove([packing.items[0].id])
+        try await memories.delete(id: shopping.id)
+
+        let file = try MemoryRestore.read(data)
+        let restored = try await memories.restore(file.records, corrections: file.corrections, listItems: try MemoryRestore.listItems(data))
+        XCTAssertEqual(restored.records.map(\.id), [shopping.id])
+        XCTAssertEqual(restored.listItems.map(\.text), ["milk"])
+        let packingNow = try await lists.list(id: packing.id)
+        XCTAssertEqual(packingNow?.items.map(\.text), ["passport"], "the deleted item stays deleted")
+        let shoppingNow = try await lists.list(id: shopping.id)
+        XCTAssertEqual(shoppingNow?.items.map(\.text), ["milk"])
+    }
+
+    /// Review B1: Undo keeps the item limit and never gives two items the same place.
+    func testRestoreKeepsItemLimitAndPlaces() async throws {
+        let (_, lists, _) = try make()
+        let list = try await lists.create(name: "Packing", items: ["charger", "passport", "jacket"], source: .typed)
+        let removed = try await lists.remove([list.items[2].id])
+        _ = try await lists.add(["socks"], to: list.id, source: .typed)
+        let back = try await lists.restore(removed)
+        XCTAssertEqual(back.map(\.position), [3], "socks took place 2, so the jacket goes after it")
+        let stored = try await lists.list(id: list.id)
+        XCTAssertEqual(stored?.items.map(\.text), ["charger", "passport", "socks", "jacket"])
+        XCTAssertEqual(Set(stored?.items.map(\.position) ?? []).count, 4)
+
+        let full = try await lists.create(name: "Full", items: [], source: .typed)
+        let filled = try await lists.add((0..<ListLimits.itemsPerList).map { "item \($0)" }, to: full.id, source: .typed)
+        let first = try await lists.remove([filled.added[0].id])
+        _ = try await lists.add(["one more"], to: full.id, source: .typed)
+        let none = try await lists.restore(first)
+        XCTAssertEqual(none, [], "the list is full again")
+        let fullNow = try await lists.list(id: full.id)
+        XCTAssertEqual(fullNow?.items.count, ListLimits.itemsPerList)
+    }
+
+    /// Review B4: notes and list items are one transaction; an item that can't be stored keeps
+    /// every note from the file out too, so "nothing was added" is true.
+    func testRestoreOfNotesAndItemsIsOneTransaction() async throws {
+        let (_, lists, memories) = try make()
+        let list = try await lists.create(name: "Packing", items: ["charger"], source: .typed)
+        let note = try await memories.save(NewMemory(text: "Keys in the tin", capturedAt: Date(timeIntervalSince1970: 0)))
+        let data = try await memories.export()
+        try await memories.deleteAll()
+
+        let file = try MemoryRestore.read(data)
+        let item = list.items[0]
+        let bad = ListItem(id: UUID(), listID: list.id, text: String(repeating: "x", count: ListLimits.itemLength + 1),
+                           source: .typed, addedAt: item.addedAt, doneAt: nil, position: 1)
+        do {
+            _ = try await memories.restore(file.records, corrections: [], listItems: [item, bad])
+            XCTFail("the over-long item breaks the database rule")
+        } catch {}
+        let notes = try await memories.list(limit: nil)
+        XCTAssertEqual(notes, [])
+        let left = try await lists.lists()
+        XCTAssertEqual(left, [])
+
+        let good = try await memories.restore(file.records, corrections: [], listItems: [item])
+        XCTAssertEqual(Set(good.records.map(\.id)), [list.id, note.id])
+        XCTAssertEqual(good.listItems, [item])
     }
 
     func testListReminderIsKnownAsAList() async throws {

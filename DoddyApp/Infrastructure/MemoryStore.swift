@@ -164,14 +164,14 @@ final class MemoryStore {
     }
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
+    /// Notes, corrections and list items are one transaction: on failure nothing was added.
     func restore(
         _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = []
     ) async throws -> [MemoryRecord] {
-        let added = try await environment.memoryRepository.restore(records, corrections: corrections)
-        // Items go back only into lists that exist now; items already here are left alone.
-        if !listItems.isEmpty { _ = try await environment.listRepository.restore(listItems) }
+        // Items go back only into lists this restore adds; a list already here keeps its own items.
+        let added = try await environment.memoryRepository.restore(records, corrections: corrections, listItems: listItems)
         await reload()
-        return added
+        return added.records
     }
 
     /// No undo: deleting everything is final.

@@ -49,11 +49,13 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     }
 
     public func list(limit: Int?) async throws -> [MemoryRecord] {
-        try await dbQueue.read { db in
-            var sql = "SELECT * FROM memories ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC"
-            if let limit { sql += " LIMIT \(max(0, limit))" }
-            return try Row.fetchAll(db, sql: sql).map(Self.record(from:))
-        }
+        try await dbQueue.read { db in try Self.allRecords(db, limit: limit) }
+    }
+
+    private static func allRecords(_ db: Database, limit: Int? = nil) throws -> [MemoryRecord] {
+        var sql = "SELECT * FROM memories ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC"
+        if let limit { sql += " LIMIT \(max(0, limit))" }
+        return try Row.fetchAll(db, sql: sql).map(record(from:))
     }
 
     /// How many of the newest notes the word-rule scan reads when the index finds too few.
@@ -156,10 +158,11 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     }
 
     public func allCorrections() async throws -> [MemoryCorrection] {
-        try await dbQueue.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM memory_corrections ORDER BY memory_id, number")
-                .map(Self.correction(from:))
-        }
+        try await dbQueue.read { db in try Self.allCorrections(db) }
+    }
+
+    private static func allCorrections(_ db: Database) throws -> [MemoryCorrection] {
+        try Row.fetchAll(db, sql: "SELECT * FROM memory_corrections ORDER BY memory_id, number").map(correction(from:))
     }
 
     public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
@@ -185,13 +188,21 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM memories")
             try db.execute(sql: "INSERT INTO memories_fts(memories_fts) VALUES('rebuild')")
+            // Read back before "deleted" is reported (DOD-06): no note, list item or correction left.
+            for table in ["memories", "list_items", "memory_corrections"] {
+                guard try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM \(table)") == 0 else {
+                    throw MemoryStoreError.verificationFailed
+                }
+            }
         }
     }
 
+    /// Notes, list items and corrections from one read, so the file is one consistent snapshot.
     public func export() async throws -> Data {
-        let items = try await dbQueue.read { db in try SQLiteListRepository.allItems(db) }
-        return try MemoryExport.json(
-            try await list(limit: nil), listItems: items, corrections: try await allCorrections(), exportedAt: now())
+        let (records, items, corrections) = try await dbQueue.read { db in
+            (try Self.allRecords(db), try SQLiteListRepository.allItems(db), try Self.allCorrections(db))
+        }
+        return try MemoryExport.json(records, listItems: items, corrections: corrections, exportedAt: now())
     }
 
     public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
@@ -202,37 +213,52 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     /// (`MemoryHistory.consistent`); otherwise the note is added without them. Notes already
     /// here keep their own history.
     public func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord] {
-        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
-        return try await dbQueue.write { db in
-            var added: [MemoryRecord] = []
-            for record in records where record.source != .sampleFixture {
-                try db.execute(
-                    sql: """
-                        INSERT INTO memories (id, raw_text, current_text, category, source, captured_at_ms,
-                                              updated_at_ms, user_edited, search_text, schema_version)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(id) DO NOTHING
-                        """,
-                    arguments: [
-                        record.id.uuidString, record.rawText, record.currentText, record.category.rawValue,
-                        record.source.rawValue, record.capturedAt.map(Self.exportedMilliseconds),
-                        record.updatedAt.map(Self.exportedMilliseconds), record.userEdited,
-                        SearchFolding.fold(record.currentText), MemoryRecord.schemaVersion,
-                    ])
-                guard db.changesCount > 0 else { continue }
-                // Throwing here rolls the whole transaction back: nothing from the file is kept.
-                guard try Self.fetch(record.id, db) == record else { throw MemoryStoreError.verificationFailed }
-                let history = byNote[record.id] ?? []
-                if MemoryHistory.consistent(record, history) {
-                    for correction in history { try Self.insert(correction, db) }
-                    guard try Self.corrections(record.id, db) == history.sorted(by: { $0.number < $1.number }) else {
-                        throw MemoryStoreError.verificationFailed
-                    }
-                }
-                added.append(record)
-            }
-            return added
+        try await dbQueue.write { db in try Self.restore(records, corrections: corrections, db) }
+    }
+
+    /// Notes, their corrections and the items of the lists among them in one transaction, so a
+    /// failure anywhere keeps nothing from the file. Items of a list already here are not added.
+    public func restore(
+        _ records: [MemoryRecord], corrections: [MemoryCorrection], listItems: [ListItem]
+    ) async throws -> (records: [MemoryRecord], listItems: [ListItem]) {
+        try await dbQueue.write { db in
+            let added = try Self.restore(records, corrections: corrections, db)
+            let newLists = Set(added.filter { $0.category == .list }.map(\.id))
+            let items = try SQLiteListRepository.restore(listItems.filter { newLists.contains($0.listID) }, db)
+            return (added, items)
         }
+    }
+
+    private static func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection], _ db: Database) throws -> [MemoryRecord] {
+        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
+        var added: [MemoryRecord] = []
+        for record in records where record.source != .sampleFixture {
+            try db.execute(
+                sql: """
+                    INSERT INTO memories (id, raw_text, current_text, category, source, captured_at_ms,
+                                          updated_at_ms, user_edited, search_text, schema_version)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO NOTHING
+                    """,
+                arguments: [
+                    record.id.uuidString, record.rawText, record.currentText, record.category.rawValue,
+                    record.source.rawValue, record.capturedAt.map(EpochMilliseconds.rounded),
+                    record.updatedAt.map(EpochMilliseconds.rounded), record.userEdited,
+                    SearchFolding.fold(record.currentText), MemoryRecord.schemaVersion,
+                ])
+            guard db.changesCount > 0 else { continue }
+            // Throwing here rolls the whole transaction back: nothing from the file is kept.
+            guard try Self.fetch(record.id, db) == record else { throw MemoryStoreError.verificationFailed }
+            let history = byNote[record.id] ?? []
+            if MemoryHistory.consistent(record, history) {
+                for correction in history { try Self.insert(correction, db) }
+                guard try Self.corrections(record.id, db) == history.sorted(by: { $0.number < $1.number }) else {
+                    throw MemoryStoreError.verificationFailed
+                }
+            }
+            added.append(record)
+        }
+        return added
     }
 
     // MARK: Helpers
@@ -253,7 +279,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try db.execute(
             sql: "INSERT INTO memory_corrections (memory_id, number, text, corrected_at_ms) VALUES (?, ?, ?, ?)",
             arguments: [correction.memoryID.uuidString, correction.number, correction.text,
-                        exportedMilliseconds(correction.correctedAt)])
+                        EpochMilliseconds.rounded(correction.correctedAt)])
     }
 
     private static func correction(from row: Row) throws -> MemoryCorrection {
@@ -280,7 +306,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
               let category = MemoryCategory(rawValue: row["category"])
         else { throw MemoryStoreError.corruptRecord(idString) }
         func date(_ column: String) -> Date? {
-            (row[column] as Int64?).map { Date(timeIntervalSince1970: Double($0) / 1000) }
+            (row[column] as Int64?).map(EpochMilliseconds.date)
         }
         do {
             return try MemoryRecord(
@@ -295,10 +321,4 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     private static func milliseconds(_ date: Date) -> Int64 { DoddyDatabase.milliseconds(date) }
 
     private static func truncatedToMilliseconds(_ date: Date) -> Date { DoddyDatabase.truncatedToMilliseconds(date) }
-
-    /// Restored dates were read from whole milliseconds, which `MemoryExport` wrote by rounding;
-    /// rounding again is the exact inverse.
-    private static func exportedMilliseconds(_ date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 * 1000).rounded())
-    }
 }
