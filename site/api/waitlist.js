@@ -1,6 +1,8 @@
 // POST /api/waitlist — store one waitlist signup privately in Vercel Blob (store "doddy-waitlist", fra1).
-// Body: {"email", "page", "consent", "website"} as JSON. Replies {ok, status: "added"|"already"} or {ok:false, error}.
+// Body: {"email", "page", "consent", "website"} as JSON. Replies {ok, status: "added"} or {ok:false, error}.
 // A new signup also gets {id, key}: the key lets that browser add the optional answers (api/waitlist-answers.js).
+// An email already stored gets the same reply without id/key, so nobody can use this to check who signed up
+// (a script can still notice the missing key; acceptable for a waitlist).
 // Only a hash of the key is stored, so nobody who merely knows the email can change the answers.
 // Stores only email, page, consent version, time and the answer-key hash. No IP, no user agent, and emails never go to logs.
 import { createHash, randomBytes } from "node:crypto";
@@ -62,7 +64,7 @@ export async function POST(request) {
   };
 
   try {
-    if (await exists(pathname)) return reply({ ok: true, status: "already" });
+    if (await exists(pathname)) return reply({ ok: true, status: "added" });
     await put(pathname, JSON.stringify(record), {
       access: "private",
       addRandomSuffix: false,
@@ -71,8 +73,8 @@ export async function POST(request) {
     });
     return reply({ ok: true, status: "added", id, key });
   } catch (err) {
-    // A duplicate signup can win the race between head() and put(); that is still a success.
-    if (await exists(pathname).catch(() => false)) return reply({ ok: true, status: "already" });
+    // A duplicate signup can win the race between head() and put(); same reply as above.
+    if (await exists(pathname).catch(() => false)) return reply({ ok: true, status: "added" });
     console.error("waitlist: write failed", err?.name ?? "unknown");
     return reply({ ok: false, error: "unavailable" }, 503);
   }

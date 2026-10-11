@@ -11,6 +11,15 @@ final class ShareAcceptSceneDelegate: NSObject, UIWindowSceneDelegate {
         if let metadata = connectionOptions.cloudKitShareMetadata {
             SharedListsController.shared.received(metadata)
         }
+        // Doddy opened from the icon's long-press menu (ADR-339).
+        if let shortcutItem = connectionOptions.shortcutItem {
+            QuickActions.handle(shortcutItem)
+        }
+    }
+
+    /// The icon's long-press menu while Doddy was already running (ADR-339).
+    func windowScene(_ windowScene: UIWindowScene, performActionFor shortcutItem: UIApplicationShortcutItem) async -> Bool {
+        QuickActions.handle(shortcutItem)
     }
 
     func windowScene(_ windowScene: UIWindowScene, userDidAcceptCloudKitShareWith cloudKitShareMetadata: CKShare.Metadata) {
@@ -29,10 +38,13 @@ struct CloudShareSheet: Identifiable {
 struct CloudSharingView: UIViewControllerRepresentable {
     let sheet: CloudShareSheet
     let listName: String
-    /// The owner stopped sharing in Apple's screen.
+    /// The owner stopped sharing, or someone who joined removed themselves, in Apple's screen.
+    /// Apple removes only the share; the caller removes the zone and the link (review I5).
     let onStopped: () -> Void
+    /// Apple's screen couldn't save a change to the share (review I5).
+    let onFailed: (any Error) -> Void
 
-    func makeCoordinator() -> Coordinator { Coordinator(listName: listName, onStopped: onStopped) }
+    func makeCoordinator() -> Coordinator { Coordinator(listName: listName, onStopped: onStopped, onFailed: onFailed) }
 
     func makeUIViewController(context: Context) -> UICloudSharingController {
         let controller = UICloudSharingController(share: sheet.share, container: sheet.container)
@@ -47,15 +59,17 @@ struct CloudSharingView: UIViewControllerRepresentable {
     final class Coordinator: NSObject, UICloudSharingControllerDelegate {
         let listName: String
         let onStopped: () -> Void
+        let onFailed: (any Error) -> Void
 
-        init(listName: String, onStopped: @escaping () -> Void) {
+        init(listName: String, onStopped: @escaping () -> Void, onFailed: @escaping (any Error) -> Void) {
             self.listName = listName
             self.onStopped = onStopped
+            self.onFailed = onFailed
         }
 
         func itemTitle(for csc: UICloudSharingController) -> String? { listName }
 
-        func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: any Error) {}
+        func cloudSharingController(_ csc: UICloudSharingController, failedToSaveShareWithError error: any Error) { onFailed(error) }
 
         func cloudSharingControllerDidStopSharing(_ csc: UICloudSharingController) { onStopped() }
     }

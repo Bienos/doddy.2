@@ -104,17 +104,22 @@ extension VoiceToolRequest {
 }
 
 extension VoiceToolReply {
+    /// The spot's note is the user's words, so it follows as data (ToolData).
     public static func parkingSaved(_ spot: ParkingSpot, now: Date, calendar: Calendar) -> String {
         var text = "saved: the parking spot is kept on this iPhone (\(Parking.savedText(spot.savedAt, now: now, calendar: calendar))"
-        if let note = spot.note { text += ", note \"\(note)\"" }
-        return text + "). Checked. It replaces any spot saved before."
+        if spot.note != nil { text += ", with the note below" }
+        return text + "). Checked. It replaces any spot saved before." + noteData(spot)
     }
 
     public static func parkingFound(_ spot: ParkingSpot, now: Date, calendar: Calendar, distanceMeters: Double?) -> String {
         var text = "found: the user saved their parking spot \(Parking.savedText(spot.savedAt, now: now, calendar: calendar))"
-        if let note = spot.note { text += " with the note \"\(note)\"" }
+        if spot.note != nil { text += " with the note below" }
         if let distanceMeters { text += "; it is \(Parking.distanceText(distanceMeters)) from here in a straight line" }
-        return text + ". It is on the screen with Open in Maps; don't describe directions yourself."
+        return text + ". It is on the screen with Open in Maps; don't describe directions yourself." + noteData(spot)
+    }
+
+    private static func noteData(_ spot: ParkingSpot) -> String {
+        spot.note.map { "\n" + ToolData.block([quoted("Note", $0)]) } ?? ""
     }
 
     public static let parkingNone = "not found: no parking spot is saved. Tell the user; offer to save one next time."

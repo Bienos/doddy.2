@@ -17,6 +17,9 @@ public enum BackupLimits {
     public static let iterations = 600_000
     /// Files asking for fewer rounds are refused (protects against a tampered header).
     public static let minimumIterations = 100_000
+    /// Files asking for more are refused too, so a crafted or damaged header can't keep the
+    /// restore screen busy for hours (ten times what Doddy writes).
+    public static let maximumIterations = 6_000_000
     public static let minimumPassphraseLength = 10
     /// Whole file, photos included. Larger backups are refused; make one without photos or voice memos.
     public static let maxFileBytes = 200 * 1024 * 1024
@@ -34,12 +37,12 @@ public struct BackupContents: Codable, Equatable, Sendable {
 
         public init(memoryID: UUID, fireAt: Date, timeZoneID: String, repeats: ReminderRepeat?) {
             self.memoryID = memoryID
-            self.fireAtMs = Int64((fireAt.timeIntervalSince1970 * 1000).rounded())
+            self.fireAtMs = EpochMilliseconds.rounded(fireAt)
             self.timeZoneID = timeZoneID
             self.repeats = repeats?.rawValue
         }
 
-        public var fireAt: Date { Date(timeIntervalSince1970: Double(fireAtMs) / 1000) }
+        public var fireAt: Date { EpochMilliseconds.date(fireAtMs) }
         public var repeatRule: ReminderRepeat? { repeats.flatMap(ReminderRepeat.init(rawValue:)) }
 
         /// When to set it on restore: its own time if still ahead; for a repeating one whose time
@@ -62,7 +65,7 @@ public struct BackupContents: Codable, Equatable, Sendable {
             self.memoryID = memoryID
             self.width = width
             self.height = height
-            self.addedAtMs = Int64((addedAt.timeIntervalSince1970 * 1000).rounded())
+            self.addedAtMs = EpochMilliseconds.rounded(addedAt)
             self.jpeg = jpeg
         }
     }
@@ -77,7 +80,7 @@ public struct BackupContents: Codable, Equatable, Sendable {
         public init(memoryID: UUID, durationMilliseconds: Int, addedAt: Date, m4a: Data) {
             self.memoryID = memoryID
             self.durationMilliseconds = durationMilliseconds
-            self.addedAtMs = Int64((addedAt.timeIntervalSince1970 * 1000).rounded())
+            self.addedAtMs = EpochMilliseconds.rounded(addedAt)
             self.m4a = m4a
         }
     }
@@ -99,7 +102,7 @@ public struct BackupContents: Codable, Equatable, Sendable {
         recordings: [Recording] = []
     ) {
         self.formatVersion = Self.currentVersion
-        self.createdAtMs = Int64((createdAt.timeIntervalSince1970 * 1000).rounded())
+        self.createdAtMs = EpochMilliseconds.rounded(createdAt)
         self.memoriesExport = memoriesExport
         self.reminders = reminders
         self.profile = profile
@@ -147,7 +150,7 @@ public enum BackupError: Error, Equatable, Sendable {
     case newerFormat(Int)
     /// Wrong passphrase, or the file was changed or damaged; AES-GCM can't tell which.
     case wrongPassphraseOrDamaged
-    /// The header asks for fewer key rounds than Doddy accepts.
+    /// The header asks for fewer (or far more) key rounds than Doddy accepts.
     case weakFile
 }
 
@@ -181,7 +184,7 @@ public enum EncryptedBackup {
         var salt = Data(count: 16)
         var generator = SystemRandomNumberGenerator()
         for index in salt.indices { salt[index] = UInt8.random(in: .min ... .max, using: &generator) }
-        let key = deriveKey(passphrase: passphrase, salt: salt, iterations: iterations)
+        guard let key = deriveKey(passphrase: passphrase, salt: salt, iterations: iterations) else { throw CancellationError() }
         let plaintext = try JSONEncoder().encode(contents)
         let sealed = try AES.GCM.seal(plaintext, using: key, authenticating: header(iterations: iterations, salt: salt))
         guard let combined = sealed.combined else { throw BackupError.notABackup }
@@ -196,22 +199,30 @@ public enum EncryptedBackup {
         return data
     }
 
+    /// Throws `BackupError`, or `CancellationError` when the calling task is cancelled while the
+    /// key is being made.
     public static func decrypt(
         _ data: Data, passphrase: String, minimumIterations: Int = BackupLimits.minimumIterations
-    ) throws(BackupError) -> BackupContents {
+    ) throws -> BackupContents {
         guard data.count <= BackupLimits.maxFileBytes else {
-            throw .tooLarge(bytes: data.count, maximum: BackupLimits.maxFileBytes)
+            throw BackupError.tooLarge(bytes: data.count, maximum: BackupLimits.maxFileBytes)
         }
-        guard let file = try? JSONDecoder().decode(File.self, from: data), file.format == format else { throw .notABackup }
-        guard file.version <= fileVersion else { throw .newerFormat(file.version) }
-        guard file.kdf == kdfName, file.cipher == cipherName, file.salt.count >= 16 else { throw .notABackup }
-        guard file.iterations >= minimumIterations else { throw .weakFile }
-        let key = deriveKey(passphrase: passphrase, salt: file.salt, iterations: file.iterations)
+        guard let file = try? JSONDecoder().decode(File.self, from: data), file.format == format else { throw BackupError.notABackup }
+        guard file.version <= fileVersion else { throw BackupError.newerFormat(file.version) }
+        guard file.kdf == kdfName, file.cipher == cipherName, file.salt.count >= 16 else { throw BackupError.notABackup }
+        guard file.iterations >= minimumIterations, file.iterations <= BackupLimits.maximumIterations else {
+            throw BackupError.weakFile
+        }
+        guard let key = deriveKey(
+            passphrase: passphrase, salt: file.salt, iterations: file.iterations, isCancelled: { Task.isCancelled })
+        else { throw CancellationError() }
         guard let box = try? AES.GCM.SealedBox(combined: file.sealed),
               let plaintext = try? AES.GCM.open(box, using: key, authenticating: header(iterations: file.iterations, salt: file.salt))
-        else { throw .wrongPassphraseOrDamaged }
-        guard let contents = try? JSONDecoder().decode(BackupContents.self, from: plaintext) else { throw .notABackup }
-        guard contents.formatVersion <= BackupContents.currentVersion else { throw .newerFormat(contents.formatVersion) }
+        else { throw BackupError.wrongPassphraseOrDamaged }
+        guard let contents = try? JSONDecoder().decode(BackupContents.self, from: plaintext) else { throw BackupError.notABackup }
+        guard contents.formatVersion <= BackupContents.currentVersion else {
+            throw BackupError.newerFormat(contents.formatVersion)
+        }
         return contents
     }
 
@@ -221,13 +232,22 @@ public enum EncryptedBackup {
     }
 
     /// The passphrase in Unicode NFC, so the same words typed on another keyboard give the same key.
-    static func deriveKey(passphrase: String, salt: Data, iterations: Int) -> SymmetricKey {
-        SymmetricKey(data: pbkdf2SHA256(password: Data(passphrase.precomposedStringWithCanonicalMapping.utf8),
-                                        salt: salt, iterations: iterations, length: 32))
+    /// Nil once `isCancelled` says so.
+    static func deriveKey(
+        passphrase: String, salt: Data, iterations: Int, isCancelled: () -> Bool = { false }
+    ) -> SymmetricKey? {
+        pbkdf2SHA256(password: Data(passphrase.precomposedStringWithCanonicalMapping.utf8),
+                     salt: salt, iterations: iterations, length: 32, isCancelled: isCancelled)
+            .map { SymmetricKey(data: $0) }
     }
 
     /// PBKDF2-HMAC-SHA256 (RFC 8018) on the platform's HMAC; checked against published vectors.
     public static func pbkdf2SHA256(password: Data, salt: Data, iterations: Int, length: Int) -> Data {
+        pbkdf2SHA256(password: password, salt: salt, iterations: iterations, length: length, isCancelled: { false })!
+    }
+
+    /// The same; asks `isCancelled` every 10,000 rounds and returns nil once it says so.
+    static func pbkdf2SHA256(password: Data, salt: Data, iterations: Int, length: Int, isCancelled: () -> Bool) -> Data? {
         let keyed = HMAC<SHA256>(key: SymmetricKey(data: password))
         var output = Data()
         var block: UInt32 = 1
@@ -238,7 +258,8 @@ public enum EncryptedBackup {
             var u = Array(first.finalize())
             var t = u
             if iterations > 1 {
-                for _ in 1..<iterations {
+                for round in 1..<iterations {
+                    if round % 10_000 == 0, isCancelled() { return nil }
                     var next = keyed
                     next.update(data: u)
                     u = Array(next.finalize())
@@ -268,11 +289,12 @@ public struct BackupRestorePlan: Equatable, Sendable {
     public static func make(
         _ contents: BackupContents, existing: [MemoryRecord], profileIsEmpty: Bool, now: Date
     ) throws(MemoryRestoreError) -> BackupRestorePlan {
-        let read = try MemoryRestore.read(contents.memoriesExport)
+        // The backup's own size limit applies, not the export file's (review B3).
+        let read = try MemoryRestore.read(contents.memoriesExport, maxBytes: BackupLimits.maxFileBytes)
         // Every earlier wording of the added notes comes back too (ADR-252).
         let notes = MemoryRestore.plan(read.records, corrections: read.corrections, existing: existing, exportedAt: read.exportedAt)
         let added = Set(notes.toAdd.map(\.id))
-        let items = try MemoryRestore.listItems(contents.memoriesExport).filter { added.contains($0.listID) }
+        let items = try MemoryRestore.listItems(contents.memoriesExport, maxBytes: BackupLimits.maxFileBytes).filter { added.contains($0.listID) }
         let reminders = contents.reminders.filter { added.contains($0.memoryID) && $0.nextFire(after: now) != nil }
         let photos = contents.photos.filter { added.contains($0.memoryID) }
         let recordings = contents.recordings.filter { added.contains($0.memoryID) && MemoryAudio.isValidDuration($0.durationMilliseconds) }

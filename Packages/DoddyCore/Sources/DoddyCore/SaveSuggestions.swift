@@ -293,8 +293,8 @@ public enum SaveSuggestions {
     ]
     static let secretWords = [
         "password", "passcode", "passwords", "login", "card number", "credit card", "debit card", "cvv", "cvc",
-        "security code", "pin number", "card pin", "bank pin", "social security", "iban", "account number", "sort code", "seed phrase",
-        "haslo", "hasla", "numer karty", "karta kredytowa", "numer konta", "pesel", "kod cvv", "pin karty", "pin do karty",
+        "security code", "pin", "pins", "social security", "iban", "account number", "sort code", "seed phrase",
+        "haslo", "hasla", "numer karty", "karta kredytowa", "numer konta", "pesel", "kod cvv",
     ]
     static let months: Set<String> = [
         "january", "february", "march", "april", "may", "june", "july", "august", "september", "october",

@@ -94,7 +94,7 @@ final class AssistantServiceTests: XCTestCase {
 
     func testTransientFailuresRetryWithBackoffThenSucceed() async throws {
         let client = FakeAssistantClient([
-            .failure(AssistantError.providerUnavailable), .failure(AssistantError.timeout), .success(AssistantReply(text: "ok")),
+            .failure(AssistantError.providerUnavailable), .failure(AssistantError.providerUnavailable), .success(AssistantReply(text: "ok")),
         ])
         let sleeps = SleepRecorder()
         let answer = try await service(client: client, sleeps: sleeps).ask("hi", sessionID: UUID(), policy: allowed)
@@ -114,6 +114,18 @@ final class AssistantServiceTests: XCTestCase {
         } catch { XCTAssertEqual(error, .providerUnavailable) }
         let sent = await client.requests
         XCTAssertEqual(sent.count, 3)
+    }
+
+    func testATimeoutIsNotSentAgainAutomatically() async {
+        // The gateway may already have sent the question and notes to the model and spent the budget.
+        let client = FakeAssistantClient([.failure(AssistantError.timeout), .success(AssistantReply(text: "ok"))])
+        do {
+            _ = try await service(client: client).ask("hi", sessionID: UUID(), policy: allowed)
+            XCTFail("expected timeout")
+        } catch { XCTAssertEqual(error, .timeout) }
+        let sent = await client.requests
+        XCTAssertEqual(sent.count, 1)
+        XCTAssertTrue(AssistantError.timeout.canRetryNow, "the user can still choose Try again")
     }
 
     func testOnlyTheDailyLimitHidesTryAgain() {

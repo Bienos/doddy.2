@@ -19,6 +19,41 @@ final class VoiceToolsTests: XCTestCase {
         VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8), now: now, calendar: calendar)
     }
 
+    /// Review C11: text from the model is bounded before any card or write; too long is refused,
+    /// never cut, so the user never confirms text the app shortened.
+    func testModelTextIsBounded() throws {
+        func json(_ fields: [String: Any]) throws -> String {
+            String(decoding: try JSONSerialization.data(withJSONObject: fields), as: UTF8.self)
+        }
+        let line = String(repeating: "a", count: VoiceTextLimits.line + 1)
+        let paragraph = String(repeating: "b", count: VoiceTextLimits.paragraph + 1)
+        let note = String(repeating: "c", count: MemoryLimits.maxTextLength + 1)
+        let cases: [(String, [String: Any], String)] = [
+            ("save_memory", ["text": note], "text"),
+            ("search_memories", ["query": paragraph], "query"),
+            ("create_reminder", ["title": line], "title"),
+            ("create_reminder", ["title": "Rent", "notes": paragraph + paragraph], "notes"),
+            ("create_calendar_event", ["title": line, "start": "2026-10-12T10:00"], "title"),
+            ("create_calendar_event", ["title": "Lunch", "start": "2026-10-12T10:00", "location": line], "location"),
+            ("change_reminder", ["title": line, "done": true], "title"),
+            ("delete_reminder", ["title": line], "title"),
+            ("delete_calendar_event", ["title": line, "start": "2026-10-12T10:00"], "title"),
+            ("remind_about_note", ["note": note, "due": "2026-10-12T10:00"], "note"),
+            ("draft_message", ["to": "Ola", "body": paragraph + paragraph], "body"),
+            ("open_map", ["place": paragraph], "place"),
+        ]
+        for (tool, fields, key) in cases {
+            guard case .invalid(_, let reason) = parse(tool, try json(fields)) else {
+                XCTFail("\(tool) accepted a \(key) that is too long")
+                continue
+            }
+            XCTAssertTrue(reason.hasPrefix("\(key) is longer than"), reason)
+        }
+        // Up to the bound is fine, and a whole saved note can still be saved.
+        XCTAssertEqual(parse("save_memory", try json(["text": String(note.dropLast())])), .saveMemory(text: String(note.dropLast())))
+        XCTAssertEqual(parse("delete_reminder", try json(["title": String(line.dropLast())])), .deleteReminder(title: String(line.dropLast())))
+    }
+
     func testParsing() {
         XCTAssertEqual(VoiceToolRequest.parse(name: "search_memories", parametersJSON: Data(#"{"query":"klucze"}"#.utf8)), .searchMemories(query: "klucze"))
         XCTAssertEqual(VoiceToolRequest.parse(name: "save_memory", parametersJSON: Data(#"{"text":"Keys in the tin"}"#.utf8)), .saveMemory(text: "Keys in the tin"))
@@ -134,7 +169,9 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertTrue(reply.contains("\"2026-10-12T18:30+02:00\""), reply)
         XCTAssertTrue(reply.contains("without a time zone"), reply)
         XCTAssertTrue(reply.contains("then call create_calendar_event again with their answer"), reply)
-        XCTAssertTrue(reply.hasSuffix("Nothing was added."), reply)
+        // The date the agent sent is quoted in the problem, which follows the first line as data.
+        XCTAssertTrue(reply.components(separatedBy: "\n")[0].hasSuffix("Nothing was added."), reply)
+        XCTAssertTrue(reply.contains("\n<<<DATA\nProblem: \"2026-10-12T18:30+02:00\" is not a day"), reply)
         XCTAssertFalse(reply.contains("create_reminder"), reply)
     }
 
@@ -161,7 +198,8 @@ final class VoiceToolsTests: XCTestCase {
 
         guard case .needsClarification(let name, let late) = earlier else { return XCTFail("expected a question") }
         let reply = VoiceToolReply.clarification(late, tool: name)
-        XCTAssertTrue(reply.hasPrefix("failed: not added yet: 2026-10-08 12:00 has already passed (it is now 2026-10-09 10:00 in Europe/Warsaw)"), reply)
+        XCTAssertTrue(reply.hasPrefix("failed: not added yet: "), reply)
+        XCTAssertTrue(reply.contains("\n<<<DATA\nProblem: 2026-10-08 12:00 has already passed (it is now 2026-10-09 10:00 in Europe/Warsaw)\nDATA>>>"), reply)
         XCTAssertTrue(reply.contains("then call create_calendar_event again"), reply)
     }
 
@@ -240,6 +278,13 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(parse("set_timer", #"{}"#), .invalid(name: "set_timer", reason: "missing duration"))
         XCTAssertEqual(parse("set_timer", #"{"minutes":-5}"#), .invalid(name: "set_timer", reason: "negative duration"))
         XCTAssertEqual(parse("set_timer", #"{"minutes":1500}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        // Review C11: a label is a line, not a page.
+        XCTAssertEqual(parse("set_timer", "{\"minutes\":1,\"label\":\"\(String(repeating: "a", count: 201))\"}"),
+                       .invalid(name: "set_timer", reason: "label is longer than 200 characters"))
+        // Review C6: a value no Int can hold is refused, not a crash.
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1e300}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        XCTAssertEqual(parse("set_timer", #"{"seconds":1e19}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1e308,"seconds":1e308}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
     }
 
     func testMapAndShortcutNeedTheirText() {
@@ -343,7 +388,7 @@ final class VoiceToolsTests: XCTestCase {
     func testTimerReplyStatesWhenItRings() {
         let draft = TimerDraft(seconds: 600, label: "Pasta")
         let reply = VoiceToolReply.timerAdded(draft, endsAt: date(2026, 10, 9, 10, 10), calendar: calendar)
-        XCTAssertEqual(reply, "added: timer \"Pasta\", 10 minutes, rings at 2026-10-09 10:10.")
+        XCTAssertEqual(reply, "added: timer 10 minutes, rings at 2026-10-09 10:10. Its label:\n<<<DATA\nLabel: \"Pasta\"\nDATA>>>")
         XCTAssertEqual(VoiceToolReply.timerAdded(TimerDraft(seconds: 45, label: nil), endsAt: date(2026, 10, 9, 10, 0), calendar: calendar),
                        "added: timer 45 seconds, rings at 2026-10-09 10:00.")
     }
@@ -353,7 +398,8 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.messageOpened(draft, recipient: "Marta").contains("Nothing was sent by Doddy"))
         XCTAssertTrue(VoiceToolReply.messageOpened(draft, recipient: "Marta").hasPrefix("opened: Messages"))
         XCTAssertTrue(VoiceToolReply.shortcutRequested("Morning routine").contains("can't see whether it finished"))
-        XCTAssertTrue(VoiceToolReply.noAddress("Marta", channel: .email).hasPrefix("failed: Marta has no email address"))
+        XCTAssertEqual(VoiceToolReply.noAddress("Marta", channel: .email),
+                       "failed: the contact below has no email address in Contacts. Nothing was opened.\n<<<DATA\nContact: \"Marta\"\nDATA>>>")
         XCTAssertTrue(VoiceToolReply.declinedMessage.hasPrefix("declined: "))
         XCTAssertEqual(VoiceToolReply.notOpened("Maps didn't open."), "failed: Maps didn't open. Nothing was opened.")
     }
@@ -376,7 +422,8 @@ final class VoiceToolsTests: XCTestCase {
         let reply = VoiceToolReply.contactMatches(["Marta Kowalska"], query: "Marta")
         XCTAssertTrue(reply.contains("Marta Kowalska"))
         XCTAssertTrue(reply.contains("Their details are on the user's screen"))
-        XCTAssertTrue(VoiceToolReply.contactMatches([], query: "Ola").hasPrefix("No contact matched \"Ola\""))
+        XCTAssertEqual(VoiceToolReply.contactMatches([], query: "Ola"),
+                       "No contact matched the search below. Tell the user you couldn't find them in Contacts. Do not guess.\n<<<DATA\nSearched for: \"Ola\"\nDATA>>>")
     }
 }
 
@@ -397,7 +444,8 @@ final class CalendarRepeatTests: XCTestCase {
             #"{"title":"Gym","start":"2026-10-12T07:00","repeat":"weekly","repeat_until":"2026-12-31"}"#) else { return XCTFail() }
         XCTAssertEqual(draft.repeats?.frequency, .weekly)
         XCTAssertEqual(draft.repeats?.until?.localText, "2026-12-31")
-        XCTAssertTrue(VoiceToolReply.eventAdded(draft, calendar: calendar).hasSuffix("Repeats every week until 2026-12-31."))
+        XCTAssertEqual(VoiceToolReply.eventAdded(draft, calendar: calendar),
+                       "added: an event on 2026-10-12 07:00 to 2026-10-12 08:00. Repeats every week until 2026-12-31. Its title:\n<<<DATA\nTitle: \"Gym\"\nDATA>>>")
         guard case .invalid = parse(VoiceToolName.createCalendarEvent,
             #"{"title":"Gym","start":"2026-10-12T07:00","repeat":"weekly","repeat_until":"2026-10-01"}"#) else {
             return XCTFail("an end before the first date is refused")

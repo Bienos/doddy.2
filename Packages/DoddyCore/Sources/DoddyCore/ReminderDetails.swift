@@ -137,10 +137,12 @@ public enum ReminderDetails {
         return true
     }
 
-    /// The changes as one phrase, for the agent and the log: "note added, high priority, moved to "Shopping"".
+    /// The changes as one phrase in the app's own words, for the agent: "note added, high
+    /// priority, moved to another list (below)". A new title and a list's name are not in it;
+    /// `summaryData` gives them as lines for a ToolData block.
     public static func summary(_ change: ReminderDetailsChange) -> String {
         var parts: [String] = []
-        if let title = change.newTitle { parts.append("renamed to \"\(title)\"") }
+        if change.newTitle != nil { parts.append("renamed (new title below)") }
         if change.addNote != nil { parts.append("note added") }
         if let text = change.replaceNotes { parts.append(text.isEmpty ? "notes cleared" : "notes replaced") }
         switch change.repeatChange {
@@ -149,26 +151,44 @@ public enum ReminderDetails {
         case nil: break
         }
         if let priority = change.priority { parts.append(priority == .none ? "priority removed" : priority.text) }
-        if let list = change.toList { parts.append("moved to the list \"\(list.title)\"") }
+        if change.toList != nil { parts.append("moved to another list (below)") }
         return parts.joined(separator: ", ")
+    }
+
+    /// The new title (the agent's words) and the list's name (from Reminders), cleaned, for a
+    /// ToolData block.
+    public static func summaryData(_ change: ReminderDetailsChange) -> [String] {
+        var lines: [String] = []
+        if let title = change.newTitle { lines.append(VoiceToolReply.quoted("New title", title)) }
+        if let list = change.toList { lines.append(VoiceToolReply.quoted("List", list.title)) }
+        return lines
     }
 }
 
 extension VoiceToolReply {
     public static let reminderRepeatNeedsDue = "not changed: a repeating reminder needs a due day. Nothing changed; ask the user when it should first be due and try again with new_due."
 
+    /// The reminder's title, a new title and a list's name follow as data (ToolData): they are
+    /// Reminders' or the agent's text. The first line says what changed in the app's own words.
     public static func reminderDetailsChanged(_ title: String, change: ReminderDetailsChange, due: ReminderDue?) -> String {
-        var text = "changed: reminder \"\(title)\": \(ReminderDetails.summary(change))"
+        var text = "changed: the reminder below: \(ReminderDetails.summary(change))"
         if let due { text += ", now due \(ReminderText.due(due))" }
-        return text + ". Checked in Reminders."
+        return text + ". Checked in Reminders.\n" + ToolData.block([quoted("Title", title)] + ReminderDetails.summaryData(change))
     }
 
+    /// The name asked for (the agent's words) and the user's Reminders lists follow as data.
     public static func reminderListNotFound(_ name: String, lists: [ReminderListRef]) -> String {
-        let names = lists.map { "\"\($0.title)\"" }.joined(separator: ", ")
-        return "not found: no Reminders list called \"\(name)\". The user's lists are: \(names.isEmpty ? "none" : names). Nothing changed; ask which one."
+        let asked = quoted("Asked for", name)
+        guard !lists.isEmpty else {
+            return "not found: no Reminders list with the name below. The user has no lists. Nothing changed; ask which one.\n"
+                + ToolData.block([asked])
+        }
+        return "not found: no Reminders list with the name below. Nothing changed; ask which one. The name asked for, then the user's lists:\n"
+            + ToolData.block([asked] + lists.map { "- \"\(ToolData.clean($0.title))\"" })
     }
 
     public static func reminderListAmbiguous(_ lists: [ReminderListRef]) -> String {
-        "not changed: more than one Reminders list has that name (\(lists.map { "\"\($0.title)\"" }.joined(separator: ", "))). Nothing changed; ask the user to rename one in Reminders."
+        "not changed: more than one Reminders list has that name. Nothing changed; ask the user to rename one in Reminders. The lists:\n"
+            + ToolData.block(lists.map { "- \"\(ToolData.clean($0.title))\"" })
     }
 }

@@ -185,8 +185,8 @@ struct ActivityView: View {
             pauseAll: defaults.bool(forKey: ConnectionPause.preferenceKey),
             connectionOn: undo.connection.map { defaults.bool(forKey: $0.preferenceKey) } ?? true) {
             result = .notDone(reason)
-        } else if undo.listID != nil {
-            // Lists are Doddy's own (ADR-276): the store reverses and reads them back.
+        } else if undo.connection == nil {
+            // Lists and notes are Doddy's own (ADR-276, ADR-277): the store reverses and reads them back.
             result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)
@@ -194,8 +194,13 @@ struct ActivityView: View {
         // The entry as it is now, in case it changed while Undo ran.
         let current = activity.entries.first { $0.id == entry.id } ?? entry
         let undone = ActivityLog.undid(current, result: result, at: Date())
-        if case .undone? = undone.undoState { justUndone.insert(entry.id) }
         activity.replace(undone)
+        if case .undone? = undone.undoState {
+            // He turns once; a row redrawn later shows the turned frame still.
+            justUndone.insert(entry.id)
+            try? await Task.sleep(for: .seconds(DoddyMotion.turn.duration + 0.5))
+            justUndone.remove(entry.id)
+        }
     }
 
     private func color(_ outcome: ActivityOutcome) -> Color {

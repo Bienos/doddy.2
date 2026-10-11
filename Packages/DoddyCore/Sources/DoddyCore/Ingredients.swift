@@ -64,10 +64,12 @@ extension VoiceToolReply {
 
     /// After the tap: what was added (read back by the list store) and how many the user left out.
     public static func ingredientsAdded(_ result: ListAddResult, list: String, dish: String, leftOut: [String]) -> String {
+        // The dish and the unticked items came from the model, so they go back as data (review C4).
         var text = listAdded(result, list: list)
         if !leftOut.isEmpty {
-            text += " The user unticked (has them already): \(leftOut.joined(separator: ", "))."
+            text += "\nThe user unticked these (has them already):\n" + ToolData.block(leftOut.map { "- \(ToolData.clean($0))" })
         }
-        return text + " These were Doddy's suggestions for \(dish); say so if the user asks where they came from."
+        return text + "\nThese were Doddy's suggestions for this dish; say so if the user asks where they came from:\n"
+            + ToolData.block(["Dish: \"\(ToolData.clean(dish))\""])
     }
 }

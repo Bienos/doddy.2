@@ -64,18 +64,25 @@ final class TodayModel {
             notice = NSLocalizedString("Notifications are off for Doddy. Turn them on in iPhone Settings, Notifications, Doddy.", comment: "")
             return
         }
-        // Setting a different lead time replaces the earlier nudge for this event.
-        if let old = nudge(for: event), old.id != plan.identifier { _ = await devices.cancelNudge(id: old.id) }
+        // Setting a different lead time replaces the earlier nudge for this event, but only once
+        // the new one is confirmed: a failure keeps the old nudge rather than leaving none (DOD-08).
+        let existing = nudge(for: event)
+        let old: ScheduledNudge? = existing?.id == plan.identifier ? nil : existing
         do {
             let time = event.start.formatted(date: .omitted, time: .shortened)
             switch try await devices.scheduleNudge(plan, time: time) {
             case .verified:
+                if let old { _ = await devices.cancelNudge(id: old.id) }
                 notice = "Nudge set for \(plan.fireAt.formatted(date: .omitted, time: .shortened)): \(event.title)."
             case .unconfirmed:
-                notice = "iOS took the nudge but didn't confirm it. Check before relying on it."
+                notice = old == nil
+                    ? "iOS took the nudge but didn't confirm it. Check before relying on it."
+                    : "iOS took the new nudge but didn't confirm it, so the earlier one was kept too. Check before relying on it."
             }
         } catch {
-            notice = "The nudge wasn't set. \(error.localizedDescription)"
+            notice = old == nil
+                ? "The nudge wasn't set. \(error.localizedDescription)"
+                : "The new nudge wasn't set; the earlier one is still on. \(error.localizedDescription)"
         }
         nudges = await devices.pendingNudges()
     }

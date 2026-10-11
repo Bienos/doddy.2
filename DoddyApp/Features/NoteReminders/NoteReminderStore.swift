@@ -109,10 +109,10 @@ final class NoteReminderStore {
         await reload()
     }
 
+    /// The receipt clears only when the delete was stored; otherwise it says nothing changed (review F8).
     func cancel(memoryID: UUID) async {
         guard let reminder = reminder(forMemory: memoryID) else { return }
-        await remove(reminder)
-        receipts[memoryID] = nil
+        receipts[memoryID] = await remove(reminder) ? nil : .failed(Self.notTurnedOff)
     }
 
     /// Done: a one-off or place reminder ends; a repeating one is done for this time only.
@@ -120,8 +120,12 @@ final class NoteReminderStore {
         guard let coordinator else { return }
         await reload()
         guard let reminder = reminders.first(where: { $0.id == reminderID }) else { return }
-        try? await coordinator.markDone(reminderID: reminderID)
-        receipts[reminder.memoryID] = nil
+        do {
+            try await coordinator.markDone(reminderID: reminderID)
+            receipts[reminder.memoryID] = nil
+        } catch {
+            receipts[reminder.memoryID] = .failed(NSLocalizedString("Couldn't mark it done. Your reminder is unchanged.", comment: ""))
+        }
         await reload()
     }
 
@@ -176,9 +180,13 @@ final class NoteReminderStore {
         await reload()
     }
 
+    /// A reminder that couldn't be deleted keeps a "nothing changed" receipt (review F8).
     func cancelAll() async {
-        for reminder in reminders { await remove(reminder) }
-        receipts = [:]
+        var kept: [UUID: NoteReminderReceipt] = [:]
+        for reminder in reminders {
+            if await !remove(reminder) { kept[reminder.memoryID] = .failed(Self.notTurnedOff) }
+        }
+        receipts = kept
     }
 
     func noteTextSettingChanged() async {
@@ -189,10 +197,21 @@ final class NoteReminderStore {
         receipts[memoryID] = nil
     }
 
-    private func remove(_ reminder: MemoryReminder) async {
-        try? await coordinator?.remove(reminderID: reminder.id)
+    /// True only when the database delete didn't throw; false means the reminder is unchanged.
+    private func remove(_ reminder: MemoryReminder) async -> Bool {
+        guard let coordinator else { return false }
+        let removed: Bool
+        do {
+            try await coordinator.remove(reminderID: reminder.id)
+            removed = true
+        } catch {
+            removed = false
+        }
         await reload()
+        return removed
     }
+
+    private static let notTurnedOff = NSLocalizedString("Couldn't turn the reminder off. Nothing changed.", comment: "")
 
     static func message(for error: any Error) -> String {
         switch error as? NoteReminderError {

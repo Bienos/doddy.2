@@ -105,11 +105,37 @@ def check(tools, session, instructions):
         errors.append(f"instructions: {{{{{name}}}}} is not declared in session.json variables")
     for name in sorted(declared - used):
         errors.append(f"session.json: variable '{name}' is never used in instructions")
+    # Builds that don't send a variable fall back to the agent's placeholder; without one the conversation can't start.
+    placeholders = session.get("elevenlabs", {}).get("placeholders")
+    if placeholders is not None:
+        for name in sorted(declared - set(placeholders)):
+            errors.append(f"session.json: variable '{name}' has no elevenlabs placeholder")
     # DODDY AI Constitution DOD-03 (ADR-191, ADR-194): asked whether it is human, Doddy says plainly it is an AI.
     if "ai, not a person" not in instructions.lower():
         errors.append("instructions: must tell Doddy to say plainly it is an AI, not a person (DOD-03)")
     if "vague answer" in instructions.lower():
         errors.append("instructions: must not ask for a vague answer about being human or an AI (DOD-03)")
+    return errors
+
+
+# Where the app answers tools that run on the phone: each such tool's name must appear there as a
+# Swift string literal, or the app would answer it as unsupported while CI stayed green.
+APP_SOURCES = [ROOT / "Packages" / "DoddyCore" / "Sources", ROOT / "DoddyApp"]
+
+
+def check_app(tools, sources=APP_SOURCES):
+    """Checks only the app agent needs: a live ElevenLabs tool id (or "not_synced") on every tool,
+    so a tool missing from the live agent is visible, and an app handler for every phone tool."""
+    errors = []
+    swift = "".join(p.read_text(encoding="utf-8", errors="ignore") for d in sources for p in sorted(d.rglob("*.swift")))
+    for tool in tools.get("tools", []):
+        name = tool.get("name", "")
+        x = tool.get("x_doddy", {})
+        tool_id = x.get("elevenlabs_tool_id")
+        if tool_id != "not_synced" and not re.fullmatch(r"tool_[a-z0-9]+", str(tool_id)):
+            errors.append(f"tool {name}: x_doddy.elevenlabs_tool_id must be the live tool id, or 'not_synced' until it is synced")
+        if x.get("runs_on") == "phone" and f'"{name}"' not in swift:
+            errors.append(f"tool {name}: runs on the phone but no Swift source names it, so the app would answer it as unsupported")
     return errors
 
 
@@ -254,6 +280,8 @@ def main(argv):
     where = spec.relative_to(ROOT).as_posix() + "/"
     tools, session, instructions = load(spec)
     errors = check(tools, session, instructions)
+    if agent == "app":
+        errors += check_app(tools)
     if errors:
         print(f"FAIL voice agent spec ({where})")
         for e in errors:

@@ -126,6 +126,23 @@ final class TranslatorTests: XCTestCase {
         XCTAssertFalse(TranslatorRouter.isAside("Mój kolega Doddy mówi, że jest blisko"))
     }
 
+    func testDoddyFromTheOtherPersonIsNotAQuietWord() {
+        var router = TranslatorRouter(setup: faceToFace())
+        // Said in their language: they are speaking to Doddy, so it is translated for the owner.
+        XCTAssertEqual(router.route(agentLine: "Doddy, gdzie jest dworzec?", after: "Doddy, ¿dónde está la estación, por favor?"),
+                       .translation(.toOwner))
+        // Their hold-to-talk button was held.
+        XCTAssertNotEqual(router.route(agentLine: "x", after: "Doddy, ok", held: .toOther), .aside)
+        XCTAssertEqual(router.route(agentLine: "x", after: "Doddy, ok", held: .toOwner), .aside)
+        // In listen mode, the guide naming Doddy in Italian still goes to the owner as a translation.
+        var listen = TranslatorRouter(setup: TranslatorSetup(kind: .listen, owner: lang("pl"), other: lang("it"))!)
+        XCTAssertEqual(listen.route(agentLine: "Doddy, to jest kaplica", after: "Doddy, questa è la cappella."), .translation(.toOwner))
+        // Their language not known yet: it is still learned from their first line.
+        var session = TranslatorSession(setup: faceToFace("pl", nil), startedAt: Date())
+        session.heard("Doddy, ¿dónde está la estación, por favor?")
+        XCTAssertEqual(session.setup.other, lang("es"))
+    }
+
     func testListenOnlyGoesToTheOwner() {
         var router = TranslatorRouter(setup: TranslatorSetup(kind: .listen, owner: lang("pl"), other: lang("it"))!)
         XCTAssertEqual(router.route(agentLine: "Questa cappella", after: "Questa cappella fu dipinta tra il 1508 e il 1512."), .translation(.toOwner))
@@ -152,6 +169,15 @@ final class TranslatorTests: XCTestCase {
         XCTAssertEqual(ExactFacts.extract("15:30 i jeszcze raz 15:30"), ["15:30"])
     }
 
+    func testASentencesFirstWordAndANumberIsNotAnAddress() {
+        XCTAssertEqual(ExactFacts.extract("At 15 we leave."), [])
+        XCTAssertEqual(ExactFacts.extract("Okay. Wait 10 seconds."), [])
+        XCTAssertEqual(ExactFacts.extract("Jedziemy na Piotrkowska 120, dobrze?"), ["Piotrkowska 120"])
+        XCTAssertEqual(ExactFacts.extract("Rue de Rivoli 99, s'il vous plaît."), ["Rue de Rivoli 99"])
+        XCTAssertEqual(ExactFacts.extract("Proszę na ul. Długa 5a."), ["ul. Długa 5a"])
+        XCTAssertEqual(ExactFacts.extract("Św. Marcin 12, proszę."), ["Św. Marcin 12"])
+    }
+
     func testCarefulTopics() {
         XCTAssertEqual(CarefulTopics.topic(in: "Tome una pastilla cada ocho horas."), .health)
         XCTAssertEqual(CarefulTopics.topic(in: "Muszę iść do lekarza."), .health)
@@ -159,6 +185,25 @@ final class TranslatorTests: XCTestCase {
         XCTAssertEqual(CarefulTopics.topic(in: "Потрібен кредит у банку"), .money)
         XCTAssertNil(CarefulTopics.topic(in: "Is this fine?"))
         XCTAssertNil(CarefulTopics.topic(in: "¿Me lleva a la plaza?"))
+    }
+
+    func testCarefulTopicsSkipEverydayLookalikes() {
+        XCTAssertNil(CarefulTopics.topic(in: "I speak Polish."))
+        XCTAssertNil(CarefulTopics.topic(in: "What is your refund policy?"))
+        XCTAssertNil(CarefulTopics.topic(in: "Another pillow, please."))
+        XCTAssertEqual(CarefulTopics.topic(in: "Take two pills."), .health)
+        XCTAssertEqual(CarefulTopics.topic(in: "Ring polisen nu."), .law)
+        XCTAssertEqual(CarefulTopics.topic(in: "Zavolejte policie."), .law)
+    }
+
+    func testACorrectedLineKeepsTheFactsOfWhatWasSaid() throws {
+        var session = TranslatorSession(setup: faceToFace(), startedAt: Date())
+        session.heard("Pociąg jest o 15:30, peron 4, bilet 18,50 zł.")
+        let turn = try XCTUnwrap(session.said("El tren sale a las 15:30."))
+        XCTAssertEqual(turn.facts, ["15:30", "18,50 zł"])
+        session.correct("El tren sale a las 15:30.", to: "El tren sale a las 15:30, andén 4.")
+        XCTAssertEqual(session.turns.last?.text, "El tren sale a las 15:30, andén 4.")
+        XCTAssertEqual(session.turns.last?.facts, ["15:30", "18,50 zł"])
     }
 
     func testSessionKeepsTurnsCarefulModeAndTheFiveMinuteSummary() throws {
@@ -187,6 +232,10 @@ final class TranslatorTests: XCTestCase {
         var utc = Calendar(identifier: .gregorian)
         utc.timeZone = TimeZone(identifier: "UTC")!
         XCTAssertEqual(summary.factsNote(calendar: utc), "From a translated conversation (Polski ⇄ Español, 2027-01-15): 15:30")
+        // A Buddhist phone calendar still gets the Gregorian date, not 2570.
+        var buddhist = Calendar(identifier: .buddhist)
+        buddhist.timeZone = utc.timeZone
+        XCTAssertEqual(summary.factsNote(calendar: buddhist), summary.factsNote(calendar: utc))
     }
 
     private var repoRoot: URL {

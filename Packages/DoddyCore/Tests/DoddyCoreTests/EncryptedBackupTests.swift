@@ -84,6 +84,48 @@ final class EncryptedBackupTests: XCTestCase {
         }
     }
 
+    /// Review B3: the export inside a backup may be larger than a plain export file may be; a
+    /// backup Doddy could make and verify can also be restored.
+    func testLargeExportInsideABackupCanBeRestored() throws {
+        let (small, note, list) = try contents()
+        var export = small.memoriesExport
+        export.append(Data(repeating: UInt8(ascii: " "), count: MemoryRestore.maxFileBytes))
+        XCTAssertThrowsError(try MemoryRestore.read(export)) {
+            XCTAssertEqual($0 as? MemoryRestoreError, .tooLarge(bytes: export.count, maximum: MemoryRestore.maxFileBytes))
+        }
+        let large = BackupContents(createdAt: now, memoriesExport: export, reminders: [], profile: [:], photos: [])
+        let plan = try BackupRestorePlan.make(large, existing: [], profileIsEmpty: true, now: now)
+        XCTAssertEqual(Set(plan.notes.toAdd.map(\.id)), [note.id, list.id])
+        XCTAssertEqual(plan.listItems.map(\.text), ["oat milk"])
+    }
+
+    /// Review B2: a header asking for a huge round count is refused before any key is made, and
+    /// making the key stops when the restore is cancelled.
+    func testHugeRoundCountIsRefusedAndKeyMakingCanBeCancelled() async throws {
+        let (contents, _, _) = try contents()
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(
+            with: try EncryptedBackup.encrypt(contents, passphrase: passphrase, iterations: 1_000)) as? [String: Any])
+        json["iterations"] = Int(Int32.max)
+        let huge = try JSONSerialization.data(withJSONObject: json)
+        let started = Date()
+        XCTAssertThrowsError(try EncryptedBackup.decrypt(huge, passphrase: passphrase)) {
+            XCTAssertEqual($0 as? BackupError, .weakFile)
+        }
+        XCTAssertLessThan(Date().timeIntervalSince(started), 1)
+
+        json["iterations"] = BackupLimits.maximumIterations
+        let slow = try JSONSerialization.data(withJSONObject: json)
+        let words = passphrase
+        let task = Task.detached { try EncryptedBackup.decrypt(slow, passphrase: words) }
+        task.cancel()
+        do {
+            _ = try await task.value
+            XCTFail("expected cancellation")
+        } catch {
+            XCTAssertTrue(error is CancellationError, "\(error)")
+        }
+    }
+
     func testRestoreOnlyAdds() throws {
         let (contents, note, list) = try contents()
         // A fresh iPhone: everything comes back, reminders that can still ring, profile known keys only.

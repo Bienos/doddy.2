@@ -388,9 +388,11 @@ extension VoiceToolReply {
     public static let translatorStopped = "stopped: translator mode is off. Nothing from it is kept on the iPhone. Talk with the user normally again; tools work again."
     public static let translatorNotOn = "stopped: translator mode wasn't on. Nothing changed."
 
-    /// Any tool asked for while translating.
+    /// Any tool asked for while translating. The tool's name is the agent's own text, so it
+    /// follows as data (ToolData).
     public static func translatorRefused(_ name: String) -> String {
-        "refused: translator mode is on, so the app doesn't run \(name) or any other tool. Nothing was looked up, saved or changed. Keep translating; the user can end translator mode on screen or by saying stop translating."
+        "refused: translator mode is on, so the app doesn't run the tool below or any other tool. Nothing was looked up, saved or changed. Keep translating; the user can end translator mode on screen or by saying stop translating.\n"
+            + ToolData.block([quoted("Tool", name)])
     }
 }
 
@@ -514,6 +516,13 @@ public struct TranslatorRouter: Sendable {
         return words.contains("doddy")
     }
 
+    /// `isAside`, unless it was the other person: their hold-to-talk button was held, or what was
+    /// said is in a language other than the owner's.
+    public func isOwnerAside(_ said: String?, held: TranslatorDirection? = nil) -> Bool {
+        guard Self.isAside(said), let said, held != .toOther else { return false }
+        return (languageOf(said) ?? setup.owner) == setup.owner
+    }
+
     /// Their language was "detect": the first line not in the owner's language sets it.
     public mutating func learnTheirLanguage(from said: String) -> TranslatorLanguage? {
         guard setup.other == nil else { return nil }
@@ -527,7 +536,7 @@ public struct TranslatorRouter: Sendable {
 
     /// `held` is the side held down on a hold-to-talk button for what was said, if any.
     public mutating func route(agentLine: String, after said: String?, held: TranslatorDirection? = nil) -> TranslatorRoute {
-        if Self.isAside(said) { return .aside }
+        if isOwnerAside(said, held: held) { return .aside }
         guard setup.kind == .faceToFace else { return .translation(.toOwner) }
         let direction = guessDirection(agentLine, said: said, held: held)
         last = direction
@@ -566,8 +575,9 @@ public enum ExactFacts {
         #"(?<![\d.,:])(?:[01]?\d|2[0-3])(?::|h)[0-5]\d(?![\d])"#,
         // Phone numbers: +48 600 100 200.
         #"\+\d[\d\s-]{7,}\d"#,
-        // Street and number: Calle Mayor 12, ul. Długa 5a, Rue de Rivoli 99.
-        #"(?:\b(?:ul\.|al\.|pl\.)\s?)?(?:\p{Lu}[\p{L}'’.-]+\s(?:(?:de|del|la|di|da|du|von|van|der)\s)?){1,3}\d{1,4}[a-zA-Z]?\b"#,
+        // Street and number: Calle Mayor 12, ul. Długa 5a, Rue de Rivoli 99, na Piotrkowska 120. A
+        // one-word name needs "ul." or a word before it, so a sentence's first word ("At 15", "Okay. Wait 10") isn't one.
+        #"(?:\b(?:ul\.|al\.|pl\.|St\.|Św\.|Av\.)\s?(?:\p{Lu}[\p{L}'’-]+\s(?:(?:de|del|la|di|da|du|von|van|der)\s)?){1,3}|(?:\p{Lu}[\p{L}'’-]+\s(?:(?:de|del|la|di|da|du|von|van|der)\s)?){2,3}|(?<=[\p{Ll}\d,;:]\s)\p{Lu}[\p{L}'’-]+\s)\d{1,4}[a-zA-Z]?\b"#,
         // Numbers with a unit: 8 h, 500 mg, 2 km, 20%.
         #"\b\d+(?:[.,]\d+)?\s?(?:mg|ml|kg|km|g|l|m|h|min|%|°C)(?![\p{L}])"#,
     ]
@@ -656,9 +666,14 @@ public enum CarefulTopics {
         ],
     ]
 
+    /// Everyday words a stem would wrongly catch ("polis", "polic", "policie", "pill").
+    static let notTopics: Set<String> = [
+        "polish", "polished", "polishing", "policy", "policies", "pillow", "pillows",
+    ]
+
     /// The first topic heard in the text, health first.
     public static func topic(in text: String) -> Topic? {
-        let words = text.lowercased().split { !$0.isLetter }.map(String.init)
+        let words = text.lowercased().split { !$0.isLetter }.map(String.init).filter { !notTopics.contains($0) }
         for topic in [Topic.health, .law, .money] {
             let list = stems[topic] ?? []
             if words.contains(where: { word in list.contains { stem in
@@ -714,7 +729,7 @@ public struct TranslatorSession: Sendable {
         guard !trimmed.isEmpty, !trimmed.hasPrefix(Self.appMessagePrefix) else { return }
         heard.append(trimmed)
         if careful == nil { careful = CarefulTopics.topic(in: trimmed) }
-        if !TranslatorRouter.isAside(trimmed) { _ = router.learnTheirLanguage(from: trimmed) }
+        if !router.isOwnerAside(trimmed, held: held) { _ = router.learnTheirLanguage(from: trimmed) }
     }
 
     /// One of Doddy's lines. Returns the turn it became.
@@ -727,20 +742,25 @@ public struct TranslatorSession: Sendable {
         let route = router.route(agentLine: trimmed, after: original, held: held)
         held = nil
         if careful == nil { careful = CarefulTopics.topic(in: trimmed) }
-        var facts = ExactFacts.extract(trimmed)
-        if case .translation = route, let original {
-            for fact in ExactFacts.extract(original) where !facts.contains(fact) { facts.append(fact) }
-        }
-        let turn = TranslatorTurn(original: original, text: trimmed, route: route, facts: Array(facts.prefix(ExactFacts.limit)))
+        let turn = TranslatorTurn(original: original, text: trimmed, route: route, facts: Self.facts(in: trimmed, original: original, route: route))
         turns.append(turn)
         return turn
     }
 
-    /// The agent corrected a line after an interruption.
+    /// The agent corrected a line after an interruption. Facts from what was said are kept.
     public mutating func correct(_ original: String, to corrected: String) {
         guard let index = turns.lastIndex(where: { $0.text == original }) else { return }
         turns[index].text = corrected
-        turns[index].facts = ExactFacts.extract(corrected)
+        turns[index].facts = Self.facts(in: corrected, original: turns[index].original, route: turns[index].route)
+    }
+
+    /// Doddy's line's facts, then those of what it translated, up to the limit.
+    private static func facts(in line: String, original: String?, route: TranslatorRoute) -> [String] {
+        var facts = ExactFacts.extract(line)
+        if case .translation = route, let original {
+            for fact in ExactFacts.extract(original) where !facts.contains(fact) { facts.append(fact) }
+        }
+        return Array(facts.prefix(ExactFacts.limit))
     }
 
     public func latest(_ direction: TranslatorDirection) -> TranslatorTurn? {
@@ -803,7 +823,7 @@ public struct TranslatorSummary: Equatable, Sendable {
     /// The note "Save the facts as a note" proposes; nil when nothing exact was said.
     public func factsNote(calendar: Calendar) -> String? {
         guard !facts.isEmpty else { return nil }
-        let day = calendar.dateComponents([.year, .month, .day], from: endedAt)
+        let day = ReminderDueRules.gregorian(calendar).dateComponents([.year, .month, .day], from: endedAt)
         let when = String(format: "%04d-%02d-%02d", day.year ?? 0, day.month ?? 0, day.day ?? 0)
         return "From a translated conversation (\(setup.pairText), \(when)): " + facts.joined(separator: "; ")
     }

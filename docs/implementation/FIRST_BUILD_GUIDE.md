@@ -157,3 +157,20 @@ In order of risk:
 - **Reminder rename/repeat (ADR-314):**
   - `EKReminder.recurrenceRules` set and cleared;
   - `EKEvent.notes` replaced, with a stale check before the save.
+
+
+### Round 6 (2026-10-11, ADR-330, ADR-332 to ADR-339): most likely to need a fix
+**First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
+- **iPad (ADR-337):**
+  - `TARGETED_DEVICE_FAMILY "1,2"` on the app, widget and share extension. Check that the Live Activities, AlarmKit and watch parts still build for iPad (they run only where iOS allows them).
+  - `UIDevice.current.userInterfaceIdiom` is read in `DeviceSupport` (`@MainActor`).
+- **Leave-by (ADR-335):**
+  - `MKDirections.calculateETA()` async with `arrivalDate`;
+  - `UNCalendarNotificationTrigger(dateMatching:)`;
+  - the new `PendingAction.leaveBy` in every `switch` (Linux parsing can't prove they are exhaustive).
+- **Spotlight (ADR-330):**
+  - `CSSearchableIndex(name:protectionClass:)` and the delete-then-index completion handlers;
+  - `onContinueUserActivity(CSSearchableItemActionType)` in `RootView`.
+- **Quick actions (ADR-339):** the async `windowScene(_:performActionFor:)` on the existing scene delegate; `connectionOptions.shortcutItem` on cold launch.
+- **Memories tags (ADR-333):** `MemoryTagRow` with `ForEach(tags, id: \.tag)` over tuples.
+- **List templates (ADR-334):** `.swipeActions` inside a `Form` section in `NewListSheet`.
