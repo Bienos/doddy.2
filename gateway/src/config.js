@@ -54,10 +54,14 @@ const positive = (value, fallback) => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
-/** @param {string | undefined} value @param {number} fallback */
+/**
+ * Positive whole number from env, or the fallback when unset. Set but invalid (e.g. "2O0") is an
+ * error, like `positive`, so a typo can't silently leave the default limit in force.
+ * @param {string | undefined} value @param {number} fallback @returns {number | null}
+ */
 const int = (value, fallback) => {
-  const n = Number.parseInt(value ?? '', 10);
-  return Number.isInteger(n) && n > 0 ? n : fallback;
+  if (value === undefined || value.trim() === '') return fallback;
+  return /^[1-9][0-9]*$/.test(value.trim()) ? Number(value.trim()) : null;
 };
 
 /**
@@ -85,6 +89,14 @@ export function loadConfig(env) {
   if (installUsd === null) missing.push('DAILY_BUDGET_PER_INSTALL_USD');
   if (inputPrice === null) missing.push('OPENAI_PRICE_INPUT_PER_MTOK_USD');
   if (outputPrice === null) missing.push('OPENAI_PRICE_OUTPUT_PER_MTOK_USD');
+  /** @type {Record<string, number | null>} */
+  const ints = {
+    GATEWAY_RATE_PER_MINUTE: int(env.GATEWAY_RATE_PER_MINUTE, 10),
+    GATEWAY_RATE_PER_DAY: int(env.GATEWAY_RATE_PER_DAY, 200),
+    GATEWAY_GLOBAL_PER_DAY: int(env.GATEWAY_GLOBAL_PER_DAY, 2000),
+    GATEWAY_INVITE_PER_DAY: int(env.GATEWAY_INVITE_PER_DAY, 600),
+  };
+  for (const [name, value] of Object.entries(ints)) if (value === null) missing.push(name);
   if (missing.length > 0 || dailyUsd === null || installUsd === null || inputPrice === null || outputPrice === null) {
     return { ok: false, missing };
   }
@@ -95,10 +107,10 @@ export function loadConfig(env) {
       model,
       tokenSecret,
       inviteTags: new Set(invites.map((code) => inviteTag(code, tokenSecret))),
-      perMinute: int(env.GATEWAY_RATE_PER_MINUTE, 10),
-      perDay: int(env.GATEWAY_RATE_PER_DAY, 200),
-      globalPerDay: int(env.GATEWAY_GLOBAL_PER_DAY, 2000),
-      invitePerDay: int(env.GATEWAY_INVITE_PER_DAY, 600),
+      perMinute: /** @type {number} */ (ints.GATEWAY_RATE_PER_MINUTE),
+      perDay: /** @type {number} */ (ints.GATEWAY_RATE_PER_DAY),
+      globalPerDay: /** @type {number} */ (ints.GATEWAY_GLOBAL_PER_DAY),
+      invitePerDay: /** @type {number} */ (ints.GATEWAY_INVITE_PER_DAY),
       tokenTtlSeconds: 24 * 3600,
       providerTimeoutMs: 20_000,
       // Whole-request budget; vercel.json maxDuration is 30 s.

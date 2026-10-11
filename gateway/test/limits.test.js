@@ -323,6 +323,10 @@ test('config: half a store configuration, a non-https URL or a bad budget is ref
     [{ DAILY_BUDGET_USD: '0' }, ['DAILY_BUDGET_USD']],
     [{ DAILY_BUDGET_PER_INSTALL_USD: '-1' }, ['DAILY_BUDGET_PER_INSTALL_USD']],
     [{ OPENAI_PRICE_OUTPUT_PER_MTOK_USD: 'free' }, ['OPENAI_PRICE_OUTPUT_PER_MTOK_USD']],
+    [{ GATEWAY_RATE_PER_DAY: '2O0' }, ['GATEWAY_RATE_PER_DAY']],
+    [{ GATEWAY_RATE_PER_MINUTE: '0' }, ['GATEWAY_RATE_PER_MINUTE']],
+    [{ GATEWAY_GLOBAL_PER_DAY: '1.5' }, ['GATEWAY_GLOBAL_PER_DAY']],
+    [{ GATEWAY_INVITE_PER_DAY: '-3' }, ['GATEWAY_INVITE_PER_DAY']],
   ];
   for (const [extra, missing] of cases) {
     const loaded = loadConfig({ ...ENV, ...extra });
