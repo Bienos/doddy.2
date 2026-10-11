@@ -11,7 +11,8 @@ import { nextRunAt } from "../src/news/schedule.js";
 import type { FeedSource, NewsSearch } from "../src/news/sources.js";
 import http from "node:http";
 import { ClaudeDigestWriter, OpenAIDigestWriter, validateLines, type DigestLine, type DigestWriter, type WriterInput } from "../src/news/writer.js";
-import { dbSkip, freshDb, testApp } from "./helpers.js";
+import { dbSkip, FakePush, freshDb, testApp } from "./helpers.js";
+import { runWorkerLoop } from "../src/workerLoop.js";
 
 const NOW = new Date("2026-10-10T06:00:00Z");
 const hoursAgo = (h: number) => new Date(NOW.getTime() - h * 3_600_000).toISOString();
@@ -372,5 +373,38 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     for (const t of ["news_settings", "news_topics", "news_feeds", "news_digests", "news_sent"]) {
       assert.equal((await db.query(`SELECT 1 FROM ${t} WHERE account_id = $1`, [accountId])).rowCount, 0, t);
     }
+  });
+
+  // Last in this suite: the worker loop may build digests for any account still due.
+  test("a slow digest does not hold back queued pushes", { timeout: 15_000 }, async () => {
+    const { accountId, h } = await user();
+    await put(h, settings({ topics: [], feeds: ["https://slow.example/feed"] }));
+    await db.query("UPDATE news_settings SET next_run_at = now() - interval '1 minute' WHERE account_id = $1", [accountId]);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => { release = r; });
+    let fetching = false;
+    const slowFeeds: FeedSource = {
+      async fetchFeed() { fetching = true; await gate; return { title: "Slow", items: [] }; },
+    };
+    const push = new FakePush();
+    let stop = false;
+    const loop = runWorkerLoop(db, { push, news: { feeds: slowFeeds } }, () => stop);
+    const until = async (ok: () => boolean) => {
+      const end = Date.now() + 5000;
+      while (!ok() && Date.now() < end) await new Promise((r) => setTimeout(r, 100));
+    };
+    await until(() => fetching);
+    // Queued only once the digest is stuck, so the old single loop could not have sent it.
+    assert.equal((await app.inject({ method: "POST", url: "/v1/updates", headers: h,
+      payload: { text: "PIN alert stand-in", channels: ["push"], idempotencyKey: "slow-digest" } })).statusCode, 202);
+    const deadline = Date.now() + 5000;
+    while (!push.sent.some((p) => p.body === "PIN alert stand-in") && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    assert.ok(fetching, "the digest is still waiting on its feed");
+    assert.ok(push.sent.some((p) => p.body === "PIN alert stand-in"), "push went out while the digest was stuck");
+    stop = true;
+    release();
+    await loop;
   });
 });
