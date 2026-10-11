@@ -202,6 +202,11 @@ struct ListDetailView: View {
             Section {
                 NoteReminderSection(memoryID: list.id)
                     .listRowBackground(Theme.canvas)
+                // A shared list's place for everyone (ADR-307).
+                if sharing.isShared(list.id) != nil {
+                    SharedPlaceRow(list: list)
+                        .listRowBackground(Theme.canvas)
+                }
             }
         }
         .listStyle(.plain)
