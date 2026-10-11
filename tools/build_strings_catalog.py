@@ -24,6 +24,7 @@ APP = os.path.join(ROOT, "DoddyApp")
 TARGETS = [
     ("DoddyApp/Resources/Localizable.xcstrings", ("DoddyApp", "Shared")),
     ("DoddyWidgets/Localizable.xcstrings", ("DoddyWidgets", "Shared")),
+    ("DoddyShare/Localizable.xcstrings", ("DoddyShare",)),
     ("DoddyWatch/Localizable.xcstrings", ("DoddyWatch",)),
     ("DoddyWatchWidgets/Localizable.xcstrings", ("DoddyWatchWidgets",)),
 ]

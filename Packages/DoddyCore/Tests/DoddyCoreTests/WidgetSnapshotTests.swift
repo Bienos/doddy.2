@@ -62,6 +62,22 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertFalse(json.contains("Wi-Fi"))
     }
 
+    func testParkingGivesTimeAndWordsNeverThePosition() throws {
+        let spot = ParkingSpot(latitude: 52.229_676, longitude: 21.012_229, accuracyMeters: 8, savedAt: now, note: "level 2, row C")
+        let snapshot = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                           showReminderText: true, isOn: true, now: now, parking: spot)
+        XCTAssertEqual(snapshot.parking, WidgetSnapshot.Parked(savedAt: now, note: "level 2, row C"))
+        let json = String(decoding: try snapshot.encoded(), as: UTF8.self)
+        XCTAssertFalse(json.contains("52.2") || json.contains("21.01"), "the position stays in the app")
+        XCTAssertEqual(WidgetSnapshot.decoded(try snapshot.encoded()), snapshot)
+        // Switched off: no parking either.
+        XCTAssertNil(WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                         showReminderText: true, isOn: false, now: now, parking: spot).parking)
+        // A snapshot written before parking existed still reads.
+        let old = #"{"isOn":true,"lists":[],"pinned":[],"reminders":[],"version":1,"writtenAt":1800000000000}"#
+        XCTAssertNil(try XCTUnwrap(WidgetSnapshot.decoded(Data(old.utf8))).parking)
+    }
+
     func testShortenedCutsOnAWord() {
         let long = Array(repeating: "word", count: 60).joined(separator: " ")
         let short = WidgetSnapshot.shortened(long)

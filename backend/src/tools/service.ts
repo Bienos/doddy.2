@@ -428,7 +428,7 @@ export class CloudToolsService {
       this.reserveRuns(userId, tool, now, 1);
       const composioUserId = this.store.composioUserId(userId, now);
       try {
-        target = await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id));
+        target = (await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id))).target;
       } catch (error) {
         throw this.failure(userId, tool, error, false);
       }
@@ -445,22 +445,29 @@ export class CloudToolsService {
   }
 
   /**
-   * Reads a write's target (no retry beyond a read's one). Missing or already done: a refusal with
-   * a receipt, before any approval is made or used. Never runs the write itself.
+   * Reads a tool's target (no retry beyond a read's one). Never runs the write itself. For a write,
+   * missing or already done is a refusal with a receipt, before any approval is made or used. For
+   * a read, it is `{ missing }`: the caller says nothing matched instead of guessing.
    */
-  private async lookup(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, composioUserId: string, connectionId: string): Promise<ResolvedTarget> {
+  private async lookup(
+    userId: string,
+    tool: CloudToolDefinition,
+    args: Record<string, unknown>,
+    composioUserId: string,
+    connectionId: string,
+  ): Promise<{ target: ResolvedTarget; missing: null } | { target: null; missing: string }> {
     const lookup = tool.resolve!;
     const result = await this.withRetry(LOOKUP_RETRIES, (signal) =>
       this.provider.execute({ toolkit: tool.toolkit, slug: lookup.slug, composioUserId, connectionId, arguments: lookup.toArguments(args), signal }),
     );
-    const target = lookup.read(result.raw, args);
-    if (!target) {
-      throw new AppError("not_found", {
-        message: lookup.notFound,
-        receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${lookup.notFound}`, "not_found", result.providerReference),
-      });
-    }
-    return target;
+    const found = lookup.read(result.raw, args);
+    if (found !== null && found.kind !== "missing") return { target: found, missing: null };
+    const message = found?.message ?? lookup.notFound;
+    if (tool.risk === "read") return { target: null, missing: message };
+    throw new AppError("not_found", {
+      message,
+      receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${message}`, "not_found", result.providerReference),
+    });
   }
 
   /** Reserves today's tool runs for this call, with a blocked receipt when a Doddy limit says no. */
@@ -528,7 +535,7 @@ export class CloudToolsService {
       });
     if (tool.risk === "write" && (tool.resolve ? request.approvalId === undefined : !approval(null, true))) throw unconfirmed();
 
-    // A lookup before the write counts as one more run, reserved together with the write.
+    // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
     this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
 
     const composioUserId = this.store.composioUserId(userId, now);
@@ -536,8 +543,15 @@ export class CloudToolsService {
     try {
       return await this.limiter.withSlot(userId, async () => {
         // The target is read again right before the write: if it is gone, done, or no longer what the
-        // card showed, the approval doesn't match and nothing is written.
-        const target = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
+        // card showed, the approval doesn't match and nothing is written. A read looks up what it opens.
+        const found = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
+        if (found?.missing) {
+          // Reads only (a write's miss throws): nothing matched, so the main slug isn't run.
+          const summary = tool.resolve!.missSummary ?? "Nothing matched.";
+          const receipt = this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", summary, null, null);
+          return { mode: this.mode, tool: tool.name, text: found.missing, count: 0, truncated: false, receipt };
+        }
+        const target = found?.target ?? null;
         // Used up here, once: a parallel run with the same approval loses the race and does nothing.
         if (tool.risk === "write" && !approval(target, false)) throw unconfirmed();
         writeSent = tool.risk === "write";
@@ -547,7 +561,7 @@ export class CloudToolsService {
             slug: tool.composioSlug,
             composioUserId,
             connectionId: row.connection_id,
-            arguments: tool.toArguments(args),
+            arguments: tool.toArguments(args, target),
             signal,
           }),
         );

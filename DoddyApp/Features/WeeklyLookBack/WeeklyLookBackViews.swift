@@ -123,7 +123,7 @@ struct WeeklyLookBackView: View {
         let events = calendarOn ? devices.events(in: VoiceTimeRange(start: now, end: end)) : nil
         let due = remindersOn ? await devices.remindersDue(by: end, calendar: .current).count : nil
         week = WeeklyLookBack.make(
-            notes: store.memories, lists: store.lists, activity: ActivityLogStore.shared.entries,
+            notes: PrivateNotesStore.current().shareable(store.memories), lists: store.lists, activity: ActivityLogStore.shared.entries,
             events: events, remindersDue: due, now: now)
     }
 }

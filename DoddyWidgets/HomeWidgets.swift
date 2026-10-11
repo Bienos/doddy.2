@@ -132,6 +132,54 @@ struct NextReminderView: View {
     }
 }
 
+// MARK: Where did I park
+
+/// The parking spot (ADR-315): when it was saved and the user's note, never the position. A tap
+/// opens Doddy, which opens the spot in Maps.
+struct ParkingWidget: Widget {
+    static let kind = "com.bienos.doddy2.parking"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { entry in
+            ParkingWidgetView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Where I parked")
+        .description("When you saved your parking spot, and your note. Tap to open it in Maps.")
+        .supportedFamilies([.systemSmall, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+struct ParkingWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: SnapshotEntry
+
+    var body: some View {
+        if let message = WidgetCopy.message(for: entry.snapshot) {
+            WidgetMessage(text: message)
+        } else if let parked = entry.snapshot?.parking {
+            let when = Text(parked.savedAt, format: .dateTime.weekday(.abbreviated).hour().minute())
+            switch family {
+            case .accessoryInline:
+                Label { when } icon: { Image(systemName: "car") }
+                    .widgetURL(DeepLink.parking.url)
+            default:
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Parked", systemImage: "car.fill").font(.headline)
+                    when.font(.subheadline)
+                    if let note = parked.note {
+                        Text(note).font(.footnote).lineLimit(family == .systemSmall ? 3 : 1).privacySensitive()
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .widgetURL(DeepLink.parking.url)
+            }
+        } else {
+            WidgetMessage(text: "No parking spot saved. Tell Doddy \u{201C}I parked here\u{201D}.")
+        }
+    }
+}
+
 // MARK: List, with ticks
 
 struct ListEntity: AppEntity {
@@ -402,6 +450,7 @@ extension WidgetSnapshot {
                 .init(id: UUID(), text: "Oat milk", isDone: false),
                 .init(id: UUID(), text: "Eggs", isDone: false),
                 .init(id: UUID(), text: "Bread", isDone: true),
-            ])])
+            ])],
+            parking: .init(savedAt: .now.addingTimeInterval(-5400), note: "Level 2, row C"))
     }()
 }

@@ -354,7 +354,8 @@ final class VoiceSessionController {
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
-        var notes = VoiceContext.savedNotes(store.memories)
+        // Private notes (ADR-310) never reach the voice agent.
+        var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
         var recent = logs.isEnabled
             ? VoiceContext.recentConversations(logs.logs)
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
@@ -834,7 +835,10 @@ final class VoiceSessionController {
             }
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-301).
-            await reply(id, ParkingStore.save(spot) ? VoiceToolReply.parkingSaved(spot, now: Date(), calendar: .current) : VoiceToolReply.parkingNotSaved)
+            let saved = ParkingStore.save(spot)
+            // The parking widget (ADR-315) shows when it was saved and the note.
+            WidgetSync.shared.refresh()
+            await reply(id, saved ? VoiceToolReply.parkingSaved(spot, now: Date(), calendar: .current) : VoiceToolReply.parkingNotSaved)
         case .changeReminder(let id, let reminder, let draft) where draft.changesDetails:
             // A note, priority or list (ADR-302): one save, read back. Undo isn't offered for these.
             await reply(id, changeReminderDetails(reminder, draft))
@@ -1571,7 +1575,7 @@ final class VoiceSessionController {
         switch request {
         case .searchMemories(let query):
             do {
-                let outcome = try await store.recall(query)
+                let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
                 await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
@@ -2079,6 +2083,7 @@ final class VoiceSessionController {
                 return
             }
             if ParkingStore.clear() { parkingCard = nil }
+            WidgetSync.shared.refresh()
             await reply(toolCallID, ParkingStore.current() == nil ? VoiceToolReply.parkingCleared : VoiceToolReply.failed("The parking spot couldn't be removed."))
         }
     }
@@ -2160,7 +2165,8 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
         case .one(let event):
             let place = draft.newLocation == nil ? nil : devices.eventLocation(event)
-            guard let plan = EventChange.plan(draft, for: event, locationBefore: place, calendar: .current) else {
+            let notes = draft.replaceNotes == nil ? nil : devices.eventNotes(event)
+            guard let plan = EventChange.plan(draft, for: event, locationBefore: place, notesBefore: notes, calendar: .current) else {
                 await reply(toolCallID, VoiceToolReply.eventChangeInvalid)
                 return
             }
@@ -2197,6 +2203,11 @@ final class VoiceSessionController {
             case .several(let found):
                 await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
             case .one(let reminder):
+                // A repeat needs a due (Reminders' rule, ADR-314).
+                if case .set? = draft.repeatChange, reminder.due == nil, draft.newDue == nil {
+                    await reply(toolCallID, VoiceToolReply.reminderRepeatNeedsDue)
+                    return
+                }
                 let nothingNew = draft.changesDetails
                     ? ReminderDetails.changesNothing(reminder, change: draft.details, newDue: draft.newDue)
                     : !draft.markDone && EventChange.sameDue(reminder.due, draft.newDue)

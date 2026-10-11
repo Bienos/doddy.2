@@ -23,7 +23,8 @@ struct ListsOverview: View {
                 }
                 .accessibilityIdentifier("lists.empty")
             }
-            ForEach(store.lists) { list in
+            // A Focus can bring one list to the front (ADR-312).
+            ForEach(FocusFilterState.shared.settings.ordered(store.lists)) { list in
                 NavigationLink(value: MemoryNavigationRoute.note(list.id)) {
                     ListCard(list: list)
                 }

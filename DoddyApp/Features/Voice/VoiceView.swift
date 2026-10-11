@@ -463,9 +463,18 @@ struct VoiceView: View {
             }
             if let note = plan.addNote {
                 Label(String(format: NSLocalizedString("Adds to its notes: “%@”", comment: ""), note), systemImage: "text.append")
-                Text("Its notes are only added to, never replaced.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
+            }
+            // ADR-314: the old notes as they are, and what replaces them; Undo puts them back.
+            if let text = plan.replaceNotes {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    if let old = plan.notesBefore, !old.isEmpty {
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                    }
+                    if !text.isEmpty {
+                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                    }
+                }
             }
             Text("If it repeats, only this time changes. Nothing is deleted.")
                 .font(.footnote)
@@ -483,7 +492,26 @@ struct VoiceView: View {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
             }
-            // ADR-302: each detail as it is now and as it will be.
+            // ADR-302 and ADR-314: each detail as it is now and as it will be.
+            if let title = draft.newTitle {
+                Label("Rename to “\(title)”", systemImage: "pencil")
+            }
+            if let text = draft.replaceNotes {
+                VStack(alignment: .leading, spacing: 4) {
+                    Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    if let old = reminder.notes, !old.isEmpty {
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                    }
+                    if !text.isEmpty {
+                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                    }
+                }
+            }
+            switch draft.repeatChange {
+            case .set(let rule)?: Label(Self.repeatText(rule), systemImage: "repeat")
+            case .stop?: Label("Stop repeating", systemImage: "repeat")
+            case nil: EmptyView()
+            }
             if let line = draft.addNote {
                 Label("Add to the notes: “\(line)”", systemImage: "note.text")
             }
@@ -494,7 +522,7 @@ struct VoiceView: View {
                 Label("Move to the list “\(list.title)”", systemImage: "list.bullet")
             }
             if draft.changesDetails {
-                Text("Notes are only added to. Undo isn't available for a note, priority or list change.")
+                Text("Undo isn't available for these changes.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
