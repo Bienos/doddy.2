@@ -12,6 +12,12 @@ adding one adapter, not rewriting the app or the agent.
 
 ## Source of truth and syncing
 
+**Not yet applied to the live agent (ADR-234, needs the owner's OK):** `session.json` first message
+`{{opening_line}}` with placeholder "Hey, it's Doddy. What's on your mind?" (`first_message_variable`). To apply:
+set the agent's first message (English and Polish) to `{{opening_line}}` and add the dynamic-variable placeholder
+`opening_line` with that text, so older app builds that don't send it still start. Until then the live first
+message is the fixed text and the app's `opening_line` is ignored.
+
 1. Change the files here first.
 2. `python3 -I scripts/voice_agent_spec.py check` (also runs in `scripts/ci.sh`).
 3. Push to ElevenLabs: `python3 -I scripts/voice_agent_spec.py elevenlabs` prints each tool in

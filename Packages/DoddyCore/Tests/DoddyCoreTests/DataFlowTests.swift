@@ -33,6 +33,21 @@ final class DataFlowTests: XCTestCase {
         XCTAssertEqual(row("elevenlabs", base).what, "Your voice, the conversation, your saved notes and your personality settings.")
     }
 
+    /// ADR-234: Picovoice only gets the AccessKey, and only while "Hey Doddy" is on; the sound it
+    /// listens to stays on the iPhone.
+    func testHeyDoddyRowFollowsTheSwitch() {
+        let off = row("picovoice", base)
+        XCTAssertFalse(off.isActive)
+        XCTAssertTrue(off.note?.contains("off") ?? false)
+        var state = base
+        state.heyDoddyOn = true
+        let on = row("picovoice", state)
+        XCTAssertTrue(on.isActive)
+        XCTAssertTrue(on.what.contains("AccessKey"))
+        XCTAssertTrue(on.what.contains("No sound"))
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("\"Hey Doddy\":") })
+    }
+
     func testVoiceRowGrowsWithWhatIsSwitchedOn() {
         var state = base
         state.rememberConversations = true

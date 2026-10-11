@@ -73,6 +73,9 @@ enum PreferenceKey {
     static let siriReadsNotes = "siriReadsNotes"
     /// Widgets show note words (ADR-233). On unless turned off; off keeps them out of the file.
     static let widgetNoteWords = "widgetNoteWords"
+    /// "Hey Doddy" listening (ADR-234). Off unless turned on. The AccessKey is in the Keychain and
+    /// the keyword file in Application Support, never here.
+    static let heyDoddyOn = "heyDoddy.on"
 }
 
 enum AppTab: Hashable {
@@ -122,9 +125,16 @@ struct RootView: View {
             .task {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
+                if scenePhase == .active { heyDoddyAppBecameActive() }
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await noteReminders.refreshOnForeground() } }
+                // "Hey Doddy" (ADR-234): the microphone can only start while Doddy is open.
+                switch phase {
+                case .active: heyDoddyAppBecameActive()
+                case .background: WakeWordListener.shared.appWentToBackground()
+                default: break
+                }
                 // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
                 switch phase {
                 case .background: opening.appWentToBackground()
@@ -163,6 +173,18 @@ struct RootView: View {
             Theme.canvas.ignoresSafeArea()
                 .task { await profiles.load() }
         }
+    }
+
+    /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
+    /// started while Doddy was in the background, if it is running or left notes to look at.
+    private func heyDoddyAppBecameActive() {
+        let listener = WakeWordListener.shared
+        if listener.hasConversationToShow, !router.isVoicePresented, router.shownDraft == nil {
+            router.isVoicePresented = true
+        } else {
+            listener.forgetFinishedConversation()
+        }
+        listener.appBecameActive()
     }
 
     private func syncWidgets() {
@@ -226,6 +248,8 @@ struct RootView: View {
         // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
+            // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
+            WakeWordListener.shared.refresh()
         }
         .onOpenURL { url in
             // doddy://note/<id> from a widget (ADR-233): opens that note on Home, like a note reminder.

@@ -7,7 +7,10 @@ import Observation
 @MainActor
 @Observable
 final class BriefSpeaker: NSObject, AVSpeechSynthesizerDelegate {
-    private(set) var isSpeaking = false
+    /// "Hey Doddy" listening (ADR-234) steps aside while the brief is read.
+    private(set) var isSpeaking = false {
+        didSet { WakeWordListener.shared.appSound(playing: isSpeaking) }
+    }
     private let synthesizer = AVSpeechSynthesizer()
 
     override init() {
@@ -23,6 +26,11 @@ final class BriefSpeaker: NSObject, AVSpeechSynthesizerDelegate {
         // The brief is written in English.
         utterance.voice = AVSpeechSynthesisVoice(language: "en-GB")
         isSpeaking = true
+        // "Hey Doddy" listening leaves the audio set up for recording, which plays through the
+        // earpiece; the brief is meant for the speaker.
+        if UserDefaults.standard.bool(forKey: PreferenceKey.heyDoddyOn) {
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+        }
         synthesizer.speak(utterance)
     }
 

@@ -115,6 +115,26 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | O10 | With O8 on: iOS Settings → Doddy → Microphone off; relaunch | The scene plays; no conversation opens by itself (it would only say "Microphone is off"). Tapping Talk to Doddy still explains and offers Open Settings |
 | O11 | With O8 on: tap a note reminder's "Done" from the Lock Screen (a background launch), then open Doddy | Nothing listened in the background; the scene (and the conversation) only once the app is on screen |
 
+## 4e. "Hey Doddy" (ADR-234, `HEY_DODDY_STATUS.md`)
+Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section train **Hey Doddy**, English, platform **iOS**; download the `.ppn` to the iPhone (Files → On My iPhone). Voice must already work (token server or the development agent). Turn off "Start listening when I open Doddy" first, so only the wake word starts conversations.
+
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Build: `make project`, then build. Package resolution fetches the Porcupine repository (large; first time takes a while) | The app builds with the `Porcupine` product. If `revision:` is refused by XcodeGen or SwiftPM, note the error. Compile errors most likely in `WakeWordListener.swift`: `PorcupineManager(accessKey:keywordPath:sensitivity:onDetection:errorCallback:)`, the `nonisolated` handler factories, `UIApplication.beginBackgroundTask`, and the memberwise `ContentState(status:isMuted:greeting:conversationStartedAt:)` |
+| H2 | Settings → Hey Doddy, fresh install | Switch off; "Now: Off." Nothing in the island; no microphone dot |
+| H3 | Turn it on without a key or file | iOS asks for the microphone if it never has. "Add your Picovoice AccessKey and “Hey Doddy” keyword file…"; no microphone dot |
+| H4 | Paste a wrong key (e.g. one letter changed) and choose the .ppn | "Picovoice didn't accept the AccessKey…" (or the activation message); no microphone dot. Choose a .zip or a `_pl_ios_` / `_android_` file: the matching problem text |
+| H5 | Paste the right key | "Now: Listening for “Hey Doddy” on this iPhone." The orange microphone dot shows. Go to the Home Screen: the island shows Doddy sitting, "Say “Hey Doddy”", "Listening on this iPhone for “Hey Doddy” only" and Stop listening (no Mute, no timer) |
+| H6 | On the Home Screen, say "Hey Doddy" | Within about a second the island says **"Hey Pat, what's up?"** (your nickname; without one, the first word of your About you name; without both, "bud"), then Doddy connects and speaks. The timer counts from the wake word, not from when listening started. When you first speak, the island goes back to Listening/Thinking/Speaking. Note the time from "Hey Doddy" to Doddy's first word |
+| H7 | Say "bye" / tap End on the island | The conversation ends; the island shows "“Hey Doddy” paused" for a moment, then "Say “Hey Doddy”" again (not the Conversation ended card). Say "Hey Doddy" again after 5 seconds: a second conversation starts. **Key question:** does listening restart in the background after the conversation, or does the island go away and Settings say "Open Doddy"? Write down which |
+| H8 | Open Doddy while a wake conversation runs; and once after one ended with a "Worth keeping?" card | The voice screen opens on that conversation (not a second one); the card shows. After a wake conversation that ended with nothing, opening Doddy goes to Home |
+| H9 | Say "Hey Doddy" and then say nothing | The conversation ends by itself about 20 seconds after Doddy is ready; listening comes back |
+| H10 | Tap Stop listening on the island | The island goes away, the microphone dot goes off, Settings shows the switch off |
+| H11 | With it listening: (a) turn on Low Power Mode; (b) take a phone call; (c) open Voice Memos and record; (d) play a voice sample in Settings and read the morning brief aloud | (a) "Paused: Low Power Mode is on.", dot off; listening returns when it's off and Doddy is open. (b, c) "Paused: another app or a call…", then back if iOS allows. (d) Samples and brief play through the **speaker** (not the earpiece) and listening comes back after |
+| H12 | Leave it listening in the background for an hour with the screen locked; note the battery % used and whether it is still listening (island) | Write the battery cost down. If iOS ended it, the island must not still say "Say “Hey Doddy”" (stale: "Not listening — open Doddy") |
+| H13 | Leave a TV or podcast playing near the iPhone for 30 minutes | Count false wake-ups. Each one should end by itself after 20 s of silence from you; after 12 in an hour the status says "Resting…" |
+| H14 | What leaves this iPhone | A Picovoice row: active only while the switch is on; the "stays on this iPhone" line for Hey Doddy; Settings → Privacy → Microphone mentions it while on |
+
 ## 5. Voice (needs a real conversation)
 | # | Do this | Expect |
 |---|---|---|

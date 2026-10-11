@@ -1,7 +1,7 @@
-# Device test script — six features built on Linux (2026-10-10)
+# Device test script — seven features built on Linux (2026-10-10, "Hey Doddy" added 2026-10-11)
 
 One pass, in order, for branch `claude/sleepy-gates-f9najr`. Everything here was written and tested only on Linux
-(`scripts/ci.sh --core-only` on the branch merged with `claude/loving-dirac-uuxoux`: 490 DoddyCore package tests,
+(`scripts/ci.sh --core-only` on the branch merged with `claude/loving-dirac-uuxoux`: 511 DoddyCore package tests with "Hey Doddy",
 123 backend tests, all pass). **None of it has been
 compiled with Xcode or run on an iPhone.** Each step names the checklist rows in
 `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`, where the full expected results are.
@@ -14,6 +14,7 @@ compiled with Xcode or run on an iPhone.** Each step names the checklist rows in
 | Brief: news, Todoist, Gmail, choosing contents | ADR-231 | B8–B11 |
 | Siri reads a note back | ADR-232 | S7–S11 |
 | Widgets | ADR-233 | W1–W7 |
+| "Hey Doddy" wake word | ADR-234 | H1–H14 |
 
 **Time:** about 90 minutes, plus fixing whatever doesn't compile. **You need:** a Mac with Xcode and XcodeGen, an
 iPhone on iOS 17 or later (iOS 18 for the controls) with a cable, the iPhone online, and for step 6 a paid team that
@@ -85,6 +86,11 @@ Follow S7–S11. Do S8 with the iPhone locked. For S11, restart the iPhone, unlo
 2. Rebuild with the App Group (`BUILD_AND_TEST.md` → "Note widgets need an App Group"), reinstall, then W7 first
    (add a note widget before opening Doddy), then W2–W6.
 
+## Step 7b — "Hey Doddy" (30 min, plus an hour in the background) — H1–H14
+Needs a free Picovoice account (AccessKey, and a "Hey Doddy" keyword file trained for iOS in English, downloaded to the
+iPhone). Follow H1–H14 in the checklist's section 4e. The key questions: does "Hey Doddy" start a conversation from the
+Home Screen with "Hey Pat, what's up?" on the island (H6), and does listening come back in the background afterwards (H7)?
+
 ## Step 8 — Brief with news, Todoist and Gmail (15 min, optional today) — B8–B11
 Needs a Doddy backend **with this branch's change** (mock mode is enough: `npm run dev` in `backend/`, see
 `BUILD_AND_TEST.md` → Connected Apps) and, for B11, the messaging server with a digest from today. A deployed backend
@@ -126,6 +132,14 @@ without this branch shows "an older version that can't list them here"; that is 
 | W4 | | |
 | W5 | | |
 | W6 | | |
+| H1 | | build / package errors |
+| H2–H5 | | |
+| H6 | | wake word → first word: … s |
+| H7 | | listening back in background? yes / no |
+| H8–H11 | | |
+| H12 | | battery: … % per hour |
+| H13 | | false wake-ups in 30 min: … |
+| H14 | | |
 | B8 | | |
 | B9 | | |
 | B10 | | |

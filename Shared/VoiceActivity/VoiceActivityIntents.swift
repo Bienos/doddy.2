@@ -31,12 +31,16 @@ struct EndDoddyConversationIntent: LiveActivityIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        // The conversation ends itself and leaves a short "Conversation ended" card.
+        // The conversation ends itself and leaves a short "Conversation ended" card. With
+        // "Hey Doddy" listening (ADR-234) this is Stop listening, which turns it off.
+        let appIsHandlingIt = VoiceActivityActions.shared.endConversation != nil
         await VoiceActivityActions.shared.endConversation?()
         // Anything still claiming to be live has no conversation behind it (iOS ended the
         // process in the background, or this is a fresh launch just to run the intent). The
-        // island must still go away, so end it. The "ended" card is left alone.
+        // island must still go away, so end it. The "ended" card is left alone, and so is
+        // "Hey Doddy" listening that the running app just took back after the conversation.
         for activity in Activity<DoddyVoiceAttributes>.activities where !activity.content.state.isEnded {
+            if appIsHandlingIt && activity.content.state.isWakeMode { continue }
             await activity.end(nil, dismissalPolicy: .immediate)
         }
         return .result()

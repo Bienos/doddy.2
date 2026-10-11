@@ -21,9 +21,13 @@ struct DoddyApp: App {
         NoteReminderRouter.shared.reminders = noteReminders
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
-        _profiles = State(initialValue: ProfileStore(environment: environment))
+        let profiles = ProfileStore(environment: environment)
+        _profiles = State(initialValue: profiles)
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
+        // "Hey Doddy" (ADR-234) starts conversations with the same notes and profile.
+        WakeWordListener.shared.store = store
+        WakeWordListener.shared.profiles = profiles
     }
 
     var body: some Scene {
