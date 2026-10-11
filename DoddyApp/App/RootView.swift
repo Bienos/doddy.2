@@ -136,6 +136,7 @@ struct RootView: View {
                 if phase == .background {
                     WidgetSync.shared.refresh()
                     AppLock.shared.wentToBackground()
+                    QuickActions.install()
                 }
                 if phase == .active { AppLock.shared.cameBack() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.

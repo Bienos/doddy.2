@@ -12332,6 +12332,17 @@
         }
       }
     },
+    "Where I parked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miejsce parkowania"
+          }
+        }
+      }
+    },
     "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.": {
       "extractionState": "manual",
       "localizations": {

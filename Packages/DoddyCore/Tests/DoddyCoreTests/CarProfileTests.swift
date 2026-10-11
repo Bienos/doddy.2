@@ -48,3 +48,13 @@ final class CarProfileTests: XCTestCase {
         }
     }
 }
+
+/// Home Screen quick actions (ADR-331).
+final class QuickActionTests: XCTestCase {
+    func testParkingOnlyWithASpotAndTypesRoundTrip() {
+        XCTAssertEqual(QuickAction.shown(hasParkingSpot: false), [.talk, .newNote, .find])
+        XCTAssertEqual(QuickAction.shown(hasParkingSpot: true).last, .parking)
+        for action in QuickAction.allCases { XCTAssertEqual(QuickAction(rawValue: action.rawValue), action) }
+        XCTAssertNil(QuickAction(rawValue: "doddy.quick.deleteEverything"))
+    }
+}
