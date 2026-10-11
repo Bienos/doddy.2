@@ -1010,5 +1010,8 @@
  "Turn off this alarm?": "Wyłączyć ten budzik?",
  "A repeating alarm stops for every day, not just the next one.": "Powtarzający się budzik wyłącza się na wszystkie dni, nie tylko na najbliższy.",
  "Snoozed": "Drzemka",
- "Last updated %@. Changes from others arrive straight away.": "Ostatnia aktualizacja: %@. Zmiany innych pojawiają się od razu."
+ "Last updated %@. Changes from others arrive straight away.": "Ostatnia aktualizacja: %@. Zmiany innych pojawiają się od razu.",
+ "Added by %@": "Dodane przez: %@",
+ "Ticked by %@": "Odhaczone przez: %@",
+ "someone else": "ktoś inny"
 }

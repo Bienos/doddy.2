@@ -195,3 +195,45 @@ extension ListRepository {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
     }
 }
+
+// MARK: Who added or ticked an item (ADR-269)
+
+/// For one item on a shared list: the iCloud user who added it and who ticked it, as user
+/// record names. Kept in memory on this iPhone only; never sent to the voice agent.
+public struct SharedItemPeople: Equatable, Sendable {
+    public let addedBy: String?
+    public let doneBy: String?
+
+    public init(addedBy: String?, doneBy: String?) {
+        self.addedBy = addedBy
+        self.doneBy = doneBy
+    }
+}
+
+/// What a list row says under an item: only other people's names; your own changes need no label.
+public struct SharedItemLabel: Equatable, Sendable {
+    public let addedBy: String?
+    public let doneBy: String?
+
+    public init(addedBy: String?, doneBy: String?) {
+        self.addedBy = addedBy
+        self.doneBy = doneBy
+    }
+
+    public var isEmpty: Bool { addedBy == nil && doneBy == nil }
+
+    /// `me` is this user's record name; `names` maps record names to display names (from the
+    /// share's participants). Someone with no known name is "someone else", never guessed.
+    public static func make(_ people: SharedItemPeople?, isDone: Bool, me: String?, names: [String: String]) -> SharedItemLabel {
+        func name(_ id: String?) -> String? {
+            guard let id, !id.isEmpty, id != me, id != ListShare.currentUserPlaceholder else { return nil }
+            return names[id] ?? "someone else"
+        }
+        return SharedItemLabel(addedBy: name(people?.addedBy), doneBy: isDone ? name(people?.doneBy) : nil)
+    }
+}
+
+extension ListShare {
+    /// CloudKit's stand-in for "the current user" in record ids.
+    public static let currentUserPlaceholder = "__defaultOwner__"
+}

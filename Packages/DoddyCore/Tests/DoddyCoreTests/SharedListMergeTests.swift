@@ -86,3 +86,20 @@ final class SharedListDataFlowTests: XCTestCase {
         XCTAssertEqual(row(2)?.isActive, true)
     }
 }
+
+/// Who added or ticked an item on a shared list (ADR-269).
+final class SharedItemLabelTests: XCTestCase {
+    private let names = ["_marta": "Marta", "_tom": "Tom"]
+
+    func testOnlyOtherPeoplesChangesAreNamed() {
+        let mine = SharedItemLabel.make(SharedItemPeople(addedBy: "_me", doneBy: "_me"), isDone: true, me: "_me", names: names)
+        XCTAssertTrue(mine.isEmpty)
+        let theirs = SharedItemLabel.make(SharedItemPeople(addedBy: "_marta", doneBy: "_tom"), isDone: true, me: "_me", names: names)
+        XCTAssertEqual(theirs, SharedItemLabel(addedBy: "Marta", doneBy: "Tom"))
+        let unticked = SharedItemLabel.make(SharedItemPeople(addedBy: "_marta", doneBy: "_tom"), isDone: false, me: "_me", names: names)
+        XCTAssertNil(unticked.doneBy, "an open item has no ticker")
+        let unknown = SharedItemLabel.make(SharedItemPeople(addedBy: "_x", doneBy: nil), isDone: false, me: "_me", names: names)
+        XCTAssertEqual(unknown.addedBy, "someone else", "a name is never guessed")
+        XCTAssertTrue(SharedItemLabel.make(SharedItemPeople(addedBy: ListShare.currentUserPlaceholder, doneBy: nil), isDone: false, me: "_me", names: names).isEmpty)
+    }
+}

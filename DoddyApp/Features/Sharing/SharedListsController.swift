@@ -35,6 +35,18 @@ final class SharedListsController {
     /// Doddy comes to the front (the build has no push entitlement, or registering failed).
     private(set) var liveUpdates = false
 
+    /// Who added or ticked items on shared lists, and the people's names (ADR-269). Memory only,
+    /// refreshed at each sync; never sent to Doddy's voice.
+    private var people: [UUID: SharedItemPeople] = [:]
+    private var names: [String: String] = [:]
+    private var me: String?
+
+    /// What a list row says under an item of a shared list: other people's names only.
+    func label(for item: ListItem) -> SharedItemLabel {
+        guard links[item.listID] != nil else { return SharedItemLabel(addedBy: nil, doneBy: nil) }
+        return SharedItemLabel.make(people[item.id], isDone: item.isDone, me: me, names: names)
+    }
+
     private var syncAgain = false
     private let cloud = ListCloud.make()
 
@@ -164,6 +176,7 @@ final class SharedListsController {
                 problem = NSLocalizedString("Sign in to iCloud in iOS Settings to keep shared lists up to date.", comment: "")
                 return
             }
+            if me == nil { me = await cloud.myRecordName() }
             var failed = false
             for link in links.values.sorted(by: { $0.listID.uuidString < $1.listID.uuidString }) {
                 do {
@@ -206,13 +219,15 @@ final class SharedListsController {
             }
         }
         if result.merged != remote {
-            try await cloud.push(result.merged, over: zone, zoneID: zoneID, in: database)
+            try await cloud.push(result.merged, over: zone, zoneID: zoneID, in: database, me: me)
         }
         // Both sides read back before the merge is remembered as the last sync.
         await store.reload()
-        guard store.list(id: link.listID).map(SharedListState.init) == result.merged,
-              try await cloud.fetch(zoneID, in: database)?.state == result.merged
+        let back = try await cloud.fetch(zoneID, in: database)
+        guard store.list(id: link.listID).map(SharedListState.init) == result.merged, back?.state == result.merged
         else { throw SharingError.unconfirmed }
+        if let back { people.merge(back.people) { _, new in new } }
+        if let share = try? await cloud.existingShare(link) { names.merge(ListCloud.names(in: share)) { _, new in new } }
         let synced = ListShare(
             listID: link.listID, zoneName: link.zoneName, zoneOwner: link.zoneOwner, role: link.role,
             base: result.merged, syncedAt: .now)

@@ -397,6 +397,17 @@
         }
       }
     },
+    "Added by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodane przez: %@"
+          }
+        }
+      }
+    },
     "Adding to Reminders…": {
       "extractionState": "manual",
       "localizations": {
@@ -9527,6 +9538,17 @@
         }
       }
     },
+    "Ticked by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhaczone przez: %@"
+          }
+        }
+      }
+    },
     "Ticks one item on one of your Doddy lists. If it could be more than one item, nothing is ticked.": {
       "extractionState": "manual",
       "localizations": {
@@ -11096,6 +11118,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "brak"
+          }
+        }
+      }
+    },
+    "someone else": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ktoś inny"
           }
         }
       }

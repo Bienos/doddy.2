@@ -95,3 +95,13 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
   - never run against iCloud, so how fast silent notifications arrive (iOS throttles them) is unknown;
   - `didReceiveRemoteNotification` (async variant) hasn't been compiled;
   - there are no automated tests: the logic is CloudKit and UIKit calls only.
+
+## Part 3: who added or ticked an item (ADR-269, round 3)
+- **Writing:** when Doddy adds an item to a shared list, it writes `addedBy` (this user's iCloud user record name) on the record. When it ticks one, it writes `doneBy`; unticking clears it. Items added before this fall back to the record's creator.
+- **Names:** from the share's participants, in the short form, e.g. "Marta".
+- **On the list:**
+  - a row shows "Added by Marta · Ticked by Tom";
+  - only for other people: your own changes get no label;
+  - a person whose name isn't known is "someone else", never guessed.
+- **Where it's kept:** in memory on this iPhone, refreshed at each sync. It's not stored in the database and never sent to the voice agent, so `read_list` is unchanged.
+- **Tests:** `SharedItemLabelTests` (1). **NOT RUN:** never run against iCloud. Whether `nameComponents` is filled for participants who joined by link is unknown (if not, they show as "someone else").

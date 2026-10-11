@@ -280,10 +280,19 @@ struct ListDetailView: View {
             .accessibilityLabel(item.text)
             .accessibilityValue(item.isDone ? "Ticked" : "Not ticked")
             .accessibilityAddTraits(.isToggle)
-            Text(item.text)
-                .strikethrough(item.isDone)
-                .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
-                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.text)
+                    .strikethrough(item.isDone)
+                    .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                // Shared lists (ADR-269): who else added or ticked it, on this iPhone only.
+                let who = sharing.label(for: item)
+                if !who.isEmpty {
+                    Text(Self.whoText(who))
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .accessibilityHidden(true)
             Spacer()
         }
         .listRowBackground(Theme.canvas)
@@ -354,6 +363,15 @@ struct ListDetailView: View {
         } catch {
             errorMessage = SharingError.message(for: error)
         }
+    }
+
+    /// "Added by Marta · Ticked by Tom" (ADR-269).
+    static func whoText(_ label: SharedItemLabel) -> String {
+        func shown(_ name: String) -> String { name == "someone else" ? NSLocalizedString("someone else", comment: "") : name }
+        let label = SharedItemLabel(addedBy: label.addedBy.map(shown), doneBy: label.doneBy.map(shown))
+        return [label.addedBy.map { String(format: NSLocalizedString("Added by %@", comment: ""), $0) },
+         label.doneBy.map { String(format: NSLocalizedString("Ticked by %@", comment: ""), $0) }]
+            .compactMap { $0 }.joined(separator: " · ")
     }
 
     private func add(_ list: DoddyList) async {

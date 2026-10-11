@@ -60,6 +60,37 @@ struct ListCloud {
             }
             return SharedListState.validated(name: name, items: parsed)
         }
+
+        /// Who added and who ticked each item (ADR-269): the fields Doddy writes, else the
+        /// record's creator. User record names only; names come from the share.
+        var people: [UUID: SharedItemPeople] {
+            var result: [UUID: SharedItemPeople] = [:]
+            for record in items {
+                guard let id = UUID(uuidString: record.recordID.recordName) else { continue }
+                result[id] = SharedItemPeople(
+                    addedBy: record["addedBy"] as? String ?? record.creatorUserRecordID?.recordName,
+                    doneBy: record["doneBy"] as? String)
+            }
+            return result
+        }
+    }
+
+    /// This user's iCloud user record name, to write who added or ticked an item.
+    func myRecordName() async -> String? {
+        try? await container.userRecordID().recordName
+    }
+
+    /// Display names of the people on a share, by user record name (ADR-269). Shown on this
+    /// iPhone only.
+    static func names(in share: CKShare) -> [String: String] {
+        var names: [String: String] = [:]
+        for participant in share.participants {
+            guard let id = participant.userIdentity.userRecordID?.recordName,
+                  let components = participant.userIdentity.nameComponents else { continue }
+            let name = PersonNameComponentsFormatter.localizedString(from: components, style: .short)
+            if !name.isEmpty { names[id] = name }
+        }
+        return names
     }
 
     /// Everything in the zone. Nil when the zone is gone: sharing was stopped, or this user left
@@ -90,7 +121,7 @@ struct ListCloud {
 
     /// Makes iCloud hold exactly `state`, changing only what differs from `zone`. Every record
     /// must still be as fetched (`.ifServerRecordUnchanged`), all or nothing (`atomically`).
-    func push(_ state: SharedListState, over zone: Zone, zoneID: CKRecordZone.ID, in database: CKDatabase) async throws {
+    func push(_ state: SharedListState, over zone: Zone, zoneID: CKRecordZone.ID, in database: CKDatabase, me: String? = nil) async throws {
         var saving: [CKRecord] = []
         let list = zone.list ?? CKRecord(recordType: Self.listType, recordID: CKRecord.ID(recordName: Self.listRecordName, zoneID: zoneID))
         if list["name"] as? String != state.name {
@@ -99,9 +130,19 @@ struct ListCloud {
         }
         let existing = Dictionary(zone.items.map { ($0.recordID.recordName, $0) }, uniquingKeysWith: { first, _ in first })
         for item in state.items {
+            let isNew = existing[item.id.uuidString] == nil
             let record = existing[item.id.uuidString]
                 ?? CKRecord(recordType: Self.itemType, recordID: CKRecord.ID(recordName: item.id.uuidString, zoneID: zoneID))
-            if Self.write(item, to: record) { saving.append(record) }
+            let wasDone = record["doneAt"] as? Date != nil
+            if Self.write(item, to: record) {
+                // Who did it (ADR-269): the adder on a new item, the ticker when it gets ticked.
+                if let me {
+                    if isNew { record["addedBy"] = me }
+                    if item.doneAt != nil, !wasDone { record["doneBy"] = me }
+                }
+                if item.doneAt == nil { record["doneBy"] = nil }
+                saving.append(record)
+            }
         }
         let kept = Set(state.items.map(\.id.uuidString))
         let deleting = zone.items.map(\.recordID).filter { !kept.contains($0.recordName) }
