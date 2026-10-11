@@ -44,6 +44,20 @@ are free). The model passes search words only; it can't choose an endpoint (no d
 Setup (owner): create a Monid API key at app.monid.ai/access/api-keys, top up the wallet, set `MONID_API_KEY` in the
 server's environment (live mode). Without it the section shows "Not set up" and nothing runs.
 
+## Round 4 (2026-10-11): complete and move a Todoist task, read one email (ADR-294, ADR-295)
+- **`complete_todoist_task` and `move_todoist_task`** (writes, with a card):
+  - The server looks the task up in Todoist first (`TODOIST_GET_TASK2`). The card shows Todoist's own content and due, not the agent's words.
+  - The approval is bound to the arguments plus that task, and the task is looked up again right before the write.
+  - A missing or completed task is refused before any approval.
+  - "completed" is reported only on Composio's successful answer. "moved" is reported only with the due Todoist sent back; anything else is "unknown".
+- **`read_email`** (read, its own switch, off by default):
+  - reads the newest email matching the search: sender, subject, time and text, cut to 1,500 characters, with links, tags and invisible characters removed;
+  - the text is framed to the agent as information, never instructions;
+  - receipts keep no subject, sender or text.
+- **Task ids:** `list_todoist_tasks` now gives each task's id, for these two tools only.
+- **Capability guard:** allows exactly `TODOIST_CLOSE_TASK_V1` and `TODOIST_UPDATE_TASK`, in the catalog and its mock.
+- **Not verified:** these were tested against the mock only, never a real account. The slugs and shapes were read from Composio's schemas on 2026-10-11.
+
 ## How a request flows
 
 Voice agent (ElevenLabs) → client tool call → app (`VoiceSessionController.handleCloud`) → Doddy server

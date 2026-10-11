@@ -112,3 +112,22 @@ In order of risk:
 - **Photo list (ADR-286):** `PhotosPicker` with `loadTransferable(type: Data.self)`, same as photo notes. Low risk.
 - **Repeats and event details (ADR-281, ADR-282):** `EKRecurrenceRule(recurrenceWith:interval:daysOfTheWeek:…end:)` and `EKRecurrenceEnd(end:)`, read back via `recurrenceRules`. Low risk.
 - **Bulk card, offline note (ADR-280, ADR-289):** plain SwiftUI and `PendingAction` switches; the risk is a missed `switch` case in `VoiceView` or `VoiceSessionController`.
+
+### Round 4 (2026-10-11, ADR-291 to ADR-298): most likely to need a fix
+**First build: still BLOCKED.** There is no Xcode here, and Actions doesn't start jobs. In order of risk:
+- **Shared place (ADR-298):**
+  - In `ListCloud.setPlace`: CKRecord subscripts with `Double`, `Int` and `Bool` values, and `modifyRecords` with only a deletion.
+  - `SharedPlaceRow` uses `@Environment(NoteReminderStore.self)` inside `ListViews`' `List`.
+- **Ingredients card (ADR-296):** the new `PendingAction.ingredients` case with six associated values. Every `switch` in `VoiceView` and `VoiceSessionController` must still be exhaustive. Any one that Linux parsing can't check would fail here first.
+- **Parking (ADR-292):**
+  - `PlaceLocation.currentFix(within:)` returns a tuple from a `TaskGroup` of an optional tuple type.
+  - The parking card reuses `contactAction`.
+- **Reminder details (ADR-293):**
+  - `EKReminder.priority` is an `Int`.
+  - `eventStore.calendar(withIdentifier:)` and `calendars(for: .reminder)`.
+  - The `case .changeReminder(...) where draft.changesDetails` pattern comes before the general case.
+- **Weekly look-back (ADR-297):**
+  - the `weekday` in `UNCalendarNotificationTrigger` components;
+  - `Calendar.current.weekdaySymbols` in a `Picker`;
+  - `ForEach(week.doneByApp.indices, id: \.self)`.
+- **Currency (ADR-291):** `ExchangeRateClient` is an `actor` with a nonisolated `URLSession` delegate class. Same pattern as `AppHTTPTransport`, so low risk.

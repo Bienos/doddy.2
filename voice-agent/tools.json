@@ -271,7 +271,7 @@
         },
         "required": ["amount", "from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_9001m4nf3w1demytz6bvyxvyj756"}
     },
     {
       "type": "function",
@@ -433,7 +433,7 @@
         },
         "required": ["action"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 60}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_8001m4nf3xc5e2asz2rxpya9f102"}
     },
     {
       "type": "function",
@@ -488,7 +488,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_2901m4nf3yzbeeq9jy2hp5jhwzef"}
     },
     {
       "type": "function",
@@ -571,7 +571,7 @@
         },
         "required": ["task_id"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7101m4nf40ase7bsx8qa68ty4eh4"}
     },
     {
       "type": "function",
@@ -586,7 +586,7 @@
         },
         "required": ["task_id", "due"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0401m4nf41j9ex08e5ksevh06rht"}
     },
     {
       "type": "function",
@@ -654,7 +654,7 @@
         },
         "required": ["list", "dish", "items"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m4nf430kezd9s0fpxznfkppr"}
     },
     {
       "type": "function",
