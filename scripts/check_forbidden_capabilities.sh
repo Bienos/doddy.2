@@ -5,7 +5,7 @@
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
 #    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
-#    (ADR-291), which downloads only the ECB's public rates file,
+#    (ADR-300), which downloads only the ECB's public rates file,
 #  - the system authentication browser is used only by Connected Apps,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
@@ -30,7 +30,7 @@
 #    reminders, contacts and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the reviewed ones (Gmail draft; Todoist add, complete and move,
-#    ADR-294), no proxy execution,
+#    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
 #    can never pick another paid endpoint).
 # Exit 0 = clean, 1 = violation.
@@ -48,7 +48,7 @@ openai_voice=DoddyApp/Features/Voice/OpenAIRealtimeSession.swift
 network_file=DoddyApp/Infrastructure/URLSessionTransport.swift
 assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
-# The ECB's public daily rates file, one fixed address (ADR-291).
+# The ECB's public daily rates file, one fixed address (ADR-300).
 rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 network_only='URLSession([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
@@ -96,7 +96,7 @@ fi
 if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:"; then
   echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $openai_voice and $rates_client." >&2; status=1
 fi
-# The rates client may only fetch the one fixed ECB file (ADR-291), never an address it is given.
+# The rates client may only fetch the one fixed ECB file (ADR-300), never an address it is given.
 if [ -f "$rates_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$rates_client" | code_only; then
   echo "FAIL: $rates_client may only fetch ExchangeRateSource.url." >&2; status=1
 fi
@@ -157,7 +157,7 @@ if [ -d "$backend_src" ]; then
   if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src"; then
     echo "FAIL: calendar write tool referenced in the backend." >&2; status=1
   fi
-  # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT, TODOIST_CREATE_TASK and, since ADR-294,
+  # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT, TODOIST_CREATE_TASK and, since ADR-303,
   # TODOIST_CLOSE_TASK_V1 and TODOIST_UPDATE_TASK (each needs a fresh on-screen approval bound to the
   # task Todoist returned). Anything that sends, deletes, shares, edits or labels is refused here, and
   # the two Todoist writes may appear only in the catalog and its mock.

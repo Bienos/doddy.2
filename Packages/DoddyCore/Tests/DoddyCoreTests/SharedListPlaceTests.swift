@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// A shared list's place reminder for everyone (ADR-298).
+/// A shared list's place reminder for everyone (ADR-307).
 final class SharedListPlaceTests: XCTestCase {
     private func place(_ lat: Double, arrive: Bool = true) throws -> ReminderPlace {
         try ReminderPlace(name: "Lidl", latitude: lat, longitude: 21.0, radiusMeters: 200, onArrival: arrive)

@@ -306,7 +306,7 @@ public struct ReminderSnapshot: Equatable, Sendable {
     public let isCompleted: Bool
     /// The repeat as read back (ADR-282); nil for none, or a rule Doddy doesn't write.
     public let repeats: CalendarRepeat?
-    /// As Reminders shows it (ADR-293).
+    /// As Reminders shows it (ADR-302).
     public let priority: ReminderPriority
     /// The list's identifier on this iPhone; nil when not read.
     public let listID: String?

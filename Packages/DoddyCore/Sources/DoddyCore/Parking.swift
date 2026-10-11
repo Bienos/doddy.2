@@ -1,6 +1,6 @@
 import Foundation
 
-// "Where did I park?" (ADR-292). "Remember where I parked" reads one position, only then, with
+// "Where did I park?" (ADR-301). "Remember where I parked" reads one position, only then, with
 // "While Using" location (place reminders' reader, ADR-196), and shows it on a card; the spot is
 // kept only after Save, on this iPhone. "Where's my car?" answers with when it was saved, the
 // user's note, and roughly how far it is; the card opens it in Apple Maps on a tap. The voice

@@ -113,21 +113,21 @@ In order of risk:
 - **Repeats and event details (ADR-281, ADR-282):** `EKRecurrenceRule(recurrenceWith:interval:daysOfTheWeek:…end:)` and `EKRecurrenceEnd(end:)`, read back via `recurrenceRules`. Low risk.
 - **Bulk card, offline note (ADR-280, ADR-289):** plain SwiftUI and `PendingAction` switches; the risk is a missed `switch` case in `VoiceView` or `VoiceSessionController`.
 
-### Round 4 (2026-10-11, ADR-291 to ADR-298): most likely to need a fix
+### Round 4 (2026-10-11, ADR-300 to ADR-307): most likely to need a fix
 **First build: still BLOCKED.** There is no Xcode here, and Actions doesn't start jobs. In order of risk:
-- **Shared place (ADR-298):**
+- **Shared place (ADR-307):**
   - In `ListCloud.setPlace`: CKRecord subscripts with `Double`, `Int` and `Bool` values, and `modifyRecords` with only a deletion.
   - `SharedPlaceRow` uses `@Environment(NoteReminderStore.self)` inside `ListViews`' `List`.
-- **Ingredients card (ADR-296):** the new `PendingAction.ingredients` case with six associated values. Every `switch` in `VoiceView` and `VoiceSessionController` must still be exhaustive. Any one that Linux parsing can't check would fail here first.
-- **Parking (ADR-292):**
+- **Ingredients card (ADR-305):** the new `PendingAction.ingredients` case with six associated values. Every `switch` in `VoiceView` and `VoiceSessionController` must still be exhaustive. Any one that Linux parsing can't check would fail here first.
+- **Parking (ADR-301):**
   - `PlaceLocation.currentFix(within:)` returns a tuple from a `TaskGroup` of an optional tuple type.
   - The parking card reuses `contactAction`.
-- **Reminder details (ADR-293):**
+- **Reminder details (ADR-302):**
   - `EKReminder.priority` is an `Int`.
   - `eventStore.calendar(withIdentifier:)` and `calendars(for: .reminder)`.
   - The `case .changeReminder(...) where draft.changesDetails` pattern comes before the general case.
-- **Weekly look-back (ADR-297):**
+- **Weekly look-back (ADR-306):**
   - the `weekday` in `UNCalendarNotificationTrigger` components;
   - `Calendar.current.weekdaySymbols` in a `Picker`;
   - `ForEach(week.doneByApp.indices, id: \.self)`.
-- **Currency (ADR-291):** `ExchangeRateClient` is an `actor` with a nonisolated `URLSession` delegate class. Same pattern as `AppHTTPTransport`, so low risk.
+- **Currency (ADR-300):** `ExchangeRateClient` is an `actor` with a nonisolated `URLSession` delegate class. Same pattern as `AppHTTPTransport`, so low risk.

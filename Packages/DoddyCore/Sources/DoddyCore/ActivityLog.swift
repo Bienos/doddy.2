@@ -7,7 +7,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
     case web
-    /// The ECB's public rates file (ADR-291).
+    /// The ECB's public rates file (ADR-300).
     case exchangeRates
 
     public var title: String {
@@ -153,7 +153,7 @@ public struct ActivityRequest: Equatable, Sendable {
             var parts: [String] = []
             if draft.markDone { parts.append("mark done") }
             if let due = draft.newDue { parts.append("due \(ReminderText.due(due))") }
-            // ADR-293: which details, not the note's text.
+            // ADR-302: which details, not the note's text.
             if draft.addNote != nil { parts.append("add a note") }
             if let priority = draft.priority { parts.append(priority.text) }
             if let list = draft.listName { parts.append("to the list “\(list)”") }
@@ -175,7 +175,7 @@ public struct ActivityRequest: Equatable, Sendable {
             // The row being undone records what happened (ActivityLog.undid), not a new row.
             return nil
         case .parkingSpot(let action):
-            // No coordinates in the log, only what was asked (ADR-292).
+            // No coordinates in the log, only what was asked (ADR-301).
             switch action {
             case .save: return ActivityRequest(app: .memories, title: "Save parking spot", detail: nil, isLookup: false)
             case .find: return ActivityRequest(app: .memories, title: "Found parking spot", detail: nil, isLookup: true)
@@ -184,7 +184,7 @@ public struct ActivityRequest: Equatable, Sendable {
         case .addIngredients(let proposal):
             return ActivityRequest(app: .memories, title: "Add ingredients to a list", detail: "“\(proposal.list)” · \(proposal.dish)", isLookup: false)
         case .convertCurrency(let request):
-            // Only that the rates file was fetched; the amount stays in the conversation (ADR-291).
+            // Only that the rates file was fetched; the amount stays in the conversation (ADR-300).
             return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
@@ -307,7 +307,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
         // A delete, checked by looking again (ADR-259 on the default line).
         if text.hasPrefix("deleted:") { return (.done, nil) }
-        // Round 4 (ADR-292, ADR-294): a parking spot removed and checked; a Todoist task moved,
+        // Round 4 (ADR-301, ADR-303): a parking spot removed and checked; a Todoist task moved,
         // with the due Todoist sent back.
         if text.hasPrefix("cleared:") || text.hasPrefix("moved: Todoist task") { return (.done, nil) }
         if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }

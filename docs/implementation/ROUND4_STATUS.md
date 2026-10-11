@@ -1,20 +1,20 @@
-# Round 4: status (ADR-291 to ADR-298)
+# Round 4: status (ADR-300 to ADR-307)
 Date: 2026-10-11. Owner: "do all of them" (round 4). Decisions are in `DECISIONS.md` › Round 4. Everything here is written and checked on Linux only. **No Xcode build, no device.**
 
 | # | Item | Result |
 |---|---|---|
 | 1 | Join `claude/affectionate-edison-ktc6i6` | Already merged by another session (PR #27). Its follow-ups (ADR-277, ADR-278) are still on that branch. |
-| 2 | Currency conversion | ADR-291, below |
-| 3 | "Where did I park?" | ADR-292, below |
-| 4 | Reminder details by voice | ADR-293, below |
-| 5 | Todoist: complete and move | ADR-294, below |
-| 6 | Read one whole email | ADR-295, below |
-| 7 | Recipe to shopping list | ADR-296, below |
-| 8 | Weekly look-back | ADR-297, below |
+| 2 | Currency conversion | ADR-300, below |
+| 3 | "Where did I park?" | ADR-301, below |
+| 4 | Reminder details by voice | ADR-302, below |
+| 5 | Todoist: complete and move | ADR-303, below |
+| 6 | Read one whole email | ADR-304, below |
+| 7 | Recipe to shopping list | ADR-305, below |
+| 8 | Weekly look-back | ADR-306, below |
 | 9 | "Talk to Doddy" control | Already existed: `DoddyWidgets/TalkToDoddyControl.swift` (iOS 18, Control Center, Lock Screen, Action Button). Nothing changed. |
-| 10 | A shared list's place for everyone | ADR-298, below |
+| 10 | A shared list's place for everyone | ADR-307, below |
 
-## ADR-291 Currency conversion
+## ADR-300 Currency conversion
 - **Ships:**
   - `convert_currency` (amount, from, to).
   - The app downloads the ECB's daily reference-rate file itself: one fixed address, ephemeral session, no cookies, redirects refused, 64 KB cap.
@@ -29,7 +29,7 @@ Date: 2026-10-11. Owner: "do all of them" (round 4). Decisions are in `DECISIONS
 - **Tests:** `CurrencyTests` (7).
 - **NOT RUN:** a real download from an iPhone, and the ECB's exact XML on the day (the parser accepts single or double quotes).
 
-## ADR-292 "Where did I park?"
+## ADR-301 "Where did I park?"
 - **Ships:** `parking_spot` save, find and clear.
   - **Save:** one position (≤ 100 m uncertainty, 15 s at most), a card, then Save keeps it in UserDefaults and reads it back.
   - **Find:** the reply has the time, the note and a rounded distance, never coordinates. The card shows Open in Maps.
@@ -40,7 +40,7 @@ Date: 2026-10-11. Owner: "do all of them" (round 4). Decisions are in `DECISIONS
 - **Tests:** `ParkingTests` (6).
 - **NOT RUN:** location on a device, underground car parks (expect "couldn't get a precise enough position"), and Maps opening.
 
-## ADR-293 Reminder details by voice
+## ADR-302 Reminder details by voice
 - **Ships:**
   - `change_reminder` takes `add_note`, `priority` and `move_to_list`, alone or with `new_due`.
   - The list is matched against `DeviceConnections.reminderLists()`, writable lists only.
@@ -53,7 +53,7 @@ Date: 2026-10-11. Owner: "do all of them" (round 4). Decisions are in `DECISIONS
 - **Tests:** `ReminderDetailsTests` (7).
 - **NOT RUN:** EventKit. In particular, whether moving a reminder between an iCloud list and a local list keeps its identifier: if it doesn't, the read-back reports "unknown", never "done".
 
-## ADR-294 and ADR-295 Todoist complete and move; read one email
+## ADR-303 and ADR-304 Todoist complete and move; read one email
 - **Backend (`backend/src/tools`):**
   - `complete_todoist_task`, `move_todoist_task` and `read_email`.
   - An optional `resolve` lookup. `prepare` is now async; the approval is bound to the arguments plus the looked-up task, which is looked up again before the write.
@@ -67,7 +67,7 @@ Date: 2026-10-11. Owner: "do all of them" (round 4). Decisions are in `DECISIONS
   - what Composio returns for an unknown task id (assumed `successful: false` with "not found"; anything else is treated as an error, never as not found);
   - whether `messageText` arrives with `verbose: true`.
 
-## ADR-296 Recipe to shopping list
+## ADR-305 Recipe to shopping list
 - **Ships:**
   - `add_ingredients` gives a card with ticks. Items already open on the list start unticked.
   - "Add N" adds only the ticked items through the store, read back, with Undo in What Doddy did.
@@ -75,7 +75,7 @@ Date: 2026-10-11. Owner: "do all of them" (round 4). Decisions are in `DECISIONS
 - **Files:** `Ingredients.swift`; the controller and `VoiceView`.
 - **Tests:** `IngredientsTests` (4, including the "What Doddy did" rows for this round's replies).
 
-## ADR-297 Weekly look-back
+## ADR-306 Weekly look-back
 - **Ships:**
   - Settings › Weekly look-back: off, plus day and time; read back from iOS.
   - The notification says only "Your week with Doddy". Its screen shows notes (up to 5, the user's words), ticked items, checked changes by app (undone and unsure ones excluded) and, if connected, the next 7 days.
@@ -86,7 +86,7 @@ Date: 2026-10-11. Owner: "do all of them" (round 4). Decisions are in `DECISIONS
 - **Tests:** `WeeklyLookBackTests` (3).
 - **NOT RUN:** the weekly notification on a device.
 
-## ADR-298 A shared list's place for everyone
+## ADR-307 A shared list's place for everyone
 - **Ships:**
   - **Under a shared list's reminder:**
     - **Share this place with everyone on the list:** one `DoddyListPlace` record, read back.

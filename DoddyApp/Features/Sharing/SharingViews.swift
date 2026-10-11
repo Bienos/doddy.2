@@ -145,7 +145,7 @@ struct SharedListStatusRow: View {
     }
 }
 
-/// Under a shared list's reminder (ADR-298): share this iPhone's place with everyone on the list,
+/// Under a shared list's reminder (ADR-307): share this iPhone's place with everyone on the list,
 /// or, when someone else shared one, be reminded there too. Nothing is shared or set until a tap.
 struct SharedPlaceRow: View {
     let list: DoddyList

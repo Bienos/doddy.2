@@ -1,6 +1,6 @@
 import Foundation
 
-// Currency conversion by voice (ADR-291). The agent passes an amount and two currency codes; the
+// Currency conversion by voice (ADR-300). The agent passes an amount and two currency codes; the
 // app converts with the European Central Bank's euro reference rates, published once a working
 // day as one public file. The iPhone downloads that file itself: nothing about the user is sent
 // (no account, no key, no amount), only an ordinary request for the file. The answer always gives

@@ -68,7 +68,7 @@ final class PlaceLocation: NSObject, CLLocationManagerDelegate {
     }
 
     /// One position at least as sure as `meters`, with how sure iOS was, or `nil` after 15
-    /// seconds. Read once, only when asked (a place reminder, or saving a parking spot, ADR-292).
+    /// seconds. Read once, only when asked (a place reminder, or saving a parking spot, ADR-301).
     func currentFix(within meters: Double) async -> (coordinate: PlaceCoordinate, accuracy: Double)? {
         await withTaskGroup(of: (coordinate: PlaceCoordinate, accuracy: Double)?.self) { group in
             group.addTask {

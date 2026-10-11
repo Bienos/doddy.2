@@ -1,19 +1,19 @@
-# Round 4 report: "do all of them" (2026-10-11, ADR-291 to ADR-298)
+# Round 4 report: "do all of them" (2026-10-11, ADR-300 to ADR-307)
 Branch `claude/hopeful-fermat-1a63x0`, restarted from `claude/loving-dirac-uuxoux` after PR #34 merged. The owner's list of ten. Details are in `ROUND4_STATUS.md`; decisions are in `DECISIONS.md` › Round 4.
 
 ## Outcome per item
 | # | Item | Outcome |
 |---|---|---|
 | 1 | Join affectionate-edison | **Already done** by another session (PR #27). Its follow-ups (ADR-277, ADR-278) are still on that branch. |
-| 2 | Currency conversion | ADR-291, written and checked on Linux |
-| 3 | "Where did I park?" | ADR-292, written and checked on Linux |
-| 4 | Reminder details by voice | ADR-293, written and checked on Linux |
-| 5 | Todoist complete and move | ADR-294: backend tests pass (mock); the app is wired |
-| 6 | Read one whole email | ADR-295: backend tests pass (mock); off by default |
-| 7 | Recipe to shopping list | ADR-296, written and checked on Linux |
-| 8 | Weekly look-back | ADR-297, written and checked on Linux |
+| 2 | Currency conversion | ADR-300, written and checked on Linux |
+| 3 | "Where did I park?" | ADR-301, written and checked on Linux |
+| 4 | Reminder details by voice | ADR-302, written and checked on Linux |
+| 5 | Todoist complete and move | ADR-303: backend tests pass (mock); the app is wired |
+| 6 | Read one whole email | ADR-304: backend tests pass (mock); off by default |
+| 7 | Recipe to shopping list | ADR-305, written and checked on Linux |
+| 8 | Weekly look-back | ADR-306, written and checked on Linux |
 | 9 | "Talk to Doddy" control | **Already existed** (`TalkToDoddyControl`, iOS 18). I proposed it without checking first; nothing was changed. |
-| 10 | Shared list place for everyone | ADR-298, written and checked on Linux |
+| 10 | Shared list place for everyone | ADR-307, written and checked on Linux |
 
 ## Tests actually run
 - `scripts/ci.sh --core-only` on Linux (Swift 6.2.1): **RESULT: PASS for core-only scope; iOS app NOT verified**. It covers:

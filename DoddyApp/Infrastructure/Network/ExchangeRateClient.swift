@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// Downloads the European Central Bank's daily euro reference rates (ADR-291), the one public
+/// Downloads the European Central Bank's daily euro reference rates (ADR-300), the one public
 /// file at `ExchangeRateSource.url`. The request carries nothing about the user: no account, no
 /// key, no amount. Ephemeral session, no cookies, redirects refused, a size cap. The last good
 /// rates are kept on this iPhone (UserDefaults) so a conversion without a connection can still

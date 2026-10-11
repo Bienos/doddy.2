@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Recipe to shopping list (ADR-296) and the "What Doddy did" rows of round 4's replies.
+/// Recipe to shopping list (ADR-305) and the "What Doddy did" rows of round 4's replies.
 final class IngredientsTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 

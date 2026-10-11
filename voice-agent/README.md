@@ -181,7 +181,7 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
 
 
-**Applied to the live agent 2026-10-11 (ADR-291 to ADR-296): round 4.**
+**Applied to the live agent 2026-10-11 (ADR-300 to ADR-305): round 4.**
 - **Re-read first:** version `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` (43 tools), unchanged since round 3. `instructions.md`, which includes the affectionate-edison lines merged in PR #27, matched it except for the order of one sentence.
 - **New client tools:**
   - `convert_currency` (`tool_9001m4nf3w1demytz6bvyxvyj756`)

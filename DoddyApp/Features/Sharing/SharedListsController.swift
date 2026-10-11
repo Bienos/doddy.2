@@ -38,7 +38,7 @@ final class SharedListsController {
     /// Who added or ticked items on shared lists, and the people's names (ADR-285). Memory only,
     /// refreshed at each sync; never sent to Doddy's voice.
     private var people: [UUID: SharedItemPeople] = [:]
-    /// The place someone shared for each shared list (ADR-298), as read at the last sync.
+    /// The place someone shared for each shared list (ADR-307), as read at the last sync.
     private(set) var places: [UUID: SharedListPlace] = [:]
     private var names: [String: String] = [:]
     private var me: String?
@@ -59,7 +59,7 @@ final class SharedListsController {
 
     func isShared(_ listID: UUID) -> ListShare? { links[listID] }
 
-    /// What the list screen offers about the list's shared place (ADR-298).
+    /// What the list screen offers about the list's shared place (ADR-307).
     func placeOffer(for listID: UUID, mine: ReminderPlace?) -> SharedPlaceOffer {
         SharedPlaceOffer.make(isShared: links[listID] != nil, shared: places[listID], mine: mine, me: me, names: names)
     }

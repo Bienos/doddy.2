@@ -1,6 +1,6 @@
 import Foundation
 
-// The weekly look-back (ADR-297). Off by default. Once a week, on the day and at the time the
+// The weekly look-back (ADR-306). Off by default. Once a week, on the day and at the time the
 // user picks (Sunday 18:00 to start), a notification says only "Your week with Doddy". Its screen
 // is built on this iPhone from what is already here: the notes saved in the last seven days, list
 // items ticked off, changes Doddy made and checked ("What Doddy did", done only), and, if Calendar

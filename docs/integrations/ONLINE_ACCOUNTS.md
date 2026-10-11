@@ -44,7 +44,7 @@ are free). The model passes search words only; it can't choose an endpoint (no d
 Setup (owner): create a Monid API key at app.monid.ai/access/api-keys, top up the wallet, set `MONID_API_KEY` in the
 server's environment (live mode). Without it the section shows "Not set up" and nothing runs.
 
-## Round 4 (2026-10-11): complete and move a Todoist task, read one email (ADR-294, ADR-295)
+## Round 4 (2026-10-11): complete and move a Todoist task, read one email (ADR-303, ADR-304)
 - **`complete_todoist_task` and `move_todoist_task`** (writes, with a card):
   - The server looks the task up in Todoist first (`TODOIST_GET_TASK2`). The card shows Todoist's own content and due, not the agent's words.
   - The approval is bound to the arguments plus that task, and the task is looked up again right before the write.

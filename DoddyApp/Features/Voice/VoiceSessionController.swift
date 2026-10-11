@@ -71,9 +71,9 @@ final class VoiceSessionController {
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
         /// "Undo that" (ADR-271): the newest undoable change from this conversation, from What Doddy did.
         case undo(toolCallID: String, entry: ActivityEntry)
-        /// "Save your parking spot here?" (ADR-292): the position read just now, and the user's note.
+        /// "Save your parking spot here?" (ADR-301): the position read just now, and the user's note.
         case parking(toolCallID: String, spot: ParkingSpot)
-        /// A dish's ingredients with ticks (ADR-296); `alreadyOpen` start unticked.
+        /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
 
         var toolCallID: String {
@@ -157,7 +157,7 @@ final class VoiceSessionController {
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
-    /// The saved parking spot, shown with Open in Maps after "where did I park?" (ADR-292).
+    /// The saved parking spot, shown with Open in Maps after "where did I park?" (ADR-301).
     private(set) var parkingCard: ParkingSpot?
     private(set) var reminderStatus: ReminderStatus? {
         didSet {
@@ -813,7 +813,7 @@ final class VoiceSessionController {
         case .undo(let id, let entry):
             await reply(id, await undoFromVoice(entry))
         case .ingredients(let id, let listID, let listName, let dish, let items, _):
-            // Only the ticked ones, through the same add as add_to_list (ADR-296).
+            // Only the ticked ones, through the same add as add_to_list (ADR-305).
             let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
             let leftOut = items.indices.filter { ingredientsUnticked.contains($0) }.map { items[$0] }
             ingredientsUnticked = []
@@ -833,10 +833,10 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
         case .parking(let id, let spot):
-            // Kept on this iPhone, then read back (ADR-292).
+            // Kept on this iPhone, then read back (ADR-301).
             await reply(id, ParkingStore.save(spot) ? VoiceToolReply.parkingSaved(spot, now: Date(), calendar: .current) : VoiceToolReply.parkingNotSaved)
         case .changeReminder(let id, let reminder, let draft) where draft.changesDetails:
-            // A note, priority or list (ADR-293): one save, read back. Undo isn't offered for these.
+            // A note, priority or list (ADR-302): one save, read back. Undo isn't offered for these.
             await reply(id, changeReminderDetails(reminder, draft))
         case .changeReminder(let id, let reminder, let draft):
             let undo = ActivityUndo.changedReminder(
@@ -1647,7 +1647,7 @@ final class VoiceSessionController {
             propose(.ingredients(toolCallID: call.toolCallId, listID: list.id, listName: list.name, dish: proposal.dish,
                                  items: proposal.items, alreadyOpen: open), toolCallID: call.toolCallId)
         case .convertCurrency(let request):
-            // The ECB's public rates file, fetched by the app (ADR-291); the last rates kept are
+            // The ECB's public rates file, fetched by the app (ADR-300); the last rates kept are
             // used, with their date, when newer ones can't be fetched.
             let found = await ExchangeRateClient.shared.rates()
             await reply(call.toolCallId, VoiceToolReply.currency(request, rates: found.rates, isLastKnown: found.isLastKnown))
@@ -2044,7 +2044,7 @@ final class VoiceSessionController {
 
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
     /// call is left without an answer.
-    /// Parking (ADR-292). Location is read once, only for "save" and, if location is already
+    /// Parking (ADR-301). Location is read once, only for "save" and, if location is already
     /// allowed, for the distance on "find"; the agent hears no coordinates.
     private func handleParking(_ action: ParkingAction, toolCallID: String) async {
         switch action {
@@ -2175,7 +2175,7 @@ final class VoiceSessionController {
             return
         }
         var draft = draft
-        // The list the user named (ADR-293): exactly one of their Reminders lists, or nothing.
+        // The list the user named (ADR-302): exactly one of their Reminders lists, or nothing.
         if let name = draft.listName {
             let lists = devices.reminderLists()
             switch ReminderDetails.matchList(name, in: lists) {
@@ -2278,7 +2278,7 @@ final class VoiceSessionController {
     /// Items the user unticked on the several-changes card. Everything starts ticked.
     private(set) var bulkUnticked: Set<String> = []
 
-    /// Ingredients the user unticked on the card (ADR-296), by position.
+    /// Ingredients the user unticked on the card (ADR-305), by position.
     private(set) var ingredientsUnticked: Set<Int> = []
 
     func toggleIngredient(_ index: Int) {

@@ -1,6 +1,6 @@
 import Foundation
 
-// Recipe to shopping list (ADR-296). "Add what I need for lasagne to my shopping list": the agent
+// Recipe to shopping list (ADR-305). "Add what I need for lasagne to my shopping list": the agent
 // proposes the ingredients from its own knowledge, so they are only a suggestion. One card lists
 // them with a tick each; anything already open on the list starts unticked and says so. The user
 // unticks what they have and taps once; only the ticked ones are added, through the same add as

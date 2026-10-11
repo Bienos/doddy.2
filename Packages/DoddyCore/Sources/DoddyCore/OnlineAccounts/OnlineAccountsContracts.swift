@@ -126,10 +126,10 @@ public enum CloudToolName {
     public static let searchNotion = "search_notion"
     public static let listTodoistTasks = "list_todoist_tasks"
     public static let addTodoistTask = "add_todoist_task"
-    /// Todoist complete and move (ADR-294): the card shows the task as Todoist has it.
+    /// Todoist complete and move (ADR-303): the card shows the task as Todoist has it.
     public static let completeTodoistTask = "complete_todoist_task"
     public static let moveTodoistTask = "move_todoist_task"
-    /// One whole email, the newest that matches, when the user asks (ADR-295). Off until switched on.
+    /// One whole email, the newest that matches, when the user asks (ADR-304). Off until switched on.
     public static let readEmail = "read_email"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"

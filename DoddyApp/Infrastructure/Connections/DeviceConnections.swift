@@ -398,7 +398,7 @@ final class DeviceConnections {
             guard !reminder.isCompleted else { return .changedElsewhere }
             moveDue(of: reminder, from: before.due, to: newDue)
         case .details(let newDue, let details):
-            // ADR-293: the priority and list must also still be as the card showed them.
+            // ADR-302: the priority and list must also still be as the card showed them.
             guard !reminder.isCompleted, ReminderPriority.from(eventKit: reminder.priority) == before.priority,
                   before.listID == nil || reminder.calendar?.calendarIdentifier == before.listID else { return .changedElsewhere }
             if let newDue { moveDue(of: reminder, from: before.due, to: newDue) }
@@ -492,7 +492,7 @@ final class DeviceConnections {
             listID: reminder.calendar?.calendarIdentifier)
     }
 
-    /// The Reminders lists Doddy may move a reminder to (ADR-293): names and identifiers only.
+    /// The Reminders lists Doddy may move a reminder to (ADR-302): names and identifiers only.
     func reminderLists() -> [ReminderListRef] {
         guard access(for: .reminders) == .granted else { return [] }
         return eventStore.calendars(for: .reminder)

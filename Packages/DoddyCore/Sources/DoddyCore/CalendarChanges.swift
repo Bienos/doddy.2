@@ -46,7 +46,7 @@ public struct ReminderChangeDraft: Equatable, Sendable {
     public let title: String
     public let newDue: ReminderDue?
     public let markDone: Bool
-    /// A line to add at the end of the notes (ADR-293).
+    /// A line to add at the end of the notes (ADR-302).
     public let addNote: String?
     public let priority: ReminderPriority?
     /// The Reminders list the user named; matched on the iPhone into `toList`.
@@ -65,7 +65,7 @@ public struct ReminderChangeDraft: Equatable, Sendable {
         self.toList = toList
     }
 
-    /// The details change as the card shows it (ADR-293); empty for a due or done alone.
+    /// The details change as the card shows it (ADR-302); empty for a due or done alone.
     public var details: ReminderDetailsChange { ReminderDetailsChange(addNote: addNote, priority: priority, toList: toList) }
     public var changesDetails: Bool { addNote != nil || priority != nil || listName != nil }
 }
@@ -104,7 +104,7 @@ public enum ReminderChange: Equatable, Sendable {
     case complete
     /// Undo of a completion: the reminder is open again.
     case reopen
-    /// A note, priority or list, with a new due or nil to keep it (ADR-293), in one save.
+    /// A note, priority or list, with a new due or nil to keep it (ADR-302), in one save.
     case details(newDue: ReminderDue?, ReminderDetailsChange)
 }
 
@@ -363,7 +363,7 @@ extension VoiceToolRequest {
     }
 
     /// title (exact), and done: true on its own, or any of new_due, add_note, priority and
-    /// move_to_list (ADR-293).
+    /// move_to_list (ADR-302).
     static func parseReminderChange(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
         guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
         let done = args.flag("done")

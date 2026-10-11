@@ -479,7 +479,7 @@ struct VoiceView: View {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
             }
-            // ADR-293: each detail as it is now and as it will be.
+            // ADR-302: each detail as it is now and as it will be.
             if let line = draft.addNote {
                 Label("Add to the notes: “\(line)”", systemImage: "note.text")
             }
@@ -556,7 +556,7 @@ struct VoiceView: View {
                     .foregroundStyle(Theme.secondaryText)
             }
         case .ingredients(_, _, let listName, let dish, let items, let alreadyOpen):
-            // ADR-296: Doddy's suggestion; the user unticks what they have.
+            // ADR-305: Doddy's suggestion; the user unticks what they have.
             Text("Add these to \(listName)?")
                 .font(.headline)
             Text("Doddy's suggestion for \(dish). Untick what you already have.")
@@ -579,7 +579,7 @@ struct VoiceView: View {
                 .accessibilityAddTraits(controller.ingredientsUnticked.contains(index) ? [] : .isSelected)
             }
         case .parking(_, let spot):
-            // ADR-292: where the iPhone is now, kept only on Save, on this iPhone.
+            // ADR-301: where the iPhone is now, kept only on Save, on this iPhone.
             Text("Save your parking spot here?")
                 .font(.headline)
             Text("Where your iPhone is now, to within about \(Int(spot.accuracyMeters.rounded())) m.")
@@ -773,7 +773,7 @@ struct VoiceView: View {
         if case .plan = pending { return controller.planTicked.isEmpty }
         // Several changes (ADR-280): nothing ticked, nothing to confirm.
         if case .bulk(_, let items, _, _) = pending { return items.allSatisfy { controller.bulkUnticked.contains($0.id) } }
-        // Ingredients (ADR-296): nothing ticked, nothing to add.
+        // Ingredients (ADR-305): nothing ticked, nothing to add.
         if case .ingredients(_, _, _, _, let items, _) = pending { return controller.ingredientsUnticked.count >= items.count }
         return false
     }
@@ -1065,7 +1065,7 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    /// "Where did I park?" (ADR-292): when it was saved and the note; Maps opens only on a tap.
+    /// "Where did I park?" (ADR-301): when it was saved and the note; Maps opens only on a tap.
     private func parkingCard(_ spot: ParkingSpot, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Your parking spot")

@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// The one parking spot kept on this iPhone (ADR-292), in the app's own preferences. Every write
+/// The one parking spot kept on this iPhone (ADR-301), in the app's own preferences. Every write
 /// is read back before Doddy says it happened.
 enum ParkingStore {
     private static var defaults: UserDefaults { .standard }

@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import UserNotifications
 
-/// Puts the weekly look-back's notification in iOS and reads it back (ADR-297). The notification
+/// Puts the weekly look-back's notification in iOS and reads it back (ADR-306). The notification
 /// says only "Your week with Doddy · A short look back, when you like.".
 enum WeeklyLookBackScheduler {
     enum Outcome: Equatable { case scheduled, off, needsPermission, failed }

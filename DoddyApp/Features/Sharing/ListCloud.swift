@@ -14,7 +14,7 @@ struct ListCloud {
     static let listType = "DoddyList"
     static let itemType = "DoddyListItem"
     static let listRecordName = "list"
-    /// A place someone shared for the list's reminder (ADR-298): one record, apart from the list
+    /// A place someone shared for the list's reminder (ADR-307): one record, apart from the list
     /// and items, so syncing items never touches it.
     static let placeType = "DoddyListPlace"
     static let placeRecordName = "place"
@@ -54,7 +54,7 @@ struct ListCloud {
         let items: [CKRecord]
         var place: CKRecord? = nil
 
-        /// The shared place, only when every field is there and makes sense (ADR-298).
+        /// The shared place, only when every field is there and makes sense (ADR-307).
         var sharedPlace: SharedListPlace? {
             guard let place else { return nil }
             return SharedListPlace.validated(
@@ -169,7 +169,7 @@ struct ListCloud {
     }
 
     /// Shares `place` with everyone on the list, or stops sharing it (nil). The record must still
-    /// be as fetched; then the zone is read again and must show exactly that (ADR-298).
+    /// be as fetched; then the zone is read again and must show exactly that (ADR-307).
     func setPlace(_ place: SharedListPlace?, over zone: Zone, zoneID: CKRecordZone.ID, in database: CKDatabase) async throws -> Bool {
         if let place {
             let record = zone.place ?? CKRecord(recordType: Self.placeType, recordID: CKRecord.ID(recordName: Self.placeRecordName, zoneID: zoneID))

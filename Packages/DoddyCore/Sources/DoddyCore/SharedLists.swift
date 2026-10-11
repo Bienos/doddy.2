@@ -238,7 +238,7 @@ extension ListShare {
     public static let currentUserPlaceholder = "__defaultOwner__"
 }
 
-// MARK: A shared list's place reminder for everyone (ADR-298)
+// MARK: A shared list's place reminder for everyone (ADR-307)
 
 /// A place one person on a shared list chose to share, so the others can be reminded there too.
 /// Shared only when that person taps Share this place; each other person sets their own reminder

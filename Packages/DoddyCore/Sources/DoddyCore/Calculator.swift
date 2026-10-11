@@ -5,7 +5,7 @@ import Foundation
 // out. Everything runs here: no network, no account, no permission, nothing stored or logged.
 // Only + − × ÷, powers, brackets and percent; no names, variables or functions, so nothing in an
 // expression can do anything but arithmetic. Currencies are converted by `convert_currency`
-// with the ECB's daily rates (ADR-291), not here.
+// with the ECB's daily rates (ADR-300), not here.
 
 extension VoiceToolName {
     public static let calculate = "calculate"

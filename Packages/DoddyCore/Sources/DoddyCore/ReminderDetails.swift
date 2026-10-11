@@ -1,6 +1,6 @@
 import Foundation
 
-// A reminder's details by voice (ADR-293). `change_reminder` also takes `add_note` (a line added
+// A reminder's details by voice (ADR-302). `change_reminder` also takes `add_note` (a line added
 // at the end of the reminder's notes; notes are only added to), `priority` (high, medium, low or
 // none) and `move_to_list` (one of the user's Reminders lists, matched by name: exactly one, or
 // nothing is guessed). They can go with a new due; "done" stays on its own. The card shows the

@@ -77,7 +77,7 @@ public enum ActivityText {
         "Delete event": "Usuń wydarzenie",
         "Delete reminder": "Usuń przypomnienie",
         "Set alarm": "Ustaw budzik",
-        // Round 4 (ADR-291 onwards).
+        // Round 4 (ADR-300 onwards).
         "Converted currency": "Przeliczono walutę",
         "Save parking spot": "Zapisz miejsce parkowania",
         "Found parking spot": "Odczytano miejsce parkowania",

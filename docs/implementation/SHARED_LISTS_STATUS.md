@@ -106,7 +106,7 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
 - **Where it's kept:** in memory on this iPhone, refreshed at each sync. It's not stored in the database and never sent to the voice agent, so `read_list` is unchanged.
 - **Tests:** `SharedItemLabelTests` (1). **NOT RUN:** never run against iCloud. Whether `nameComponents` is filled for participants who joined by link is unknown (if not, they show as "someone else").
 
-## A shared list's place for everyone (ADR-298, round 4)
+## A shared list's place for everyone (ADR-307, round 4)
 - **Share this place:** on a shared list with a place reminder, this button writes the picked place (name, point, radius, arrive or leave, who shared it) to one `DoddyListPlace` record in the zone. It is read back, and syncing items never touches that record.
 - **What others see:** "Marta shared a reminder at “Lidl”". **Remind me there too** sets their own place reminder, which iOS watches on their iPhone.
 - **Stopping:** whoever shared the place can stop sharing it.
