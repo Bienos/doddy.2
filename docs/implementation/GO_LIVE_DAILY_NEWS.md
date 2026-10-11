@@ -8,6 +8,10 @@
 > sent, and the scheduled digest is built when the service next wakes. Still to do by the owner:
 > `DATABASE_URL` (the database's Internal Database URL) and an AI key, `ANTHROPIC_API_KEY` or
 > `OPENAI_API_KEY` (ADR-197), in the service's Environment, typed in Render only.
+>
+> **2026-10-11:** the backend `doddy` moved to a new Render account (`docs/integrations/DEPLOY_RENDER.md`). The
+> messaging service and database above were **not** moved and are still in workspace SLIYD; recreate them in the new
+> workspace if that account is no longer used.
 
 Date: 2026-10-10. Turns on **one** messaging-server feature: a short daily news digest at your
 chosen time. Two ways (ADR-174):
