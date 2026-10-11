@@ -305,3 +305,10 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | H2 | Tap What leaves this iPhone; Done. Then Settings › Privacy | The row-by-row screen opens as a sheet and closes. Settings › Privacy starts with the paragraph that used to be on Home |
 | H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count |
 
+## 4p. A guided first conversation (ADR-401)
+Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.
+| # | Do this | Expect |
+|---|---|---|
+| F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
+| F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
+
