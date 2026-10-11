@@ -44,8 +44,10 @@ public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
 }
 
 public struct CallRequest: Equatable, Sendable, Decodable {
-    public let callId: UUID
-    /// `requested` (ElevenLabs accepted it) or `unknown` (no answer from ElevenLabs; not redialled).
+    /// Nil when the server's answer never reached the phone.
+    public let callId: UUID?
+    /// `requested` (ElevenLabs accepted it) or `unknown` (no answer from ElevenLabs, or the
+    /// server's answer was lost on the way back; the phone may already be ringing; not redialled).
     public let status: String
 }
 
@@ -105,8 +107,15 @@ extension DoddyServerClient {
         try await expect(204, .delete, "/v1/calls/pin")
     }
 
+    /// Waits longer than the server's own ElevenLabs timeout (15 s). A request that may have
+    /// reached the server without an answer coming back is `unknown`, never "offline, try again".
     public func callMeNow() async throws -> CallRequest {
-        let response = try await authorized(.post, "/v1/calls/outbound", body: nil)
+        let response: ServerResponse
+        do {
+            response = try await authorized(.post, "/v1/calls/outbound", body: nil, startsSomething: true, timeout: 30)
+        } catch is OutcomeUnknown {
+            return CallRequest(callId: nil, status: "unknown")
+        }
         guard response.status == 202, let request = try? JSONDecoder().decode(CallRequest.self, from: response.body)
         else { throw Self.error(from: response) }
         return request

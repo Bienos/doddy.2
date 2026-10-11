@@ -14,6 +14,20 @@ public struct ServerRequest: Equatable, Sendable {
     public let path: String
     public let body: Data?
     public let bearerToken: String?
+    /// How long the transport should wait for an answer. Starting a call or building the news
+    /// waits on the server's own provider calls, so those get longer than the default: giving up
+    /// sooner would report a failure while the call or the news is already on its way.
+    public let timeout: TimeInterval
+
+    public static let defaultTimeout: TimeInterval = 15
+
+    init(method: HTTPMethod, path: String, body: Data?, bearerToken: String?, timeout: TimeInterval = defaultTimeout) {
+        self.method = method
+        self.path = path
+        self.body = body
+        self.bearerToken = bearerToken
+        self.timeout = timeout
+    }
 }
 
 public struct ServerResponse: Equatable, Sendable {
@@ -27,8 +41,31 @@ public struct ServerResponse: Equatable, Sendable {
 }
 
 public protocol ServerTransport: Sendable {
-    /// Sends one request. Throws `ServerError.offline` when no HTTP response arrived.
+    /// Sends one request. When no HTTP response arrived, throws the underlying error (e.g. the
+    /// `URLError`) so the client can tell "never left the phone" from "may have reached the
+    /// server" (`ServerTransportFailure`). A transport that throws `ServerError.offline` instead
+    /// is read as "may have reached the server" for requests that start something.
     func send(_ request: ServerRequest) async throws -> ServerResponse
+}
+
+/// What a transport error says about whether the request reached the server (DOD-08).
+public enum ServerTransportFailure {
+    /// True only for errors raised before the request could have reached the server: no network,
+    /// no such host, connection refused, or a failed TLS handshake. A timeout or a dropped
+    /// connection may come after the server got the request, so they are not on this list.
+    public static func certainlyNotSent(_ error: any Error) -> Bool {
+        guard let error = error as? URLError else { return false }
+        switch error.code {
+        case .notConnectedToInternet, .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed,
+             .internationalRoamingOff, .callIsActive, .dataNotAllowed, .badURL, .unsupportedURL,
+             .appTransportSecurityRequiresSecureConnection, .secureConnectionFailed,
+             .serverCertificateHasBadDate, .serverCertificateUntrusted, .serverCertificateHasUnknownRoot,
+             .serverCertificateNotYetValid, .clientCertificateRejected, .clientCertificateRequired:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /// Holds the device's bearer token for the anonymous Doddy account.
@@ -243,9 +280,16 @@ public actor DoddyServerClient {
         guard response.status == status else { throw Self.error(from: response) }
     }
 
-    func authorized(_ method: HTTPMethod, _ path: String, body: Data?) async throws -> ServerResponse {
+    /// `startsSomething`: the request starts something the user would notice twice (a call, a
+    /// news message). If it may have reached the server but no answer came back, `OutcomeUnknown`
+    /// is thrown instead of `ServerError.offline`, so the caller says "unknown" rather than
+    /// "offline, try again" (DOD-08).
+    func authorized(
+        _ method: HTTPMethod, _ path: String, body: Data?,
+        startsSomething: Bool = false, timeout: TimeInterval = ServerRequest.defaultTimeout
+    ) async throws -> ServerResponse {
         let token = try await ensureAccount()
-        let response = try await send(method, path, body: body, token: token)
+        let response = try await send(method, path, body: body, token: token, startsSomething: startsSomething, timeout: timeout)
         if response.status == 401 {
             // The account was deleted or the token revoked; a new one is created on next use.
             try? credentials.delete()
@@ -254,15 +298,24 @@ public actor DoddyServerClient {
         return response
     }
 
-    private func send(_ method: HTTPMethod, _ path: String, body: Data?, token: String?) async throws -> ServerResponse {
+    private func send(
+        _ method: HTTPMethod, _ path: String, body: Data?, token: String?,
+        startsSomething: Bool = false, timeout: TimeInterval = ServerRequest.defaultTimeout
+    ) async throws -> ServerResponse {
         do {
-            return try await transport.send(ServerRequest(method: method, path: path, body: body, bearerToken: token))
-        } catch let error as ServerError {
+            return try await transport.send(
+                ServerRequest(method: method, path: path, body: body, bearerToken: token, timeout: timeout))
+        } catch let error as ServerError where !(startsSomething && error == .offline) {
             throw error
         } catch {
+            if startsSomething && !ServerTransportFailure.certainlyNotSent(error) { throw OutcomeUnknown() }
             throw ServerError.offline
         }
     }
+
+    /// The request may have reached the server, but no answer came back. Internal: each request
+    /// that starts something turns it into its own "unknown" result.
+    struct OutcomeUnknown: Error {}
 
     static func error(from response: ServerResponse) -> ServerError {
         let body = try? JSONDecoder().decode(ErrorBody.self, from: response.body)

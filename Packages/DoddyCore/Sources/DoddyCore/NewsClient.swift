@@ -136,6 +136,8 @@ public struct FeedCheck: Equatable, Sendable, Decodable {
 
 public struct NewsSendResult: Equatable, Sendable, Decodable {
     public let digestId: UUID?
+    /// A digest status (see `NewsDigest.status`), or `unknown` when the server's answer never
+    /// reached the phone: the news may still arrive, so it isn't sent again automatically.
     public let status: String
     public let aiWritten: Bool
     public let errorCode: String?
@@ -166,8 +168,16 @@ extension DoddyServerClient {
         return check
     }
 
+    /// The server fetches the feeds and waits for the AI writer (up to 60 s, retried once) before
+    /// it answers, so this waits longer than other requests. A request that may have reached the
+    /// server without an answer coming back is `unknown`: the news may still arrive.
     public func sendNewsNow() async throws -> NewsSendResult {
-        let response = try await authorized(.post, "/v1/news/send-now", body: nil)
+        let response: ServerResponse
+        do {
+            response = try await authorized(.post, "/v1/news/send-now", body: nil, startsSomething: true, timeout: 180)
+        } catch is OutcomeUnknown {
+            return NewsSendResult(digestId: nil, status: "unknown", aiWritten: false, errorCode: "outcome_unknown")
+        }
         guard response.status == 200, let result = try? JSONDecoder().decode(NewsSendResult.self, from: response.body)
         else { throw Self.error(from: response) }
         return result
