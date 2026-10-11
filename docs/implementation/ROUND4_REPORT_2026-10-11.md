@@ -17,7 +17,7 @@ Branch `claude/hopeful-fermat-1a63x0`, restarted from `claude/loving-dirac-uuxou
 
 ## Tests actually run
 - `scripts/ci.sh --core-only` on Linux (Swift 6.2.1): **RESULT: PASS for core-only scope; iOS app NOT verified**. It covers:
-  - DoddyCore tests, including 7 new test files (`CurrencyTests`, `ParkingTests`, `ReminderDetailsTests`, `IngredientsTests`, `WeeklyLookBackTests`, `SharedListPlaceTests` and the updated `OnlineAccountsContractTests`);
+  - DoddyCore: **746 tests, 0 failures**, including 7 new test files (`CurrencyTests`, `ParkingTests`, `ReminderDetailsTests`, `IngredientsTests`, `WeeklyLookBackTests`, `SharedListPlaceTests` and the updated `OnlineAccountsContractTests`);
   - the app-logic type-check, now including `ParkingStore.swift`;
   - the capability guard, with negative checks: a probe `TODOIST_DELETE_TASK` fails it, and the rates client may only use its fixed address;
   - the agent specs and the Polish catalogs (1,136 of 1,158 strings);
