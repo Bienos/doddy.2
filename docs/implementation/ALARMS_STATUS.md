@@ -42,3 +42,19 @@ Date: 2026-10-11. Owner: "do all of them" (item 6).
 | DOD-08 verified_status_and_receipts | "added" only when AlarmKit lists the new id; Turn off checked gone | — | Not run on a device |
 | DOD-09 correction_and_recovery | Settings › Alarms with Turn off; older iOS gets a timer or reminder offer | — | — |
 | DOD-11 observable_privacy | Under the Timers switch and Pause all; logged in What Doddy did; label kept only on the phone | `testAlarmsAreServedByTimersPausedAndLogged` | — |
+
+## Part 2 (ADR-283, round 3)
+- **`list_alarms`:** reads Doddy's own alarms on the phone (time, label, days), with no card. It says Clock app alarms aren't visible.
+- **`cancel_alarm`:** takes `time` (HH:MM) and a `label` only when two alarms share the time.
+  - It finds exactly one alarm, or the agent asks.
+  - The card says "Turn off this alarm?" and that a repeating alarm stops for every day.
+  - At **Turn off**, the Timers switch is checked again, then AlarmKit cancels the alarm, and it counts only once AlarmKit no longer lists it.
+- **Snooze:** every Doddy alarm set from now on has Snooze next to Stop. It rings again after 9 minutes (`AlarmDraft.snoozeMinutes`).
+  - The countdown shows on the Lock Screen and in the Dynamic Island, drawn by `DoddyWidgets/AlarmLiveActivity.swift`.
+  - Alarms set before this have no Snooze.
+- **Alarm book:** Doddy now keeps each alarm's time ("07:00") with the label and summary, to match by voice. Older entries take it from the summary.
+- **Guard:** AlarmKit is also allowed in `Shared/Alarms/DoddyAlarmMetadata.swift`, shared by the app and the widget, and in the snooze widget.
+- **Tests:** `AlarmVoiceTests` (2).
+- **NOT RUN:**
+  - `AlarmManager.AlarmConfiguration(countdownDuration:schedule:attributes:)`, `AlarmPresentation(alert:countdown:)`, `secondaryButtonBehavior: .countdown` and `AlarmPresentationState.mode` have never been compiled;
+  - Snooze has never been pressed on a device.

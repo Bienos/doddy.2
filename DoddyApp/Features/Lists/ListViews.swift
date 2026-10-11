@@ -280,10 +280,19 @@ struct ListDetailView: View {
             .accessibilityLabel(item.text)
             .accessibilityValue(item.isDone ? "Ticked" : "Not ticked")
             .accessibilityAddTraits(.isToggle)
-            Text(item.text)
-                .strikethrough(item.isDone)
-                .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
-                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.text)
+                    .strikethrough(item.isDone)
+                    .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                // Shared lists (ADR-285): who else added or ticked it, on this iPhone only.
+                let who = sharing.label(for: item)
+                if !who.isEmpty {
+                    Text(Self.whoText(who))
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .accessibilityHidden(true)
             Spacer()
         }
         .listRowBackground(Theme.canvas)
@@ -356,6 +365,15 @@ struct ListDetailView: View {
         }
     }
 
+    /// "Added by Marta · Ticked by Tom" (ADR-285).
+    static func whoText(_ label: SharedItemLabel) -> String {
+        func shown(_ name: String) -> String { name == "someone else" ? NSLocalizedString("someone else", comment: "") : name }
+        let label = SharedItemLabel(addedBy: label.addedBy.map(shown), doneBy: label.doneBy.map(shown))
+        return [label.addedBy.map { String(format: NSLocalizedString("Added by %@", comment: ""), $0) },
+         label.doneBy.map { String(format: NSLocalizedString("Ticked by %@", comment: ""), $0) }]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+
     private func add(_ list: DoddyList) async {
         guard let text = ListText.cleaned(newItem) else { return }
         errorMessage = nil
@@ -420,6 +438,8 @@ struct NewListSheet: View {
     @State private var name = ""
     @State private var items = ""
     @State private var errorMessage: String?
+    /// What came from a photo (ADR-286), said once above the items.
+    @State private var photoNote: String?
 
     var body: some View {
         NavigationStack {
@@ -432,6 +452,19 @@ struct NewListSheet: View {
                     TextEditor(text: $items)
                         .frame(minHeight: 120)
                         .accessibilityLabel("First items, one per line")
+                }
+                Section {
+                    ListPhotoPicker { proposal in
+                        if ListText.cleaned(name) == nil, let suggested = proposal.name { name = suggested }
+                        let existing = items.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                        items = (existing + proposal.items).joined(separator: "\n")
+                        photoNote = proposal.leftOut == 0
+                            ? String(format: NSLocalizedString("Read %lld lines from the photo. Check them before Create.", comment: ""), proposal.items.count)
+                            : String(format: NSLocalizedString("Read %lld lines from the photo; %lld were too long or past the limit. Check them before Create.", comment: ""), proposal.items.count, proposal.leftOut)
+                    }
+                    if let photoNote {
+                        Text(photoNote).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
                 }
                 if let errorMessage {
                     Section { ProblemView(message: errorMessage) }

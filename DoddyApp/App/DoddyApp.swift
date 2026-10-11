@@ -60,11 +60,13 @@ struct DoddyApp: App {
                 .task {
                     await SharedListsController.shared.load()
                     await SharedListsController.shared.syncAll()
+                    await SharedListsController.shared.startLiveUpdates()
                 }
                 // Keeps the morning check-in's words in the iPhone's current language (ADR-220).
                 .task { if MorningCheckInSettings.stored().isOn { _ = await MorningCheckInScheduler.apply(.stored()) } }
                 .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
                 .task { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }
+                .task { await BirthdayScheduler.refresh() }
         }
     }
 }

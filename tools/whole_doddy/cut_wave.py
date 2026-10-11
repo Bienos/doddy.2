@@ -1,4 +1,4 @@
-"""Cut the greeting wave out of the owner's pack (ADR-268).
+"""Cut the greeting wave out of the owner's pack (ADR-290).
 
 The pack's only wave is a five-frame strip on paper, 016_doddy_wave_v01.png. This takes frame 4
 (open hand with the orange marks) and removes only the paper that touches the frame's edges, so

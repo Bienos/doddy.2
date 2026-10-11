@@ -35,7 +35,7 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
   - if the owner stops sharing or removes someone, that person's next sync says the list is no longer shared and keeps it.
 - **On the list's screen:** "Shared through your iCloud" / "Shared with you through iCloud", the last update, problems, **Update now** and **People**.
 - **Privacy:** What leaves this iPhone has a row for "Your iCloud (Apple) and the people you share lists with", active only while a list is shared. The Privacy paragraph in Settings has a sentence too.
-- **No push:** changes from others arrive when Doddy is open or brought to the front. Background push for shared lists would need the push entitlement and is not built.
+- **Updates straight away:** see part 2 below (ADR-284). Without the push entitlement, changes from others arrive when Doddy is open or brought to the front.
 
 ## Files
 - **Core:** `SharedLists.swift` (`SharedListState`, `SharedListItem`, `SharedListMerge`, `ListShare`, `ListShareRepository`), `Lists.swift` (`replaceShared` requirement), `DataFlow.swift`.
@@ -79,3 +79,29 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
 | DOD-09 correction_and_recovery | Three-way merge never drops an edited item; a failed sync retries from the same base; stop and leave keep the list here | `SharedListMergeTests` (7) | Concurrent-edit behaviour not tried with real people |
 | DOD-11 observable_privacy | Off unless set up; only chosen lists; data-flow row and Privacy sentence; CloudKit confined by the guard | `testTheICloudRowFollowsSharedLists` | — |
 | Data is not instructions | iCloud content is validated like typed text and never read as commands | `testWhatComesFromICloudIsCheckedLikeAnythingTyped` | — |
+
+## Part 2: updates straight away (ADR-284, round 3)
+- **Subscribing:** while any list is shared, Doddy saves a `CKDatabaseSubscription` and reads it back. Each one is silent (`shouldSendContentAvailable`, no alert, no list content):
+  - one on the private database for lists the user shares;
+  - one on the shared database for lists they joined.
+  The subscriptions are removed when no list of that kind is shared any more.
+- **Registering:** `registerForRemoteNotifications` runs without a permission prompt, because silent notifications don't need one. The device token is used by Apple only: `PushRegistrar` hands it only to a caller waiting for it, and sharing asks for it only to learn that registration worked.
+- **When a list changes elsewhere:** iCloud wakes Doddy (`AppDelegate.application(_:didReceiveRemoteNotification:)`). `SharedListsController.handleRemoteNotification` checks it's a Doddy list subscription and runs the normal checked sync.
+- **Needs:**
+  - the push entitlement: `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup-iCloud.entitlements`;
+  - the `remote-notification` background mode, now in `Config/Doddy-Info.plist` and used for nothing else.
+- **Without push:** registration fails, and the list's status line keeps saying "Changes from others show when Doddy is open."
+- **NOT RUN:**
+  - never run against iCloud, so how fast silent notifications arrive (iOS throttles them) is unknown;
+  - `didReceiveRemoteNotification` (async variant) hasn't been compiled;
+  - there are no automated tests: the logic is CloudKit and UIKit calls only.
+
+## Part 3: who added or ticked an item (ADR-285, round 3)
+- **Writing:** when Doddy adds an item to a shared list, it writes `addedBy` (this user's iCloud user record name) on the record. When it ticks one, it writes `doneBy`; unticking clears it. Items added before this fall back to the record's creator.
+- **Names:** from the share's participants, in the short form, e.g. "Marta".
+- **On the list:**
+  - a row shows "Added by Marta · Ticked by Tom";
+  - only for other people: your own changes get no label;
+  - a person whose name isn't known is "someone else", never guessed.
+- **Where it's kept:** in memory on this iPhone, refreshed at each sync. It's not stored in the database and never sent to the voice agent, so `read_list` is unchanged.
+- **Tests:** `SharedItemLabelTests` (1). **NOT RUN:** never run against iCloud. Whether `nameComponents` is filled for participants who joined by link is unknown (if not, they show as "someone else").

@@ -291,10 +291,10 @@ struct ConnectionInfo {
                 canDo: [
                     "Read your events for today, tomorrow, the week, or a day you name",
                     "Add an event, after you tap Add",
-                    "Move, rename or delete one event, after you tap Change or Delete",
+                    "Move, rename or delete one event, change its place or add a note to it, after you tap Change or Delete",
                 ],
                 leavesPhone: "Event titles and times, when Doddy uses them in a conversation.",
-                staysHere: "Locations and notes are not read or sent. Doddy changes or deletes an event only after you tap, one at a time.")
+                staysHere: "An event's place is read only to show it on the card when you ask to change it, and notes are only added to. Neither is sent to Doddy's voice. Doddy changes or deletes events only after you tap.")
         case .reminders:
             ConnectionInfo(
                 symbol: "checklist",
@@ -323,9 +323,10 @@ struct ConnectionInfo {
                 canDo: [
                     "Look up a contact by name and show the details on your screen",
                     "Call, text or email them from that card, after you tap",
+                    "Remind you of the birthdays you pick, in Settings, Birthdays",
                 ],
                 leavesPhone: "Only the names Doddy finds. Numbers and email addresses stay on your screen.",
-                staysHere: "Doddy never calls, texts or emails anyone by itself.")
+                staysHere: "Doddy never calls, texts or emails anyone by itself. Birthdays are read on this iPhone only.")
         case .messages:
             ConnectionInfo(
                 symbol: "text.bubble",

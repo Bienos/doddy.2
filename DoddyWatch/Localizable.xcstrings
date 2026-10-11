@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Add an item": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj pozycję"
+          }
+        }
+      }
+    },
     "Check the words, then Save.": {
       "extractionState": "manual",
       "localizations": {

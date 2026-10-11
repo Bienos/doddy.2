@@ -167,7 +167,7 @@ extension DoddyVoiceAttributes.ContentState {
         if showsMuted { return .shush }
         let greets = !(greeting ?? "").isEmpty
         switch status {
-        // The greeting after "Hey Doddy" is a wave (ADR-268).
+        // The greeting after "Hey Doddy" is a wave (ADR-290).
         case .connecting: return greets ? .wave : .yawnStretch
         case .listening: return greets ? .wave : .listening
         case .thinking: return .kneelingInspect

@@ -7,7 +7,7 @@ import Foundation
 enum IslandPose: String, CaseIterable, Sendable {
     case yawnStretch = "yawn_stretch", listening, kneelingInspect = "kneeling_inspect", shrug, shush, facepalm
     case crosslegged, leaning, reachingHigh = "reaching_high", fistpump, tiptoe
-    /// The greeting (ADR-268): frame 4 of the pack's wave strip, cut out by
+    /// The greeting (ADR-290): frame 4 of the pack's wave strip, cut out by
     /// tools/whole_doddy/cut_wave.py (the only pose not from 01-transparent-poses).
     case wave
 

@@ -38,6 +38,8 @@ public enum AlarmRepeat: String, CaseIterable, Equatable, Sendable {
 /// An alarm the agent proposed. Nothing is set until the user taps Set alarm on the card.
 public struct AlarmDraft: Equatable, Sendable {
     public static let maxLabelLength = 60
+    /// Snooze on a Doddy alarm rings again after this many minutes (ADR-283).
+    public static let snoozeMinutes = 9
 
     /// The first time it rings, as the user's wall clock. For a repeating alarm, the day it was
     /// asked for; AlarmKit then rings at `hour`:`minute` on every matching day.
@@ -103,4 +105,86 @@ extension VoiceToolReply {
     public static let alarmNotAllowed = "failed: Doddy isn't allowed to set alarms on this iPhone (iOS Settings, Doddy, Alarms). Nothing was set. Tell the user where to turn it on."
     public static let declinedAlarm = "declined: the user chose not to set this alarm. Nothing was set."
     public static let alarmUnconfirmed = "unknown: the iPhone didn't confirm the alarm. Ask the user to check before trying again."
+}
+
+// MARK: Asking about and turning off alarms by voice (ADR-283)
+
+extension VoiceToolName {
+    public static let listAlarms = "list_alarms"
+    public static let cancelAlarm = "cancel_alarm"
+}
+
+/// One of Doddy's alarms as the iPhone keeps it: AlarmKit's id, and the time and label Doddy
+/// remembered when it set it. Only alarms Doddy set; the Clock app's alarms aren't visible.
+public struct AlarmEntry: Equatable, Sendable, Identifiable {
+    public let id: UUID
+    /// "07:00".
+    public let clock: String
+    public let label: String?
+    /// "07:00 on weekdays" or "07:00 on 2026-10-12".
+    public let summary: String
+
+    public init(id: UUID, clock: String, label: String?, summary: String) {
+        self.id = id
+        self.clock = clock
+        self.label = label
+        self.summary = summary
+    }
+}
+
+public enum AlarmMatch {
+    /// Alarms at this time (HH:MM), narrowed by the label when one is given; nothing guessed.
+    public static func match(clock: String, label: String?, in alarms: [AlarmEntry]) -> ListMatchResult<AlarmEntry> {
+        var found = alarms.filter { $0.clock == clock }
+        if let label, !label.isEmpty {
+            let wanted = SearchFolding.tokens(label).joined(separator: " ")
+            let named = found.filter { SearchFolding.tokens($0.label ?? "").joined(separator: " ") == wanted }
+            if !named.isEmpty { found = named }
+        }
+        switch found.count {
+        case 0: return .none
+        case 1: return .one(found[0])
+        default: return .several(found)
+        }
+    }
+
+    /// "HH:MM" from "7:05", "07:05" or "07:05:00"; nil otherwise.
+    public static func clock(_ text: String) -> String? {
+        let parts = text.trimmingCharacters(in: .whitespaces).split(separator: ":")
+        guard parts.count == 2 || parts.count == 3, let hour = Int(parts[0]), let minute = Int(parts[1]),
+              (0...23).contains(hour), (0...59).contains(minute) else { return nil }
+        return String(format: "%02d:%02d", hour, minute)
+    }
+}
+
+extension VoiceToolRequest {
+    static func parseCancelAlarm(_ args: Arguments, name: String) -> VoiceToolRequest {
+        guard let text = args.text("time"), let clock = AlarmMatch.clock(text) else {
+            return .invalid(name: name, reason: "time is the alarm's time as HH:MM")
+        }
+        return .cancelAlarm(clock: clock, label: args.text("label"))
+    }
+}
+
+extension VoiceToolReply {
+    public static func alarms(_ alarms: [AlarmEntry]) -> String {
+        guard !alarms.isEmpty else { return "alarms: none set by Doddy. (Alarms from the Clock app aren't visible to Doddy.)" }
+        let lines = alarms.map { alarm in alarm.summary + (alarm.label.map { " (\"\($0)\")" } ?? "") }
+        return "alarms set by Doddy: \(lines.joined(separator: "; ")). (Alarms from the Clock app aren't visible to Doddy.)"
+    }
+
+    public static func alarmNotFound(_ clock: String) -> String {
+        "not found: Doddy has no alarm at \(clock). Nothing changed. (Doddy can't see or change the Clock app's alarms.)"
+    }
+
+    public static func alarmAmbiguous(_ alarms: [AlarmEntry]) -> String {
+        "not changed: more than one alarm matches (\(alarms.map(\.summary).joined(separator: "; "))). Ask the user which one."
+    }
+
+    public static func alarmCancelled(_ alarm: AlarmEntry) -> String {
+        "turned off: the alarm at \(alarm.summary) is off. Checked."
+    }
+
+    public static let alarmCancelDeclined = "declined: the user kept the alarm. Nothing changed."
+    public static let alarmCancelUnconfirmed = "unknown: the iPhone didn't confirm the alarm is off. Ask the user to check Settings, Alarms in Doddy."
 }

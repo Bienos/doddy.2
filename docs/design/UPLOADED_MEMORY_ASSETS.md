@@ -60,7 +60,7 @@ originals if the pack changes. The originals are not stored in the repository.
 | WholeDoddy_fistpump | doddy_fistpump_v02.png | c7a1fd158652d6420c67ce51d2e60e6b4808392fc131c108c7e348acf80a0561 |
 | WholeDoddy_tiptoe | doddy_tiptoe_v02.png | 3dbb2824f699f0845c4f683daebd3bdee535763a2a321fa84400749647382f56 |
 
-### The greeting wave (ADR-268)
+### The greeting wave (ADR-290)
 
 `WholeDoddy_wave` is the one Whole Doddy picture that is not a straight downscale. The pack's only
 wave is `016_doddy_wave_v01.png` (in the folder's root and in `DODDY-Numbered-Video-Assets-v01.zip`;
