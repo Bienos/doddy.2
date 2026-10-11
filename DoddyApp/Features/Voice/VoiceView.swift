@@ -111,7 +111,7 @@ struct VoiceView: View {
                         HStack(alignment: .center, spacing: 16) {
                             VoiceDoddyView(art: screenArt(controller))
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(statusTitle(controller.phase))
+                                Text(statusTitle(controller))
                                     .font(.title2.bold())
                                     .accessibilityIdentifier("voice.status")
                                 if controller.isMuted && controller.isLive {
@@ -277,9 +277,12 @@ struct VoiceView: View {
             }
         case .failed(let message):
             if controller.isOffline {
-                OfflineNoteCard(controller: controller)
+                OfflineNoteCard(controller: controller, startText: controller.recovery?.text ?? "")
             } else {
                 ProblemView(message: message)
+                if controller.recovery != nil || controller.recoverySaved != nil {
+                    RecoveryDraftCard(controller: controller)
+                }
             }
         default:
             EmptyView()
@@ -1344,15 +1347,16 @@ struct VoiceView: View {
                       awaitingConfirmation: controller.pendingAction != nil, planRunning: planRunning)
     }
 
-        private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {
-        switch phase {
+        private func statusTitle(_ controller: VoiceSessionController) -> String {
+        switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
         case .thinking: NSLocalizedString("Thinking…", comment: "")
         case .speaking: NSLocalizedString("Speaking", comment: "")
         case .ended: NSLocalizedString("Conversation ended", comment: "")
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
-        case .failed: NSLocalizedString("Couldn't connect", comment: "")
+        // A drop after Doddy was listening says so; it is never "Couldn't connect" (ADR-330).
+        case .failed: controller.endTitle ?? NSLocalizedString("Couldn't connect", comment: "")
         }
     }
 }
@@ -1361,7 +1365,10 @@ struct VoiceView: View {
 /// saved on this iPhone after Save and read back; nothing is queued to send later.
 struct OfflineNoteCard: View {
     let controller: VoiceSessionController
+    /// After a drop, what Doddy last heard (ADR-330); the user edits or clears it.
+    var startText = ""
     @State private var text = ""
+    @State private var started = false
     @State private var isSaving = false
     @State private var problem: String?
 
@@ -1392,12 +1399,67 @@ struct OfflineNoteCard: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .onAppear {
+            guard !started else { return }
+            started = true
+            text = startText
+        }
     }
 
     private func save() async {
         isSaving = true
         defer { isSaving = false }
         problem = await controller.saveOfflineNote(text)
-        if problem == nil { text = "" }
+        if problem == nil {
+            text = ""
+            controller.discardRecovery()
+        }
+    }
+}
+
+/// After a conversation dropped (OP-023, ADR-330): what Doddy last heard and hadn't answered, or
+/// the note it was asking about, as a draft. It is not a note until Save; Discard drops it.
+struct RecoveryDraftCard: View {
+    let controller: VoiceSessionController
+    @State private var isSaving = false
+    @State private var problem: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let saved = controller.recoverySaved {
+                Label(String(format: NSLocalizedString("Saved as a note: “%@”", comment: ""), saved), systemImage: "checkmark.circle")
+                    .accessibilityIdentifier("voice.recovery.saved")
+            } else if let draft = controller.recovery {
+                Label(draft.pendingNote != nil ? "Doddy was asking to save this" : "Doddy last heard you say", systemImage: "text.bubble")
+                    .font(.headline)
+                Text("A draft, not a note: it's saved only if you tap Save.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                TextField("Draft", text: Binding(get: { controller.recovery?.text ?? "" }, set: { controller.editRecovery($0) }), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("voice.recovery.text")
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        HStack { Text("Save as note"); Spacer(); Image(systemName: "square.and.arrow.down") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(isSaving || draft.text.allSatisfy(\.isWhitespace))
+                    Button("Discard") { controller.discardRecovery() }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+                if let problem { ProblemView(message: problem) }
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.recovery")
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        problem = await controller.saveRecovery()
     }
 }

@@ -145,6 +145,10 @@ final class VoiceSessionController {
     private(set) var phase: Phase = .idle {
         didSet {
             Self.conversationInProgress = isLive
+            switch phase {
+            case .listening, .thinking, .speaking: connectedOnce = true
+            default: break
+            }
             syncIsland()
         }
     }
@@ -297,8 +301,16 @@ final class VoiceSessionController {
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
+        // The previous conversation's lines and unanswered cards are kept before they're cleared,
+        // even when it ended in a failure nothing else recorded (ADR-330).
+        keepLog()
         isOffline = false
         offlineSaved = nil
+        sessionEnd = nil
+        recovery = nil
+        recoverySaved = nil
+        userAskedToEnd = false
+        connectedOnce = false
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
         ReadAloudController.shared.stop()
         startedByWakeWord = wakeGreeting != nil
@@ -361,8 +373,9 @@ final class VoiceSessionController {
         await store.reload()
         // Private notes (ADR-310) never reach the voice agent.
         var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
+        // After a drop the agent is told it was cut off (ADR-330), within the same switch.
         var recent = logs.isEnabled
-            ? VoiceContext.recentConversations(logs.logs)
+            ? SessionRecovery.withResumeNote(VoiceContext.recentConversations(logs.logs), logs: logs.logs, now: Date())
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
         var listsText = ListsPrompt.render(store.lists)
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
@@ -443,8 +456,14 @@ final class VoiceSessionController {
                 ref.value?.startSilentWakeTimer()
             }
         }
-        config.onDisconnect = { _ in
-            Task { @MainActor in ref.value?.disconnected() }
+        config.onDisconnect = { reason in
+            // `.agent`: the connection was closed from the other side (ADR-330).
+            let kind: VoiceSessionEnd.Disconnect = switch reason {
+            case .user: .user
+            case .agent: .agent
+            case .error: .error
+            }
+            Task { @MainActor in ref.value?.disconnected(kind) }
         }
 
         let auth: ElevenLabsConfiguration
@@ -614,7 +633,7 @@ final class VoiceSessionController {
             fail(message)
             Task { await stop() }
         case .ended:
-            disconnected()
+            disconnected(.agent)
         }
     }
 
@@ -683,7 +702,10 @@ final class VoiceSessionController {
         return "\(session.category.rawValue), mode \(session.mode.rawValue), \(mixing), other app audio playing: \(session.isOtherAudioPlaying)"
     }
 
-    func stop() async {
+    /// `reason`: why it ends. Anything already known (a drop or failure) is kept.
+    func stop(_ reason: VoiceSessionEnd = .userEnded) async {
+        userAskedToEnd = true
+        if sessionEnd == nil { sessionEnd = reason }
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
@@ -710,7 +732,7 @@ final class VoiceSessionController {
         self.startedAt = nil
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
-        logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: provider.rawValue))
+        logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: provider.rawValue, ended: sessionEnd?.code))
     }
 
     /// A random, stable id for this install, so ElevenLabs can tell the owner's conversations
@@ -1466,7 +1488,7 @@ final class VoiceSessionController {
         silentWakeTimer = Task { [weak self] in
             try? await Task.sleep(for: .seconds(WakeGate.silentWakeTimeout))
             guard !Task.isCancelled, let self, self.isLive, !self.lines.contains(where: \.fromUser) else { return }
-            await self.stop()
+            await self.stop(.quietTimeout)
         }
     }
 
@@ -1548,22 +1570,94 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        let wasLive = isLive
+        if sessionEnd == nil { sessionEnd = .dropped(isOffline ? .offline : .error(message)) }
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
+        keepRecoveryDraft()
         phase = .failed(message)
         pendingAction = nil
+        // The lines and unanswered cards are kept now, not only at the next Close (ADR-330).
+        keepLog()
+        // A conversation that was running is ended, so it doesn't hold the microphone.
+        if wasLive, let active = conversation {
+            conversation = nil
+            Task { await active.endConversation() }
+        }
+        // As after a drop by disconnect: "Worth keeping?" once Doddy had been listening.
+        if wasLive { offerSaveSuggestions() }
     }
 
-    private func disconnected() {
+    private func disconnected(_ kind: VoiceSessionEnd.Disconnect) {
+        if sessionEnd == nil { sessionEnd = VoiceSessionEnd.afterDisconnect(kind, userAsked: userAskedToEnd) }
+        let wasLive = isLive
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         conversation = nil
+        if wasLive { keepRecoveryDraft() }
         pendingAction = nil
         keepLog()
         if case .failed = phase { return }
+        // A drop is never shown as a normal end (ADR-330).
+        if let end = sessionEnd, end.isDrop, wasLive {
+            phase = .failed(SessionRecovery.status(end, connected: connectedOnce).detail ?? "")
+            offerSaveSuggestions()
+            return
+        }
         phase = .ended
         offerSaveSuggestions()
+    }
+
+    // MARK: Session recovery (OP-023, ADR-330)
+
+    /// How this conversation ended; nil while it runs.
+    private(set) var sessionEnd: VoiceSessionEnd?
+    /// After a drop: what Doddy last heard and hadn't answered, and the note it was asking about.
+    /// On this screen only, never written anywhere; it becomes a note only on Save.
+    private(set) var recovery: RecoveryDraft?
+    /// The note saved from the draft, as read back.
+    private(set) var recoverySaved: String?
+    /// Set by End, Close or the island; a disconnect after it is the user's end, not a drop.
+    private var userAskedToEnd = false
+    /// True once Doddy was ready to listen, so a later stop is a drop, not "Couldn't connect".
+    private var connectedOnce = false
+
+    /// The title for how it ended: "The conversation dropped", "Couldn't connect"…
+    var endTitle: String? {
+        sessionEnd.map { NSLocalizedString(SessionRecovery.status($0, connected: connectedOnce).title, comment: "") }
+    }
+
+    private func keepRecoveryDraft() {
+        guard let end = sessionEnd, connectedOnce, recovery == nil else { return }
+        let pendingNote: String? = if case .memory(_, let text) = pendingAction { text } else { nil }
+        recovery = SessionRecovery.draft(
+            lines: lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) },
+            pendingNote: pendingNote, end: end, endedAt: Date())
+    }
+
+    func editRecovery(_ text: String) {
+        recovery?.text = text
+    }
+
+    /// Saves the draft as a note, only now that the user tapped Save; read back by the store.
+    /// Returns what went wrong, or nil.
+    func saveRecovery() async -> String? {
+        guard let text = recovery?.text else { return nil }
+        do {
+            try MemoryTextValidator.validate(text)
+            let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+            guard store.record(id: record.id) != nil else { return NSLocalizedString("The note couldn't be confirmed. Check your notes.", comment: "") }
+            recoverySaved = record.currentText
+            recovery = nil
+            return nil
+        } catch {
+            return UserFacingError.message(for: error)
+        }
+    }
+
+    func discardRecovery() {
+        recovery = nil
     }
 
     // MARK: End-of-conversation save suggestions (ADR-247)
@@ -1571,14 +1665,17 @@ final class VoiceSessionController {
     /// Picks what the user said that may be worth keeping, on the phone, from their own lines only.
     /// Not for a private conversation, not when switched off, not when notes can't be saved.
     private func offerSaveSuggestions() {
-        guard !suggestionsOffered, phase == .ended else { return }
+        // After an end, and after a drop once Doddy had been listening (ADR-330).
+        let dropped = sessionEnd?.isDrop == true && connectedOnce
+        guard !suggestionsOffered, phase == .ended || dropped else { return }
         suggestionsOffered = true
         guard !isPrivate, store.isStorageAvailable,
               UserDefaults.standard.object(forKey: PreferenceKey.suggestSavesAfterConversation) as? Bool ?? true
         else { return }
         let found = SaveSuggestions.suggest(
             userLines: lines.filter(\.fromUser).map(\.text),
-            alreadyProposed: proposedNoteTexts,
+            // What the recovery draft already offers isn't offered twice.
+            alreadyProposed: proposedNoteTexts + (recovery.map { $0.unanswered + [$0.pendingNote].compactMap { $0 } } ?? []),
             existingNotes: store.memories)
         saveSuggestions = found.isEmpty ? nil : SaveSuggestionCard(found)
     }

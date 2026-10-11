@@ -310,3 +310,12 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | AS13 | Live server + real Todoist: ask Doddy to add a task, tap Add, and turn on Airplane mode right after the tap; turn it off | Doddy asks the server once more with the same confirmation: "added", one task in Todoist. Never two |
 | AS14 | Same, with Gmail: create a draft, cut the connection mid-way, then ask for the same draft again | The card says an earlier try may have gone through and to check Gmail; Gmail has at most the drafts you confirmed |
 | AS15 | With "List my tasks" on: make a task's answer get lost (server timeout), then ask for the same task | Doddy says it's already in Todoist and shows no card; with "List my tasks" off it shows the card with the warning line |
+
+## 4l. Voice session recovery (ADR-330, `SESSION_RECOVERY_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| SR1 | Talk to Doddy; mid-sentence turn on Airplane mode | "You're offline" (or "The conversation dropped"), never "Conversation ended"; the offline card holds what Doddy last heard |
+| SR2 | Talk to Doddy on Wi-Fi; switch the router off right after Doddy answers and you say one more thing | "The conversation dropped"; the draft card shows that last thing; Save as note saves it once, Discard drops it |
+| SR3 | Ask Doddy to save a note and, while the card shows, cut the connection | The draft is the note Doddy was asking about; nothing saved until Save as note |
+| SR4 | After SR2, tap Talk again within 15 minutes ("Remember recent conversations" on) | Doddy says the last conversation was cut off and offers to carry on; with the setting off or Private, it doesn't |
+| SR5 | Say goodbye so Doddy ends the call; then tap End in another conversation | Both show "Conversation ended", never "dropped" (checks that end_call arrives as the SDK's own end) |
