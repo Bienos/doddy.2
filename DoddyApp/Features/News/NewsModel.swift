@@ -68,6 +68,18 @@ final class NewsModel {
 
     func save() async {
         guard let client else { return }
+        // A half-filled own topic would be left out without a word, then "Saved." shown. Rows with
+        // neither a name nor keywords are empty and simply skipped.
+        if let incomplete = ownTopics.first(where: { topic in
+            let hasLabel = !topic.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            return hasLabel != !NewsTopic.keywords(from: topic.keywordsText).isEmpty
+        }) {
+            let label = incomplete.label.trimmingCharacters(in: .whitespacesAndNewlines)
+            message = label.isEmpty
+                ? NSLocalizedString("One of your own topics has keywords but no name. Name it or remove it. Nothing was saved.", comment: "")
+                : String(format: NSLocalizedString("Add keywords to \u{201C}%@\u{201D}, or remove it. Nothing was saved.", comment: ""), label)
+            return
+        }
         let parts = Calendar.current.dateComponents([.hour, .minute], from: sendTime)
         let topics = selectedCatalog.compactMap { id in catalog.first { $0.id == id }.map { NewsTopic(catalogId: $0.id, label: $0.label) } }
             + ownTopics.compactMap { t in
