@@ -416,7 +416,7 @@ export class Store {
     accountId: string;
     argsDigest: string;
     now: number;
-  }): boolean {
+  }, opts: { checkOnly?: boolean } = {}): boolean {
     return this.transaction(() => {
       const row = this.db.prepare("SELECT * FROM approvals WHERE approval_id = ?").get(input.approvalId) as
         | { user_id: string; capability: string; account_id: string; args_digest: string; expires_at: number; consumed_at: number | null }
@@ -432,6 +432,8 @@ export class Store {
       ) {
         return false;
       }
+      // checkOnly: would it be accepted? Lets the caller pass its limits first without burning it.
+      if (opts.checkOnly) return true;
       return this.db.prepare("UPDATE approvals SET consumed_at = ? WHERE approval_id = ? AND consumed_at IS NULL").run(input.now, input.approvalId)
         .changes === 1;
     });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { ConfigError, loadConfig, testLimits } from "../src/config.js";
+import { argumentDigest } from "../src/policy.js";
 import { Store } from "../src/store.js";
 import { ADD_TODOIST_TASK, CHECK_EMAIL, DRAFT_EMAIL, driveQuoted, FIND_DRIVE_FILE, LIST_TODOIST_TASKS, SEARCH_NOTION, todoistSearchWord } from "../src/tools/catalog.js";
 import { ComposioToolsProvider, type ComposioToolsLike } from "../src/tools/composio.js";
@@ -336,6 +337,24 @@ test("a write refused by the provider's rate limit is reported as not done", asy
 });
 
 // ------------------------------------------------------------------ limits and privacy
+
+test("a write refused by a Doddy limit keeps its confirmation for a later try", async () => {
+  rig = await start({ userDailyToolRuns: 1, serviceDailyCalls: 300 });
+  await ready(rig, "todoist", "add_todoist_task");
+  await on(rig, "list_todoist_tasks");
+  assert.equal((await run(rig, "list_todoist_tasks", {})).status, 200, "uses today's only run");
+  const args = { content: "Renew passport" };
+  const prepared = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "add_todoist_task", arguments: args } });
+  const refused = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  assert.equal(refused.body.error.code, "quota_exceeded");
+  assert.equal(rig.provider.executed.filter((e) => e.slug === "TODOIST_CREATE_TASK").length, 0);
+  const still = rig.store.consumeApproval(
+    { approvalId: prepared.body.approvalId, userId: DEV_IDENTITIES[USER_A]!, capability: "add_todoist_task",
+      accountId: rig.store.getConnection(DEV_IDENTITIES[USER_A]!, "todoist")!.connection_id, argsDigest: argumentDigest(args), now: rig.clock.ms },
+    { checkOnly: true },
+  );
+  assert.equal(still, true, "the confirmation was not used up by the refusal");
+});
 
 test("the daily tool-run limit stops further runs before any provider call", async () => {
   rig = await start({ userDailyToolRuns: 2, serviceDailyCalls: 300 });

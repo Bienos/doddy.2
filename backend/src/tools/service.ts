@@ -400,24 +400,20 @@ export class CloudToolsService {
     this.limiter.reserveRequest(userId, now);
     const row = this.checkUsable(userId, tool, op);
 
-    if (tool.risk === "write") {
-      const approved =
-        request.approvalId !== undefined &&
-        this.store.consumeApproval({
-          approvalId: request.approvalId,
-          userId,
-          capability: tool.name,
-          accountId: row.connection_id,
-          argsDigest: argumentDigest(args),
-          now,
-        });
-      if (!approved) {
-        throw new AppError("capability_disabled", {
-          message: "This action needs a fresh confirmation.",
-          receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
-        });
-      }
-    }
+    // A write's approval is checked here but only used up right before the provider call, so a
+    // limit or "busy" refusal in between doesn't cost the user their confirmation.
+    const approval = (checkOnly: boolean) =>
+      request.approvalId !== undefined &&
+      this.store.consumeApproval(
+        { approvalId: request.approvalId, userId, capability: tool.name, accountId: row.connection_id, argsDigest: argumentDigest(args), now: this.now() },
+        { checkOnly },
+      );
+    const unconfirmed = () =>
+      new AppError("capability_disabled", {
+        message: "This action needs a fresh confirmation.",
+        receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
+      });
+    if (tool.risk === "write" && !approval(true)) throw unconfirmed();
 
     try {
       this.limiter.reserveToolRun(userId, now);
@@ -432,6 +428,8 @@ export class CloudToolsService {
     const title = TOOLKITS[tool.toolkit].title;
     try {
       return await this.limiter.withSlot(userId, async () => {
+        // Used up here, once: a parallel run with the same approval loses the race and does nothing.
+        if (tool.risk === "write" && !approval(false)) throw unconfirmed();
         const result = await this.withRetry(tool, (signal) =>
           this.provider.execute({
             toolkit: tool.toolkit,
