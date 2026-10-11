@@ -47,5 +47,12 @@ for name in $("$work/island-check" --pose-assets); do
         done
     done
 done
+for name in $("$work/island-check" --talking-assets); do
+    for file in Contents.json art@2x.png art@3x.png; do
+        if [ ! -f "DoddyApp/Resources/Assets.xcassets/$name.imageset/$file" ]; then
+            echo "FAIL: DoddyApp/Resources/Assets.xcassets/$name.imageset/$file is missing"; missing=1
+        fi
+    done
+done
 [ "$missing" -eq 0 ] || exit 1
 "$work/island-check" "$@"
