@@ -21,7 +21,8 @@
 #    database or networking of its own (ADR-232),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
-#  - AlarmKit only inside DoddyApp/Features/Alarms (ADR-260),
+#  - AlarmKit only inside DoddyApp/Features/Alarms, plus the shared alarm metadata and the snooze
+#    countdown widget (ADR-260, ADR-267),
 #  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
 #    reminders, contacts and "While Using" location,
@@ -172,7 +173,7 @@ fi
 if grep -RInE --include='*.swift' "$sharing_only" "${dirs[@]}" | code_only | grep -v "^$sharing_dir/"; then
   echo "FAIL: CloudKit outside $sharing_dir." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v "^$alarms_dir/"; then
+if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v -e "^$alarms_dir/" -e "^Shared/Alarms/DoddyAlarmMetadata.swift:" -e "^DoddyWidgets/AlarmLiveActivity.swift:"; then
   echo "FAIL: AlarmKit outside $alarms_dir." >&2; status=1
 fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then

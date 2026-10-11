@@ -48,7 +48,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
              VoiceToolName.moveReminders: .reminders
         case VoiceToolName.lookupContact: .contacts
-        case VoiceToolName.setTimer, VoiceToolName.setAlarm: .timers
+        case VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm: .timers
         case VoiceToolName.openMap: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
@@ -171,6 +171,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case setTimer(TimerDraft)
     /// A real alarm (ADR-260), on iOS 26 and later.
     case setAlarm(AlarmDraft)
+    /// Doddy's alarms, read on the phone (ADR-267). No card: nothing changes.
+    case listAlarms
+    /// Turn one of Doddy's alarms off, after a card.
+    case cancelAlarm(clock: String, label: String?)
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
@@ -238,6 +242,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseTimer(args, name: name)
         case VoiceToolName.setAlarm:
             return parseAlarm(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.listAlarms:
+            return .listAlarms
+        case VoiceToolName.cancelAlarm:
+            return parseCancelAlarm(args, name: name)
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)

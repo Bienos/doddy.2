@@ -37,6 +37,8 @@ final class VoiceSessionController {
         case timer(toolCallID: String, draft: TimerDraft)
         /// "Set this alarm?" (ADR-260), iOS 26 and later.
         case alarm(toolCallID: String, draft: AlarmDraft)
+        /// "Turn off this alarm?" (ADR-267), one of Doddy's alarms.
+        case cancelAlarm(toolCallID: String, alarm: AlarmEntry)
         case map(toolCallID: String, place: String)
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
@@ -68,7 +70,7 @@ final class VoiceSessionController {
 
         var toolCallID: String {
             switch self {
-            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _),
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _), .cancelAlarm(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _), .bulk(let id, _, _, _):
@@ -593,6 +595,13 @@ final class VoiceSessionController {
             await reply(id, await startTimer(draft))
         case .alarm(let id, let draft):
             await reply(id, await setAlarm(draft))
+        case .cancelAlarm(let id, let alarm):
+            guard isOn(.timers) else {
+                connectionNeeded = .timers
+                await reply(id, VoiceToolReply.failed("Timers and alarms are switched off. Nothing changed."))
+                return
+            }
+            await reply(id, AlarmScheduler.cancel(alarm.id) ? VoiceToolReply.alarmCancelled(alarm) : VoiceToolReply.alarmCancelUnconfirmed)
         case .map(let id, let place):
             guard let url = OpenLinks.map(place: place) else {
                 await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
@@ -751,6 +760,7 @@ final class VoiceSessionController {
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
         case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
         case .alarm(let id, _): await reply(id, VoiceToolReply.declinedAlarm)
+        case .cancelAlarm(let id, _): await reply(id, VoiceToolReply.alarmCancelDeclined)
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
@@ -1381,6 +1391,15 @@ final class VoiceSessionController {
                 return
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .listAlarms:
+            // Read on the phone (ADR-267): times and labels Doddy set, nothing else.
+            await reply(call.toolCallId, VoiceToolReply.alarms(AlarmScheduler.current()))
+        case .cancelAlarm(let clock, let label):
+            switch AlarmMatch.match(clock: clock, label: label, in: AlarmScheduler.current()) {
+            case .none: await reply(call.toolCallId, VoiceToolReply.alarmNotFound(clock))
+            case .several(let found): await reply(call.toolCallId, VoiceToolReply.alarmAmbiguous(found))
+            case .one(let alarm): propose(.cancelAlarm(toolCallID: call.toolCallId, alarm: alarm), toolCallID: call.toolCallId)
+            }
         case .setAlarm(let draft):
             // Said now, before a card that could only fail: an older iOS, or alarms refused.
             switch AlarmScheduler.support() {
@@ -2177,7 +2196,7 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .alarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
+        case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
              .deleteEvent, .deleteReminder, .bulk: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false

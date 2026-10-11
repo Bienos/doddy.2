@@ -201,7 +201,7 @@
  "It hasn't been saved.": "Nie została zapisana.",
  "Keep Precise Location on, or iOS can't tell when you get there.": "Zostaw włączone Dokładne położenie, inaczej iOS nie rozpozna, kiedy tam dotrzesz.",
  "Keep editing": "Edytuj dalej",
- "Keep it": "Zachowaj",
+ "Keep it": "Zostaw",
  "Keep them": "Zachowaj je",
  "Kept only on this iPhone, never sent anywhere. Not in exports.": "Tylko na tym iPhonie, nigdy nigdzie niewysyłane. Nie ma go w eksportach.",
  "Keywords, comma separated": "Słowa kluczowe, oddzielone przecinkami",
@@ -944,7 +944,6 @@
  "Alarms": "Budziki",
  "That alarm couldn't be turned off. Try again.": "Nie udało się wyłączyć tego budzika. Spróbuj jeszcze raz.",
  "Doddy's alarms ring even in Silent mode or a Focus. Only alarms set by Doddy are shown here; the Clock app's alarms aren't.": "Budziki Doddy'ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy'ego, nie te z aplikacji Zegar.",
- "It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz go w Ustawieniach, w sekcji Budziki.",
  "Set alarm": "Ustaw budzik",
  "Saturday and Sunday": "Sobota i niedziela",
  "Monday to Friday": "Od poniedziałku do piątku",
@@ -1006,5 +1005,9 @@
  "Move these reminders?": "Przenieść te przypomnienia?",
  "Left as they are (that time doesn't exist that day): %@": "Zostają bez zmian (tej godziny nie ma tego dnia): %@",
  "Untick any to keep. Each one is checked before it goes; a repeating event loses only this time. This can't be undone from Doddy.": "Odznacz te, które mają zostać. Każde jest sprawdzane przed usunięciem; z powtarzającego się wydarzenia znika tylko ten termin. Doddy nie może tego cofnąć.",
- "Untick any to leave. Each keeps its time and is checked before it moves.": "Odznacz te, które mają zostać. Każde zachowuje swoją godzinę i jest sprawdzane przed przeniesieniem."
+ "Untick any to leave. Each keeps its time and is checked before it moves.": "Odznacz te, które mają zostać. Każde zachowuje swoją godzinę i jest sprawdzane przed przeniesieniem.",
+ "It rings even in Silent mode or a Focus, with Snooze for 9 minutes. Turn it off in Settings, Alarms, or ask Doddy.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z drzemką na 9 minut. Wyłączysz go w Ustawieniach, w sekcji Budziki, albo prosząc Doddy’ego.",
+ "Turn off this alarm?": "Wyłączyć ten budzik?",
+ "A repeating alarm stops for every day, not just the next one.": "Powtarzający się budzik wyłącza się na wszystkie dni, nie tylko na najbliższy.",
+ "Snoozed": "Drzemka"
 }

@@ -166,6 +166,17 @@
         }
       }
     },
+    "A repeating alarm stops for every day, not just the next one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtarzający się budzik wyłącza się na wszystkie dni, nie tylko na najbliższy."
+          }
+        }
+      }
+    },
     "A saved preference couldn't be read. Nothing was deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -3708,13 +3719,13 @@
         }
       }
     },
-    "It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.": {
+    "It rings even in Silent mode or a Focus, with Snooze for 9 minutes. Turn it off in Settings, Alarms, or ask Doddy.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz go w Ustawieniach, w sekcji Budziki."
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z drzemką na 9 minut. Wyłączysz go w Ustawieniach, w sekcji Budziki, albo prosząc Doddy’ego."
           }
         }
       }
@@ -3868,7 +3879,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zachowaj"
+            "value": "Zostaw"
           }
         }
       }
@@ -7965,6 +7976,17 @@
         }
       }
     },
+    "Snoozed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drzemka"
+          }
+        }
+      }
+    },
     "Something in that request wasn't accepted. Nothing was changed.": {
       "extractionState": "manual",
       "localizations": {
@@ -9743,6 +9765,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłącz powiadomienia"
+          }
+        }
+      }
+    },
+    "Turn off this alarm?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączyć ten budzik?"
           }
         }
       }

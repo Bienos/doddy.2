@@ -10,12 +10,8 @@ import SwiftUI
 // `needsNewerIOS` and the agent offers a timer or a reminder instead. An alarm is set only after
 // the user taps Set alarm, and "set" means AlarmKit lists it afterwards.
 
-/// One alarm Doddy set, as shown in Settings › Alarms.
-struct DoddyAlarm: Identifiable, Equatable {
-    let id: UUID
-    let summary: String
-    let label: String?
-}
+/// One alarm Doddy set, as shown in Settings › Alarms and matched by voice (ADR-267).
+typealias DoddyAlarm = AlarmEntry
 
 @MainActor
 enum AlarmScheduler {
@@ -40,7 +36,7 @@ enum AlarmScheduler {
         if #available(iOS 26.0, *) {
             let outcome = try await AlarmKitBackend.schedule(draft)
             if case .verified(let id) = outcome {
-                AlarmBook.remember(DoddyAlarm(id: id, summary: draft.summary, label: draft.label))
+                AlarmBook.remember(DoddyAlarm(id: id, clock: draft.clock, label: draft.label, summary: draft.summary))
                 return .verified
             }
             return outcome == .notAllowed ? .notAllowed : .unconfirmed
@@ -84,14 +80,15 @@ private enum AlarmBook {
         let stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
         return stored.compactMap { id, fields in
             guard let uuid = UUID(uuidString: id), let summary = fields["summary"] else { return nil }
-            return DoddyAlarm(id: uuid, summary: summary, label: fields["label"])
+            // Alarms set before ADR-267 kept no clock; their summary starts with it.
+            return DoddyAlarm(id: uuid, clock: fields["clock"] ?? String(summary.prefix(5)), label: fields["label"], summary: summary)
         }
         .sorted { $0.summary < $1.summary }
     }
 
     static func remember(_ alarm: DoddyAlarm) {
         var stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
-        var fields = ["summary": alarm.summary]
+        var fields = ["summary": alarm.summary, "clock": alarm.clock]
         if let label = alarm.label { fields["label"] = label }
         stored[alarm.id.uuidString] = fields
         UserDefaults.standard.set(stored, forKey: key)
@@ -104,9 +101,6 @@ private enum AlarmBook {
 }
 
 #if canImport(AlarmKit)
-@available(iOS 26.0, *)
-private struct DoddyAlarmMetadata: AlarmMetadata {}
-
 @available(iOS 26.0, *)
 @MainActor
 private enum AlarmKitBackend {
@@ -140,13 +134,21 @@ private enum AlarmKitBackend {
             schedule = .fixed(date)
         }
         let title: LocalizedStringResource = draft.label.map { LocalizedStringResource(stringLiteral: $0) } ?? "Doddy alarm"
+        // Stop, and Snooze (ADR-267): rings again after `snoozeMinutes`, with a countdown on the
+        // Lock Screen drawn by the widget extension (AlarmLiveActivity).
         let alert = AlarmPresentation.Alert(
             title: title,
-            stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill"))
+            stopButton: AlarmButton(text: "Stop", textColor: .white, systemImageName: "stop.fill"),
+            secondaryButton: AlarmButton(text: "Snooze", textColor: .white, systemImageName: "zzz"),
+            secondaryButtonBehavior: .countdown)
+        let countdown = AlarmPresentation.Countdown(title: "Snoozed")
         let attributes = AlarmAttributes<DoddyAlarmMetadata>(
-            presentation: AlarmPresentation(alert: alert), metadata: nil, tintColor: .orange)
+            presentation: AlarmPresentation(alert: alert, countdown: countdown), metadata: nil, tintColor: .orange)
         let id = UUID()
-        _ = try await manager.schedule(id: id, configuration: .alarm(schedule: schedule, attributes: attributes))
+        let configuration = AlarmManager.AlarmConfiguration<DoddyAlarmMetadata>(
+            countdownDuration: Alarm.CountdownDuration(preAlert: nil, postAlert: TimeInterval(AlarmDraft.snoozeMinutes * 60)),
+            schedule: schedule, attributes: attributes)
+        _ = try await manager.schedule(id: id, configuration: configuration)
         return scheduledIDs().contains(id) ? .verified(id) : .unconfirmed
     }
 
