@@ -336,4 +336,7 @@ Needs first: the new "First conversation" section on the live agent, with placeh
 |---|---|---|
 | F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
 | F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
+## 4n. A shorter introduction (ADR-327)
+| I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
+| I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
 
