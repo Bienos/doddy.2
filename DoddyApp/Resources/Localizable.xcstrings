@@ -430,6 +430,17 @@
         }
       }
     },
+    "Add a warranty": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj gwarancję"
+          }
+        }
+      }
+    },
     "Add an item": {
       "extractionState": "manual",
       "localizations": {
@@ -1189,6 +1200,17 @@
         }
       }
     },
+    "Bought on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data zakupu"
+          }
+        }
+      }
+    },
     "Breathe": {
       "extractionState": "manual",
       "localizations": {
@@ -1427,6 +1449,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zmień notatkę"
+          }
+        }
+      }
+    },
+    "Change or remove the warranty": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień lub usuń gwarancję"
           }
         }
       }
@@ -2630,6 +2663,17 @@
         }
       }
     },
+    "Doddy couldn't read a date or a length from this note, so check both.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie odczytał z tej notatki daty ani okresu, więc sprawdź oba."
+          }
+        }
+      }
+    },
     "Doddy doesn't speak to anyone here. Use it for a guide, a talk or an announcement, not someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -2736,6 +2780,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy korzysta tylko z Twoich notatek: bez kalendarza, przypomnień, kontaktów, innych aplikacji i kont online."
+          }
+        }
+      }
+    },
+    "Doddy keeps up to 200 warranties. Remove an old one first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przechowuje do 200 gwarancji. Najpierw usuń starą."
           }
         }
       }
@@ -3323,6 +3378,17 @@
         }
       }
     },
+    "Ends %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kończy się %@"
+          }
+        }
+      }
+    },
     "English": {
       "extractionState": "manual",
       "localizations": {
@@ -3550,6 +3616,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szybciej"
+          }
+        }
+      }
+    },
+    "Filled in from the note's words. Check them against the receipt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzupełnione na podstawie treści notatki. Sprawdź z paragonem."
           }
         }
       }
@@ -4258,6 +4335,17 @@
         }
       }
     },
+    "It couldn't be removed. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "It couldn't be written out. The recording is still here; type a few words so you can find the note later.": {
       "extractionState": "manual",
       "localizations": {
@@ -4276,6 +4364,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie zadziałało, pokaż mi kroki"
+          }
+        }
+      }
+    },
+    "It ends within a month, so there's no reminder to set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kończy się w ciągu miesiąca, więc nie ma czego przypominać."
           }
         }
       }
@@ -4353,6 +4452,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Było długie, więc dodano tylko pierwszą część."
+          }
+        }
+      }
+    },
+    "It wasn't saved. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zapisano. Spróbuj ponownie."
           }
         }
       }
@@ -7899,6 +8009,17 @@
         }
       }
     },
+    "Remind me a month before": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnij miesiąc wcześniej"
+          }
+        }
+      }
+    },
     "Remind me about this": {
       "extractionState": "manual",
       "localizations": {
@@ -8181,6 +8302,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usuń szablon"
+          }
+        }
+      }
+    },
+    "Remove the warranty": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń gwarancję"
           }
         }
       }
@@ -10583,6 +10715,28 @@
         }
       }
     },
+    "The length is what the receipt or you say. Doddy doesn't know your rights as a buyer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okres jest taki, jak na paragonie albo jak wpiszesz. Doddy nie zna Twoich praw jako kupującego."
+          }
+        }
+      }
+    },
+    "The length must be 1 to 120 months.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okres musi wynosić od 1 do 120 miesięcy."
+          }
+        }
+      }
+    },
     "The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -11184,6 +11338,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To wspomnienie już nie istnieje."
+          }
+        }
+      }
+    },
+    "This note already has a reminder; this one replaces it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta notatka ma już przypomnienie; to je zastąpi."
           }
         }
       }
@@ -12222,6 +12387,72 @@
         }
       }
     },
+    "Warranties": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancje"
+          }
+        }
+      }
+    },
+    "Warranties (%lld)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancje (%lld)"
+          }
+        }
+      }
+    },
+    "Warranty": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancja"
+          }
+        }
+      }
+    },
+    "Warranty ended %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancja skończyła się %@"
+          }
+        }
+      }
+    },
+    "Warranty until %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancja do %@"
+          }
+        }
+      }
+    },
+    "Warranty: %lld months": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gwarancja: %lld mies."
+          }
+        }
+      }
+    },
     "Way": {
       "extractionState": "manual",
       "localizations": {
@@ -12328,6 +12559,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co jest udostępniane"
+          }
+        }
+      }
+    },
+    "What it is": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co to jest"
           }
         }
       }

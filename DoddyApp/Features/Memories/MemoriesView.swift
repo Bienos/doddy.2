@@ -85,6 +85,21 @@ struct MemoriesView: View {
                         if !people.isEmpty {
                             MemoryPeopleRow(people: people)
                         }
+                        // Warranties kept for receipts (ADR-342), only once there is one.
+                        let warrantyCount = WarrantyStore.current().items.count
+                        if warrantyCount > 0 {
+                            NavigationLink(value: MemoryNavigationRoute.warranties) {
+                                HStack {
+                                    Image(systemName: "checkmark.shield").accessibilityHidden(true)
+                                    Text(String(format: NSLocalizedString("Warranties (%lld)", comment: ""), warrantyCount))
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(Theme.secondaryText).accessibilityHidden(true)
+                                }
+                                .frame(minHeight: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("memories.warranties")
+                        }
                         let pins = PinnedNotes(stored: pinnedRaw)
                         LazyVStack(spacing: 12) {
                             // Pinned notes first (ADR-187), then the chosen order.
@@ -125,6 +140,7 @@ struct MemoriesView: View {
                     FindMemoriesView(initialQuery: query).id(ShortcutRouter.shared.findRequest?.id)
                 case .note(let id): MemoryOrListView(id: id)
                 case .person(let name): PersonNotesView(person: name)
+                case .warranties: WarrantiesView()
                 }
             }
             .onChange(of: activeCategory) { _, active in

@@ -12,6 +12,8 @@ enum MemoryNavigationRoute: Hashable {
     case note(UUID)
     /// A person's page (ADR-341): the name as written after @.
     case person(String)
+    /// Every warranty, soonest end first (ADR-342).
+    case warranties
 }
 
 struct DoddyWordmark: View {

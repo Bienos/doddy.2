@@ -91,6 +91,8 @@ struct MemoryDetailView: View {
                     Text("A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                     NoteReminderSection(memoryID: memoryID)
+                    // Warranty for a receipt (ADR-342): suggested from the note's words, checked by the user.
+                    WarrantySection(record: record)
                     Button { correction = record } label: {
                         HStack { Text("Edit this note"); Spacer(); Image(systemName: "pencil") }
                     }
