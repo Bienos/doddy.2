@@ -200,13 +200,13 @@ In order of risk:
   - `$(TeamIdentifierPrefix)` in `Config/DoddyMac-Info.plist`, `Config/DoddyMacWidgets-Info.plist` and the App Group entitlements;
   - `WidgetCenter` in the Mac app;
   - `containerBackground(.background, for: .widget)` on macOS.
-- **New note widget and the Mac window (ADR-440, ADR-441):**
+- **New note widget and the Mac window (ADR-450, ADR-451):**
   - `NewNoteWidget` in `DoddyWidgets/HomeWidgets.swift`: `Button(intent: NewNoteIntent())`, added to `DoddyHomeWidgets` (seven widgets in that bundle);
   - `Window(..., id:)` next to `MenuBarExtra`, and `openWindow(id:)`;
   - `HSplitView`, and `TextEditor` with `.scrollContentBackground(.hidden)`;
   - `NSApplication.shared.activate()`, which is macOS 14+.
 - **Share extension (ADR-311), Swift 6:** `ShareViewController` no longer sends the main-actor `[NSExtensionItem]` to `Task.detached` or a `sending` parameter, which strict concurrency rejects. The items stay on the main actor, and each attachment is read with `NSItemProvider.loadItem(forTypeIdentifier:options:completionHandler:)` inside `withCheckedContinuation`; only a `String` comes back. Behaviour is unchanged: the first web link (never a file's address), else the plain text.
-- **Smart Stack, palette, iPadOS 26 (ADR-443 to ADR-445):**
+- **Smart Stack, palette, iPadOS 26 (ADR-453 to ADR-455):**
   - `DoddyToolLiveActivity.island(_:)` takes an `ActivityViewContext<DoddyToolAttributes>`;
   - `DoddyToolLiveActivityWithWatch` uses `.supplementalActivityFamilies([.small])` and `@Environment(\.activityFamily)`;
   - the bundle's `if #unavailable(iOS 18.0)`: if `WidgetBundleBuilder` rejects it, use `if #available { … } else { … }` or a nested bundle;

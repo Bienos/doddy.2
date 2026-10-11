@@ -55,7 +55,9 @@ final class ActivityTextTests: XCTestCase {
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy:
             true
-        case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid:
+        case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
+             .noteCapabilityGap:
+            // The gap tool leaves no row in What Doddy did (ADR-440).
             false
         }
     }

@@ -33,6 +33,7 @@ struct SettingsView: View {
     @State private var restoreFailed = false
     @State private var deleteError: String?
     @AppStorage(PreferenceKey.suggestSavesAfterConversation) private var suggestSaves = true
+    @AppStorage(PreferenceKey.learningOn) private var learningOn = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
     @State private var editingProfile = false
     @State private var confirmForget = false
@@ -215,7 +216,7 @@ struct SettingsView: View {
                             Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                             Button("Cancel", role: .cancel) {}
                         } message: {
-                            Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected.")
+                            Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too.")
                         }
                     if let deleteError {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
@@ -376,6 +377,19 @@ struct SettingsView: View {
                     Text("When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                    if let learning = store.learning, learning.isAvailable {
+                        // ADR-440: facts and routines Doddy kept, each confirmed by the user.
+                        NavigationLink {
+                            LearnedView(learning: learning)
+                        } label: {
+                            StatusRow(
+                                title: "What I've learned",
+                                value: learningOn
+                                    ? "On · \(learning.confirmedFacts.count + learning.confirmedProcedures.count)"
+                                    : "Off")
+                        }
+                        .accessibilityIdentifier("settings.learned")
+                    }
                     if let problem = conversationLogs.problem {
                         Label(problem, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
@@ -391,7 +405,7 @@ struct SettingsView: View {
 
                 Section("Voice") {
                     PersonalityLinkRow()
-                    // The Dynamic Island and Lock Screen styles: iPhone only (ADR-432, ADR-443).
+                    // The Dynamic Island and Lock Screen styles: iPhone only (ADR-432, ADR-453).
                     if DeviceSupport.hasDynamicIsland { IslandStyleLinkRow() }
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
@@ -738,6 +752,8 @@ struct SettingsView: View {
         let stillSharedNames = stillShared.compactMap { store.list(id: $0)?.name }
         do {
             try await store.deleteAll()
+            // Everything Doddy learned and the counts of corrections go with the notes (ADR-440).
+            try await store.learning?.deleteAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
         } catch {
             deleteError = UserFacingError.message(for: error)

@@ -9,7 +9,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
     var body: some Widget {
         DoddyVoiceLiveActivity()
         ShoppingLiveActivity()
-        // The tools' Live Activity; from iOS 18 the same one with an Apple Watch layout (ADR-444).
+        // The tools' Live Activity; from iOS 18 the same one with an Apple Watch layout (ADR-454).
         if #available(iOS 18.0, *) {
             DoddyToolLiveActivityWithWatch()
         }

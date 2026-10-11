@@ -22,7 +22,7 @@ struct DoddyMacApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        // The bigger Doddy window (ADR-441), opened only from the menu bar window.
+        // The bigger Doddy window (ADR-451), opened only from the menu bar window.
         Window("Doddy", id: MacNotesWindow.id) {
             MacNotesWindow()
                 .environment(model)

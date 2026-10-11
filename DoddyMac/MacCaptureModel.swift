@@ -13,7 +13,7 @@ final class MacCaptureModel {
     private let repository: SQLiteMemoryRepository?
     /// Set when the database can't be opened. Save is then not offered.
     let openProblem: String?
-    /// Every note on this Mac, newest first: the Doddy window lists them all (ADR-441).
+    /// Every note on this Mac, newest first: the Doddy window lists them all (ADR-451).
     private(set) var notes: [MemoryRecord] = []
     /// The menu bar window shows the last five.
     var recent: [MemoryRecord] { Array(notes.prefix(5)) }

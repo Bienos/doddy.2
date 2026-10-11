@@ -119,28 +119,35 @@ extension VoiceToolReply {
         "failed: no saved note has exactly that text. Call search_memories, then pass one note's text exactly as the result quotes it. Nothing was set."
     }
 
+    /// The search is the agent's words, so it follows as data (ToolData).
     public static func placeNotFound(_ query: String) -> String {
-        "failed: Apple Maps found no place for \"\(query)\". Ask the user for a more specific place, e.g. with a street or town. Nothing was set."
+        "failed: Apple Maps found no place for the search below. Ask the user for a more specific place, e.g. with a street or town. Nothing was set.\n"
+            + ToolData.block([quoted("Searched for", query)])
     }
 
     /// `summary` is `ReminderFormat.summary` of the stored reminder. `previous` is the reminder
     /// the note had before, which this one replaced (review C3).
-    /// The note's stored text follows as data (ToolData).
+    /// The note's stored text, and a place's name (from Apple Maps), follow as data (ToolData).
     public static func noteReminderSet(_ reminder: MemoryReminder, note: String, replacing previous: MemoryReminder? = nil) -> String {
-        "added: a reminder about the note below: \(phrase(reminder)). It is a notification on this iPhone.\(replaced(previous))\n" + noteData(note)
+        "added: a reminder about the note below: \(phrase(reminder)). It is a notification on this iPhone.\(replaced(previous))\n"
+            + noteData(note, reminder, previous)
     }
 
     public static func noteReminderInDoddyOnly(_ reminder: MemoryReminder, note: String, replacing previous: MemoryReminder? = nil) -> String {
-        "added: a reminder about the note below: \(phrase(reminder)), kept in Doddy only. Notifications are off for Doddy, so the iPhone won't alert; it shows on Doddy's Home when due. Tell the user this.\(replaced(previous))\n" + noteData(note)
+        "added: a reminder about the note below: \(phrase(reminder)), kept in Doddy only. Notifications are off for Doddy, so the iPhone won't alert; it shows on Doddy's Home when due. Tell the user this.\(replaced(previous))\n"
+            + noteData(note, reminder, previous)
     }
 
-    private static func noteData(_ note: String) -> String {
-        ToolData.block(["Note: \"\(ToolData.clean(note))\""])
+    private static func noteData(_ note: String, _ reminder: MemoryReminder, _ previous: MemoryReminder?) -> String {
+        var lines = [quoted("Note", note)]
+        if case .place(let place) = reminder.trigger { lines.append(quoted("Place", place.name)) }
+        if case .place(let place)? = previous?.trigger { lines.append(quoted("Earlier place", place.name)) }
+        return ToolData.block(lines)
     }
 
     private static func replaced(_ previous: MemoryReminder?) -> String {
         guard let previous else { return "" }
-        return " It replaced the note's earlier reminder (\(phrase(previous))), which is gone now. Tell the user."
+        return " It replaced the note's earlier reminder (\(phrase(previous, earlier: true))), which is gone now. Tell the user."
     }
 
     public static func noteReminderFailed(_ reason: String) -> String {
@@ -149,7 +156,8 @@ extension VoiceToolReply {
         return "failed: \(reason)"
     }
 
-    private static func phrase(_ reminder: MemoryReminder) -> String {
+    /// A place reminder names "the place below" (or "the earlier place below"): the name is data.
+    private static func phrase(_ reminder: MemoryReminder, earlier: Bool = false) -> String {
         switch reminder.trigger {
         case .time(let fireAt, let zone):
             if reminder.repeats != nil {
@@ -159,7 +167,7 @@ extension VoiceToolReply {
                 "at \(ReminderFormat.dateTime(fireAt, timeZoneID: zone, locale: Locale(identifier: "en_GB"))) (\(ReminderFormat.zoneName(zone)))"
             }
         case .place(let place):
-            "\(ReminderFormat.place(place).lowercased()) (within \(place.radiusMeters) m, each time until the user marks it Done)"
+            "\(place.onArrival ? "when you arrive at" : "when you leave") the \(earlier ? "earlier " : "")place below (within \(place.radiusMeters) m, each time until the user marks it Done)"
         }
     }
 }

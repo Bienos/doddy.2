@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The helper palette (ADR-445; the owner's review deck, slide 12, "Mała paleta wewnątrz pracy z
+/// The helper palette (ADR-455; the owner's review deck, slide 12, "Mała paleta wewnątrz pracy z
 /// Doddy"): a small floating panel with a quick note field. It floats over Doddy's own windows
 /// and hides as soon as Doddy isn't the active app (`hidesOnDeactivate`), so it never sits over
 /// another app's work. Shown and hidden from the Doddy window; it is never shown by itself.

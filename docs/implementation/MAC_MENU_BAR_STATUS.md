@@ -65,7 +65,7 @@ Date: 2026-10-11. Source: the owner's deck "Doddy-Watch-iPad-Mac-Review" (Google
   - the widget on a real desktop;
   - the menu bar face at 18 pt in light and dark menu bars.
 
-## The Doddy window (ADR-441, 2026-10-11)
+## The Doddy window (ADR-451, 2026-10-11)
 - From the deck, slide 11. "Open Doddy window" in the menu bar window opens a separate window, about 720 × 480:
   - **left:** a larger note field (Save ⌘Return, Cancel Esc), with the same "Saved on this Mac." rule;
   - **right:** every note saved on that Mac, newest first, with its date; the words can be selected.
@@ -74,7 +74,7 @@ Date: 2026-10-11. Source: the owner's deck "Doddy-Watch-iPad-Mac-Review" (Google
   - On macOS 14 the window may also open by itself at launch. The modifier that stops this needs macOS 15. Check on a Mac, and decide whether to raise the minimum to macOS 15.
   - Whether `NSApplication.shared.activate()` brings the window to the front for a menu bar app.
 
-## The palette (ADR-445, 2026-10-11)
+## The palette (ADR-455, 2026-10-11)
 - **How it opens:** the Doddy window's "Palette" toolbar button shows or hides a small floating panel with a quick note field.
 - **Saving:** Save (Return) and Cancel (Esc), with the same "Saved on this Mac." rule. All three Mac surfaces now share `MacCaptureModel.saveForDisplay`.
 - **Visibility:** it floats over Doddy's windows and hides when another app becomes active (`hidesOnDeactivate`). It comes back with Doddy.

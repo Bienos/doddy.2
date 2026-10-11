@@ -206,6 +206,11 @@ struct VoiceView: View {
                                 .id("saveSuggestions")
                         }
 
+                        if let learning = store.learning, learning.cards.contains(where: { $0.state != .dismissed }) {
+                            LearningCardsView(learning: learning)
+                                .id("learningCards")
+                        }
+
                         if pauseAllConnections {
                             pausedCard
                                 .id("connectionsPaused")

@@ -23,6 +23,17 @@
         }
       }
     },
+    "\"That's wrong\" keeps it below, out of use, so you can see it. Delete removes it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„To nieprawda” zostawia pozycję niżej, nieużywaną, żeby można ją było zobaczyć. Usuń kasuje ją całkiem."
+          }
+        }
+      }
+    },
     "%@ shared a reminder at “%@”.": {
       "extractionState": "manual",
       "localizations": {
@@ -75,6 +86,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "(Doddy asks for: %@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(Doddy zapyta o: %@)"
           }
         }
       }
@@ -489,6 +511,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Około %lld min drogi, plus %lld min zapasu"
+          }
+        }
+      }
+    },
+    "About a person": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O osobie"
+          }
+        }
+      }
+    },
+    "About a place": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O miejscu"
           }
         }
       }
@@ -915,6 +959,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Łatwiejszy sposób, żeby się przywitać."
+          }
+        }
+      }
+    },
+    "An example: lost keys": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przykład: zgubione klucze"
           }
         }
       }
@@ -1466,6 +1521,17 @@
         }
       }
     },
+    "Bring back": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywróć"
+          }
+        }
+      }
+    },
     "CLOSE IN MEANING": {
       "extractionState": "manual",
       "localizations": {
@@ -1572,6 +1638,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Anulowano"
+          }
+        }
+      }
+    },
+    "Cards you tapped Not now on. They go away by themselves after 7 days.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Propozycje, przy których wybrano Nie teraz. Same znikają po 7 dniach."
           }
         }
       }
@@ -2115,6 +2192,17 @@
         }
       }
     },
+    "Connections are paused, so no routine is handed over and Doddy asks nothing new.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc żadna rutyna nie jest przekazywana, a Doddy o nic nowego nie pyta."
+          }
+        }
+      }
+    },
     "Continue": {
       "extractionState": "manual",
       "localizations": {
@@ -2133,6 +2221,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontynuuj bez zapisywania"
+          }
+        }
+      }
+    },
+    "Controlling other apps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sterowanie innymi aplikacjami"
           }
         }
       }
@@ -2188,6 +2287,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Popraw ten szczegół"
+          }
+        }
+      }
+    },
+    "Corrections this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poprawki w tym tygodniu"
           }
         }
       }
@@ -2456,6 +2566,39 @@
         }
       }
     },
+    "Delete everything": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń wszystko"
+          }
+        }
+      }
+    },
+    "Delete everything Doddy learned": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń wszystko, czego nauczył się Doddy"
+          }
+        }
+      }
+    },
+    "Delete everything Doddy learned?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć wszystko, czego nauczył się Doddy?"
+          }
+        }
+      }
+    },
     "Delete list": {
       "extractionState": "manual",
       "localizations": {
@@ -2551,6 +2694,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć to przypomnienie?"
+          }
+        }
+      }
+    },
+    "Delete this routine?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć tę rutynę?"
           }
         }
       }
@@ -2850,6 +3004,17 @@
         }
       }
     },
+    "Doddy can only find what you told it. It can't see your home or track your things.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy znajdzie tylko to, co mu powiedziałeś. Nie widzi Twojego domu i nie śledzi Twoich rzeczy."
+          }
+        }
+      }
+    },
     "Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.": {
       "extractionState": "manual",
       "localizations": {
@@ -2913,6 +3078,47 @@
         }
       }
     },
+    "Doddy counts how often you undo something, change a step, say \"That's wrong\", ask for the same thing again or leave a card unanswered, so you can see whether he gets better. Only the kind of event and the tool name are kept, for 90 days, on this iPhone, never sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy counts how often you undo something, change a step, say \"That's wrong\", ask for the same thing again or leave a card unanswered, so you can see whether he gets better. Only the kind of event and the tool name are kept, for 90 days, on this iPad, never sent."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy counts how often you undo something, change a step, say \"That's wrong\", ask for the same thing again or leave a card unanswered, so you can see whether he gets better. Only the kind of event and the tool name are kept, for 90 days, on this iPhone, never sent."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy liczy, jak często cofasz zmianę, poprawiasz krok, mówisz „To nieprawda”, prosisz o to samo jeszcze raz albo zostawiasz propozycję bez odpowiedzi, żeby można było zobaczyć, czy robi postępy. Zapisywany jest tylko rodzaj zdarzenia i nazwa narzędzia, przez 90 dni, na tym iPadzie, i nigdy nie jest to wysyłane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy liczy, jak często cofasz zmianę, poprawiasz krok, mówisz „To nieprawda”, prosisz o to samo jeszcze raz albo zostawiasz propozycję bez odpowiedzi, żeby można było zobaczyć, czy robi postępy. Zapisywany jest tylko rodzaj zdarzenia i nazwa narzędzia, przez 90 dni, na tym iPhonie, i nigdy nie jest to wysyłane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy doesn't speak to anyone here. Use it for a guide, a talk or an announcement, not someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -2920,6 +3126,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie mówi tu do nikogo. Używaj tego do przewodnika, wykładu albo komunikatu, nie do czyjejś prywatnej rozmowy."
+          }
+        }
+      }
+    },
+    "Doddy doesn't use these until you say they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie korzysta z tego, dopóki nie potwierdzisz, że to wciąż prawda."
           }
         }
       }
@@ -3094,6 +3311,17 @@
         }
       }
     },
+    "Doddy looks through what you told it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przegląda to, co mu powiedziałeś."
+          }
+        }
+      }
+    },
     "Doddy may call me": {
       "extractionState": "manual",
       "localizations": {
@@ -3134,6 +3362,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy potrzebuje Twojej lokalizacji podczas używania aplikacji, żeby przypomnieć Ci w danym miejscu. Nic nie zostało ustawione. Zezwól na to w Ustawieniach."
+          }
+        }
+      }
+    },
+    "Doddy noticed this in what you said. It stays on this iPhone. It is handed to Doddy in a conversation only if you turned that on in Settings, What I've learned.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy noticed this in what you said. It stays on this iPad. It is handed to Doddy in a conversation only if you turned that on in Settings, What I've learned."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy noticed this in what you said. It stays on this iPhone. It is handed to Doddy in a conversation only if you turned that on in Settings, What I've learned."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy zauważył to w Twojej wypowiedzi. Zostaje na tym iPadzie. Trafia do Doddy’ego w rozmowie tylko wtedy, gdy włączysz to w Ustawieniach, w Czego się nauczyłem."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy zauważył to w Twojej wypowiedzi. Zostaje na tym iPhonie. Trafia do Doddy’ego w rozmowie tylko wtedy, gdy włączysz to w Ustawieniach, w Czego się nauczyłem."
+                }
+              }
+            }
           }
         }
       }
@@ -3351,6 +3620,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wykonuję plan"
+          }
+        }
+      }
+    },
+    "Doing things on websites": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Działania na stronach internetowych"
           }
         }
       }
@@ -3604,6 +3884,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przy każdym otwarciu Doddy’ego: dwusekundowa animacja. Pióro rysuje Doddy’ego, on trafia do kosza i wyskakuje gotowy do rozmowy, a potem wjeżdżają przyciski. Stuknij, aby pominąć. Przy włączonym Ograniczeniu ruchu to nieruchomy obrazek; przy ukrytej grafice postaci lub włączonym VoiceOver się nie odtwarza."
+          }
+        }
+      }
+    },
+    "Edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj"
           }
         }
       }
@@ -4314,6 +4605,17 @@
         }
       }
     },
+    "Found, from your own note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znalezione dzięki Twojej notatce."
+          }
+        }
+      }
+    },
     "From Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -4688,6 +4990,17 @@
         }
       }
     },
+    "In a conversation, ask for one by name and Doddy shows one card with these steps. Every step still needs your tap, every time. A routine you don't use for 90 days is taken off below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W rozmowie poproś o rutynę po nazwie, a Doddy pokaże jedną kartę z tymi krokami. Każdy krok nadal wymaga Twojego dotknięcia, za każdym razem. Rutyna nieużywana przez 90 dni trafia niżej, do wyłączonych."
+          }
+        }
+      }
+    },
     "In progress": {
       "extractionState": "manual",
       "localizations": {
@@ -4765,6 +5078,47 @@
         }
       }
     },
+    "It is removed from this iPhone and from what Doddy can use. This can't be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is removed from this iPad and from what Doddy can use. This can't be undone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is removed from this iPhone and from what Doddy can use. This can't be undone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięte z tego iPada i z tego, z czego może korzystać Doddy. Tego nie można cofnąć."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięte z tego iPhone’a i z tego, z czego może korzystać Doddy. Tego nie można cofnąć."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs keeps its own record as described in Settings › Privacy.": {
       "extractionState": "manual",
       "localizations": {
@@ -4799,6 +5153,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Zostanie usunięta z tego iPhone’a i nie będzie już przywoływana. Notatki zapisane podczas niej zostają, a ElevenLabs przechowuje własny zapis, jak opisano w Ustawieniach › Prywatność."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "It is removed from this iPhone. Anything it already did stays as it is.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is removed from this iPad. Anything it already did stays as it is."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is removed from this iPhone. Anything it already did stays as it is."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięta z tego iPada. To, co już zrobiła, pozostaje bez zmian."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięta z tego iPhone’a. To, co już zrobiła, pozostaje bez zmian."
                 }
               }
             }
@@ -5217,6 +5612,17 @@
         }
       }
     },
+    "Kept so you can see them. Doddy doesn't use anything here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowane, żeby można je było zobaczyć. Doddy niczego stąd nie używa."
+          }
+        }
+      }
+    },
     "Keyword file": {
       "extractionState": "manual",
       "localizations": {
@@ -5345,6 +5751,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Później…"
+          }
+        }
+      }
+    },
+    "Learn from how I use Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ucz się z tego, jak używam Doddy’ego"
           }
         }
       }
@@ -5642,6 +6059,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wczytuję notatki"
+          }
+        }
+      }
+    },
+    "Loading…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie…"
           }
         }
       }
@@ -6104,6 +6532,28 @@
         }
       }
     },
+    "More for this fact": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Więcej opcji dla tego faktu"
+          }
+        }
+      }
+    },
+    "More for this routine": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Więcej opcji dla tej rutyny"
+          }
+        }
+      }
+    },
     "More on your iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -6177,6 +6627,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przeniesiono na jutro: %lld. Sprawdzone w Przypomnieniach."
+          }
+        }
+      }
+    },
+    "Music": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muzyka"
           }
         }
       }
@@ -6342,6 +6803,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nigdy"
+          }
+        }
+      }
+    },
+    "Never this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie proponuj tego"
           }
         }
       }
@@ -6632,6 +7104,17 @@
         }
       }
     },
+    "None yet. After you do the same few things in the same order on three different days, Doddy may offer to save them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze żadnych. Gdy w trzy różne dni zrobisz te same rzeczy w tej samej kolejności, Doddy może zaproponować ich zapisanie."
+          }
+        }
+      }
+    },
     "Normal": {
       "extractionState": "manual",
       "localizations": {
@@ -6775,6 +7258,17 @@
         }
       }
     },
+    "Not saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zapisano."
+          }
+        }
+      }
+    },
     "Not sent right now": {
       "extractionState": "manual",
       "localizations": {
@@ -6804,6 +7298,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To nie te same słowa. Sprawdź, czy chodziło Ci o tę notatkę."
+          }
+        }
+      }
+    },
+    "Not used yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nie użyto"
           }
         }
       }
@@ -6977,6 +7482,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nic zgadywanego. Tylko to, co zachowałeś."
+          }
+        }
+      }
+    },
+    "Nothing learned is shared. Doddy can't use it in a conversation until you turn this on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic z tego, czego się nauczył, nie jest udostępniane. Doddy nie użyje tego w rozmowie, dopóki tego nie włączysz."
           }
         }
       }
@@ -7172,6 +7688,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na razie nie ma czego porządkować."
+          }
+        }
+      }
+    },
+    "Nothing yet. Doddy only keeps what you confirm.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nic. Doddy zachowuje tylko to, co potwierdzisz."
           }
         }
       }
@@ -8253,6 +8780,17 @@
         }
       }
     },
+    "Payments": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatności"
+          }
+        }
+      }
+    },
     "People": {
       "extractionState": "manual",
       "localizations": {
@@ -9055,6 +9593,17 @@
         }
       }
     },
+    "Remember this about you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapamiętać to o Tobie?"
+          }
+        }
+      }
+    },
     "Remembered conversations": {
       "extractionState": "manual",
       "localizations": {
@@ -9624,6 +10173,39 @@
         }
       }
     },
+    "Routine": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rutyna"
+          }
+        }
+      }
+    },
+    "Routines": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rutyny"
+          }
+        }
+      }
+    },
+    "Routines used this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyte rutyny w tym tygodniu"
+          }
+        }
+      }
+    },
     "Run": {
       "extractionState": "manual",
       "localizations": {
@@ -9818,6 +10400,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisać tę notatkę?"
+          }
+        }
+      }
+    },
+    "Save this routine?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisać tę rutynę?"
           }
         }
       }
@@ -10066,6 +10659,17 @@
         }
       }
     },
+    "Saved. You can change or remove it in Settings, What I've learned.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano. Możesz to zmienić lub usunąć w Ustawieniach, w Czego się nauczyłem."
+          }
+        }
+      }
+    },
     "Saving memories": {
       "extractionState": "manual",
       "localizations": {
@@ -10084,6 +10688,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisanie teraz niczego nie zachowa i usunie wszystko, co było zapisane wcześniej."
+          }
+        }
+      }
+    },
+    "Saving replaces the words Doddy uses. Earlier wordings are kept in its history.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisanie zastępuje słowa, których używa Doddy. Wcześniejsze wersje zostają w historii."
           }
         }
       }
@@ -10383,6 +10998,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyślij do Doddy’ego"
+          }
+        }
+      }
+    },
+    "Sending messages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłanie wiadomości"
           }
         }
       }
@@ -10993,6 +11619,17 @@
         }
       }
     },
+    "Smart home": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inteligentny dom"
+          }
+        }
+      }
+    },
     "Snoozed": {
       "extractionState": "manual",
       "localizations": {
@@ -11011,6 +11648,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ktoś z listy udostępnia przypomnienie w miejscu „%@”."
+          }
+        }
+      }
+    },
+    "Something else": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś innego"
           }
         }
       }
@@ -11320,6 +11968,17 @@
         }
       }
     },
+    "Still true?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wciąż aktualne?"
+          }
+        }
+      }
+    },
     "Stop": {
       "extractionState": "manual",
       "localizations": {
@@ -11489,6 +12148,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tag %@, notatki: %lld"
+          }
+        }
+      }
+    },
+    "Taken off": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączone"
           }
         }
       }
@@ -12040,6 +12710,17 @@
         }
       }
     },
+    "That's wrong": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nieprawda"
+          }
+        }
+      }
+    },
     "The Doddy list this widget shows.": {
       "extractionState": "manual",
       "localizations": {
@@ -12132,6 +12813,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się ustawić porannego podsumowania. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "The facts and routines you confirmed are handed to the voice service at the start of a conversation, like your notes. You can see this under Privacy, What leaves this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The facts and routines you confirmed are handed to the voice service at the start of a conversation, like your notes. You can see this under Privacy, What leaves this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The facts and routines you confirmed are handed to the voice service at the start of a conversation, like your notes. You can see this under Privacy, What leaves this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potwierdzone przez Ciebie fakty i rutyny są przekazywane usłudze głosowej na początku rozmowy, tak jak Twoje notatki. Zobaczysz to w Prywatności, w Co opuszcza tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Potwierdzone przez Ciebie fakty i rutyny są przekazywane usłudze głosowej na początku rozmowy, tak jak Twoje notatki. Zobaczysz to w Prywatności, w Co opuszcza tego iPhone’a."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The keys aren't on the hook.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kluczy nie ma na wieszaku."
           }
         }
       }
@@ -12657,6 +13390,17 @@
         }
       }
     },
+    "There they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O, są."
+          }
+        }
+      }
+    },
     "There's no text or web link here that Doddy can keep. Nothing was saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -12664,6 +13408,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie ma tu tekstu ani linku, który Doddy mógłby zachować. Nic nie zostało zapisane."
+          }
+        }
+      }
+    },
+    "Things I can't do yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego jeszcze nie umiem"
           }
         }
       }
@@ -12915,6 +13670,17 @@
         }
       }
     },
+    "This is the name you say to ask for the routine. Its steps stay as they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nazwa, którą mówisz, żeby poprosić o rutynę. Jej kroki zostają bez zmian."
+          }
+        }
+      }
+    },
     "This isn't a Google Keep note.": {
       "extractionState": "manual",
       "localizations": {
@@ -13107,7 +13873,7 @@
         }
       }
     },
-    "This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected.": {
+    "This removes every fact, routine and count of corrections from this iPhone. Your notes aren't touched. Exported files and older backups aren't affected.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -13116,13 +13882,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This removes every note, every list with its items, and the search index from this iPad and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected."
+                  "value": "This removes every fact, routine and count of corrections from this iPad. Your notes aren't touched. Exported files and older backups aren't affected."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected."
+                  "value": "This removes every fact, routine and count of corrections from this iPhone. Your notes aren't touched. Exported files and older backups aren't affected."
                 }
               }
             }
@@ -13134,13 +13900,54 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "To usuwa z tego iPada wszystkie notatki, wszystkie listy z ich pozycjami i indeks wyszukiwania i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
+                  "value": "To usuwa z tego iPada wszystkie fakty, rutyny i liczniki poprawek. Twoje notatki zostają. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "To usuwa z tego iPhone’a wszystkie notatki, wszystkie listy z ich pozycjami i indeks wyszukiwania i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
+                  "value": "To usuwa z tego iPhone’a wszystkie fakty, rutyny i liczniki poprawek. Twoje notatki zostają. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This removes every note, every list with its items, and the search index from this iPad and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To usuwa z tego iPada wszystkie notatki, wszystkie listy z ich pozycjami i indeks wyszukiwania i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian. Wszystko, czego Doddy nauczył się z Twoich słów, oraz liczniki poprawek również zostają usunięte."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To usuwa z tego iPhone’a wszystkie notatki, wszystkie listy z ich pozycjami i indeks wyszukiwania i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian. Wszystko, czego Doddy nauczył się z Twoich słów, oraz liczniki poprawek również zostają usunięte."
                 }
               }
             }
@@ -13218,6 +14025,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Brakuje tej próbki w aplikacji."
+          }
+        }
+      }
+    },
+    "This week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tym tygodniu"
           }
         }
       }
@@ -14093,6 +14911,39 @@
         }
       }
     },
+    "Use what Doddy learned in voice conversations": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używaj tego, czego nauczył się Doddy, w rozmowach głosowych"
+          }
+        }
+      }
+    },
+    "Used %lld times, last on %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyto %lld razy, ostatnio %@"
+          }
+        }
+      }
+    },
+    "Used once, on %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyto raz, %@"
+          }
+        }
+      }
+    },
     "Verify my number": {
       "extractionState": "manual",
       "localizations": {
@@ -14199,6 +15050,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czekam na potwierdzenie z Przypomnień"
+          }
+        }
+      }
+    },
+    "Waiting for your answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czekają na Twoją odpowiedź"
           }
         }
       }
@@ -14313,6 +15175,17 @@
         }
       }
     },
+    "What Doddy knows about you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy wie o Tobie"
+          }
+        }
+      }
+    },
     "What I can do": {
       "extractionState": "manual",
       "localizations": {
@@ -14320,6 +15193,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co potrafię"
+          }
+        }
+      }
+    },
+    "What I've learned": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego się nauczyłem"
           }
         }
       }
@@ -14438,6 +15322,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co chcesz zachować?"
+          }
+        }
+      }
+    },
+    "What you asked for that Doddy has no way to do, as a topic only. This stays on your iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rzeczy, o które poproszono, a których Doddy nie potrafi zrobić, tylko jako temat. Zostaje to na Twoim iPhonie."
           }
         }
       }
@@ -14594,6 +15489,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Gdy zaczyna się rozmowa, aplikacja przekazuje Doddy’emu zapisane notatki oraz, jeśli to jest włączone, kilka ostatnich rozmów, żeby mógł kontynuować tam, gdzie skończyliście. Są przechowywane tylko na tym iPhonie. Pogoda pochodzi z Open-Meteo, a fakty z Wikipedii."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "When this is on, Doddy may ask after a conversation whether to remember something you said about yourself, or a routine you repeat on three different days. Each card shows the exact words and nothing is saved unless you tap Save. It's worked out on this iPhone from your own words; never for private conversations, and never passwords, card numbers, or health, religion, politics or money details.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When this is on, Doddy may ask after a conversation whether to remember something you said about yourself, or a routine you repeat on three different days. Each card shows the exact words and nothing is saved unless you tap Save. It's worked out on this iPad from your own words; never for private conversations, and never passwords, card numbers, or health, religion, politics or money details."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "When this is on, Doddy may ask after a conversation whether to remember something you said about yourself, or a routine you repeat on three different days. Each card shows the exact words and nothing is saved unless you tap Save. It's worked out on this iPhone from your own words; never for private conversations, and never passwords, card numbers, or health, religion, politics or money details."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy to jest włączone, Doddy może po rozmowie zapytać, czy zapamiętać coś, co powiedziano o Tobie, albo rutynę powtarzaną w trzy różne dni. Każda karta pokazuje dokładne słowa i nic nie jest zapisywane, dopóki nie dotkniesz Zapisz. Wybierane jest to na tym iPadzie z Twoich własnych słów; nigdy dla rozmów prywatnych i nigdy hasła, numery kart ani dane o zdrowiu, religii, poglądach czy pieniądzach."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy to jest włączone, Doddy może po rozmowie zapytać, czy zapamiętać coś, co powiedziano o Tobie, albo rutynę powtarzaną w trzy różne dni. Każda karta pokazuje dokładne słowa i nic nie jest zapisywane, dopóki nie dotkniesz Zapisz. Wybierane jest to na tym iPhonie z Twoich własnych słów; nigdy dla rozmów prywatnych i nigdy hasła, numery kart ani dane o zdrowiu, religii, poglądach czy pieniądzach."
                 }
               }
             }
@@ -14840,6 +15776,17 @@
         }
       }
     },
+    "Yes, still true": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak, wciąż aktualne"
+          }
+        }
+      }
+    },
     "Yesterday": {
       "extractionState": "manual",
       "localizations": {
@@ -14847,6 +15794,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wczoraj"
+          }
+        }
+      }
+    },
+    "You ask Doddy where they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytasz Doddy’ego, gdzie są."
           }
         }
       }
@@ -14902,6 +15860,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każde zapisane wspomnienie wybierasz Ty. Zobacz oryginał, zmień go lub usuń."
+          }
+        }
+      }
+    },
+    "You did these in this order on three different days. If you save it, you can ask Doddy for it by name. Every step still asks you first, every time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te rzeczy zrobiono w tej kolejności w trzy różne dni. Po zapisaniu możesz poprosić o nie Doddy’ego po nazwie. Każdy krok nadal pyta Cię o zgodę, za każdym razem."
           }
         }
       }
@@ -15010,6 +15979,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłączyłeś powiadomienia Doddy’ego w Ustawieniach iOS. Włącz je tam, aby dostawać aktualności."
+          }
+        }
+      }
+    },
+    "You'd saved “keys under the sofa cushion”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisałeś „klucze pod poduszką na sofie”."
           }
         }
       }
@@ -15475,6 +16455,28 @@
         }
       }
     },
+    "confirmed %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "potwierdzono %@"
+          }
+        }
+      }
+    },
+    "from a conversation on %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "z rozmowy z dnia %@"
+          }
+        }
+      }
+    },
     "iCloud didn't confirm it. Nothing is counted as done; try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -15556,6 +16558,127 @@
           "stringUnit": {
             "state": "translated",
             "value": "ktoś inny"
+          }
+        }
+      }
+    },
+    "the items": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "pozycje"
+          }
+        }
+      }
+    },
+    "the list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "listę"
+          }
+        }
+      }
+    },
+    "the message": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "treść"
+          }
+        }
+      }
+    },
+    "the number of minutes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "liczbę minut"
+          }
+        }
+      }
+    },
+    "the recipient": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "adresata"
+          }
+        }
+      }
+    },
+    "the start": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "początek"
+          }
+        }
+      }
+    },
+    "the subject": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "temat"
+          }
+        }
+      }
+    },
+    "the task": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zadanie"
+          }
+        }
+      }
+    },
+    "the text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tekst"
+          }
+        }
+      }
+    },
+    "the time": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "termin"
+          }
+        }
+      }
+    },
+    "the title": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tytuł"
           }
         }
       }

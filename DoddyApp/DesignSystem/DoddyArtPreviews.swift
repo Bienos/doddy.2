@@ -59,9 +59,33 @@ import SwiftUI
     }
 }
 
-#Preview("Storybook") {
-    StorybookView(played: .constant(false))
+#Preview("Storyboards (ADR-380)") {
+    ScrollView {
+        VStack(spacing: 20) {
+            ForEach(PanelStory.allCases.filter { $0 != .keys }, id: \.self) { story in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(story.rawValue).font(.caption)
+                    PanelStoryView(story: story, played: .constant(false), height: 240)
+                }
+            }
+            KeysPreviewGrid()
+        }
         .padding()
+    }
+}
+
+private struct KeysPreviewGrid: View {
+    var body: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 110))], spacing: 8) {
+            ForEach(1...PanelStory.keys.panelCount, id: \.self) { panel in
+                Image(decorative: PanelStory.keys.assetName(panel)).resizable().scaledToFit()
+            }
+        }
+    }
+}
+
+#Preview("Face ID door") {
+    AppLockView()
 }
 
 #Preview("Problem with Doddy") {

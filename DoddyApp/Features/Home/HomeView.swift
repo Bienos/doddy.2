@@ -16,6 +16,8 @@ struct HomeView: View {
     @State private var modal: MemoryModal?
     /// Doddy's idle breaths are playing (ADR-313).
     @State private var breathing = false
+    /// The first visit of a morning waves instead of breathing (ADR-380).
+    @State private var helloMotion: DoddyMotion = .idle
     /// He has sat down on his box after the breaths (ADR-323).
     @State private var seated = HomeIdle.sat
     /// The sit plays only right after the breaths; a redraw meanwhile doesn't cut it short (ADR-331).
@@ -42,15 +44,18 @@ struct HomeView: View {
     }
 
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
-    /// four times and sits down on his box (ADR-323). Waits a moment first, so an opening that is
-    /// about to start wins. The opening's hand-over still lands on the usual sitting picture.
+    /// four times and sits down on his box (ADR-323). The first time Home shows on a morning he
+    /// waves instead (ADR-380). Waits a moment first, so an opening that is about to start wins.
+    /// The opening's hand-over still lands on the usual sitting picture.
     private func breatheOnce() async {
         guard !HomeIdle.played, !reduceMotion, !hideCharacterArt else { return }
         try? await Task.sleep(for: .seconds(0.6))
         guard !Task.isCancelled, !HomeIdle.played, opening?.play == nil, opening?.ready == nil, ready == nil else { return }
         HomeIdle.played = true
+        helloMotion = HomeIdle.wavesThisMorning(now: .now) ? .wave : .idle
         breathing = true
-        try? await Task.sleep(for: .seconds(DoddyMotion.idle.duration + 0.2))
+        // The wave rests on the open hand a moment longer before he sits.
+        try? await Task.sleep(for: .seconds(helloMotion.duration + (helloMotion == .wave ? 0.8 : 0.2)))
         sitPlays = true
         seated = true
         breathing = false
@@ -81,8 +86,9 @@ struct HomeView: View {
                     }
                     Group {
                         if breathing {
-                            // Idle (ADR-313): he stands and breathes, on the sitting pose's floor.
-                            DoddyMotionView(motion: .idle, height: 170)
+                            // Idle (ADR-313): he stands and breathes, on the sitting pose's floor; or
+                            // waves (ADR-380), whose strip stands on the same floor (564/600).
+                            DoddyMotionView(motion: helloMotion, height: 170)
                                 .padding(.bottom, 31)
                                 .frame(height: 210, alignment: .bottom)
                         } else if seated, ready == nil {
@@ -382,4 +388,14 @@ enum HomeIdle {
     static var played = false
     /// He sat down on his box this launch (ADR-323): later visits show him seated, without replaying.
     static var sat = false
+
+    /// The day Home last waved (ADR-380), on this iPhone only. Not a note.
+    static let waveDayKey = "home.lastWaveDay"
+
+    /// True the first time it is asked on a morning; it then records the day (`MorningWave`).
+    static func wavesThisMorning(now: Date, defaults: UserDefaults = .standard) -> Bool {
+        guard let day = MorningWave.dayToRecord(now: now, lastWaveDay: defaults.string(forKey: waveDayKey)) else { return false }
+        defaults.set(day, forKey: waveDayKey)
+        return true
+    }
 }

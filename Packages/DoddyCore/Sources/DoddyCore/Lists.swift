@@ -335,47 +335,57 @@ public enum ListsPrompt {
 }
 
 extension VoiceToolReply {
-    /// No list by that name: nothing changed; the agent asks.
+    /// No list by that name: nothing changed; the agent asks. The name asked for (the agent's
+    /// words) and the user's list names follow as data (ToolData).
     public static func listNotFound(_ name: String, lists: [DoddyList]) -> String {
         let ask = "Ask the user which list they mean, or whether to start a new one with create_list."
         guard !lists.isEmpty else {
-            return "not found: there is no list called \"\(name)\". Nothing changed. The user has no lists yet. \(ask)"
+            return "not found: there is no list with the name below. Nothing changed. The user has no lists yet. \(ask)\n"
+                + ToolData.block([quoted("Asked for", name)])
         }
-        return "not found: there is no list called \"\(name)\". Nothing changed. \(ask) Their lists:\n" + names(lists)
+        return "not found: there is no list with the name below. Nothing changed. \(ask) The name asked for, then their lists:\n"
+            + names(lists, asked: name)
     }
 
     public static func listAmbiguous(_ name: String, lists: [DoddyList]) -> String {
-        "not changed: \"\(name)\" matches more than one list. Ask the user which one:\n" + names(lists)
+        "not changed: the name below matches more than one list. Ask the user which one. The name asked for, then the lists:\n"
+            + names(lists, asked: name)
     }
 
-    /// The user's list names, as data (ToolData).
-    private static func names(_ lists: [DoddyList]) -> String {
-        ToolData.block(lists.map { "- \"\(ToolData.clean($0.name))\"" })
+    /// The name asked for and the user's list names, as data (ToolData).
+    private static func names(_ lists: [DoddyList], asked: String) -> String {
+        ToolData.block([quoted("Asked for", asked)] + lists.map { "- \"\(ToolData.clean($0.name))\"" })
     }
 
     /// The list's name and the stored items follow as data (ToolData); a shared list's name and
-    /// items can come from someone else.
+    /// items can come from someone else. The items not added are the agent's words: the first line
+    /// only counts them, and they are named in the same block, after the items added.
     public static func listAdded(_ result: ListAddResult, list: String) -> String {
-        let name = "Name: \"\(ToolData.clean(list))\""
+        var data = ["Name: \"\(ToolData.clean(list))\""]
         var text: String
+        var intro = "Its name"
         if result.added.isEmpty {
-            text = "not added: nothing new was added to the list. Its name:\n" + ToolData.block([name])
+            text = "not added: nothing new was added to the list."
         } else {
-            text = "added to the list: \(itemCount(result.added.count)). Its name, then the items added:\n"
-                + ToolData.block([name] + result.added.map { "- \(ToolData.clean($0.text))" })
+            text = "added to the list: \(itemCount(result.added.count))."
+            intro += ", then the items added"
+            data += result.added.map { "- \(ToolData.clean($0.text))" }
         }
-        var parts: [String] = []
+        var left: [String] = []
         if !result.alreadyThere.isEmpty {
-            parts.append("Already on the list, not added again: \(result.alreadyThere.joined(separator: ", ")).")
+            text += " Already on the list, not added again: \(itemCount(result.alreadyThere.count))."
+            left += result.alreadyThere.map { "- Already on the list: \(ToolData.clean($0))" }
         }
         if !result.tooLong.isEmpty {
-            parts.append("Too long to add (over \(ListLimits.itemLength) characters): \(result.tooLong.joined(separator: ", ")).")
+            text += " Too long to add (over \(ListLimits.itemLength) characters): \(itemCount(result.tooLong.count))."
+            left += result.tooLong.map { "- Too long: \(ToolData.clean($0))" }
         }
         if !result.noRoom.isEmpty {
-            parts.append("Not added, the list is full (\(ListLimits.itemsPerList) items): \(result.noRoom.joined(separator: ", ")).")
+            text += " Not added, the list is full (\(ListLimits.itemsPerList) items): \(itemCount(result.noRoom.count))."
+            left += result.noRoom.map { "- No room: \(ToolData.clean($0))" }
         }
-        if !parts.isEmpty { text += "\n" + parts.joined(separator: " ") }
-        return text
+        if !left.isEmpty { intro += ", then the items not added" }
+        return text + " " + intro + ":\n" + ToolData.block(data + left)
     }
 
     private static func itemCount(_ count: Int) -> String { "\(count) item\(count == 1 ? "" : "s")" }
@@ -423,7 +433,9 @@ extension VoiceToolReply {
             text += "\nThose words were not \(verb); ask the user which item they mean."
         }
         if !notFound.isEmpty {
-            text += "\nNot on the list: \(notFound.joined(separator: ", "))."
+            // The agent's words for items that aren't there, as data.
+            text += "\nNot on the list, so not \(verb): \(itemCount(notFound.count)). Those words:\n"
+                + ToolData.block(notFound.map { "- \(ToolData.clean($0))" })
         }
         return text
     }
@@ -437,7 +449,8 @@ extension VoiceToolReply {
     public static let declinedList = "declined: the user chose not to start this list. Nothing was made."
 
     public static func listNameTaken(_ name: String) -> String {
-        "not created: a list called \"\(name)\" already exists. Offer to add the items to it with add_to_list instead."
+        "not created: a list with the name below already exists. Offer to add the items to it with add_to_list instead.\n"
+            + ToolData.block([quoted("Name", name)])
     }
 
     public static func listFailed(_ reason: String) -> String {

@@ -54,7 +54,7 @@ struct MacCaptureView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
-                // The bigger window (ADR-441), for a longer note and every note on this Mac.
+                // The bigger window (ADR-451), for a longer note and every note on this Mac.
                 Button("Open Doddy window") {
                     openWindow(id: MacNotesWindow.id)
                     NSApplication.shared.activate()

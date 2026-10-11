@@ -12,8 +12,9 @@ struct CandidateCharacterView: View {
     var body: some View {
         if !hideCharacterArt {
             switch assetName {
-            // Whole Doddy poses (ADR-299): hello is the wave, "on the way" is the tiptoe.
-            case "Doddy_waving": WholeDoddyView(pose: .wave, height: size)
+            // Whole Doddy poses (ADR-299): hello is the wave, played once from the pack's whole
+            // wave strip (ADR-380); "on the way" is the tiptoe.
+            case "Doddy_waving": DoddyMotionView(motion: .wave, height: size)
             case "Doddy_approaching": WholeDoddyView(pose: .tiptoe, height: size)
             case "Doddy_listening": UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: size)
             default: UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: size)
@@ -212,7 +213,7 @@ extension MemoryCategory {
 enum DeviceSupport {
     /// Accessibility › Touch › Back Tap is an iPhone setting; iPad has none.
     @MainActor static var hasBackTap: Bool { UIDevice.current.userInterfaceIdiom == .phone }
-    /// Live Activities: every iPhone, and iPad from iPadOS 26 (ADR-443; earlier iPads have none, so
+    /// Live Activities: every iPhone, and iPad from iPadOS 26 (ADR-453; earlier iPads have none, so
     /// shopping mode is hidden there instead of saying "turn them on in Settings", ADR-432).
     @MainActor static var hasLiveActivities: Bool {
         switch UIDevice.current.userInterfaceIdiom {
@@ -225,7 +226,7 @@ enum DeviceSupport {
             return false
         }
     }
-    /// The Dynamic Island and the styles for it: iPhone only (ADR-432, ADR-443).
+    /// The Dynamic Island and the styles for it: iPhone only (ADR-432, ADR-453).
     @MainActor static var hasDynamicIsland: Bool { UIDevice.current.userInterfaceIdiom == .phone }
     /// The sidebar replaces the tab bar on a wide screen (ADR-430), but not on an iPhone: a large
     /// iPhone in landscape is regular width too, and keeps the tab bar.

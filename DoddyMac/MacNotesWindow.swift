@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The Doddy window on the Mac (ADR-441; the owner's review deck, slide 11, "Miejsce, by rozwinąć
+/// The Doddy window on the Mac (ADR-451; the owner's review deck, slide 11, "Miejsce, by rozwinąć
 /// myśl"): more room for a note, and every note saved on this Mac, still in Doddy's own window.
 /// Opened only from the menu bar window. Typing only, Save or Cancel, as there (ADR-435).
 struct MacNotesWindow: View {
@@ -22,7 +22,7 @@ struct MacNotesWindow: View {
         }
         .frame(minWidth: 560, minHeight: 360)
         .toolbar {
-            // The helper palette (ADR-445): a small floating note field while you use Doddy.
+            // The helper palette (ADR-455): a small floating note field while you use Doddy.
             Button {
                 MacPaletteController.shared.toggle(model: model)
             } label: {

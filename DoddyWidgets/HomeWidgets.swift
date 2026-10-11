@@ -368,7 +368,7 @@ struct TalkToDoddyWidgetView: View {
 
 // MARK: New note
 
-/// "New note" on the Home Screen (ADR-440; the owner's review deck, slide 05, "Miejsce na
+/// "New note" on the Home Screen (ADR-450; the owner's review deck, slide 05, "Miejsce na
 /// następną myśl", made for iPad and on iPhone too). A tap runs `NewNoteIntent`, the control's
 /// intent: Doddy opens on an empty capture screen. Nothing is typed or recorded in the widget,
 /// and nothing is saved until Save there.

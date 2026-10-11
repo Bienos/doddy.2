@@ -71,7 +71,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
   - the strings `--check` (watch catalogs included): PASS.
 - No watch code changed in this round.
 
-## Reminder with Done/Later on the watch (ADR-442, deck slide 04)
+## Reminder with Done/Later on the watch (ADR-452, deck slide 04)
 - **Already covered, no code.** The iPhone's note reminder notifications carry long-press actions:
   - one-off reminders: Open note, In an hour, Tomorrow morning, Done;
   - repeating reminders: Done this time;
@@ -83,7 +83,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
   - that In an hour, Tomorrow and Done run on the iPhone from the watch;
   - what "Open note" does from the watch. It is a foreground action, and may open the Doddy watch app rather than the note.
 
-## Focus in the Smart Stack (ADR-444, deck slide 02)
+## Focus in the Smart Stack (ADR-454, deck slide 02)
 - **What it does:** from iOS 18 the iPhone's focus, breathing and read-aloud Live Activity has its own Apple Watch layout (`.small` family). It shows what is running, the time left, and Pause or Resume. The button runs on the iPhone.
 - **Without it:** watchOS would show its own default layout.
 - **Apple's description:** [WWDC24 "Bring your Live Activity to Apple Watch"](https://developer.apple.com/videos/play/wwdc2024/10068/).

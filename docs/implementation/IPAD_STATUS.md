@@ -52,16 +52,16 @@ Still open, needing a simulator:
 - `ShareLink` inside a context menu and a toolbar menu, and `UICloudSharingController` in a `.sheet`, may anchor oddly or show blank.
 - Home's background picture is sized by width and may look soft on a wide iPad.
 
-## "New note" Home Screen widget (ADR-440, 2026-10-11)
+## "New note" Home Screen widget (ADR-450, 2026-10-11)
 - From the owner's deck, slide 05. A small widget, and a Lock Screen circle, on iPad and iPhone.
 - A tap runs `NewNoteIntent` (the "New note" control's intent): Doddy opens on an empty capture screen. Nothing is typed or recorded in the widget.
 - It shows Doddy listening (owner's pack) on full-colour Home Screens, and the pencil otherwise.
 - **NOT RUN:** whether `Button(intent:)` with an intent that opens the app behaves on iPad as it does with the "Talk to Doddy" widget.
 
-## Live Activities on iPadOS 26, Pencil (ADR-443, ADR-446, 2026-10-11)
+## Live Activities on iPadOS 26, Pencil (ADR-453, ADR-456, 2026-10-11)
 - **Shopping mode on iPad:** offered again on iPadOS 26 and later, where Live Activities are reported to work. On earlier iPads it stays hidden. The Dynamic Island styles stay iPhone only.
 - **Sources:** [Home Assistant iOS pull request 5733](https://github.com/home-assistant/iOS/pull/5733), merged, and [9to5Mac, June 2025](https://9to5mac.com/2025/06/13/live-activities-are-coming-to-ipad-and-mac-heres-how-theyll-work/). Not confirmed in Apple's documentation, so **check on a real iPad on iPadOS 26** that shopping mode starts and shows on the Lock Screen.
-- **Slide 07's kitchen timer:** not built (see ADR-443).
+- **Slide 07's kitchen timer:** not built (see ADR-453).
 - **Pencil:** Scribble writes into the capture screen's text field. Nothing in Doddy turns it off. A drawing canvas is the owner's decision.
 
 ## Constitution evidence log

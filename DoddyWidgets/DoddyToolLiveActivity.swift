@@ -46,7 +46,7 @@ struct DoddyToolLiveActivity: Widget {
     }
 }
 
-/// The same Live Activity with its own layout in the Apple Watch Smart Stack (ADR-444; the
+/// The same Live Activity with its own layout in the Apple Watch Smart Stack (ADR-454; the
 /// owner's review deck, slide 02, "Skupienie w Smart Stack"). iOS 18 and later; the bundle uses
 /// it there instead of `DoddyToolLiveActivity`. watchOS shows the iPhone's Live Activity on its
 /// own; this gives it a small layout with one action, Pause or Resume, which runs on the iPhone.
