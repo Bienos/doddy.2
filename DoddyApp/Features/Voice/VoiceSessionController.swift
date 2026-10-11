@@ -37,7 +37,7 @@ final class VoiceSessionController {
         case timer(toolCallID: String, draft: TimerDraft)
         /// "Set this alarm?" (ADR-260), iOS 26 and later.
         case alarm(toolCallID: String, draft: AlarmDraft)
-        /// "Turn off this alarm?" (ADR-267), one of Doddy's alarms.
+        /// "Turn off this alarm?" (ADR-283), one of Doddy's alarms.
         case cancelAlarm(toolCallID: String, alarm: AlarmEntry)
         case map(toolCallID: String, place: String)
         case shortcut(toolCallID: String, name: String)
@@ -62,7 +62,7 @@ final class VoiceSessionController {
         case deleteEvent(toolCallID: String, event: CalendarEventSummary)
         /// "Delete this reminder?" (ADR-259): one open reminder, exactly as Reminders has it.
         case deleteReminder(toolCallID: String, reminder: ReminderSnapshot)
-        /// Several changes on one card (ADR-264). `verb` is "deleted" or "moved"; `skipped` are
+        /// Several changes on one card (ADR-280). `verb` is "deleted" or "moved"; `skipped` are
         /// reminders left out because their time doesn't exist on the new day.
         case bulk(toolCallID: String, items: [BulkItem], verb: String, skipped: [String])
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
@@ -1251,7 +1251,7 @@ final class VoiceSessionController {
         lines[index].text = corrected
     }
 
-    // MARK: Offline (ADR-273)
+    // MARK: Offline (ADR-289)
 
     /// The conversation couldn't start or stopped because there's no internet.
     private(set) var isOffline = false
@@ -1429,7 +1429,7 @@ final class VoiceSessionController {
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .listAlarms:
-            // Read on the phone (ADR-267): times and labels Doddy set, nothing else.
+            // Read on the phone (ADR-283): times and labels Doddy set, nothing else.
             await reply(call.toolCallId, VoiceToolReply.alarms(AlarmScheduler.current()))
         case .cancelAlarm(let clock, let label):
             switch AlarmMatch.match(clock: clock, label: label, in: AlarmScheduler.current()) {
@@ -1904,7 +1904,7 @@ final class VoiceSessionController {
         }
     }
 
-    // MARK: Several changes on one card (ADR-264)
+    // MARK: Several changes on one card (ADR-280)
 
     /// Items the user unticked on the several-changes card. Everything starts ticked.
     private(set) var bulkUnticked: Set<String> = []
@@ -1943,7 +1943,7 @@ final class VoiceSessionController {
         propose(.bulk(toolCallID: toolCallID, items: items, verb: verb, skipped: skipped), toolCallID: toolCallID)
     }
 
-    /// Each ticked item on its own: checked unchanged, changed, read back (ADR-264).
+    /// Each ticked item on its own: checked unchanged, changed, read back (ADR-280).
     private func runBulk(_ items: [BulkItem], verb: String, skipped: [String]) -> String {
         guard isOn(.calendar) || isOn(.reminders) else {
             return VoiceToolReply.failed("Calendar and Reminders aren't connected. Nothing changed.")

@@ -19,7 +19,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
             NewNoteControl()
         }
         #if canImport(AlarmKit)
-        // A Doddy alarm's snooze countdown (ADR-267), iOS 26 and later.
+        // A Doddy alarm's snooze countdown (ADR-283), iOS 26 and later.
         if #available(iOS 26.0, *) {
             AlarmLiveActivity()
         }

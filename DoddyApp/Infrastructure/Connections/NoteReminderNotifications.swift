@@ -166,7 +166,7 @@ extension TimerBanners {
             }
             return
         }
-        // A birthday (ADR-272) just opens Doddy; nothing else happens.
+        // A birthday (ADR-288) just opens Doddy; nothing else happens.
         if Birthdays.isBirthday(notificationID: requestID) { return }
         // The evening wrap-up (ADR-261) opens its screen; nothing moves until the user taps.
         if EveningWrapUp.isWrapUp(notificationID: requestID) {

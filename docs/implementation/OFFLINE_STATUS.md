@@ -1,4 +1,4 @@
-# Offline: status (ADR-273)
+# Offline: status (ADR-289)
 Date: 2026-10-11. Owner: "do all of them" (round 3, item 10).
 
 ## What ships

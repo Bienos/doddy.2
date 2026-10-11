@@ -3,7 +3,7 @@ import AlarmKit
 import SwiftUI
 import WidgetKit
 
-/// The snooze countdown of a Doddy alarm (ADR-267), on the Lock Screen and in the Dynamic Island.
+/// The snooze countdown of a Doddy alarm (ADR-283), on the Lock Screen and in the Dynamic Island.
 /// AlarmKit draws the ringing alarm itself; this only shows the minutes until it rings again.
 @available(iOS 26.0, *)
 struct AlarmLiveActivity: Widget {

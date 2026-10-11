@@ -1,6 +1,6 @@
 import Foundation
 
-// Birthday reminders from contacts (ADR-272). Off until the user turns it on, and then only for
+// Birthday reminders from contacts (ADR-288). Off until the user turns it on, and then only for
 // the people they pick: Settings › Birthdays lists the contacts that have a birthday, each with
 // its own switch, all off. A picked birthday becomes Doddy's own yearly notification at 09:00 on
 // the day, read back from iOS. Contacts are read on this iPhone only (with Contacts on in

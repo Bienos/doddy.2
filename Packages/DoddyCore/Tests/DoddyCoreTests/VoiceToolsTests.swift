@@ -342,7 +342,7 @@ final class VoiceToolsTests: XCTestCase {
     }
 }
 
-/// Repeating events and reminders by voice (ADR-266).
+/// Repeating events and reminders by voice (ADR-282).
 final class CalendarRepeatTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

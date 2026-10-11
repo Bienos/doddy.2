@@ -1,4 +1,4 @@
-# Several changes on one card: status (ADR-264)
+# Several changes on one card: status (ADR-280)
 Date: 2026-10-11. Owner: "do all of them" (round 3, item 1).
 
 ## What ships

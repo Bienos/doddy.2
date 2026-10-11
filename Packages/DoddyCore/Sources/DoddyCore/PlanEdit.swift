@@ -24,7 +24,7 @@ public struct PlanStepForm: Equatable, Sendable {
     public var minutes: Int
     public var seconds: Int
     public var label: String
-    /// Kept from the agent's step (ADR-266); not edited on the form.
+    /// Kept from the agent's step (ADR-282); not edited on the form.
     public var repeats: CalendarRepeat?
 
     public init(_ step: PlanStep, now: Date = Date(), calendar: Calendar = .current) {

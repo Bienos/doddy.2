@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// A list from a photo (ADR-270).
+/// A list from a photo (ADR-286).
 final class PhotoListTests: XCTestCase {
     func testBulletsAndNumbersGoAndAHeadingBecomesTheName() {
         let read = """

@@ -159,7 +159,7 @@ struct NotePhotoSection: View {
     }
 }
 
-/// New list › "Read a list from a photo" (ADR-270). Apple's picker runs outside Doddy (no photo
+/// New list › "Read a list from a photo" (ADR-286). Apple's picker runs outside Doddy (no photo
 /// library permission); the text is read on this iPhone and goes into the New list screen for the
 /// user to check and edit. The photo itself isn't kept.
 struct ListPhotoPicker: View {

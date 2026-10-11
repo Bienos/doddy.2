@@ -61,7 +61,7 @@ struct ListCloud {
             return SharedListState.validated(name: name, items: parsed)
         }
 
-        /// Who added and who ticked each item (ADR-269): the fields Doddy writes, else the
+        /// Who added and who ticked each item (ADR-285): the fields Doddy writes, else the
         /// record's creator. User record names only; names come from the share.
         var people: [UUID: SharedItemPeople] {
             var result: [UUID: SharedItemPeople] = [:]
@@ -80,7 +80,7 @@ struct ListCloud {
         try? await container.userRecordID().recordName
     }
 
-    /// Display names of the people on a share, by user record name (ADR-269). Shown on this
+    /// Display names of the people on a share, by user record name (ADR-285). Shown on this
     /// iPhone only.
     static func names(in share: CKShare) -> [String: String] {
         var names: [String: String] = [:]
@@ -135,7 +135,7 @@ struct ListCloud {
                 ?? CKRecord(recordType: Self.itemType, recordID: CKRecord.ID(recordName: item.id.uuidString, zoneID: zoneID))
             let wasDone = record["doneAt"] as? Date != nil
             if Self.write(item, to: record) {
-                // Who did it (ADR-269): the adder on a new item, the ticker when it gets ticked.
+                // Who did it (ADR-285): the adder on a new item, the ticker when it gets ticked.
                 if let me {
                     if isNew { record["addedBy"] = me }
                     if item.doneAt != nil, !wasDone { record["doneBy"] = me }
@@ -166,7 +166,7 @@ struct ListCloud {
         return changed
     }
 
-    // MARK: Updates straight away (ADR-268)
+    // MARK: Updates straight away (ADR-284)
 
     static func subscriptionID(_ role: ListShareRole) -> String { "doddy-lists-\(role.rawValue)" }
 

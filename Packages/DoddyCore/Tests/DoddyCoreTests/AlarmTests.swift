@@ -48,7 +48,7 @@ final class AlarmTests: XCTestCase {
     }
 }
 
-/// Asking about and turning off Doddy's alarms by voice (ADR-267).
+/// Asking about and turning off Doddy's alarms by voice (ADR-283).
 final class AlarmVoiceTests: XCTestCase {
     private let gym = AlarmEntry(id: UUID(), clock: "07:00", label: "gym", summary: "07:00 on weekdays")
     private let flight = AlarmEntry(id: UUID(), clock: "07:00", label: "flight", summary: "07:00 on 2026-10-14")

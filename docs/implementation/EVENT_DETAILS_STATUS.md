@@ -1,4 +1,4 @@
-# An event's place and notes by voice: status (ADR-265)
+# An event's place and notes by voice: status (ADR-281)
 Date: 2026-10-11. Owner: "do all of them" (round 3, item 2).
 
 ## What ships

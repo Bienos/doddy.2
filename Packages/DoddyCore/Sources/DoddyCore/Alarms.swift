@@ -38,7 +38,7 @@ public enum AlarmRepeat: String, CaseIterable, Equatable, Sendable {
 /// An alarm the agent proposed. Nothing is set until the user taps Set alarm on the card.
 public struct AlarmDraft: Equatable, Sendable {
     public static let maxLabelLength = 60
-    /// Snooze on a Doddy alarm rings again after this many minutes (ADR-267).
+    /// Snooze on a Doddy alarm rings again after this many minutes (ADR-283).
     public static let snoozeMinutes = 9
 
     /// The first time it rings, as the user's wall clock. For a repeating alarm, the day it was
@@ -107,7 +107,7 @@ extension VoiceToolReply {
     public static let alarmUnconfirmed = "unknown: the iPhone didn't confirm the alarm. Ask the user to check before trying again."
 }
 
-// MARK: Asking about and turning off alarms by voice (ADR-267)
+// MARK: Asking about and turning off alarms by voice (ADR-283)
 
 extension VoiceToolName {
     public static let listAlarms = "list_alarms"

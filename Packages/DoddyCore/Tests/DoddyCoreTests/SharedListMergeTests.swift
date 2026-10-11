@@ -87,7 +87,7 @@ final class SharedListDataFlowTests: XCTestCase {
     }
 }
 
-/// Who added or ticked an item on a shared list (ADR-269).
+/// Who added or ticked an item on a shared list (ADR-285).
 final class SharedItemLabelTests: XCTestCase {
     private let names = ["_marta": "Marta", "_tom": "Tom"]
 

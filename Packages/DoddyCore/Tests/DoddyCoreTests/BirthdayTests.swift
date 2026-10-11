@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Birthday reminders from contacts (ADR-272).
+/// Birthday reminders from contacts (ADR-288).
 final class BirthdayTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

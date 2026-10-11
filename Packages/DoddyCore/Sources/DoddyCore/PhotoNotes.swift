@@ -117,7 +117,7 @@ public enum RecognizedText {
     }
 }
 
-// MARK: A list from a photo (ADR-270)
+// MARK: A list from a photo (ADR-286)
 
 /// A photo of a handwritten or printed list, read on this iPhone, turned into a name and items for
 /// the New list screen. The user sees and edits every line before Create; nothing is saved by

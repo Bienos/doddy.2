@@ -1,6 +1,6 @@
 import Foundation
 
-// Repeating events and reminders by voice (ADR-266). "Gym every Monday at 7" becomes one Calendar
+// Repeating events and reminders by voice (ADR-282). "Gym every Monday at 7" becomes one Calendar
 // event or Apple reminder with a repeat rule, shown on the card ("Repeats every week on Monday,
 // until 31 Dec") and added only on Add. The weekday comes from the first date, as Calendar does
 // it; "weekdays" is Monday to Friday. The rule is read back with the event or reminder, so

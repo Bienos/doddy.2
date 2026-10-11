@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Several changes on one card (ADR-264).
+/// Several changes on one card (ADR-280).
 final class BulkChangeTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

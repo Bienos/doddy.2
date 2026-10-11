@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import XCTest
 
-/// Offline (ADR-273): which errors mean "no connection".
+/// Offline (ADR-289): which errors mean "no connection".
 final class OfflineTests: XCTestCase {
     func testNoConnectionIsRecognisedAlsoWhenWrapped() {
         XCTAssertTrue(Offline.isNoConnection(URLError(.notConnectedToInternet)))

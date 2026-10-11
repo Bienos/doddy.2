@@ -73,7 +73,7 @@ struct WatchListView: View {
     let listID: UUID
     @State private var working: UUID?
     @State private var message: String?
-    /// An item to add, said (dictation) or written (ADR-271).
+    /// An item to add, said (dictation) or written (ADR-287).
     @State private var newItem = ""
     @State private var isAdding = false
 

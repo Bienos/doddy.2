@@ -24,9 +24,9 @@ public struct EventChangeDraft: Equatable, Sendable {
     public let newStart: Date?
     public let newEnd: Date?
     public let newTitle: String?
-    /// A new place (ADR-265). Replaces the old one, which the card shows (never the agent).
+    /// A new place (ADR-281). Replaces the old one, which the card shows (never the agent).
     public let newLocation: String?
-    /// A line added to the end of the event's notes (ADR-265). Notes are never replaced.
+    /// A line added to the end of the event's notes (ADR-281). Notes are never replaced.
     public let addNote: String?
 
     public init(title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?,
@@ -58,7 +58,7 @@ public struct ReminderChangeDraft: Equatable, Sendable {
 public struct EventChangePlan: Equatable, Sendable {
     public let before: CalendarEventSummary
     public let after: CalendarEventSummary
-    /// The place now, read on this iPhone for the card and the stale check only (ADR-265).
+    /// The place now, read on this iPhone for the card and the stale check only (ADR-281).
     public let locationBefore: String?
     /// The new place; nil: the place doesn't change.
     public let newLocation: String?
@@ -244,7 +244,7 @@ extension VoiceToolReply {
         return "changed: \"\(after.title)\" is now \(when). Checked in Calendar."
     }
 
-    /// With the place or an added note (ADR-265). The old place is never sent to the agent.
+    /// With the place or an added note (ADR-281). The old place is never sent to the agent.
     public static func eventChanged(_ plan: EventChangePlan, calendar: Calendar) -> String {
         var extra = ""
         if let place = plan.newLocation { extra += place.isEmpty ? " Its place was cleared." : " Its place is now \"\(place)\"." }

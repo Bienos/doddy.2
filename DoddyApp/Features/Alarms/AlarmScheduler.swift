@@ -10,7 +10,7 @@ import SwiftUI
 // `needsNewerIOS` and the agent offers a timer or a reminder instead. An alarm is set only after
 // the user taps Set alarm, and "set" means AlarmKit lists it afterwards.
 
-/// One alarm Doddy set, as shown in Settings › Alarms and matched by voice (ADR-267).
+/// One alarm Doddy set, as shown in Settings › Alarms and matched by voice (ADR-283).
 typealias DoddyAlarm = AlarmEntry
 
 @MainActor
@@ -80,7 +80,7 @@ private enum AlarmBook {
         let stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
         return stored.compactMap { id, fields in
             guard let uuid = UUID(uuidString: id), let summary = fields["summary"] else { return nil }
-            // Alarms set before ADR-267 kept no clock; their summary starts with it.
+            // Alarms set before ADR-283 kept no clock; their summary starts with it.
             return DoddyAlarm(id: uuid, clock: fields["clock"] ?? String(summary.prefix(5)), label: fields["label"], summary: summary)
         }
         .sorted { $0.summary < $1.summary }
@@ -134,7 +134,7 @@ private enum AlarmKitBackend {
             schedule = .fixed(date)
         }
         let title: LocalizedStringResource = draft.label.map { LocalizedStringResource(stringLiteral: $0) } ?? "Doddy alarm"
-        // Stop, and Snooze (ADR-267): rings again after `snoozeMinutes`, with a countdown on the
+        // Stop, and Snooze (ADR-283): rings again after `snoozeMinutes`, with a countdown on the
         // Lock Screen drawn by the widget extension (AlarmLiveActivity).
         let alert = AlarmPresentation.Alert(
             title: title,

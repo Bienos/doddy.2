@@ -1,4 +1,4 @@
-# Repeating events and reminders by voice: status (ADR-266)
+# Repeating events and reminders by voice: status (ADR-282)
 Date: 2026-10-11. Owner: "do all of them" (round 3, item 3).
 
 ## What ships

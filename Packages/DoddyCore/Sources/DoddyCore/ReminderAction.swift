@@ -281,7 +281,7 @@ public struct ReminderWrite: Equatable, Sendable {
     public let notes: String?
     public let due: ReminderDue?
     public let key: String
-    /// Reminders' own repeat (ADR-266).
+    /// Reminders' own repeat (ADR-282).
     public let repeats: CalendarRepeat?
 
     public init(_ draft: ReminderDraft) {
@@ -304,7 +304,7 @@ public struct ReminderSnapshot: Equatable, Sendable {
     public let due: ReminderDue?
     public let markerURL: String?
     public let isCompleted: Bool
-    /// The repeat as read back (ADR-266); nil for none, or a rule Doddy doesn't write.
+    /// The repeat as read back (ADR-282); nil for none, or a rule Doddy doesn't write.
     public let repeats: CalendarRepeat?
 
     public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false, repeats: CalendarRepeat? = nil) {

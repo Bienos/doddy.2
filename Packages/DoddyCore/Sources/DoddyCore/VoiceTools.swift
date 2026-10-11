@@ -80,7 +80,7 @@ public struct CalendarEventDraft: Equatable, Sendable {
     public let allDay: Bool
     public let location: String?
     public let notes: String?
-    /// Calendar's own repeat (ADR-266); nil for a one-off event.
+    /// Calendar's own repeat (ADR-282); nil for a one-off event.
     public var repeats: CalendarRepeat? = nil
 
     /// Nil while the event is still ahead (an all-day event counts until its day ends). Checked
@@ -103,7 +103,7 @@ public struct ReminderDraft: Equatable, Sendable {
     public let title: String
     public let due: ReminderDue?
     public let notes: String?
-    /// Reminders' own repeat (ADR-266); needs a due.
+    /// Reminders' own repeat (ADR-282); needs a due.
     public let repeats: CalendarRepeat?
 
     public init(title: String, due: ReminderDue?, notes: String?, repeats: CalendarRepeat? = nil) {
@@ -171,7 +171,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case setTimer(TimerDraft)
     /// A real alarm (ADR-260), on iOS 26 and later.
     case setAlarm(AlarmDraft)
-    /// Doddy's alarms, read on the phone (ADR-267). No card: nothing changes.
+    /// Doddy's alarms, read on the phone (ADR-283). No card: nothing changes.
     case listAlarms
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
@@ -198,7 +198,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case deleteCalendarEvent(EventChangeDraft)
     /// Delete one open reminder (ADR-259), by its exact title.
     case deleteReminder(title: String)
-    /// Several changes on one card (ADR-264): events starting in the range, deleted.
+    /// Several changes on one card (ADR-280): events starting in the range, deleted.
     case deleteCalendarEvents(VoiceTimeRange)
     /// Open reminders due by a day, moved to another day at their own times.
     case moveReminders(dueBy: ReminderDue, to: ReminderDue)

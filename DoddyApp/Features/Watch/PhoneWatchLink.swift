@@ -51,7 +51,7 @@ final class PhoneWatchLink: NSObject {
             guard Self.isOn else { return .failed }
             return WatchReply(await WidgetSync.shared.tick(listID: listID, itemID: itemID, shownDone: shownDone))
         case .addToList(let listID, let text):
-            // Said or written on the watch and checked there (ADR-271); the same add as on the
+            // Said or written on the watch and checked there (ADR-287); the same add as on the
             // iPhone, read back by the store.
             guard Self.isOn else { return .failed }
             if let problem = WatchNote.itemProblem(text) { return .notSaved(reason: problem) }

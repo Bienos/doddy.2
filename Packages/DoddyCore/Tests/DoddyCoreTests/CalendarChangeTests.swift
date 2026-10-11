@@ -132,7 +132,7 @@ final class CalendarChangeTests: XCTestCase {
     }
 }
 
-/// Event details by voice (ADR-265): a new place, a line added to the notes.
+/// Event details by voice (ADR-281): a new place, a line added to the notes.
 final class EventDetailsTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

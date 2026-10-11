@@ -1,6 +1,6 @@
 import Foundation
 
-// Several changes on one card (ADR-264). "Clear my Thursday afternoon" and "move all of today's
+// Several changes on one card (ADR-280). "Clear my Thursday afternoon" and "move all of today's
 // reminders to tomorrow" become one card that lists every event or reminder it would touch, each
 // with a tick (all ticked, because the user asked for all of them; any can be unticked). Only the
 // ticked ones change, after one tap, and each one separately: it must still look as the card

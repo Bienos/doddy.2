@@ -284,7 +284,7 @@ struct ListDetailView: View {
                 Text(item.text)
                     .strikethrough(item.isDone)
                     .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
-                // Shared lists (ADR-269): who else added or ticked it, on this iPhone only.
+                // Shared lists (ADR-285): who else added or ticked it, on this iPhone only.
                 let who = sharing.label(for: item)
                 if !who.isEmpty {
                     Text(Self.whoText(who))
@@ -365,7 +365,7 @@ struct ListDetailView: View {
         }
     }
 
-    /// "Added by Marta · Ticked by Tom" (ADR-269).
+    /// "Added by Marta · Ticked by Tom" (ADR-285).
     static func whoText(_ label: SharedItemLabel) -> String {
         func shown(_ name: String) -> String { name == "someone else" ? NSLocalizedString("someone else", comment: "") : name }
         let label = SharedItemLabel(addedBy: label.addedBy.map(shown), doneBy: label.doneBy.map(shown))
@@ -438,7 +438,7 @@ struct NewListSheet: View {
     @State private var name = ""
     @State private var items = ""
     @State private var errorMessage: String?
-    /// What came from a photo (ADR-270), said once above the items.
+    /// What came from a photo (ADR-286), said once above the items.
     @State private var photoNote: String?
 
     var body: some View {

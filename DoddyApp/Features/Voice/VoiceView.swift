@@ -435,7 +435,7 @@ struct VoiceView: View {
                 .font(.headline)
             changeRow(after: false, title: plan.before.title, when: eventWhen(plan.before))
             changeRow(after: true, title: plan.after.title, when: eventWhen(plan.after))
-            // Place and notes (ADR-265): shown here only; the old place never goes to Doddy's voice.
+            // Place and notes (ADR-281): shown here only; the old place never goes to Doddy's voice.
             if let place = plan.newLocation {
                 Label(String(format: NSLocalizedString("Place: %@ → %@", comment: ""),
                              plan.locationBefore?.isEmpty == false ? plan.locationBefore! : NSLocalizedString("none", comment: ""),
@@ -690,7 +690,7 @@ struct VoiceView: View {
 
     private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {
         if case .plan = pending { return controller.planTicked.isEmpty }
-        // Several changes (ADR-264): nothing ticked, nothing to confirm.
+        // Several changes (ADR-280): nothing ticked, nothing to confirm.
         if case .bulk(_, let items, _, _) = pending { return items.allSatisfy { controller.bulkUnticked.contains($0.id) } }
         return false
     }
@@ -1119,7 +1119,7 @@ struct VoiceView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// One line under an item on the several-changes card (ADR-264).
+    /// One line under an item on the several-changes card (ADR-280).
     private func bulkDetail(_ item: BulkItem) -> String {
         switch item {
         case .deleteEvent(let event): eventWhen(event)
@@ -1127,7 +1127,7 @@ struct VoiceView: View {
         }
     }
 
-    /// "Repeats every week until Thu 31 Dec 2026" (ADR-266), in the iPhone's language.
+    /// "Repeats every week until Thu 31 Dec 2026" (ADR-282), in the iPhone's language.
     static func repeatText(_ repeats: CalendarRepeat) -> String {
         let base = switch repeats.frequency {
         case .daily: NSLocalizedString("Repeats every day", comment: "")
@@ -1200,7 +1200,7 @@ struct VoiceView: View {
     }
 }
 
-/// Offline (ADR-273): what still works without the internet. A note written or dictated here is
+/// Offline (ADR-289): what still works without the internet. A note written or dictated here is
 /// saved on this iPhone after Save and read back; nothing is queued to send later.
 struct OfflineNoteCard: View {
     let controller: VoiceSessionController

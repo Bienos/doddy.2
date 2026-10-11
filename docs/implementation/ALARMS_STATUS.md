@@ -43,7 +43,7 @@ Date: 2026-10-11. Owner: "do all of them" (item 6).
 | DOD-09 correction_and_recovery | Settings › Alarms with Turn off; older iOS gets a timer or reminder offer | — | — |
 | DOD-11 observable_privacy | Under the Timers switch and Pause all; logged in What Doddy did; label kept only on the phone | `testAlarmsAreServedByTimersPausedAndLogged` | — |
 
-## Part 2 (ADR-267, round 3)
+## Part 2 (ADR-283, round 3)
 - **`list_alarms`:** reads Doddy's own alarms on the phone (time, label, days), with no card. It says Clock app alarms aren't visible.
 - **`cancel_alarm`:** takes `time` (HH:MM) and a `label` only when two alarms share the time.
   - It finds exactly one alarm, or the agent asks.

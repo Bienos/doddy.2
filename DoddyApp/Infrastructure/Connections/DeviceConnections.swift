@@ -143,7 +143,7 @@ final class DeviceConnections {
         event.isAllDay = draft.allDay
         event.location = draft.location
         event.notes = draft.notes
-        // A repeat (ADR-266) is saved with the event and must read back the same.
+        // A repeat (ADR-282) is saved with the event and must read back the same.
         if let repeats = draft.repeats { event.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
         try eventStore.save(event, span: draft.repeats == nil ? .thisEvent : .futureEvents)
         guard let identifier = event.eventIdentifier, let back = eventStore.event(withIdentifier: identifier),
@@ -153,7 +153,7 @@ final class DeviceConnections {
         return .verified
     }
 
-    /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-266). The end is the
+    /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the
     /// end of the last day, in this iPhone's time zone.
     nonisolated private static func rule(_ repeats: CalendarRepeat, calendar: Calendar) -> EKRecurrenceRule {
         let frequency: EKRecurrenceFrequency = switch repeats.unit {
@@ -200,7 +200,7 @@ final class DeviceConnections {
               Self.summary(event) == plan.before else {
             return .changedElsewhere
         }
-        // A new place (ADR-265) only if the place is still what the card showed.
+        // A new place (ADR-281) only if the place is still what the card showed.
         if plan.newLocation != nil, (event.location ?? "") != (plan.locationBefore ?? "") { return .changedElsewhere }
         var notes = event.notes
         if let line = plan.removeNote {
@@ -226,7 +226,7 @@ final class DeviceConnections {
         return readBack ? .verified : .unconfirmed
     }
 
-    /// The place an occurrence has now, for the change card only (ADR-265). Never sent to the agent.
+    /// The place an occurrence has now, for the change card only (ADR-281). Never sent to the agent.
     func eventLocation(_ event: CalendarEventSummary) -> String? {
         guard access(for: .calendar) == .granted else { return nil }
         return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.location
@@ -476,7 +476,7 @@ final class DeviceConnections {
         }
     }
 
-    /// Contacts with a birthday (ADR-272): name and day only, read on this iPhone. Nil without
+    /// Contacts with a birthday (ADR-288): name and day only, read on this iPhone. Nil without
     /// Contacts permission. Nothing else about the contact is read.
     func birthdays() -> [BirthdayContact]? {
         guard access(for: .contacts) == .granted else { return nil }

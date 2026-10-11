@@ -54,7 +54,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
 | DOD-07 scoped_action_approval | Save only on tap after checking the words; a tick changes only the item as it was shown | `testRequestsRoundTripAndOtherVersionsAreIgnored`, `testNotesAreCheckedBeforeSending` | UI not compiled |
 | DOD-11 observable_privacy | Own switch; notification-text setting respected; no storage or network on the watch (guarded) | capability guard PASS | Snapshot sits in the system's application context on the watch |
 
-## Round 3: adding to a list from the watch (ADR-271)
+## Round 3: adding to a list from the watch (ADR-287)
 - **Add an item** at the top of a list on the watch: said with the watch's dictation or written.
 - **On the watch:** the item is checked with the same rules as a typed item (not empty, at most 200 characters).
 - **On the iPhone:** it's sent as `WatchRequest.addToList(listID:text:)` and added through the same `MemoryStore.addToList` as on the phone, which reads it back.

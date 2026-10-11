@@ -1,4 +1,4 @@
-# Birthday reminders from contacts: status (ADR-272)
+# Birthday reminders from contacts: status (ADR-288)
 Date: 2026-10-11. Owner: "do all of them" (round 3, item 9).
 
 ## What ships

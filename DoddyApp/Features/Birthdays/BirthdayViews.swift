@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import UserNotifications
 
-/// Puts the picked birthdays in iOS as Doddy's own yearly notifications (ADR-272) and reads them
+/// Puts the picked birthdays in iOS as Doddy's own yearly notifications (ADR-288) and reads them
 /// back. Replaces whatever birthday notifications Doddy had pending.
 enum BirthdayScheduler {
     enum Outcome: Equatable { case scheduled(Int), off, needsPermission, failed }

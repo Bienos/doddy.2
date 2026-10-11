@@ -1,4 +1,4 @@
-# A list from a photo: status (ADR-270)
+# A list from a photo: status (ADR-286)
 Date: 2026-10-11. Owner: "do all of them" (round 3, item 7).
 
 ## What ships

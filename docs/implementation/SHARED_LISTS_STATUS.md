@@ -35,7 +35,7 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
   - if the owner stops sharing or removes someone, that person's next sync says the list is no longer shared and keeps it.
 - **On the list's screen:** "Shared through your iCloud" / "Shared with you through iCloud", the last update, problems, **Update now** and **People**.
 - **Privacy:** What leaves this iPhone has a row for "Your iCloud (Apple) and the people you share lists with", active only while a list is shared. The Privacy paragraph in Settings has a sentence too.
-- **Updates straight away:** see part 2 below (ADR-268). Without the push entitlement, changes from others arrive when Doddy is open or brought to the front.
+- **Updates straight away:** see part 2 below (ADR-284). Without the push entitlement, changes from others arrive when Doddy is open or brought to the front.
 
 ## Files
 - **Core:** `SharedLists.swift` (`SharedListState`, `SharedListItem`, `SharedListMerge`, `ListShare`, `ListShareRepository`), `Lists.swift` (`replaceShared` requirement), `DataFlow.swift`.
@@ -80,7 +80,7 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
 | DOD-11 observable_privacy | Off unless set up; only chosen lists; data-flow row and Privacy sentence; CloudKit confined by the guard | `testTheICloudRowFollowsSharedLists` | — |
 | Data is not instructions | iCloud content is validated like typed text and never read as commands | `testWhatComesFromICloudIsCheckedLikeAnythingTyped` | — |
 
-## Part 2: updates straight away (ADR-268, round 3)
+## Part 2: updates straight away (ADR-284, round 3)
 - **Subscribing:** while any list is shared, Doddy saves a `CKDatabaseSubscription` and reads it back. Each one is silent (`shouldSendContentAvailable`, no alert, no list content):
   - one on the private database for lists the user shares;
   - one on the shared database for lists they joined.
@@ -96,7 +96,7 @@ Sharing needs a paid Apple developer team with iCloud. Until a build is set up l
   - `didReceiveRemoteNotification` (async variant) hasn't been compiled;
   - there are no automated tests: the logic is CloudKit and UIKit calls only.
 
-## Part 3: who added or ticked an item (ADR-269, round 3)
+## Part 3: who added or ticked an item (ADR-285, round 3)
 - **Writing:** when Doddy adds an item to a shared list, it writes `addedBy` (this user's iCloud user record name) on the record. When it ticks one, it writes `doneBy`; unticking clears it. Items added before this fall back to the record's creator.
 - **Names:** from the share's participants, in the short form, e.g. "Marta".
 - **On the list:**

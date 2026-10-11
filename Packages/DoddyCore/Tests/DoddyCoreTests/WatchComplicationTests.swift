@@ -48,7 +48,7 @@ final class WatchComplicationTests: XCTestCase {
     }
 }
 
-/// Adding to a list from the watch (ADR-271).
+/// Adding to a list from the watch (ADR-287).
 final class WatchListAddTests: XCTestCase {
     func testTheRequestRoundTripsAndTheItemIsCheckedOnTheWatch() throws {
         let list = UUID()

@@ -196,7 +196,7 @@ extension ListRepository {
     }
 }
 
-// MARK: Who added or ticked an item (ADR-269)
+// MARK: Who added or ticked an item (ADR-285)
 
 /// For one item on a shared list: the iCloud user who added it and who ticked it, as user
 /// record names. Kept in memory on this iPhone only; never sent to the voice agent.

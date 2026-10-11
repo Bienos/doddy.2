@@ -1,6 +1,6 @@
 import Foundation
 
-// Offline (ADR-273). Doddy's voice needs the internet. When a conversation can't start, or drops,
+// Offline (ADR-289). Doddy's voice needs the internet. When a conversation can't start, or drops,
 // because the iPhone has no connection, the voice screen says so plainly ("You're offline")
 // instead of a technical error, and offers what works without the internet: writing or dictating
 // a note that is saved on this iPhone, checked, as on Capture. Nothing is queued to send later.

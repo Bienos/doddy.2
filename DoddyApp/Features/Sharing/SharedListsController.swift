@@ -31,11 +31,11 @@ final class SharedListsController {
         }
     }
 
-    /// iCloud wakes Doddy when a shared list changes (ADR-268). False: changes arrive when
+    /// iCloud wakes Doddy when a shared list changes (ADR-284). False: changes arrive when
     /// Doddy comes to the front (the build has no push entitlement, or registering failed).
     private(set) var liveUpdates = false
 
-    /// Who added or ticked items on shared lists, and the people's names (ADR-269). Memory only,
+    /// Who added or ticked items on shared lists, and the people's names (ADR-285). Memory only,
     /// refreshed at each sync; never sent to Doddy's voice.
     private var people: [UUID: SharedItemPeople] = [:]
     private var names: [String: String] = [:]
@@ -99,7 +99,7 @@ final class SharedListsController {
         if !links.values.contains(where: { $0.role == link.role }) { await cloud.unsubscribe(link.role) }
     }
 
-    // MARK: Updates straight away (ADR-268)
+    // MARK: Updates straight away (ADR-284)
 
     /// While any list is shared: register for silent notifications (no permission prompt; the
     /// device token is not sent anywhere, iCloud uses it directly) and subscribe each database

@@ -31,7 +31,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
-		<!-- Shared lists (ADR-268): iCloud's silent "a list changed" wake-up. Used for nothing else. -->
+		<!-- Shared lists (ADR-284): iCloud's silent "a list changed" wake-up. Used for nothing else. -->
 		<string>remote-notification</string>
 	</array>
 	<key>NSSupportsLiveActivities</key>

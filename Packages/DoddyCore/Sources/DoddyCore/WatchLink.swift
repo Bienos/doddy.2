@@ -11,7 +11,7 @@ import Foundation
 public enum WatchRequest: Codable, Equatable, Sendable {
     case tick(listID: UUID, itemID: UUID, shownDone: Bool)
     case saveNote(text: String)
-    /// An item said or written on the watch, for one list (ADR-271).
+    /// An item said or written on the watch, for one list (ADR-287).
     case addToList(listID: UUID, text: String)
 
     public func encoded() throws -> Data { try JSONEncoder().encode(Envelope(version: WatchLinkVersion.current, request: self)) }
@@ -37,7 +37,7 @@ public enum WatchReply: Codable, Equatable, Sendable {
     case saved
     /// Nothing was saved; `reason` is shown on the watch.
     case notSaved(reason: String)
-    /// Added to the list on the iPhone and read back (ADR-271).
+    /// Added to the list on the iPhone and read back (ADR-287).
     case addedToList(String)
     /// The same item is already open on the list; nothing added.
     case alreadyOnList(String)
@@ -88,7 +88,7 @@ public enum WatchNote {
         }
     }
 
-    /// A list item from the watch: the same rules as one typed on the iPhone (ADR-271).
+    /// A list item from the watch: the same rules as one typed on the iPhone (ADR-287).
     public static func itemProblem(_ text: String) -> String? {
         guard let item = ListText.cleaned(text) else { return "Say or type an item first." }
         return item.count > ListLimits.itemLength ? "An item can be up to \(ListLimits.itemLength) characters." : nil
