@@ -8,7 +8,7 @@ import { parseFeed, type NewsItem } from "../src/news/feeds.js";
 import { shortlist } from "../src/news/rank.js";
 import { checkUrl, isPublicAddress, requestOnce, safeFetchText } from "../src/news/safeFetch.js";
 import { nextRunAt } from "../src/news/schedule.js";
-import type { FeedSource, NewsSearch } from "../src/news/sources.js";
+import { GNewsSearch, type FeedSource, type NewsSearch } from "../src/news/sources.js";
 import http from "node:http";
 import { ClaudeDigestWriter, OpenAIDigestWriter, validateLines, type DigestLine, type DigestWriter, type WriterInput } from "../src/news/writer.js";
 import { dbSkip, FakePush, freshDb, testApp } from "./helpers.js";
@@ -140,6 +140,23 @@ test("Claude writer: request shape and structured reply (local stand-in for the 
     await assert.rejects(writer.write({ language: "en", topics: ["Tech"], candidates }), /writer_(refusal|unparsed)/);
     reply = message("not json");
     await assert.rejects(writer.write({ language: "en", topics: ["Tech"], candidates }), /writer_unparsed/);
+  } finally {
+    server.close();
+  }
+});
+
+test("keyword search keeps only http(s) links (local stand-in for GNews)", async () => {
+  const articles = [
+    { title: "Good", description: null, url: "https://news.example/a", publishedAt: "2026-10-10T05:00:00Z", source: { name: "Ex" } },
+    { title: "Script", description: null, url: "javascript:alert(1)", publishedAt: "2026-10-10T05:00:00Z", source: { name: "Ex" } },
+    { title: "Broken", description: null, url: "not a url", publishedAt: "2026-10-10T05:00:00Z", source: { name: "Ex" } },
+  ];
+  const server = http.createServer((_req, res) => res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ articles })));
+  await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
+  try {
+    const gnews = new GNewsSearch("k", 2000, `http://127.0.0.1:${(server.address() as { port: number }).port}`);
+    const found = await gnews.search('"x"', "en", NOW);
+    assert.deepEqual(found.map((f) => f.url), ["https://news.example/a"]);
   } finally {
     server.close();
   }
