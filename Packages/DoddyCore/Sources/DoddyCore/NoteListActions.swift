@@ -1,6 +1,6 @@
 import Foundation
 
-// Notes and lists in the action status model (ADR-293, extends ADR-291 and ADR-292). Notes and
+// Notes and lists in the action status model (ADR-302, extends ADR-300 and ADR-301). Notes and
 // lists live in Doddy's own database on this iPhone, which is the truth about them. So an entry
 // Doddy wasn't sure about (cut off mid-way) is settled by Doddy itself: it looks in its own
 // notes and lists and the entry becomes confirmed or "didn't happen", never guessed. Lists were

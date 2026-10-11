@@ -24,7 +24,7 @@ enum AlarmScheduler {
     }
 
     /// Asks for permission the first time and sets the alarm under `id`. Whether it is set is
-    /// read from AlarmKit's list afterwards, by AlarmSetAction (ADR-292).
+    /// read from AlarmKit's list afterwards, by AlarmSetAction (ADR-301).
     static func schedule(_ draft: AlarmDraft, id: UUID) async throws -> AlarmScheduleAttempt {
         #if canImport(AlarmKit)
         if #available(iOS 26.0, *) {
@@ -71,7 +71,7 @@ enum AlarmScheduler {
     }
 }
 
-/// AlarmScheduler as AlarmSetAction needs it (ADR-292).
+/// AlarmScheduler as AlarmSetAction needs it (ADR-301).
 @MainActor
 final class AlarmKitWriter: AlarmWriter {
     func alarms() -> [AlarmEntry] { AlarmScheduler.current() }
@@ -90,7 +90,7 @@ private enum AlarmBook {
         let stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
         return stored.compactMap { id, fields in
             guard let uuid = UUID(uuidString: id), let summary = fields["summary"] else { return nil }
-            // Alarms set before ADR-283 kept no clock; their summary starts with it. Before ADR-292, no key.
+            // Alarms set before ADR-283 kept no clock; their summary starts with it. Before ADR-301, no key.
             return DoddyAlarm(
                 id: uuid, clock: fields["clock"] ?? String(summary.prefix(5)), label: fields["label"], summary: summary,
                 key: fields["key"])
@@ -115,7 +115,7 @@ private enum AlarmBook {
     }
 
     /// Drops notes of alarms AlarmKit no longer lists, except one noted in the last 10 minutes:
-    /// AlarmKit may list a just-set alarm late, and a retry must still find it (ADR-292).
+    /// AlarmKit may list a just-set alarm late, and a retry must still find it (ADR-301).
     static func keepOnly(_ ids: Set<UUID>, now: Date = Date()) {
         let stored = UserDefaults.standard.dictionary(forKey: key) as? [String: [String: String]] ?? [:]
         UserDefaults.standard.set(stored.filter { id, fields in

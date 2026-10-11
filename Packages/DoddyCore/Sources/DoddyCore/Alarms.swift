@@ -123,7 +123,7 @@ public struct AlarmEntry: Equatable, Sendable, Identifiable {
     public let label: String?
     /// "07:00 on weekdays" or "07:00 on 2026-10-12".
     public let summary: String
-    /// `AlarmIdempotency.key` of the draft it was set from (ADR-292). Nil for alarms set before.
+    /// `AlarmIdempotency.key` of the draft it was set from (ADR-301). Nil for alarms set before.
     public let key: String?
 
     public init(id: UUID, clock: String, label: String?, summary: String, key: String? = nil) {

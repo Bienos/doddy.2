@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-291 (OP-012 / OP-013): typed action status, receipts, status history, and retry that
+/// ADR-300 (OP-012 / OP-013): typed action status, receipts, status history, and retry that
 /// checks before repeating. EventKit itself is only exercised on a device.
 final class ActionStatusTests: XCTestCase {
     private var calendar: Calendar = {
@@ -112,7 +112,7 @@ final class ActionStatusTests: XCTestCase {
         XCTAssertEqual(recovered.history.last, ActivityStatusChange(status: .unknown, at: now + 600, note: ActivityLog.interruptedNote))
     }
 
-    /// Planted-bug guard: before ADR-291 a check rewrote any entry it was given.
+    /// Planted-bug guard: before ADR-300 a check rewrote any entry it was given.
     func testACheckNeverRewritesAFinalResult() {
         let asked = request(.createReminder(milk))
         let receipt = ReminderReceipt(title: "Buy milk", listTitle: "Home", due: milk.due, id: "x-1")
@@ -123,7 +123,7 @@ final class ActionStatusTests: XCTestCase {
     }
 
     func testEntriesSavedBeforeThisStillLoad() throws {
-        // An entry as ActivityLogStore wrote it before ADR-291: none of the new keys.
+        // An entry as ActivityLogStore wrote it before ADR-300: none of the new keys.
         let old = #"[{"id":"6F1B2C9E-1C1A-4B6D-9F51-0B1D2C3E4F50","at":781790400,"app":"reminders","title":"Add reminder","detail":"“Buy milk”","outcome":"notSure","reminderKey":"v1-abc"}]"#
         let entries = try JSONDecoder().decode([ActivityEntry].self, from: Data(old.utf8))
         XCTAssertEqual(entries.count, 1)
@@ -233,7 +233,7 @@ final class ActionStatusTests: XCTestCase {
         XCTAssertNotEqual(EventIdempotency.key(later), key)
         XCTAssertTrue(key?.hasPrefix("e1-") == true)
         XCTAssertNil(request(.openMap(place: "x")).operationKey)
-        // Timers and alarms have keys too since ADR-292 (TimerAlarmActionsTests).
+        // Timers and alarms have keys too since ADR-301 (TimerAlarmActionsTests).
         XCTAssertEqual(request(.setTimer(TimerDraft(seconds: 60, label: nil))).operationKey, TimerIdempotency.key(TimerDraft(seconds: 60, label: nil)))
     }
 

@@ -1,4 +1,4 @@
-# Action status model: status (ADR-291, timers and alarms ADR-292, notes and lists ADR-293)
+# Action status model: status (ADR-300, timers and alarms ADR-301, notes and lists ADR-302)
 Date: 2026-10-11. Owner instruction: "start the action status model". This covers OP-012 (action receipts and status history) and OP-013 (recoverable failure and retry) from the research backlog.
 
 ## What was already there
@@ -69,7 +69,7 @@ Date: 2026-10-11. Owner instruction: "start the action status model". This cover
 - English/Polish on a device. The new screen strings are not in the Polish catalog yet; they show in English.
 - Mac checklist items AS1 to AS5.
 
-## Timers and alarms (ADR-292)
+## Timers and alarms (ADR-301)
 Owner instruction: "extend it to timers and alarms".
 
 - **Keys:**
@@ -114,7 +114,7 @@ Owner instruction: "extend it to timers and alarms".
   - how late AlarmKit lists a new alarm;
   - Mac checklist items AS6 to AS9.
 
-## Notes and lists (ADR-293)
+## Notes and lists (ADR-302)
 Owner instruction: "extend it to notes and lists".
 
 - **Why it differs:** notes and lists live in Doddy's own database, which is the truth about them. So Doddy settles an unsure entry itself instead of asking the user to check.

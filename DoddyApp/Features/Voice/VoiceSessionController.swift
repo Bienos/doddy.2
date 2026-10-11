@@ -216,7 +216,7 @@ final class VoiceSessionController {
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
-    /// What earlier tries of a reminder or event meant when its card was shown (ADR-291).
+    /// What earlier tries of a reminder or event meant when its card was shown (ADR-300).
     private var retryChecks: [String: ActionRetryDecision] = [:]
     /// The app's read-back and whether it was asked to write, for the entry logged with the reply.
     private var writeResults: [String: WriteResult] = [:]
@@ -737,7 +737,7 @@ final class VoiceSessionController {
         switch action {
         case .memory(let id, let text):
             let retry = retryChecks.removeValue(forKey: id)
-            // After an unconfirmed try: the note may be saved already (ADR-293). Look, don't save twice.
+            // After an unconfirmed try: the note may be saved already (ADR-302). Look, don't save twice.
             if let since = retry?.uncheckedSince, let existing = NoteIdempotency.savedSince(since, text: text, in: store.memories) {
                 let result = WriteResult(
                     reply: VoiceToolReply.noteAlreadySaved(existing), receipt: ActivityReceipt(note: existing, readAt: Date()), attempted: false)
@@ -1024,14 +1024,14 @@ final class VoiceSessionController {
         }
     }
 
-    /// What the list's own result says, for the receipt in What Doddy did (ADR-293).
+    /// What the list's own result says, for the receipt in What Doddy did (ADR-302).
     private static func receiptLines(_ result: ListAddResult) -> [String] {
         result.added.map { "Added: \($0.text)" } + result.alreadyThere.map { "Already on the list: \($0)" }
             + result.tooLong.map { "Too long: \($0.prefix(40))" } + result.noRoom.map { "No room: \($0)" }
     }
 
     /// A change that runs without a card is written down "in progress" before it runs too, so a
-    /// change cut off mid-way shows as "Not sure" and is settled at the next look (ADR-293).
+    /// change cut off mid-way shows as "Not sure" and is settled at the next look (ADR-302).
     private func logStarted(_ toolCallID: String) {
         guard let request = asked[toolCallID], started[toolCallID] == nil else { return }
         let entry = ActivityEntry.started(request, at: Date())
@@ -1789,7 +1789,7 @@ final class VoiceSessionController {
                 if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
             } else if let request = step.activity(calendar: .current),
                       case .stop(let count) = ActionRetry.decide(for: request, in: activity.entries, now: Date()) {
-                // Tried too often without a confirmed result (ADR-291): shown on the card, not run.
+                // Tried too often without a confirmed result (ADR-300): shown on the card, not run.
                 blocked[step.number] = .tooManyTries(app: request.app, count: count)
             } else if let call = step.cloudCall {
                 // As a single card: the server checks the switch, the connection and the arguments,
@@ -1838,7 +1838,7 @@ final class VoiceSessionController {
             } else if !ticked.contains(step.number) {
                 text = PlanReply.unticked
             } else {
-                // Earlier tries are read before this one is written down (ADR-291).
+                // Earlier tries are read before this one is written down (ADR-300).
                 let request = step.activity(calendar: .current)
                 let retry = ActionRetry.decide(for: request, in: activity.entries, now: Date())
                 if case .stop(let count) = retry, let request {
@@ -1863,7 +1863,7 @@ final class VoiceSessionController {
 
     /// Checked again at the tap: the user may have paused or switched off the app while the card waited.
     /// A step's reply, what its entry keeps (receipt, whether it wrote) and what Undo needs when it
-    /// added an event or reminder and read it back (ADR-271, ADR-291): the same as from its single card.
+    /// added an event or reminder and read it back (ADR-271, ADR-300): the same as from its single card.
     private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?, retry: ActionRetryDecision) async -> WriteResult {
         if let block = await planBlock(for: step) { return WriteResult(reply: block.reply) }
         switch step.request {
@@ -2091,7 +2091,7 @@ final class VoiceSessionController {
         return EventAddAction.add(draft, to: devices, now: Date(), calendar: .current)
     }
 
-    // MARK: Action status (ADR-291)
+    // MARK: Action status (ADR-300)
 
     /// The reply for the agent, plus what the entry in "What Doddy did" keeps.
     private struct WriteResult {
@@ -2116,7 +2116,7 @@ final class VoiceSessionController {
     }
 
     /// Unsure note and list entries are settled from Doddy's own database before any retry is
-    /// decided (ADR-293), and only once it has loaded.
+    /// decided (ADR-302), and only once it has loaded.
     private func settleLocalEntries() async {
         await store.reload()
         guard store.hasLoaded, store.loadError == nil else { return }
@@ -2474,7 +2474,7 @@ final class VoiceSessionController {
         return outcome
     }
 
-    /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-292); "started"
+    /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-301); "started"
     /// only when the iPhone lists it, with the ring time it lists.
     private func timerResult(_ draft: TimerDraft, retry: ActionRetryDecision?) async -> WriteResult {
         guard await devices.notificationAccess() == .granted else {
@@ -2495,7 +2495,7 @@ final class VoiceSessionController {
     }
 
     /// Checked again at the tap: the switch, and that the time hasn't passed while the card waited.
-    /// Looks at Doddy's alarms first, so asking again never sets a second one (ADR-292).
+    /// Looks at Doddy's alarms first, so asking again never sets a second one (ADR-301).
     private func alarmResult(_ draft: AlarmDraft, retry: ActionRetryDecision?) async -> WriteResult {
         guard isOn(.timers) else {
             connectionNeeded = .timers
@@ -2534,7 +2534,7 @@ final class VoiceSessionController {
 
     /// `undo` is what "What Doddy did" needs to put the change back; the entry keeps it only when
     /// `text` says the change was made and checked (ADR-268). A reminder or event add passes its
-    /// receipt, attempt and undo through `writeResults` instead (ADR-291).
+    /// receipt, attempt and undo through `writeResults` instead (ADR-300).
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
         let write = writeResults.removeValue(forKey: toolCallID)
         retryChecks[toolCallID] = nil

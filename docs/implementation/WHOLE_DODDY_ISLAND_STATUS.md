@@ -29,7 +29,8 @@ is a private Artifact in the owner's account.
   eyes closed (from the stretch) while Hey Doddy waits or is paused, otherwise the cross-legged smile.
 - The island stays black: iOS draws it and apps can't change it. The black outlines get a 1 pt cream edge; there is
   no panel. Orange still means "Doddy can hear you" (LIVE, the bars, the keyline).
-- Unchanged: the V4 styles, the Lock Screen card, and the tool island (focus, breathing, read aloud).
+- Unchanged here: the V4 styles and the focus and breathing islands. Since ADR-299 the Lock Screen card and the
+  read-aloud island use the poses too (`DODDY_WORLD_IN_APP_STATUS.md`).
 
 ## Files
 - `Shared/IslandArt/IslandPose.swift`: the poses, their figure boxes, the face poses and head positions.

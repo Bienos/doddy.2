@@ -135,7 +135,7 @@ final class DeviceConnections {
 
     /// Saves one event in the default calendar and returns it as read back with its identifier
     /// (which Undo uses, ADR-268), or nil when the read-back doesn't show it (or its repeat).
-    /// `EventAddAction` looks first and compares (CalendarEventWriter, ADR-291).
+    /// `EventAddAction` looks first and compares (CalendarEventWriter, ADR-300).
     func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
@@ -528,7 +528,7 @@ final class DeviceConnections {
     // MARK: Timers
 
     /// Schedules a local notification for the timer and reads it back from iOS to confirm.
-    /// Doddy's timers still waiting to ring (TimerWriter, ADR-292). The ring time is the one
+    /// Doddy's timers still waiting to ring (TimerWriter, ADR-301). The ring time is the one
     /// written into the notification when it was set, not recomputed from its trigger.
     func pendingTimers() async -> [PendingTimer] {
         await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in

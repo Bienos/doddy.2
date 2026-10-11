@@ -62,7 +62,7 @@ struct HomeView: View {
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
 
                     if let problem = store.environment.storageProblem {
-                        ProblemView(message: problem)
+                        ProblemView(message: problem, showsDoddy: true)
                     }
 
                     VStack(spacing: 12) {
@@ -127,6 +127,8 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
+                // Doddy's room behind the greeting and Doddy (ADR-299).
+                .background(alignment: .top) { SceneryBackdrop(place: .home, height: 440) }
             }
             .background(Theme.canvas)
             .toolbar(.hidden, for: .navigationBar, .tabBar)

@@ -433,18 +433,34 @@ struct IslandMinimalView: View {
 struct IslandPoseView: View {
     let pose: IslandPose
     let maxSize: CGSize
+    /// The cream edge for black backgrounds; off on the cream Lock Screen card.
+    var edged = true
 
     var body: some View {
-        let box = pose.figure
+        IslandFigureView(assetName: pose.assetName, figure: pose.figure, maxSize: maxSize, edged: edged)
+    }
+}
+
+/// A 2:3 picture from the owner's pack cropped to its figure box and standing on the bottom of
+/// `maxSize`, as large as fits. Used for the poses and for the voice screen's talking frames
+/// (ADR-299), which share one box so Doddy doesn't jump between frames.
+struct IslandFigureView: View {
+    let assetName: String
+    let figure: IslandRect
+    let maxSize: CGSize
+    var edged = true
+
+    var body: some View {
+        let box = figure
         // Picture width (points) so the figure fits; the picture is 2:3.
         let width = min(maxSize.width / CGFloat(box.width), maxSize.height / (CGFloat(box.height) * 1.5))
         let height = width * 1.5
-        Image(pose.assetName)
+        Image(assetName)
             .resizable()
             .frame(width: width, height: height)
             .offset(x: -CGFloat(box.x) * width, y: -CGFloat(box.y) * height)
             .frame(width: CGFloat(box.width) * width, height: CGFloat(box.height) * height, alignment: .topLeading)
-            .islandCreamEdge()
+            .islandCreamEdge(edged)
             .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
             .accessibilityHidden(true)
     }
@@ -472,10 +488,11 @@ struct IslandPoseFaceView: View {
 
 extension View {
     /// A 1 pt cream edge around a picture's opaque pixels, so black outlines read on black.
-    func islandCreamEdge() -> some View {
-        shadow(color: .islandCream, radius: 0, x: 1, y: 0)
-            .shadow(color: .islandCream, radius: 0, x: -1, y: 0)
-            .shadow(color: .islandCream, radius: 0, x: 0, y: 1)
-            .shadow(color: .islandCream, radius: 0, x: 0, y: -1)
+    func islandCreamEdge(_ on: Bool = true) -> some View {
+        let edge = on ? Color.islandCream : .clear
+        return shadow(color: edge, radius: 0, x: 1, y: 0)
+            .shadow(color: edge, radius: 0, x: -1, y: 0)
+            .shadow(color: edge, radius: 0, x: 0, y: 1)
+            .shadow(color: edge, radius: 0, x: 0, y: -1)
     }
 }

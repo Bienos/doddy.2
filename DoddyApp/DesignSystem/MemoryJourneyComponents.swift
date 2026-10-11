@@ -58,6 +58,66 @@ struct UploadedCharacterView: View {
     }
 }
 
+/// Whole Doddy (ADR-299): one of the owner's pack poses (`WholeDoddy_*`, the same as the
+/// island's), cropped to the figure and drawn at `height`. A pose means the same thing in the
+/// app as on the island: shrug for "not found", facepalm for "that went wrong", wave for hello.
+/// In dark appearance the outline gets the island's thin cream edge instead of a paper card.
+/// Hidden with "Hide Doddy's pictures"; smaller at accessibility text sizes.
+struct WholeDoddyView: View {
+    let pose: IslandPose
+    var height: CGFloat = 180
+    @Environment(\.dynamicTypeSize) private var textSize
+    @Environment(\.colorScheme) private var colorScheme
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+
+    var body: some View {
+        if !hideCharacterArt {
+            let shown = textSize.isAccessibilitySize ? min(height, 100) : height
+            let box = pose.figure
+            // The figure's width at this height (the picture is 2:3).
+            let width = shown * CGFloat(box.width / box.height) / 1.5
+            IslandPoseView(pose: pose, maxSize: CGSize(width: width, height: shown), edged: colorScheme == .dark)
+        }
+    }
+}
+
+/// A place from Doddy's world behind the top of a screen (ADR-299): his room on Home, the
+/// memory library on Memories, the coffee shop for the morning check-in. The owner's pack
+/// (021-036 "world"), day pictures in light appearance and night pictures in dark. Faint and
+/// fading into the canvas, so text over it keeps its contrast; it scrolls with the screen.
+/// Decoration only: hidden from VoiceOver, and with "Hide Doddy's pictures".
+struct SceneryBackdrop: View {
+    enum Place: String {
+        case home, memory, coffee
+    }
+
+    let place: Place
+    var height: CGFloat = 380
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+
+    var body: some View {
+        if !hideCharacterArt {
+            Color.clear
+                .frame(height: height)
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .top) {
+                    Image(decorative: "Scenery_\(place.rawValue)")
+                        .resizable()
+                        .scaledToFill()
+                }
+                .clipped()
+                .opacity(0.4)
+                .mask {
+                    LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.5),
+                                           .init(color: .clear, location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+}
+
 /// The picture itself at an exact height, with the paper backing in dark appearance. Shared by
 /// `UploadedCharacterView` and the opening's hand-over (ADR-225), so the opening's last frame
 /// and Home's picture are drawn the same way, pixel for pixel.

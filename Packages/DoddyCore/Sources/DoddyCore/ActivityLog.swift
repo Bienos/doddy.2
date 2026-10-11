@@ -67,10 +67,10 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
-    /// The same change asked again has the same key (ADR-291, ADR-292): new reminders, events,
+    /// The same change asked again has the same key (ADR-300, ADR-301): new reminders, events,
     /// timers and alarms, whose adds look first and so can be retried safely. Nil for everything else.
     public let operationKey: String?
-    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-293).
+    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-302).
     public let check: ActivityCheck?
 
     public init(
@@ -249,14 +249,14 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public let undo: ActivityUndo?
     /// Set after the user tapped Undo.
     public var undoState: UndoState?
-    // ADR-291. All optional, so entries saved before them still load.
+    // ADR-300. All optional, so entries saved before them still load.
     /// The same change asked again has the same key (`ActivityRequest.operationKey`).
     public let operationKey: String?
     /// What the app read back. Only ever kept on a confirmed entry.
     public private(set) var receipt: ActivityReceipt?
     /// True when the app was asked to write; false when Doddy stopped before writing. Nil when not known.
     public let attempted: Bool?
-    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-293).
+    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-302).
     public let check: ActivityCheck?
     private var statusHistory: [ActivityStatusChange]?
 
@@ -321,10 +321,10 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         return entry
     }
 
-    /// Typed status (ADR-291). Nil for look-ups.
+    /// Typed status (ADR-300). Nil for look-ups.
     public var status: ActionStatus? { outcome.status }
 
-    /// How the status moved, oldest first. Entries saved before ADR-291 show their one known status.
+    /// How the status moved, oldest first. Entries saved before ADR-300 show their one known status.
     public var history: [ActivityStatusChange] {
         if let statusHistory { return statusHistory }
         return status.map { [ActivityStatusChange(status: $0, at: at)] } ?? []
@@ -368,7 +368,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        // Found already there when Doddy looked first (ADR-291, ADR-292): nothing new was written.
+        // Found already there when Doddy looked first (ADR-300, ADR-301): nothing new was written.
         let foundFirst = ["already in Reminders", "already in Calendar", "was already set", "was already running"]
         if text.hasPrefix("saved:"), text.contains("was already saved from the earlier try") { return (.alreadyThere, nil) }
         if text.hasPrefix("added:"), foundFirst.contains(where: text.contains) {
