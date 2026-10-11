@@ -68,3 +68,16 @@ No critical or medium issues found. The service is small and does one job:
   - The ElevenLabs key never leaves the server.
 - **DOD-08:** Not applicable (no external writes).
 - **Claims to limit:** Tested with a stubbed `fetch` only. ElevenLabs agent authentication and limits are owner configuration and are not verified here.
+
+---
+
+## Fix status (2026-10-11, owner approved "fix all")
+
+| # | Status | Commit |
+|---|---|---|
+| 1 | fixed: `DODDY_TOKENS_PER_HOUR` (default 30) per tester per clock hour, per instance (a brake, not a hard cap; ElevenLabs agent limits stay the spending cap). 429 `rate_limited` with Retry-After; ElevenLabs not called. Invalid value → 500 `server_not_configured`. | `103fd06` |
+| 2 | fixed: one `voice_token_config` log line per instance names the testers whose codes are too short (labels only) | `103fd06` |
+| 3 | fixed: 405 carries `Allow: POST` | `103fd06` |
+| 4 | aligned: `engines` set to Node ≥22 like the other services; README updated | `103fd06` |
+
+Tests after the fixes: `npm test` → **9 pass, 0 fail** (Node 22.22). The README documents the new variable and the 429 response.
