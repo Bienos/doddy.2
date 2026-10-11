@@ -33,7 +33,8 @@ export async function handleAssist(request, deps) {
   try {
     return await assist(request, deps);
   } catch {
-    logEvent({ evt: 'assist', code: 'providerUnavailable' }, deps.logSink);
+    // cause=unexpected tells a gateway bug apart from a provider outage in the logs.
+    logEvent({ evt: 'assist', code: 'providerUnavailable', cause: 'unexpected' }, deps.logSink);
     return errorResponse('providerUnavailable');
   }
 }
@@ -99,26 +100,39 @@ async function assist(request, deps) {
   const schema = buildSchema([...aliasToId.keys()]);
   const promptBytes = Buffer.byteLength(instructions) + Buffer.byteLength(input) + Buffer.byteLength(JSON.stringify(schema));
   const estimate = estimateMicros(promptBytes, MAX_OUTPUT_TOKENS, config.prices);
+  const scopes = [
+    { scope: 'all', capMicros: config.dailyBudgetMicros },
+    { scope: `dev:${claims.deviceId}`, capMicros: config.installBudgetMicros },
+    { scope: `inv:${claims.inviteTag}`, capMicros: config.inviteBudgetMicros },
+  ];
   let reserved;
   try {
-    reserved = await deps.spend.reserve([
-      { scope: 'all', capMicros: config.dailyBudgetMicros },
-      { scope: `dev:${claims.deviceId}`, capMicros: config.installBudgetMicros },
-    ], estimate, nowMs);
+    reserved = await deps.spend.reserve(scopes, estimate, nowMs);
   } catch (err) {
     if (err instanceof StoreUnavailableError) return fail('providerUnavailable', { ...counts, cause: 'limitStore' }, { requestId: req.requestId });
     throw err;
   }
   if (!reserved.ok) return fail('dailyLimitReached', counts, { requestId: req.requestId, retryAfterSeconds: reserved.retryAfterSeconds });
 
-  // 5. Call the provider, then replace the estimate with the real cost.
+  // 5. Call the provider, then replace the estimate with the real cost. A 5xx may have been billed,
+  // so a retry first reserves one more estimate; if that would pass a cap, there is no retry. The
+  // failed attempt keeps that estimate booked, the same rule actualCost applies to a final 5xx.
   const result = await callProvider(
     { fetch: deps.fetch, apiKey: config.openaiKey, model: config.model, timeoutMs: config.providerTimeoutMs, deadlineMs: config.providerDeadlineMs },
     { instructions, input, schema },
+    { beforeRetry: async () => {
+      try {
+        return (await deps.spend.reserve(scopes, estimate, deps.now())).ok;
+      } catch (err) {
+        if (err instanceof StoreUnavailableError) return false;
+        throw err;
+      }
+    } },
   );
-  const spent = actualCost(result, estimate, config.prices);
+  const spent = actualCost(result, estimate, config.prices) + result.failedAttempts * estimate;
   try {
-    await deps.spend.settle(reserved.reservation, spent);
+    // The extra reservations stay booked for the failed attempts; the first one becomes the answer's cost.
+    await deps.spend.settle(reserved.reservation, spent - result.failedAttempts * estimate);
   } catch (err) {
     // The answer is already paid for; keep it. The estimate stays booked, which over-counts (safe side)
     // unless real usage exceeded the worst-case estimate.
@@ -128,7 +142,7 @@ async function assist(request, deps) {
   Object.assign(counts, { costMicros: spent });
   if (result.kind === 'refused') return fail('refused', counts, { requestId: req.requestId });
   if (result.kind === 'error') {
-    return fail(result.code, { ...counts, providerStatus: result.providerStatus }, { requestId: req.requestId, retryAfterSeconds: result.retryAfterSeconds });
+    return fail(result.code, { ...counts, providerStatus: result.providerStatus, cause: result.cause }, { requestId: req.requestId, retryAfterSeconds: result.retryAfterSeconds });
   }
 
   // 6. Check the model output. Anything unexpected is an error, never a guess.
@@ -163,7 +177,8 @@ async function assist(request, deps) {
  * @param {import('./openai.js').ProviderResult} result @param {number} estimate @param {import('./budget.js').Prices} prices
  */
 function actualCost(result, estimate, prices) {
-  if (result.kind !== 'error' && Number.isInteger(result.inputTokens) && Number.isInteger(result.outputTokens)) {
+  // Reported usage wins whenever there is any (an incomplete answer is billed too).
+  if (Number.isInteger(result.inputTokens) && Number.isInteger(result.outputTokens)) {
     return costMicros({ inputTokens: /** @type {number} */ (result.inputTokens), outputTokens: /** @type {number} */ (result.outputTokens) }, prices);
   }
   if (result.kind === 'error' && (result.providerStatus ?? 0) >= 400 && (result.providerStatus ?? 0) < 500) return 0;

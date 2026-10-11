@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
-import type { Db } from "../db.js";
-import { canPush, enqueue, smsNumber, type Channel } from "../outbox.js";
+import type { TextCipher } from "../crypto.js";
+import { inTransaction, type Db } from "../db.js";
+import { log } from "../log.js";
+import { enqueue, usableChannels, type Channel } from "../outbox.js";
 import { catalogById } from "./catalog.js";
 import { pushBody, smsBody } from "./compose.js";
 import type { NewsItem } from "./feeds.js";
@@ -13,6 +15,8 @@ export interface NewsDeps {
   feeds: FeedSource;
   search?: NewsSearch;
   writer?: DigestWriter;
+  /** Encrypts queued digest text at rest when the server has the key. */
+  cipher?: TextCipher;
 }
 
 export const MAX_TOPICS = 10;
@@ -74,35 +78,34 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
         // A code only (writer_*, or the HTTP status), never story text or keys.
         const code = err instanceof Error && /^writer_[a-z0-9_]+$/.test(err.message) ? err.message
           : `writer_error${typeof (err as { status?: unknown })?.status === "number" ? `_${(err as { status: number }).status}` : ""}`;
-        console.log(JSON.stringify({ time: new Date().toISOString(), msg: "news writer failed, plain headlines used", code }));
+        log("news writer failed, plain headlines used", { code });
         picks = []; // fall back to plain headlines below
       }
     }
     if (picks.length === 0) picks = candidates.slice(0, 3).map((c) => ({ candidate: c, line: shorten(c.title, 140) }));
 
-    const channels: Channel[] = [];
-    for (const ch of settings.channels) {
-      if (ch === "push" && await canPush(db, accountId)) channels.push(ch);
-      if (ch === "sms" && await smsNumber(db, accountId)) channels.push(ch);
-    }
+    const channels = await usableChannels(db, accountId, settings.channels);
 
     const entries = picks.map((p) => ({ line: p.line, url: p.candidate.url, source: p.candidate.source }));
-    for (const [i, p] of picks.entries()) {
-      await db.query(
-        `INSERT INTO news_digest_items (digest_id, position, title, line, url, source, published_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [digestId, i, p.candidate.title, p.line, p.candidate.url, p.candidate.source, p.candidate.publishedAt]);
-      await db.query(
-        `INSERT INTO news_sent (account_id, url_hash) VALUES ($1, $2)
-         ON CONFLICT (account_id, url_hash) DO UPDATE SET sent_at = now()`, [accountId, p.candidate.urlHash]);
-    }
+    // One transaction: stories count as sent only if the digest was really kept and queued.
+    await inTransaction(db, async (c) => {
+      for (const [i, p] of picks.entries()) {
+        await c.query(
+          `INSERT INTO news_digest_items (digest_id, position, title, line, url, source, published_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [digestId, i, p.candidate.title, p.line, p.candidate.url, p.candidate.source, p.candidate.publishedAt]);
+        await c.query(
+          `INSERT INTO news_sent (account_id, url_hash) VALUES ($1, $2)
+           ON CONFLICT (account_id, url_hash) DO UPDATE SET sent_at = now()`, [accountId, p.candidate.urlHash]);
+      }
+      for (const ch of channels) {
+        const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);
+        await enqueue(c, accountId, [ch], body, now, `news:${digestId}`, { cipher: news.cipher });
+      }
+    });
     if (channels.length === 0) {
       // Kept for the app. no_channel only when the user chose a channel that can't be used now.
       return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : undefined });
-    }
-    for (const ch of channels) {
-      const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);
-      await enqueue(db, accountId, [ch], body, now, `news:${digestId}`);
     }
     return finish({ status: "queued", aiWritten });
   } catch {

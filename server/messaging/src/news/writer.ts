@@ -51,7 +51,7 @@ export class ClaudeDigestWriter implements DigestWriter {
 
   constructor(apiKey: string, options: { model?: string; baseURL?: string } = {}) {
     this.model = options.model ?? "claude-haiku-5-5";
-    this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 2, timeout: 60_000 });
+    this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 1, timeout: 60_000 });
   }
 
   private readonly model: string;

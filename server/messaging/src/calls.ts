@@ -1,4 +1,5 @@
-import { createHash, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
+import { sha256 } from "./crypto.js";
 import type { Db } from "./db.js";
 
 export const SESSION_HOURS = 2;
@@ -32,10 +33,6 @@ export interface CallVariables {
 
 export function variablesFor(caller: CallVariables["doddy_caller"], direction: CallVariables["doddy_direction"]): CallVariables {
   return { secret__doddy_session: "none", doddy_caller: caller, doddy_memory: "off", doddy_pin: "not_set", doddy_direction: direction };
-}
-
-export function sha256(value: string): Buffer {
-  return createHash("sha256").update(value).digest();
 }
 
 export function sameSecret(expected: string, given: string | undefined): boolean {

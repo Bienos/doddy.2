@@ -5,8 +5,8 @@ import type { FastifyInstance } from "fastify";
 import { isAcceptablePin } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { searchMemories } from "../src/memorySearch.js";
-import { dispatchDue } from "../src/outbox.js";
-import { dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, TOOL_SECRET } from "./helpers.js";
+import { bodyAad, dispatchDue } from "../src/outbox.js";
+import { dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, testCipher, TOOL_SECRET } from "./helpers.js";
 
 test("PIN rules reject trivial PINs", () => {
   for (const bad of ["123", "2580", "11111", "111111", "123456", "987654", "012345", "12a456", "123456789"]) {
@@ -123,12 +123,55 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
       assert.equal((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, s2)).json().status, "wrong_pin");
     }
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, s2)).json(), { status: "locked", minutes: 60 });
-    const { rows: alerts } = await db.query<{ channel: string; body: string | null }>(
-      "SELECT channel, body FROM outbound_messages WHERE account_id = $1", [owner.accountId]);
+    const { rows: alerts } = await db.query<{ id: string; channel: string; body: string | null; body_ciphertext: Buffer }>(
+      "SELECT id, channel, body, body_ciphertext FROM outbound_messages WHERE account_id = $1", [owner.accountId]);
     assert.equal(alerts.length, 1);
     assert.equal(alerts[0]!.channel, "push");
-    assert.match(alerts[0]!.body ?? "", /wrong Doddy PIN 5 times.*locked for 1 h/);
-    assert.ok(!(alerts[0]!.body ?? "").includes("+48"), "no phone number in the alert");
+    assert.equal(alerts[0]!.body, null, "queued text is not kept in plain form");
+    const text = testCipher.decrypt(alerts[0]!.body_ciphertext, bodyAad(owner.accountId, alerts[0]!.id));
+    assert.match(text, /wrong Doddy PIN 5 times.*locked for 1 h/);
+    assert.ok(!text.includes("+48"), "no phone number in the alert");
+  });
+
+  test("changing or removing the PIN ends memory access for calls already verified", async () => {
+    const { h } = await user("+48500000016", { pin: "258025", inbound: true, memories: ["Spare key under the mat"] });
+    const s = (await ring("+48500000016")).secret__doddy_session!;
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s);
+    assert.equal((await el("/webhooks/elevenlabs/tools/search-memories", { query: "key" }, s)).json().status, "ok");
+    assert.equal((await call("PUT", "/v1/calls/pin", h, { pin: "369147" })).statusCode, 204);
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/search-memories", { query: "key" }, s)).json(), { status: "pin_required" });
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "369147" }, s);
+    assert.equal((await call("DELETE", "/v1/calls/pin", h)).statusCode, 204);
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/search-memories", { query: "key" }, s)).json(), { status: "pin_required" });
+  });
+
+  test("a PIN lock queues no alert when push isn't configured on the server", async () => {
+    const noPush = await testApp(db, { push: undefined });
+    const r = await noPush.app.inject({ method: "POST", url: "/v1/accounts" });
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    const hh = { authorization: `Bearer ${deviceToken}` };
+    const inj = (method: "POST" | "PUT", url: string, payload: object, headers: Record<string, string> = hh) =>
+      noPush.app.inject({ method, url, headers, payload });
+    await inj("POST", "/v1/phone/verification/check", { phone: "+48500000017", code: "123456" });
+    await inj("PUT", "/v1/calls/pin", { pin: "258025" });
+    await inj("PUT", "/v1/calls/settings", { inboundEnabled: true });
+    await inj("PUT", "/v1/device/push-token", { token: "e".repeat(64), environment: "sandbox" });
+    const start = await inj("POST", "/webhooks/elevenlabs/call-start", { caller_id: "+48500000017" }, { "x-doddy-tool-secret": TOOL_SECRET });
+    const s = start.json().dynamic_variables.secret__doddy_session;
+    for (let i = 0; i < 5; i++) {
+      await inj("POST", "/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, { "x-doddy-tool-secret": TOOL_SECRET, "x-doddy-session": s });
+    }
+    assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [accountId])).rowCount, 0);
+    await noPush.app.close();
+  });
+
+  test("parallel note saves can't overfill the inbox", async () => {
+    const { accountId } = await user("+48500000018", { pin: "258025", inbound: true });
+    const s = (await ring("+48500000018")).secret__doddy_session!;
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s);
+    await Promise.all(Array.from({ length: 30 }, (_, i) => el("/webhooks/elevenlabs/tools/save-note", { text: `note ${i}` }, s)));
+    const { rows } = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM call_notes WHERE account_id = $1", [accountId]);
+    assert.equal(rows[0]!.n, 20);
   });
 
   test("memory text is encrypted at rest", async () => {
@@ -149,7 +192,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(notes.length, 1);
     assert.equal(notes[0].text, "Call Anna about Friday");
     push.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     // Only this account's device: other tests may leave their own alerts queued.
     const mine = push.sent.filter((p) => p.target.deviceToken === "12".repeat(32));
     assert.equal(mine.length, 1);
@@ -157,6 +200,25 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
 
     assert.equal((await call("DELETE", `/v1/call-notes/${notes[0].id}`, h)).statusCode, 204);
     assert.equal((await call("GET", "/v1/call-notes", h)).json().notes.length, 0);
+  });
+
+  test("a note that won't decrypt is listed apart and can still be discarded", async () => {
+    const { accountId, h } = await user("+48500000015", { pin: "258025", inbound: true });
+    const s = (await ring("+48500000015")).secret__doddy_session!;
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s);
+    await el("/webhooks/elevenlabs/tools/save-note", { text: "Readable" }, s);
+    await el("/webhooks/elevenlabs/tools/save-note", { text: "Broken" }, s);
+    const { rows } = await db.query<{ id: string }>(
+      "SELECT id FROM call_notes WHERE account_id = $1 ORDER BY created_at DESC LIMIT 1", [accountId]);
+    const broken = rows[0]!.id;
+    await db.query("UPDATE call_notes SET ciphertext = $2 WHERE id = $1", [broken, Buffer.alloc(40, 1)]);
+
+    const r = await call("GET", "/v1/call-notes", h);
+    assert.equal(r.statusCode, 200);
+    assert.deepEqual(r.json().notes.map((n: { text: string }) => n.text), ["Readable"]);
+    assert.deepEqual(r.json().unreadable.map((n: { id: string }) => n.id), [broken]);
+    assert.equal((await call("DELETE", `/v1/call-notes/${broken}`, h)).statusCode, 204);
+    assert.equal((await call("GET", "/v1/call-notes", h)).json().unreadable.length, 0);
   });
 
   test("memory copy: snapshot replaces everything; turning it off deletes every copy", async () => {

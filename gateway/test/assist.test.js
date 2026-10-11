@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { handleAssist } from '../src/assist.js';
+import { MemorySpendCap } from '../src/budget.js';
 import { inviteTag } from '../src/token.js';
-import { assistRequest, ENV, fakeProvider, fixture, makeDeps, providerOk, SECRET, token } from './helpers.js';
+import { assistRequest, ENV, fakeProvider, fixture, makeDeps, NOW_MS, providerOk, SECRET, token } from './helpers.js';
 
 const NOTE_ID = 'b7c9d1e2-4f35-4a6b-8c7d-9e0f1a2b3c4d';
 const body = () => structuredClone(fixture('assist_request_v1.json'));
@@ -112,6 +113,27 @@ test('malformed or empty model output is a provider error, never a made-up answe
   }
 });
 
+test('reasoning models get a low reasoning effort; other models are sent no reasoning field', async () => {
+  for (const [model, expected] of [['gpt-5-mini', { effort: 'low' }], ['o4-mini', { effort: 'low' }], ['gpt-4.1-mini', undefined]]) {
+    const provider = fakeProvider(providerOk({ answer: 'ok', sources: [] }));
+    const { deps } = makeDeps({ fetch: provider, env: { ...ENV, OPENAI_MODEL: model } });
+    await run(assistRequest(body()), deps);
+    assert.deepEqual(provider.calls[0].body.reasoning, expected, model);
+  }
+});
+
+test('an answer cut off by the output allowance is an error with its own cause, billed at reported usage', async () => {
+  const cut = Response.json({ status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' }, output: [], usage: { input_tokens: 300, output_tokens: 800 } });
+  const { deps, logs } = makeDeps({ fetch: fakeProvider(cut) });
+  const { res, json } = await run(assistRequest(body()), deps);
+  assert.equal(res.status, 503);
+  assert.equal(json.error.code, 'providerUnavailable');
+  const line = JSON.parse(logs.at(-1));
+  assert.equal(line.cause, 'outputLimit');
+  // Placeholder prices: 10 and 40 USD per 1M tokens -> 300*10 + 800*40 micro-dollars.
+  assert.equal(line.costMicros, 300 * 10 + 800 * 40);
+});
+
 test('A-15: refusal, provider 429, 5xx (one retry), timeout and bad key map to the error taxonomy', async () => {
   const refusal = Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'refusal', refusal: 'no' }] }] });
   let r = await run(assistRequest(body()), makeDeps({ fetch: fakeProvider(refusal) }).deps);
@@ -197,7 +219,7 @@ test('request hygiene: wrong method, content type, oversized and malformed bodie
   res = await handleAssist(assistRequest(JSON.stringify(body()), { headers: { 'content-type': 'text/plain' } }), deps);
   assert.equal(res.status, 400);
 
-  res = await handleAssist(assistRequest('{"a":"' + 'x'.repeat(70_000) + '"}'), deps);
+  res = await handleAssist(assistRequest('{"a":"' + 'x'.repeat(140_000) + '"}'), deps);
   assert.equal(res.status, 413);
 
   res = await handleAssist(assistRequest('{not json'), deps);
@@ -235,12 +257,59 @@ test('A-16: logs contain no question, note, answer, token, key or full ids', asy
   assert.match(all, /"memoryCount":1/);
 });
 
+test('a retried 5xx keeps its estimate booked on top of the answer that followed', async () => {
+  const ok = () => providerOk({ answer: 'ok', sources: [] }, { input_tokens: 100, output_tokens: 10 });
+  const down = () => new Response('{}', { status: 503 });
+  const spentWith = async (...replies) => {
+    const spend = new MemorySpendCap();
+    const { deps } = makeDeps({ fetch: fakeProvider(...replies), spend });
+    await run(assistRequest(body()), deps);
+    return spend.total('all', NOW_MS);
+  };
+  const answered = await spentWith(ok());
+  const bothDown = await spentWith(down(), down());
+  const retried = await spentWith(down(), ok());
+  assert.equal(bothDown % 2, 0);
+  assert.equal(retried, answered + bothDown / 2, 'one estimate for the failed attempt plus the real cost of the answer');
+});
+
+test('no retry when the budget has no room for a second attempt', async () => {
+  const spend = new MemorySpendCap();
+  const provider = fakeProvider(new Response('{}', { status: 503 }), providerOk({ answer: 'ok', sources: [] }));
+  // This request's estimate: two failed attempts book it twice. Then allow exactly one per install.
+  const one = await (async () => {
+    const s = new MemorySpendCap();
+    await run(assistRequest(body()), makeDeps({ fetch: fakeProvider(new Response('{}', { status: 503 }), new Response('{}', { status: 503 })), spend: s }).deps);
+    return s.total('all', NOW_MS) / 2;
+  })();
+  const { deps } = makeDeps({ fetch: provider, spend, env: { ...ENV, DAILY_BUDGET_PER_INSTALL_USD: String((one + 1) / 1_000_000) } });
+  const { res } = await run(assistRequest(body()), deps);
+  assert.equal(res.status, 503, 'the 5xx is returned instead of retrying past the cap');
+  assert.equal(provider.calls.length, 1);
+  assert.equal(spend.total('all', NOW_MS), one, 'the failed attempt keeps its estimate booked');
+});
+
+test('a request at every character limit with four-byte characters is accepted', async () => {
+  const e = (n) => '😀'.repeat(n);
+  const max = body();
+  max.userText = e(2_000);
+  max.turns = Array.from({ length: 6 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', text: e(2_000) }));
+  max.memories = Array.from({ length: 8 }, (_, i) => ({
+    id: `00000000-0000-4000-8000-00000000000${i}`, text: e(1_500), source: 'explicit_text' }));
+  const raw = JSON.stringify(max);
+  assert.ok(Buffer.byteLength(raw) > 64 * 1024, 'bigger than the old 64 KiB limit');
+  const { deps } = makeDeps({ env: { ...ENV, DAILY_BUDGET_USD: '100', DAILY_BUDGET_PER_INSTALL_USD: '100', DAILY_BUDGET_PER_INVITE_USD: '100' } });
+  const { res } = await run(assistRequest(raw), deps);
+  assert.equal(res.status, 200);
+});
+
 test('review: an unexpected internal error becomes a content-free 503, not a platform 500', async () => {
   const boom = { hit: async () => { throw new Error('limiter exploded with SECRET-DETAIL'); } };
   const { deps, logs } = makeDeps({ limiter: boom });
   const { res, json } = await run(assistRequest(body()), deps);
   assert.deepEqual([res.status, json.error.code], [503, 'providerUnavailable']);
   assert.ok(!logs.join('').includes('SECRET-DETAIL'));
+  assert.equal(JSON.parse(logs.at(-1)).cause, 'unexpected', 'a gateway bug is told apart from a provider outage');
 });
 
 test('review: one invite cannot exceed its daily total by minting many device ids', async () => {

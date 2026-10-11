@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import type { Db } from "../src/db.js";
-import { dispatchDue } from "../src/outbox.js";
+import { TextCipher } from "../src/crypto.js";
+import { dispatchDue, MAX_ATTEMPTS } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
-import { BASE_URL, dbSkip, FakePush, FakeSms, freshDb, testApp, TWILIO_TOKEN } from "./helpers.js";
+import { BASE_URL, dbSkip, FakePush, FakeSms, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
 
 const APNS_TOKEN = "ab".repeat(32);
 const PHONE = "+48500100200";
@@ -24,8 +25,12 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     await db?.end();
   });
 
+  // Each test account comes from its own address, so the per-IP signup limit (10/hour) is
+  // exercised by its own test below rather than by how many tests this suite has.
+  let accounts = 0;
   async function newAccount() {
-    const r = await app.inject({ method: "POST", url: "/v1/accounts" });
+    accounts++;
+    const r = await app.inject({ method: "POST", url: "/v1/accounts", remoteAddress: `10.77.${accounts >> 8}.${accounts & 255}` });
     assert.equal(r.statusCode, 201);
     const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
     return { accountId, headers: { authorization: `Bearer ${deviceToken}` } };
@@ -59,17 +64,25 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     assert.equal(first.statusCode, 202);
     const again = await call("POST", "/v1/updates", a.headers, update);
     assert.deepEqual(again.json(), first.json(), "same idempotency key returns the same message");
+    const edited = await call("POST", "/v1/updates", a.headers, { ...update, text: "Your dentist is at 16:00" });
+    assert.equal(edited.statusCode, 409, "same key with different text is refused, not silently ignored");
+    assert.equal(edited.json().error, "idempotency_mismatch");
+
+    const id = (first.json() as { messages: { id: string }[] }).messages[0]!.id;
+    const { rows: queued } = await db.query("SELECT body, body_ciphertext FROM outbound_messages WHERE id = $1", [id]);
+    assert.equal(queued[0].body, null, "queued text is encrypted at rest");
+    assert.ok(!queued[0].body_ciphertext.toString("utf8").includes("dentist"));
 
     push.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal(push.sent.length, 1);
     assert.equal(push.sent[0]!.body, "Your dentist is at 15:00");
 
-    const id = (first.json() as { messages: { id: string }[] }).messages[0]!.id;
     const status = await call("GET", `/v1/updates/${id}`, a.headers);
     assert.equal(status.json().state, "sent");
-    const { rows } = await db.query("SELECT body FROM outbound_messages WHERE id = $1", [id]);
+    const { rows } = await db.query("SELECT body, body_ciphertext FROM outbound_messages WHERE id = $1", [id]);
     assert.equal(rows[0].body, null);
+    assert.equal(rows[0].body_ciphertext, null, "text erased once sent");
 
     const other = await newAccount();
     assert.equal((await call("GET", `/v1/updates/${id}`, other.headers)).statusCode, 404, "no cross-account reads");
@@ -80,7 +93,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     await call("PUT", "/v1/device/push-token", a.headers, { token: "cd".repeat(32), environment: "production" });
     await call("POST", "/v1/updates", a.headers, { text: "hi", channels: ["push"], idempotencyKey: "gone" });
     push.next = [{ kind: "rejected", code: "apns_Unregistered", deviceGone: true }];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     const r = await call("POST", "/v1/updates", a.headers, { text: "hi again", channels: ["push"], idempotencyKey: "gone2" });
     assert.equal(r.statusCode, 409);
   });
@@ -101,7 +114,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
 
     assert.equal((await call("POST", "/v1/updates", a.headers, update("s2"))).statusCode, 202);
     sms.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.deepEqual(sms.sent, [{ to: PHONE, body: "Morning! 3 things today." }]);
 
     // A queued text, then the user replies STOP before it goes out.
@@ -124,7 +137,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     // Transient refusal → back in the queue with a later send time.
     push.next = [{ kind: "transient", code: "apns_503" }];
     const t = await call("POST", "/v1/updates", a.headers, { text: "t", channels: ["push"], idempotencyKey: "t" });
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     const tid = (t.json() as { messages: { id: string }[] }).messages[0]!.id;
     const { rows: tr } = await db.query("SELECT state, attempts, send_at > now() AS later FROM outbound_messages WHERE id = $1", [tid]);
     assert.deepEqual(tr[0], { state: "queued", attempts: 1, later: true });
@@ -132,10 +145,10 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     // Unknown outcome (timeout) → 'unknown', never resent.
     push.next = [{ kind: "unknown", code: "apns_timeout" }];
     const u = await call("POST", "/v1/updates", a.headers, { text: "u", channels: ["push"], idempotencyKey: "u" });
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     const uid = (u.json() as { messages: { id: string }[] }).messages[0]!.id;
     push.sent = [];
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal((await call("GET", `/v1/updates/${uid}`, a.headers)).json().state, "unknown");
     assert.ok(!push.sent.some((s) => s.body === "u"));
 
@@ -143,8 +156,67 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     const s = await call("POST", "/v1/updates", a.headers, { text: "s", channels: ["push"], idempotencyKey: "s" });
     const sid = (s.json() as { messages: { id: string }[] }).messages[0]!.id;
     await db.query("UPDATE outbound_messages SET state = 'sending', updated_at = now() - interval '10 minutes' WHERE id = $1", [sid]);
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal((await call("GET", `/v1/updates/${sid}`, a.headers)).json().state, "unknown");
+  });
+
+  test("a claimed message reaped by another worker before its turn is not sent", async () => {
+    const a = await newAccount();
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "cd".repeat(32), environment: "sandbox" });
+    const q = async (text: string) => (await call("POST", "/v1/updates", a.headers, { text, channels: ["push"], idempotencyKey: text })).json().messages[0].id;
+    const first = await q("reap-1");
+    const second = await q("reap-2");
+    await db.query("UPDATE outbound_messages SET send_at = now() - interval '1 hour' WHERE id = $1", [first]);
+    const sent: string[] = [];
+    const slow = new FakePush();
+    slow.send = async (_t, alert, id) => {
+      sent.push(alert.body);
+      // While this send is in flight, another worker's reaper marks the next one unknown.
+      await db.query("UPDATE outbound_messages SET state = 'unknown', error_code = 'worker_interrupted', body = NULL, body_ciphertext = NULL, body_key_version = NULL WHERE id = $1", [second]);
+      return { kind: "accepted", providerId: id };
+    };
+    await dispatchDue(db, { push: slow, cipher: testCipher });
+    assert.ok(sent.includes("reap-1"));
+    assert.ok(!sent.includes("reap-2"), "an unknown message is never sent afterwards");
+  });
+
+  test("a message the server can't decrypt fails without being sent", async () => {
+    const a = await newAccount();
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "fa".repeat(32), environment: "sandbox" });
+    const id = (await call("POST", "/v1/updates", a.headers, { text: "secret", channels: ["push"], idempotencyKey: "nokey" })).json().messages[0].id;
+    await db.query("UPDATE outbound_messages SET send_at = now() - interval '2 hours' WHERE id = $1", [id]);
+    const p = new FakePush();
+    await dispatchDue(db, { push: p, cipher: new TextCipher(Buffer.alloc(32, 9)) });
+    assert.ok(!p.sent.some((s) => s.target.deviceToken === "fa".repeat(32)));
+    const { rows } = await db.query("SELECT state, error_code FROM outbound_messages WHERE id = $1", [id]);
+    assert.deepEqual(rows[0], { state: "failed", error_code: "body_unreadable" });
+  });
+
+  test("transient refusals stop after MAX_ATTEMPTS and end as failed", async () => {
+    const a = await newAccount();
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "ab12".repeat(16), environment: "sandbox" });
+    const id = (await call("POST", "/v1/updates", a.headers, { text: "retry", channels: ["push"], idempotencyKey: "retry" })).json().messages[0].id;
+    await db.query("UPDATE outbound_messages SET attempts = $2 - 1, send_at = now() - interval '3 hours' WHERE id = $1", [id, MAX_ATTEMPTS]);
+    const p = new FakePush();
+    p.next = [{ kind: "transient", code: "apns_503" }];
+    await dispatchDue(db, { push: p, cipher: testCipher });
+    const { rows } = await db.query("SELECT state, attempts, error_code FROM outbound_messages WHERE id = $1", [id]);
+    assert.deepEqual(rows[0], { state: "failed", attempts: MAX_ATTEMPTS, error_code: "apns_503" });
+  });
+
+  test("a number proven by another account takes its queued texts with it", async () => {
+    const old = await newAccount();
+    const phone = "+48500100999";
+    await call("POST", "/v1/phone/verification/check", old.headers, { phone, code: "123456" });
+    await call("PUT", "/v1/phone/sms-consent", old.headers, { consent: true, textVersion: "sms-v1" });
+    const q = await call("POST", "/v1/updates", old.headers, { text: "for old owner", channels: ["sms"], idempotencyKey: "moved",
+      sendAt: new Date(Date.now() + 3_600_000).toISOString() });
+    assert.equal(q.statusCode, 202);
+    const fresh = await newAccount();
+    assert.equal((await call("POST", "/v1/phone/verification/check", fresh.headers, { phone, code: "123456" })).statusCode, 200);
+    const { rows } = await db.query("SELECT state, error_code FROM outbound_messages WHERE id = $1", [q.json().messages[0].id]);
+    assert.deepEqual(rows[0], { state: "cancelled", error_code: "sms_not_enabled" });
+    assert.equal((await call("GET", "/v1/phone", fresh.headers)).json().smsEnabled, false, "new owner starts without consent");
   });
 
   test("Twilio status callback records delivery", async () => {
@@ -153,7 +225,7 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     await call("PUT", "/v1/phone/sms-consent", a.headers, { consent: true, textVersion: "sms-v1" });
     sms.next = [{ kind: "accepted", providerId: "SMdelivered1" }];
     const r = await call("POST", "/v1/updates", a.headers, { text: "x", channels: ["sms"], idempotencyKey: "d" });
-    await dispatchDue(db, { push, sms });
+    await dispatchDue(db, { push, sms, cipher: testCipher });
     assert.equal((await twilioPost("/webhooks/twilio/status", { MessageSid: "SMdelivered1", MessageStatus: "delivered" })).statusCode, 204);
     const id = (r.json() as { messages: { id: string }[] }).messages[0]!.id;
     assert.equal((await call("GET", `/v1/updates/${id}`, a.headers)).json().deliveryStatus, "delivered");

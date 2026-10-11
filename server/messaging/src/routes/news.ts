@@ -4,7 +4,7 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
-import { canPush, smsNumber } from "../outbox.js";
+import { usableChannels } from "../outbox.js";
 import { CATALOG, catalogById } from "../news/catalog.js";
 import { buildDigest, MAX_FEEDS, MAX_TOPICS } from "../news/digest.js";
 import { parseFeed } from "../news/feeds.js";
@@ -70,10 +70,9 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (body.enabled && body.topics.length === 0 && body.feeds.length === 0) {
       return reply.code(400).send({ error: "no_topics" });
     }
-    for (const ch of body.channels) {
-      if (ch === "push" && !(await canPush(db, accountId))) return reply.code(409).send({ error: "push_not_enabled" });
-      if (ch === "sms" && !(await smsNumber(db, accountId))) return reply.code(409).send({ error: "sms_not_enabled" });
-    }
+    const usable = await usableChannels(db, accountId, body.channels);
+    const missing = body.channels.find((ch) => !usable.includes(ch));
+    if (missing) return reply.code(409).send({ error: `${missing}_not_enabled` });
     for (const url of body.feeds) {
       try { checkUrl(url); } catch { return reply.code(400).send({ error: "unsafe_url", url }); }
     }

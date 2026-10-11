@@ -196,7 +196,27 @@ export class ConnectedAppsService {
       const receipt = this.receipt(userId, "connect", "failed", summary, errorCode, null);
       throw new AppError("attempt_invalid", { receipt });
     };
+    // Every remote connection this completion touched that belongs to this user. Unless it ends
+    // recorded as this user's connection, each is removed at the provider (or queued for removal),
+    // so no grant stays live that Disconnect couldn't find. Never the unverified callback hint.
+    const touched: (string | null)[] = [attempt.pending_connection_id];
+    let recorded = false;
+    try {
+      return await this.completeAttempt(userId, request, attempt, composioUserId, fail, touched, () => { recorded = true; });
+    } finally {
+      if (!recorded) await this.discardRemote(userId, touched);
+    }
+  }
 
+  private async completeAttempt(
+    userId: string,
+    request: CompleteRequest,
+    attempt: { pending_connection_id: string | null },
+    composioUserId: string,
+    fail: (errorCode: string, summary: string) => never,
+    touched: (string | null)[],
+    markRecorded: () => void,
+  ): Promise<ConnectionResult> {
     let connectionId: string;
     const result = request.result;
     if (result.kind === "canceled") {
@@ -214,6 +234,7 @@ export class ConnectedAppsService {
           return { connection: this.view(userId), receipt };
         }
         connectionId = done.connectionId;
+        touched.push(connectionId);
       } else if (result.kind === "callback") {
         // The redirect's status/ID are hints only; they must match the attempt we created, and the
         // server re-reads status and ownership below. A forged "success" changes nothing.
@@ -227,6 +248,7 @@ export class ConnectedAppsService {
         connectionId = result.connectedAccountId;
       } else {
         const done = await this.provider.completeVerifiedAuth({ composioUserId, sessionUri: result.sessionUri, signal: this.timeout() });
+        touched.push(done.connectionId); // redeemed for this user's own Composio id
         if (done.connectionId !== attempt.pending_connection_id) {
           return fail("attempt_mismatch", "The connection didn't match this attempt. Nothing was connected.");
         }
@@ -259,6 +281,7 @@ export class ConnectedAppsService {
         connected_at: this.now(),
         last_checked_at: this.now(),
       });
+      markRecorded();
       const receipt =
         verdict === "read_only"
           ? this.receipt(userId, "connect", "succeeded", "Google Calendar connected with read-only access.", null, null)
@@ -434,6 +457,21 @@ export class ConnectedAppsService {
             null,
           );
     return { connection: this.view(userId), receipt };
+  }
+
+  /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
+  private async discardRemote(userId: string, ids: (string | null)[]): Promise<void> {
+    for (const connectionId of new Set(ids.filter((id): id is string => !!id))) {
+      this.store.queueCleanup(connectionId, userId, PROVIDER, this.now());
+      let result: "removed" | "failed";
+      try {
+        result = await this.provider.removeConnection({ connectionId, signal: this.timeout() });
+      } catch {
+        result = "failed";
+      }
+      if (result === "removed") this.store.finishCleanup(connectionId);
+      else this.store.failCleanup(connectionId, "remote_cleanup_failed");
+    }
   }
 
   private async removeRemote(userId: string): Promise<"removed" | "failed"> {

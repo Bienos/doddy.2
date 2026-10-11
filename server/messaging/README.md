@@ -28,7 +28,7 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
 - Outbox states: `queued → sending → sent | failed | unknown | cancelled`.
   - A timeout or dropped connection becomes `unknown` and is **never resent automatically**, so nobody gets a text twice.
   - A 429 or 5xx refusal is retried with backoff, at most 5 attempts.
-- Message text is erased from the database as soon as a message reaches a final state.
+- Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY` when that key is set (plain text otherwise).
 - Logs carry ids and counts only. No message text, no phone numbers, no tokens.
 - A missing provider configuration returns `503 not_configured`. It never fakes success.
 
