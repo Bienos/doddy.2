@@ -5,7 +5,7 @@ import SwiftUI
 /// state picked at the top. It is a preview: nothing here is a running conversation, and the
 /// real island also depends on the phone (size, other apps' activities, text size).
 struct IslandStyleView: View {
-    @AppStorage(PreferenceKey.islandStyle) private var styleRaw = IslandStyle.leanIn.rawValue
+    @AppStorage(PreferenceKey.islandStyle) private var styleRaw = IslandStyle.preferredDefault.rawValue
     @State private var previewState = PreviewState.listening
 
     enum PreviewState: String, CaseIterable, Identifiable {
@@ -130,13 +130,13 @@ struct IslandPreview: View {
 
 /// Settings → Voice row.
 struct IslandStyleLinkRow: View {
-    @AppStorage(PreferenceKey.islandStyle) private var styleRaw = IslandStyle.leanIn.rawValue
+    @AppStorage(PreferenceKey.islandStyle) private var styleRaw = IslandStyle.preferredDefault.rawValue
 
     var body: some View {
         NavigationLink {
             IslandStyleView()
         } label: {
-            StatusRow(title: "Dynamic Island style", value: (IslandStyle(rawValue: styleRaw) ?? .leanIn).displayName)
+            StatusRow(title: "Dynamic Island style", value: IslandStyle.stored(styleRaw).displayName)
         }
         .accessibilityIdentifier("settings.islandStyle")
     }
