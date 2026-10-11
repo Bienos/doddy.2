@@ -93,7 +93,7 @@ public enum ActivityText {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
         }
         // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders or the list (ADR-276).
-        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę")]
+        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę"), ("your notes", "w notatkach", "notatki")]
         for (place, locative, accusative) in places {
             notes["You undid this. Checked in \(place)."] = "Cofnięto. Sprawdzone \(locative)."
             notes["Not undone: it changed in \(place) since Doddy did this, so Doddy left it alone."] =

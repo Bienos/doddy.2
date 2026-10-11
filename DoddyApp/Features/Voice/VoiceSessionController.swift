@@ -738,7 +738,8 @@ final class VoiceSessionController {
                 savedThisConversation += 1
                 // Only after the store returned the saved record (ADR-240).
                 flashIsland(.noteSaved)
-                await reply(id, VoiceToolReply.saved(record))
+                // What Doddy did can delete it again for a day, if it's left untouched (ADR-277).
+                await reply(id, VoiceToolReply.saved(record), undo: .savedNote(id: record.id, text: record.currentText))
             } catch {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
@@ -1795,6 +1796,14 @@ final class VoiceSessionController {
         case .createReminder(let draft):
             let outcome = await addReminder(draft)
             return (VoiceToolReply.reminder(outcome), ActivityUndo.addedReminder(outcome, draft: draft))
+        case .saveMemory(let text):
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                savedThisConversation += 1
+                return (VoiceToolReply.saved(record), .savedNote(id: record.id, text: record.currentText))
+            } catch {
+                return (VoiceToolReply.failed(UserFacingError.message(for: error)), nil)
+            }
         default:
             return (await runOtherPlanStep(step, approval: approval), nil)
         }
@@ -2032,7 +2041,7 @@ final class VoiceSessionController {
             connectionOn: undo.connection.map(isOn) ?? true) {
             if let connection = undo.connection, !isOn(connection) { connectionNeeded = connection }
             result = .notDone(reason)
-        } else if undo.listID != nil {
+        } else if undo.connection == nil {
             result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)

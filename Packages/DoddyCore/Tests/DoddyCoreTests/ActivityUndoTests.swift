@@ -369,6 +369,53 @@ final class ActivityUndoTests: XCTestCase {
         XCTAssertTrue(ticked.explanation(calendar: calendar).contains("Only the ones still ticked are unticked."))
     }
 
+    // MARK: Notes saved by voice (ADR-277)
+
+    private func saved(_ text: String, current: String? = nil, edited: Bool = false) throws -> MemoryRecord {
+        try MemoryRecord(id: UUID(), rawText: text, currentText: current, source: .explicitVoice, capturedAt: date(10, 9),
+                         updatedAt: edited ? date(10, 10) : nil, userEdited: edited)
+    }
+
+    func testASavedNoteIsDeletedOnlyWhileExactlyAsSaved() throws {
+        let note = try saved("Keys in the blue tin")
+        func unchanged(_ record: MemoryRecord, corrections: Int = 0, photo: Bool = false, recording: Bool = false, reminder: Bool = false) -> Bool {
+            ActivityUndo.noteUnchanged(record, savedText: "Keys in the blue tin", corrections: corrections,
+                                       hasPhoto: photo, hasRecording: recording, hasReminder: reminder)
+        }
+        XCTAssertTrue(unchanged(note))
+        XCTAssertFalse(unchanged(try saved("Keys in the blue tin", current: "Keys in the red tin", edited: true)))
+        XCTAssertFalse(unchanged(try saved("Something else")))
+        XCTAssertFalse(unchanged(note, corrections: 1))
+        XCTAssertFalse(unchanged(note, photo: true))
+        XCTAssertFalse(unchanged(note, recording: true))
+        XCTAssertFalse(unchanged(note, reminder: true))
+    }
+
+    func testSavedNoteUndoIsDoddysOwnAndNeverOfferedByVoice() throws {
+        let note = try saved("Keys in the blue tin")
+        let undo = ActivityUndo.savedNote(id: note.id, text: note.currentText)
+        XCTAssertNil(undo.connection)
+        XCTAssertNil(undo.listID)
+        XCTAssertNil(undo.blocked(pauseAll: true, connectionOn: false))
+        let request = ActivityRequest.describe(.saveMemory(text: note.currentText), calendar: calendar)!
+        let row = ActivityEntry(request: request, reply: VoiceToolReply.saved(note), at: now, undo: undo)
+        XCTAssertTrue(row.canUndo(now: now))
+        XCTAssertNil(ActivityEntry(request: request, reply: VoiceToolReply.failed("Couldn't save."), at: now, undo: undo).undo)
+        XCTAssertNil(ActivityUndo.latest(in: [row], since: now.addingTimeInterval(-60), now: now))
+
+        XCTAssertEqual(undo.question(), "Delete the note “Keys in the blue tin”?")
+        XCTAssertEqual(undo.question(.polish), "Usunąć notatkę „Keys in the blue tin”?")
+        XCTAssertEqual(undo.buttonTitle(.polish), "Usuń")
+        let long = ActivityUndo.savedNote(id: UUID(), text: String(repeating: "a", count: 120))
+        XCTAssertTrue(long.question().hasSuffix("…”?"))
+
+        let done = ActivityLog.undid(row, result: .undone, at: now)
+        XCTAssertEqual(done.note, "You undid this. Checked in your notes.")
+        XCTAssertEqual(done.note(.polish), "Cofnięto. Sprawdzone w notatkach.")
+        let back = try JSONDecoder().decode(ActivityEntry.self, from: JSONEncoder().encode(row))
+        XCTAssertEqual(back, row)
+    }
+
     // MARK: What the user is asked
 
     func testTheSheetIsInPolishOnAPolishIPhone() {
