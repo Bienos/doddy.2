@@ -37,7 +37,7 @@ scripts/ci.sh                  # everything, including xcodebuild test on the fi
 - To pick the simulator: `DODDY_DESTINATION="platform=iOS Simulator,name=iPhone 16" scripts/ci.sh`.
 - To build only (faster first signal): `xcodebuild build -project Doddy.xcodeproj -scheme Doddy -destination "generic/platform=iOS Simulator"`.
 - **The watch app** is a dependency of the iPhone app, so the build above compiles it too. On its own: `xcodebuild build -project Doddy.xcodeproj -target DoddyWatch -sdk watchsimulator`.
-- **Signing for a device:** no team is committed. In Xcode, choose your team for Doddy, DoddyWidgets and DoddyWatch.
+- **Signing for a device:** no team is committed. Set yours once, outside Xcode: `make team ID=<your 10-character Team ID>` (developer.apple.com → Account → Membership details), then `make project`. It is saved in the git-ignored `Config/Team.local.xcconfig` and applied to every target (app, widgets, share extension, watch) on every regeneration, so there is nothing to click in Xcode. Not yet run on a Mac.
   - Widgets with content and the watch's companion pairing need the bundle ids to line up: `<app>`, `<app>.widgets`, `<app>.watchkitapp`.
   - The App Group is opt-in (see the comment at the top of `project.yml`).
   - Push is opt-in too.

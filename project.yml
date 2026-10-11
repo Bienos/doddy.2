@@ -9,6 +9,9 @@ options:
     watchOS: "10.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
+configFiles:
+  Debug: Config/Team.xcconfig
+  Release: Config/Team.xcconfig
 packages:
   DoddyCore:
     path: Packages/DoddyCore
@@ -31,8 +34,9 @@ settings:
     SWIFT_VERSION: "6.0"
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
-    # No signing team is committed. Select your own team in Xcode to run on a device.
-    DEVELOPMENT_TEAM: ""
+    # No signing team is committed, and none is set here: DEVELOPMENT_TEAM comes from
+    # Config/Team.local.xcconfig (git-ignored, written once by `make team ID=<TeamID>`) through
+    # `configFiles` above, so it survives every `make project` and needs no clicking in Xcode.
     # Override this at build time for an isolated simulator install; keep the owner's default.
     DODDY_APP_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
     # Push notifications from the Doddy messaging server (ADR-142, ADR-174). Off by default. Now that

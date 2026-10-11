@@ -1,0 +1,4 @@
+// Signing team for every target (project.yml `configFiles`). Committed on purpose, with no team in it.
+// Your own team lives in Config/Team.local.xcconfig, which is git-ignored: run `make team ID=<TeamID>` once.
+// The "?" makes the include optional, so CI and fresh clones build without a team.
+#include? "Team.local.xcconfig"
