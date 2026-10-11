@@ -13,6 +13,8 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
+        // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
+        ServerKeychainStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
