@@ -602,6 +602,30 @@ final class DeviceConnections {
 /// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).
 extension DeviceConnections: ReminderStore {}
 
+/// What `VoiceSessionController` uses of `DeviceConnections`, so its tests can put in a fake
+/// Calendar and Reminders (AppTests review 2026-10-11, finding 2). The real class is the default;
+/// the signatures are the class's own. Sendable because a `@MainActor` class is; the controller
+/// hands it to DoddyCore's nonisolated `ReminderAction.add`.
+@MainActor
+protocol DeviceConnecting: ReminderStore, Sendable {
+    func access(for connection: VoiceConnection) -> DeviceConnections.Access
+    func notificationAccess() async -> DeviceConnections.Access
+    func events(in range: VoiceTimeRange) -> [CalendarEventSummary]
+    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: DeviceConnections.AddOutcome, eventID: String?)
+    func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
+    func undo(_ undo: ActivityUndo) async -> UndoResult
+    func eventLocation(_ event: CalendarEventSummary) -> String?
+    func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome
+    func deleteEvent(_ event: CalendarEventSummary) throws -> DeviceConnections.ChangeOutcome
+    func deleteReminder(_ before: ReminderSnapshot) throws -> DeviceConnections.ChangeOutcome
+    func reminderSnapshot(id: String) -> ReminderSnapshot?
+    func startTimer(_ draft: TimerDraft) async throws -> DeviceConnections.AddOutcome
+    func findContacts(named name: String) throws -> [DeviceConnections.ContactMatch]
+    func contactBirthdays() throws -> [ContactBirthday]
+}
+
+extension DeviceConnections: DeviceConnecting {}
+
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.
 private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
     private let lock = NSLock()

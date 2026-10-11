@@ -239,7 +239,8 @@ final class VoiceSessionController {
     private(set) var audioNote: String?
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
-    private let devices = DeviceConnections()
+    /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
+    private let devices: any DeviceConnecting
     private var conversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
     private(set) var provider: VoiceProvider = .elevenLabs
@@ -269,11 +270,24 @@ final class VoiceSessionController {
     /// Suggestions are worked out once per conversation, so a dismissed card doesn't come back.
     private var suggestionsOffered = false
 
-    init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
+    init(
+        store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared,
+        devices: any DeviceConnecting = DeviceConnections()
+    ) {
         self.store = store
         self.logs = logs
         self.activity = activity
+        self.devices = devices
     }
+
+    #if DEBUG
+    /// Test seam only (AppTests review finding 2): shows `action` as if the agent had proposed it,
+    /// with `link` standing in for the provider so a test can read the reply. The app never calls it.
+    func showCardForTesting(_ action: PendingAction, link: any LiveVoiceLink) {
+        conversation = link
+        pendingAction = action
+    }
+    #endif
 
     var isLive: Bool {
         switch phase {
