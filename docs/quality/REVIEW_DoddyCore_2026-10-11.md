@@ -27,6 +27,25 @@ Not run: `xcodebuild`, UI tests, and anything on a device. There is no Xcode her
 | A11 | `Assistant/AssistantService.swift:88` | After a timeout the request is automatically re-POSTed up to 3 times. → The question and notes leave the phone three times, and the budget is spent three times. | low, DOD-11 |
 | A12 | `ServerClient.swift:276`, `CallsClient.swift:143`, `NewsClient.swift:181` | A dead `(400,"no_topics")` case, and duplicated response helpers. | low |
 
+### Section A fix status (2026-10-11)
+
+DoddyCore changes, each with a focused test; `make test-core` and `scripts/typecheck_app_logic.sh` pass on Linux. The app files below are not compiled here, so their part is still open and needs Xcode.
+
+| # | DoddyCore | Still needs Xcode (app files not compiled on Linux) |
+|---|---|---|
+| A1 | Requests that start something (`callMeNow`, `sendNewsNow`) turn an ambiguous transport failure into status `unknown`; only errors raised before the request left the phone (`ServerTransportFailure.certainlyNotSent`) stay `.offline`. `ServerRequest.timeout` is 30 s for calls and 180 s for news. | `ServerHTTPTransport.swift`: use `request.timeout` instead of 15, and rethrow the `URLError` instead of `ServerError.offline` (until then a real "no network" also reads as unknown, which is safe). `NewsModel.swift`: add `case "unknown"` to the send-now message (today it falls to "Couldn't build your news right now"). |
+| A2 | `sendUpdate(_:channels:)` keeps one key per text and channels until the server accepts it; 409 `idempotency_mismatch` maps to `.invalidRequest(["idempotencyKey"])`. | `UpdatesModel.swift:141`: call `sendUpdate(text, channels: [channel])` without `idempotencyKey: UUID().uuidString`. |
+| A3 | `callInbox()` decodes `notes` and `unreadable` and throws on a failed load. | `CallsModel.swift:28`: use `callInbox()` instead of `try? callNotes()`, list unreadable notes with Discard, and show a load error. |
+| A4 | Shipping catalog: `cloudSync` is `.limited` (lists you share, through iCloud). `PrivacyDefaults.syncText`. | `SettingsView.swift:243`: show `privacy.syncText`. |
+| A5 | `DataFlowState.newsWriterProvider`; until known, the row names "Anthropic or OpenAI, as the server is set up". | Optional: `DataFlowView` passes the provider once News settings are loaded. |
+| A6 | Fixed: `outcome_unknown` receipts and unlisted codes on writes read `unknown`. | — |
+| A7 | Fixed: one in-flight account creation. | — |
+| A8 | Fixed: "Queued for your notifications or texts". | — |
+| A9 | 429 maps to `.rateLimited(retryAfterSeconds:)` with a wait-time message. | `VoiceTokenClient.swift:23`: pass the `Retry-After` header as `retryAfter:`. |
+| A10 | Loopback http only in DEBUG builds. `BoundSessionToken` and `boundToken:` initialisers send a token only to the origin that issued it. | Store a `BoundSessionToken` in `KeychainSessionStore` when saving (SettingsView:298) and use the `boundToken:` initialisers in `OnlineAccountsClientFactory.swift` and `ConnectedAppsView.swift`; decide how existing unbound tokens migrate. |
+| A11 | Fixed: timeouts are not retried automatically; Try again stays. | — |
+| A12 | One shared `getJSON`. The `(400,"no_topics")` case is **not dead** (PUT `/v1/news/settings` returns it and `NewsModel` reads it), so it stays. | — |
+
 ## B. Memory and persistence
 
 | # | Where | Problem → failure | Severity / rule |
