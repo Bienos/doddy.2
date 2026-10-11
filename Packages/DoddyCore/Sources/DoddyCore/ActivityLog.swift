@@ -6,6 +6,8 @@ import Foundation
 public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
+    /// Microsoft Outlook (ADR-336).
+    case outlook
     case web
     /// The ECB's public rates file (ADR-300).
     case exchangeRates
@@ -24,6 +26,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .drive: "Google Drive"
         case .notion: "Notion"
         case .todoist: "Todoist"
+        case .outlook: "Outlook"
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
         }
@@ -222,6 +225,10 @@ public struct ActivityRequest: Equatable, Sendable {
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
         case CloudToolName.addTodoistTask: ActivityRequest(app: .todoist, title: "Add a task", detail: nil, isLookup: false)
         case CloudToolName.webSearch: ActivityRequest(app: .web, title: "Searched the web", detail: nil, isLookup: true)
+        case CloudToolName.checkOutlookEmail: ActivityRequest(app: .outlook, title: "Checked email", detail: nil, isLookup: true)
+        case CloudToolName.readOutlookEmail: ActivityRequest(app: .outlook, title: "Read an email", detail: nil, isLookup: true)
+        case CloudToolName.draftOutlookEmail: ActivityRequest(app: .outlook, title: "Create an email draft", detail: nil, isLookup: false)
+        case CloudToolName.readOutlookCalendar: ActivityRequest(app: .outlook, title: "Read your calendar", detail: nil, isLookup: true)
         default: nil
         }
     }

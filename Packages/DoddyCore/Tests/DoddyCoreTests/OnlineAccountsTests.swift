@@ -18,13 +18,13 @@ final class OnlineAccountsContractTests: XCTestCase {
     func testEveryFixtureDecodes() throws {
         let catalog = try decode(ToolsCatalog.self, "catalog-disconnected")
         XCTAssertEqual(catalog.mode, .mock)
-        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist", "websearch"])
+        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "websearch"])
         let accounts = catalog.toolkits.filter(\.hasAccount)
-        XCTAssertEqual(accounts.count, 4)
+        XCTAssertEqual(accounts.count, 5)
         XCTAssertTrue(accounts.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
         XCTAssertTrue(catalog.toolkits.flatMap(\.tools).allSatisfy { !$0.enabled }, "every switch starts off")
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
-        XCTAssertEqual(writes, ["add_todoist_task", "complete_todoist_task", "draft_email", "draft_email_reply", "move_todoist_task"])
+        XCTAssertEqual(writes, ["add_todoist_task", "complete_todoist_task", "draft_email", "draft_email_reply", "draft_outlook_email", "move_todoist_task"])
         XCTAssertEqual(Set(writes), CloudToolName.writes, "the app and the server agree on which tools write")
         XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)), CloudToolName.all)
 
