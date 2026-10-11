@@ -115,9 +115,8 @@ form.addEventListener("submit", async (event) => {
     });
     const reply = await res.json();
     if (reply.ok) {
-      say(status, reply.status === "already"
-        ? "You're already on the list. We'll email you when early access opens."
-        : "You're on the list. We'll email you when early access opens.", "ok");
+      // Same words for a new and an already stored email, so the form can't tell anyone who signed up.
+      say(status, "You're on the list. We'll email you when early access opens.", "ok");
       form.reset();
       if (reply.id && reply.key) askQuestions(reply.id, reply.key);
     } else if (reply.error === "invalid_email") {

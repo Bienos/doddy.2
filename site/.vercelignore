@@ -1,0 +1,2 @@
+# Tests for the api/ functions run in scripts/ci.sh; they are not part of the published site.
+test
