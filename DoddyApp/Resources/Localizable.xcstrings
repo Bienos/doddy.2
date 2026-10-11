@@ -3312,6 +3312,17 @@
         }
       }
     },
+    "Ends a conversation with Doddy, turns off “Hey Doddy” and stops a voice memo recording. Nothing is saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kończy rozmowę z Doddym, wyłącza „Hey Doddy” i zatrzymuje nagrywanie notatki głosowej. Nic nie jest zapisywane."
+          }
+        }
+      }
+    },
     "English": {
       "extractionState": "manual",
       "localizations": {
@@ -9732,6 +9743,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymaj"
+          }
+        }
+      }
+    },
+    "Stop Doddy listening": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj słuchanie Doddy’ego"
+          }
+        }
+      }
+    },
+    "Stop listening": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań słuchać"
           }
         }
       }

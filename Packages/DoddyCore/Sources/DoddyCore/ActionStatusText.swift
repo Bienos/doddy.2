@@ -64,6 +64,8 @@ extension SessionRecovery {
         switch end {
         case .userEnded, .doddyEnded, .quietTimeout:
             return ("Rozmowa zakończona", nil)
+        case .stoppedListening:
+            return ("Przestano słuchać", "Mikrofon Doddy’ego jest wyłączony.")
         case .dropped(.offline):
             return ("Jesteś offline", "Głos Doddy’ego potrzebuje internetu.")
         case .dropped(let drop) where !connected:

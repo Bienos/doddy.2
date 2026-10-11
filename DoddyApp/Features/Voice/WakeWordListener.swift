@@ -42,6 +42,8 @@ final class WakeWordListener {
 
     @ObservationIgnored private var manager: PorcupineManager?
     @ObservationIgnored private var running = false
+    /// Porcupine's recorder is running (Stop listening reads it, ADR-335).
+    var isEngineRunning: Bool { running }
     @ObservationIgnored private var gate = WakeGate()
     @ObservationIgnored private var inForeground = false
     @ObservationIgnored private var interrupted = false
@@ -214,6 +216,7 @@ final class WakeWordListener {
         state = target
         syncIsland()
         scheduleRestEnd()
+        ListeningIndicatorModel.shared.refresh()
     }
 
     private static var microphone: WakeConditions.Microphone {

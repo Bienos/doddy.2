@@ -145,6 +145,8 @@ final class VoiceSessionController {
     private(set) var phase: Phase = .idle {
         didSet {
             Self.conversationInProgress = isLive
+            if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
+            ListeningIndicatorModel.shared.refresh()
             switch phase {
             case .listening, .thinking, .speaking: connectedOnce = true
             default: break
@@ -155,6 +157,15 @@ final class VoiceSessionController {
     /// True while any conversation holds the microphone (the island keeps it alive in other
     /// screens). Voice samples in Settings don't play then, so they never take over its audio.
     static private(set) var conversationInProgress = false
+    /// The conversation that is connecting or live, for Stop listening (ADR-335).
+    static private(set) weak var current: VoiceSessionController?
+
+    /// What the listening indicator says about the conversation (ADR-335).
+    static var microphone: MicrophoneSnapshot.Conversation {
+        guard let current, current.isLive else { return .none }
+        if current.phase == .connecting { return .connecting }
+        return current.isMuted ? .muted : .listening
+    }
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
@@ -189,7 +200,12 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
-    private(set) var isMuted = false { didSet { syncIsland() } }
+    private(set) var isMuted = false {
+        didSet {
+            syncIsland()
+            ListeningIndicatorModel.shared.refresh()
+        }
+    }
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
@@ -721,6 +737,15 @@ final class VoiceSessionController {
         await active?.endConversation()
         // Only now may "Hey Doddy" take the microphone again (ADR-254).
         WakeWordListener.shared.conversationAudioReleased()
+    }
+
+    /// Stop listening from Siri or the indicator (OP-024, ADR-335): ends the conversation like End,
+    /// but keeps a "Save this note?" card that was showing as a draft. True when it kept one.
+    func stopListening() async -> Bool {
+        if sessionEnd == nil { sessionEnd = .stoppedListening }
+        keepRecoveryDraft()
+        await stop(.stoppedListening)
+        return recovery != nil
     }
 
     /// Keeps the transcript lines of this conversation on the phone, once, so the next

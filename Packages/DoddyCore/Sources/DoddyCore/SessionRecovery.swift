@@ -15,6 +15,9 @@ public enum VoiceSessionEnd: Equatable, Sendable {
     case doddyEnded
     /// Started by "Hey Doddy" and nobody spoke (ADR-254).
     case quietTimeout
+    /// "Stop listening" (OP-024, ADR-335): from Siri or the listening indicator, which also turn
+    /// off "Hey Doddy" and stop a voice memo.
+    case stoppedListening
     /// It stopped before either side ended it.
     case dropped(Drop)
 
@@ -55,6 +58,7 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         case .userEnded: "user"
         case .doddyEnded: "doddy"
         case .quietTimeout: "quiet"
+        case .stoppedListening: "stopped"
         case .dropped(.offline): "dropped-offline"
         case .dropped(.connectionLost): "dropped-connection"
         case .dropped(.error): "dropped-error"
@@ -89,7 +93,13 @@ public enum SessionRecovery {
     /// The draft after a drop, from the lines Doddy got as final text. Nil for any other end, or
     /// when there is nothing it hadn't answered and no card was showing. Words the user was still
     /// saying when it dropped never arrived as text, so they can't be in it.
+    /// After "Stop listening" only the "Save this note?" card that was showing is kept: the user
+    /// chose to stop, so what they said last isn't offered back.
     public static func draft(lines: [ConversationLog.Line], pendingNote: String?, end: VoiceSessionEnd, endedAt: Date) -> RecoveryDraft? {
+        if end == .stoppedListening {
+            let note = pendingNote?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return note.isEmpty ? nil : RecoveryDraft(unanswered: [], pendingNote: note, endedAt: endedAt)
+        }
         guard end.isDrop else { return nil }
         let afterLastReply = lines.lastIndex(where: { !$0.fromUser }).map { lines.index(after: $0) } ?? lines.startIndex
         let unanswered = lines[afterLastReply...]
@@ -108,6 +118,8 @@ public enum SessionRecovery {
         switch end {
         case .userEnded, .doddyEnded, .quietTimeout:
             return ("Conversation ended", nil)
+        case .stoppedListening:
+            return ("Stopped listening", "Doddy's microphone is off.")
         case .dropped(.offline):
             return ("You're offline", "Doddy's voice needs the internet.")
         case .dropped(let drop) where !connected:

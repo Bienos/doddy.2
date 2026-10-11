@@ -28,6 +28,8 @@ final class VoiceMemoRecorder {
     private var ticker: Task<Void, Never>?
 
     var isRecording: Bool { if case .recording = state { true } else { false } }
+    /// The microphone is recording now, as AVAudioRecorder says (Stop listening, ADR-335).
+    var isCapturing: Bool { recorder?.isRecording == true }
 
     /// Asks for the microphone once (the same permission as talking to Doddy), then records.
     func start() async {
@@ -57,6 +59,7 @@ final class VoiceMemoRecorder {
             elapsed = 0
             stoppedByItself = false
             state = .recording(startedAt: Date())
+            MicrophoneHolders.shared.recording(self, true)
             ticker = Task { [weak self] in
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .milliseconds(250))
@@ -89,12 +92,28 @@ final class VoiceMemoRecorder {
         state = .idle
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
         WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
+        MicrophoneHolders.shared.recording(self, false)
         let milliseconds = min(Int((seconds * 1000).rounded()), VoiceMemoLimits.maxSeconds * 1000)
         guard MemoryAudio.isValidDuration(milliseconds), FileManager.default.fileExists(atPath: recorder.url.path) else {
             try? FileManager.default.removeItem(at: recorder.url)
             return nil
         }
         return Recording(url: recorder.url, durationMilliseconds: milliseconds)
+    }
+
+    /// Stop listening (ADR-335): the microphone stops now, and the note's screen keeps what was
+    /// recorded as its draft, as when the 5-minute limit is reached (`stoppedByItself`). True when
+    /// it is long enough to keep.
+    func stopFromOutside() -> Bool {
+        guard let recorder, recorder.isRecording else { return false }
+        ticker?.cancel()
+        ticker = nil
+        let seconds = recorder.currentTime
+        elapsed = seconds
+        recorder.stop()
+        state = .idle
+        stoppedByItself = true
+        return MemoryAudio.isValidDuration(min(Int((seconds * 1000).rounded()), VoiceMemoLimits.maxSeconds * 1000))
     }
 
     /// Stops and throws the recording away.

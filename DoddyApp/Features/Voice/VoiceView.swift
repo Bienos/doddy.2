@@ -284,6 +284,11 @@ struct VoiceView: View {
                     RecoveryDraftCard(controller: controller)
                 }
             }
+        case .ended:
+            // After Stop listening (ADR-335): the note Doddy was asking about, as a draft.
+            if controller.recovery != nil || controller.recoverySaved != nil {
+                RecoveryDraftCard(controller: controller)
+            }
         default:
             EmptyView()
         }

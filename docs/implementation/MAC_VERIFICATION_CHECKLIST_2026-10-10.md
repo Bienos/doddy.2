@@ -319,3 +319,15 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | SR3 | Ask Doddy to save a note and, while the card shows, cut the connection | The draft is the note Doddy was asking about; nothing saved until Save as note |
 | SR4 | After SR2, tap Talk again within 15 minutes ("Remember recent conversations" on) | Doddy says the last conversation was cut off and offers to carry on; with the setting off or Private, it doesn't |
 | SR5 | Say goodbye so Doddy ends the call; then tap End in another conversation | Both show "Conversation ended", never "dropped" (checks that end_call arrives as the SDK's own end) |
+
+## 4m. Stop listening and the listening indicator (ADR-335, `LISTENING_PRIVACY_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| LS1 | Turn on "Hey Doddy"; open Settings, then the note screen | The pill "Listening for “Hey Doddy”" shows at the top over both; taps beside it still work |
+| LS2 | Tap Stop listening on the pill | "Stopped. Doddy isn't listening. “Hey Doddy” is off…"; the orange dot goes off; the Settings switch is off |
+| LS3 | Lock the iPhone during a conversation; say "Hey Siri, stop listening in Doddy" | Siri says "Stopped…" without unlocking; the conversation shows "Stopped listening"; the orange dot goes off |
+| LS4 | Ask Doddy to save a note; while the card shows, ask Siri to stop listening | The voice screen keeps the note as a draft; nothing saved until Save as note |
+| LS5 | Record a voice memo for 5 seconds; stop listening with Siri | The memo stops; the note screen has the recording as a draft; nothing saved |
+| LS6 | Mute in a conversation (ElevenLabs, then the OpenAI test voice) | The pill (or the voice screen) says "Microphone muted… isn't sent", never "off"; note whether the orange dot stays on for each |
+| LS7 | Nothing listening; ask Siri to stop listening | "Doddy wasn't listening. The microphone is off." |
+| LS8 | Polish iPhone: LS2 and LS3 | Polish pill, button and Siri answer; "Przestań słuchać w aplikacji Doddy" works |

@@ -21,5 +21,8 @@
  "Ask ${applicationName} what I saved": "Zapytaj aplikację ${applicationName}, co mam zapisane",
  "What did I save in ${applicationName}": "Co mam zapisane w aplikacji ${applicationName}",
  "Read my note from ${applicationName}": "Przeczytaj moją notatkę z aplikacji ${applicationName}",
- "Check my notes in ${applicationName}": "Sprawdź moje notatki w aplikacji ${applicationName}"
+ "Check my notes in ${applicationName}": "Sprawdź moje notatki w aplikacji ${applicationName}",
+ "Stop listening in ${applicationName}": "Przestań słuchać w aplikacji ${applicationName}",
+ "Tell ${applicationName} to stop listening": "Powiedz aplikacji ${applicationName}, żeby przestała słuchać",
+ "${applicationName} stop listening": "${applicationName}, przestań słuchać"
 }

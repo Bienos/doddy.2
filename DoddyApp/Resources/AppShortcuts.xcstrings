@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "${applicationName} stop listening": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName}, przestań słuchać"
+          }
+        }
+      }
+    },
     "Add to ${list} in ${applicationName}": {
       "extractionState": "manual",
       "localizations": {
@@ -188,6 +199,17 @@
         }
       }
     },
+    "Stop listening in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań słuchać w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
     "Talk to ${applicationName}": {
       "extractionState": "manual",
       "localizations": {
@@ -195,6 +217,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Porozmawiaj w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Tell ${applicationName} to stop listening": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz aplikacji ${applicationName}, żeby przestała słuchać"
           }
         }
       }

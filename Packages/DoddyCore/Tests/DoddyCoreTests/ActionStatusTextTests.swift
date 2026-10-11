@@ -75,7 +75,7 @@ final class ActionStatusTextTests: XCTestCase {
     }
 
     func testEveryWayAConversationEndsHasPolish() {
-        let ends: [VoiceSessionEnd] = [.userEnded, .doddyEnded, .quietTimeout, .dropped(.offline), .dropped(.connectionLost), .dropped(.error(""))]
+        let ends: [VoiceSessionEnd] = [.userEnded, .doddyEnded, .quietTimeout, .stoppedListening, .dropped(.offline), .dropped(.connectionLost), .dropped(.error(""))]
         for end in ends {
             for connected in [true, false] {
                 let english = SessionRecovery.status(end, connected: connected)
