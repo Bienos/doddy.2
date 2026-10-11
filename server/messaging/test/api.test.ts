@@ -59,6 +59,9 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     assert.equal(first.statusCode, 202);
     const again = await call("POST", "/v1/updates", a.headers, update);
     assert.deepEqual(again.json(), first.json(), "same idempotency key returns the same message");
+    const edited = await call("POST", "/v1/updates", a.headers, { ...update, text: "Your dentist is at 16:00" });
+    assert.equal(edited.statusCode, 409, "same key with different text is refused, not silently ignored");
+    assert.equal(edited.json().error, "idempotency_mismatch");
 
     push.sent = [];
     await dispatchDue(db, { push, sms });

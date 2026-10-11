@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type pg from "pg";
 import type { Db } from "./db.js";
 import type { PushSender, SendOutcome, SmsSender } from "./providers/types.js";
@@ -29,22 +29,35 @@ export async function smsNumber(db: Queryable, accountId: string): Promise<strin
 
 export interface QueuedMessage { id: string; channel: Channel; state: string }
 
-/** Inserts one row per channel. Re-sending the same idempotency key returns the existing rows. */
+/** The same idempotency key was used before with a different payload (DOD-07). */
+export class IdempotencyConflict extends Error {
+  constructor() { super("idempotency_mismatch"); }
+}
+
+/**
+ * Inserts one row per channel. Re-sending the same idempotency key with the same payload returns
+ * the existing rows; with a different payload it throws IdempotencyConflict and queues nothing.
+ * `fingerprint` is what the key is bound to (defaults to the body).
+ */
 export async function enqueue(
   db: Queryable, accountId: string, channels: Channel[], body: string, sendAt: Date, idempotencyKey: string,
+  fingerprint: string = body,
 ): Promise<QueuedMessage[]> {
+  const payloadHash = createHash("sha256").update(fingerprint).digest();
   const out: QueuedMessage[] = [];
   for (const channel of channels) {
     await db.query(
-      `INSERT INTO outbound_messages (id, account_id, channel, idempotency_key, body, send_at, state)
-       VALUES ($1, $2, $3, $4, $5, $6, 'queued')
+      `INSERT INTO outbound_messages (id, account_id, channel, idempotency_key, body, send_at, state, payload_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, 'queued', $7)
        ON CONFLICT (account_id, channel, idempotency_key) DO NOTHING`,
-      [randomUUID(), accountId, channel, idempotencyKey, body, sendAt]);
-    const { rows } = await db.query<QueuedMessage>(
-      `SELECT id, channel, state FROM outbound_messages
+      [randomUUID(), accountId, channel, idempotencyKey, body, sendAt, payloadHash]);
+    const { rows } = await db.query<QueuedMessage & { payload_hash: Buffer | null }>(
+      `SELECT id, channel, state, payload_hash FROM outbound_messages
        WHERE account_id = $1 AND channel = $2 AND idempotency_key = $3`,
       [accountId, channel, idempotencyKey]);
-    out.push(rows[0]!);
+    const row = rows[0]!;
+    if (row.payload_hash && !row.payload_hash.equals(payloadHash)) throw new IdempotencyConflict();
+    out.push({ id: row.id, channel: row.channel, state: row.state });
   }
   return out;
 }

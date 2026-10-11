@@ -2,7 +2,8 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
-import { canPush, enqueue, smsNumber, type Channel } from "../outbox.js";
+import { inTransaction } from "../db.js";
+import { canPush, enqueue, IdempotencyConflict, smsNumber, type Channel } from "../outbox.js";
 
 const MAX_DAYS_AHEAD = 30;
 
@@ -34,8 +35,17 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       if (ch === "push" && !(await canPush(db, accountId))) return reply.code(409).send({ error: "push_not_enabled" });
       if (ch === "sms" && !(await smsNumber(db, accountId))) return reply.code(409).send({ error: "sms_not_enabled" });
     }
-    const messages = await enqueue(db, accountId, channels, body.text, sendAt, body.idempotencyKey);
-    return reply.code(202).send({ messages });
+    try {
+      // One transaction: a conflict on the second channel must not leave the first one queued.
+      // The key is bound to the text and, when given, the requested time (a retry without
+      // sendAt is still the same request).
+      const messages = await inTransaction(db, (c) =>
+        enqueue(c, accountId, channels, body.text, sendAt, body.idempotencyKey, JSON.stringify([body.text, body.sendAt ?? null])));
+      return reply.code(202).send({ messages });
+    } catch (err) {
+      if (err instanceof IdempotencyConflict) return reply.code(409).send({ error: "idempotency_mismatch" });
+      throw err;
+    }
   });
 
   app.get("/v1/updates/:id", { preHandler: auth }, async (req, reply) => {
