@@ -1574,6 +1574,12 @@ final class VoiceSessionController {
         }
         switch request {
         case .searchMemories(let query):
+            // "#car": exactly the notes with that tag (ADR-333). Private notes stay out.
+            if let tag = NoteTags.tagQuery(query) {
+                let notes = NoteTags.filter(PrivateNotesStore.current().shareable(store.memories), tag: tag)
+                await reply(call.toolCallId, VoiceToolReply.taggedNotes(tag, notes: notes))
+                return
+            }
             do {
                 let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
                 await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))

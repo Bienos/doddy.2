@@ -9186,6 +9186,17 @@
         }
       }
     },
+    "Show notes with one tag": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż notatki z jednym tagiem"
+          }
+        }
+      }
+    },
     "Show this list on your Lock Screen?": {
       "extractionState": "manual",
       "localizations": {
@@ -9710,6 +9721,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Synchronizacja między urządzeniami"
+          }
+        }
+      }
+    },
+    "Tag %@, %lld notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag %@, notatki: %lld"
           }
         }
       }
