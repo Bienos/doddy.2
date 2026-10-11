@@ -555,6 +555,29 @@ struct VoiceView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
+        case .ingredients(_, _, let listName, let dish, let items, let alreadyOpen):
+            // ADR-296: Doddy's suggestion; the user unticks what they have.
+            Text("Add these to \(listName)?")
+                .font(.headline)
+            Text("Doddy's suggestion for \(dish). Untick what you already have.")
+                .foregroundStyle(Theme.secondaryText)
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                Button { controller.toggleIngredient(index) } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Image(systemName: controller.ingredientsUnticked.contains(index) ? "circle" : "checkmark.circle.fill")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item)
+                            if alreadyOpen.contains(index) {
+                                Text("Already on the list").font(.caption).foregroundStyle(Theme.secondaryText)
+                            }
+                        }
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(controller.ingredientsUnticked.contains(index) ? [] : .isSelected)
+            }
         case .parking(_, let spot):
             // ADR-292: where the iPhone is now, kept only on Save, on this iPhone.
             Text("Save your parking spot here?")
@@ -750,6 +773,8 @@ struct VoiceView: View {
         if case .plan = pending { return controller.planTicked.isEmpty }
         // Several changes (ADR-280): nothing ticked, nothing to confirm.
         if case .bulk(_, let items, _, _) = pending { return items.allSatisfy { controller.bulkUnticked.contains($0.id) } }
+        // Ingredients (ADR-296): nothing ticked, nothing to add.
+        if case .ingredients(_, _, _, _, let items, _) = pending { return controller.ingredientsUnticked.count >= items.count }
         return false
     }
 
@@ -777,6 +802,8 @@ struct VoiceView: View {
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         case .undo(_, let entry): (entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
         case .parking: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
+        case .ingredients(_, _, _, _, let items, _):
+            (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
         }
     }
 

@@ -29,7 +29,8 @@
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
 #    reminders, contacts and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
-#    their answers), no write tools beyond the two reviewed ones (Gmail draft, Todoist task), no proxy execution,
+#    their answers), no write tools beyond the reviewed ones (Gmail draft; Todoist add, complete and move,
+#    ADR-294), no proxy execution,
 #    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
 #    can never pick another paid endpoint).
 # Exit 0 = clean, 1 = violation.
@@ -156,10 +157,14 @@ if [ -d "$backend_src" ]; then
   if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src"; then
     echo "FAIL: calendar write tool referenced in the backend." >&2; status=1
   fi
-  # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT and TODOIST_CREATE_TASK (each needs a fresh
-  # on-screen approval). Anything that sends, deletes, shares, edits or labels is refused here.
-  if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src"; then
-    echo "FAIL: a write tool beyond the reviewed Gmail draft and Todoist task is referenced in the backend." >&2; status=1
+  # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT, TODOIST_CREATE_TASK and, since ADR-294,
+  # TODOIST_CLOSE_TASK_V1 and TODOIST_UPDATE_TASK (each needs a fresh on-screen approval bound to the
+  # task Todoist returned). Anything that sends, deletes, shares, edits or labels is refused here, and
+  # the two Todoist writes may appear only in the catalog and its mock.
+  if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:.*TODOIST_(CLOSE_TASK_V1|UPDATE_TASK)([^A-Z0-9_]|$)" \
+    | grep -E 'GMAIL_|GOOGLEDRIVE_|NOTION_|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)'; then
+    echo "FAIL: a write tool beyond the reviewed Gmail draft and the Todoist add, complete and move is referenced in the backend." >&2; status=1
   fi
   if grep -RInE 'tools\.proxy|proxyExecute|COMPOSIO_MULTI_EXECUTE|COMPOSIO_REMOTE' "$backend_src"; then
     echo "FAIL: generic proxy/meta-tool execution in the backend." >&2; status=1
@@ -188,5 +193,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

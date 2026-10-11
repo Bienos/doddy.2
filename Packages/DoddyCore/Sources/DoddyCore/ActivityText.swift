@@ -82,6 +82,10 @@ public enum ActivityText {
         "Save parking spot": "Zapisz miejsce parkowania",
         "Found parking spot": "Odczytano miejsce parkowania",
         "Clear parking spot": "Usuń miejsce parkowania",
+        "Read an email": "Przeczytano e-mail",
+        "Complete a task": "Ukończ zadanie",
+        "Move a task": "Przesuń zadanie",
+        "Add ingredients to a list": "Dodaj składniki do listy",
     ]
 
     /// Doddy's own fixed notes, in Polish. Built from the same text the app writes, so they match.

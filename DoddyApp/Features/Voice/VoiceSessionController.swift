@@ -73,6 +73,8 @@ final class VoiceSessionController {
         case undo(toolCallID: String, entry: ActivityEntry)
         /// "Save your parking spot here?" (ADR-292): the position read just now, and the user's note.
         case parking(toolCallID: String, spot: ParkingSpot)
+        /// A dish's ingredients with ticks (ADR-296); `alreadyOpen` start unticked.
+        case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
 
         var toolCallID: String {
             switch self {
@@ -80,7 +82,8 @@ final class VoiceSessionController {
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
-                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _):
+                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _),
+                 .ingredients(let id, _, _, _, _, _):
                 id
             }
         }
@@ -809,6 +812,26 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
         case .undo(let id, let entry):
             await reply(id, await undoFromVoice(entry))
+        case .ingredients(let id, let listID, let listName, let dish, let items, _):
+            // Only the ticked ones, through the same add as add_to_list (ADR-296).
+            let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
+            let leftOut = items.indices.filter { ingredientsUnticked.contains($0) }.map { items[$0] }
+            ingredientsUnticked = []
+            guard !ticked.isEmpty else {
+                await reply(id, VoiceToolReply.ingredientsNoneTicked)
+                return
+            }
+            do {
+                let result = try await store.addToList(ticked, listID: listID, source: .voice)
+                listReceipt = ListReceipt(
+                    listID: listID, title: result.added.isEmpty ? "Nothing new for \(listName)" : "Added to \(listName)",
+                    lines: result.added.map { .added($0.text) } + result.alreadyThere.map { .note("\($0) · already on the list, not added again") },
+                    undo: result.added.isEmpty ? nil : store.listUndo)
+                let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: listID, list: listName, items: result.added)
+                await reply(id, VoiceToolReply.ingredientsAdded(result, list: listName, dish: dish, leftOut: leftOut), undo: undo)
+            } catch {
+                await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
+            }
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-292).
             await reply(id, ParkingStore.save(spot) ? VoiceToolReply.parkingSaved(spot, now: Date(), calendar: .current) : VoiceToolReply.parkingNotSaved)
@@ -951,6 +974,9 @@ final class VoiceSessionController {
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
+        case .ingredients(let id, _, _, _, _, _):
+            ingredientsUnticked = []
+            await reply(id, VoiceToolReply.ingredientsDeclined)
         case .bulk(let id, _, _, _):
             bulkUnticked = []
             await reply(id, VoiceToolReply.bulkDeclined)
@@ -1614,6 +1640,12 @@ final class VoiceSessionController {
             await reply(call.toolCallId, VoiceToolReply.conversion(request))
         case .parkingSpot(let action):
             await handleParking(action, toolCallID: call.toolCallId)
+        case .addIngredients(let proposal):
+            guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
+            let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
+            ingredientsUnticked = open
+            propose(.ingredients(toolCallID: call.toolCallId, listID: list.id, listName: list.name, dish: proposal.dish,
+                                 items: proposal.items, alreadyOpen: open), toolCallID: call.toolCallId)
         case .convertCurrency(let request):
             // The ECB's public rates file, fetched by the app (ADR-291); the last rates kept are
             // used, with their date, when newer ones can't be fetched.
@@ -2246,6 +2278,13 @@ final class VoiceSessionController {
     /// Items the user unticked on the several-changes card. Everything starts ticked.
     private(set) var bulkUnticked: Set<String> = []
 
+    /// Ingredients the user unticked on the card (ADR-296), by position.
+    private(set) var ingredientsUnticked: Set<Int> = []
+
+    func toggleIngredient(_ index: Int) {
+        if ingredientsUnticked.contains(index) { ingredientsUnticked.remove(index) } else { ingredientsUnticked.insert(index) }
+    }
+
     func toggleBulkItem(_ id: String) {
         if bulkUnticked.contains(id) { bulkUnticked.remove(id) } else { bulkUnticked.insert(id) }
     }
@@ -2581,7 +2620,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .translator, .plan, .undo: false

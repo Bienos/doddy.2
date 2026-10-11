@@ -181,6 +181,8 @@ public struct ActivityRequest: Equatable, Sendable {
             case .find: return ActivityRequest(app: .memories, title: "Found parking spot", detail: nil, isLookup: true)
             case .clear: return ActivityRequest(app: .memories, title: "Clear parking spot", detail: nil, isLookup: false)
             }
+        case .addIngredients(let proposal):
+            return ActivityRequest(app: .memories, title: "Add ingredients to a list", detail: "“\(proposal.list)” · \(proposal.dish)", isLookup: false)
         case .convertCurrency(let request):
             // Only that the rates file was fetched; the amount stays in the conversation (ADR-291).
             return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
@@ -197,6 +199,9 @@ public struct ActivityRequest: Equatable, Sendable {
         switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
+        case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
+        case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
+        case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)
         case CloudToolName.findDriveFile: ActivityRequest(app: .drive, title: "Looked for a file", detail: nil, isLookup: true)
         case CloudToolName.searchNotion: ActivityRequest(app: .notion, title: "Searched Notion", detail: nil, isLookup: true)
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
@@ -302,6 +307,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
         // A delete, checked by looking again (ADR-259 on the default line).
         if text.hasPrefix("deleted:") { return (.done, nil) }
+        // Round 4 (ADR-292, ADR-294): a parking spot removed and checked; a Todoist task moved,
+        // with the due Todoist sent back.
+        if text.hasPrefix("cleared:") || text.hasPrefix("moved: Todoist task") { return (.done, nil) }
         if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
         // Lists (ADR-216), answered from the store's own result (ADR-272). Something was added,
         // ticked, removed or a list was made; or nothing was, and why.
