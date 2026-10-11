@@ -240,6 +240,10 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(parse("set_timer", #"{}"#), .invalid(name: "set_timer", reason: "missing duration"))
         XCTAssertEqual(parse("set_timer", #"{"minutes":-5}"#), .invalid(name: "set_timer", reason: "negative duration"))
         XCTAssertEqual(parse("set_timer", #"{"minutes":1500}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        // Review C6: a value no Int can hold is refused, not a crash.
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1e300}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        XCTAssertEqual(parse("set_timer", #"{"seconds":1e19}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
+        XCTAssertEqual(parse("set_timer", #"{"minutes":1e308,"seconds":1e308}"#), .invalid(name: "set_timer", reason: "timer is longer than 24 hours"))
     }
 
     func testMapAndShortcutNeedTheirText() {

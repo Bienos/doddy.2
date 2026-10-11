@@ -359,9 +359,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
         let minutes = args.number("minutes") ?? 0
         let seconds = args.number("seconds") ?? 0
         guard minutes >= 0, seconds >= 0 else { return .invalid(name: name, reason: "negative duration") }
-        let total = Int((minutes * 60 + seconds).rounded())
+        // Checked as a Double first: Int(_:) traps on a value it can't hold (review C6).
+        let length = (minutes * 60 + seconds).rounded()
+        guard length.isFinite, length <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
+        let total = Int(length)
         guard total >= 1 else { return .invalid(name: name, reason: "missing duration") }
-        guard total <= 86_400 else { return .invalid(name: name, reason: "timer is longer than 24 hours") }
         return .setTimer(TimerDraft(seconds: total, label: args.text("label")))
     }
 
