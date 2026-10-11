@@ -123,7 +123,9 @@ public enum PlanProposal {
                 return .refused("failed: step \(number) of the plan has no tool. Nothing was done.")
             }
             guard PlanTool.allowed.contains(tool) else {
-                return .refused("failed: step \(number) (\(tool)) can't be part of a plan; a plan may only use \(PlanTool.allowed.joined(separator: ", ")). Call \(tool) on its own instead. Nothing was done.")
+                // The name is the agent's words (maybe no tool at all), so it follows as data (ToolData).
+                return .refused("failed: step \(number) can't be part of a plan; a plan may only use \(PlanTool.allowed.joined(separator: ", ")). Call the tool below on its own instead. Nothing was done.\n"
+                    + ToolData.block([VoiceToolReply.quoted("Tool", tool)]))
             }
             let data = (try? JSONSerialization.data(withJSONObject: fields)) ?? Data("{}".utf8)
             let request = VoiceToolRequest.parse(name: tool, parametersJSON: data, now: now, calendar: calendar)
@@ -135,7 +137,9 @@ public enum PlanProposal {
                 steps.append(PlanStep(number: number, toolName: tool, request: request))
             case .needsClarification(_, let clarification):
                 // The whole plan waits for the answer, so no step runs on a guessed time.
-                return .refused("failed: not added yet: step \(number) (\(tool)): \(clarification.problem). Ask the user \(clarification.question), then call \(VoiceToolName.proposePlan) again with their answer. Nothing was done.")
+                // The problem quotes what the agent sent, so it follows as data (ToolData).
+                return .refused("failed: not added yet: step \(number) (\(tool)): the day or time can't be used as sent; the problem is below. Ask the user \(clarification.question), then call \(VoiceToolName.proposePlan) again with their answer. Nothing was done.\n"
+                    + VoiceToolReply.problemData(clarification))
             case .invalid(_, let reason):
                 return .refused("failed: step \(number) (\(tool)) was incomplete (\(reason)). Nothing was done.")
             default:

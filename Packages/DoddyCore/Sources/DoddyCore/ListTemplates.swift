@@ -90,11 +90,16 @@ public struct ListTemplates: Equatable, Sendable {
 }
 
 extension VoiceToolReply {
+    /// The name asked for (the agent's words) and the user's template names follow as data (ToolData).
     public static func templateNotFound(_ name: String, templates: ListTemplates) -> String {
-        let names = templates.all.map { "\"\($0.name)\"" }.joined(separator: ", ")
-        return "not found: there is no list template called \"\(name)\". Nothing was made. "
-            + (templates.all.isEmpty
-                ? "The user has no templates yet; they can save one from a list's menu in Doddy (Save as template)."
-                : "Their templates: \(names). Ask which one they mean.")
+        let asked = quoted("Asked for", name)
+        guard !templates.all.isEmpty else {
+            return "not found: there is no list template with the name below. Nothing was made. "
+                + "The user has no templates yet; they can save one from a list's menu in Doddy (Save as template).\n"
+                + ToolData.block([asked])
+        }
+        return "not found: there is no list template with the name below. Nothing was made. "
+            + "Ask which one they mean. The name asked for, then their templates:\n"
+            + ToolData.block([asked] + templates.all.map { "- \"\(ToolData.clean($0.name))\"" })
     }
 }

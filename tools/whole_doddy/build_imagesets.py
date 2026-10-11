@@ -11,6 +11,13 @@ world/ (021-036) and the cut outputs in <cuts dir>:
     cut_frames.py numbered/020_doddy_talking_v03.png <cuts>/talking   (6 frames)
     cut_panels.py trans/038_trans_page_v01.png <cuts>/page            (4 panels)
 and, for ADR-313, the strips cut with `--shared` into <strips dir> (see STRIPS below).
+For ADR-380 the same <strips dir> also holds the wave strip and the storyboard panels:
+    cut_frames.py numbered/016_doddy_wave_v01.png <strips>/wave --rows-max-y 620 --shared
+    cut_storyboards.py trans/037_trans_phone_v01.png <strips>/phone --trim-top 0.09
+    cut_storyboards.py trans/039_trans_door_v01.png <strips>/door --trim-top 0.09
+    cut_storyboards.py trans/040_trans_ink_v01.png <strips>/ink
+    cut_storyboards.py trans/041_rw_keys_storyboard_v01.png <strips>/keys --trim-top 0.13 \
+        --trim-left 0.13 --sides tlltll
 """
 import json
 import os
@@ -101,6 +108,7 @@ def main(pack, cuts, root, strips=None):
         build_313(pack, strips, app, widgets)
         build_314(pack, root, app, widgets)
         build_324(strips, root, app, widgets)
+        build_380(strips, app)
     print("done")
 
 
@@ -170,6 +178,20 @@ def build_324(strips, root, app, widgets):
     write_json(os.path.join(folder, "Contents.json"), {"images": [
         {"filename": "art@2x.png", "idiom": "universal", "scale": "2x"},
     ], "info": INFO})
+
+
+# ADR-380: the storyboards and how many panels each has.
+STORYBOARDS = [("phone", 4), ("door", 4), ("ink", 4), ("keys", 6)]
+
+
+def build_380(strips, app):
+    """The whole wave (016) as a strip, and the phone, door, ink and keys storyboards."""
+    for i in range(1, 6):
+        frame = Image.open(os.path.join(strips, f"wave_{i}.png")).convert("RGBA")
+        scaled_set(app, f"DoddyMotion_wave_{i}", frame, (200, 300))
+    for name, count in STORYBOARDS:
+        for i in range(1, count + 1):
+            photo_set(app, f"Story_{name}_{i}", Image.open(os.path.join(strips, f"{name}_{i}.jpg")), width=420)
 
 
 if __name__ == "__main__":
