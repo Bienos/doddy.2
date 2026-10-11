@@ -57,6 +57,30 @@ final class ServerClientFailureTests: XCTestCase {
         XCTAssertEqual(sent[0].timeout, ServerRequest.defaultTimeout)
     }
 
+    func testARetriedUpdateKeepsItsIdempotencyKeyUntilTheServerAcceptsIt() async throws {
+        let accepted = ServerResponse(status: 202, body: Data(#"{"messages":[]}"#.utf8))
+        let transport = StepTransport([.failure(URLError(.timedOut)), .success(accepted), .success(accepted)])
+        let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
+        do {
+            _ = try await client.sendUpdate("Hi", channels: [.sms])
+            XCTFail("expected offline")
+        } catch {
+            XCTAssertEqual(error as? ServerError, .offline)
+        }
+        _ = try await client.sendUpdate("Hi", channels: [.sms])
+        _ = try await client.sendUpdate("Hi", channels: [.sms])
+        let keys = try await transport.sent.map { request in
+            try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.body)) as? [String: Any])["idempotencyKey"] as? String
+        }
+        XCTAssertEqual(keys[0], keys[1], "the retry is the same update")
+        XCTAssertNotEqual(keys[1], keys[2], "once accepted, sending again is a new update")
+    }
+
+    func testIdempotencyMismatchIsNotReadAsAChannelThatIsOff() {
+        let response = ServerResponse(status: 409, body: Data(#"{"error":"idempotency_mismatch"}"#.utf8))
+        XCTAssertEqual(DoddyServerClient.error(from: response), .invalidRequest(fields: ["idempotencyKey"]))
+    }
+
     func testOnlyErrorsBeforeTheRequestLeftCountAsNotSent() {
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.notConnectedToInternet)))
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.cannotConnectToHost)))

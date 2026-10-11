@@ -190,6 +190,8 @@ private extension Character {
 public actor DoddyServerClient {
     private let transport: any ServerTransport
     private let credentials: any ServerCredentialStore
+    /// Idempotency keys of updates not yet accepted by the server, by text and channels.
+    private var pendingUpdateKeys: [UpdateBody: String] = [:]
 
     public init(transport: any ServerTransport, credentials: any ServerCredentialStore) {
         self.transport = transport
@@ -242,6 +244,19 @@ public actor DoddyServerClient {
 
     public func removePhone() async throws {
         try await expect(204, .delete, "/v1/phone")
+    }
+
+    /// Sends with one idempotency key per intent: sending the same text to the same channels
+    /// again after a failure reuses the key, so if the first try did reach the server it still
+    /// goes out once (DOD-08). The key is dropped once the server has accepted the update, so a
+    /// later send of the same text is a new update.
+    public func sendUpdate(_ text: String, channels: [UpdateChannel]) async throws -> [QueuedUpdate] {
+        let intent = UpdateBody(text: text, channels: channels, idempotencyKey: "")
+        let key = pendingUpdateKeys[intent] ?? UUID().uuidString
+        pendingUpdateKeys[intent] = key
+        let queued = try await sendUpdate(text, channels: channels, idempotencyKey: key)
+        pendingUpdateKeys[intent] = nil
+        return queued
     }
 
     public func sendUpdate(_ text: String, channels: [UpdateChannel], idempotencyKey: String) async throws -> [QueuedUpdate] {
@@ -328,6 +343,8 @@ public actor DoddyServerClient {
         case (400, "unsafe_url"): return .unsafeURL
         case (400, "no_topics"): return .notEnabled("no_topics")
         case (422, "not_a_feed"): return .notAFeed
+        // The key was used before for a different update; the server sent nothing new.
+        case (409, "idempotency_mismatch"): return .invalidRequest(fields: ["idempotencyKey"])
         case (400, _): return .invalidRequest(fields: body?.fields ?? [])
         case (401, _): return .accountMissing
         case (404, "no_verified_phone"), (409, _): return .notEnabled(code)
@@ -348,7 +365,7 @@ private struct PushTokenBody: Encodable { let token: String; let environment: Pu
 private struct PhoneBody: Encodable { let phone: String }
 private struct CodeBody: Encodable { let phone: String; let code: String }
 private struct ConsentBody: Encodable { let consent: Bool; let textVersion: String? }
-private struct UpdateBody: Encodable { let text: String; let channels: [UpdateChannel]; let idempotencyKey: String }
+private struct UpdateBody: Encodable, Hashable { let text: String; let channels: [UpdateChannel]; let idempotencyKey: String }
 private struct QueuedList: Decodable { let messages: [QueuedUpdate] }
 private struct ErrorBody: Decodable { let error: String?; let fields: [String]? }
 
