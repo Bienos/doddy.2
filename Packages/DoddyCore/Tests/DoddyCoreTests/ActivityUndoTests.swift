@@ -291,6 +291,31 @@ final class ActivityUndoTests: XCTestCase {
         XCTAssertEqual(ActivityUndo.reversed(plan), EventChange.reversed(plan))
     }
 
+    /// A change by voice that also set a place or added a note line (ADR-281) comes back whole.
+    func testUndoPutsBackAPlaceAndTakesOffAnAddedNoteLine() throws {
+        let before = event(start: date(12, 9), id: "E1@1")
+        let after = event(start: date(12, 10), id: "E1@2")
+        let plan = EventChangePlan(before: before, after: after, locationBefore: "Old clinic", newLocation: "New clinic", addNote: "Bring the card")
+        let back = ActivityUndo.reversed(plan)
+        XCTAssertEqual(back.after.start, before.start)
+        XCTAssertEqual(back.locationBefore, "New clinic")
+        XCTAssertEqual(back.newLocation, "Old clinic")
+        XCTAssertNil(back.addNote)
+        XCTAssertEqual(back.removeNote, "Bring the card")
+        XCTAssertEqual(EventChange.notes("Parking at the back\nBring the card", removing: "Bring the card"), .some("Parking at the back"))
+
+        // No place before: Undo clears the one Doddy set. Only a note: the place is left alone.
+        let placed = ActivityUndo.reversed(EventChangePlan(before: before, after: after, locationBefore: nil, newLocation: "Clinic"))
+        XCTAssertEqual(placed.newLocation, "")
+        let noted = ActivityUndo.reversed(EventChangePlan(before: before, after: before, addNote: "Bring the card"))
+        XCTAssertNil(noted.newLocation)
+        XCTAssertEqual(noted.removeNote, "Bring the card")
+
+        // The plan, place and note included, survives being saved with the row.
+        let undo = ActivityUndo.changedEvent(plan)
+        XCTAssertEqual(try JSONDecoder().decode(ActivityUndo.self, from: JSONEncoder().encode(undo)), undo)
+    }
+
     // MARK: Lists (ADR-276)
 
     private let listID = UUID()
