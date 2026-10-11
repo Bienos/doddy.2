@@ -92,6 +92,49 @@ final class ConnectedAppsContractTests: XCTestCase {
         XCTAssertFalse(BackendConnectedAppsClient.isAllowed(URL(string: "ftp://doddy.example.com")!))
         XCTAssertFalse(BackendConnectedAppsClient.isAllowed(URL(string: "https://doddy.example.com?x=1")!))
     }
+
+    func testReleaseBuildsRefusePlainHTTPEvenToLoopback() {
+        XCTAssertFalse(BackendConnectedAppsClient.isAllowed(URL(string: "http://127.0.0.1:8787")!, allowLoopbackHTTP: false))
+        XCTAssertFalse(BackendConnectedAppsClient.isAllowed(URL(string: "http://localhost:8787")!, allowLoopbackHTTP: false))
+        XCTAssertTrue(BackendConnectedAppsClient.isAllowed(URL(string: "https://doddy.example.com")!, allowLoopbackHTTP: false))
+    }
+
+    func testABoundTokenIsSentOnlyToTheServerThatIssuedIt() async throws {
+        let issuer = URL(string: "https://doddy.example.com")!
+        let bound = try XCTUnwrap(BoundSessionToken(token: "secret", issuedBy: issuer))
+        XCTAssertEqual(bound.token(for: URL(string: "https://DODDY.example.com:443/v1")!), "secret")
+        XCTAssertNil(bound.token(for: URL(string: "https://other.example.com")!))
+        XCTAssertNil(bound.token(for: URL(string: "https://doddy.example.com:8443")!))
+
+        let transport = BearerRecorder()
+        let moved = try XCTUnwrap(BackendOnlineAccountsClient(
+            baseURL: URL(string: "https://other.example.com")!, boundToken: { bound }, transport: transport))
+        do {
+            _ = try await moved.catalog()
+            XCTFail("expected notConfigured")
+        } catch {
+            XCTAssertEqual(error, .notConfigured)
+        }
+        let apps = try XCTUnwrap(BackendConnectedAppsClient(
+            baseURL: URL(string: "https://other.example.com")!, boundToken: { bound }, transport: transport))
+        do {
+            _ = try await apps.status()
+            XCTFail("expected notConfigured")
+        } catch {
+            XCTAssertEqual(error, .notConfigured)
+        }
+        let sent = await transport.authorizations
+        XCTAssertEqual(sent, [], "the token never left for another host")
+    }
+}
+
+private actor BearerRecorder: HTTPTransport {
+    private(set) var authorizations: [String?] = []
+
+    func send(_ request: HTTPRequest) async throws -> (status: Int, body: Data) {
+        authorizations.append(request.headers["authorization"])
+        return (500, Data())
+    }
 }
 
 final class ConnectedAppsSupportTests: XCTestCase {

@@ -41,6 +41,8 @@ extension VoiceToolReply {
         case .unreadableResponse:
             return isWrite ? maybeDone : "failed: Doddy's server sent an answer the app couldn't read, so nothing is shown."
         case .server(let code, _, _, let receipt):
+            // The server's own receipt outranks the code: it recorded that the provider may have done it.
+            if receipt?.status == .outcomeUnknown { return maybeDone }
             switch code {
             case "capability_disabled":
                 if receipt?.errorCode == "confirmation_required" {
@@ -56,11 +58,12 @@ extension VoiceToolReply {
             case "rate_limited", "quota_exceeded", "busy":
                 return "failed: \(account) or Doddy's usage limit says to wait. Tell the user to try again later. Nothing was done."
             case "provider_timeout", "provider_unavailable":
-                return isWrite || receipt?.status == .outcomeUnknown ? maybeDone : "failed: \(account) couldn't be reached. Nothing was changed."
+                return isWrite ? maybeDone : "failed: \(account) couldn't be reached. Nothing was changed."
             case "malformed_provider_result":
                 return isWrite ? maybeDone : "failed: \(account) sent an answer Doddy couldn't read, so there is nothing to report."
             default:
-                return "failed: that didn't work. Nothing was done."
+                // A code this app doesn't know can't prove a write didn't happen.
+                return isWrite ? maybeDone : "failed: that didn't work. Nothing was done."
             }
         }
     }

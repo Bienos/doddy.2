@@ -215,6 +215,31 @@ final class CloudToolVoiceTests: XCTestCase {
             "declined: the user chose not to do \"Add a task\". Nothing was done.")
     }
 
+    func testAWriteWithAnUnknownCodeOrAnOutcomeUnknownReceiptIsNeverNothingWasDone() throws {
+        func serverError(_ code: String, receiptStatus: String?) throws -> OnlineAccountsError {
+            let receipt = receiptStatus.map {
+                #","receipt":{"operationId":"\#(UUID().uuidString)","operation":"write","toolkit":"todoist","tool":"add_todoist_task","timestamp":"2026-10-11T09:00:00Z","mode":"live","status":"\#($0)","summary":"Add task","errorCode":null,"providerReference":null}"#
+            } ?? ""
+            let body = #"{"error":{"code":"\#(code)","message":"m","correlationId":"c"\#(receipt)}}"#
+            do {
+                _ = try BackendOnlineAccountsClient.decode(status: 500, data: Data(body.utf8)) as RunResult
+                XCTFail("a 500 must decode to an error")
+                return .unreadableResponse
+            } catch {
+                XCTAssertEqual(error.code, code)
+                return error
+            }
+        }
+        // A code this app doesn't know.
+        let unlisted = try serverError("internal_error", receiptStatus: nil)
+        XCTAssertTrue(VoiceToolReply.cloudFailed(unlisted, tool: "add_todoist_task").hasPrefix("unknown:"))
+        XCTAssertTrue(VoiceToolReply.cloudFailed(unlisted, tool: "check_email").hasPrefix("failed:"), "a read changed nothing")
+        // A listed code, but the server's receipt says the provider may have done it.
+        let limited = try serverError("rate_limited", receiptStatus: "outcome_unknown")
+        XCTAssertTrue(VoiceToolReply.cloudFailed(limited, tool: "add_todoist_task").hasPrefix("unknown:"))
+        XCTAssertFalse(VoiceToolReply.cloudFailed(limited, tool: "add_todoist_task").contains("Nothing was done"))
+    }
+
     private func failure(_ name: String) throws -> OnlineAccountsError? {
         do {
             _ = try BackendOnlineAccountsClient.decode(status: 403, data: try fixture(name)) as RunResult

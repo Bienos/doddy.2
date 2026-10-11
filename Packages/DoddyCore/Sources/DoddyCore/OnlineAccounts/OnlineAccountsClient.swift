@@ -57,6 +57,11 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
         self.transport = transport
     }
 
+    /// Same, with a token that is sent only to the server it was issued for.
+    public init?(baseURL: URL, boundToken: @escaping @Sendable () -> BoundSessionToken?, transport: any HTTPTransport) {
+        self.init(baseURL: baseURL, sessionToken: { boundToken()?.token(for: baseURL) }, transport: transport)
+    }
+
     public func catalog() async throws(OnlineAccountsError) -> ToolsCatalog {
         try await call("GET", "v1/tools", body: Optional<JSONValue>.none)
     }

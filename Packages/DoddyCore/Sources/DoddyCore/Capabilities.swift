@@ -123,10 +123,12 @@ public struct CapabilityCatalog: Sendable {
     }
 
     /// What the app ships (ADR-190): `withMessaging` plus reminders on notes, which are local
-    /// notifications and need no server.
+    /// notifications and need no server, and the lists the user shares through iCloud (ADR-263),
+    /// which are the only thing that syncs.
     public static func shipping(serverConfigured: Bool) -> CapabilityCatalog {
         CapabilityCatalog(statuses: withMessaging(serverConfigured: serverConfigured).statuses.merging([
             .noteReminders: .available,
+            .cloudSync: .limited("Only lists you share, through iCloud; notes don't sync between devices"),
         ]) { _, new in new })
     }
 }
