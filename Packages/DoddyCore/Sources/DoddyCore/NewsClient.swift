@@ -104,7 +104,7 @@ public struct NewsDigest: Equatable, Sendable, Decodable, Identifiable {
     }
 
     public let id: UUID
-    /// queued (handed to notifications/texts), ready (kept for the app only, nothing sent),
+    /// queued (in the server's outbox for notifications/texts), ready (kept for the app only, nothing sent),
     /// empty (nothing new), failed, building.
     public let status: String
     public let aiWritten: Bool
@@ -117,7 +117,8 @@ public struct NewsDigest: Equatable, Sendable, Decodable, Identifiable {
     /// How this digest reached the user, never claiming more than the server recorded.
     public var deliveryText: String {
         switch status {
-        case "queued": "Sent to you"
+        // In the server's outbox; whether Apple or Twilio took it is recorded per message, not here.
+        case "queued": "Queued for your notifications or texts"
         case "ready": errorCode == "no_channel"
             ? "Only here: notifications or texts weren't on, so nothing was sent"
             : "In the app only"
