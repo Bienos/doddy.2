@@ -114,15 +114,15 @@ No critical issues found. Several areas are solid and well tested:
 
 | # | Status | Commit |
 |---|---|---|
-| 1 | fixed: `VERCEL_ENV=production` requires the shared store | `see git log` "require the shared limits store" |
-| 2 | fixed: `reasoning.effort=low` for gpt-5/o-series; a cut-off answer logs `cause=outputLimit` and is billed at reported usage. **Not verified against the real API.** | "low reasoning effort" |
-| 3 | fixed: `::ffff:a.b.c.d` unwrapped to IPv4; the test fails on the old code | "separate IPv4-mapped clients" |
-| 4 | fixed: `cause=noClientAddress` logged on registration | same commit |
-| 5 | fixed: set-but-invalid integer settings → `503 notConfigured` naming the variable | "refuse invalid rate-limit settings" |
-| 6 | fixed: catch-all logs `cause=unexpected` | "log cause=unexpected" |
-| 7 | fixed: a retry first reserves one more estimate (skipped if over a cap); the failed attempt keeps its estimate booked. My first version reserved 2× up front; that was replaced because it halved the largest request the default budget allows. | "count a retried 5xx" + "reserve a retry's budget only when" |
-| 8 | fixed: `inv:<tag>` budget scope, `DAILY_BUDGET_PER_INVITE_USD` (default half the daily budget) | "per-invite daily budget" |
-| 9 | fixed: `bodyBytes` raised to 128 KiB; tested with a request at every limit using 4-byte characters | "raise the request body limit" |
+| 1 | fixed: `VERCEL_ENV=production` requires the shared store | `4aa95ce` |
+| 2 | fixed: `reasoning.effort=low` for gpt-5/o-series; a cut-off answer logs `cause=outputLimit` and is billed at reported usage. **Not verified against the real API.** | `c95dbff` |
+| 3 | fixed: `::ffff:a.b.c.d` unwrapped to IPv4; the test fails on the old code | `aeeb506` |
+| 4 | fixed: `cause=noClientAddress` logged on registration | `aeeb506` |
+| 5 | fixed: set-but-invalid integer settings → `503 notConfigured` naming the variable | `ecf2a99` |
+| 6 | fixed: catch-all logs `cause=unexpected` | `e953922` |
+| 7 | fixed: a retry first reserves one more estimate (skipped if over a cap); the failed attempt keeps its estimate booked. My first version reserved 2× up front; that was replaced because it halved the largest request the default budget allows. | `108873e`, `fd62a17` |
+| 8 | fixed: `inv:<tag>` budget scope, `DAILY_BUDGET_PER_INVITE_USD` (default half the daily budget) | `408f9f8` |
+| 9 | fixed: `bodyBytes` raised to 128 KiB; tested with a request at every limit using 4-byte characters | `e056c6b` |
 | Prompt-only action claims | unchanged: documented as a claim limit, with no code check added | — |
 
 Tests after the fixes: `npm test` → **73 pass, 0 fail**; `npm run typecheck` clean (Node 22.22).
