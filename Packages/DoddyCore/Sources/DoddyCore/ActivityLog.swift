@@ -105,7 +105,8 @@ public struct ActivityRequest: Equatable, Sendable {
         case .leaveBy(let request):
             return ActivityRequest(
                 app: .maps, title: "Remind when to leave",
-                detail: "“\(request.place)” · arrive by \(when(request.arriveBy, hasTime: true))", isLookup: false)
+                detail: "“\(request.place)” · arrive by \(when(request.arriveBy, hasTime: true))", isLookup: false,
+                operationKey: LeaveByIdempotency.key(request))
         case .findFreeTime(let request):
             let range = request.range(calendar: .current)
             return ActivityRequest(

@@ -91,6 +91,10 @@ enum ActionStatusText {
         ("Rings at ", "Dzwoni o "),
         ("Alarm ", "Budzik "),
         ("Repeats ", "Powtarza się: "),
+        // Leave reminders (LeaveByActions).
+        ("Leave at ", "Wyjście o "),
+        ("Place: ", "Miejsce: "),
+        ("Arrive by ", "Na miejscu do "),
     ]
 
     static let polishSummaries: [String: String] = [

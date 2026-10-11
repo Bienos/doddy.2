@@ -327,6 +327,9 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | AS13 | Live server + real Todoist: ask Doddy to add a task, tap Add, and turn on Airplane mode right after the tap; turn it off | Doddy asks the server once more with the same confirmation: "added", one task in Todoist. Never two |
 | AS14 | Same, with Gmail: create a draft, cut the connection mid-way, then ask for the same draft again | The card says an earlier try may have gone through and to check Gmail; Gmail has at most the drafts you confirmed |
 | AS15 | With "List my tasks" on: make a task's answer get lost (server timeout), then ask for the same task | Doddy says it's already in Todoist and shows no card; with "List my tasks" off it shows the card with the warning line |
+| AS16 | Ask "remind me when to leave for the dentist to be there by 10"; Set reminder; then ask exactly the same again and tap Set reminder | The second says it was already set; one notification arrives; What Doddy did shows "Leave at …" from iOS |
+| AS17 | Draft an Outlook email by voice with a weak connection (Network Link Conditioner, 100% loss after the tap, then off) | One draft in Outlook; the row is Confirmed with "Answer from the first try" or Not sure, never two drafts |
+| AS18 | Same as AS17 with "draft a reply to Anna" (Gmail) | One reply draft; the repeated answer names no recipient or words |
 
 ## 4n. Voice session recovery (ADR-360, `SESSION_RECOVERY_STATUS.md`)
 | # | Do this | Expect |

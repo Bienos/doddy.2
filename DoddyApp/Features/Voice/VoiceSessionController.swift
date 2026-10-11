@@ -269,6 +269,7 @@ final class VoiceSessionController {
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     private let devices = DeviceConnections()
     private let alarmWriter = AlarmKitWriter()
+    private let leaveByWriter = LeaveByScheduler()
     private var conversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
     private(set) var provider: VoiceProvider = .elevenLabs
@@ -913,12 +914,18 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
         case .leaveBy(let id, let plan):
-            // A local notification at the leave time, read back from iOS (ADR-335).
-            switch await LeaveByScheduler.schedule(plan) {
-            case .scheduled: await reply(id, VoiceToolReply.leaveBySet(plan, calendar: .current))
-            case .notAllowed: await reply(id, VoiceToolReply.leaveByNotAllowed)
-            case .failed: await reply(id, VoiceToolReply.leaveByFailed)
+            // A local notification at the leave time, read back from iOS (ADR-335). Doddy looks for
+            // the same one first, so asking again never sets a second (LeaveByActions).
+            let outcome = await LeaveBySetAction.set(plan, with: leaveByWriter)
+            var result = WriteResult(reply: VoiceToolReply.leaveBy(outcome, plan: plan, calendar: .current), attempted: outcome.attemptedWrite)
+            switch outcome {
+            case .set(let pending), .alreadySet(let pending):
+                result.receipt = ActivityReceipt(leaveBy: pending, plan: plan, calendar: .current, readAt: Date())
+            default:
+                break
             }
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-301).
             let saved = ParkingStore.save(spot)
@@ -2326,6 +2333,9 @@ final class VoiceSessionController {
     /// "Remind me when to leave" (ADR-335): one position, an Apple Maps search near it and the
     /// travel time; the card shows what Maps found. Nothing is set until Set reminder.
     private func handleLeaveBy(_ request: LeaveByRequest, toolCallID: String) async {
+        // No 3-try stop here (ADR-319's asks the user to look in the app, and a waiting leave
+        // reminder shows nowhere): setting always looks for the same one first, so asking again
+        // can't set a second.
         let location = PlaceLocation.shared
         var readiness = await location.readiness()
         if readiness == .notDetermined { readiness = await location.requestWhenInUse() }

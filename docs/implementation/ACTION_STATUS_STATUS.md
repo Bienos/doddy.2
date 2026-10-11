@@ -213,6 +213,44 @@ Owner instruction: "extend it to online accounts". Gmail drafts and Todoist task
 - The app wiring compiled with Xcode.
 - Mac checklist items AS13 to AS15.
 
+## Round 6's writes (ADR-363, owner: "go" for bringing them in)
+The default branch's round 6 added three writes after ADR-319 to ADR-322 were written: an Outlook email draft, "Remind me when to leave", and (earlier, ADR-316) the Gmail reply draft.
+
+### What was wrong
+- **Outlook draft and Gmail reply draft:** the server kept no provider id for either one and had no answer to give a repeat.
+  - The phone repeats a confirmed write once when the answer is lost on the way (ADR-322).
+  - That repeat got "the first try may or may not have gone through" even when the draft had been made, so the row stayed "Not sure".
+- **"Remind me when to leave":** it was scheduled under a random identifier, with no look first. Asking again made a second notification for the same trip.
+  - A failed `add` said "Nothing was set" without looking.
+  - The entry kept no receipt and no key.
+
+### What it does now
+- **Server (`backend/src/tools/catalog.ts`):** both drafts return the provider's draft id (`externalId`) and have a `replay`.
+  - A repeat with the same confirmation gets the first answer (`replayed`) and nothing runs again.
+  - The reply draft's replay uses none of the request's words, because its email lookup can't be repeated the same way, as for Todoist's move and complete.
+  - The phone already treated both as keyed writes (`CloudToolName.writes`). Their rows now get the provider's id in the receipt, and the agent never hears it.
+- **Leave reminders (`LeaveByActions.swift`, core):**
+  - **Key:** the place (normalized), the arrival minute and the way of travel. Spare minutes don't make it a different trip.
+  - **Always looks first, as for alarms:** a waiting Doddy leave reminder with the same key counts as already set ("…was already set, so Doddy did not set a second one").
+  - **Read back:** a new one is scheduled as `doddy.leaveBy.<key>.<uuid>` and counts as set only when iOS lists it. After an error, a listed one still counts as set; if it isn't listed, it wasn't set; if the add worked but iOS doesn't list it, the result is "unknown".
+  - **Receipt:** when iOS will show it, the place, and the arrival time, with Polish labels.
+  - **No 3-try stop for leave reminders.** ADR-319's stop asks the user to look in the app, and a waiting leave reminder shows nowhere. Asking again can't make a second one, because Doddy always looks first.
+- **App:** `LeaveByScheduler` is now the `LeaveByWriter`. The confirm path logs it "in progress" first, as before, then keeps the receipt and whether it wrote.
+
+### Verified (Linux)
+- **Tests:** `LeaveByActionsTests` (5) pass.
+- **Backend:** 198 tests pass. The Outlook and reply-draft tests now expect a repeat to be answered from the first run, with one provider call.
+- **Planted bugs**, each caught and then restored:
+  - setting without looking first: 4 failures;
+  - the Outlook draft without a replay: 1 failure.
+- **App:** `swiftc -parse` on the controller and the scheduler.
+
+### NOT RUN / unverified
+- **Not built or run:** not compiled with Xcode. Not run against live Outlook or Gmail.
+- **Not tried on a device:** that iOS lists the leave notification's `nextTriggerDate`.
+- **Not settled:** an unsure leave reminder isn't checked when "What Doddy did" opens; it is checked at the next request.
+- **Checklist:** Mac checklist items AS16 to AS18.
+
 ## Polish (follow-up, owner: "do the Polish pass")
 Text is kept in English and translated when it is shown, as for the rest of What Doddy did (ADR-275). `ActionStatusText.swift` covers:
 - **Statuses:** status names (`ActionStatus.text(_:)`) and the history line (`ActivityEntry.historyText`).

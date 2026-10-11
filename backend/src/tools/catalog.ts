@@ -997,8 +997,18 @@ export const DRAFT_EMAIL_REPLY: CloudToolDefinition = {
       count: 1,
       truncated: false,
       summary: "Gmail reply draft created (not sent).",
+      externalId: data.id,
     };
   },
+  // A repeat of a run that succeeded (ADR-322): the email it answered can't be looked up again
+  // the same way, so the answer uses none of this request's words.
+  replay: (_args, externalId) => ({
+    text: "drafted: the Gmail reply draft from the first try was created; nothing ran again. It was NOT sent; the user sends it from Gmail.",
+    count: 1,
+    truncated: false,
+    summary: "Gmail reply draft created (not sent).",
+    ...(externalId ? { externalId } : {}),
+  }),
 };
 
 // ------------------------------------------------------------------ Notion: one page's text
@@ -1254,14 +1264,20 @@ export const DRAFT_OUTLOOK_EMAIL: CloudToolDefinition = {
     const data = dataOf(raw);
     // Only Outlook's draft id confirms it; an answer that says it isn't a draft is not "done" either.
     if (typeof data.id !== "string" || data.id === "" || data.isDraft === false) throw new ProviderError("malformed_provider_result");
-    return {
-      text: `drafted: Outlook draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Outlook.`,
-      count: 1,
-      truncated: false,
-      summary: "Outlook draft created (not sent).",
-    };
+    return { ...outlookDraftOutcome(args), externalId: data.id };
   },
+  // A repeat of a run that succeeded gets the first answer and nothing runs again (ADR-322).
+  replay: (args, externalId) => ({ ...outlookDraftOutcome(args), ...(externalId ? { externalId } : {}) }),
 };
+
+function outlookDraftOutcome(args: Record<string, unknown>): ToolOutcome {
+  return {
+    text: `drafted: Outlook draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Outlook.`,
+    count: 1,
+    truncated: false,
+    summary: "Outlook draft created (not sent).",
+  };
+}
 
 export const MAX_OUTLOOK_CALENDAR_DAYS = 31;
 export const MAX_OUTLOOK_EVENTS = 20;
