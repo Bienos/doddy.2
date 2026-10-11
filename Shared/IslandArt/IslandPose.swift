@@ -17,6 +17,8 @@ enum IslandPose: String, CaseIterable, Sendable {
     case basketballDribble = "basketball_dribble"
     /// Breathing (ADR-313): balancing on one leg.
     case onelegBalance = "oneleg_balance"
+    /// "Pause all connections" is on (ADR-323): crouching, lying low.
+    case sneakyCrouch = "sneaky_crouch"
 
     var assetName: String { "WholeDoddy_\(rawValue)" }
 
@@ -40,6 +42,7 @@ enum IslandPose: String, CaseIterable, Sendable {
         case .bellyReading: (17, 196, 384, 413)
         case .basketballDribble: (34, 83, 375, 467)
         case .onelegBalance: (10, 78, 389, 531)
+        case .sneakyCrouch: (77, 89, 338, 524)
         }
         return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
     }
@@ -132,12 +135,16 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
     case run
     /// 015: crouch, jump, land, stand. Once, when the last thing on a list is ticked.
     case jump
-    /// 018, frame 3 only: Doddy turned side-on. A still mark for "undone" in What Doddy did.
+    /// 018, frames 1–3: Doddy turns side-on. Once when an entry is undone in What Doddy did
+    /// (ADR-323); otherwise its last frame stands still as the "undone" mark.
     case turn
     /// 019: a burst, a star jump, a crouch, a wave. Once, when a note is saved.
     case pop
     /// 013: four breaths, standing. Once on Home, then he sits.
     case idle
+    /// 017: he sits down on a box (ADR-323). Once on Home after the idle breaths; then he stays
+    /// on the box for that launch.
+    case sit
 
     /// The frames the app ships, in order.
     var frames: [Int] {
@@ -145,9 +152,10 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .walk: Array(1...8)
         case .run: Array(1...6)
         case .jump: Array(1...5)
-        case .turn: [3]
+        case .turn: Array(1...3)
         case .pop: Array(1...4)
         case .idle: Array(1...4)
+        case .sit: Array(1...5)
         }
     }
 
@@ -159,8 +167,9 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .walk: 0.12
         case .run: 0.09
         case .jump, .pop: 0.12
-        case .turn: 1
+        case .turn: 0.16
         case .idle: 0.3
+        case .sit: 0.22
         }
     }
 
@@ -178,6 +187,7 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .turn: (103, 115, 298, 564)
         case .pop: (34, 142, 365, 579)
         case .idle: (97, 112, 303, 564)
+        case .sit: (37, 123, 362, 564)
         }
         return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
     }

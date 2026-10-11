@@ -458,9 +458,13 @@ struct SettingsView: View {
                 } header: {
                     Text("Connections")
                 } footer: {
-                    Text(pauseAllConnections
-                        ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
-                        : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    HStack(alignment: .top, spacing: 12) {
+                        // Paused: Doddy lies low, crouching (ADR-323).
+                        if pauseAllConnections { WholeDoddyView(pose: .sneakyCrouch, height: 56) }
+                        Text(pauseAllConnections
+                            ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
+                            : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    }
                 }
 
                 Section {
