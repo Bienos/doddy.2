@@ -20,9 +20,18 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
+    /// Memory on calls: a copy of the notes is on the Doddy messaging server (DOD-11).
+    @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
     /// Testing only (ADR-265): who runs Doddy's voice, ElevenLabs (default) or OpenAI Realtime.
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
     private var router: ShortcutRouter { .shared }
+
+    /// Where notes are kept, as switched on now: never "only on this iPhone" while a copy is on the server.
+    private var notesWhereText: String {
+        memoryCopyOn
+            ? NSLocalizedString("Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls.", comment: "")
+            : NSLocalizedString("Notes stay on this iPhone.", comment: "")
+    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -120,7 +129,7 @@ struct HomeView: View {
 
                     recent
 
-                    Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
+                    Text("Doddy is an AI, not a person. \(notesWhereText) While a conversation is open, they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("home.status")
