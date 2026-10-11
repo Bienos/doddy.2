@@ -71,9 +71,12 @@ final class PhoneWatchLink: NSObject {
                 return .notSaved(reason: "Doddy's notes can't be opened on your iPhone, so nothing was saved.")
             }
             do {
-                // Written or dictated on the watch and checked there before Save.
-                let record = try await store.save(text: text, category: .other, source: .explicitText)
-                return store.record(id: record.id) != nil ? .saved : .failed
+                // Written or dictated on the watch and checked there before Save. `save` returns
+                // only after the repository read the note back, so that is the answer; the store's
+                // reload after it can fail on its own, and "failed" then made the watch save the
+                // note again on retry (review I6).
+                _ = try await store.save(text: text, category: .other, source: .explicitText)
+                return .saved
             } catch {
                 return .notSaved(reason: "Not saved: \(UserFacingError.message(for: error))")
             }
