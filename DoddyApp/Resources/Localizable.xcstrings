@@ -375,6 +375,17 @@
         }
       }
     },
+    "Add %lld to the list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj %lld do listy"
+          }
+        }
+      }
+    },
     "Add a preference": {
       "extractionState": "manual",
       "localizations": {
@@ -430,6 +441,17 @@
         }
       }
     },
+    "Add to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do"
+          }
+        }
+      }
+    },
     "Add to a list": {
       "extractionState": "manual",
       "localizations": {
@@ -448,6 +470,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj do listy w Doddym"
+          }
+        }
+      }
+    },
+    "Added %lld to %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodano %lld do: %@."
           }
         }
       }
@@ -492,6 +525,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaje pozycje do jednej z Twoich list w Doddym. Kilka pozycji oddziel przecinkami."
+          }
+        }
+      }
+    },
+    "Adds to a new list called “To do”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doda je do nowej listy „Do zrobienia”."
           }
         }
       }
@@ -3686,6 +3730,17 @@
         }
       }
     },
+    "Found by simple rules on this iPhone, so check them. Adding them doesn't save the note; Save does.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znalezione prostymi regułami na tym iPhonie, więc je sprawdź. Dodanie ich nie zapisuje notatki; robi to Zapisz."
+          }
+        }
+      }
+    },
     "From Google Keep: in Google Takeout, export Keep. In the Files app, tap the .zip to unpack it, open the Keep folder and pick the .json files. You can also pick .txt and .md files.": {
       "extractionState": "manual",
       "localizations": {
@@ -4386,6 +4441,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Słowa kluczowe, oddzielone przecinkami"
+          }
+        }
+      }
+    },
+    "LOOKS LIKE THINGS TO DO": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WYGLĄDA NA RZECZY DO ZROBIENIA"
           }
         }
       }
@@ -5915,6 +5981,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na razie nic nowego w Twoich tematach."
+          }
+        }
+      }
+    },
+    "Nothing new was added; those are already on the list or it's full.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nowego nie dodano; te pozycje już są na liście albo lista jest pełna."
           }
         }
       }
@@ -11030,6 +11107,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tytuł"
+          }
+        }
+      }
+    },
+    "To do": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do zrobienia"
           }
         }
       }
