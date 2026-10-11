@@ -257,9 +257,13 @@ struct ListDetailView: View {
                  : "The copy in your iCloud is deleted and the people you invited lose the list. It stays on this iPhone.")
         }
         .sheet(item: $cloudShare) { sheet in
-            CloudSharingView(sheet: sheet, listName: list.name) {
-                Task { await sharing.load() }
-            }
+            CloudSharingView(sheet: sheet, listName: list.name, onStopped: {
+                // Apple's "Stop Sharing" removes only the share, so the copy in iCloud and the
+                // link go here too (review I5).
+                Task { await stopAfterSharingScreen(list) }
+            }, onFailed: { error in
+                errorMessage = SharingError.message(for: error)
+            })
         }
         .confirmationDialog("Show this list on your Lock Screen?", isPresented: $confirmShopping, titleVisibility: .visible) {
             Button("Start shopping mode") { shopping.start(list) }
@@ -355,6 +359,14 @@ struct ListDetailView: View {
         errorMessage = nil
         do {
             cloudShare = try await sharing.share(list)
+        } catch {
+            errorMessage = SharingError.message(for: error)
+        }
+    }
+
+    private func stopAfterSharingScreen(_ list: DoddyList) async {
+        do {
+            try await sharing.stop(list.id)
         } catch {
             errorMessage = SharingError.message(for: error)
         }
