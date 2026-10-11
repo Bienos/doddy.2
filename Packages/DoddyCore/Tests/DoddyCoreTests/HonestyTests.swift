@@ -41,6 +41,19 @@ final class HonestyTests: XCTestCase {
         XCTAssertFalse(PrivacyDefaults.m0.cloudAIEnabled)
     }
 
+    func testSyncIsNotCalledUnbuiltWhileSharedListsShip() {
+        // Lists the user shares do go to iCloud; notes don't sync. "Off (not built)" hid the first.
+        XCTAssertEqual(PrivacyDefaults.m0.syncText, "Off (not built)")
+        XCTAssertFalse(PrivacyDefaults.v1Voice.syncText.contains("not built"))
+        XCTAssertTrue(PrivacyDefaults.v1Voice.syncText.contains("iCloud"))
+        for configured in [false, true] {
+            guard case .limited(let note) = CapabilityCatalog.shipping(serverConfigured: configured).status(of: .cloudSync) else {
+                return XCTFail("shared lists must be described, not called not implemented")
+            }
+            XCTAssertTrue(note.contains("iCloud"))
+        }
+    }
+
     func testUnavailableAdaptersThrowAndNeverFabricateResults() async throws {
         let new = try NewMemory(text: "x", capturedAt: Date(timeIntervalSince1970: 0))
         let repo = UnavailableMemoryRepository()

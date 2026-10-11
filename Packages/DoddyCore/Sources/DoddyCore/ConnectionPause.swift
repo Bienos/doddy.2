@@ -13,9 +13,9 @@ public enum ConnectionPause {
         switch request {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
              .calculate, .convertUnits, .parkingSpot, .addIngredients,
-             .addToList, .readList, .checkOff, .removeFromList, .createList:
+             .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap:
             false
-        case .readCalendar, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
+        case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .runShortcut, .draftMessage, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,

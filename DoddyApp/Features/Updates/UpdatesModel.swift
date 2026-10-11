@@ -105,7 +105,7 @@ final class UpdatesModel {
         await run {
             try await client.confirmPhone(e164, code: code.filter(\.isNumber))
             self.phoneStep = .enterNumber
-            self.phone = try await client.phoneStatus()
+            await self.readBackPhone(client)
         }
     }
 
@@ -118,9 +118,21 @@ final class UpdatesModel {
         guard let client else { return }
         await run {
             try await client.setSMSConsent(on)
-            self.phone = try await client.phoneStatus()
+            await self.readBackPhone(client)
         }
     }
+
+    /// After a write the server accepted: shows the server's state, or says the change was made
+    /// but couldn't be read back, never "nothing was changed" (DOD-08).
+    private func readBackPhone(_ client: DoddyServerClient) async {
+        do {
+            phone = try await client.phoneStatus()
+        } catch {
+            message = Self.savedButNotReadBack
+        }
+    }
+
+    static let savedButNotReadBack = NSLocalizedString("The Doddy messaging server accepted the change, but Doddy couldn't read it back, so what's shown may be out of date. Open this screen again to check.", comment: "")
 
     func removePhone() async {
         guard let client else { return }
@@ -138,7 +150,8 @@ final class UpdatesModel {
             let text = channel == .push
                 ? "Test from Doddy: notifications are working."
                 : "Test from Doddy: texts are working."
-            let queued = try await client.sendUpdate(text, channels: [channel], idempotencyKey: UUID().uuidString)
+            // One key per text and channel until the server accepts it, so a retry is not a second message.
+            let queued = try await client.sendUpdate(text, channels: [channel])
             guard let id = queued.first?.id else { return }
             for _ in 0..<10 {
                 let status = try await client.updateStatus(id)

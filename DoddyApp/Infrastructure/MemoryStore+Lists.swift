@@ -88,28 +88,33 @@ extension MemoryStore {
         await listChanged(listID)
     }
 
-    /// Takes back exactly the change `undo` describes. Items ticked since an add stay.
+    /// Takes back exactly the change `undo` describes. Items ticked since an add stay. Throws
+    /// `ListUndoError` unless every item came back as it was (read back by the repository), so
+    /// nothing says "Undone" for items that weren't (review C10).
     func undoListChange(_ undo: ListUndo) async throws {
         let repository = environment.listRepository
+        let expected: [ListItem], reversed: [ListItem]
         switch undo.change {
         case .added(let items):
             let current = Set(list(id: undo.listID)?.open.map(\.id) ?? [])
-            _ = try await repository.remove(items.map(\.id).filter(current.contains))
+            (expected, reversed) = (items, try await repository.remove(items.map(\.id).filter(current.contains)))
         case .ticked(let items):
-            _ = try await repository.setDone(items.map(\.id), done: false)
+            (expected, reversed) = (items, try await repository.setDone(items.map(\.id), done: false).filter { !$0.isDone })
         case .unticked(let items):
-            _ = try await repository.setDone(items.map(\.id), done: true)
+            (expected, reversed) = (items, try await repository.setDone(items.map(\.id), done: true).filter(\.isDone))
         case .removed(let items):
-            _ = try await repository.restore(items)
+            (expected, reversed) = (items, try await repository.restore(items))
         }
         if listUndo == undo { listUndo = nil }
         await listChanged(undo.listID)
+        try ListUndoError.check(expected: expected, reversed: reversed)
     }
 
     /// Undo from What Doddy did for a list change made by voice (ADR-276): only the items still as
     /// Doddy left them (ActivityUndo.listItemsToUndo), then the list is read back. When a write
     /// throws, a fresh look decides: all still as Doddy left them means nothing was written.
     func undoFromActivity(_ undo: ActivityUndo) async -> UndoResult {
+        if case .savedNote(let id, let text) = undo { return await undoSavedNote(id: id, text: text) }
         guard let listID = undo.listID else { return .notDone("That isn't a list change.") }
         await reload()
         guard let items = undo.listItemsToUndo(in: list(id: listID)), !items.isEmpty else { return .leftAlone }
@@ -130,6 +135,32 @@ extension MemoryStore {
         return undo.listUndoChecks(items, after: list(id: listID)) ? .undone : .notSure
     }
 
+    /// Undo of a note Doddy saved by voice (ADR-277): deleted only while it is exactly as saved,
+    /// with nothing added to it; then the store is read again to check it's gone. The notes
+    /// screen still offers its own short Undo for the delete, as for any delete.
+    private func undoSavedNote(id: UUID, text: String) async -> UndoResult {
+        await reload()
+        guard let record = record(id: id) else { return .leftAlone }
+        let hasReminder: Bool
+        do {
+            hasReminder = try await environment.noteReminders?.reminder(forMemory: id) != nil
+        } catch {
+            return .notDone("Doddy couldn't check the note's reminder.")
+        }
+        guard ActivityUndo.noteUnchanged(
+            record, savedText: text, corrections: corrections.filter { $0.memoryID == id }.count,
+            hasPhoto: photos[id] != nil, hasRecording: recordings[id] != nil, hasReminder: hasReminder) else {
+            return .leftAlone
+        }
+        do {
+            try await delete(id: id)
+        } catch {
+            await reload()
+            return self.record(id: id) == nil ? .notSure : .notDone(UserFacingError.message(for: error))
+        }
+        return self.record(id: id) == nil ? .undone : .notSure
+    }
+
     private func listChanged(_ listID: UUID) async {
         await reload()
         await environment.noteReminders?.refreshContent(forMemory: listID)
@@ -138,6 +169,7 @@ extension MemoryStore {
 
 extension UserFacingError {
     static func listMessage(for error: any Error) -> String {
+        if let undo = error as? ListUndoError { return undo.message }
         guard let error = error as? ListError else { return message(for: error) }
         switch error {
         case .emptyName: return NSLocalizedString("Give the list a name.", comment: "")
@@ -241,14 +273,13 @@ extension MemoryStore {
 }
 
 /// Importing notes (ADR-231): notes go in through `restore` (one transaction, read back); a Keep
-/// checklist becomes a list with its ticked items ticked, each step read back by the repository.
+/// checklist becomes a list with its ticked items ticked, in one transaction read back by the
+/// repository, so a failure leaves no half-imported list that Undo would miss (review G5).
 extension MemoryStore {
     @discardableResult
     func importList(_ part: NoteImport.ListPart) async throws -> DoddyList {
-        let created = try await environment.listRepository.create(name: part.name, items: part.open + part.ticked, source: .typed)
-        let ticked = Set(part.ticked)
-        let toTick = created.items.filter { ticked.contains($0.text) }
-        if !toTick.isEmpty { _ = try await environment.listRepository.setDone(toTick.map(\.id), done: true) }
+        let created = try await environment.listRepository.create(
+            name: part.name, items: part.open + part.ticked, done: Set(part.ticked), source: .typed)
         await reload()
         return list(id: created.id) ?? created
     }

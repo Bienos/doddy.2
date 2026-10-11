@@ -6,9 +6,7 @@ final class MemoryJourneyTests: XCTestCase {
     @MainActor
     private func launch(appearance: String = "light", largeText: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-memoryTestID", UUID().uuidString, "-onboardingDone", "YES",
-                               "-backTapSetupStatus", "deferred", "-voiceAgentID", "", "-appearance", appearance,
-                               "-openingScene", "NO", "-listenOnOpen", "NO"]
+        app.launchArguments = UITestLaunch.arguments(store: .persistent(UUID()), appearance: appearance)
         if largeText { app.launchArguments += ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"] }
         app.launch()
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 10))

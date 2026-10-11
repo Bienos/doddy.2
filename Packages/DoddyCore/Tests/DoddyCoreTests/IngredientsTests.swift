@@ -34,9 +34,13 @@ final class IngredientsTests: XCTestCase {
     func testTheReplySaysTheyWereSuggestions() {
         let item = ListItem(id: UUID(), listID: UUID(), text: "pasta", source: .voice, addedAt: now, doneAt: nil, position: 0)
         let reply = VoiceToolReply.ingredientsAdded(ListAddResult(added: [item], alreadyThere: [], tooLong: [], noRoom: []), list: "Shopping", dish: "lasagne", leftOut: ["salt"])
-        XCTAssertTrue(reply.hasPrefix("added to \"Shopping\": pasta."))
-        XCTAssertTrue(reply.contains("unticked (has them already): salt"))
-        XCTAssertTrue(reply.contains("Doddy's suggestions for lasagne"))
+        // The list name and items sit between the data markers (review C4).
+        XCTAssertTrue(reply.contains(ToolData.block(["Name: \"Shopping\"", "- pasta"])), reply)
+        XCTAssertTrue(reply.hasPrefix("added to the list: 1 item."))
+        XCTAssertTrue(reply.contains("unticked these (has them already)"))
+        XCTAssertTrue(reply.contains("- salt"))
+        XCTAssertTrue(reply.contains("Doddy's suggestions for this dish"))
+        XCTAssertTrue(reply.contains("Dish: \"lasagne\""))
     }
 
     func testRoundFourRepliesLandOnHonestRows() {
