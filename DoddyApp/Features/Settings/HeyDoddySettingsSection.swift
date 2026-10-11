@@ -37,6 +37,11 @@ struct HeyDoddySettingsSection: View {
                 .accessibilityIdentifier("settings.heyDoddy.toggle")
             StatusRow(title: "Now", value: listener.state.summary)
                 .accessibilityIdentifier("settings.heyDoddy.status")
+            if isOn && FocusFilterState.shared.settings.pausesHeyDoddy {
+                Label("Paused by your Focus. It listens again when that Focus ends.", systemImage: "moon")
+                    .font(.footnote)
+                    .accessibilityIdentifier("settings.heyDoddy.focusPaused")
+            }
             if isOn || hasKey || hasFile {
                 setup
             }

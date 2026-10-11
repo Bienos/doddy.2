@@ -132,6 +132,54 @@ struct NextReminderView: View {
     }
 }
 
+// MARK: Where did I park
+
+/// The parking spot (ADR-315): when it was saved and the user's note, never the position. A tap
+/// opens Doddy, which opens the spot in Maps.
+struct ParkingWidget: Widget {
+    static let kind = "com.bienos.doddy2.parking"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { entry in
+            ParkingWidgetView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Where I parked")
+        .description("When you saved your parking spot, and your note. Tap to open it in Maps.")
+        .supportedFamilies([.systemSmall, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+struct ParkingWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: SnapshotEntry
+
+    var body: some View {
+        if let message = WidgetCopy.message(for: entry.snapshot) {
+            WidgetMessage(text: message)
+        } else if let parked = entry.snapshot?.parking {
+            let when = Text(parked.savedAt, format: .dateTime.weekday(.abbreviated).hour().minute())
+            switch family {
+            case .accessoryInline:
+                Label { when } icon: { Image(systemName: "car") }
+                    .widgetURL(DeepLink.parking.url)
+            default:
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Parked", systemImage: "car.fill").font(.headline)
+                    when.font(.subheadline)
+                    if let note = parked.note {
+                        Text(note).font(.footnote).lineLimit(family == .systemSmall ? 3 : 1).privacySensitive()
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .widgetURL(DeepLink.parking.url)
+            }
+        } else {
+            WidgetMessage(text: "No parking spot saved. Tell Doddy \u{201C}I parked here\u{201D}.")
+        }
+    }
+}
+
 // MARK: List, with ticks
 
 struct ListEntity: AppEntity {
@@ -283,7 +331,18 @@ struct TalkToDoddyWidgetView: View {
     var body: some View {
         Button(intent: TalkToDoddyIntent()) {
             if family == .accessoryCircular {
-                Image(systemName: "waveform").font(.title2).accessibilityLabel("Talk to Doddy")
+                // Doddy's face on the Lock Screen (ADR-313), the watch complication's crop. iOS draws
+                // Lock Screen widgets in one tint, so the cream face reads light and his lines dark.
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Image("WidgetDoddy_face")
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(Circle())
+                        .padding(4)
+                }
+                .accessibilityElement()
+                .accessibilityLabel("Talk to Doddy")
             } else {
                 VStack(spacing: 8) {
                     // Doddy waving hello (ADR-299), as when "Hey Doddy" greets you. Tinted and
@@ -299,6 +358,48 @@ struct TalkToDoddyWidgetView: View {
             }
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: Doddy, resting (StandBy)
+
+/// Made for StandBy (ADR-313): Doddy stretching, eyes closed, and the time of the next note
+/// reminder. Only the time, never the note's words: StandBy is seen across the room. Works as
+/// a small Home Screen widget too.
+struct DoddyRestWidget: Widget {
+    static let kind = "com.bienos.doddy2.rest"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { entry in
+            DoddyRestView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Doddy, resting")
+        .description("Doddy and the time of your next reminder. Made for StandBy. No note words are shown.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct DoddyRestView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
+    let entry: SnapshotEntry
+
+    var body: some View {
+        VStack(spacing: 6) {
+            // A tinted Home Screen flattens the drawing into one colour; there it is left out.
+            if renderingMode != .accented {
+                WidgetPose(pose: .yawnStretch, height: 92)
+            }
+            if let message = WidgetCopy.message(for: entry.snapshot) {
+                Text(message).font(.caption).multilineTextAlignment(.center).foregroundStyle(.secondary)
+            } else if let next = entry.snapshot?.reminders(after: entry.date).first {
+                Label { Text(next.fireAt, format: .dateTime.weekday(.abbreviated).hour().minute()) } icon: { Image(systemName: "bell") }
+                    .font(.headline)
+                    .monospacedDigit()
+            } else {
+                Text("No reminders coming up.").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -349,6 +450,7 @@ extension WidgetSnapshot {
                 .init(id: UUID(), text: "Oat milk", isDone: false),
                 .init(id: UUID(), text: "Eggs", isDone: false),
                 .init(id: UUID(), text: "Bread", isDone: true),
-            ])])
+            ])],
+            parking: .init(savedAt: .now.addingTimeInterval(-5400), note: "Level 2, row C"))
     }()
 }

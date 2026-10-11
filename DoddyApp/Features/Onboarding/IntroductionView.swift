@@ -9,7 +9,7 @@ struct IntroductionView: View {
         case welcome
         case question(Int)
         case review
-        /// Once, at the end of first use (ADR-310). `saved`: how the introduction ended.
+        /// Once, at the end of first use (ADR-319). `saved`: how the introduction ended.
         case quickStart(saved: Bool)
     }
 

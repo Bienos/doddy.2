@@ -67,7 +67,7 @@ enum PreferenceKey {
     /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
     /// the keyword file in Application Support, never here.
     static let heyDoddyOn = "heyDoddy.on"
-    /// The Quick start screen (ADR-310) was shown once, at the end of first use; never again.
+    /// The Quick start screen (ADR-319) was shown once, at the end of first use; never again.
     static let quickStartOffered = "quickStartOffered"
 }
 
@@ -84,6 +84,7 @@ struct RootView: View {
     @State private var homePath: [UUID] = []
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
@@ -116,10 +117,13 @@ struct RootView: View {
                 #endif
             }
             .preferredColorScheme(colorScheme)
+            // The Face ID lock (ADR-310) covers everything until iOS says yes.
+            .overlay { if AppLock.shared.isLocked { AppLockView() } }
             .task {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
                 if scenePhase == .active { heyDoddyAppBecameActive() }
+                pickUpSharedItem()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -128,8 +132,13 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
+                    pickUpSharedItem()
                 }
-                if phase == .background { WidgetSync.shared.refresh() }
+                if phase == .background {
+                    WidgetSync.shared.refresh()
+                    AppLock.shared.wentToBackground()
+                }
+                if phase == .active { AppLock.shared.cameBack() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
                 switch phase {
                 case .active: heyDoddyAppBecameActive()
@@ -159,7 +168,8 @@ struct RootView: View {
                 noteReminders.pendingOpenMemoryID = nil
             }
             // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
-            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
+            // Private notes (ADR-310) are never in the server copy for calls.
+            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories)) }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)
@@ -173,6 +183,13 @@ struct RootView: View {
 
     /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
     /// started while Doddy was in the background, if it is running or left notes to look at.
+    /// Text or a link shared from another app with "Save to Doddy" (ADR-311): opens the capture
+    /// screen with it, as the shortcut does. Nothing is saved until Save there.
+    private func pickUpSharedItem() {
+        guard let item = ShareInboxFile.take() else { return }
+        ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
+    }
+
     private func heyDoddyAppBecameActive() {
         let listener = WakeWordListener.shared
         if listener.hasConversationToShow {
@@ -276,6 +293,9 @@ struct RootView: View {
             case .home: selectedTab = .home
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
+            // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
+            case .parking:
+                if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
             }
         }
     }

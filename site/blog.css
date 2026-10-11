@@ -197,3 +197,8 @@
 .spot--left { flex-direction: row-reverse; }
 .spot--left figcaption { transform: rotate(3deg); text-align: right; }
 @media (max-width: 560px) { .spot figcaption { font-size: 1.25rem; } }
+
+/* Full-width figures (charts, diagrams) inside a post: ![alt](src "caption") */
+.post-figure { margin: 30px 0 34px; }
+.post-figure img { display: block; width: 100%; height: auto; border-radius: 20px; border: 1px solid var(--rule); box-shadow: var(--lift); background: var(--paper); }
+.post-figure figcaption { margin: 12px 4px 0; font-size: 0.9375rem; line-height: 1.45; color: var(--secondary-text); }

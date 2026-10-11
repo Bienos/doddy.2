@@ -1,4 +1,4 @@
-# Quick start (ADR-310): status
+# Quick start (ADR-319): status
 
 Owner request, 11 October 2026: "tak, zrób ekran Szybki start z tymi godzinami". It followed
 Claude's list of which settings make Doddy easy to use and which have to stay off until the user

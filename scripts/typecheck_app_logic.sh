@@ -65,6 +65,13 @@ final class PlaceLocation {
 }
 SWIFT
 
+# The one type IslandPose.swift needs from the island drawing model (ADR-313).
+cat > "$work/IslandRectStub.swift" <<'SWIFT'
+struct IslandRect: Equatable, Sendable {
+    var x: Double, y: Double, width: Double, height: Double
+}
+SWIFT
+
 files=(
   DoddyApp/Infrastructure/PersonalityPreferences.swift
   DoddyApp/Infrastructure/PinnedNotesStorage.swift
@@ -83,9 +90,12 @@ files=(
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
   DoddyApp/Features/Parking/ParkingStore.swift
   Shared/Widgets/WidgetSnapshotFile.swift
+  Shared/Share/ShareInboxFile.swift
+  # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.
+  Shared/IslandArt/IslandPose.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"

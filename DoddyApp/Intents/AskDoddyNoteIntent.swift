@@ -1,4 +1,6 @@
 import AppIntents
+import DoddyCore
+import SwiftUI
 
 /// "Ask Doddy what I saved" (ADR-248): Siri asks what to look for, Doddy searches the saved notes
 /// on this iPhone (the same search as Memories → Find) and Siri says the note's own words and
@@ -27,8 +29,21 @@ struct AskDoddyNoteIntent: AppIntent {
     }
 
     @MainActor
-    func perform() async throws -> some IntentResult & ProvidesDialog {
+    func perform() async throws -> some IntentResult & ProvidesDialog & ShowsSnippetView {
         let answer = await SiriNoteLookup.spokenAnswer(for: query, environment: .shared)
-        return .result(dialog: "\(answer)")
+        // Siri's panel shows Doddy in the pose for the answer (ADR-313); the words are Siri's own.
+        return .result(dialog: "\(answer)", view: SiriDoddySnippet(pose: SiriNoteLookup.pose(forAnswer: answer)))
+    }
+}
+
+/// Doddy in Siri's panel (ADR-313). Decorative: Siri says and shows the answer itself. Empty with
+/// "Hide Doddy's pictures".
+struct SiriDoddySnippet: View {
+    let pose: IslandPose
+
+    var body: some View {
+        WholeDoddyView(pose: pose, height: 110)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
     }
 }

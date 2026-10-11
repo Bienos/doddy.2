@@ -1,6 +1,6 @@
 import Foundation
 
-// Quick start (ADR-310). The last first-use screen, shown once after the introduction: the
+// Quick start (ADR-319). The last first-use screen, shown once after the introduction: the
 // opt-in settings that make Doddy easier to live with, each one tap away instead of buried in
 // Settings. Nothing changes until the user taps the button. An unticked item is left exactly as
 // it is (never turned off), and so is one already on (its own time is kept). The notifications are
