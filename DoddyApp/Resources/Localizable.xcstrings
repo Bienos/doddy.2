@@ -9439,13 +9439,13 @@
         }
       }
     },
-    "While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs’ servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.": {
+    "While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs’ servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podczas rozmowy Twój głos, ta rozmowa, zapisane notatki, nazwy list (a pozycje listy, gdy Doddy ją czyta lub zmienia), kilka ostatnich rozmów oraz wpisy z kalendarza, nazwy kontaktów lub szkice, których Doddy używa, są wysyłane do ElevenLabs, żeby działał Doddy. Sprawdzanie pogody i Wikipedii odbywa się z serwerów ElevenLabs. Nic nie jest zapisywane, dodawane, uruchamiane, wysyłane ani otwierane, dopóki tego nie stukniesz. Jeśli wyjdziesz z aplikacji, Doddy dalej słucha (zobaczysz go w Dynamic Island), dopóki nie stukniesz Zakończ. Jeśli iOS zatrzyma Doddy’ego w tle, wyspa to pokaże, zamiast udawać, że nadal Cię słyszy."
+            "value": "Podczas rozmowy Twój głos, ta rozmowa, zapisane notatki, nazwy list (a pozycje listy, gdy Doddy ją czyta lub zmienia), kilka ostatnich rozmów oraz wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice, których Doddy używa, są wysyłane do ElevenLabs, żeby działał Doddy. Sprawdzanie pogody i Wikipedii odbywa się z serwerów ElevenLabs. Nic nie jest zapisywane, dodawane, uruchamiane, wysyłane ani otwierane, dopóki tego nie stukniesz. Jeśli wyjdziesz z aplikacji, Doddy dalej słucha (zobaczysz go w Dynamic Island), dopóki nie stukniesz Zakończ. Jeśli iOS zatrzyma Doddy’ego w tle, wyspa to pokaże, zamiast udawać, że nadal Cię słyszy."
           }
         }
       }

@@ -209,6 +209,14 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | U5 | Ask Doddy to mark a reminder done; Undo → Mark not done | Open again in Reminders |
 | U6 | Turn on Pause all; Undo | "Not undone: Connections are paused in Settings. Nothing changed."; Undo still offered |
 
+## 16. Birthdays from Contacts (ADR-256; needs the live agent update first)
+| # | Do this | Expect |
+|---|---|---|
+| BD1 | Give two contacts birthdays this week (one without a year); ask "whose birthday is this week?" | Doddy names both with the day; never a year or age |
+| BD2 | Contacts switch off; ask again | "Contacts isn't connected …"; nothing read |
+| BD3 | Pause all on; ask again | Paused reply; nothing read |
+| BD4 | "Remind me the day before Anna's birthday" | A create_reminder card; nothing added before the tap |
+
 ## Result log
 | Item | Xcode / iOS / device | Result | Notes |
 |---|---|---|---|

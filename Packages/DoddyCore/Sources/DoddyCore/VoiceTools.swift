@@ -45,7 +45,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         switch toolName {
         case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent: .calendar
         case VoiceToolName.createReminder, VoiceToolName.changeReminder: .reminders
-        case VoiceToolName.lookupContact: .contacts
+        case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays: .contacts
         case VoiceToolName.setTimer: .timers
         case VoiceToolName.openMap: .maps
         case VoiceToolName.runShortcut: .shortcuts
@@ -161,6 +161,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case needsClarification(name: String, ReminderClarification)
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
+    /// Birthdays saved in Contacts in the next `days` days, read only (ADR-256).
+    case upcomingBirthdays(days: Int)
     case setTimer(TimerDraft)
     case openMap(place: String)
     case runShortcut(name: String)
@@ -208,6 +210,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)
+        case VoiceToolName.upcomingBirthdays:
+            return parseBirthdays(args, name: name)
         case VoiceToolName.setTimer:
             return parseTimer(args, name: name)
         case VoiceToolName.openMap:
@@ -386,6 +390,11 @@ struct Arguments {
 
     func number(_ key: String) -> Double? {
         values[key] as? Double
+    }
+
+    /// The key is present, whatever its value.
+    func has(_ key: String) -> Bool {
+        values[key] != nil
     }
 }
 

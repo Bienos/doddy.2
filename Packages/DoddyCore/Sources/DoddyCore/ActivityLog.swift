@@ -111,6 +111,8 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", isLookup: false)
         case .lookupContact(let name):
             return ActivityRequest(app: .contacts, title: "Looked for a contact", detail: "“\(name)”", isLookup: true)
+        case .upcomingBirthdays(let days):
+            return ActivityRequest(app: .contacts, title: "Read birthdays", detail: days == 1 ? "Today" : "Next \(days) days", isLookup: true)
         case .setTimer(let draft):
             let minutes = draft.seconds / 60, seconds = draft.seconds % 60
             let length = minutes > 0 ? "\(minutes) min\(seconds > 0 ? " \(seconds) s" : "")" : "\(seconds) s"

@@ -453,6 +453,25 @@ final class DeviceConnections {
                 emailAddresses: contact.emailAddresses.map { $0.value as String })
         }
     }
+
+    /// Name and birthday of every contact that has one (ADR-256). Nothing else is read.
+    /// Only the day and month reach the agent (`VoiceToolReply.birthdays`); the year stays here.
+    func birthdays() throws -> [ContactBirthday] {
+        let keys: [CNKeyDescriptor] = [
+            CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
+            CNContactBirthdayKey as CNKeyDescriptor,
+        ]
+        var found: [ContactBirthday] = []
+        try contactStore.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
+            // Gregorian birthdays only; a card with only a non-Gregorian date is skipped.
+            guard let birthday = contact.birthday, let month = birthday.month, let day = birthday.day,
+                  birthday.calendar == nil || birthday.calendar?.identifier == .gregorian else { return }
+            found.append(ContactBirthday(
+                name: CNContactFormatter.string(from: contact, style: .fullName) ?? "Unnamed contact",
+                month: month, day: day, year: birthday.year))
+        }
+        return found
+    }
 }
 
 /// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).

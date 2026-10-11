@@ -14,7 +14,7 @@ public enum ConnectionPause {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
              .addToList, .readList, .checkOff, .removeFromList, .createList:
             false
-        case .readCalendar, .createCalendarEvent, .createReminder, .lookupContact, .setTimer,
+        case .readCalendar, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .runShortcut, .draftMessage, .cloudTool, .changeCalendarEvent, .changeReminder:
             true
         case .remindAboutNote(let draft):

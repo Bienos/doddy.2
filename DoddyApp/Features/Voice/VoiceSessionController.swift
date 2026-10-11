@@ -1348,6 +1348,18 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
+        case .upcomingBirthdays(let days):
+            // Read only (ADR-256): the agent hears names with the day and month, nothing else.
+            guard devices.access(for: .contacts) == .granted else {
+                await notConnected(call.toolCallId, .contacts)
+                return
+            }
+            do {
+                let found = Birthdays.upcoming(try devices.birthdays(), now: Date(), days: days, calendar: .current)
+                await reply(call.toolCallId, VoiceToolReply.birthdays(found, days: days, calendar: .current))
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
         case .setTimer(let draft):
             guard await devices.notificationAccess() == .granted else {
                 await notConnected(call.toolCallId, .timers)

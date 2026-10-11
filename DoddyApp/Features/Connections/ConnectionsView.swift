@@ -314,12 +314,13 @@ struct ConnectionInfo {
         case .contacts:
             ConnectionInfo(
                 symbol: "person.crop.circle",
-                examples: ["What's Marta's number?", "Find Tomek Kowalski"],
+                examples: ["What's Marta's number?", "Find Tomek Kowalski", "Whose birthday is this week?"],
                 canDo: [
                     "Look up a contact by name and show the details on your screen",
                     "Call, text or email them from that card, after you tap",
+                    "Tell you whose birthday is coming up, from the birthdays on your contact cards",
                 ],
-                leavesPhone: "Only the names Doddy finds. Numbers and email addresses stay on your screen.",
+                leavesPhone: "Only the names Doddy finds, and for birthdays the day and month. Numbers, email addresses and birth years stay on your iPhone.",
                 staysHere: "Doddy never calls, texts or emails anyone by itself.")
         case .messages:
             ConnectionInfo(

@@ -143,6 +143,19 @@
     },
     {
       "type": "function",
+      "name": "upcoming_birthdays",
+      "description": "Read the birthdays saved on the user's iPhone contact cards, from today for the next few days. You receive each person's name and the day and month only, never a birth year or age. Only mention birthdays the tool returned; contacts without a saved birthday are unknown. Nothing is added anywhere: if the user wants a reminder, use create_reminder. If the result says Contacts isn't connected, tell the user they can connect it in Settings, Connections.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "days": {"type": "integer", "description": "How many days to look ahead, today included: 1 for today only, 7 for this week (the default), up to 60."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20}
+    },
+    {
+      "type": "function",
       "name": "geocode_place",
       "description": "Find the latitude and longitude of a city or town so that get_weather can be called. Use it when the user asks about the weather somewhere. If the user does not name a place, ask which city first. Returns one best match with its country, region and timezone.",
       "parameters": {
