@@ -107,3 +107,29 @@ No critical issues found. Several areas are solid and well tested:
   - Logs use an allow-list of field names and shapes (`logging.js`), tested.
   - Store keys are HMACed, so no raw ids sit in Redis (tested).
 - **Claims to limit:** "Tested" means against fakes only. No real provider, store or deploy was used. The budget relies on placeholder prices until the owner sets real ones.
+
+---
+
+## Fix status (2026-10-11, owner approved "fix all")
+
+| # | Status | Commit |
+|---|---|---|
+| 1 | fixed: `VERCEL_ENV=production` requires the shared store | `see git log` "require the shared limits store" |
+| 2 | fixed: `reasoning.effort=low` for gpt-5/o-series; a cut-off answer logs `cause=outputLimit` and is billed at reported usage. **Not verified against the real API.** | "low reasoning effort" |
+| 3 | fixed: `::ffff:a.b.c.d` unwrapped to IPv4; the test fails on the old code | "separate IPv4-mapped clients" |
+| 4 | fixed: `cause=noClientAddress` logged on registration | same commit |
+| 5 | fixed: set-but-invalid integer settings → `503 notConfigured` naming the variable | "refuse invalid rate-limit settings" |
+| 6 | fixed: catch-all logs `cause=unexpected` | "log cause=unexpected" |
+| 7 | fixed: a retry first reserves one more estimate (skipped if over a cap); the failed attempt keeps its estimate booked. My first version reserved 2× up front; that was replaced because it halved the largest request the default budget allows. | "count a retried 5xx" + "reserve a retry's budget only when" |
+| 8 | fixed: `inv:<tag>` budget scope, `DAILY_BUDGET_PER_INVITE_USD` (default half the daily budget) | "per-invite daily budget" |
+| 9 | fixed: `bodyBytes` raised to 128 KiB; tested with a request at every limit using 4-byte characters | "raise the request body limit" |
+| Prompt-only action claims | unchanged: documented as a claim limit, with no code check added | — |
+
+Tests after the fixes: `npm test` → **73 pass, 0 fail**; `npm run typecheck` clean (Node 22.22).
+
+**Noticed while fixing (not changed, owner decision):** with the placeholder prices (10 / 40 USD per 1M tokens) and the default per-install budget ($0.25), any prompt over about 21 KB is refused as `dailyLimitReached` on the first request. A request with several long notes is that size. Set the real `OPENAI_PRICE_*_PER_MTOK_USD` for the chosen model before testers use it.
+
+**Deploy notes:**
+- New optional variable `DAILY_BUDGET_PER_INVITE_USD`.
+- A production deploy without Redis now refuses to serve.
+- Invalid `GATEWAY_RATE_*` values now refuse to serve instead of using defaults.
