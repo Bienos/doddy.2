@@ -166,6 +166,13 @@ extension TimerBanners {
             }
             return
         }
+        // The evening wrap-up (ADR-256) opens its screen; nothing moves until the user taps.
+        if EveningWrapUp.isWrapUp(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.eveningWrapUpOpened() }
+            }
+            return
+        }
         // The morning check-in (ADR-220) opens its screen; nothing else happens until the user taps.
         if MorningCheckIn.isCheckIn(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

@@ -89,6 +89,17 @@
         }
       }
     },
+    "A notification at this time says only \"Anything to move to tomorrow?\". Tap it to see open reminders from today and move the ones you pick. Needs Reminders on in Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O tej godzinie powiadomienie powie tylko „Coś przenieść na jutro?”. Stuknij je, aby zobaczyć otwarte przypomnienia z dzisiaj i przenieść te, które wybierzesz. Wymaga włączonych Przypomnień w Połączeniach."
+          }
+        }
+      }
+    },
     "A notification from Doddy on this iPhone, not Apple Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -547,6 +558,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dowolny kanał RSS lub Atom, na przykład blog albo lokalna gazeta."
+          }
+        }
+      }
+    },
+    "Anything for\ntomorrow?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś\nna jutro?"
           }
         }
       }
@@ -1449,6 +1471,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Połączenia są wstrzymane, więc Doddy nie czyta Twojego kalendarza ani przypomnień. Włącz je ponownie w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
+    "Connections are paused, so Doddy isn't reading your reminders. Turn them back on in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc Doddy nie czyta Twoich przypomnień. Włączysz je z powrotem w Ustawieniach, w sekcji Połączenia."
           }
         }
       }
@@ -2714,6 +2747,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Angielski"
+          }
+        }
+      }
+    },
+    "Evening wrap-up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieczorne podsumowanie"
           }
         }
       }
@@ -4302,6 +4346,39 @@
         }
       }
     },
+    "Move %lld to tomorrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieś na jutro (%lld)"
+          }
+        }
+      }
+    },
+    "Moved %lld to tomorrow. %lld couldn't be moved (changed in Reminders, or the time doesn't exist tomorrow); check them there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeniesiono na jutro: %lld. Nie udało się przenieść: %lld (zmienione w Przypomnieniach albo ta godzina jutro nie istnieje); sprawdź je tam."
+          }
+        }
+      }
+    },
+    "Moved %lld to tomorrow. Checked in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeniesiono na jutro: %lld. Sprawdzone w Przypomnieniach."
+          }
+        }
+      }
+    },
     "Mute or unmute Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -4929,6 +5006,17 @@
         }
       }
     },
+    "Nothing left from today. Good night.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z dzisiaj nic nie zostało. Dobranoc."
+          }
+        }
+      }
+    },
     "Nothing left on your calendar or reminders today.": {
       "extractionState": "manual",
       "localizations": {
@@ -5145,6 +5233,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiadomienia Doddy’ego są wyłączone, więc porządki nie zadzwonią. Włącz je w Ustawieniach iOS."
+          }
+        }
+      }
+    },
+    "Notifications are off for Doddy, so the wrap-up can't ring. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia Doddy’ego są wyłączone, więc podsumowanie nie może się pojawić. Włącz je w Ustawieniach iOS."
           }
         }
       }
@@ -5530,6 +5629,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz porządki teraz"
+          }
+        }
+      }
+    },
+    "Open the wrap-up now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz podsumowanie teraz"
           }
         }
       }
@@ -7217,6 +7327,17 @@
         }
       }
     },
+    "Set. The wrap-up notification comes every evening.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione. Powiadomienie o podsumowaniu przyjdzie co wieczór."
+          }
+        }
+      }
+    },
     "Setting the reminder…": {
       "extractionState": "manual",
       "localizations": {
@@ -7708,6 +7829,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stabilnie"
+          }
+        }
+      }
+    },
+    "Still open from today or earlier. Tick the ones to move; each keeps its time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wciąż otwarte z dzisiaj lub wcześniej. Zaznacz te do przeniesienia; każde zachowa swoją godzinę."
           }
         }
       }
@@ -8588,6 +8720,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zegarek pokazuje przypięte notatki, najbliższe przypomnienia o notatkach i listy, a także może odhaczać pozycje i zapisywać nowe notatki. Robi to przez iPhone’a, który musi być w pobliżu; na zegarku nic nie jest zapisywane."
+          }
+        }
+      }
+    },
+    "The wrap-up couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić podsumowania. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
+    "The wrap-up shows your open reminders from the Reminders app. Turn on Reminders in Settings, Connections; they're read on this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie pokazuje otwarte przypomnienia z aplikacji Przypomnienia. Włącz Przypomnienia w Ustawieniach, w sekcji Połączenia; są czytane tylko na tym iPhonie."
           }
         }
       }

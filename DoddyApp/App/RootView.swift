@@ -189,6 +189,10 @@ struct RootView: View {
         }
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
+        // The evening wrap-up (ADR-256), from its notification or Settings.
+        .sheet(isPresented: $router.isWrapUpPresented, onDismiss: { router.showWaitingDraft() }) {
+            EveningWrapUpView(openSettings: { selectedTab = .settings })
+        }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })

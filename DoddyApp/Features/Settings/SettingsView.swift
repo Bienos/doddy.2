@@ -190,6 +190,8 @@ struct SettingsView: View {
 
                 MorningCheckInSettingsSection()
 
+                EveningWrapUpSettingsSection()
+
                 TidyUpSettingsSection()
 
                 BackupSettingsSection()

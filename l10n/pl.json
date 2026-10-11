@@ -949,5 +949,19 @@
  "Saturday and Sunday": "Sobota i niedziela",
  "Monday to Friday": "Od poniedziałku do piątku",
  "No alarms from Doddy. Ask Doddy, for example “Wake me at seven”.": "Brak budzików od Doddy'ego. Poproś Doddy'ego, na przykład „Obudź mnie o siódmej”.",
- "Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.": "Budziki wymagają iOS 26 lub nowszego. Na tym iPhonie Doddy może zamiast tego ustawić minutnik albo przypomnienie."
+ "Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.": "Budziki wymagają iOS 26 lub nowszego. Na tym iPhonie Doddy może zamiast tego ustawić minutnik albo przypomnienie.",
+ "Connections are paused, so Doddy isn't reading your reminders. Turn them back on in Settings, Connections.": "Połączenia są wstrzymane, więc Doddy nie czyta Twoich przypomnień. Włączysz je z powrotem w Ustawieniach, w sekcji Połączenia.",
+ "Set. The wrap-up notification comes every evening.": "Ustawione. Powiadomienie o podsumowaniu przyjdzie co wieczór.",
+ "A notification at this time says only \\\"Anything to move to tomorrow?\\\". Tap it to see open reminders from today and move the ones you pick. Needs Reminders on in Connections.": "O tej godzinie powiadomienie powie tylko „Coś przenieść na jutro?”. Stuknij je, aby zobaczyć otwarte przypomnienia z dzisiaj i przenieść te, które wybierzesz. Wymaga włączonych Przypomnień w Połączeniach.",
+ "Still open from today or earlier. Tick the ones to move; each keeps its time.": "Wciąż otwarte z dzisiaj lub wcześniej. Zaznacz te do przeniesienia; każde zachowa swoją godzinę.",
+ "Notifications are off for Doddy, so the wrap-up can't ring. Turn them on in iOS Settings.": "Powiadomienia Doddy’ego są wyłączone, więc podsumowanie nie może się pojawić. Włącz je w Ustawieniach iOS.",
+ "Nothing left from today. Good night.": "Z dzisiaj nic nie zostało. Dobranoc.",
+ "Move %lld to tomorrow": "Przenieś na jutro (%lld)",
+ "Open the wrap-up now": "Otwórz podsumowanie teraz",
+ "Evening wrap-up": "Wieczorne podsumowanie",
+ "Moved %lld to tomorrow. Checked in Reminders.": "Przeniesiono na jutro: %lld. Sprawdzone w Przypomnieniach.",
+ "The wrap-up shows your open reminders from the Reminders app. Turn on Reminders in Settings, Connections; they're read on this iPhone only.": "Podsumowanie pokazuje otwarte przypomnienia z aplikacji Przypomnienia. Włącz Przypomnienia w Ustawieniach, w sekcji Połączenia; są czytane tylko na tym iPhonie.",
+ "Moved %lld to tomorrow. %lld couldn't be moved (changed in Reminders, or the time doesn't exist tomorrow); check them there.": "Przeniesiono na jutro: %lld. Nie udało się przenieść: %lld (zmienione w Przypomnieniach albo ta godzina jutro nie istnieje); sprawdź je tam.",
+ "The wrap-up couldn't be set. Try again.": "Nie udało się ustawić podsumowania. Spróbuj jeszcze raz.",
+ "Anything for\\ntomorrow?": "Coś\nna jutro?"
 }
