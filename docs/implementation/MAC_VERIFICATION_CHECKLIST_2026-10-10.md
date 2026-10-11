@@ -301,3 +301,8 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Q5 | Fresh install; skip; **Turn these on** with the look-back ticked; allow notifications | "Weekly look-back set."; Settings › Weekly look-back shows Sunday 19:00, the tidy-up Sunday 18:00 |
 | Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |
 
+## 4q. Quick access tips (ADR-402)
+| # | Do this | Expect |
+|---|---|---|
+| A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
+

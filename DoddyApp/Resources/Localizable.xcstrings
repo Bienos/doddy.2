@@ -408,6 +408,17 @@
         }
       }
     },
+    "Action Button, on iPhones that have one: iOS Settings › Action Button › Controls › Talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przycisk czynności, na iPhone’ach, które go mają: Ustawienia iOS › Przycisk czynności › Elementy sterujące › Porozmawiaj z Doddym."
+          }
+        }
+      }
+    },
     "Add": {
       "extractionState": "manual",
       "localizations": {
@@ -1922,6 +1933,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontynuuj bez zapisywania"
+          }
+        }
+      }
+    },
+    "Control Center or the Lock Screen: add the Talk to Doddy control (edit Control Center, Add a Control, search Doddy).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centrum sterowania lub ekran blokady: dodaj element „Porozmawiaj z Doddym” (edytuj Centrum sterowania, Dodaj element sterujący, wyszukaj Doddy)."
           }
         }
       }
@@ -9417,6 +9439,17 @@
         }
       }
     },
+    "Siri: say “Hey Siri, talk to Doddy”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siri: powiedz „Hej Siri, porozmawiaj w aplikacji Doddy”."
+          }
+        }
+      }
+    },
     "Skip ahead to the tap test": {
       "extractionState": "manual",
       "localizations": {
@@ -9567,6 +9600,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zacznij słuchać, gdy otwieram Doddy’ego"
+          }
+        }
+      }
+    },
+    "Start me without opening the app": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchom mnie bez otwierania aplikacji"
           }
         }
       }

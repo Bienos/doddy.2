@@ -38,6 +38,8 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.switches["quickStart.morning"].exists)
         XCTAssertEqual(app.switches["quickStart.evening"].value as? String, "0", "Reminders is off on a fresh install")
         XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
+        // ADR-402: where Siri, the Action Button and the control are, without claiming they're set.
+        XCTAssertTrue(app.descendants(matching: .any)["quickStart.quickAccess"].exists)
         app.buttons["quickStart.notNow"].tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
