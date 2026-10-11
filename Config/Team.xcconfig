@@ -1,4 +1,10 @@
-// Signing team for every target (project.yml `configFiles`). Committed on purpose, with no team in it.
-// Your own team lives in Config/Team.local.xcconfig, which is git-ignored: run `make team ID=<TeamID>` once.
-// The "?" makes the include optional, so CI and fresh clones build without a team.
+// Signing settings for every target (project.yml `configFiles`). Committed on purpose, with no team in it.
+// Your own team lives in Config/Team.local.xcconfig, which is git-ignored: run `make team ID=<TeamID>` once
+// (add FREE=1 for a free "Personal Team", which cannot use App Groups).
+// Defaults: the App Group is on (owner, 2026-10-11: paid Apple Developer account).
+DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements
+DODDY_WIDGET_ENTITLEMENTS = Config/DoddyWidgets.entitlements
+DODDY_SHARE_ENTITLEMENTS = Config/DoddyShare.entitlements
+DODDY_WATCH_ENTITLEMENTS = Config/DoddyWatch.entitlements
+// The "?" makes the include optional, so CI and fresh clones build without a team. It comes last so it wins.
 #include? "Team.local.xcconfig"
