@@ -150,6 +150,26 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await call("GET", `/v1/updates/${sid}`, a.headers)).json().state, "unknown");
   });
 
+  test("a claimed message reaped by another worker before its turn is not sent", async () => {
+    const a = await newAccount();
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "cd".repeat(32), environment: "sandbox" });
+    const q = async (text: string) => (await call("POST", "/v1/updates", a.headers, { text, channels: ["push"], idempotencyKey: text })).json().messages[0].id;
+    const first = await q("reap-1");
+    const second = await q("reap-2");
+    await db.query("UPDATE outbound_messages SET send_at = now() - interval '1 hour' WHERE id = $1", [first]);
+    const sent: string[] = [];
+    const slow = new FakePush();
+    slow.send = async (_t, alert, id) => {
+      sent.push(alert.body);
+      // While this send is in flight, another worker's reaper marks the next one unknown.
+      await db.query("UPDATE outbound_messages SET state = 'unknown', error_code = 'worker_interrupted', body = NULL WHERE id = $1", [second]);
+      return { kind: "accepted", providerId: id };
+    };
+    await dispatchDue(db, { push: slow });
+    assert.ok(sent.includes("reap-1"));
+    assert.ok(!sent.includes("reap-2"), "an unknown message is never sent afterwards");
+  });
+
   test("Twilio status callback records delivery", async () => {
     const a = await newAccount();
     await call("POST", "/v1/phone/verification/check", a.headers, { phone: "+48500999888", code: "123456" });

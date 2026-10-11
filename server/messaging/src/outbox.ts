@@ -96,6 +96,12 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
      RETURNING m.id, m.account_id, m.channel, m.body, m.attempts`,
     [batch]);
   for (const msg of rows) {
+    // Claimed rows wait their turn in this batch. Refresh the claim just before sending so the
+    // stale-`sending` reaper times each message, not the whole batch; if another worker already
+    // reaped it as unknown, it must not be sent now.
+    const fresh = await db.query(
+      "UPDATE outbound_messages SET updated_at = now() WHERE id = $1 AND state = 'sending'", [msg.id]);
+    if (!fresh.rowCount) continue;
     let outcome: SendOutcome | { kind: "cancelled"; code: string };
     try {
       outcome = msg.channel === "push" ? await sendPush(db, senders.push, msg) : await sendSms(db, senders.sms, msg);
@@ -146,11 +152,15 @@ async function sendSms(db: Db, sender: SmsSender | undefined, msg: Claimed): Pro
 }
 
 async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelled"; code: string }): Promise<void> {
-  const final = (state: string, code: string | null, providerId: string | null = null) => db.query(
-    `UPDATE outbound_messages
-     SET state = $2, error_code = $3, provider_message_id = $4, body = NULL, updated_at = now()
-     WHERE id = $1 AND state = 'sending'`,
-    [msg.id, state, code, providerId]);
+  const final = async (state: string, code: string | null, providerId: string | null = null) => {
+    const r = await db.query(
+      `UPDATE outbound_messages
+       SET state = $2, error_code = $3, provider_message_id = $4, body = NULL, updated_at = now()
+       WHERE id = $1 AND state = 'sending'`,
+      [msg.id, state, code, providerId]);
+    // The row was reaped meanwhile: the real outcome would otherwise vanish without a trace.
+    if (!r.rowCount) console.log(JSON.stringify({ time: new Date().toISOString(), msg: "outcome after reap", id: msg.id, outcome: state, code }));
+  };
   switch (o.kind) {
     case "accepted": await final("sent", null, o.providerId); break;
     case "rejected": await final("failed", o.code); break;
