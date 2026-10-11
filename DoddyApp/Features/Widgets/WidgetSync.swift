@@ -51,10 +51,14 @@ final class WidgetSync {
             try WidgetSnapshotFile.write(snapshot)
             lastWritten = snapshot
             problem = nil
-            WidgetCenter.shared.reloadAllTimelines()
         } catch {
+            // Not remembered as written, so the next change writes again.
+            lastWritten = nil
             problem = NSLocalizedString("Widgets couldn't be updated, so they may show older notes or lists. Open the widget's note in Doddy to see what is saved.", comment: "")
         }
+        // After every write attempt (review I1): even when the read-back failed, the file may hold
+        // the new snapshot, and widgets must not keep showing deleted or turned-off content.
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// A widget tap on a list item. Only changes the item when the widget showed it as it is now;
