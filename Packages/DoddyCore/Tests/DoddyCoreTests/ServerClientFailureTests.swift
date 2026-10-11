@@ -81,6 +81,30 @@ final class ServerClientFailureTests: XCTestCase {
         XCTAssertEqual(DoddyServerClient.error(from: response), .invalidRequest(fields: ["idempotencyKey"]))
     }
 
+    func testCallInboxListsNotesThatCantBeReadSoTheyCanBeDiscarded() async throws {
+        let id = UUID()
+        let body = #"{"notes":[],"unreadable":[{"id":"\#(id.uuidString.lowercased())","createdAt":"2026-10-10T09:02:18.197Z"}]}"#
+        let transport = StepTransport([.success(ServerResponse(status: 200, body: Data(body.utf8)))])
+        let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
+        let inbox = try await client.callInbox()
+        XCTAssertEqual(inbox.unreadable.map(\.id), [id])
+        XCTAssertNotNil(inbox.unreadable.first?.createdDate)
+        // Older servers send no list.
+        let old = try JSONDecoder().decode(CallInbox.self, from: Data(#"{"notes":[]}"#.utf8))
+        XCTAssertEqual(old.unreadable, [])
+    }
+
+    func testACallInboxThatFailsToLoadIsAnErrorNotAnEmptyInbox() async {
+        let transport = StepTransport([.success(ServerResponse(status: 503, body: Data(#"{"error":"not_configured"}"#.utf8)))])
+        let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
+        do {
+            _ = try await client.callInbox()
+            XCTFail("expected an error")
+        } catch {
+            XCTAssertEqual(error as? ServerError, .notConfigured("not_configured"))
+        }
+    }
+
     func testOnlyErrorsBeforeTheRequestLeftCountAsNotSent() {
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.notConnectedToInternet)))
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.cannotConnectToHost)))

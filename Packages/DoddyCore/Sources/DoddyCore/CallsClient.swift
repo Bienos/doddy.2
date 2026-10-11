@@ -34,6 +34,30 @@ public struct CallNote: Equatable, Sendable, Decodable, Identifiable {
     public var createdDate: Date? { ServerDates.parse(createdAt) }
 }
 
+/// A call note the server holds but can't decrypt (e.g. after a key change). Only when it was
+/// said is known; it can still be discarded with `deleteCallNote`.
+public struct UnreadableCallNote: Equatable, Sendable, Decodable, Identifiable {
+    public let id: UUID
+    public let createdAt: String
+
+    public var createdDate: Date? { ServerDates.parse(createdAt) }
+}
+
+/// Everything waiting in the call-notes inbox, including the notes that can't be read.
+public struct CallInbox: Equatable, Sendable, Decodable {
+    public let notes: [CallNote]
+    public let unreadable: [UnreadableCallNote]
+
+    private enum CodingKeys: String, CodingKey { case notes, unreadable }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        notes = try container.decode([CallNote].self, forKey: .notes)
+        // Servers before the unreadable list omit it.
+        unreadable = try container.decodeIfPresent([UnreadableCallNote].self, forKey: .unreadable) ?? []
+    }
+}
+
 public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
     public let id: UUID
     public let direction: String
@@ -140,9 +164,14 @@ extension DoddyServerClient {
         return result.count
     }
 
+    /// Only the readable notes. Use `callInbox()` so notes that can't be read can be discarded.
     public func callNotes() async throws -> [CallNote] {
-        let list: NoteList = try await decoded(.get, "/v1/call-notes")
-        return list.notes
+        try await callInbox().notes
+    }
+
+    /// Throws when the inbox couldn't be loaded; an empty inbox is only ever what the server said.
+    public func callInbox() async throws -> CallInbox {
+        try await decoded(.get, "/v1/call-notes")
     }
 
     public func deleteCallNote(_ id: UUID) async throws {
@@ -163,5 +192,4 @@ private struct PinBody: Encodable { let pin: String }
 private struct EnabledBody: Encodable { let enabled: Bool }
 private struct SnapshotBody: Encodable { let items: [MemoryCopyItem] }
 private struct CountBody: Decodable { let count: Int }
-private struct NoteList: Decodable { let notes: [CallNote] }
 private struct CallList: Decodable { let calls: [CallRecord] }
