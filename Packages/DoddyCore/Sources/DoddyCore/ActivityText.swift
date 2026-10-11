@@ -101,6 +101,13 @@ public enum ActivityText {
             "Found in Reminders when you checked.": "Znalezione w Przypomnieniach przy sprawdzaniu.",
             "Not in Reminders when you checked. You can ask Doddy again.": "Nie było w Przypomnieniach przy sprawdzaniu. Możesz poprosić Doddy’ego ponownie.",
             "The conversation ended before you answered.": "Rozmowa skończyła się przed Twoją odpowiedzią.",
+            // Settled from Doddy's own notes and lists (ADR-321).
+            "Found in your notes when Doddy checked.": "Znalezione w notatkach przy sprawdzaniu.",
+            "Not in your notes when Doddy checked, so it didn't happen. You can ask again.":
+                "Nie było w notatkach przy sprawdzaniu, więc to się nie stało. Możesz poprosić ponownie.",
+            "Found in your lists when Doddy checked.": "Znalezione na listach przy sprawdzaniu.",
+            "Not in your lists when Doddy checked, so it didn't happen. You can ask again.":
+                "Nie było na listach przy sprawdzaniu, więc to się nie stało. Możesz poprosić ponownie.",
         ]
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
@@ -130,7 +137,7 @@ public enum ActivityText {
         return reasons
     }()
 
-    private static func polish(_ connection: VoiceConnection) -> String {
+    static func polish(_ connection: VoiceConnection) -> String {
         switch connection {
         case .calendar: "Kalendarz"
         case .reminders: "Przypomnienia"
@@ -151,6 +158,7 @@ public enum ActivityText {
     public static func note(_ english: String, _ language: NotificationLanguage) -> String {
         guard language == .polish else { return english }
         if let known = polishNotes[english] { return known }
+        if let settled = ActionStatusText.polishNote(english) { return settled }
         let prefix = "Not undone: ", suffix = " Nothing changed."
         if english.hasPrefix(prefix), english.hasSuffix(suffix), english.count > prefix.count + suffix.count {
             let reason = String(english.dropFirst(prefix.count).dropLast(suffix.count))

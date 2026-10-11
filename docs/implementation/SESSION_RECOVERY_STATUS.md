@@ -53,7 +53,7 @@ Date: 2026-10-11. Owner instruction: "start OP-023" (voice fallback and session 
 - **Not built:** the app hasn't been compiled with Xcode.
 - **No real drops tested:** Wi-Fi off mid-sentence, a server-side close, the agent saying goodbye, Airplane mode, a phone call.
 - **Unconfirmed on a device:** that `.agent` is what a real network drop reports, and that end_call arrives as `.user`.
-- **Polish:** the new strings aren't in the Polish catalog yet, so they show in English.
+- **Polish:** added (see `ACTION_STATUS_STATUS.md`, "Polish"), but not seen on a device.
 - **Checklist:** Mac checklist items SR1 to SR5.
 
 ## Constitution evidence log

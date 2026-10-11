@@ -1601,7 +1601,7 @@ final class VoiceSessionController {
         if case .failed = phase { return }
         // A drop is never shown as a normal end (ADR-330).
         if let end = sessionEnd, end.isDrop, wasLive {
-            phase = .failed(SessionRecovery.status(end, connected: connectedOnce).detail ?? "")
+            phase = .failed(SessionRecovery.status(end, connected: connectedOnce, language: .current).detail ?? "")
             offerSaveSuggestions()
             return
         }
@@ -1625,7 +1625,7 @@ final class VoiceSessionController {
 
     /// The title for how it ended: "The conversation dropped", "Couldn't connect"…
     var endTitle: String? {
-        sessionEnd.map { NSLocalizedString(SessionRecovery.status($0, connected: connectedOnce).title, comment: "") }
+        sessionEnd.map { SessionRecovery.status($0, connected: connectedOnce, language: .current).title }
     }
 
     private func keepRecoveryDraft() {

@@ -66,7 +66,7 @@ Date: 2026-10-11. Owner instruction: "start the action status model". This cover
   - whether an all-day event reads back on the same day;
   - whether start and end read back to the second;
   - whether `event(withIdentifier:)` returns the event right after a save.
-- English/Polish on a device. The new screen strings are not in the Polish catalog yet; they show in English.
+- English/Polish on a device. Polish was added afterwards (see "Polish" below), but it hasn't been seen on a device.
 - Mac checklist items AS1 to AS5.
 
 ## Timers and alarms (ADR-320)
@@ -212,6 +212,20 @@ Owner instruction: "extend it to online accounts". Gmail drafts and Todoist task
 - Whether Todoist's search finds a task just made.
 - The app wiring compiled with Xcode.
 - Mac checklist items AS13 to AS15.
+
+## Polish (follow-up, owner: "do the Polish pass")
+Text is kept in English and translated when it is shown, as for the rest of What Doddy did (ADR-275). `ActionStatusText.swift` covers:
+- **Statuses:** status names (`ActionStatus.text(_:)`) and the history line (`ActivityEntry.historyText`).
+- **Receipts:** the heading and Doddy's own labels (`ActivityReceipt.heading`/`lines(_:)`): "Lista:", "Dodano:", "Już na liście:", "Dzwoni o", the server's write summaries and the replay line.
+- **Notes:** the notes written when Doddy settles notes and lists itself, including the list-name forms, and the 3-try stop note for every app (through `ActivityText.note`).
+- **Plan cards:** every blocked-step line (`PlanBlock.screenText(_:)`). Before, every kind of block line was English only.
+- **Session recovery (ADR-330):** the end titles and lines (`SessionRecovery.status(_:connected:language:)`), and the draft card's labels (`l10n/pl.json`).
+
+Kept as written: list names, items, titles, the user's words, a reason a service gave, and dates in receipts (still the English date format, as elsewhere in receipts).
+
+`l10n/pl.json` also got Polish for a few other screens' strings that were missing it: the camera shortcut, "No reminders coming up.", "Reading the photo…", "Stop repeating" and "Open Shortcuts". The catalog now covers 1188 of 1209 strings; the rest are test fixtures, brand names and punctuation.
+
+Tests: `ActionStatusTextTests` (7). A planted missing translation was caught.
 
 ## Constitution evidence log
 | Rule | How it applies | Enforcing code | Tests run | Gap / claim to limit |

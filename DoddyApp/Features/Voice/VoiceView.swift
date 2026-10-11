@@ -1430,9 +1430,15 @@ struct RecoveryDraftCard: View {
                 Label(String(format: NSLocalizedString("Saved as a note: “%@”", comment: ""), saved), systemImage: "checkmark.circle")
                     .accessibilityIdentifier("voice.recovery.saved")
             } else if let draft = controller.recovery {
-                Label(draft.pendingNote != nil ? "Doddy was asking to save this" : "Doddy last heard you say", systemImage: "text.bubble")
-                    .font(.headline)
-                Text("A draft, not a note: it's saved only if you tap Save.")
+                Group {
+                    if draft.pendingNote != nil {
+                        Label("Doddy was asking to save this", systemImage: "text.bubble")
+                    } else {
+                        Label("Doddy last heard you say", systemImage: "text.bubble")
+                    }
+                }
+                .font(.headline)
+                Text("A draft, not a note: it's saved only if you tap Save as note.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.secondaryText)
                 TextField("Draft", text: Binding(get: { controller.recovery?.text ?? "" }, set: { controller.editRecovery($0) }), axis: .vertical)

@@ -45,6 +45,17 @@
         }
       }
     },
+    "A draft, not a note: it's saved only if you tap Save as note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To szkic, nie notatka: zapisze się dopiero po stuknięciu „Zapisz jako notatkę”."
+          }
+        }
+      }
+    },
     "A handwritten or printed list. Doddy reads it on this iPhone; the photo isn't kept or sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -408,6 +419,17 @@
         }
       }
     },
+    "Add camera shortcut": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj skrót aparatu"
+          }
+        }
+      }
+    },
     "Add my own topic": {
       "extractionState": "manual",
       "localizations": {
@@ -415,6 +437,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj własny temat"
+          }
+        }
+      }
+    },
+    "Add the shortcut once. Shortcuts shows it first, and you tap Add Shortcut.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj skrót raz. Skróty najpierw go pokażą, a potem stukasz „Dodaj skrót”."
           }
         }
       }
@@ -2641,6 +2674,17 @@
         }
       }
     },
+    "Doddy last heard you say": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnie, co Doddy usłyszał"
+          }
+        }
+      }
+    },
     "Doddy may call me": {
       "extractionState": "manual",
       "localizations": {
@@ -2747,6 +2791,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy tłumaczy między Tobą a kimś, kto mówi w innym języku."
+          }
+        }
+      }
+    },
+    "Doddy was asking to save this": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pytał, czy to zapisać"
           }
         }
       }
@@ -2927,6 +2982,28 @@
         }
       }
     },
+    "Don't have the shortcut? Add it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie masz skrótu? Dodaj go"
+          }
+        }
+      }
+    },
+    "Don't have the shortcut? Show me how": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie masz skrótu? Pokaż, jak"
+          }
+        }
+      }
+    },
     "Don't keep it": {
       "extractionState": "manual",
       "localizations": {
@@ -3066,6 +3143,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stuknij dwukrotnie, aby pominąć."
+          }
+        }
+      }
+    },
+    "Draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szkic"
           }
         }
       }
@@ -5578,6 +5666,17 @@
         }
       }
     },
+    "No reminders coming up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak nadchodzących przypomnień."
+          }
+        }
+      }
+    },
     "No text was found in this photo. Add a few words so you can find the note later.": {
       "extractionState": "manual",
       "localizations": {
@@ -6656,6 +6755,17 @@
         }
       }
     },
+    "Open Shortcuts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Skróty"
+          }
+        }
+      }
+    },
     "Open iPhone Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -7547,6 +7657,17 @@
         }
       }
     },
+    "Reading the photo…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczytuję zdjęcie…"
+          }
+        }
+      }
+    },
     "Ready (not yet tested with a real server)": {
       "extractionState": "manual",
       "localizations": {
@@ -8328,6 +8449,17 @@
         }
       }
     },
+    "Save as note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz jako notatkę"
+          }
+        }
+      }
+    },
     "Save invite code": {
       "extractionState": "manual",
       "localizations": {
@@ -8434,6 +8566,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano"
+          }
+        }
+      }
+    },
+    "Saved as a note: “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano jako notatkę: „%@”"
           }
         }
       }
@@ -9589,6 +9732,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymaj"
+          }
+        }
+      }
+    },
+    "Stop repeating": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie powtarzaj"
           }
         }
       }

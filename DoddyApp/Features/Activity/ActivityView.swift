@@ -125,9 +125,9 @@ struct ActivityView: View {
             // What the app itself read back (ADR-319); kept only on confirmed entries.
             if let receipt = entry.receipt {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text("Read back from \(receipt.app.title) at \(receipt.readAt.formatted(date: .omitted, time: .shortened))")
+                    Text(verbatim: receipt.heading(.current, time: receipt.readAt.formatted(date: .omitted, time: .shortened)))
                         .font(.caption.weight(.semibold))
-                    ForEach(receipt.lines, id: \.self) { line in
+                    ForEach(receipt.lines(.current), id: \.self) { line in
                         Text(line).font(.caption)
                     }
                 }
@@ -136,9 +136,7 @@ struct ActivityView: View {
             }
             // How an unsure change was settled, step by step.
             if entry.history.contains(where: { $0.status == .unknown }) {
-                Text(entry.history.filter { $0.status != .proposed }
-                    .map { "\($0.status.text) \($0.at.formatted(date: .omitted, time: .shortened))" }
-                    .joined(separator: " → "))
+                Text(verbatim: entry.historyText(.current) { $0.formatted(date: .omitted, time: .shortened) })
                     .font(.caption)
                     .foregroundStyle(Theme.secondaryText)
                     .accessibilityIdentifier("activity.history")
