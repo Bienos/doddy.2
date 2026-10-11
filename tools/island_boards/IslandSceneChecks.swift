@@ -322,7 +322,12 @@ enum IslandSceneChecks {
         expect(pop.frame(at: 0) == 1 && pop.frame(at: pop.duration + 5) == 4, "pop plays once and rests on frame 4")
         expect(DoddyMotion.jump.frame(at: 100) == 5 && DoddyMotion.jump.stillFrame == 5, "jump ends standing")
         expect(DoddyMotion.run.stillFrame == 1 && DoddyMotion.walk.stillFrame == 1, "a loop's still is its first frame")
-        expect(DoddyMotion.turn.frames == [3] && DoddyMotion.turn.frame(at: 9) == 3, "turn is frame 3 only")
+        expect(DoddyMotion.turn.frames == [1, 2, 3] && DoddyMotion.turn.frame(at: 9) == 3 && DoddyMotion.turn.stillFrame == 3,
+               "turn plays 1-3 once and rests turned (ADR-323)")
+        expect(DoddyMotion.sit.frame(at: 0) == 1 && DoddyMotion.sit.frame(at: 9) == 5 && DoddyMotion.sit.stillFrame == 5,
+               "sit ends seated on the box")
+        expect(DoddyMotion.sit.figure.y + DoddyMotion.sit.figure.height == DoddyMotion.idle.figure.y + DoddyMotion.idle.figure.height,
+               "sit and idle stand on the same floor")
         expect(DoddyMotion.idle.frame(at: -1) == 1, "a time before zero")
         expect(DoddyMotion.allCases.filter(\.loops) == [.walk, .run], "only walk and run loop")
         for m in DoddyMotion.allCases {

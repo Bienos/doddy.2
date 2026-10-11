@@ -20,6 +20,7 @@ from PIL import Image
 APP = "DoddyApp/Resources/Assets.xcassets"
 WIDGETS = "DoddyWidgets/Assets.xcassets"
 WATCH = "DoddyWatchWidgets/Assets.xcassets"
+WATCH_APP = "DoddyWatch/Assets.xcassets"
 INFO = {"author": "xcode", "version": 1}
 
 
@@ -97,7 +98,8 @@ def main(pack, cuts, root, strips=None):
         {"filename": "face@2x.png", "idiom": "universal", "scale": "2x"},
     ], "info": INFO})
     if strips:
-        build_309(pack, strips, app, widgets)
+        build_313(pack, strips, app, widgets)
+        build_314(pack, root, app, widgets)
     print("done")
 
 
@@ -107,13 +109,15 @@ STRIPS = [
     ("walk", "012_doddy_walk_v01", 567, [], range(1, 9)),
     ("run", "014_doddy_run_v01", 568, [], range(1, 7)),
     ("jump", "015_doddy_jump_v01", 596, ["--min-fraction", "0.3"], range(1, 6)),
-    ("turn", "018_doddy_turn_v01", 605, [], [3]),
+    ("turn", "018_doddy_turn_v01", 605, [], range(1, 4)),
     ("pop", "019_doddy_pop_v01", 640, ["--min-fraction", "0"], range(1, 5)),
     ("idle", "013_doddy_idle_v01", 760, [], range(1, 5)),
+    # ADR-323: he sits down on a box after the idle breaths.
+    ("sit", "017_doddy_sit_v01", 582, [], range(1, 6)),
 ]
 
 
-def build_309(pack, strips, app, widgets):
+def build_313(pack, strips, app, widgets):
     # Focus and breathing islands: two more poses from 01-transparent-poses.
     for name in ("basketball_dribble", "oneleg_balance"):
         pose = Image.open(os.path.join(pack, f"poses/doddy_{name}_v02.png")).convert("RGBA")
@@ -133,6 +137,24 @@ def build_309(pack, strips, app, widgets):
     listening = Image.open(os.path.join(pack, "poses/doddy_listening_v02.png")).convert("RGBA")
     face = listening.crop((514 - 235, 387 - 235, 514 + 235, 387 + 235))
     scaled_set(widgets, "WidgetDoddy_face", face, (120, 120))
+
+
+def build_314(pack, root, app, widgets):
+    """ADR-323: the "Pause all connections" pose, and two poses for the watch app itself."""
+    crouch = Image.open(os.path.join(pack, "poses/doddy_sneaky_crouch_v02.png")).convert("RGBA")
+    for catalog in (app, widgets):
+        scaled_set(catalog, "WholeDoddy_sneaky_crouch", crouch, (200, 300))
+    watch_app = os.path.join(root, WATCH_APP)
+    os.makedirs(watch_app, exist_ok=True)
+    write_json(os.path.join(watch_app, "Contents.json"), {"info": INFO})
+    for name in ("crosslegged", "fistpump"):
+        pose = Image.open(os.path.join(pack, f"poses/doddy_{name}_v02.png")).convert("RGBA")
+        folder = os.path.join(watch_app, f"WatchDoddy_{name}.imageset")
+        os.makedirs(folder, exist_ok=True)
+        pose.resize((120, 180), Image.LANCZOS).save(os.path.join(folder, "art@2x.png"), optimize=True)
+        write_json(os.path.join(folder, "Contents.json"), {"images": [
+            {"filename": "art@2x.png", "idiom": "universal", "scale": "2x"},
+        ], "info": INFO})
 
 
 if __name__ == "__main__":

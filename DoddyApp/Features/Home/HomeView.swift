@@ -16,6 +16,8 @@ struct HomeView: View {
     @State private var modal: MemoryModal?
     /// Doddy's idle breaths are playing (ADR-313).
     @State private var breathing = false
+    /// He has sat down on his box after the breaths (ADR-323).
+    @State private var seated = HomeIdle.sat
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
@@ -28,7 +30,8 @@ struct HomeView: View {
     private var router: ShortcutRouter { .shared }
 
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
-    /// four times and sits. Waits a moment first, so an opening that is about to start wins.
+    /// four times and sits down on his box (ADR-323). Waits a moment first, so an opening that is
+    /// about to start wins. The opening's hand-over still lands on the usual sitting picture.
     private func breatheOnce() async {
         guard !HomeIdle.played, !reduceMotion, !hideCharacterArt else { return }
         try? await Task.sleep(for: .seconds(0.6))
@@ -36,6 +39,7 @@ struct HomeView: View {
         HomeIdle.played = true
         breathing = true
         try? await Task.sleep(for: .seconds(DoddyMotion.idle.duration + 0.2))
+        seated = true
         breathing = false
     }
 
@@ -67,6 +71,13 @@ struct HomeView: View {
                             DoddyMotionView(motion: .idle, height: 170)
                                 .padding(.bottom, 31)
                                 .frame(height: 210, alignment: .bottom)
+                        } else if seated, ready == nil {
+                            // Then he sits down on his box (ADR-323) and stays there this launch.
+                            // Same scale and floor as the breaths (both strips' boxes end at 564/600).
+                            DoddyMotionView(motion: .sit, height: 166, playing: !HomeIdle.sat)
+                                .padding(.bottom, 31)
+                                .frame(height: 210, alignment: .bottom)
+                                .onAppear { HomeIdle.sat = true }
                         } else {
                             UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
                         }
@@ -86,6 +97,10 @@ struct HomeView: View {
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: breathing)
                         .task { await breatheOnce() }
+                        // An opening (a later return) lands on the usual sitting picture: off the box.
+                        .onChange(of: opening?.play == nil) { _, nothingPlaying in
+                            if !nothingPlaying { seated = false; HomeIdle.sat = false }
+                        }
                         // Doddy's room behind Doddy only, edge to edge; no text over it (ADR-308).
                         .background {
                             SceneryBackdrop(place: .home, height: 270, focus: 0.2)
@@ -351,4 +366,6 @@ private struct HomeActionTile: View {
 @MainActor
 enum HomeIdle {
     static var played = false
+    /// He sat down on his box this launch (ADR-323): later visits show him seated, without replaying.
+    static var sat = false
 }
