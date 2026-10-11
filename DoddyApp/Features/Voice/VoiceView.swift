@@ -659,7 +659,7 @@ struct VoiceView: View {
             Label(String(format: NSLocalizedString("Leave at %@", comment: ""), plan.leaveAt.formatted(date: .omitted, time: .shortened)), systemImage: "bell")
                 .font(.headline)
             // ADR-347: off on every new card, because it shows the place on the Lock Screen.
-            if LeaveByCountdown.isAvailable(plan, now: .now) {
+            if DeviceSupport.host.supports(.liveActivities), LeaveByCountdown.isAvailable(plan, now: .now) {
                 Toggle("Countdown on the Lock Screen", isOn: Binding(get: { controller.leaveByCountdown }, set: { controller.leaveByCountdown = $0 }))
                     .accessibilityIdentifier("voice.leaveBy.countdown")
                 Text("Shows the place and the time left on the Lock Screen, and on your Apple Watch.")

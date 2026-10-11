@@ -20,7 +20,7 @@ final class ShoppingModeController {
 
     private init() {}
 
-    var isAvailable: Bool { ActivityAuthorizationInfo().areActivitiesEnabled }
+    var isAvailable: Bool { DeviceSupport.host.supports(.liveActivities) && ActivityAuthorizationInfo().areActivitiesEnabled }
 
     func isOn(for listID: UUID) -> Bool { self.listID == listID }
 

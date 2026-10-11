@@ -694,6 +694,17 @@
         }
       }
     },
+    "Alarms can't be set on a Mac. Doddy can set timers and reminders instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na Macu nie można ustawiać budzików. Doddy może zamiast tego ustawić minutniki i przypomnienia."
+          }
+        }
+      }
+    },
     "Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.": {
       "extractionState": "manual",
       "localizations": {

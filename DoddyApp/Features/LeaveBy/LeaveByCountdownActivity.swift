@@ -8,7 +8,8 @@ import Foundation
 enum LeaveByCountdownActivity {
     /// True when iOS accepted the countdown.
     static func start(_ plan: LeaveByPlan, now: Date = .now) -> Bool {
-        guard LeaveByCountdown.isAvailable(plan, now: now), ActivityAuthorizationInfo().areActivitiesEnabled else { return false }
+        guard DeviceSupport.host.supports(.liveActivities), LeaveByCountdown.isAvailable(plan, now: now),
+              ActivityAuthorizationInfo().areActivitiesEnabled else { return false }
         let state = LeaveByActivityAttributes.ContentState(leaveAt: plan.leaveAt, arriveBy: plan.request.arriveBy)
         do {
             _ = try Activity.request(

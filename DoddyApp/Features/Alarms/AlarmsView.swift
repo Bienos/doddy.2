@@ -9,7 +9,10 @@ struct AlarmsView: View {
     var body: some View {
         List {
             Section {
-                if AlarmScheduler.support() == .needsNewerIOS {
+                if AlarmScheduler.support() == .notOnThisDevice {
+                    Text("Alarms can't be set on a Mac. Doddy can set timers and reminders instead.")
+                        .foregroundStyle(Theme.secondaryText)
+                } else if AlarmScheduler.support() == .needsNewerIOS {
                     Text("Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.")
                         .foregroundStyle(Theme.secondaryText)
                 } else if alarms.isEmpty {

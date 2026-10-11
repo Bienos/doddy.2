@@ -71,6 +71,8 @@ public enum AlarmSupport: Equatable, Sendable {
     case needsNewerIOS
     /// The user said no to alarms in iOS Settings.
     case notAllowed
+    /// A device without AlarmKit, such as a Mac running the iPad app (ADR-349).
+    case notOnThisDevice
 }
 
 extension VoiceToolRequest {

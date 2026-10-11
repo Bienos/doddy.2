@@ -1779,6 +1779,7 @@ final class VoiceSessionController {
             switch AlarmScheduler.support() {
             case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
             case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
+            case .notOnThisDevice: await reply(call.toolCallId, VoiceToolReply.alarmNotOnThisDevice(DeviceSupport.host))
             case .available: propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
             }
         case .openMap(let place):
@@ -2657,6 +2658,7 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.alarmUnconfirmed
             case .needsNewerIOS: return VoiceToolReply.alarmNeedsNewerIOS
             case .notAllowed: return VoiceToolReply.alarmNotAllowed
+            case .notOnThisDevice: return VoiceToolReply.alarmNotOnThisDevice(DeviceSupport.host)
             }
         } catch {
             return VoiceToolReply.notAdded(UserFacingError.message(for: error))

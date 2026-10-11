@@ -20,10 +20,13 @@ enum AlarmScheduler {
         case unconfirmed
         case needsNewerIOS
         case notAllowed
+        /// A Mac running the iPad app has no AlarmKit (ADR-349).
+        case notOnThisDevice
     }
 
     /// Before a card is shown: can this iPhone set an alarm at all?
     static func support() -> AlarmSupport {
+        guard DeviceSupport.host.supports(.alarms) else { return .notOnThisDevice }
         #if canImport(AlarmKit)
         if #available(iOS 26.0, *) { return AlarmKitBackend.support() }
         #endif
