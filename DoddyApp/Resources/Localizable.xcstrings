@@ -12,6 +12,17 @@
         }
       }
     },
+    "%lld left": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zostało: %lld"
+          }
+        }
+      }
+    },
     "A little\ntidier.": {
       "extractionState": "manual",
       "localizations": {
@@ -2263,6 +2274,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy potrzebuje Twojej lokalizacji podczas używania aplikacji, żeby przypomnieć Ci w danym miejscu. Nic nie zostało ustawione. Zezwól na to w Ustawieniach."
+          }
+        }
+      }
+    },
+    "Doddy reminder %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie Doddy’ego %@"
           }
         }
       }
@@ -4973,6 +4995,17 @@
         }
       }
     },
+    "Nothing coming up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic się nie zbliża."
+          }
+        }
+      }
+    },
     "Nothing exact was said, so there's nothing to save.": {
       "extractionState": "manual",
       "localizations": {
@@ -5530,6 +5563,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz raz Doddy’ego na iPhonie, żeby zobaczyć tu swoje notatki i listy."
+          }
+        }
+      }
+    },
+    "Open Doddy on your iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego na iPhonie."
           }
         }
       }
@@ -6454,6 +6498,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnienie"
+          }
+        }
+      }
+    },
+    "Reminder at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie o %@"
           }
         }
       }
@@ -9435,6 +9490,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw włącz SMS-y w sekcji Powiadomienia i SMS-y."
+          }
+        }
+      }
+    },
+    "Turned off in Doddy's Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączone w Ustawieniach Doddy’ego."
           }
         }
       }

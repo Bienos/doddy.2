@@ -25,6 +25,7 @@ TARGETS = [
     ("DoddyApp/Resources/Localizable.xcstrings", ("DoddyApp", "Shared")),
     ("DoddyWidgets/Localizable.xcstrings", ("DoddyWidgets", "Shared")),
     ("DoddyWatch/Localizable.xcstrings", ("DoddyWatch",)),
+    ("DoddyWatchWidgets/Localizable.xcstrings", ("DoddyWatchWidgets",)),
 ]
 # System permission prompts (INFOPLIST_KEY_NS…UsageDescription in project.yml, app target):
 # l10n/pl_infoplist.json holds the English each translation was made from, so a changed prompt

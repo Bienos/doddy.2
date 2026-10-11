@@ -30,7 +30,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyWatch Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyWatch DoddyWatchWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import CloudKit|import FirebaseCore|import Sentry|import Analytics'

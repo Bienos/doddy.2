@@ -38,6 +38,10 @@ settings:
     # widgets say "Open Doddy to set up widgets" and the app writes nothing.
     DODDY_APP_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
     DODDY_WIDGET_ENTITLEMENTS: ""
+    # Watch complications (ADR-257) read the snapshot from the watch's App Group, also off by
+    # default. To turn on: DODDY_WATCH_ENTITLEMENTS = Config/DoddyWatch.entitlements (it is used by
+    # the watch app and its widget extension).
+    DODDY_WATCH_ENTITLEMENTS: ""
 targets:
   Doddy:
     type: application
@@ -116,12 +120,17 @@ targets:
     platform: watchOS
     sources:
       - path: DoddyWatch
+      - path: Shared/Widgets/WidgetSnapshotFile.swift
     dependencies:
+      # Watch face complications and the Smart Stack (ADR-257), embedded in the watch app.
+      - target: DoddyWatchWidgets
       - package: DoddyCore
         product: DoddyCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
+        INFOPLIST_FILE: Config/DoddyWatch-Info.plist
         PRODUCT_NAME: DoddyWatch
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
@@ -131,6 +140,29 @@ targets:
         INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: NO
         # A single-target watchOS app (watchOS 7+), not a WatchKit extension.
         INFOPLIST_KEY_WKApplication: YES
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+  DoddyWatchWidgets:
+    # Watch face complications and the Smart Stack (ADR-257). Reads only the snapshot the watch
+    # app saves in the watch's App Group; shows times, counts and list names, never note words.
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: DoddyWatchWidgets
+      - path: Shared/Widgets/WidgetSnapshotFile.swift
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp.widgets
+        PRODUCT_NAME: DoddyWatchWidgets
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyWatchWidgets-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
   DoddyTests:

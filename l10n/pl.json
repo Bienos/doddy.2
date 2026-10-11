@@ -963,5 +963,11 @@
  "The wrap-up shows your open reminders from the Reminders app. Turn on Reminders in Settings, Connections; they're read on this iPhone only.": "Podsumowanie pokazuje otwarte przypomnienia z aplikacji Przypomnienia. Włącz Przypomnienia w Ustawieniach, w sekcji Połączenia; są czytane tylko na tym iPhonie.",
  "Moved %lld to tomorrow. %lld couldn't be moved (changed in Reminders, or the time doesn't exist tomorrow); check them there.": "Przeniesiono na jutro: %lld. Nie udało się przenieść: %lld (zmienione w Przypomnieniach albo ta godzina jutro nie istnieje); sprawdź je tam.",
  "The wrap-up couldn't be set. Try again.": "Nie udało się ustawić podsumowania. Spróbuj jeszcze raz.",
- "Anything for\\ntomorrow?": "Coś\nna jutro?"
+ "Anything for\\ntomorrow?": "Coś\nna jutro?",
+ "Reminder at %@": "Przypomnienie o %@",
+ "Open Doddy on your iPhone.": "Otwórz Doddy’ego na iPhonie.",
+ "%lld left": "Zostało: %lld",
+ "Turned off in Doddy's Settings.": "Wyłączone w Ustawieniach Doddy’ego.",
+ "Nothing coming up.": "Nic się nie zbliża.",
+ "Doddy reminder %@": "Przypomnienie Doddy’ego %@"
 }

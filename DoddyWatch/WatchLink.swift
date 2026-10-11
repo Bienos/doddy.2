@@ -2,6 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 import WatchConnectivity
+import WidgetKit
 
 /// The watch's side (ADR-232). Holds only the last snapshot the iPhone sent (in memory, and in
 /// the system's own application context); asks the iPhone to tick or save and shows its reply.
@@ -52,6 +53,12 @@ final class WatchLink: NSObject {
     fileprivate func received(_ context: [String: Any]) {
         guard let data = context[WatchLinkVersion.snapshotKey] as? Data, let decoded = WidgetSnapshot.decoded(data) else { return }
         snapshot = decoded
+        // The complications (ADR-257) read the same snapshot from the watch's App Group folder.
+        // "Show in widgets" off arrives as an empty snapshot, so nothing of the user's stays there.
+        // Without the App Group the write fails and the complications say to open Doddy.
+        if (try? WidgetSnapshotFile.write(decoded)) != nil {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 }
 
