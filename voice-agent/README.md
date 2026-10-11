@@ -42,6 +42,13 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
 step catches it. Last synced 2026-10-10 (agent version `agtvrsn_1601m4m2szrwfb9rhx1r2vcgmc3j`, ADR-253: `said_time` on three tools and the plan example, two prompt sentences, edited in place in the live prompt, which is ahead of this branch's `instructions.md` with lists, translator, morning check-in and note-reminder `repeat` from other branches; rollback `agtvrsn_1601m4m03vmqe90rh35280g5pxp7`. Before that `agtvrsn_2801m4knwd04fxfbj25wat868jtp`, ADR-204: `propose_plan`; before that `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`, ADR-198: `remind_me_about_note`; before that `agtvrsn_5801m4k5544wevk9bz7wezwneh88`, ADR-177: AI disclosure line; before that `agtvrsn_3401m4k47e2revvv01sk7xv1tb26`, ADR-173: `web_search` added; before that `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 21 live tools (22 since ADR-198) (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_5801m4jtvazveprbj3znhn66j4tt` (before web search).
 
+**Applied to the live agent 2026-10-11 (ADR-324, unlock as you go):** two prompt sentences edited in place, the
+rest of the live prompt byte-for-byte as read first: the Settings line under "Tools on the phone" (the card asks to
+allow exactly what the request needs and the request runs again by itself; say one short line; never say access was
+given; Settings is only where access is taken back) and the online-account rule for "declined" / iPhone-denied results.
+Version `agtvrsn_7001m4nt39q1fhwrhtsyqdegf35g` → `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh`; 51 tools untouched. For rollback,
+the previous version has the two old sentences.
+
 **Applied to the live agent 2026-10-10 (ADR-129):** the M4 Reminders wording (ADR-126) and the calendar
 date rules (ADR-127, ADR-128) in `create_reminder`, `create_calendar_event` and the prompt. The opening line
 of `instructions.md` is the owner's dashboard edit, copied back so the spec matches the live prompt.

@@ -1,7 +1,7 @@
 # Unlock as you go — status (ADR-324)
 Date: 2026-10-11. Owner: "go build it, one card with two taps". Decision and rules: `docs/product/UNLOCK_AS_YOU_GO.md`.
 
-**Overall: built on Linux; the iOS app is NOT compiled, NOT run on an iPhone, and the live ElevenLabs agent prompt is NOT updated.** The DoddyCore package part is tested here; the SwiftUI and controller part is syntax-parsed only.
+**Overall: built on Linux and the live ElevenLabs agent prompt is updated; the iOS app is NOT compiled and NOT run on an iPhone.** The DoddyCore package part is tested here; the SwiftUI and controller part is syntax-parsed only.
 
 ## What was built
 
@@ -34,7 +34,10 @@ UnlockTests cover: only the four server codes raise a card, an expired confirmat
 - Demo mode end to end (mock server): "Connect demo Gmail" on the card, then the switch, then the request.
 - iOS denial: the blocked card and Open iPhone Settings.
 - Dynamic Type, VoiceOver order of the step list, dark mode.
-- **Live agent**: `voice-agent/instructions.md` is the spec; the ElevenLabs agent still has the old "say they can switch it on in Settings" lines until the owner (or a session with approval) updates it. Until then Doddy's spoken line may still mention Settings while the card is on screen.
+- A real conversation against the updated live agent: that Doddy says one short line and waits while the card is up, and accepts "declined" without asking again.
+
+## Live agent (owner: "yes update the live agent too", 2026-10-11)
+Agent `agent_0501m4et27vyeawrwqfdxxfszfa6` was re-read first (version `agtvrsn_7001m4nt39q1fhwrhtsyqdegf35g`); both old sentences were present verbatim. Only those two were replaced, with the exact text now in `voice-agent/instructions.md`; the prompt is otherwise unchanged and the 51 tools were not sent. New version `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh`. Not run in a conversation yet.
 
 ## Constitution evidence (DOD rules)
 - `disallow_model_only_approval`, DOD-07: the card is raised from `UnlockNeed.from(error)` and `DeviceConnections.access`, never from the agent's text; every step is verified against the server's answer or iOS before the next (tests: `testOnlyUnlockableServerCodesRaiseACard`, `testConnectedAccountWithToolOffNeedsOnlyThatSwitch`).
