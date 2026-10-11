@@ -524,7 +524,7 @@
         },
         "required": ["query", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4nt0dfmecabw665gm7xqwcs"}
     },
     {
       "type": "function",
@@ -542,7 +542,7 @@
     {
       "type": "function",
       "name": "search_notion",
-      "description": "Search the titles of Notion pages that were shared with Doddy. You get titles and last-edited times only; you cannot read page content or change anything. Use it when the user asks where a Notion page is. Answer only from the result and never invent pages. If nothing is found, say Notion only finds pages shared with Doddy. If the result says the tool is switched off or Notion isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
+      "description": "Search the titles of Notion pages that were shared with Doddy. You get titles and last-edited times only; to hear one page's text, use read_notion_page. You cannot change anything. Use it when the user asks where a Notion page is. Answer only from the result and never invent pages. If nothing is found, say Notion only finds pages shared with Doddy. If the result says the tool is switched off or Notion isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -563,7 +563,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_5301m4nszh67fbqbhsg52p4r7ynp"}
     },
     {
       "type": "function",
