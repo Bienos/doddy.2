@@ -1,7 +1,7 @@
 import Foundation
 
 // The weekly look-back (ADR-306). Off by default. Once a week, on the day and at the time the
-// user picks (Sunday 18:00 to start), a notification says only "Your week with Doddy". Its screen
+// user picks (Sunday 19:00 to start, an hour after the tidy-up; ADR-310), a notification says only "Your week with Doddy". Its screen
 // is built on this iPhone from what is already here: the notes saved in the last seven days, list
 // items ticked off, changes Doddy made and checked ("What Doddy did", done only), and, if Calendar
 // or Reminders are on in Connections, what is coming up in the next seven days. Counts and the
@@ -15,7 +15,7 @@ public struct WeeklyLookBackSettings: Equatable, Sendable {
     public var hour: Int
     public var minute: Int
 
-    public init(isOn: Bool = false, weekday: Int = 1, hour: Int = 18, minute: Int = 0) {
+    public init(isOn: Bool = false, weekday: Int = 1, hour: Int = 19, minute: Int = 0) {
         self.isOn = isOn
         self.weekday = min(max(weekday, 1), 7)
         self.hour = min(max(hour, 0), 23)
@@ -31,7 +31,7 @@ public struct WeeklyLookBackSettings: Equatable, Sendable {
         WeeklyLookBackSettings(
             isOn: defaults.bool(forKey: isOnKey),
             weekday: defaults.object(forKey: weekdayKey) as? Int ?? 1,
-            hour: defaults.object(forKey: hourKey) as? Int ?? 18,
+            hour: defaults.object(forKey: hourKey) as? Int ?? 19,
             minute: defaults.object(forKey: minuteKey) as? Int ?? 0)
     }
 

@@ -15,7 +15,7 @@ says yes.
   | Morning check-in | 08:00, weekdays only | yes | local notification, shows no note; iOS asks first |
   | Evening wrap-up | 21:00 every day | only with Reminders connected | same; without Reminders its screen has nothing to show (owner, 2026-10-11) |
   | Weekly tidy-up | Sunday 18:00 | yes | same; nothing is deleted unless tapped |
-  | Weekly look-back (ADR-306) | Sunday 19:00 | yes | same; an hour after the tidy-up so they never arrive together (owner, 2026-10-11). Settings' own default (18:00) is unchanged |
+  | Weekly look-back (ADR-306) | Sunday 19:00 | yes | same; an hour after the tidy-up so they never arrive together (owner, 2026-10-11). Settings' own default is now 19:00 too (owner, 2026-10-11) |
   | Use "About you" answers in voice conversations | — | **no** | sends the answers to ElevenLabs; only offered when answers are saved |
 - **Rules** (`Packages/DoddyCore/Sources/DoddyCore/QuickStart.swift`, `QuickStart.plan`):
   - nothing changes until **Turn these on**;
