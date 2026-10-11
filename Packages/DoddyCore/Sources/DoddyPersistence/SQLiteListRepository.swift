@@ -30,6 +30,10 @@ public final class SQLiteListRepository: ListRepository {
     }
 
     public func create(name: String, items: [String], source: ListItemSource) async throws -> DoddyList {
+        try await create(name: name, items: items, done: [], source: source)
+    }
+
+    public func create(name: String, items: [String], done: Set<String>, source: ListItemSource) async throws -> DoddyList {
         let name = try ListText.checkedName(name)
         let date = DoddyDatabase.truncatedToMilliseconds(now())
         return try await dbQueue.write { db in
@@ -55,8 +59,19 @@ public final class SQLiteListRepository: ListRepository {
                     MemoryRecord.schemaVersion,
                 ])
             let result = try Self.insert(items, into: record.id, source: source, at: date, db)
+            let expected = result.added.map { item in
+                done.contains(item.text)
+                    ? ListItem(id: item.id, listID: item.listID, text: item.text, source: item.source,
+                               addedAt: item.addedAt, doneAt: date, position: item.position)
+                    : item
+            }
+            for item in expected where item.isDone {
+                try db.execute(
+                    sql: "UPDATE list_items SET done_at_ms = ? WHERE id = ?",
+                    arguments: [DoddyDatabase.milliseconds(date), item.id.uuidString])
+            }
             guard let stored = try Self.list(record.id, db), stored.record == record,
-                  Set(stored.items) == Set(result.added)
+                  Set(stored.items) == Set(expected)
             else { throw MemoryStoreError.verificationFailed }
             return stored
         }

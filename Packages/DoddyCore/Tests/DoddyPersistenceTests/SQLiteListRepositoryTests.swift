@@ -36,6 +36,24 @@ final class SQLiteListRepositoryTests: XCTestCase {
         XCTAssertEqual(reopened?.open.map(\.text), ["milk", "eggs", "2 packs of bananas"])
     }
 
+    /// Review G5: an imported checklist is made with its ticked items ticked, in one transaction.
+    func testCreateWithTickedItemsIsOneReadBackWrite() async throws {
+        let (_, lists, _) = try make()
+        let made = try await lists.create(name: "Packing", items: ["passport", "charger", "socks"], done: ["charger"], source: .typed)
+        XCTAssertEqual(made.items.map(\.text), ["passport", "charger", "socks"])
+        XCTAssertEqual(made.items.filter(\.isDone).map(\.text), ["charger"])
+        let stored = try await lists.list(id: made.id)
+        XCTAssertEqual(stored?.items.filter(\.isDone).map(\.text), ["charger"])
+
+        do {
+            _ = try await lists.create(name: "packing", items: ["towel"], done: ["towel"], source: .typed)
+            XCTFail("the name is taken")
+        } catch ListError.nameTaken {}
+        let all = try await lists.lists()
+        XCTAssertEqual(all.map(\.name), ["Packing"], "a refused import adds nothing")
+        XCTAssertEqual(all.first?.items.count, 3)
+    }
+
     func testNamesAreUniqueAndListsAreNotNotes() async throws {
         let (_, lists, memories) = try make()
         let shopping = try await lists.create(name: "Shopping", items: [], source: .typed)

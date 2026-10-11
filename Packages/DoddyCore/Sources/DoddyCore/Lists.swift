@@ -142,6 +142,9 @@ public protocol ListRepository: Sendable {
     func list(id: UUID) async throws -> DoddyList?
     /// A new list (a `list` note) with its first items, in one transaction.
     func create(name: String, items: [String], source: ListItemSource) async throws -> DoddyList
+    /// As `create`, with the items whose text is in `done` ticked, in the same transaction
+    /// (an imported checklist, review G5): the list is there whole or not at all.
+    func create(name: String, items: [String], done: Set<String>, source: ListItemSource) async throws -> DoddyList
     func add(_ texts: [String], to listID: UUID, source: ListItemSource) async throws -> ListAddResult
     /// A new name: same rules as a new list; the first name stays as the original text.
     func rename(listID: UUID, to name: String) async throws -> DoddyList
@@ -168,6 +171,7 @@ public struct UnavailableListRepository: ListRepository {
     public func lists() async throws -> [DoddyList] { throw error }
     public func list(id: UUID) async throws -> DoddyList? { throw error }
     public func create(name: String, items: [String], source: ListItemSource) async throws -> DoddyList { throw error }
+    public func create(name: String, items: [String], done: Set<String>, source: ListItemSource) async throws -> DoddyList { throw error }
     public func add(_ texts: [String], to listID: UUID, source: ListItemSource) async throws -> ListAddResult { throw error }
     public func rename(listID: UUID, to name: String) async throws -> DoddyList { throw error }
     public func setDone(_ itemIDs: [UUID], done: Bool) async throws -> [ListItem] { throw error }
