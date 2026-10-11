@@ -307,6 +307,51 @@ enum IslandSceneChecks {
         let box = VoiceScreenArt.talkingFigure
         expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= 1 && box.y + box.height <= 1, "talking box")
         failures += motions()
+        failures += wave()
+        return failures
+    }
+
+    /// The wave beside Doddy (ADR-442): it follows whose turn it is, stays inside its box, is flat
+    /// when nobody is talking, and stands still with Reduce Motion.
+    static func wave() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: wave: \(message)"); failures += 1 }
+        }
+        expect(VoiceWave.mode(.listening, muted: false) == .listening, "listening")
+        expect(VoiceWave.mode(.listening, muted: true) == .flat, "muted is flat")
+        expect(VoiceWave.mode(.speaking, muted: false) == .speaking, "speaking")
+        expect(VoiceWave.mode(.thinking, muted: false) == .thinking, "thinking")
+        for phase in [VoiceScreenArt.Phase.connecting, .ended, .microphoneOff, .failed] {
+            expect(VoiceWave.mode(phase, muted: false) == .flat, "\(phase) is flat")
+        }
+        let modes: [VoiceWave.Mode] = [.flat, .listening, .thinking, .speaking]
+        for mode in modes {
+            for bar in 0..<VoiceWave.barCount {
+                for step in 0..<200 {
+                    let level = VoiceWave.level(bar: bar, mode: mode, at: Double(step) * 0.05)
+                    expect(level >= 0.12 && level <= 1, "\(mode) bar \(bar) at step \(step): \(level)")
+                }
+            }
+        }
+        for bar in 0..<VoiceWave.barCount {
+            expect(VoiceWave.level(bar: bar, mode: .flat, at: 3.3) == 0.12, "flat bar \(bar)")
+            expect(VoiceWave.level(bar: bar, mode: .speaking, at: 1, still: true)
+                   == VoiceWave.level(bar: bar, mode: .speaking, at: 99, still: true), "still ignores time")
+        }
+        // Doddy's turn moves more than yours.
+        func spread(_ mode: VoiceWave.Mode) -> Double {
+            var most = 0.0
+            for bar in 0..<VoiceWave.barCount {
+                let levels = (0..<400).map { VoiceWave.level(bar: bar, mode: mode, at: Double($0) * 0.025) }
+                most = max(most, (levels.max() ?? 0) - (levels.min() ?? 0))
+            }
+            return most
+        }
+        expect(spread(.speaking) > spread(.listening), "speaking moves more than listening")
+        expect(spread(.listening) > 0.1, "listening visibly moves")
+        expect(VoiceWave.level(bar: -1, mode: .speaking, at: 1) == 0.12 && VoiceWave.level(bar: 99, mode: .speaking, at: 1) == 0.12,
+               "a bar out of range")
         return failures
     }
 

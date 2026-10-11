@@ -129,6 +129,61 @@ enum VoiceScreenArt: Hashable, Sendable {
     }
 }
 
+/// The sound wave beside Doddy on the voice screen (ADR-442). It follows the conversation's phase,
+/// not the audio: nothing here measures the microphone or Doddy's voice, so the bars are a picture
+/// of whose turn it is (you: soft and slow, Doddy: lively), never of how loud anyone is.
+/// Kept here, beside the poses, so the mapping is checked on any machine with Swift.
+enum VoiceWave {
+    static let barCount = 7
+
+    enum Mode: Equatable, Sendable {
+        /// No wave: connecting, ended, failed, no microphone, or muted.
+        case flat
+        /// Your turn: the microphone is open.
+        case listening
+        /// Between your words and his: a slow rise and fall.
+        case thinking
+        /// Doddy's turn.
+        case speaking
+    }
+
+    static func mode(_ phase: VoiceScreenArt.Phase, muted: Bool) -> Mode {
+        switch phase {
+        case .listening: muted ? .flat : .listening
+        case .thinking: .thinking
+        case .speaking: .speaking
+        case .connecting, .ended, .microphoneOff, .failed: .flat
+        }
+    }
+
+    /// The height of one bar as a fraction (0.12 ... 1) of the wave's height, at a moment.
+    /// A pure function of the bar, the mode and the time, so it can be checked and so it looks
+    /// the same on every screen. With `still` (Reduce Motion) the time is ignored.
+    static func level(bar: Int, mode: Mode, at seconds: TimeInterval, still: Bool = false) -> Double {
+        let floor = 0.12
+        guard barCount > 1, (0..<barCount).contains(bar) else { return floor }
+        // Tallest in the middle, so it reads as one wave and not as a bar chart.
+        let position = Double(bar) / Double(barCount - 1)
+        let envelope = 0.45 + 0.55 * sin(position * .pi)
+        let t = still ? 0 : seconds
+        let swing: Double
+        switch mode {
+        case .flat: return floor
+        case .listening: swing = 0.5 + 0.5 * sin(t * 2.2 + Double(bar) * 0.9)
+        case .thinking: swing = 0.5 + 0.5 * sin(t * 1.3 - Double(bar) * 0.55)
+        case .speaking: swing = 0.5 + 0.5 * sin(t * 7.5 + Double(bar) * 1.7) * sin(t * 2.9 + Double(bar) * 0.6)
+        }
+        let amplitude: Double = switch mode {
+        case .listening: 0.45
+        case .thinking: 0.35
+        case .speaking: 1
+        case .flat: 0
+        }
+        let value = floor + (1 - floor) * envelope * amplitude * max(0, min(1, swing))
+        return max(floor, min(1, value))
+    }
+}
+
 /// Doddy moving (ADR-313): strips from the owner's pack, cut by tools/whole_doddy/cut_frames.py
 /// --shared, so every frame has the same scale and ground. Image sets `DoddyMotion_<strip>_<n>`
 /// in the app catalog. A strip either loops or plays once and stays on its last frame.

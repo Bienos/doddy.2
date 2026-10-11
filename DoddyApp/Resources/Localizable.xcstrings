@@ -4236,6 +4236,17 @@
         }
       }
     },
+    "Hide transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukryj transkrypt"
+          }
+        }
+      }
+    },
     "Hide character artwork": {
       "extractionState": "manual",
       "localizations": {
@@ -9897,6 +9908,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż, co powiedzieli"
+          }
+        }
+      }
+    },
+    "Show transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż transkrypt"
           }
         }
       }
