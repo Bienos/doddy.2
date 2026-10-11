@@ -1721,7 +1721,9 @@ final class VoiceSessionController {
             return
         }
         var blocked: [Int: PlanBlock] = [:]
-        planCloud = [:]
+        // This plan's own approvals (review H7): kept apart until its card is shown, so an
+        // overlapping propose_plan can't mix its approvals into this card or this one's into it.
+        var approvals: [Int: PlanCloudApproval] = [:]
         for step in steps {
             if let block = await planBlock(for: step) {
                 blocked[step.number] = block
@@ -1730,7 +1732,7 @@ final class VoiceSessionController {
                 // As a single card: the server checks the switch, the connection and the arguments,
                 // and returns the preview the card shows with an approval for exactly these.
                 switch await prepareCloud(call) {
-                case .ready(let approval): planCloud[step.number] = approval
+                case .ready(let approval): approvals[step.number] = approval
                 case .blocked(let block): blocked[step.number] = block
                 }
             }
@@ -1747,8 +1749,14 @@ final class VoiceSessionController {
             await reply(call.toolCallId, PlanReply.summary(results))
             return
         }
+        // Another card may have been shown while the steps were checked (the checks wait).
+        guard pendingAction == nil else {
+            await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
+            return
+        }
         planTicked = Set(steps.map(\.number)).subtracting(blocked.keys)
         planChanged = []
+        planCloud = approvals
         askedPlans[call.toolCallId] = steps
         propose(.plan(toolCallID: call.toolCallId, steps: steps, blocked: blocked), toolCallID: call.toolCallId)
     }
