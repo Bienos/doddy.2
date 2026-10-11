@@ -79,9 +79,16 @@ final class SharedListsController {
         let share = try await cloud.share(state, listID: list.id)
         // Read back before remembering the link.
         let zoneID = share.recordID.zoneID
-        guard try await cloud.fetch(zoneID, in: cloud.container.privateCloudDatabase)?.state == state else { throw SharingError.unconfirmed }
         let link = ListShare(listID: list.id, zoneName: zoneID.zoneName, zoneOwner: zoneID.ownerName, role: .owner, base: state, syncedAt: .now)
-        try await repository.save(link)
+        do {
+            guard try await cloud.fetch(zoneID, in: cloud.container.privateCloudDatabase)?.state == state else { throw SharingError.unconfirmed }
+            try await repository.save(link)
+        } catch {
+            // Not shared after all: nothing is left in iCloud for a link this iPhone doesn't keep
+            // (review I4).
+            _ = try? await cloud.stop(link)
+            throw error
+        }
         links[list.id] = link
         await startLiveUpdates()
         return CloudShareSheet(share: share, container: cloud.container)

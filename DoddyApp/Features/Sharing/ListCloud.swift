@@ -197,18 +197,28 @@ struct ListCloud {
 
     /// Puts the list in a new zone in the user's own iCloud and shares the zone. Nobody is
     /// invited yet; that happens in Apple's sharing screen. Returns the saved share.
+    ///
+    /// If any step fails, the zone is deleted again (review I4): no copy of the list is left in
+    /// iCloud, and a retry doesn't meet records from the failed try (`serverRecordChanged`).
+    /// Records left by a try that couldn't clean up are written over as fetched.
     func share(_ state: SharedListState, listID: UUID) async throws -> CKShare {
         let database = container.privateCloudDatabase
         let zone = CKRecordZone(zoneName: ListShare.zoneName(for: listID))
         let zones = try await database.modifyRecordZones(saving: [zone], deleting: [])
         for outcome in zones.saveResults.values { _ = try outcome.get() }
-        try await push(state, over: Zone(list: nil, items: []), zoneID: zone.zoneID, in: database)
-        let share = CKShare(recordZoneID: zone.zoneID)
-        share[CKShare.SystemFieldKey.title] = state.name
-        share.publicPermission = .none
-        let saved = try await database.modifyRecords(saving: [share], deleting: [], savePolicy: .ifServerRecordUnchanged, atomically: true)
-        guard let stored = try saved.saveResults[share.recordID]?.get() as? CKShare else { throw CKError(.internalError) }
-        return stored
+        do {
+            let current = try await fetch(zone.zoneID, in: database) ?? Zone(list: nil, items: [])
+            try await push(state, over: current, zoneID: zone.zoneID, in: database)
+            let share = CKShare(recordZoneID: zone.zoneID)
+            share[CKShare.SystemFieldKey.title] = state.name
+            share.publicPermission = .none
+            let saved = try await database.modifyRecords(saving: [share], deleting: [], savePolicy: .ifServerRecordUnchanged, atomically: true)
+            guard let stored = try saved.saveResults[share.recordID]?.get() as? CKShare else { throw CKError(.internalError) }
+            return stored
+        } catch {
+            _ = try? await database.modifyRecordZones(saving: [], deleting: [zone.zoneID])
+            throw error
+        }
     }
 
     /// The zone's share, for Apple's sharing screen (adding or removing people).
