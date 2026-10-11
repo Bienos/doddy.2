@@ -9,6 +9,8 @@ struct IntroductionView: View {
         case welcome
         case question(Int)
         case review
+        /// Once, at the end of first use (ADR-310). `saved`: how the introduction ended.
+        case quickStart(saved: Bool)
     }
 
     @Environment(ProfileStore.self) private var profiles
@@ -40,6 +42,11 @@ struct IntroductionView: View {
                     back: { phase = .question(keys.count - 1) },
                     finishWithoutSaving: { finish(saved: false) },
                     saved: { finish(saved: true) })
+            case .quickStart(let saved):
+                QuickStartView(profileSaved: !profiles.profile.isEmpty) {
+                    UserDefaults.standard.set(true, forKey: PreferenceKey.quickStartOffered)
+                    Task { await profiles.finishIntroduction(saved: saved) }
+                }
             }
         }
         .onAppear {
@@ -96,8 +103,14 @@ struct IntroductionView: View {
         Binding(get: { draft[key] ?? "" }, set: { draft[key] = $0.isEmpty ? nil : $0 })
     }
 
+    /// The first time through, the Quick start comes before Home; reopened from Settings, or once
+    /// it has been shown, the introduction ends here.
     private func finish(saved: Bool) {
-        Task { await profiles.finishIntroduction(saved: saved) }
+        if UserDefaults.standard.bool(forKey: PreferenceKey.quickStartOffered) {
+            Task { await profiles.finishIntroduction(saved: saved) }
+        } else {
+            phase = .quickStart(saved: saved)
+        }
     }
 }
 

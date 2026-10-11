@@ -23,6 +23,39 @@
         }
       }
     },
+    "%@ at %@. Notes saved twice and finished lists; nothing is deleted unless you tap it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@. Notatki zapisane dwa razy i ukończone listy; nic nie zostanie usunięte, dopóki tego nie stukniesz."
+          }
+        }
+      }
+    },
+    "%@ every day. Move today's open reminders to tomorrow. Needs Reminders on in Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ codziennie. Przenieś dzisiejsze niezałatwione przypomnienia na jutro. Wymaga włączonych Przypomnień w Połączeniach."
+          }
+        }
+      }
+    },
+    "%@ on weekdays. A quick look at your day: reminders and lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ w dni robocze. Szybki rzut oka na dzień: przypomnienia i listy."
+          }
+        }
+      }
+    },
     "%lld left": {
       "extractionState": "manual",
       "localizations": {
@@ -30,6 +63,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zostało: %lld"
+          }
+        }
+      }
+    },
+    "A few things that make Doddy easier.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kilka rzeczy, które ułatwiają życie z Doddym."
           }
         }
       }
@@ -1233,6 +1277,17 @@
         }
       }
     },
+    "Change or turn off any of these in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdą z tych rzeczy zmienisz lub wyłączysz w Ustawieniach."
+          }
+        }
+      }
+    },
     "Change reminder": {
       "extractionState": "manual",
       "localizations": {
@@ -1702,6 +1757,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dalej"
+          }
+        }
+      }
+    },
+    "Continue to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejdź do Doddy’ego"
           }
         }
       }
@@ -3070,6 +3136,17 @@
         }
       }
     },
+    "Evening wrap-up set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieczorne podsumowanie ustawione."
+          }
+        }
+      }
+    },
     "Event": {
       "extractionState": "manual",
       "localizations": {
@@ -3682,6 +3759,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Oto, co bym zapamiętał."
+          }
+        }
+      }
+    },
+    "Here's what's set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oto, co jest ustawione."
           }
         }
       }
@@ -4841,6 +4929,17 @@
         }
       }
     },
+    "Morning check-in set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny przegląd ustawiony."
+          }
+        }
+      }
+    },
     "Move %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -5556,6 +5655,17 @@
         }
       }
     },
+    "Nothing changes until you tap the button. You can change any of it later in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic się nie zmieni, dopóki nie stukniesz przycisku. Każdą z tych rzeczy zmienisz później w Ustawieniach."
+          }
+        }
+      }
+    },
     "Nothing coming up.": {
       "extractionState": "manual",
       "localizations": {
@@ -5860,6 +5970,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiadomienia Doddy’ego są wyłączone, więc podsumowanie nie może się pojawić. Włącz je w Ustawieniach iOS."
+          }
+        }
+      }
+    },
+    "Notifications are off for Doddy, so this can't ring. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia Doddy’ego są wyłączone, więc to nie zadzwoni. Włącz je w Ustawieniach iOS."
           }
         }
       }
@@ -8372,6 +8493,17 @@
         }
       }
     },
+    "Setting up…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawiam…"
+          }
+        }
+      }
+    },
     "Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -10088,6 +10220,17 @@
         }
       }
     },
+    "This couldn't be set. Try again in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się tego ustawić. Spróbuj ponownie w Ustawieniach."
+          }
+        }
+      }
+    },
     "This evening": {
       "extractionState": "manual",
       "localizations": {
@@ -10770,6 +10913,17 @@
         }
       }
     },
+    "Turn these on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz to"
+          }
+        }
+      }
+    },
     "Turned off in Doddy's Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -11056,6 +11210,17 @@
         }
       }
     },
+    "Use what you told me in voice conversations": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używaj Twoich odpowiedzi „O Tobie” w rozmowach głosowych"
+          }
+        }
+      }
+    },
     "Verify my number": {
       "extractionState": "manual",
       "localizations": {
@@ -11228,6 +11393,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cotygodniowe porządki"
+          }
+        }
+      }
+    },
+    "Weekly tidy-up set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cotygodniowe porządki ustawione."
           }
         }
       }
@@ -11804,6 +11980,17 @@
         }
       }
     },
+    "Your answers will be used in voice conversations.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje odpowiedzi będą używane w rozmowach głosowych."
+          }
+        }
+      }
+    },
     "Your day": {
       "extractionState": "manual",
       "localizations": {
@@ -12002,6 +12189,17 @@
         }
       }
     },
+    "Your saved answers are sent to ElevenLabs at the start of each conversation so I know them. Off, they stay on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane odpowiedzi są wysyłane do ElevenLabs na początku każdej rozmowy, żebym je znał. Gdy to jest wyłączone, zostają na tym iPhonie."
+          }
+        }
+      }
+    },
     "Your shortcut reached Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -12097,6 +12295,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "iOS will ask whether Doddy may send notifications. They never show your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS zapyta, czy Doddy może wysyłać powiadomienia. Nigdy nie pokazują Twoich notatek."
           }
         }
       }
