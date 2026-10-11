@@ -37,9 +37,20 @@ final class NoteImportTests: XCTestCase {
         let emoji = String(repeating: "👨‍👩‍👧", count: 50)
         XCTAssertEqual(emoji.count, 50)
         let list = keep(#"{"title":"Zakupy","listContent":[{"text":"\#(emoji)","isChecked":false}]}"#)
-        XCTAssertEqual(list.problem, .tooManyItems)
+        XCTAssertEqual(list.problem, .listItemTooLong)
         let fits = keep(#"{"title":"Zakupy","listContent":[{"text":"\#(String(repeating: "👨‍👩‍👧", count: 40))","isChecked":false}]}"#)
         XCTAssertNil(fits.problem)
+    }
+
+    /// Review B6: too many items and one over-long item are told apart, so the user hears which.
+    func testChecklistTooManyItemsAndTooLongItemAreDifferentProblems() {
+        let items = (0...ListLimits.itemsPerList).map { #"{"text":"item \#($0)","isChecked":false}"# }.joined(separator: ",")
+        let many = keep(#"{"title":"Zakupy","listContent":[\#(items)]}"#)
+        XCTAssertEqual(many.problem, .tooManyItems)
+        let longItem = String(repeating: "a", count: ListLimits.itemLength + 1)
+        let long = keep(#"{"title":"Zakupy","listContent":[{"text":"mleko","isChecked":false},{"text":"\#(longItem)","isChecked":true}]}"#)
+        XCTAssertEqual(long.problem, .listItemTooLong)
+        XCTAssertFalse(long.canImport)
     }
 
     func testTrashOtherJSONAndBadFilesAreNotImported() {

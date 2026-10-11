@@ -134,6 +134,11 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
+                    // Memory on calls: a copy upload that failed or was cut off is sent again.
+                    // Private notes (ADR-310) are never in the server copy.
+                    if store.hasLoaded && store.loadError == nil {
+                        MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories))
+                    }
                     pickUpSharedItem()
                 }
                 if phase == .background {
@@ -171,9 +176,14 @@ struct RootView: View {
                 homePath = [memoryID]
                 noteReminders.pendingOpenMemoryID = nil
             }
-            // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
-            // Private notes (ADR-310) are never in the server copy for calls.
-            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories)) }
+            // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone. Only
+            // after a read that worked: a failed one can leave the list empty or stale, and uploading
+            // that would wipe or roll back the server copy (DOD-06). Private notes (ADR-310) are
+            // never in the server copy for calls.
+            .onChange(of: store.revision) {
+                guard store.hasLoaded, store.loadError == nil else { return }
+                MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
+            }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)

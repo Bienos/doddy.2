@@ -40,32 +40,31 @@ final class WidgetSync {
         SharedListsController.shared.listsChanged()
         // Private notes (ADR-310) never appear on widgets or the watch.
         let shareable = PrivateNotesStore.current().shareable(store.memories)
+        let pinned = PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes))
+        let showReminderText = UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
+        let current = reminders?.reminders ?? []
         let snapshot = WidgetSnapshot.make(
-            memories: shareable, lists: store.lists,
-            pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
-            reminders: reminders?.reminders ?? [],
-            showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
-            isOn: Self.isOn, now: now, parking: ParkingStore.current(), hidesDoddy: Self.hidesDoddy)
-        // The Apple Watch gets the same content, under its own switch (ADR-232).
+            memories: shareable, lists: store.lists, pinned: pinned, reminders: current,
+            showReminderText: showReminderText, isOn: Self.isOn, now: now, parking: ParkingStore.current(), hidesDoddy: Self.hidesDoddy)
+        // The Apple Watch gets the same content, under its own switch (ADR-232), applied there.
         PhoneWatchLink.shared.send(WidgetSnapshot.make(
-            memories: shareable, lists: store.lists,
-            pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
-            reminders: reminders?.reminders ?? [],
-            showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
-            isOn: true, now: now, hidesDoddy: Self.hidesDoddy))
+            memories: shareable, lists: store.lists, pinned: pinned, reminders: current,
+            showReminderText: showReminderText, isOn: true, now: now, hidesDoddy: Self.hidesDoddy))
         guard isAvailable else { return }
         // Same content as last time: no write, no widget reload (the time stamp alone isn't news).
-        if let lastWritten, lastWritten.isOn == snapshot.isOn, lastWritten.pinned == snapshot.pinned,
-           lastWritten.reminders == snapshot.reminders, lastWritten.lists == snapshot.lists,
-           lastWritten.parking == snapshot.parking, lastWritten.hidesDoddy == snapshot.hidesDoddy { return }
+        if let lastWritten, lastWritten.hasSameContent(as: snapshot) { return }
         do {
             try WidgetSnapshotFile.write(snapshot)
             lastWritten = snapshot
             problem = nil
-            WidgetCenter.shared.reloadAllTimelines()
         } catch {
+            // Not remembered as written, so the next change writes again.
+            lastWritten = nil
             problem = NSLocalizedString("Widgets couldn't be updated, so they may show older notes or lists. Open the widget's note in Doddy to see what is saved.", comment: "")
         }
+        // After every write attempt (review I1): even when the read-back failed, the file may hold
+        // the new snapshot, and widgets must not keep showing deleted or turned-off content.
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// A widget tap on a list item. Only changes the item when the widget showed it as it is now;

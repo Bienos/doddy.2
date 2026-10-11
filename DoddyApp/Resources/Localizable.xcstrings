@@ -2201,6 +2201,17 @@
         }
       }
     },
+    "Delete all %lld notes and %lld lists?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć wszystkie notatki (%lld) i listy (%lld)?"
+          }
+        }
+      }
+    },
     "Delete all memories": {
       "extractionState": "manual",
       "localizations": {
@@ -2432,13 +2443,13 @@
         }
       }
     },
-    "Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain.": {
+    "Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain, for the server address set when you saved it; it is never sent to another address.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ustawienie deweloperskie. Użyj https albo http://localhost w Symulatorze. Token pochodzi od właściciela serwera i jest przechowywany tylko w pęku kluczy tego iPhone’a."
+            "value": "Ustawienie deweloperskie. Użyj https albo http://localhost w Symulatorze. Token pochodzi od właściciela serwera i jest przechowywany tylko w pęku kluczy tego iPhone’a, dla adresu serwera ustawionego przy zapisie; nigdy nie jest wysyłany pod inny adres."
           }
         }
       }
@@ -2626,6 +2637,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy to praktyczny, ciekawy świata kumpel, który wyłapuje drobne kłopoty, najpierw odpowiada i przyznaje się do błędu. Wybierz, jak ma wypadać."
+          }
+        }
+      }
+    },
+    "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to SI, nie człowiek. Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje."
           }
         }
       }
@@ -4852,6 +4874,17 @@
         }
       }
     },
+    "Lists you share are also in iCloud and with the people you invited.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniane listy są też w iCloud i u zaproszonych osób."
+          }
+        }
+      }
+    },
     "Little things, kept": {
       "extractionState": "manual",
       "localizations": {
@@ -5090,6 +5123,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wspomnienia"
+          }
+        }
+      }
+    },
+    "Memories are kept in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki są przechowywane w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj."
           }
         }
       }
@@ -8614,6 +8658,17 @@
         }
       }
     },
+    "Saved. Remove from this list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano. Usuń z tej listy"
+          }
+        }
+      }
+    },
     "Saving memories": {
       "extractionState": "manual",
       "localizations": {
@@ -11122,13 +11177,13 @@
         }
       }
     },
-    "This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.": {
+    "This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "To usuwa z tego iPhone’a wszystkie wspomnienia i ich indeks wyszukiwania i nie da się tego cofnąć. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
+            "value": "To usuwa z tego iPhone’a wszystkie notatki, wszystkie listy z ich pozycjami i indeks wyszukiwania i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
           }
         }
       }
@@ -12471,6 +12526,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się zaktualizować widżetów, więc mogą pokazywać starsze notatki lub listy. Otwórz notatkę z widżetu w Doddym, żeby zobaczyć, co jest zapisane."
+          }
+        }
+      }
+    },
+    "With Memory on calls on, a copy of your notes is also on your Doddy messaging server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia Twoich notatek jest też na serwerze wiadomości Doddy’ego."
           }
         }
       }
