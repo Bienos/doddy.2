@@ -315,8 +315,25 @@ final class WakeWordListener {
             refresh()
             return
         }
-        guard let store else { return }
         Self.log.notice("wake word heard")
+        beginConversation()
+    }
+
+    /// Double Back Tap while "Hey Doddy" is already listening, possibly with Doddy in the
+    /// background: the same conversation the wake word starts, greeting on the island and no
+    /// screen taking over. Returns false when listening isn't live (not on, paused, or iOS ended
+    /// the app), so the caller opens Doddy instead: iOS only gives the microphone and a new
+    /// Live Activity to an app that is in front. A deliberate tap skips the wake word's settle
+    /// time and hourly limit, which exist only against false detections.
+    func startFromTap() -> Bool {
+        guard running, state == .listening else { return false }
+        Self.log.notice("Back Tap while listening")
+        return beginConversation()
+    }
+
+    @discardableResult
+    private func beginConversation() -> Bool {
+        guard let store else { return false }
         // The conversation needs the microphone: give it up first.
         stopEngine()
         handingOver = true
@@ -352,6 +369,7 @@ final class WakeWordListener {
             refresh()
             if background != .invalid { UIApplication.shared.endBackgroundTask(background) }
         }
+        return true
     }
 
     /// Same rule as `VoiceView`: the token server if one is set, else the public agent.
