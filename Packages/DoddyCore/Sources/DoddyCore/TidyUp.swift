@@ -77,10 +77,13 @@ public enum TidyUp {
     }
 
     public static func suggestions(
-        memories: [MemoryRecord], lists: [DoddyList], reminders: [MemoryReminder], now: Date
+        memories: [MemoryRecord], lists: [DoddyList], reminders: [MemoryReminder], now: Date,
+        withAttachments: Set<UUID> = []
     ) -> Suggestions {
+        // A note carrying a photo or voice memo (`withAttachments`) is never a copy by its words
+        // alone: deleting it would delete a different photo or recording.
         var groups: [String: [MemoryRecord]] = [:]
-        for note in memories where note.source != .sampleFixture && note.category != .list {
+        for note in memories where note.source != .sampleFixture && note.category != .list && !withAttachments.contains(note.id) {
             let key = DuplicateNote.key(note.currentText)
             guard !key.isEmpty else { continue }
             groups[key, default: []].append(note)
