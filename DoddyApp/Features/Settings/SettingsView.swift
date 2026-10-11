@@ -228,7 +228,7 @@ struct SettingsView: View {
                 Section("Privacy") {
                     // ADR-310: Face ID when Doddy opens, and after a minute away.
                     AppLockToggle()
-                    // The short version that used to sit at the bottom of Home (ADR-321).
+                    // The short version that used to sit at the bottom of Home (ADR-326).
                     Text("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -464,9 +464,13 @@ struct SettingsView: View {
                 } header: {
                     Text("Connections")
                 } footer: {
-                    Text(pauseAllConnections
-                        ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
-                        : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    HStack(alignment: .top, spacing: 12) {
+                        // Paused: Doddy lies low, crouching (ADR-323).
+                        if pauseAllConnections { WholeDoddyView(pose: .sneakyCrouch, height: 56) }
+                        Text(pauseAllConnections
+                            ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
+                            : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    }
                 }
 
                 Section {
@@ -942,7 +946,7 @@ struct JSONExport: Transferable {
 /// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to compare
 /// them. Same notes, lists, tools and cards either way; it takes effect when the next conversation
 /// starts, and Settings › What leaves this iPhone follows it. Here rather than on Home, where it sat
-/// under Talk to Doddy for every new user (ADR-320).
+/// under Talk to Doddy for every new user (ADR-325).
 struct VoiceProviderTestSwitch: View {
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
 

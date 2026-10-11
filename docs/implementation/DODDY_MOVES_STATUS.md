@@ -56,3 +56,17 @@ rendering, frame rates and battery cost.
 No new data, permissions or network use. The StandBy widget and the Lock Screen show no note words.
 A notification's picture adds no text. The share card holds exactly what "Share as text" sends, and
 only when the user shares it.
+
+## ADR-323 additions (owner: "do all except 8 and 9")
+1. Alarm snooze (ADR-283): cream Lock Screen card with Doddy stretching awake; same pose on the island.
+2. Shopping mode (ADR-257): Doddy on tiptoe on the island and the cream card.
+3. Pictures on the morning check-in, evening wrap-up, weekly look-back and birthday notifications.
+4. Home: after the breaths he sits down on his box (strip 017) and stays there that launch; an opening
+   takes him off it, so the ADR-225 hand-over is unchanged.
+5. Settings: the crouching pose beside the "Pause all connections" footer while paused.
+6. Watch app: cross-legged on the "open Doddy on your iPhone" screen; fist pump on a confirmed save.
+7. What Doddy did: the turn plays once for an entry undone while the screen is open.
+
+Not built (need the owner's decision): weather (umbrella pose; a weather source and location) and
+app icon choices (brand). Known gap: widgets, Live Activities and the watch don't read Hide Doddy's
+pictures. Checklist 4j, Z1–Z7. Not compiled for iOS or watchOS.

@@ -147,7 +147,7 @@ final class VoiceSessionController {
             Self.conversationInProgress = isLive
             syncIsland()
             // Listening comes only from the provider's own event, so this marks a conversation
-            // that really connected, not a tap that failed (ADR-321).
+            // that really connected, not a tap that failed (ADR-326).
             if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
                 UserDefaults.standard.set(true, forKey: PreferenceKey.hadFirstConversation)
             }

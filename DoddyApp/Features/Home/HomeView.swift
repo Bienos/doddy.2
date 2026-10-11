@@ -16,6 +16,8 @@ struct HomeView: View {
     @State private var modal: MemoryModal?
     /// Doddy's idle breaths are playing (ADR-313).
     @State private var breathing = false
+    /// He has sat down on his box after the breaths (ADR-323).
+    @State private var seated = HomeIdle.sat
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
@@ -23,7 +25,7 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
-    /// First visit (ADR-321): until a conversation has really connected, Home keeps to Talk to
+    /// First visit (ADR-326): until a conversation has really connected, Home keeps to Talk to
     /// Doddy and holds back the Back Tap and Today cards.
     @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
     @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
@@ -32,7 +34,8 @@ struct HomeView: View {
     private var router: ShortcutRouter { .shared }
 
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
-    /// four times and sits. Waits a moment first, so an opening that is about to start wins.
+    /// four times and sits down on his box (ADR-323). Waits a moment first, so an opening that is
+    /// about to start wins. The opening's hand-over still lands on the usual sitting picture.
     private func breatheOnce() async {
         guard !HomeIdle.played, !reduceMotion, !hideCharacterArt else { return }
         try? await Task.sleep(for: .seconds(0.6))
@@ -40,6 +43,7 @@ struct HomeView: View {
         HomeIdle.played = true
         breathing = true
         try? await Task.sleep(for: .seconds(DoddyMotion.idle.duration + 0.2))
+        seated = true
         breathing = false
     }
 
@@ -71,6 +75,13 @@ struct HomeView: View {
                             DoddyMotionView(motion: .idle, height: 170)
                                 .padding(.bottom, 31)
                                 .frame(height: 210, alignment: .bottom)
+                        } else if seated, ready == nil {
+                            // Then he sits down on his box (ADR-323) and stays there this launch.
+                            // Same scale and floor as the breaths (both strips' boxes end at 564/600).
+                            DoddyMotionView(motion: .sit, height: 166, playing: !HomeIdle.sat)
+                                .padding(.bottom, 31)
+                                .frame(height: 210, alignment: .bottom)
+                                .onAppear { HomeIdle.sat = true }
                         } else {
                             UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
                         }
@@ -90,6 +101,10 @@ struct HomeView: View {
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: breathing)
                         .task { await breatheOnce() }
+                        // An opening (a later return) lands on the usual sitting picture: off the box.
+                        .onChange(of: opening?.play == nil) { _, nothingPlaying in
+                            if !nothingPlaying { seated = false; HomeIdle.sat = false }
+                        }
                         // Doddy's room behind Doddy only, edge to edge; no text over it (ADR-308).
                         .background {
                             SceneryBackdrop(place: .home, height: 270, focus: 0.2)
@@ -152,7 +167,7 @@ struct HomeView: View {
                         .frame(maxWidth: .infinity)
 
                     // Today only points to Settings until something is connected; on the first
-                    // visit that is one more thing to read before talking (ADR-321).
+                    // visit that is one more thing to read before talking (ADR-326).
                     if hadFirstConversation || calendarOn || remindersOn {
                         TodayCard(openSettings: { selectedTab = .settings })
                     }
@@ -164,7 +179,7 @@ struct HomeView: View {
 
                     recent
 
-                    // The longer summary is in Settings › Privacy (ADR-321).
+                    // The longer summary is in Settings › Privacy (ADR-326).
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Doddy is an AI, not a person.")
                             .accessibilityIdentifier("home.status")
@@ -348,9 +363,11 @@ private struct HomeActionTile: View {
 @MainActor
 enum HomeIdle {
     static var played = false
+    /// He sat down on his box this launch (ADR-323): later visits show him seated, without replaying.
+    static var sat = false
 }
 
-/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-321).
+/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-326).
 private struct DataFlowSheet: View {
     @Environment(\.dismiss) private var dismiss
 

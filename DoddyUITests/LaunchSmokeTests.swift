@@ -15,7 +15,7 @@ final class LaunchSmokeTests: XCTestCase {
         app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
         if onboardingDone { app.launchArguments += ["-onboardingDone", "YES"] }
         // Most tests are about someone who has talked to Doddy before; Home's first visit
-        // (ADR-321) holds back the Back Tap and Today cards until then.
+        // (ADR-326) holds back the Back Tap and Today cards until then.
         app.launchArguments += ["-hadFirstConversation", firstVisit ? "NO" : "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         // The opening (ADR-225) is on by default; most tests start straight on Home.
@@ -91,7 +91,7 @@ final class LaunchSmokeTests: XCTestCase {
 
     @MainActor
     func testFirstVisitHomeKeepsToTalkingAndLinksToPrivacy() {
-        // ADR-321: before the first conversation, a hint under Talk and no setup cards.
+        // ADR-326: before the first conversation, a hint under Talk and no setup cards.
         let app = launch(onboardingDone: true, backTapSetup: "notStarted", firstVisit: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["home.firstHint"].exists)
@@ -266,7 +266,7 @@ final class LaunchSmokeTests: XCTestCase {
 
     @MainActor
     func testListeningOnOpenIsOnByDefaultButWaitsForTheMicrophone() {
-        // ADR-320: with the microphone never asked about, nothing opens by itself, so iOS's
+        // ADR-325: with the microphone never asked about, nothing opens by itself, so iOS's
         // question can only follow a tap on Talk to Doddy. (Opening once it's allowed is covered
         // by OpeningPolicyTests; a UI test can't grant the microphone.)
         XCUIApplication().resetAuthorizationStatus(for: .microphone)
