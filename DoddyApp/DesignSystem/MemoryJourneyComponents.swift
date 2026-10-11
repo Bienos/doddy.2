@@ -10,6 +10,8 @@ enum MemoryNavigationRoute: Hashable {
     /// `query` pre-fills the search (the "Find in Doddy" shortcut); empty otherwise.
     case find(query: String)
     case note(UUID)
+    /// A person's page (ADR-341): the name as written after @.
+    case person(String)
 }
 
 struct DoddyWordmark: View {

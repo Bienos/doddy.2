@@ -26,8 +26,10 @@ struct CaptureView: View {
     @State private var memoProblem: String?
     @FocusState private var editorFocused: Bool
 
-    init(sharedText: String? = nil) {
-        _text = State(initialValue: sharedText ?? "")
+    /// `startingText` begins a note the user writes themselves, e.g. "@Marta " from a person's
+    /// page (ADR-341); `sharedText` came from another app.
+    init(sharedText: String? = nil, startingText: String? = nil) {
+        _text = State(initialValue: sharedText ?? startingText ?? "")
         _isShared = State(initialValue: sharedText != nil)
     }
 

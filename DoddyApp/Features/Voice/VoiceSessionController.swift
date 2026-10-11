@@ -1626,6 +1626,12 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.taggedNotes(tag, notes: notes))
                 return
             }
+            // "@Marta": exactly the notes that mention that person (ADR-341). Private notes stay out.
+            if let person = NotePeople.personQuery(query) {
+                let notes = NotePeople.notes(PrivateNotesStore.current().shareable(store.memories), about: person)
+                await reply(call.toolCallId, VoiceToolReply.personNotes(person, notes: notes))
+                return
+            }
             do {
                 let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
                 await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))

@@ -12,12 +12,21 @@ public enum NoteTags {
     /// start or after a space or an opening bracket ("C#", "a#b" and "site.com/#top" aren't tags),
     /// and the tag must have a letter ("#1" isn't one).
     public static func tags(in text: String) -> [String] {
+        words(in: text, marker: "#").map { $0.lowercased() }.reduce(into: []) { found, tag in
+            if !found.contains(tag) { found.append(tag) }
+        }
+    }
+
+    /// The words written right after `marker`, as written, in order (repeats kept). Shared with
+    /// people (`@Marta`, ADR-341): the marker counts only at the start or after a space or an
+    /// opening bracket, so "C#" and "anna@example.com" don't count, and the word needs a letter.
+    static func words(in text: String, marker: Character) -> [String] {
         var found: [String] = []
         let characters = Array(text)
         var index = 0
         while index < characters.count {
             defer { index += 1 }
-            guard characters[index] == "#" else { continue }
+            guard characters[index] == marker else { continue }
             if index > 0 {
                 let before = characters[index - 1]
                 guard before.isWhitespace || before == "(" || before == "[" else { continue }
@@ -28,8 +37,7 @@ public enum NoteTags {
             while let last = word.last, last == "-" || last == "_" { word.removeLast() }
             index = end - 1
             guard !word.isEmpty, word.count <= maxLength, word.contains(where: \.isLetter) else { continue }
-            let tag = word.lowercased()
-            if !found.contains(tag) { found.append(tag) }
+            found.append(word)
         }
         return found
     }

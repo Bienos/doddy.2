@@ -80,6 +80,11 @@ struct MemoriesView: View {
                         if !tags.isEmpty {
                             MemoryTagRow(tags: tags, selection: $tag, active: activeTag)
                         }
+                        // People written with @ (ADR-341), from the same notes as the tags.
+                        let people = NotePeople.people(tagged)
+                        if !people.isEmpty {
+                            MemoryPeopleRow(people: people)
+                        }
                         let pins = PinnedNotes(stored: pinnedRaw)
                         LazyVStack(spacing: 12) {
                             // Pinned notes first (ADR-187), then the chosen order.
@@ -119,6 +124,7 @@ struct MemoriesView: View {
                     // A new "Find in Doddy" request resets the screen even with the same words.
                     FindMemoriesView(initialQuery: query).id(ShortcutRouter.shared.findRequest?.id)
                 case .note(let id): MemoryOrListView(id: id)
+                case .person(let name): PersonNotesView(person: name)
                 }
             }
             .onChange(of: activeCategory) { _, active in

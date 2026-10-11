@@ -34,6 +34,17 @@
         }
       }
     },
+    "%@, %lld notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, notatki: %lld"
+          }
+        }
+      }
+    },
     "%lld items": {
       "extractionState": "manual",
       "localizations": {
@@ -1130,6 +1141,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zanim umknie"
+          }
+        }
+      }
+    },
+    "Birthday: %@ (from %@ in Contacts)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urodziny: %@ (z kontaktu %@)"
           }
         }
       }
@@ -5512,6 +5534,17 @@
         }
       }
     },
+    "New note about %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa notatka o: %@"
+          }
+        }
+      }
+    },
     "Newest first": {
       "extractionState": "manual",
       "localizations": {
@@ -5673,6 +5706,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Brak wspomnień"
+          }
+        }
+      }
+    },
+    "No note mentions this person any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żadna notatka nie wspomina już tej osoby."
           }
         }
       }
@@ -7158,6 +7202,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Osoby"
+          }
+        }
+      }
+    },
+    "People are names you write with @ in a note, like @Marta. Doddy only reads them from your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osoby to imiona zapisane w notatce z @, np. @Marta. Doddy odczytuje je tylko z Twoich notatek."
+          }
+        }
+      }
+    },
+    "People in your notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osoby w Twoich notatkach"
           }
         }
       }
