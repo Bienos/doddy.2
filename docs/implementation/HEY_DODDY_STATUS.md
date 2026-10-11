@@ -48,8 +48,11 @@ Owner choices: "Own listening mode", detector "Picovoice (Recommended)". Decisio
 ## The spoken greeting (not live yet)
 The app sends the dynamic variable `opening_line` with every conversation: the greeting after the wake word, otherwise
 Doddy's usual opening ("Hey, it's Doddy. What's up?" / "Hej, tu Doddy. Co słychać?", matching the live agent's text). `voice-agent/session.json`
-now has first message `{{opening_line}}` with that placeholder. **The live ElevenLabs agent has not been changed.** The owner said "Go live" on 2026-10-11; the attempt was refused by
-this session's permission check (production change), so nothing was written to ElevenLabs.
+now has first message `{{opening_line}}` with that placeholder. **Applied to the live ElevenLabs agent on 2026-10-11** (owner: "you do it"): English and Polish first message
+`{{opening_line}}`, placeholder `opening_line` = "Hey, it's Doddy. what's up?" (the previous live text, so builds that
+don't send it sound the same); the other 35 language presets and all other placeholders unchanged; read back after
+saving. Live version `agtvrsn_6701m4mc9b7wekgb2jeg1c6pwnyv`; rollback `agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm`. Not yet
+heard on a device: checklist H6 now also checks that Doddy *says* "Hey Pat, what's up?".
 Until the owner approves that change (first message plus a dynamic-variable placeholder for `opening_line`), Doddy
 says his usual opening out loud and only the island shows "Hey Pat, what's up?". An agent without the placeholder
 ignores the extra variable, so this build works either way.

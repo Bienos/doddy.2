@@ -12,7 +12,9 @@ adding one adapter, not rewriting the app or the agent.
 
 ## Source of truth and syncing
 
-**Not yet applied to the live agent (ADR-234, needs the owner's OK):** `session.json` first message
+**Applied to the live agent 2026-10-11 (ADR-234, owner: "you do it"):** done as described below; read back after
+saving. Version `agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm` (rollback) → `agtvrsn_2701m4mc8sejfzkbjmekv9nczdrp` (first
+message and placeholder) → `agtvrsn_6701m4mc9b7wekgb2jeg1c6pwnyv` (Polish preset). What was changed: `session.json` first message
 `{{opening_line}}` with placeholder "Hey, it's Doddy. what's up?" (the live text, `first_message_variable`). To apply:
 set the agent's first message (English and Polish) to `{{opening_line}}` and add the dynamic-variable placeholder
 `opening_line` with that text, so older app builds that don't send it still start. Until then the live first
