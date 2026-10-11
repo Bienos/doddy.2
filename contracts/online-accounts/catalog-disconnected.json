@@ -4,7 +4,7 @@
     {
       "id": "gmail",
       "title": "Gmail",
-      "access": "Doddy can list your recent emails (sender, subject, a short preview) and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+      "access": "Doddy can list your recent emails (sender, subject, a short preview), read one email aloud when you ask (the newest that matches), and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -14,7 +14,14 @@
         {
           "name": "check_email",
           "title": "Check my email",
-          "blurb": "Lists your newest emails: sender, subject and a short preview. Doddy doesn't open full messages.",
+          "blurb": "Lists your newest emails: sender, subject and a short preview. It doesn't open full messages.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "read_email",
+          "title": "Read an email",
+          "blurb": "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.",
           "risk": "read",
           "enabled": false
         },
@@ -68,7 +75,7 @@
     {
       "id": "todoist",
       "title": "Todoist",
-      "access": "Doddy can list your open tasks and add a task after you tap Add. It can't complete, change or delete tasks.",
+      "access": "Doddy can list your open tasks, add a task after you tap Add, and mark a task done or change its due date after you tap to confirm. It can't delete tasks or change their text.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -86,6 +93,20 @@
           "name": "add_todoist_task",
           "title": "Add a task",
           "blurb": "Adds a Todoist task after you tap Add on the card.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "complete_todoist_task",
+          "title": "Complete a task",
+          "blurb": "Marks a Todoist task done after you tap Complete. The card shows the task as Todoist has it.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "move_todoist_task",
+          "title": "Change a task's date",
+          "blurb": "Changes a Todoist task's due date after you tap Move. It can't change the task's text.",
           "risk": "write",
           "enabled": false
         }

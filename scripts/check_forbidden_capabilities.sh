@@ -4,7 +4,8 @@
 #    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
-#    (ADR-265), whose WebSocket lives in one file in Features/Voice,
+#    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
+#    (ADR-300), which downloads only the ECB's public rates file,
 #  - the system authentication browser is used only by Connected Apps,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
@@ -28,7 +29,8 @@
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
 #    reminders, contacts and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
-#    their answers), no write tools beyond the two reviewed ones (Gmail draft, Todoist task), no proxy execution,
+#    their answers), no write tools beyond the reviewed ones (Gmail draft; Todoist add, complete and move,
+#    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
 #    can never pick another paid endpoint).
 # Exit 0 = clean, 1 = violation.
@@ -46,6 +48,8 @@ openai_voice=DoddyApp/Features/Voice/OpenAIRealtimeSession.swift
 network_file=DoddyApp/Infrastructure/URLSessionTransport.swift
 assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
+# The ECB's public daily rates file, one fixed address (ADR-300).
+rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 network_only='URLSession([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
@@ -89,8 +93,12 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client and $openai_voice." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $openai_voice and $rates_client." >&2; status=1
+fi
+# The rates client may only fetch the one fixed ECB file (ADR-300), never an address it is given.
+if [ -f "$rates_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$rates_client" | code_only; then
+  echo "FAIL: $rates_client may only fetch ExchangeRateSource.url." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
@@ -149,10 +157,14 @@ if [ -d "$backend_src" ]; then
   if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src"; then
     echo "FAIL: calendar write tool referenced in the backend." >&2; status=1
   fi
-  # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT and TODOIST_CREATE_TASK (each needs a fresh
-  # on-screen approval). Anything that sends, deletes, shares, edits or labels is refused here.
-  if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src"; then
-    echo "FAIL: a write tool beyond the reviewed Gmail draft and Todoist task is referenced in the backend." >&2; status=1
+  # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT, TODOIST_CREATE_TASK and, since ADR-303,
+  # TODOIST_CLOSE_TASK_V1 and TODOIST_UPDATE_TASK (each needs a fresh on-screen approval bound to the
+  # task Todoist returned). Anything that sends, deletes, shares, edits or labels is refused here, and
+  # the two Todoist writes may appear only in the catalog and its mock.
+  if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:.*TODOIST_(CLOSE_TASK_V1|UPDATE_TASK)([^A-Z0-9_]|$)" \
+    | grep -E 'GMAIL_|GOOGLEDRIVE_|NOTION_|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)'; then
+    echo "FAIL: a write tool beyond the reviewed Gmail draft and the Todoist add, complete and move is referenced in the backend." >&2; status=1
   fi
   if grep -RInE 'tools\.proxy|proxyExecute|COMPOSIO_MULTI_EXECUTE|COMPOSIO_REMOTE' "$backend_src"; then
     echo "FAIL: generic proxy/meta-tool execution in the backend." >&2; status=1
@@ -181,5 +193,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport and the OpenAI test voice, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

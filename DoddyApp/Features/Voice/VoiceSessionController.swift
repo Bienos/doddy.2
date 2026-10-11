@@ -71,6 +71,10 @@ final class VoiceSessionController {
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
         /// "Undo that" (ADR-271): the newest undoable change from this conversation, from What Doddy did.
         case undo(toolCallID: String, entry: ActivityEntry)
+        /// "Save your parking spot here?" (ADR-301): the position read just now, and the user's note.
+        case parking(toolCallID: String, spot: ParkingSpot)
+        /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
+        case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
 
         var toolCallID: String {
             switch self {
@@ -78,7 +82,8 @@ final class VoiceSessionController {
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
-                 .undo(let id, _), .bulk(let id, _, _, _):
+                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _),
+                 .ingredients(let id, _, _, _, _, _):
                 id
             }
         }
@@ -152,6 +157,8 @@ final class VoiceSessionController {
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
     private(set) var contactCard: ContactCard?
+    /// The saved parking spot, shown with Open in Maps after "where did I park?" (ADR-301).
+    private(set) var parkingCard: ParkingSpot?
     private(set) var reminderStatus: ReminderStatus? {
         didSet {
             // Reminders confirmed it (added, or already there): the island says so briefly (ADR-240).
@@ -310,6 +317,7 @@ final class VoiceSessionController {
         privacyLocked = false
         pendingAction = nil
         contactCard = nil
+        parkingCard = nil
         reminderStatus = nil
         noteReminderStatus = nil
         planStatus = nil
@@ -677,6 +685,7 @@ final class VoiceSessionController {
         conversation = nil
         pendingAction = nil
         contactCard = nil
+        parkingCard = nil
         connectionNeeded = nil
         if isLive { phase = .ended }
         keepLog()
@@ -803,6 +812,32 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
         case .undo(let id, let entry):
             await reply(id, await undoFromVoice(entry))
+        case .ingredients(let id, let listID, let listName, let dish, let items, _):
+            // Only the ticked ones, through the same add as add_to_list (ADR-305).
+            let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
+            let leftOut = items.indices.filter { ingredientsUnticked.contains($0) }.map { items[$0] }
+            ingredientsUnticked = []
+            guard !ticked.isEmpty else {
+                await reply(id, VoiceToolReply.ingredientsNoneTicked)
+                return
+            }
+            do {
+                let result = try await store.addToList(ticked, listID: listID, source: .voice)
+                listReceipt = ListReceipt(
+                    listID: listID, title: result.added.isEmpty ? "Nothing new for \(listName)" : "Added to \(listName)",
+                    lines: result.added.map { .added($0.text) } + result.alreadyThere.map { .note("\($0) · already on the list, not added again") },
+                    undo: result.added.isEmpty ? nil : store.listUndo)
+                let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: listID, list: listName, items: result.added)
+                await reply(id, VoiceToolReply.ingredientsAdded(result, list: listName, dish: dish, leftOut: leftOut), undo: undo)
+            } catch {
+                await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
+            }
+        case .parking(let id, let spot):
+            // Kept on this iPhone, then read back (ADR-301).
+            await reply(id, ParkingStore.save(spot) ? VoiceToolReply.parkingSaved(spot, now: Date(), calendar: .current) : VoiceToolReply.parkingNotSaved)
+        case .changeReminder(let id, let reminder, let draft) where draft.changesDetails:
+            // A note, priority or list (ADR-302): one save, read back. Undo isn't offered for these.
+            await reply(id, changeReminderDetails(reminder, draft))
         case .changeReminder(let id, let reminder, let draft):
             let undo = ActivityUndo.changedReminder(
                 id: reminder.id, title: reminder.title, oldDue: reminder.due,
@@ -938,6 +973,10 @@ final class VoiceSessionController {
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
+        case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
+        case .ingredients(let id, _, _, _, _, _):
+            ingredientsUnticked = []
+            await reply(id, VoiceToolReply.ingredientsDeclined)
         case .bulk(let id, _, _, _):
             bulkUnticked = []
             await reply(id, VoiceToolReply.bulkDeclined)
@@ -1262,6 +1301,10 @@ final class VoiceSessionController {
 
     func dismissContactCard() {
         contactCard = nil
+    }
+
+    func dismissParkingCard() {
+        parkingCard = nil
     }
 
     func dismissReminderStatus() {
@@ -1595,6 +1638,19 @@ final class VoiceSessionController {
             await reply(call.toolCallId, VoiceToolReply.calculation(expression))
         case .convertUnits(let request):
             await reply(call.toolCallId, VoiceToolReply.conversion(request))
+        case .parkingSpot(let action):
+            await handleParking(action, toolCallID: call.toolCallId)
+        case .addIngredients(let proposal):
+            guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
+            let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
+            ingredientsUnticked = open
+            propose(.ingredients(toolCallID: call.toolCallId, listID: list.id, listName: list.name, dish: proposal.dish,
+                                 items: proposal.items, alreadyOpen: open), toolCallID: call.toolCallId)
+        case .convertCurrency(let request):
+            // The ECB's public rates file, fetched by the app (ADR-300); the last rates kept are
+            // used, with their date, when newer ones can't be fetched.
+            let found = await ExchangeRateClient.shared.rates()
+            await reply(call.toolCallId, VoiceToolReply.currency(request, rates: found.rates, isLastKnown: found.isLastKnown))
         case .upcomingBirthdays(let days):
             // Read only (ADR-269): the agent hears names with the day and month, nothing else.
             guard devices.access(for: .contacts) == .granted else {
@@ -1988,6 +2044,45 @@ final class VoiceSessionController {
 
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
     /// call is left without an answer.
+    /// Parking (ADR-301). Location is read once, only for "save" and, if location is already
+    /// allowed, for the distance on "find"; the agent hears no coordinates.
+    private func handleParking(_ action: ParkingAction, toolCallID: String) async {
+        switch action {
+        case .save(let note):
+            var readiness = await PlaceLocation.shared.readiness()
+            if readiness == .notDetermined { readiness = await PlaceLocation.shared.requestWhenInUse() }
+            guard readiness == .ready else {
+                await reply(toolCallID, VoiceToolReply.parkingNoLocation(readiness))
+                return
+            }
+            guard let fix = await PlaceLocation.shared.currentFix(within: Parking.worstAccuracyMeters) else {
+                await reply(toolCallID, VoiceToolReply.parkingNoLocation(nil))
+                return
+            }
+            let spot = ParkingSpot(latitude: fix.coordinate.latitude, longitude: fix.coordinate.longitude,
+                                   accuracyMeters: fix.accuracy, savedAt: Date(), note: note)
+            propose(.parking(toolCallID: toolCallID, spot: spot), toolCallID: toolCallID)
+        case .find:
+            guard let spot = ParkingStore.current() else {
+                await reply(toolCallID, VoiceToolReply.parkingNone)
+                return
+            }
+            var distance: Double?
+            if await PlaceLocation.shared.readiness() == .ready, let here = await PlaceLocation.shared.currentCoordinate() {
+                distance = Parking.distance(from: (here.latitude, here.longitude), to: (spot.latitude, spot.longitude))
+            }
+            parkingCard = spot
+            await reply(toolCallID, VoiceToolReply.parkingFound(spot, now: Date(), calendar: .current, distanceMeters: distance))
+        case .clear:
+            guard ParkingStore.current() != nil else {
+                await reply(toolCallID, VoiceToolReply.parkingNothingToClear)
+                return
+            }
+            if ParkingStore.clear() { parkingCard = nil }
+            await reply(toolCallID, ParkingStore.current() == nil ? VoiceToolReply.parkingCleared : VoiceToolReply.failed("The parking spot couldn't be removed."))
+        }
+    }
+
     private func propose(_ action: PendingAction, toolCallID: String) {
         guard pendingAction == nil else {
             Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
@@ -2079,6 +2174,21 @@ final class VoiceSessionController {
             await notConnected(toolCallID, .reminders)
             return
         }
+        var draft = draft
+        // The list the user named (ADR-302): exactly one of their Reminders lists, or nothing.
+        if let name = draft.listName {
+            let lists = devices.reminderLists()
+            switch ReminderDetails.matchList(name, in: lists) {
+            case .none:
+                await reply(toolCallID, VoiceToolReply.reminderListNotFound(name, lists: lists))
+                return
+            case .several(let found):
+                await reply(toolCallID, VoiceToolReply.reminderListAmbiguous(found))
+                return
+            case .one(let list):
+                draft.toList = list
+            }
+        }
         do {
             let open = try await devices.incompleteReminders()
             switch EventChange.matchReminder(draft.title, in: open) {
@@ -2087,7 +2197,10 @@ final class VoiceSessionController {
             case .several(let found):
                 await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
             case .one(let reminder):
-                if !draft.markDone, EventChange.sameDue(reminder.due, draft.newDue) {
+                let nothingNew = draft.changesDetails
+                    ? ReminderDetails.changesNothing(reminder, change: draft.details, newDue: draft.newDue)
+                    : !draft.markDone && EventChange.sameDue(reminder.due, draft.newDue)
+                if nothingNew {
                     await reply(toolCallID, VoiceToolReply.changeNothingNew)
                     return
                 }
@@ -2112,6 +2225,23 @@ final class VoiceSessionController {
                 return VoiceToolReply.eventChanged(plan, calendar: .current)
             case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
+    private func changeReminderDetails(_ reminder: ReminderSnapshot, _ draft: ReminderChangeDraft) -> String {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return VoiceToolReply.failed("Reminders isn't connected. Nothing changed.")
+        }
+        if EventChange.duePassed(draft.newDue, now: Date(), local: .current) { return VoiceToolReply.eventChangeTimePassed }
+        do {
+            switch try devices.changeReminder(reminder, .details(newDue: draft.newDue, draft.details)) {
+            case .verified: return VoiceToolReply.reminderDetailsChanged(reminder.title, change: draft.details, due: draft.newDue)
+            case .changedElsewhere: return VoiceToolReply.reminderChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.reminderChangeUnconfirmed
             }
         } catch {
             return VoiceToolReply.failed(UserFacingError.message(for: error))
@@ -2147,6 +2277,13 @@ final class VoiceSessionController {
 
     /// Items the user unticked on the several-changes card. Everything starts ticked.
     private(set) var bulkUnticked: Set<String> = []
+
+    /// Ingredients the user unticked on the card (ADR-305), by position.
+    private(set) var ingredientsUnticked: Set<Int> = []
+
+    func toggleIngredient(_ index: Int) {
+        if ingredientsUnticked.contains(index) { ingredientsUnticked.remove(index) } else { ingredientsUnticked.insert(index) }
+    }
 
     func toggleBulkItem(_ id: String) {
         if bulkUnticked.contains(id) { bulkUnticked.remove(id) } else { bulkUnticked.insert(id) }
@@ -2483,7 +2620,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .translator, .plan, .undo: false
