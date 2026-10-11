@@ -60,6 +60,11 @@ struct HomeView: View {
                         .id(ready != nil)
                         .transition(.opacity)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
+                        // Doddy's room behind Doddy only, edge to edge; no text over it (ADR-308).
+                        .background {
+                            SceneryBackdrop(place: .home, height: 270, focus: 0.2)
+                                .padding(.horizontal, -24)
+                        }
 
                     if let problem = store.environment.storageProblem {
                         ProblemView(message: problem, showsDoddy: true)
@@ -127,8 +132,6 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
-                // Doddy's room behind the greeting and Doddy (ADR-299).
-                .background(alignment: .top) { SceneryBackdrop(place: .home, height: 440) }
             }
             .background(Theme.canvas)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
