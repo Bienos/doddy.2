@@ -213,3 +213,10 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | W4 | Ask Doddy to save a note, tap Save; ask for a reminder and Add | Reaching high while it waits; a fist pump only after Saved / Reminders confirmed it |
 | W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, arms out with the greeting, leaning while paused |
 | W6 | Start the translator from Home with Whole Doddy chosen | Language Bridge as before, no pose |
+
+## 4g. Cream Lock Screen cards (ADR-266)
+| # | Do this | Expect |
+|---|---|---|
+| C1 | Dark mode on. Talk to Doddy and lock the iPhone; then turn on Hey Doddy and lock it again | Both Lock Screen cards are cream with dark text and Doddy without a paper box. Mute / End / Stop listening read clearly |
+| C2 | Dark mode on. Start a focus timer, then shopping mode for a list, and lock the iPhone | Both cards are cream with readable text; ticking an item still works |
+
