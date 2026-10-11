@@ -113,6 +113,16 @@ final class SharedListsController {
         try await stop(listID)
     }
 
+    /// Said before a shared list is deleted (review F6): what happens to the people it is shared
+    /// with, and that Undo brings the list back on this iPhone only, unshared. Nil when the list
+    /// isn't shared.
+    func deleteWarning(_ listID: UUID) -> String? {
+        guard let link = links[listID] else { return nil }
+        return link.role == .owner
+            ? NSLocalizedString("Sharing stops first: the copy in your iCloud is deleted and the people you invited lose the list. Undo brings it back on this iPhone only, not shared.", comment: "")
+            : NSLocalizedString("You leave the shared list first; the others keep it. Undo brings it back on this iPhone only, not shared.", comment: "")
+    }
+
     /// Delete all (Settings): stops sharing every list this user shares, so no copy and no
     /// invitees are left in iCloud (review G3/I3). Returns the lists whose stop wasn't confirmed
     /// (all of them in a build without iCloud). While Doddy stays open, the next sync tries those

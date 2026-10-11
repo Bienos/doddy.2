@@ -235,6 +235,7 @@ struct ListDetailView: View {
             }
         } message: {
             Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
+                + Text(verbatim: sharing.deleteWarning(list.id).map { " " + $0 } ?? "")
         }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
         .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
