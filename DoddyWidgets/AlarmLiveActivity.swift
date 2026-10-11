@@ -5,21 +5,27 @@ import WidgetKit
 
 /// The snooze countdown of a Doddy alarm (ADR-283), on the Lock Screen and in the Dynamic Island.
 /// AlarmKit draws the ringing alarm itself; this only shows the minutes until it rings again.
+/// Doddy stretches awake beside it, on the cream card like his other Lock Screen cards (ADR-323).
 @available(iOS 26.0, *)
 struct AlarmLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmAttributes<DoddyAlarmMetadata>.self) { context in
-            HStack {
-                Image(systemName: "zzz")
-                Text("Snoozed")
+            HStack(spacing: 12) {
+                WidgetPose(pose: .yawnStretch, height: 64)
+                Label("Snoozed", systemImage: "zzz")
+                    .font(.headline)
                 Spacer()
                 countdown(context.state)
                     .font(.title2.monospacedDigit())
             }
             .padding()
+            .doddyCreamLockScreen()
         } dynamicIsland: { context in
             DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) { Image(systemName: "alarm") }
+                DynamicIslandExpandedRegion(.leading) {
+                    IslandPoseView(pose: .yawnStretch, maxSize: CGSize(width: 44, height: 52))
+                        .padding(.leading, 6)
+                }
                 DynamicIslandExpandedRegion(.trailing) { countdown(context.state).monospacedDigit() }
                 DynamicIslandExpandedRegion(.bottom) { Text("Snoozed").font(.caption) }
             } compactLeading: {

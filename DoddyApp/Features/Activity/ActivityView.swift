@@ -15,6 +15,8 @@ struct ActivityView: View {
     @State private var undoing: Set<UUID> = []
     /// The entry whose Undo sheet is showing.
     @State private var confirmUndo: ActivityEntry?
+    /// Entries undone while this screen is open: Doddy turns back once for these (ADR-323).
+    @State private var justUndone: Set<UUID> = []
 
     private var days: [(day: Date, items: [ActivityItem])] {
         let calendar = Calendar.current
@@ -103,8 +105,11 @@ struct ActivityView: View {
                 Text(detail).font(.subheadline)
             }
             HStack(spacing: 6) {
-                // Undone (ADR-313): Doddy turned back, frame 3 of the pack's turn strip.
-                if case .undone? = entry.undoState { DoddyMotionView(motion: .turn, height: 28) }
+                // Undone (ADR-313): Doddy turned back. He turns once when it was undone just now
+                // (ADR-323); otherwise only the turned-back frame shows.
+                if case .undone? = entry.undoState {
+                    DoddyMotionView(motion: .turn, height: 28, playing: justUndone.contains(entry.id))
+                }
                 Text(entry.statusText(.current))
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(entry.undoState == nil ? color(entry.outcome) : Theme.secondaryText)
@@ -188,7 +193,9 @@ struct ActivityView: View {
         }
         // The entry as it is now, in case it changed while Undo ran.
         let current = activity.entries.first { $0.id == entry.id } ?? entry
-        activity.replace(ActivityLog.undid(current, result: result, at: Date()))
+        let undone = ActivityLog.undid(current, result: result, at: Date())
+        if case .undone? = undone.undoState { justUndone.insert(entry.id) }
+        activity.replace(undone)
     }
 
     private func color(_ outcome: ActivityOutcome) -> Color {
