@@ -226,6 +226,14 @@ final class VoiceSessionController {
     @ObservationIgnored private var islandFlashClear: Task<Void, Never>?
     /// How long "Note saved" and "Reminder set" stay on the island.
     static let islandFlashSeconds: TimeInterval = 8
+    /// Every note text Doddy put on a save card or plan in this conversation, saved or declined,
+    /// so the end-of-conversation suggestions never offer them again (ADR-247).
+    private var proposedNoteTexts: [String] = []
+    /// "Worth keeping?" after the conversation ends (ADR-247). Nothing ticked, nothing saved
+    /// until the user taps Save.
+    private(set) var saveSuggestions: SaveSuggestionCard?
+    /// Suggestions are worked out once per conversation, so a dismissed card doesn't come back.
+    private var suggestionsOffered = false
 
     init(store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared) {
         self.store = store
@@ -272,6 +280,9 @@ final class VoiceSessionController {
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
+        proposedNoteTexts = []
+        saveSuggestions = nil
+        suggestionsOffered = false
         audioPausedByOtherApp = false
         audioNote = nil
 
@@ -475,6 +486,7 @@ final class VoiceSessionController {
         connectionNeeded = nil
         if isLive { phase = .ended }
         keepLog()
+        offerSaveSuggestions()
         await active?.endConversation()
     }
 
@@ -1150,6 +1162,53 @@ final class VoiceSessionController {
         keepLog()
         if case .failed = phase { return }
         phase = .ended
+        offerSaveSuggestions()
+    }
+
+    // MARK: End-of-conversation save suggestions (ADR-247)
+
+    /// Picks what the user said that may be worth keeping, on the phone, from their own lines only.
+    /// Not for a private conversation, not when switched off, not when notes can't be saved.
+    private func offerSaveSuggestions() {
+        guard !suggestionsOffered, phase == .ended else { return }
+        suggestionsOffered = true
+        guard !isPrivate, store.isStorageAvailable,
+              UserDefaults.standard.object(forKey: PreferenceKey.suggestSavesAfterConversation) as? Bool ?? true
+        else { return }
+        let found = SaveSuggestions.suggest(
+            userLines: lines.filter(\.fromUser).map(\.text),
+            alreadyProposed: proposedNoteTexts,
+            existingNotes: store.memories)
+        saveSuggestions = found.isEmpty ? nil : SaveSuggestionCard(found)
+    }
+
+    func toggleSaveSuggestion(_ id: Int) {
+        saveSuggestions?.toggle(id)
+    }
+
+    func changeSaveSuggestion(_ id: Int, to text: String) {
+        saveSuggestions?.setText(id, text)
+    }
+
+    /// Saves the ticked suggestions one by one through the normal checked save (read back before
+    /// it counts). A failed one says why and is never shown as saved.
+    func saveTickedSuggestions() async {
+        guard var card = saveSuggestions, card.tickedCount > 0, !card.isSaving else { return }
+        let batch = card.beginSaving()
+        saveSuggestions = card
+        for (id, text) in batch {
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                saveSuggestions?.finish(id, .success(record))
+            } catch {
+                saveSuggestions?.finish(id, .failure(SaveSuggestionFailure(message: UserFacingError.message(for: error))))
+            }
+        }
+    }
+
+    func dismissSaveSuggestions() {
+        guard saveSuggestions?.isSaving != true else { return }
+        saveSuggestions = nil
     }
 
     private func handle(_ call: ClientToolCallEvent) async {
@@ -1184,6 +1243,7 @@ final class VoiceSessionController {
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
+            proposedNoteTexts.append(text)
             pendingMemoryCategory = .other
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
         case .readCalendar(let range):
@@ -1306,6 +1366,9 @@ final class VoiceSessionController {
             return
         case .plan(let parsed):
             steps = parsed
+        }
+        proposedNoteTexts += steps.compactMap { step in
+            if case .saveMemory(let text) = step.request { text } else { nil }
         }
         guard pendingAction == nil else {
             // One card at a time, as in propose(_:toolCallID:).
