@@ -58,7 +58,7 @@
         },
         "required": ["from"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_3201m4nyakxvf7ht6vxqyywxjf43"}
     },
     {
       "type": "function",
@@ -473,7 +473,7 @@
         },
         "required": ["place", "arrive_by"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4801m4nyams5ff79cbnt0j8vweds"}
     },
     {
       "type": "function",
@@ -610,7 +610,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1401m4nyap0tfdvbspd4a6717pnh"}
     },
     {
       "type": "function",
@@ -623,7 +623,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1901m4nyaq66ew6bkbvqby0049mv"}
     },
     {
       "type": "function",
@@ -638,7 +638,7 @@
         },
         "required": ["to", "subject", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9501m4nyarbhfx8sjxt8jdg88nja"}
     },
     {
       "type": "function",
@@ -652,7 +652,7 @@
         },
         "required": ["from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1301m4nyas4zf8bbxnwb6q0jvpyb"}
     },
     {
       "type": "function",
