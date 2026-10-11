@@ -36,9 +36,10 @@ Date: 2026-10-11. Source: the owner's deck "Doddy-Watch-iPad-Mac-Review" (Google
 - `swiftc -parse DoddyMac/*.swift`: PASS.
 - The capability guard: PASS. A planted `import AVFoundation` in `DoddyMac` made it FAIL as intended; the file was removed.
 - The strings `--check`: PASS. `project.yml` parses.
+- `xcodegen generate` with XcodeGen 2.44.1, built from source on Linux (`USER` set), writes the project. It has a `DoddyMac` scheme and target (`SDKROOT = macosx`, `MACOSX_DEPLOYMENT_TARGET = 14.0`, `INFOPLIST_KEY_LSUIElement = YES`), linked to the `DoddyPersistence` product. This proves the spec, not the build.
 
 ## NOT RUN
-- No `xcodegen generate` on a Mac and no `xcodebuild -scheme DoddyMac`. Things nobody has seen yet:
+- No `xcodebuild -scheme DoddyMac`: the generated project has never been built. Things nobody has seen yet:
   - **MenuBarExtra:** the window opens and closes; Esc cancels and doesn't just close the window; the text field gets focus when the window opens.
   - **Sandbox:** Application Support resolves inside the container.
   - **Signing:** automatic signing with no team. Use "Sign to Run Locally" for a first try.

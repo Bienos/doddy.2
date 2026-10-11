@@ -30,6 +30,7 @@ Date: 2026-10-11. Owner: "forget iphone and continue" (after `prompts/APPLE_PLAT
 - `scripts/check_forbidden_capabilities.sh`: PASS.
 - `tools/build_strings_catalog.py --check`: PASS. The sidebar's words ("Home", "Memories", "Settings", "Lists", "Doddy", "App navigation") already have Polish lines.
 - `project.yml` parses as YAML.
+- Later the same day, XcodeGen 2.44.1 (built from source on Linux) generated the project from this spec, with `SidebarLayout.swift` in the app target.
 
 ## NOT RUN
 - No Xcode build, no simulator, no iPad. In particular, nobody has seen:
