@@ -44,6 +44,20 @@ final class ListsTests: XCTestCase {
         XCTAssertFalse(ListMatch.item("milk", in: [items[0]]) == .one(items[0]))
     }
 
+    /// Review C10: Undo is "done" only when every item came back; otherwise it says what did.
+    func testUndoSaysOnlyWhatWasTakenBack() {
+        let eggs = item("eggs"), milk = item("milk")
+        XCTAssertNoThrow(try ListUndoError.check(expected: [eggs, milk], reversed: [milk, eggs]))
+        XCTAssertThrowsError(try ListUndoError.check(expected: [eggs, milk], reversed: [])) { error in
+            XCTAssertEqual(error as? ListUndoError, .nothingUndone)
+        }
+        XCTAssertThrowsError(try ListUndoError.check(expected: [eggs, milk], reversed: [eggs])) { error in
+            XCTAssertEqual(error as? ListUndoError, .partlyUndone(undone: ["eggs"], notUndone: ["milk"]))
+            XCTAssertEqual((error as? ListUndoError)?.message,
+                           "Only part was undone: eggs. Not undone, as they were changed or deleted since: milk.")
+        }
+    }
+
     /// Review C9: removing takes only the same words; "milk" alone never removes "oat milk".
     func testRemovingNeverTakesAPartialMatch() {
         let items = [item("oat milk"), item("eggs"), item("milk chocolate")]

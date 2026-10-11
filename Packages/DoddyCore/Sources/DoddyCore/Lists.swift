@@ -94,6 +94,31 @@ public enum ListError: Error, Equatable, Sendable {
     case notANote
 }
 
+/// Undo of a list change (review C10): "Undone" only when every item it meant to take back
+/// came back as it was. Otherwise it says which did and which didn't.
+public enum ListUndoError: Error, Equatable, Sendable {
+    case nothingUndone
+    case partlyUndone(undone: [String], notUndone: [String])
+
+    /// `reversed` are the items the repository read back as taken back.
+    public static func check(expected: [ListItem], reversed: [ListItem]) throws(ListUndoError) {
+        let back = Set(reversed.map(\.id))
+        let missed = expected.filter { !back.contains($0.id) }
+        guard !missed.isEmpty else { return }
+        let undone = expected.filter { back.contains($0.id) }
+        throw undone.isEmpty ? .nothingUndone : .partlyUndone(undone: undone.map(\.text), notUndone: missed.map(\.text))
+    }
+
+    public var message: String {
+        switch self {
+        case .nothingUndone:
+            "Nothing was undone: the items were changed or deleted since."
+        case .partlyUndone(let undone, let notUndone):
+            "Only part was undone: \(undone.joined(separator: ", ")). Not undone, as they were changed or deleted since: \(notUndone.joined(separator: ", "))."
+        }
+    }
+}
+
 /// What an add actually did. Only `added` changed anything.
 public struct ListAddResult: Equatable, Sendable {
     public let added: [ListItem]
