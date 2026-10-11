@@ -1268,7 +1268,7 @@ final class VoiceSessionController {
             status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted,
             greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
-        state.islandStyle = IslandStyle(rawValue: UserDefaults.standard.string(forKey: PreferenceKey.islandStyle) ?? "") ?? .leanIn
+        state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
         return state
     }
 

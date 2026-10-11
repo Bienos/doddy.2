@@ -12,8 +12,7 @@ struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
             ShoppingLockScreen(listID: context.attributes.listID, state: context.state, isStale: context.isStale)
-                .activityBackgroundTint(Color("CardBackground"))
-                .activitySystemActionForegroundColor(Color("Ink"))
+                .doddyCreamLockScreen()
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {

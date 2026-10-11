@@ -59,7 +59,7 @@ Branch `claude/hopeful-fermat-1a63x0`, restarted from `claude/loving-dirac-uuxou
   - `list_alarms` (`tool_4201m4n8qbg3f40agsjckezvanvq`)
   - `cancel_alarm` (`tool_7901m4n8qcz5f22r1ahkr926kqqm`)
 - **New version:** `agtvrsn_7701m4n8vprrem78gmfjjmq77t96`, 43 tools. The stored prompt was read back from the update.
-- **Kept as found:** the live agent carries `undo_last`, `upcoming_birthdays`, `calculate` and `convert_units`, with their prompt lines, from the unmerged `claude/affectionate-edison-ktc6i6`. This branch's app answers "unsupported" to them; that line needs joining. ADR-266 to ADR-279 are left for it.
+- **Kept as found:** the live agent carries `undo_last`, `upcoming_birthdays`, `calculate` and `convert_units`, with their prompt lines, from the unmerged `claude/affectionate-edison-ktc6i6`. This branch's app answers "unsupported" to them; that line needs joining. ADR-268 to ADR-279 are left for it (the default branch has since used 266 and 267).
 - **Mixed versions:** an installed app from before this round answers "unsupported" to the four new tools, and the agent says it couldn't. Nothing is faked.
 
 ## Security and privacy
