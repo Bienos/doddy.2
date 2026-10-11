@@ -90,11 +90,26 @@ final class CallsModel {
         }
     }
 
+    /// Writes, then shows what the server now holds. The settings are read back even when the
+    /// write failed, since it may have half happened (the copy switched on, then the upload
+    /// failed), and a failed read-back after a good write never reads as "nothing changed" (DOD-08).
     private func change(_ work: @escaping (DoddyServerClient) async throws -> Void) async {
         guard let client else { return }
         await run {
-            try await work(client)
-            self.settings = try await client.callSettings()
+            var failure: (any Error)?
+            do {
+                try await work(client)
+            } catch {
+                failure = error
+            }
+            do {
+                let settings = try await client.callSettings()
+                self.settings = settings
+                UserDefaults.standard.set(settings.memoryCopy.enabled, forKey: PreferenceKey.memoryCopyOn)
+            } catch {
+                if failure == nil { self.message = UpdatesModel.savedButNotReadBack }
+            }
+            if let failure { throw failure }
         }
     }
 
