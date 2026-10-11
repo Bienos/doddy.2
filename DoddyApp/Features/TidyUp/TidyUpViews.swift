@@ -42,6 +42,7 @@ struct TidyUpView: View {
     @State private var confirmDelete: MemoryRecord?
     @State private var problem: String?
     @State private var lastDone: String?
+    private let sharing = SharedListsController.shared
 
     private var tidy: TidyUp.Suggestions {
         TidyUp.suggestions(memories: store.memories, lists: store.lists, reminders: noteReminders.reminders, now: .now)
@@ -138,6 +139,14 @@ struct TidyUpView: View {
     }
 
     private func delete(_ record: MemoryRecord) async {
+        do {
+            // A shared list stops being shared first, so no copy and no invitees are left in
+            // iCloud (review F2). Not confirmed: the list stays.
+            try await sharing.stopSharingBeforeDeleting(record.id)
+        } catch {
+            problem = SharingError.message(for: error)
+            return
+        }
         do {
             try await store.delete(id: record.id)
             problem = nil
