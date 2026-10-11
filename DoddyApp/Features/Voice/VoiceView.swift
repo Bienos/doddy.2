@@ -123,6 +123,13 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
+                        // Testing only (ADR-265): the copy below names ElevenLabs; say plainly when it isn't.
+                        if controller.provider == .openAIRealtime {
+                            Label("Test voice: OpenAI runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.", systemImage: "testtube.2")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                                .accessibilityIdentifier("voice.openAITest")
+                        }
                         if controller.audioPausedByOtherApp && controller.isLive {
                             Label("Another app has Doddy's audio. He can't hear you until it lets go.", systemImage: "pause.circle")
                                 .font(.footnote)
@@ -261,7 +268,11 @@ struct VoiceView: View {
                 .buttonStyle(SecondaryButtonStyle())
             }
         case .failed(let message):
-            ProblemView(message: message)
+            if controller.isOffline {
+                OfflineNoteCard(controller: controller)
+            } else {
+                ProblemView(message: message)
+            }
         default:
             EmptyView()
         }
@@ -339,6 +350,10 @@ struct VoiceView: View {
                 Text(location)
                     .foregroundStyle(Theme.secondaryText)
             }
+            if let repeats = draft.repeats {
+                Label(Self.repeatText(repeats), systemImage: "repeat")
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .reminder(_, let draft):
             Text("Add this reminder?")
                 .font(.headline)
@@ -349,7 +364,22 @@ struct VoiceView: View {
                 Text(ReminderText.due(draft.due))
                     .foregroundStyle(Theme.secondaryText)
             }
+            if let repeats = draft.repeats {
+                Label(Self.repeatText(repeats), systemImage: "repeat")
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .cancelAlarm(_, let alarm):
+            Text("Turn off this alarm?")
+                .font(.headline)
+            Text(alarm.summary)
+                .font(.title3.monospacedDigit())
+            if let label = alarm.label {
+                Text("“\(label)”")
+            }
+            Text("A repeating alarm stops for every day, not just the next one.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         case .alarm(_, let draft):
@@ -372,7 +402,7 @@ struct VoiceView: View {
             if let label = draft.label {
                 Text("“\(label)”")
             }
-            Text("It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.")
+            Text("It rings even in Silent mode or a Focus, with Snooze for 9 minutes. Turn it off in Settings, Alarms, or ask Doddy.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         case .timer(_, let draft):
@@ -412,6 +442,19 @@ struct VoiceView: View {
                 .font(.headline)
             changeRow(after: false, title: plan.before.title, when: eventWhen(plan.before))
             changeRow(after: true, title: plan.after.title, when: eventWhen(plan.after))
+            // Place and notes (ADR-281): shown here only; the old place never goes to Doddy's voice.
+            if let place = plan.newLocation {
+                Label(String(format: NSLocalizedString("Place: %@ → %@", comment: ""),
+                             plan.locationBefore?.isEmpty == false ? plan.locationBefore! : NSLocalizedString("none", comment: ""),
+                             place.isEmpty ? NSLocalizedString("none", comment: "") : place),
+                      systemImage: "mappin.and.ellipse")
+            }
+            if let note = plan.addNote {
+                Label(String(format: NSLocalizedString("Adds to its notes: “%@”", comment: ""), note), systemImage: "text.append")
+                Text("Its notes are only added to, never replaced.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Text("If it repeats, only this time changes. Nothing is deleted.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
@@ -438,6 +481,39 @@ struct VoiceView: View {
             Text("If it repeats, only this time is deleted. This can't be undone from Doddy.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .bulk(_, let items, let verb, let skipped):
+            Group {
+                if verb == "deleted" { Text("Delete these events?") } else { Text("Move these reminders?") }
+            }
+            .font(.headline)
+            ForEach(items) { item in
+                Button { controller.toggleBulkItem(item.id) } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Image(systemName: controller.bulkUnticked.contains(item.id) ? "circle" : "checkmark.circle.fill")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                            Text(bulkDetail(item)).font(.caption).foregroundStyle(Theme.secondaryText)
+                        }
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(controller.bulkUnticked.contains(item.id) ? [] : .isSelected)
+            }
+            if !skipped.isEmpty {
+                Text(String(format: NSLocalizedString("Left as they are (that time doesn't exist that day): %@", comment: ""), skipped.joined(separator: ", ")))
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+            Group {
+                if verb == "deleted" {
+                    Text("Untick any to keep. Each one is checked before it goes; a repeating event loses only this time. This can't be undone from Doddy.")
+                } else {
+                    Text("Untick any to leave. Each keeps its time and is checked before it moves.")
+                }
+            }
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
         case .deleteReminder(_, let reminder):
             Text("Delete this reminder?")
                 .font(.headline)
@@ -621,6 +697,8 @@ struct VoiceView: View {
 
     private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {
         if case .plan = pending { return controller.planTicked.isEmpty }
+        // Several changes (ADR-280): nothing ticked, nothing to confirm.
+        if case .bulk(_, let items, _, _) = pending { return items.allSatisfy { controller.bulkUnticked.contains($0.id) } }
         return false
     }
 
@@ -630,6 +708,7 @@ struct VoiceView: View {
         case .event, .reminder: (NSLocalizedString("Add", comment: ""), NSLocalizedString("Don't add", comment: ""))
         case .timer: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Don't start", comment: ""))
         case .alarm: (NSLocalizedString("Set alarm", comment: ""), NSLocalizedString("Don't set", comment: ""))
+        case .cancelAlarm: (NSLocalizedString("Turn off", comment: ""), NSLocalizedString("Keep it", comment: ""))
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
@@ -639,6 +718,10 @@ struct VoiceView: View {
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .deleteEvent, .deleteReminder: (NSLocalizedString("Delete", comment: ""), NSLocalizedString("Don't delete", comment: ""))
+        case .bulk(_, let items, let verb, _):
+            (String(format: verb == "deleted" ? NSLocalizedString("Delete %lld", comment: "") : NSLocalizedString("Move %lld", comment: ""),
+                    items.filter { !controller.bulkUnticked.contains($0.id) }.count),
+             NSLocalizedString("Not now", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         }
@@ -1043,6 +1126,28 @@ struct VoiceView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// One line under an item on the several-changes card (ADR-280).
+    private func bulkDetail(_ item: BulkItem) -> String {
+        switch item {
+        case .deleteEvent(let event): eventWhen(event)
+        case .moveReminder(let reminder, let due): ReminderText.due(reminder.due) + " → " + ReminderText.due(due)
+        }
+    }
+
+    /// "Repeats every week until Thu 31 Dec 2026" (ADR-282), in the iPhone's language.
+    static func repeatText(_ repeats: CalendarRepeat) -> String {
+        let base = switch repeats.frequency {
+        case .daily: NSLocalizedString("Repeats every day", comment: "")
+        case .weekdays: NSLocalizedString("Repeats every weekday (Monday to Friday)", comment: "")
+        case .weekly: NSLocalizedString("Repeats every week", comment: "")
+        case .everyTwoWeeks: NSLocalizedString("Repeats every two weeks", comment: "")
+        case .monthly: NSLocalizedString("Repeats every month", comment: "")
+        case .yearly: NSLocalizedString("Repeats every year", comment: "")
+        }
+        guard let until = repeats.until else { return base }
+        return base + " " + String(format: NSLocalizedString("until %@", comment: ""), ReminderText.due(until))
+    }
+
     private func eventWhen(_ event: CalendarEventSummary) -> String {
         if event.allDay {
             return event.start.formatted(date: .abbreviated, time: .omitted) + " (all day)"
@@ -1099,5 +1204,50 @@ struct VoiceView: View {
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
         case .failed: NSLocalizedString("Couldn't connect", comment: "")
         }
+    }
+}
+
+/// Offline (ADR-289): what still works without the internet. A note written or dictated here is
+/// saved on this iPhone after Save and read back; nothing is queued to send later.
+struct OfflineNoteCard: View {
+    let controller: VoiceSessionController
+    @State private var text = ""
+    @State private var isSaving = false
+    @State private var problem: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("You're offline", systemImage: "wifi.slash").font(.headline)
+            Text("Doddy's voice needs the internet. You can still write or dictate a note here; it's saved on this iPhone.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+            if let saved = controller.offlineSaved {
+                Label(String(format: NSLocalizedString("Saved on this iPhone: “%@”", comment: ""), saved), systemImage: "checkmark.circle")
+                    .accessibilityIdentifier("voice.offline.saved")
+            }
+            TextField("Your note", text: $text, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .accessibilityIdentifier("voice.offline.note")
+            Button {
+                Task { await save() }
+            } label: {
+                HStack { Text("Save note"); Spacer(); Image(systemName: "square.and.arrow.down") }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(isSaving || text.allSatisfy(\.isWhitespace))
+            if let problem { ProblemView(message: problem) }
+            Text("When you're back online, close this and talk to Doddy again.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        problem = await controller.saveOfflineNote(text)
+        if problem == nil { text = "" }
     }
 }

@@ -47,3 +47,17 @@ final class WatchComplicationTests: XCTestCase {
         XCTAssertEqual(dates, [now, now.addingTimeInterval(1801), now.addingTimeInterval(3600), now.addingTimeInterval(7201)])
     }
 }
+
+/// Adding to a list from the watch (ADR-287).
+final class WatchListAddTests: XCTestCase {
+    func testTheRequestRoundTripsAndTheItemIsCheckedOnTheWatch() throws {
+        let list = UUID()
+        let request = WatchRequest.addToList(listID: list, text: "oat milk")
+        XCTAssertEqual(WatchRequest.decoded(try request.encoded()), request)
+        XCTAssertNil(WatchNote.itemProblem("oat milk"))
+        XCTAssertNotNil(WatchNote.itemProblem("   "))
+        XCTAssertNotNil(WatchNote.itemProblem(String(repeating: "x", count: 201)))
+        XCTAssertEqual(WatchReply.decoded(try WatchReply.addedToList("oat milk").encoded()), .addedToList("oat milk"))
+        XCTAssertEqual(WatchReply.alreadyOnList("milk").message, "“milk” is already on the list. Nothing added.")
+    }
+}

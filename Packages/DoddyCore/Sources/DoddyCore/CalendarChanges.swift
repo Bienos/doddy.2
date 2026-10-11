@@ -24,8 +24,15 @@ public struct EventChangeDraft: Equatable, Sendable {
     public let newStart: Date?
     public let newEnd: Date?
     public let newTitle: String?
+    /// A new place (ADR-281). Replaces the old one, which the card shows (never the agent).
+    public let newLocation: String?
+    /// A line added to the end of the event's notes (ADR-281). Notes are never replaced.
+    public let addNote: String?
 
-    public init(title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?) {
+    public init(title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?,
+                newLocation: String? = nil, addNote: String? = nil) {
+        self.newLocation = newLocation
+        self.addNote = addNote
         self.title = title
         self.currentStart = currentStart
         self.currentIsDayOnly = currentIsDayOnly
@@ -51,11 +58,27 @@ public struct ReminderChangeDraft: Equatable, Sendable {
 public struct EventChangePlan: Equatable, Sendable {
     public let before: CalendarEventSummary
     public let after: CalendarEventSummary
+    /// The place now, read on this iPhone for the card and the stale check only (ADR-281).
+    public let locationBefore: String?
+    /// The new place; nil: the place doesn't change.
+    public let newLocation: String?
+    /// A line to add at the end of the notes.
+    public let addNote: String?
+    /// Undo of `addNote`: this exact line comes off the end of the notes again.
+    public let removeNote: String?
 
-    public init(before: CalendarEventSummary, after: CalendarEventSummary) {
+    public init(before: CalendarEventSummary, after: CalendarEventSummary, locationBefore: String? = nil,
+                newLocation: String? = nil, addNote: String? = nil, removeNote: String? = nil) {
         self.before = before
         self.after = after
+        self.locationBefore = locationBefore
+        self.newLocation = newLocation
+        self.addNote = addNote
+        self.removeNote = removeNote
     }
+
+    /// Something besides the time and title changes.
+    public var changesDetails: Bool { newLocation != nil || addNote != nil || removeNote != nil }
 }
 
 /// What a reminder change does on the iPhone (ADR-229, ADR-258).
@@ -69,6 +92,22 @@ public enum ReminderChange: Equatable, Sendable {
 
 public enum EventChange {
     public static let maxTitleLength = 200
+    public static let maxLocationLength = 200
+    public static let maxNoteLength = 500
+
+    /// Notes with `line` added at the end, on a line of its own.
+    public static func notes(_ current: String?, adding line: String) -> String {
+        guard let current, !current.isEmpty else { return line }
+        return current.hasSuffix("\n") ? current + line : current + "\n" + line
+    }
+
+    /// Notes with `line` taken off the end again (Undo); nil when they no longer end with it.
+    public static func notes(_ current: String?, removing line: String) -> String?? {
+        guard let current else { return nil }
+        if current == line { return .some(nil) }
+        guard current.hasSuffix("\n" + line) else { return nil }
+        return .some(String(current.dropLast(line.count + 1)))
+    }
 
     /// Exactly one event with this title (ignoring case, accents and punctuation) starting at the
     /// same minute (or on the same day, for a day-only name). Otherwise nothing is guessed.
@@ -89,7 +128,7 @@ public enum EventChange {
 
     /// The new event. A new start alone keeps the length; a new end alone keeps the start. An
     /// all-day event moved to a day stays all day. Nil when the result makes no sense.
-    public static func plan(_ draft: EventChangeDraft, for event: CalendarEventSummary, calendar: Calendar) -> EventChangePlan? {
+    public static func plan(_ draft: EventChangeDraft, for event: CalendarEventSummary, locationBefore: String? = nil, calendar: Calendar) -> EventChangePlan? {
         var start = event.start, end = event.end
         let length = event.end.timeIntervalSince(event.start)
         if let newStart = draft.newStart {
@@ -106,8 +145,11 @@ public enum EventChange {
         let title = draft.newTitle?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty ?? event.title
         guard title.count <= maxTitleLength else { return nil }
         let after = CalendarEventSummary(id: event.id, title: title, start: start, end: end, allDay: event.allDay)
-        guard after != event else { return nil }
-        return EventChangePlan(before: event, after: after)
+        let location = draft.newLocation?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+        let newLocation = location == (locationBefore ?? "").nonEmpty ? nil : location
+        let note = draft.addNote?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmpty
+        guard after != event || newLocation != nil || note != nil else { return nil }
+        return EventChangePlan(before: event, after: after, locationBefore: locationBefore, newLocation: newLocation, addNote: note)
     }
 
     /// Where to look for the event: the whole day it starts on.
@@ -160,7 +202,10 @@ public enum EventChange {
         let back = CalendarEventSummary(
             id: itemID.map { occurrenceID(itemID: $0, start: plan.before.start) }, title: plan.before.title,
             start: plan.before.start, end: plan.before.end, allDay: plan.before.allDay)
-        return EventChangePlan(before: now, after: back)
+        // The place goes back; an added line comes off the notes again.
+        return EventChangePlan(
+            before: now, after: back, locationBefore: plan.newLocation ?? plan.locationBefore,
+            newLocation: plan.newLocation.map { _ in plan.locationBefore ?? "" }, addNote: nil, removeNote: plan.addNote)
     }
 
     /// Exactly one open reminder with this title.
@@ -197,6 +242,16 @@ extension VoiceToolReply {
             ? "\(localText(after.start, hasTime: false, calendar: calendar)) (all day)"
             : "\(localText(after.start, hasTime: true, calendar: calendar))–\(localText(after.end, hasTime: true, calendar: calendar))"
         return "changed: \"\(after.title)\" is now \(when). Checked in Calendar."
+    }
+
+    /// With the place or an added note (ADR-281). The old place is never sent to the agent.
+    public static func eventChanged(_ plan: EventChangePlan, calendar: Calendar) -> String {
+        var extra = ""
+        if let place = plan.newLocation { extra += place.isEmpty ? " Its place was cleared." : " Its place is now \"\(place)\"." }
+        if let note = plan.addNote { extra += " Added to its notes: \"\(note)\"." }
+        if plan.removeNote != nil { extra += " The added line came off its notes again." }
+        let base = eventChanged(plan.after, calendar: calendar)
+        return String(base.dropLast(" Checked in Calendar.".count)) + extra + " Checked in Calendar."
     }
 
     public static let eventChangeTimePassed = "failed: the new time passed while the card was waiting. Nothing changed. Ask the user for a new time."
@@ -265,13 +320,16 @@ extension VoiceToolRequest {
             }
         }
         let newTitle = args.text("new_title")
-        guard newStart != nil || newEnd != nil || newTitle != nil else {
-            return .invalid(name: name, reason: "give new_start, new_end or new_title")
+        let newLocation = args.text("new_location"), addNote = args.text("add_note")
+        guard newStart != nil || newEnd != nil || newTitle != nil || newLocation != nil || addNote != nil else {
+            return .invalid(name: name, reason: "give new_start, new_end, new_title, new_location or add_note")
         }
         if let newTitle, newTitle.count > EventChange.maxTitleLength { return .invalid(name: name, reason: "new_title is too long") }
+        if let newLocation, newLocation.count > EventChange.maxLocationLength { return .invalid(name: name, reason: "new_location is too long") }
+        if let addNote, addNote.count > EventChange.maxNoteLength { return .invalid(name: name, reason: "add_note is too long") }
         return .changeCalendarEvent(EventChangeDraft(
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime,
-            newStart: newStart, newEnd: newEnd, newTitle: newTitle))
+            newStart: newStart, newEnd: newEnd, newTitle: newTitle, newLocation: newLocation, addNote: addNote))
     }
 
     /// title + start (as read_calendar returned them): the occurrence to delete (ADR-259).

@@ -1,5 +1,5 @@
 import { loadConfig } from "./config.js";
-import { createPool, migrate } from "./db.js";
+import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom } from "./providers/index.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
@@ -7,7 +7,7 @@ import { log, runWorkerLoop } from "./workerLoop.js";
 // the same loop in-process instead with RUN_WORKER_IN_WEB=1 (src/index.ts).
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
-await migrate(db);
+await migrateOrExit(db, log);
 const { push, sms, cipher, news } = providersFrom(config);
 log("worker started", { push: !!push, sms: !!sms });
 

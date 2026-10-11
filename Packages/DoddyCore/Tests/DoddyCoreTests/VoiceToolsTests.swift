@@ -341,3 +341,63 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.contactMatches([], query: "Ola").hasPrefix("No contact matched \"Ola\""))
     }
 }
+
+/// Repeating events and reminders by voice (ADR-282).
+final class CalendarRepeatTests: XCTestCase {
+    private var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Warsaw")!
+        return calendar
+    }
+    private var now: Date { calendar.date(from: DateComponents(year: 2026, month: 10, day: 11, hour: 12))! }
+    private func parse(_ name: String, _ json: String) -> VoiceToolRequest {
+        VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8), now: now, calendar: calendar)
+    }
+
+    func testAnEventCanRepeatUntilADay() {
+        guard case .createCalendarEvent(let draft) = parse(VoiceToolName.createCalendarEvent,
+            #"{"title":"Gym","start":"2026-10-12T07:00","repeat":"weekly","repeat_until":"2026-12-31"}"#) else { return XCTFail() }
+        XCTAssertEqual(draft.repeats?.frequency, .weekly)
+        XCTAssertEqual(draft.repeats?.until?.localText, "2026-12-31")
+        XCTAssertTrue(VoiceToolReply.eventAdded(draft, calendar: calendar).hasSuffix("Repeats every week until 2026-12-31."))
+        guard case .invalid = parse(VoiceToolName.createCalendarEvent,
+            #"{"title":"Gym","start":"2026-10-12T07:00","repeat":"weekly","repeat_until":"2026-10-01"}"#) else {
+            return XCTFail("an end before the first date is refused")
+        }
+        guard case .invalid = parse(VoiceToolName.createCalendarEvent,
+            #"{"title":"Gym","start":"2026-10-12T07:00","repeat":"hourly"}"#) else { return XCTFail("unknown repeat") }
+    }
+
+    func testAReminderRepeatNeedsADue() {
+        guard case .createReminder(let draft) = parse(VoiceToolName.createReminder,
+            #"{"title":"Take pills","due":"2026-10-12T08:00","repeat":"daily"}"#) else { return XCTFail() }
+        XCTAssertEqual(draft.repeats, CalendarRepeat(frequency: .daily))
+        XCTAssertEqual(ReminderWrite(draft).repeats, draft.repeats)
+        guard case .invalid = parse(VoiceToolName.createReminder, #"{"title":"Take pills","repeat":"daily"}"#) else {
+            return XCTFail("a repeat needs a first date")
+        }
+    }
+
+    func testReadBackConfirmsOnlyTheSameRule() {
+        XCTAssertEqual(CalendarRepeat.from(unit: .weekly, interval: 1, weekdays: [2, 3, 4, 5, 6], until: nil)?.frequency, .weekdays)
+        XCTAssertEqual(CalendarRepeat.from(unit: .weekly, interval: 2, weekdays: [2], until: nil)?.frequency, .everyTwoWeeks)
+        XCTAssertNil(CalendarRepeat.from(unit: .weekly, interval: 3, weekdays: nil, until: nil), "a rule Doddy doesn't write")
+        XCTAssertNil(CalendarRepeat.from(unit: .weekly, interval: 1, weekdays: [2, 4], until: nil))
+        let write = ReminderWrite(ReminderDraft(title: "Pills", due: ReminderDue(year: 2026, month: 10, day: 12, hour: 8, timeZoneID: "Europe/Warsaw"), notes: nil, repeats: CalendarRepeat(frequency: .daily)))
+        let plain = ReminderSnapshot(id: "1", title: "Pills", listTitle: "R", due: write.due, markerURL: nil)
+        let repeating = ReminderSnapshot(id: "1", title: "Pills", listTitle: "R", due: write.due, markerURL: nil, repeats: CalendarRepeat(frequency: .daily))
+        XCTAssertFalse(ReminderMatching.confirms(plain, write), "the repeat must read back too")
+        XCTAssertTrue(ReminderMatching.confirms(repeating, write))
+    }
+
+    func testAPlanStepKeepsItsRepeatWhenEdited() {
+        let step = PlanStep(number: 1, toolName: VoiceToolName.createReminder, request: parse(VoiceToolName.createReminder,
+            #"{"title":"Take pills","due":"2026-10-12T08:00","repeat":"daily"}"#))
+        var form = PlanStepForm(step, now: now, calendar: calendar)
+        form.text = "Take vitamins"
+        guard case .step(let edited) = form.apply(to: step, now: now, calendar: calendar),
+              case .createReminder(let draft) = edited.request else { return XCTFail() }
+        XCTAssertEqual(draft.title, "Take vitamins")
+        XCTAssertEqual(draft.repeats?.frequency, .daily)
+    }
+}

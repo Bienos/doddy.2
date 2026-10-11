@@ -8,6 +8,20 @@
 > sent, and the scheduled digest is built when the service next wakes. Still to do by the owner:
 > `DATABASE_URL` (the database's Internal Database URL) and an AI key, `ANTHROPIC_API_KEY` or
 > `OPENAI_API_KEY` (ADR-197), in the service's Environment, typed in Render only.
+>
+> **2026-10-11 (owner: "recreate the messaging service on the new account"):** recreated in the new Render
+> workspace "Patryk's workspace" (the one the backend `doddy` moved to, `docs/integrations/DEPLOY_RENDER.md`),
+> Frankfurt, free plan: Postgres `doddy-messaging-db` (`dpg-db5m1kdckfvc73am3220-a`, PostgreSQL 16, **free database
+> expires 2026-11-10**) and web service `doddy-messaging` (`srv-db5m1krbc2fs739bveig`,
+> https://doddy-messaging-zw1n.onrender.com, default branch `claude/loving-dirac-uuxoux`, auto-deploy off,
+> `RUN_WORKER_IN_WEB=1`, `TRUST_PROXY_HOPS=1`, `NODE_VERSION=22`). Created with the Render API, so the build and start
+> commands `cd server/messaging` first and there is no health check path (set `/healthz` in the dashboard if wanted).
+> Verified 2026-10-11 after the owner set `DATABASE_URL` (Internal Database URL) and an AI key in Render: the service
+> is live, `GET /healthz` answers `{"ok":true}` (it checks the database), and the log shows `configured features` with
+> `newsWriter: true`, `push: false`, `sms: false`, `newsSearch: false`, plus "worker started in the web process".
+> (A first attempt hung on an unreachable `DATABASE_URL` and failed after about 2 minutes with `ETIMEDOUT`: use the new
+> database's Internal URL.) Not verified yet: the app talking to it and a real digest being built.
+> The old SLIYD service and database are not used any more; delete them there.
 
 Date: 2026-10-10. Turns on **one** messaging-server feature: a short daily news digest at your
 chosen time. Two ways (ADR-174):
@@ -104,6 +118,7 @@ The server creates its tables on first start (migrations run automatically).
 ## If something goes wrong
 | What you see | Likely cause |
 |---|---|
+| Deploy fails; log says `database unreachable at startup` | `DATABASE_URL` is wrong or points at a database this service can't reach (e.g. one in another Render workspace). Paste the database's **Internal Database URL**. The server gives up after 10 seconds |
 | "Updates need a Doddy messaging server" | The address is empty, not https, or has a path |
 | Test notification never arrives | Bundle ID on Render ≠ the app's, Push not enabled on the App ID, the key's Team ID ≠ the signing team, or notifications are off in iOS Settings |
 | Digest says "Only here: notifications or texts weren't on" | You chose Notification, but notifications aren't on for this iPhone (step 4.4). The digest is still in the app |

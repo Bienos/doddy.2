@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { generateKeyPairSync, verify } from "node:crypto";
 import http from "node:http";
+import { createServer, type Socket } from "node:net";
 import { test } from "node:test";
 import twilio from "twilio";
+import { createPool, dbErrorFields } from "../src/db.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsOutboundCaller } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, twilioSignature } from "../src/providers/twilio.js";
@@ -58,4 +60,30 @@ test("outbound call: a gateway error after the request may have rung is unknown,
   } finally {
     server.close();
   }
+});
+
+test("a database that never answers fails within the connect timeout, not minutes later", async () => {
+  // A TCP server that accepts and then stays silent, like an unreachable or wrong DATABASE_URL.
+  const sockets: Socket[] = [];
+  const server = createServer((s) => { sockets.push(s); });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const { port } = server.address() as { port: number };
+  const db = createPool(`postgres://u:secret@127.0.0.1:${port}/x`, 300);
+  const started = Date.now();
+  try {
+    await assert.rejects(db.query("SELECT 1"), /timeout/i);
+    assert.ok(Date.now() - started < 3_000, `took ${Date.now() - started} ms`);
+  } finally {
+    await db.end().catch(() => {});
+    for (const s of sockets) s.destroy();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
+});
+
+test("database errors are logged without the connection string", () => {
+  const fields = dbErrorFields(Object.assign(new Error("bad postgresql://u:hunter2@db.example:5432/x here"), { code: "ETIMEDOUT" }));
+  assert.equal(fields.code, "ETIMEDOUT");
+  assert.ok(!fields.error.includes("hunter2"));
+  assert.equal(fields.error, "bad <url> here");
+  assert.deepEqual(dbErrorFields("boom"), { code: "unknown", error: "boom" });
 });

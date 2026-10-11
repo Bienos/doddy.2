@@ -118,3 +118,98 @@ test("ignored short codes are logged once, by label only", async () => {
   assert.equal(second.logs.filter((l) => l.event === "voice_token_config").length, 0);
   assert.deepEqual(ignoredShortCodes(`a:${CODE},b:x`), ["b"]);
 });
+
+// OpenAI Realtime test voice (ADR-265).
+const openAIEnv = { ...env, OPENAI_API_KEY: "openai-server-key" };
+
+function openAIRequest(body = JSON.stringify({ provider: "openai" }), code = CODE) {
+  return new Request("https://example.test/api/voice-token", {
+    method: "POST",
+    headers: { authorization: `Bearer ${code}`, "content-type": "application/json" },
+    body,
+  });
+}
+
+test("openai: returns a client secret carrying only model and voice, and never logs secrets", async () => {
+  const upstream = Response.json({ value: "ek_secret", expires_at: 1, session: { model: "gpt-realtime" } });
+  const { response, body, logs, calls } = await run(openAIRequest(), { upstream, environment: openAIEnv });
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { token: "ek_secret", provider: "openai", model: "gpt-realtime" });
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "https://api.openai.com/v1/realtime/client_secrets");
+  assert.equal(calls[0].init.method, "POST");
+  assert.equal(calls[0].init.headers.authorization, "Bearer openai-server-key");
+  const sent = JSON.parse(calls[0].init.body);
+  assert.deepEqual(sent, {
+    expires_after: { anchor: "created_at", seconds: 120 },
+    session: { type: "realtime", model: "gpt-realtime", audio: { output: { voice: "marin" } } },
+  });
+  // No prompt, notes or tools go through this server.
+  assert.equal(sent.session.instructions, undefined);
+  assert.equal(sent.session.tools, undefined);
+  const logged = JSON.stringify(logs);
+  assert.match(logged, /"provider":"openai"/);
+  for (const secret of ["ek_secret", CODE, "openai-server-key"]) assert.ok(!logged.includes(secret), secret);
+});
+
+test("openai: model and voice come from the environment", async () => {
+  const upstream = Response.json({ value: "ek_secret", session: {} });
+  const environment = { ...openAIEnv, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1", OPENAI_REALTIME_VOICE: "cedar" };
+  const { body, calls } = await run(openAIRequest(), { upstream, environment });
+  const sent = JSON.parse(calls[0].init.body);
+  assert.equal(sent.session.model, "gpt-realtime-2.1");
+  assert.equal(sent.session.audio.output.voice, "cedar");
+  assert.equal(body.model, "gpt-realtime-2.1");
+});
+
+test("openai: needs its own key; ElevenLabs keys alone are not enough, and nothing is called", async () => {
+  const { response, body, calls } = await run(openAIRequest(), { environment: env });
+  assert.equal(response.status, 500);
+  assert.deepEqual(body, { error: "server_not_configured" });
+  assert.equal(calls.length, 0);
+});
+
+test("openai: OpenAI alone is enough for the OpenAI voice, and ElevenLabs then reports not configured", async () => {
+  const onlyOpenAI = { DODDY_ACCESS_CODES: env.DODDY_ACCESS_CODES, OPENAI_API_KEY: "openai-server-key" };
+  const upstream = Response.json({ value: "ek_secret" });
+  assert.equal((await run(openAIRequest(), { upstream, environment: onlyOpenAI })).response.status, 200);
+  assert.equal((await run(request(), { environment: onlyOpenAI })).response.status, 500);
+});
+
+test("openai: a wrong code is refused before OpenAI is called", async () => {
+  const { response, calls } = await run(openAIRequest(undefined, "wrong-code-but-long-enough"), { environment: openAIEnv });
+  assert.equal(response.status, 401);
+  assert.equal(calls.length, 0);
+});
+
+test("unknown provider or a body that isn't JSON is refused before anything is called", async () => {
+  for (const raw of [JSON.stringify({ provider: "other" }), "not json"]) {
+    const { response, body, calls } = await run(openAIRequest(raw), { environment: openAIEnv });
+    assert.equal(response.status, 400);
+    assert.deepEqual(body, { error: "unknown_provider" });
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("an explicit elevenlabs provider behaves like no body", async () => {
+  const { response, body } = await run(openAIRequest(JSON.stringify({ provider: "elevenlabs" })));
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { token: "jwt-token" });
+});
+
+test("openai: upstream limits, failures and bad replies map like ElevenLabs'", async () => {
+  const cases = [
+    [new Response("{}", { status: 429 }), 503, "voice_busy"],
+    [new Response("{}", { status: 401 }), 502, "upstream_failed"],
+    [Response.json({ nothing: true }), 502, "upstream_bad_response"],
+    [new Response("not json", { status: 200 }), 502, "upstream_bad_response"],
+    [Object.assign(new Error("t"), { name: "TimeoutError" }), 504, "upstream_timeout"],
+    [new TypeError("fetch failed"), 502, "upstream_unreachable"],
+  ];
+  for (const [upstream, status, error] of cases) {
+    const { response, body } = await run(openAIRequest(), { upstream, environment: openAIEnv });
+    assert.equal(response.status, status, error);
+    assert.deepEqual(body, { error });
+  }
+});

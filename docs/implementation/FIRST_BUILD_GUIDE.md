@@ -87,3 +87,28 @@ Nothing from this round has been compiled with Xcode either. In order of risk:
 - `Features/Alarms/AlarmScheduler.swift` (ADR-260): every AlarmKit call. It needs Xcode 26 to compile at all; on Xcode 16 only the `#if canImport(AlarmKit)` fallback builds.
 - `DoddyWatchWidgets` (ADR-262): XcodeGen embedding a watchOS app extension in the single-target watch app, and `.widgetLabel` on the corner complication.
 - `Features/EveningWrapUp/EveningWrapUpViews.swift` (ADR-261) and the delete card (ADR-259): ordinary SwiftUI and EventKit (`remove(_:span:)`, `remove(_:commit:)`), lower risk.
+
+### Round 3 (2026-10-11, ADR-280 to ADR-289): most likely to need a fix
+**First build: still BLOCKED.** This session has no Xcode, and GitHub Actions doesn't start jobs for the account (billing; PR #25's checks ended within seconds). So nothing below has been compiled. Both ways above still apply.
+
+In order of risk:
+- **Alarms part 2 (ADR-283):**
+  - In `Features/Alarms/AlarmScheduler.swift`:
+    - the snooze, built with `AlarmConfiguration(countdownDuration:…)` and a secondary button with behaviour `.countdown`;
+    - `typealias DoddyAlarm = AlarmEntry`.
+  - In `DoddyWidgets/AlarmLiveActivity.swift`:
+    - `ActivityConfiguration(for: AlarmAttributes<DoddyAlarmMetadata>.self)`;
+    - the `AlarmPresentationState` mode switch;
+    - its registration in the widget bundle under `#if canImport(AlarmKit)` plus `if #available(iOS 26, *)` inside a `WidgetBundleBuilder`. That may need a separate bundle body.
+- **Shared-list push (ADR-284):**
+  - `CKDatabaseSubscription` with silent `notificationInfo`;
+  - `CKNotification(fromRemoteNotificationDictionary:)`;
+  - the async `application(_:didReceiveRemoteNotification:) async -> UIBackgroundFetchResult` in a SwiftUI `UIApplicationDelegateAdaptor`.
+- **"Added by" (ADR-285):**
+  - reading `CKShare.participants` and `userIdentity.nameComponents`;
+  - `userRecordID()` on `CKContainer`, under Swift 6 Sendable checks.
+- **Birthdays (ADR-288):** `CNContactStore.enumerateContacts(with:usingBlock:)` off the main actor, with `CNContactBirthdayKey`. The `UNCalendarNotificationTrigger` with `repeats: true` is low risk.
+- **Watch add-to-list (ADR-287):** `TextField` dictation on watchOS 10 inside `WatchListView`.
+- **Photo list (ADR-286):** `PhotosPicker` with `loadTransferable(type: Data.self)`, same as photo notes. Low risk.
+- **Repeats and event details (ADR-281, ADR-282):** `EKRecurrenceRule(recurrenceWith:interval:daysOfTheWeek:…end:)` and `EKRecurrenceEnd(end:)`, read back via `recurrenceRules`. Low risk.
+- **Bulk card, offline note (ADR-280, ADR-289):** plain SwiftUI and `PendingAction` switches; the risk is a missed `switch` case in `VoiceView` or `VoiceSessionController`.

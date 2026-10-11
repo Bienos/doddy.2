@@ -16,6 +16,7 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
     @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
 
     private var state: DataFlowState {
         let defaults = UserDefaults.standard
@@ -37,7 +38,8 @@ struct DataFlowView: View {
             morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
             siriReadsNotes: siriReadsNotes,
             heyDoddyOn: heyDoddyOn,
-            sharedLists: SharedListsController.shared.links.count)
+            sharedLists: SharedListsController.shared.links.count,
+            voiceProvider: VoiceProvider(stored: voiceProvider))
     }
 
     var body: some View {

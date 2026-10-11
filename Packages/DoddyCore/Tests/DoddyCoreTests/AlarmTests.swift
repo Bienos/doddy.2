@@ -47,3 +47,33 @@ final class AlarmTests: XCTestCase {
         XCTAssertEqual(logged?.detail, "07:00 on 2026-10-12")
     }
 }
+
+/// Asking about and turning off Doddy's alarms by voice (ADR-283).
+final class AlarmVoiceTests: XCTestCase {
+    private let gym = AlarmEntry(id: UUID(), clock: "07:00", label: "gym", summary: "07:00 on weekdays")
+    private let flight = AlarmEntry(id: UUID(), clock: "07:00", label: "flight", summary: "07:00 on 2026-10-14")
+    private let early = AlarmEntry(id: UUID(), clock: "05:30", label: nil, summary: "05:30 on 2026-10-12")
+
+    func testTurningOffMatchesByTimeAndOnlyThenByLabel() {
+        guard case .cancelAlarm(let clock, let label) = VoiceToolRequest.parse(
+            name: VoiceToolName.cancelAlarm, parametersJSON: Data(#"{"time":"7:00"}"#.utf8), now: Date(), calendar: .current)
+        else { return XCTFail() }
+        XCTAssertEqual(clock, "07:00")
+        XCTAssertNil(label)
+        guard case .several = AlarmMatch.match(clock: "07:00", label: nil, in: [gym, flight, early]) else { return XCTFail("two at 07:00: ask") }
+        XCTAssertEqual(AlarmMatch.match(clock: "07:00", label: "Gym", in: [gym, flight, early]), .one(gym))
+        XCTAssertEqual(AlarmMatch.match(clock: "05:30", label: nil, in: [gym, flight, early]), .one(early))
+        guard case .none = AlarmMatch.match(clock: "08:00", label: nil, in: [gym]) else { return XCTFail() }
+        guard case .invalid = VoiceToolRequest.parse(name: VoiceToolName.cancelAlarm, parametersJSON: Data(#"{"time":"25:00"}"#.utf8),
+                                                     now: Date(), calendar: .current) else { return XCTFail() }
+    }
+
+    func testTheListSaysOnlyDoddysAlarmsAreVisible() {
+        XCTAssertTrue(VoiceToolReply.alarms([]).contains("Clock app"))
+        let reply = VoiceToolReply.alarms([gym])
+        XCTAssertTrue(reply.contains("07:00 on weekdays (\"gym\")"))
+        XCTAssertEqual(VoiceConnection.serving(VoiceToolName.cancelAlarm), .timers)
+        XCTAssertTrue(ConnectionPause.applies(to: .listAlarms))
+        XCTAssertEqual(ActivityRequest.describe(.listAlarms, calendar: .current)?.isLookup, true)
+    }
+}
