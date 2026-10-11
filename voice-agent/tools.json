@@ -145,6 +145,34 @@
     },
     {
       "type": "function",
+      "name": "delete_calendar_events",
+      "description": "Propose deleting every event that starts in a time range on the user's iPhone Calendar, on one card. Use it only when the user clearly asks to clear or cancel everything in a time (e.g. 'clear my Thursday afternoon'); for one event use delete_calendar_event. Give from and to in local time; a day alone as to means the whole day; at most 31 days. The card lists each event, all ticked; the user can untick any and taps Delete. A repeating event loses only the time in the range. Doddy can't undo it. The result starts with 'deleted' (all ticked ones gone, each checked), 'partly deleted' (it names the ones that weren't), 'declined', 'not changed' (nothing in that range, or too many), 'unknown' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen which ones I should delete.' (Polish: 'Potwierdź na ekranie, które mam usunąć.'). Never say they were deleted unless the result says so, and name the ones it says weren't.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "from": {"type": "string", "description": "Start of the range, YYYY-MM-DDTHH:MM or YYYY-MM-DD, local time."},
+          "to": {"type": "string", "description": "End of the range, YYYY-MM-DDTHH:MM, or YYYY-MM-DD for the whole of that day."}
+        },
+        "required": ["from", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120}
+    },
+    {
+      "type": "function",
+      "name": "move_reminders",
+      "description": "Propose moving the user's open Apple reminders that are due on a day or earlier to another day, each keeping its time, on one card. Use it only when the user asks to move several reminders at once (e.g. 'move today's reminders to tomorrow'); for one reminder use change_reminder. The card lists each reminder, all ticked; the user can untick any and taps Move. The result starts with 'moved', 'partly moved' (it names the ones that weren't), 'declined', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen which ones I should move.' (Polish: 'Potwierdź na ekranie, które mam przenieść.'). Never say they were moved unless the result says so.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "due_by": {"type": "string", "description": "Reminders due on this day or earlier move, YYYY-MM-DD (usually today)."},
+          "to": {"type": "string", "description": "The day they move to, YYYY-MM-DD, today or later."}
+        },
+        "required": ["due_by", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120}
+    },
+    {
+      "type": "function",
       "name": "remind_me_about_note",
       "description": "Propose Doddy's own reminder about one note the user already saved: a notification on this iPhone that opens the note, at a time or when the user arrives at or leaves a place. Use it only when the user asks to be reminded about a saved note (e.g. 'remind me about the parcel code when I get to the post office'). First find the note with search_memories, or use the text save_memory just saved, and pass that note's text exactly. Give due or place, never both. If the user wants it again and again (every day, on weekdays, every week or every month), also give repeat with due; the weekday, day and time come from due, and monthly works for days 1 to 28. You can't stop a repeat; the user does that on the note. It also works for one of the user's lists (e.g. 'remind me of my shopping list when I get to Lidl'): give list with the list's exact name instead of note; the notification says only that a list is due, never its name or items. For a new to-do that is not a saved note, use create_reminder instead. The app shows the note and the time or place on screen and the user must tap Set reminder; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should set this.' (Polish: 'Potwierdź na ekranie, jeśli mam to ustawić.'). Never say it was set unless the result starts with added. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
       "parameters": {

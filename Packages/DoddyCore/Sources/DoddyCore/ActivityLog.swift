@@ -148,6 +148,10 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .reminders, title: "Change reminder", detail: "“\(draft.title)” · \(what)", isLookup: false)
         case .deleteCalendarEvent(let draft):
             return ActivityRequest(app: .calendar, title: "Delete event", detail: "“\(draft.title)” \(when(draft.currentStart, hasTime: !draft.currentIsDayOnly))", isLookup: false)
+        case .deleteCalendarEvents(let range):
+            return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
+        case .moveReminders(let dueBy, let to):
+            return ActivityRequest(app: .reminders, title: "Move reminders", detail: "due by \(ReminderText.due(dueBy)) → \(ReminderText.due(to))", isLookup: false)
         case .deleteReminder(let title):
             return ActivityRequest(app: .reminders, title: "Delete reminder", detail: "“\(title)”", isLookup: false)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:

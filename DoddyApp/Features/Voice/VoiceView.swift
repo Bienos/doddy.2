@@ -459,6 +459,39 @@ struct VoiceView: View {
             Text("If it repeats, only this time is deleted. This can't be undone from Doddy.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .bulk(_, let items, let verb, let skipped):
+            Group {
+                if verb == "deleted" { Text("Delete these events?") } else { Text("Move these reminders?") }
+            }
+            .font(.headline)
+            ForEach(items) { item in
+                Button { controller.toggleBulkItem(item.id) } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Image(systemName: controller.bulkUnticked.contains(item.id) ? "circle" : "checkmark.circle.fill")
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.title)
+                            Text(bulkDetail(item)).font(.caption).foregroundStyle(Theme.secondaryText)
+                        }
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(controller.bulkUnticked.contains(item.id) ? [] : .isSelected)
+            }
+            if !skipped.isEmpty {
+                Text(String(format: NSLocalizedString("Left as they are (that time doesn't exist that day): %@", comment: ""), skipped.joined(separator: ", ")))
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+            Group {
+                if verb == "deleted" {
+                    Text("Untick any to keep. Each one is checked before it goes; a repeating event loses only this time. This can't be undone from Doddy.")
+                } else {
+                    Text("Untick any to leave. Each keeps its time and is checked before it moves.")
+                }
+            }
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
         case .deleteReminder(_, let reminder):
             Text("Delete this reminder?")
                 .font(.headline)
@@ -642,6 +675,8 @@ struct VoiceView: View {
 
     private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {
         if case .plan = pending { return controller.planTicked.isEmpty }
+        // Several changes (ADR-264): nothing ticked, nothing to confirm.
+        if case .bulk(_, let items, _, _) = pending { return items.allSatisfy { controller.bulkUnticked.contains($0.id) } }
         return false
     }
 
@@ -660,6 +695,10 @@ struct VoiceView: View {
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .deleteEvent, .deleteReminder: (NSLocalizedString("Delete", comment: ""), NSLocalizedString("Don't delete", comment: ""))
+        case .bulk(_, let items, let verb, _):
+            (String(format: verb == "deleted" ? NSLocalizedString("Delete %lld", comment: "") : NSLocalizedString("Move %lld", comment: ""),
+                    items.filter { !controller.bulkUnticked.contains($0.id) }.count),
+             NSLocalizedString("Not now", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         }
@@ -1062,6 +1101,14 @@ struct VoiceView: View {
                 .foregroundStyle(Theme.secondaryText)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// One line under an item on the several-changes card (ADR-264).
+    private func bulkDetail(_ item: BulkItem) -> String {
+        switch item {
+        case .deleteEvent(let event): eventWhen(event)
+        case .moveReminder(let reminder, let due): ReminderText.due(reminder.due) + " → " + ReminderText.due(due)
+        }
     }
 
     /// "Repeats every week until Thu 31 Dec 2026" (ADR-266), in the iPhone's language.

@@ -1838,6 +1838,17 @@
         }
       }
     },
+    "Delete %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń (%lld)"
+          }
+        }
+      }
+    },
     "Delete all": {
       "extractionState": "manual",
       "localizations": {
@@ -1889,6 +1900,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usuń listę"
+          }
+        }
+      }
+    },
+    "Delete these events?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć te wydarzenia?"
           }
         }
       }
@@ -4005,6 +4027,17 @@
         }
       }
     },
+    "Left as they are (that time doesn't exist that day): %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zostają bez zmian (tej godziny nie ma tego dnia): %@"
+          }
+        }
+      }
+    },
     "Less magic. More control.": {
       "extractionState": "manual",
       "localizations": {
@@ -4456,6 +4489,17 @@
         }
       }
     },
+    "Move %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieś (%lld)"
+          }
+        }
+      }
+    },
     "Move %lld to tomorrow": {
       "extractionState": "manual",
       "localizations": {
@@ -4463,6 +4507,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przenieś na jutro (%lld)"
+          }
+        }
+      }
+    },
+    "Move these reminders?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przenieść te przypomnienia?"
           }
         }
       }
@@ -9853,6 +9908,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odznacz wszystko"
+          }
+        }
+      }
+    },
+    "Untick any to keep. Each one is checked before it goes; a repeating event loses only this time. This can't be undone from Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odznacz te, które mają zostać. Każde jest sprawdzane przed usunięciem; z powtarzającego się wydarzenia znika tylko ten termin. Doddy nie może tego cofnąć."
+          }
+        }
+      }
+    },
+    "Untick any to leave. Each keeps its time and is checked before it moves.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odznacz te, które mają zostać. Każde zachowuje swoją godzinę i jest sprawdzane przed przeniesieniem."
           }
         }
       }

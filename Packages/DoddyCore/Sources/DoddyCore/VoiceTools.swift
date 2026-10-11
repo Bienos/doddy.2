@@ -44,8 +44,9 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     public static func serving(_ toolName: String) -> VoiceConnection? {
         switch toolName {
         case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent,
-             VoiceToolName.deleteCalendarEvent: .calendar
-        case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder: .reminders
+             VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents: .calendar
+        case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
+             VoiceToolName.moveReminders: .reminders
         case VoiceToolName.lookupContact: .contacts
         case VoiceToolName.setTimer, VoiceToolName.setAlarm: .timers
         case VoiceToolName.openMap: .maps
@@ -193,6 +194,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case deleteCalendarEvent(EventChangeDraft)
     /// Delete one open reminder (ADR-259), by its exact title.
     case deleteReminder(title: String)
+    /// Several changes on one card (ADR-264): events starting in the range, deleted.
+    case deleteCalendarEvents(VoiceTimeRange)
+    /// Open reminders due by a day, moved to another day at their own times.
+    case moveReminders(dueBy: ReminderDue, to: ReminderDue)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -217,6 +222,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseEventChange(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.deleteCalendarEvent:
             return parseEventDelete(args, name: name, calendar: calendar)
+        case VoiceToolName.deleteCalendarEvents:
+            return parseDeleteEvents(args, name: name, calendar: calendar)
+        case VoiceToolName.moveReminders:
+            return parseMoveReminders(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.deleteReminder:
             guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
             return .deleteReminder(title: title)

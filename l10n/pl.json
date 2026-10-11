@@ -999,5 +999,12 @@
  "Place: %@ → %@": "Miejsce: %@ → %@",
  "none": "brak",
  "Adds to its notes: “%@”": "Dopisuje do notatek: „%@”",
- "Its notes are only added to, never replaced.": "Do notatek wydarzenia tylko się dopisuje, nigdy ich nie zastępuje."
+ "Its notes are only added to, never replaced.": "Do notatek wydarzenia tylko się dopisuje, nigdy ich nie zastępuje.",
+ "Delete %lld": "Usuń (%lld)",
+ "Move %lld": "Przenieś (%lld)",
+ "Delete these events?": "Usunąć te wydarzenia?",
+ "Move these reminders?": "Przenieść te przypomnienia?",
+ "Left as they are (that time doesn't exist that day): %@": "Zostają bez zmian (tej godziny nie ma tego dnia): %@",
+ "Untick any to keep. Each one is checked before it goes; a repeating event loses only this time. This can't be undone from Doddy.": "Odznacz te, które mają zostać. Każde jest sprawdzane przed usunięciem; z powtarzającego się wydarzenia znika tylko ten termin. Doddy nie może tego cofnąć.",
+ "Untick any to leave. Each keeps its time and is checked before it moves.": "Odznacz te, które mają zostać. Każde zachowuje swoją godzinę i jest sprawdzane przed przeniesieniem."
 }

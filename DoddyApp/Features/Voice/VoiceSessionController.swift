@@ -60,6 +60,9 @@ final class VoiceSessionController {
         case deleteEvent(toolCallID: String, event: CalendarEventSummary)
         /// "Delete this reminder?" (ADR-259): one open reminder, exactly as Reminders has it.
         case deleteReminder(toolCallID: String, reminder: ReminderSnapshot)
+        /// Several changes on one card (ADR-264). `verb` is "deleted" or "moved"; `skipped` are
+        /// reminders left out because their time doesn't exist on the new day.
+        case bulk(toolCallID: String, items: [BulkItem], verb: String, skipped: [String])
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
@@ -68,7 +71,7 @@ final class VoiceSessionController {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
-                 .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _):
+                 .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _), .bulk(let id, _, _, _):
                 id
             }
         }
@@ -633,6 +636,10 @@ final class VoiceSessionController {
             await reply(id, deleteEvent(event))
         case .deleteReminder(let id, let reminder):
             await reply(id, deleteReminder(reminder))
+        case .bulk(let id, let items, let verb, let skipped):
+            let ticked = items.filter { !bulkUnticked.contains($0.id) }
+            bulkUnticked = []
+            await reply(id, runBulk(ticked, verb: verb, skipped: skipped))
         case .translator(let id, let setup):
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
@@ -753,6 +760,9 @@ final class VoiceSessionController {
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
+        case .bulk(let id, _, _, _):
+            bulkUnticked = []
+            await reply(id, VoiceToolReply.bulkDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -1344,6 +1354,10 @@ final class VoiceSessionController {
             await proposeEventDelete(draft, toolCallID: call.toolCallId)
         case .deleteReminder(let title):
             await proposeReminderDelete(title, toolCallID: call.toolCallId)
+        case .deleteCalendarEvents(let range):
+            await proposeBulkEventDelete(range, toolCallID: call.toolCallId)
+        case .moveReminders(let dueBy, let to):
+            await proposeBulkReminderMove(dueBy: dueBy, to: to, toolCallID: call.toolCallId)
         case .remindAboutNote(let draft):
             await proposeNoteReminder(draft, toolCallID: call.toolCallId)
         case .needsClarification(let name, let clarification):
@@ -1834,6 +1848,71 @@ final class VoiceSessionController {
         }
     }
 
+    // MARK: Several changes on one card (ADR-264)
+
+    /// Items the user unticked on the several-changes card. Everything starts ticked.
+    private(set) var bulkUnticked: Set<String> = []
+
+    func toggleBulkItem(_ id: String) {
+        if bulkUnticked.contains(id) { bulkUnticked.remove(id) } else { bulkUnticked.insert(id) }
+    }
+
+    private func proposeBulkEventDelete(_ range: VoiceTimeRange, toolCallID: String) async {
+        guard devices.access(for: .calendar) == .granted else {
+            await notConnected(toolCallID, .calendar)
+            return
+        }
+        let events = BulkChange.eventsToDelete(devices.events(in: range), in: range)
+        await proposeBulk(events.map(BulkItem.deleteEvent), verb: "deleted", skipped: [], toolCallID: toolCallID)
+    }
+
+    private func proposeBulkReminderMove(dueBy: ReminderDue, to: ReminderDue, toolCallID: String) async {
+        guard devices.access(for: .reminders) == .granted else {
+            await notConnected(toolCallID, .reminders)
+            return
+        }
+        do {
+            let open = try await devices.incompleteReminders()
+            let (moves, skipped) = BulkChange.remindersToMove(open, dueBy: dueBy, to: to, local: .current)
+            await proposeBulk(moves, verb: "moved", skipped: skipped, toolCallID: toolCallID)
+        } catch {
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+        }
+    }
+
+    private func proposeBulk(_ items: [BulkItem], verb: String, skipped: [String], toolCallID: String) async {
+        guard !items.isEmpty else { return await reply(toolCallID, VoiceToolReply.bulkNothing) }
+        guard items.count <= BulkChange.maxItems else { return await reply(toolCallID, VoiceToolReply.bulkTooMany(items.count)) }
+        bulkUnticked = []
+        propose(.bulk(toolCallID: toolCallID, items: items, verb: verb, skipped: skipped), toolCallID: toolCallID)
+    }
+
+    /// Each ticked item on its own: checked unchanged, changed, read back (ADR-264).
+    private func runBulk(_ items: [BulkItem], verb: String, skipped: [String]) -> String {
+        guard isOn(.calendar) || isOn(.reminders) else {
+            return VoiceToolReply.failed("Calendar and Reminders aren't connected. Nothing changed.")
+        }
+        guard !items.isEmpty else { return VoiceToolReply.bulkDeclined }
+        var results: [(BulkItem, BulkResult)] = []
+        for item in items {
+            let outcome: DeviceConnections.ChangeOutcome?
+            switch item {
+            case .deleteEvent(let event):
+                outcome = isOn(.calendar) ? try? devices.deleteEvent(event) : nil
+            case .moveReminder(let reminder, let due):
+                outcome = isOn(.reminders) && !EventChange.duePassed(due, now: Date(), local: .current)
+                    ? try? devices.changeReminder(reminder, .due(due)) : nil
+            }
+            switch outcome {
+            case .verified: results.append((item, .done))
+            case .changedElsewhere: results.append((item, .changedElsewhere))
+            case .unconfirmed: results.append((item, .unconfirmed))
+            case nil: results.append((item, .failed))
+            }
+        }
+        return VoiceToolReply.bulkResult(results, verb: verb, skipped: skipped)
+    }
+
     // MARK: Deleting events and reminders (ADR-259)
 
     /// Exactly one event with the title and start the agent read; otherwise the agent asks.
@@ -2099,7 +2178,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder: true
+             .deleteEvent, .deleteReminder, .bulk: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false
         }
