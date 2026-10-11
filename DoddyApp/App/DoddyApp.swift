@@ -21,7 +21,12 @@ struct DoddyApp: App {
         NoteReminderRouter.shared.reminders = noteReminders
         // A tick from a widget can also start the app in the background (ADR-219).
         WidgetSync.shared.store = store
+        // Siri and Shortcuts list actions (ADR-226) use the same store.
+        IntentStores.store = store
         WidgetSync.shared.reminders = noteReminders
+        // The Apple Watch app asks through the same store (ADR-232).
+        PhoneWatchLink.shared.store = store
+        PhoneWatchLink.shared.activate()
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
         _profiles = State(initialValue: ProfileStore(environment: environment))
@@ -41,6 +46,7 @@ struct DoddyApp: App {
                 .task { await SystemNoteNotifications.registerCategory() }
                 // Keeps the morning check-in's words in the iPhone's current language (ADR-220).
                 .task { if MorningCheckInSettings.stored().isOn { _ = await MorningCheckInScheduler.apply(.stored()) } }
+                .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
         }
     }
 }

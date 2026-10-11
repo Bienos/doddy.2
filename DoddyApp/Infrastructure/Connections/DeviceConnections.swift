@@ -20,6 +20,16 @@ final class DeviceConnections {
         case unconfirmed
     }
 
+    /// Changing something that is already in Calendar or Reminders (ADR-229).
+    enum ChangeOutcome: Equatable {
+        case verified
+        /// It no longer looks as it did on the card (changed, moved, done or deleted elsewhere).
+        /// Nothing was written.
+        case changedElsewhere
+        /// Saved, but reading it back failed. The agent must tell the user to check.
+        case unconfirmed
+    }
+
     struct ContactMatch: Identifiable, Equatable {
         let id: String
         let name: String
@@ -115,11 +125,7 @@ final class DeviceConnections {
         let predicate = eventStore.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
         return eventStore.events(matching: predicate)
             .sorted { $0.startDate < $1.startDate }
-            .map {
-                CalendarEventSummary(
-                    id: Self.occurrenceID($0), title: $0.title ?? "Untitled", start: $0.startDate,
-                    end: $0.endDate, allDay: $0.isAllDay)
-            }
+            .map { Self.summary($0) }
     }
 
     /// Repeating events share one identifier, so the start time is added: one id per occurrence.
@@ -142,6 +148,40 @@ final class DeviceConnections {
             return .unconfirmed
         }
         return .verified
+    }
+
+    /// Moves or renames exactly the occurrence the card showed (ADR-229). It's found again by its
+    /// id and must still look as it did on the card, or nothing is written. A repeating event
+    /// changes only this occurrence. Then it's read back from Calendar.
+    func changeEvent(_ plan: EventChangePlan) throws -> ChangeOutcome {
+        guard access(for: .calendar) == .granted else { return .changedElsewhere }
+        guard let event = rawEvents(from: plan.before.start, to: plan.before.end).first(where: { Self.occurrenceID($0) == plan.before.id }),
+              Self.summary(event) == plan.before else {
+            return .changedElsewhere
+        }
+        event.title = plan.after.title
+        event.startDate = plan.after.start
+        event.endDate = plan.after.end
+        try eventStore.save(event, span: .thisEvent)
+        let itemID = event.calendarItemIdentifier
+        let eventID = event.eventIdentifier
+        let readBack = rawEvents(from: plan.after.start, to: plan.after.end).contains { found in
+            (found.calendarItemIdentifier == itemID || (eventID != nil && found.eventIdentifier == eventID))
+                && (found.title ?? "Untitled") == plan.after.title
+                && found.startDate == plan.after.start && found.endDate == plan.after.end
+        }
+        return readBack ? .verified : .unconfirmed
+    }
+
+    private func rawEvents(from start: Date, to end: Date) -> [EKEvent] {
+        let predicate = eventStore.predicateForEvents(withStart: start.addingTimeInterval(-60), end: end.addingTimeInterval(60), calendars: nil)
+        return eventStore.events(matching: predicate)
+    }
+
+    private static func summary(_ event: EKEvent) -> CalendarEventSummary {
+        CalendarEventSummary(
+            id: occurrenceID(event), title: event.title ?? "Untitled", start: event.startDate,
+            end: event.endDate, allDay: event.isAllDay)
     }
 
     // MARK: Reminders (M4, ADR-126)
@@ -181,13 +221,45 @@ final class DeviceConnections {
         reminder.notes = write.notes
         reminder.url = URL(string: write.markerURL)
         if let due = write.due {
-            var components = DateComponents(year: due.year, month: due.month, day: due.day, hour: due.hour, minute: due.minute)
-            components.calendar = due.calendar
-            if due.hasTime { components.timeZone = due.calendar.timeZone }
-            reminder.dueDateComponents = components
+            reminder.dueDateComponents = Self.components(due)
         }
         try eventStore.save(reminder, commit: true)
         return reminder.calendarItemIdentifier
+    }
+
+    private static func components(_ due: ReminderDue) -> DateComponents {
+        var components = DateComponents(year: due.year, month: due.month, day: due.day, hour: due.hour, minute: due.minute)
+        components.calendar = due.calendar
+        if due.hasTime { components.timeZone = due.calendar.timeZone }
+        return components
+    }
+
+    /// Changes the due of, or completes, exactly the reminder the card showed (ADR-229). It must
+    /// still be open with the same title and due, or nothing is written. An alarm set for the old
+    /// due moves with it. Then it's read back from Reminders.
+    func changeReminder(_ before: ReminderSnapshot, newDue: ReminderDue?, markDone: Bool) throws -> ChangeOutcome {
+        guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }
+        guard let reminder = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder,
+              !reminder.isCompleted, (reminder.title ?? "") == before.title,
+              EventChange.sameDue(Self.snapshot(reminder).due, before.due) else {
+            return .changedElsewhere
+        }
+        if markDone {
+            reminder.isCompleted = true
+        } else if let newDue {
+            let oldDate = before.due.flatMap { EventChange.moment($0, local: .current) }
+            reminder.dueDateComponents = Self.components(newDue)
+            if let oldDate, let newDate = EventChange.moment(newDue, local: .current) {
+                for alarm in reminder.alarms ?? [] where alarm.absoluteDate == oldDate {
+                    alarm.absoluteDate = newDate
+                }
+            }
+        }
+        try eventStore.save(reminder, commit: true)
+        guard let back = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder else { return .unconfirmed }
+        let snapshot = Self.snapshot(back)
+        if markDone { return snapshot.isCompleted ? .verified : .unconfirmed }
+        return !snapshot.isCompleted && EventChange.sameDue(snapshot.due, newDue) ? .verified : .unconfirmed
     }
 
     /// For "What Doddy did" → Check: is the reminder Doddy wasn't sure about in Reminders now

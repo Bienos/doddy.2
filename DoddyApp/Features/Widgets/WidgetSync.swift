@@ -25,13 +25,21 @@ final class WidgetSync {
     }
 
     func refresh(now: Date = .now) {
-        guard isAvailable, let store, store.hasLoaded else { return }
+        guard let store, store.hasLoaded else { return }
         let snapshot = WidgetSnapshot.make(
             memories: store.memories, lists: store.lists,
             pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
             reminders: reminders?.reminders ?? [],
             showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
             isOn: Self.isOn, now: now)
+        // The Apple Watch gets the same content, under its own switch (ADR-232).
+        PhoneWatchLink.shared.send(WidgetSnapshot.make(
+            memories: store.memories, lists: store.lists,
+            pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
+            reminders: reminders?.reminders ?? [],
+            showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
+            isOn: true, now: now))
+        guard isAvailable else { return }
         // Same content as last time: no write, no widget reload (the time stamp alone isn't news).
         if let lastWritten, lastWritten.isOn == snapshot.isOn, lastWritten.pinned == snapshot.pinned,
            lastWritten.reminders == snapshot.reminders, lastWritten.lists == snapshot.lists { return }
@@ -41,7 +49,7 @@ final class WidgetSync {
             problem = nil
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
-            problem = "Widgets couldn't be updated, so they may show older notes or lists. Open the widget's note in Doddy to see what is saved."
+            problem = NSLocalizedString("Widgets couldn't be updated, so they may show older notes or lists. Open the widget's note in Doddy to see what is saved.", comment: "")
         }
     }
 

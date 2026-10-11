@@ -74,7 +74,7 @@ final class UpdatesModel {
             } catch let error where !(error is ServerError) {
                 // iOS refused to register: usually a build signed without the Push capability
                 // (free Apple ID, DODDY_PUSH_ENTITLEMENTS empty). Say so instead of a raw error.
-                self.message = "This build of Doddy can't receive notifications (it needs an Apple developer team with Push Notifications). Daily news still works in the app."
+                self.message = NSLocalizedString("This build of Doddy can't receive notifications (it needs an Apple developer team with Push Notifications). Daily news still works in the app.", comment: "")
             }
         }
     }
@@ -91,7 +91,7 @@ final class UpdatesModel {
     func sendCode(to rawNumber: String) async {
         guard let client else { return }
         guard let e164 = PhoneNumberInput.normalize(rawNumber) else {
-            message = "That doesn't look like a phone number. Include the country code, like +48 500 100 200."
+            message = NSLocalizedString("That doesn't look like a phone number. Include the country code, like +48 500 100 200.", comment: "")
             return
         }
         await run {
@@ -161,7 +161,7 @@ final class UpdatesModel {
             self.phone = .none
             self.phoneStep = .enterNumber
             self.lastTest = nil
-            self.message = "Your Doddy messaging data was deleted. Memories on this iPhone were not touched."
+            self.message = NSLocalizedString("Your Doddy messaging data was deleted. Memories on this iPhone were not touched.", comment: "")
         }
     }
 
@@ -181,21 +181,21 @@ final class UpdatesModel {
             return "Something went wrong and nothing was changed. (\(error.localizedDescription))"
         }
         switch error {
-        case .offline: return "Couldn't reach the Doddy messaging server. Check your connection and try again."
-        case .notConfigured: return "The Doddy messaging server isn't set up for this yet (missing provider keys). Nothing was sent."
-        case .notEnabled("sms_not_enabled"): return "Texts aren't on. Verify your number and turn on texts first."
-        case .notEnabled("push_not_enabled"): return "Notifications aren't on for this iPhone yet."
-        case .notEnabled: return "Verify your phone number first."
-        case .wrongCode: return "That code isn't right. Check the text and try again."
-        case .codeExpired: return "That code has expired. Ask for a new one."
-        case .phoneRejected: return "That number can't receive codes. Check it and try again."
-        case .unsafeURL: return "Doddy can't use that address. Use a public web address (https://…)."
-        case .notAFeed: return "That address didn't return a news feed. Look for an RSS or Atom link on the site."
-        case .weakPIN: return "Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456."
-        case .invalidRequest: return "Something in that request wasn't accepted. Nothing was changed."
-        case .rateLimited: return "Too many tries. Wait a while and try again."
-        case .providerUnavailable: return "The text service didn't answer. Try again in a moment."
-        case .accountMissing: return "This iPhone's Doddy messaging account no longer exists. Try again to start a new one."
+        case .offline: return NSLocalizedString("Couldn't reach the Doddy messaging server. Check your connection and try again.", comment: "")
+        case .notConfigured: return NSLocalizedString("The Doddy messaging server isn't set up for this yet (missing provider keys). Nothing was sent.", comment: "")
+        case .notEnabled("sms_not_enabled"): return NSLocalizedString("Texts aren't on. Verify your number and turn on texts first.", comment: "")
+        case .notEnabled("push_not_enabled"): return NSLocalizedString("Notifications aren't on for this iPhone yet.", comment: "")
+        case .notEnabled: return NSLocalizedString("Verify your phone number first.", comment: "")
+        case .wrongCode: return NSLocalizedString("That code isn't right. Check the text and try again.", comment: "")
+        case .codeExpired: return NSLocalizedString("That code has expired. Ask for a new one.", comment: "")
+        case .phoneRejected: return NSLocalizedString("That number can't receive codes. Check it and try again.", comment: "")
+        case .unsafeURL: return NSLocalizedString("Doddy can't use that address. Use a public web address (https://…).", comment: "")
+        case .notAFeed: return NSLocalizedString("That address didn't return a news feed. Look for an RSS or Atom link on the site.", comment: "")
+        case .weakPIN: return NSLocalizedString("Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456.", comment: "")
+        case .invalidRequest: return NSLocalizedString("Something in that request wasn't accepted. Nothing was changed.", comment: "")
+        case .rateLimited: return NSLocalizedString("Too many tries. Wait a while and try again.", comment: "")
+        case .providerUnavailable: return NSLocalizedString("The text service didn't answer. Try again in a moment.", comment: "")
+        case .accountMissing: return NSLocalizedString("This iPhone's Doddy messaging account no longer exists. Try again to start a new one.", comment: "")
         case .unexpected(let status): return "The Doddy messaging server answered with an error (\(status)). Nothing was changed."
         }
     }

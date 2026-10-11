@@ -7,6 +7,8 @@ struct FindMemoriesView: View {
     @State private var outcome: RecallOutcome?
     @State private var searchError: String?
     @State private var isRunning = false
+    /// Close in meaning (ADR-227): notes the word search didn't find.
+    @State private var meaningHits: [MeaningHit] = []
     @FocusState private var focused: Bool
 
     /// `initialQuery` comes from the "Find in Doddy" shortcut; the search runs on appear.
@@ -44,6 +46,9 @@ struct FindMemoriesView: View {
                         ListHitsView(hits: listHits)
                     }
                     RecallResultsView(outcome: outcome, query: query)
+                    if !meaningHits.isEmpty {
+                        MeaningHitsView(hits: meaningHits)
+                    }
                 }
             }.padding(24)
         }
@@ -58,6 +63,7 @@ struct FindMemoriesView: View {
     private func runSearch() async {
         let question = query
         outcome = nil
+        meaningHits = []
         searchError = nil
         guard !question.allSatisfy(\.isWhitespace) else { isRunning = false; return }
         isRunning = true
@@ -67,6 +73,12 @@ struct FindMemoriesView: View {
             guard !Task.isCancelled else { return }
             outcome = result
             isRunning = false
+            // Then, without holding up the word results: notes close in meaning, on this iPhone.
+            var found: Set<UUID> = []
+            if case .matches(let candidates) = result { found = Set(candidates.map(\.memoryID)) }
+            let hits = await MeaningService.index.search(question, in: store.memories, excluding: found)
+            guard !Task.isCancelled else { return }
+            meaningHits = hits
         } catch is CancellationError {
             // The newer task owns the spinner and results; don't publish stale state.
         } catch {
@@ -74,6 +86,31 @@ struct FindMemoriesView: View {
             isRunning = false
             searchError = UserFacingError.message(for: error)
         }
+    }
+}
+
+/// "Close in meaning" (ADR-227): saved notes the word search missed, worded as a suggestion.
+private struct MeaningHitsView: View {
+    let hits: [MeaningHit]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("CLOSE IN MEANING")
+                .font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+            Text("Not the same words. Check it's the one you meant.")
+                .font(.footnote).foregroundStyle(Theme.secondaryText)
+            ForEach(hits) { hit in
+                NavigationLink(value: MemoryNavigationRoute.note(hit.record.id)) {
+                    Text(hit.record.currentText).lineLimit(3)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator))
+                        .contentShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .accessibilityIdentifier("memories.meaningHits")
     }
 }
 

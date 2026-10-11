@@ -43,8 +43,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
         switch toolName {
-        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent: .calendar
-        case VoiceToolName.createReminder: .reminders
+        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent: .calendar
+        case VoiceToolName.createReminder, VoiceToolName.changeReminder: .reminders
         case VoiceToolName.lookupContact: .contacts
         case VoiceToolName.setTimer: .timers
         case VoiceToolName.openMap: .maps
@@ -177,6 +177,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case checkOff(ListVoiceRequest)
     case removeFromList(ListVoiceRequest)
     case createList(ListVoiceRequest)
+    /// Move or rename an event, or change or complete an Apple reminder (ADR-229): matched
+    /// exactly on the iPhone, shown on a card, written only on the user's tap, read back.
+    case changeCalendarEvent(EventChangeDraft)
+    case changeReminder(ReminderChangeDraft)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -197,6 +201,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseReminder(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.remindAboutNote:
             return parseNoteReminder(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.changeCalendarEvent:
+            return parseEventChange(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.changeReminder:
+            return parseReminderChange(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)

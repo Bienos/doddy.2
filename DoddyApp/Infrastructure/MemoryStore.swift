@@ -18,6 +18,10 @@ final class MemoryStore {
     /// The photo of the note deleted a moment ago: its file is kept until Undo is no longer offered.
     private var recentlyDeletedPhoto: MemoryPhoto?
     private var cleanedPhotoFiles = false
+    /// Voice memos (ADR-230): which note carries which recording, kept like photos.
+    private(set) var recordings: [UUID: MemoryAudio] = [:]
+    private var recentlyDeletedAudio: MemoryAudio?
+    private var cleanedAudioFiles = false
     /// The last list change made on screen or by voice, for its Undo (memory only).
     var listUndo: ListUndo?
     private(set) var hasLoaded = false
@@ -50,6 +54,13 @@ final class MemoryStore {
                 if !cleanedPhotoFiles {
                     cleanedPhotoFiles = true
                     environment.photoFiles.deleteOrphans(keeping: Set(linked.map(\.fileName)))
+                }
+            }
+            if let linked = try? await environment.audioRepository.allAudio() {
+                recordings = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
+                if !cleanedAudioFiles {
+                    cleanedAudioFiles = true
+                    environment.audioFiles.deleteOrphans(keeping: Set(linked.map(\.fileName)))
                 }
             }
             loadError = nil
@@ -90,11 +101,14 @@ final class MemoryStore {
         let copy = self.record(id: id)
         recentlyDeletedItems = list(id: id)?.items ?? []
         let photo = photos[id]
+        let audio = recordings[id]
         let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
         // Only one deleted note can be undone, so the photo of the one before it goes for good.
         if let old = recentlyDeletedPhoto { environment.photoFiles.delete(old.fileName) }
         recentlyDeletedPhoto = photo
+        if let old = recentlyDeletedAudio { environment.audioFiles.delete(old.fileName) }
+        recentlyDeletedAudio = audio
         if let reminderID { await environment.noteReminders?.memoryDeleted(reminderID: reminderID) }
         noteReminders?.clearReceipt(memoryID: id)
         recentlyDeleted = copy.map { DeletedNote(record: $0, deletedAt: .now) }
@@ -117,6 +131,10 @@ final class MemoryStore {
             _ = try? await environment.photoRepository.attach(photo)
             recentlyDeletedPhoto = nil
         }
+        if let audio = recentlyDeletedAudio {
+            _ = try? await environment.audioRepository.attach(audio)
+            recentlyDeletedAudio = nil
+        }
         if recentlyDeleted == deleted { recentlyDeleted = nil }
         await reload()
     }
@@ -128,6 +146,10 @@ final class MemoryStore {
             if let photo = recentlyDeletedPhoto {
                 environment.photoFiles.delete(photo.fileName)
                 recentlyDeletedPhoto = nil
+            }
+            if let audio = recentlyDeletedAudio {
+                environment.audioFiles.delete(audio.fileName)
+                recentlyDeletedAudio = nil
             }
         }
     }
@@ -147,6 +169,8 @@ final class MemoryStore {
         try await environment.memoryRepository.deleteAll()
         environment.photoFiles.deleteOrphans(keeping: [])
         recentlyDeletedPhoto = nil
+        environment.audioFiles.deleteOrphans(keeping: [])
+        recentlyDeletedAudio = nil
         await environment.noteReminders?.allMemoriesDeleted()
         await reload()
     }
@@ -161,25 +185,25 @@ enum UserFacingError {
         if let error = error as? MemoryValidationError {
             switch error {
             case .empty:
-                return "Write something first. Empty notes aren't saved."
+                return NSLocalizedString("Write something first. Empty notes aren't saved.", comment: "")
             case .tooLong(let length, let maximum):
                 return "That's \(length) characters; the limit is \(maximum). Nothing was cut and nothing was saved."
             default:
-                return "This note can't be saved as it is."
+                return NSLocalizedString("This note can't be saved as it is.", comment: "")
             }
         }
         if let error = error as? MemoryStoreError {
             switch error {
             case .notFound:
-                return "That memory no longer exists."
+                return NSLocalizedString("That memory no longer exists.", comment: "")
             case .verificationFailed:
-                return "The save couldn't be confirmed, so it wasn't counted as saved. Your text is still here."
+                return NSLocalizedString("The save couldn't be confirmed, so it wasn't counted as saved. Your text is still here.", comment: "")
             case .corruptRecord:
-                return "A stored memory couldn't be read. Nothing was deleted."
+                return NSLocalizedString("A stored memory couldn't be read. Nothing was deleted.", comment: "")
             }
         }
         if error is DoddyError {
-            return "The memory store isn't available on this iPhone right now."
+            return NSLocalizedString("The memory store isn't available on this iPhone right now.", comment: "")
         }
         return "Something went wrong and nothing was changed. (\(error.localizedDescription))"
     }

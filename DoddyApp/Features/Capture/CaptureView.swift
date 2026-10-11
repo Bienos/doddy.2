@@ -21,6 +21,9 @@ struct CaptureView: View {
     /// A picked photo, prepared and read (ADR-218). Linked to the note only after the note saves.
     @State private var photo: PhotoTextReader.Prepared?
     @State private var photoProblem: String?
+    /// A recording made here (ADR-230). Linked to the note only after the note saves.
+    @State private var memo: VoiceMemoDraft?
+    @State private var memoProblem: String?
     @FocusState private var editorFocused: Bool
 
     init(sharedText: String? = nil) {
@@ -28,7 +31,7 @@ struct CaptureView: View {
         _isShared = State(initialValue: sharedText != nil)
     }
 
-    private var hasDraft: Bool { !text.allSatisfy(\.isWhitespace) || photo != nil }
+    private var hasDraft: Bool { !text.allSatisfy(\.isWhitespace) || photo != nil || memo != nil }
 
     var body: some View {
         NavigationStack {
@@ -39,6 +42,9 @@ struct CaptureView: View {
                             SaveReceiptView(record: store.record(id: saved.id) ?? saved, onDone: { dismiss() }, onAnother: startAnother)
                             if let photoProblem {
                                 ProblemView(message: photoProblem).accessibilityIdentifier("capture.photoNotKept")
+                            }
+                            if let memoProblem {
+                                ProblemView(message: memoProblem).accessibilityIdentifier("capture.memoNotKept")
                             }
                             if let loadError = store.loadError {
                                 ProblemView(message: "The note was saved, but the list couldn't refresh. \(loadError)")
@@ -72,6 +78,7 @@ struct CaptureView: View {
                         .disabled(isSaving)
                         .accessibilityIdentifier("capture.paste")
                         CapturePhotoPicker(text: $text, prepared: $photo, isDisabled: isSaving)
+                        CaptureVoiceMemo(text: $text, draft: $memo, isDisabled: isSaving)
                         Text("No folders. Your words, exactly.").font(.caption).foregroundStyle(Theme.secondaryText)
                         DisclosureGroup("Optional note type") {
                             Picker("Type", selection: $category) {
@@ -120,7 +127,10 @@ struct CaptureView: View {
                 if isShared && text.allSatisfy(\.isWhitespace) { isShared = false }
             }
             .confirmationDialog("Discard this note?", isPresented: $confirmDiscard, titleVisibility: .visible) {
-                Button("Discard", role: .destructive) { dismiss() }
+                Button("Discard", role: .destructive) {
+                    memo?.discardFile()
+                    dismiss()
+                }
                 Button("Keep editing", role: .cancel) {}
             } message: { Text("It hasn't been saved.") }
         }
@@ -137,6 +147,7 @@ struct CaptureView: View {
     private func startAnother() {
         text = ""; category = .other; saved = nil; errorMessage = nil; isShared = false
         duplicate = nil; allowDuplicate = false; photo = nil; photoProblem = nil
+        memo?.discardFile(); memo = nil; memoProblem = nil
     }
 
     private func beginSave() {
@@ -162,7 +173,13 @@ struct CaptureView: View {
         // The note is saved either way; a photo that can't be kept is said plainly, never hidden.
         if let photo {
             do { try await store.attachPhoto(jpeg: photo.jpeg, width: photo.width, height: photo.height, to: record.id) }
-            catch { photoProblem = "The note was saved, but its photo couldn't be kept on this iPhone. The note's words are all there." }
+            catch { photoProblem = NSLocalizedString("The note was saved, but its photo couldn't be kept on this iPhone. The note's words are all there.", comment: "") }
+        }
+        if let memo {
+            do { try await store.attachRecording(from: memo.recording.url, durationMilliseconds: memo.recording.durationMilliseconds, to: record.id) }
+            catch { memoProblem = NSLocalizedString("The note was saved, but its recording couldn't be kept on this iPhone. The note's words are all there.", comment: "") }
+            memo.discardFile()
+            self.memo = nil
         }
         saved = record
     }

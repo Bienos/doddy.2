@@ -6,13 +6,16 @@ public enum MemorySource: String, Codable, CaseIterable, Sendable {
     case explicitVoice = "explicit_voice"
     case sharedContent = "shared_content"
     case importedLegacyUnknown = "imported_legacy_unknown"
+    /// Brought in from a Google Keep export or a text file the user picked and reviewed
+    /// (ADR-231). Dated when the file says when the note was made, otherwise "date unknown".
+    case importedFile = "imported_file"
     case sampleFixture = "sample_fixture"
 
     /// Sources a user can create through an explicit capture action.
     public var isExplicitCapture: Bool {
         switch self {
         case .explicitText, .explicitVoice, .sharedContent: true
-        case .importedLegacyUnknown, .sampleFixture: false
+        case .importedLegacyUnknown, .importedFile, .sampleFixture: false
         }
     }
 
@@ -111,7 +114,7 @@ public struct MemoryRecord: Hashable, Sendable, Identifiable {
         try MemoryTextValidator.validate(current)
         switch (source, capturedAt) {
         case (.importedLegacyUnknown, .some): throw .unexpectedCaptureDate(source)
-        case (.importedLegacyUnknown, .none): break
+        case (.importedLegacyUnknown, .none), (.importedFile, _): break
         case (_, .none): throw .missingCaptureDate(source)
         case (_, .some): break
         }

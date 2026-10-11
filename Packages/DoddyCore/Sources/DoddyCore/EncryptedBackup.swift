@@ -7,7 +7,8 @@ import Crypto
 
 // Encrypted backup file (ADR-222; owner: "A file you keep"). One file the user saves to Files or
 // iCloud Drive themselves and restores on a new iPhone. It holds the notes and lists (the same
-// JSON as the export), the photos of photo notes, time reminders and the "About you" answers,
+// JSON as the export), the photos of photo notes, voice memo recordings (ADR-234, optional, like
+// photos), time reminders and the "About you" answers,
 // encrypted with a key made from the user's passphrase. No server, no account, no key escrow:
 // without the passphrase nobody, Doddy included, can open it. Restore adds; it never overwrites.
 
@@ -17,7 +18,7 @@ public enum BackupLimits {
     /// Files asking for fewer rounds are refused (protects against a tampered header).
     public static let minimumIterations = 100_000
     public static let minimumPassphraseLength = 10
-    /// Whole file, photos included. Larger backups are refused; make one without photos.
+    /// Whole file, photos included. Larger backups are refused; make one without photos or voice memos.
     public static let maxFileBytes = 200 * 1024 * 1024
     public static let fileExtension = "doddybackup"
 }
@@ -66,6 +67,21 @@ public struct BackupContents: Codable, Equatable, Sendable {
         }
     }
 
+    /// A note's voice memo (ADR-234). Files made before it have none; they still open.
+    public struct Recording: Codable, Equatable, Sendable {
+        public let memoryID: UUID
+        public let durationMilliseconds: Int
+        public let addedAtMs: Int64
+        public let m4a: Data
+
+        public init(memoryID: UUID, durationMilliseconds: Int, addedAt: Date, m4a: Data) {
+            self.memoryID = memoryID
+            self.durationMilliseconds = durationMilliseconds
+            self.addedAtMs = Int64((addedAt.timeIntervalSince1970 * 1000).rounded())
+            self.m4a = m4a
+        }
+    }
+
     public static let currentVersion = 1
 
     public let formatVersion: Int
@@ -76,14 +92,35 @@ public struct BackupContents: Codable, Equatable, Sendable {
     /// "About you" answers by `ProfileKey` raw value.
     public let profile: [String: String]
     public let photos: [Photo]
+    public let recordings: [Recording]
 
-    public init(createdAt: Date, memoriesExport: Data, reminders: [Reminder], profile: [String: String], photos: [Photo]) {
+    public init(
+        createdAt: Date, memoriesExport: Data, reminders: [Reminder], profile: [String: String], photos: [Photo],
+        recordings: [Recording] = []
+    ) {
         self.formatVersion = Self.currentVersion
         self.createdAtMs = Int64((createdAt.timeIntervalSince1970 * 1000).rounded())
         self.memoriesExport = memoriesExport
         self.reminders = reminders
         self.profile = profile
         self.photos = photos
+        self.recordings = recordings
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case formatVersion, createdAtMs, memoriesExport, reminders, profile, photos, recordings
+    }
+
+    /// Recordings are optional in the file, so backups made before ADR-234 still open.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        formatVersion = try container.decode(Int.self, forKey: .formatVersion)
+        createdAtMs = try container.decode(Int64.self, forKey: .createdAtMs)
+        memoriesExport = try container.decode(Data.self, forKey: .memoriesExport)
+        reminders = try container.decode([Reminder].self, forKey: .reminders)
+        profile = try container.decode([String: String].self, forKey: .profile)
+        photos = try container.decode([Photo].self, forKey: .photos)
+        recordings = try container.decodeIfPresent([Recording].self, forKey: .recordings) ?? []
     }
 
     /// Time reminders worth keeping: the next occurrence of each, after `now`. Place reminders
@@ -221,6 +258,8 @@ public struct BackupRestorePlan: Equatable, Sendable {
     public let listItems: [ListItem]
     /// Photos for notes this restore adds (a note already here keeps its own photo or none).
     public let photos: [BackupContents.Photo]
+    /// Voice memos for notes this restore adds, with a valid length.
+    public let recordings: [BackupContents.Recording]
     /// Reminders for notes this restore adds, still ahead (or repeating).
     public let reminders: [BackupContents.Reminder]
     /// The "About you" answers, only when this iPhone has none.
@@ -235,9 +274,10 @@ public struct BackupRestorePlan: Equatable, Sendable {
         let items = try MemoryRestore.listItems(contents.memoriesExport).filter { added.contains($0.listID) }
         let reminders = contents.reminders.filter { added.contains($0.memoryID) && $0.nextFire(after: now) != nil }
         let photos = contents.photos.filter { added.contains($0.memoryID) }
+        let recordings = contents.recordings.filter { added.contains($0.memoryID) && MemoryAudio.isValidDuration($0.durationMilliseconds) }
         let draft = contents.profileDraft
         return BackupRestorePlan(
-            notes: notes, listItems: items, photos: photos, reminders: reminders,
+            notes: notes, listItems: items, photos: photos, recordings: recordings, reminders: reminders,
             profile: profileIsEmpty && !draft.values.isEmpty ? draft : nil)
     }
 

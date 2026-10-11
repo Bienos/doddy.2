@@ -14,6 +14,8 @@ enum PreferenceKey {
     static let pinnedNotes = "pinnedNotes"
     /// Widgets show pinned notes, reminders and lists (ADR-219); on unless turned off.
     static let widgetsShowContent = "widgetsShowContent"
+    /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
+    static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
@@ -119,6 +121,8 @@ struct RootView: View {
             }
             // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
             .onChange(of: store.revision) { WidgetSync.shared.refresh() }
+            // Siri learns the list names for "Add to my shopping list in Doddy" (ADR-226).
+            .onChange(of: store.lists.map(\.name)) { DoddyShortcuts.updateAppShortcutParameters() }
             .onChange(of: noteReminders.reminders) { WidgetSync.shared.refresh() }
             .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
             .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
@@ -183,6 +187,8 @@ struct RootView: View {
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             BackTapSetupView(model: router.setup)
         }
+        // The weekly tidy-up (ADR-228), from its notification or Settings.
+        .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })

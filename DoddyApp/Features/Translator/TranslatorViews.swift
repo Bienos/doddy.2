@@ -269,10 +269,10 @@ struct TranslatorScreen: View {
     private var statusText: String {
         if controller.holdToTalk { return controller.heldSide == nil ? "Hold a button to talk" : "Listening" }
         switch controller.phase {
-        case .speaking: return "Doddy is speaking"
-        case .thinking: return "Translating"
+        case .speaking: return NSLocalizedString("Doddy is speaking", comment: "")
+        case .thinking: return NSLocalizedString("Translating", comment: "")
         case .listening: return controller.isMuted ? "Paused" : "Listening"
-        default: return "Connecting"
+        default: return NSLocalizedString("Connecting", comment: "")
         }
     }
 
@@ -337,7 +337,7 @@ struct TranslatorEndCard: View {
 
     private func message(_ error: TranslatorSaveError) -> String {
         switch error {
-        case .nothingToSave: "Nothing exact was said, so there's nothing to save."
+        case .nothingToSave: NSLocalizedString("Nothing exact was said, so there's nothing to save.", comment: "")
         case .failed(let reason): "Nothing was saved. \(reason)"
         }
     }

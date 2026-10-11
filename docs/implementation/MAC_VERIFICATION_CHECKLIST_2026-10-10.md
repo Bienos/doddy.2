@@ -13,6 +13,7 @@ the app (SwiftUI views, the App Intents, the widget control, anything using UIKi
 EventKit, and `PlaceLocation`, which the check replaces with a stub) has still never been compiled.
 
 ## 1. Build first
+0. Start with `docs/implementation/FIRST_BUILD_GUIDE.md`. It covers getting hosted CI to start, or building on a Mac. It also lists the files most likely to need a fix from this round (ADR-226 to ADR-233), which added a watch target, voice memos, import, change cards, Siri lists, meaning search, tidy-up and the Polish catalogs.
 1. `xcodegen generate`, then `scripts/ci.sh` (the full run, not `--core-only`). Note the output.
 2. If the app does not compile, these are the places most likely to need a one-line fix:
    - `DoddyApp/Intents/SaveToDoddyIntent.swift` and `FindInDoddyIntent.swift`: the `@Parameter(...)` arguments and `parameterSummary`.

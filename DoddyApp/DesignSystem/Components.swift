@@ -134,10 +134,10 @@ struct ProblemView: View {
 enum StatusCopy {
     static func text(for status: CapabilityStatus) -> String {
         switch status {
-        case .available: "Available"
+        case .available: NSLocalizedString("Available", comment: "")
         case .limited(let note): "Limited · \(note)"
         case .needsSetup(let note): "Needs setup · \(note)"
-        case .notImplemented(let milestone) where milestone == "unscheduled": "Not built · not scheduled"
+        case .notImplemented(let milestone) where milestone == "unscheduled": NSLocalizedString("Not built · not scheduled", comment: "")
         case .notImplemented(let milestone): "Not built yet · planned \(milestone)"
         }
     }
@@ -146,21 +146,21 @@ enum StatusCopy {
 extension Capability {
     var displayName: String {
         switch self {
-        case .memoryStorage: "Saving memories"
-        case .memoryRecall: "Finding memories"
-        case .cloudAssistant: "AI answers"
-        case .textAssistant: "Typed AI questions"
-        case .voiceInput: "Listening (voice)"
-        case .voiceOutput: "Speaking (voice)"
-        case .reminders: "Reminders"
-        case .connectedAccounts: "Connected accounts"
-        case .cloudSync: "Sync between devices"
-        case .systemShortcut: "Shortcut and Back Tap"
-        case .pushUpdates: "Updates as notifications"
-        case .textUpdates: "Updates by text message"
-        case .phoneCalls: "Phone calls with Doddy"
-        case .newsDigests: "Daily news message"
-        case .noteReminders: "Reminders on notes"
+        case .memoryStorage: NSLocalizedString("Saving memories", comment: "")
+        case .memoryRecall: NSLocalizedString("Finding memories", comment: "")
+        case .cloudAssistant: NSLocalizedString("AI answers", comment: "")
+        case .textAssistant: NSLocalizedString("Typed AI questions", comment: "")
+        case .voiceInput: NSLocalizedString("Listening (voice)", comment: "")
+        case .voiceOutput: NSLocalizedString("Speaking (voice)", comment: "")
+        case .reminders: NSLocalizedString("Reminders", comment: "")
+        case .connectedAccounts: NSLocalizedString("Connected accounts", comment: "")
+        case .cloudSync: NSLocalizedString("Sync between devices", comment: "")
+        case .systemShortcut: NSLocalizedString("Shortcut and Back Tap", comment: "")
+        case .pushUpdates: NSLocalizedString("Updates as notifications", comment: "")
+        case .textUpdates: NSLocalizedString("Updates by text message", comment: "")
+        case .phoneCalls: NSLocalizedString("Phone calls with Doddy", comment: "")
+        case .newsDigests: NSLocalizedString("Daily news message", comment: "")
+        case .noteReminders: NSLocalizedString("Reminders on notes", comment: "")
         }
     }
 }
@@ -168,11 +168,12 @@ extension Capability {
 extension MemorySource {
     var displayName: String {
         switch self {
-        case .explicitText: "Your typed note"
-        case .explicitVoice: "Your voice note"
-        case .sharedContent: "Shared into Doddy"
-        case .importedLegacyUnknown: "Imported, date unknown"
-        case .sampleFixture: "Sample"
+        case .explicitText: NSLocalizedString("Your typed note", comment: "")
+        case .explicitVoice: NSLocalizedString("Your voice note", comment: "")
+        case .sharedContent: NSLocalizedString("Shared into Doddy", comment: "")
+        case .importedLegacyUnknown: NSLocalizedString("Imported, date unknown", comment: "")
+        case .importedFile: NSLocalizedString("Imported from a file", comment: "")
+        case .sampleFixture: NSLocalizedString("Sample", comment: "")
         }
     }
 }
@@ -180,16 +181,16 @@ extension MemorySource {
 extension MemoryCategory {
     var displayName: String {
         switch self {
-        case .fact: "Fact"
-        case .preference: "Preference"
-        case .commitment: "Commitment"
-        case .recommendation: "Recommendation"
-        case .decision: "Decision"
-        case .item: "Item"
-        case .place: "Place"
-        case .intention: "Intention"
-        case .other: "Other"
-        case .list: "List"
+        case .fact: NSLocalizedString("Fact", comment: "")
+        case .preference: NSLocalizedString("Preference", comment: "")
+        case .commitment: NSLocalizedString("Commitment", comment: "")
+        case .recommendation: NSLocalizedString("Recommendation", comment: "")
+        case .decision: NSLocalizedString("Decision", comment: "")
+        case .item: NSLocalizedString("Item", comment: "")
+        case .place: NSLocalizedString("Place", comment: "")
+        case .intention: NSLocalizedString("Intention", comment: "")
+        case .other: NSLocalizedString("Other", comment: "")
+        case .list: NSLocalizedString("List", comment: "")
         }
     }
 }

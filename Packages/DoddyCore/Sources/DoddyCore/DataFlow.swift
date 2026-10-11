@@ -91,7 +91,7 @@ public enum DataFlow {
                 note: "Listen only hears whoever is near you. Nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes of the end."),
             DataFlowRow(
                 id: "backup", destination: "Where you save a backup file",
-                what: "Your notes, lists, photos, time reminders and About you answers, locked with your passphrase.",
+                what: "Your notes, lists, photos, voice memos, time reminders and About you answers, locked with your passphrase.",
                 when: "Only when you make a backup file and choose where to save it.", isActive: true,
                 note: "Doddy has no copy of the passphrase or the file. Without the passphrase nobody can open it."),
             DataFlowRow(

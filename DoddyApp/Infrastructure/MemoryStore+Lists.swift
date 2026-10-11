@@ -108,12 +108,12 @@ extension UserFacingError {
     static func listMessage(for error: any Error) -> String {
         guard let error = error as? ListError else { return message(for: error) }
         switch error {
-        case .emptyName: return "Give the list a name."
+        case .emptyName: return NSLocalizedString("Give the list a name.", comment: "")
         case .nameTooLong(let maximum): return "A list name can be up to \(maximum) characters."
         case .nameTaken(let name): return "You already have a list called “\(name)”."
         case .tooManyLists(let maximum): return "You can have up to \(maximum) lists. Delete one to make another."
-        case .notFound: return "That list no longer exists."
-        case .notANote: return "Lists and notes can't be turned into each other."
+        case .notFound: return NSLocalizedString("That list no longer exists.", comment: "")
+        case .notANote: return NSLocalizedString("Lists and notes can't be turned into each other.", comment: "")
         }
     }
 }
@@ -151,5 +151,73 @@ extension MemoryStore {
             environment.photoFiles.delete(removed.fileName)
         }
         await reload()
+    }
+}
+
+/// Voice memos (ADR-230): the recording is copied in and read back first, then linked to its note.
+extension MemoryStore {
+    func recording(for memoryID: UUID) -> MemoryAudio? { recordings[memoryID] }
+
+    /// Where the recording is on this iPhone, or nil when its file is missing.
+    func recordingURL(_ audio: MemoryAudio) -> URL? {
+        guard environment.audioFiles.exists(audio.fileName) else { return nil }
+        return environment.audioFiles.url(for: audio.fileName)
+    }
+
+    @discardableResult
+    func attachRecording(from source: URL, durationMilliseconds: Int, to memoryID: UUID) async throws -> MemoryAudio {
+        // As with photos, a note gets a recording only while it has none.
+        guard recordings[memoryID] == nil else { throw AudioError.alreadyAttached }
+        guard MemoryAudio.isValidDuration(durationMilliseconds) else { throw AudioError.badDuration }
+        let fileName = MemoryAudio.fileName(for: memoryID)
+        let files = environment.audioFiles
+        try await Task.detached(priority: .userInitiated) { try files.store(from: source, fileName: fileName) }.value
+        do {
+            let audio = try await environment.audioRepository.attach(
+                MemoryAudio(memoryID: memoryID, fileName: fileName, durationMilliseconds: durationMilliseconds, addedAt: Date()))
+            await reload()
+            return audio
+        } catch {
+            files.delete(fileName)
+            throw error
+        }
+    }
+
+    /// The recording's bytes, for the encrypted backup file (ADR-234). nil when the file is missing.
+    func recordingData(_ audio: MemoryAudio) async -> Data? {
+        guard let url = recordingURL(audio) else { return nil }
+        return await Task.detached(priority: .userInitiated) { try? Data(contentsOf: url) }.value
+    }
+
+    /// A recording from a backup file: written to a temporary file, then attached and read back
+    /// exactly like one just recorded. The temporary file is removed either way.
+    @discardableResult
+    func attachRecording(m4a: Data, durationMilliseconds: Int, to memoryID: UUID) async throws -> MemoryAudio {
+        let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("DoddyRestore-\(UUID().uuidString).m4a")
+        try m4a.write(to: temporary, options: [.atomic])
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        return try await attachRecording(from: temporary, durationMilliseconds: durationMilliseconds, to: memoryID)
+    }
+
+    /// Removes the recording from its note; the note's words stay.
+    func removeRecording(from memoryID: UUID) async throws {
+        if let removed = try await environment.audioRepository.detach(memoryID: memoryID) {
+            environment.audioFiles.delete(removed.fileName)
+        }
+        await reload()
+    }
+}
+
+/// Importing notes (ADR-231): notes go in through `restore` (one transaction, read back); a Keep
+/// checklist becomes a list with its ticked items ticked, each step read back by the repository.
+extension MemoryStore {
+    @discardableResult
+    func importList(_ part: NoteImport.ListPart) async throws -> DoddyList {
+        let created = try await environment.listRepository.create(name: part.name, items: part.open + part.ticked, source: .typed)
+        let ticked = Set(part.ticked)
+        let toTick = created.items.filter { ticked.contains($0.text) }
+        if !toTick.isEmpty { _ = try await environment.listRepository.setDone(toTick.map(\.id), done: true) }
+        await reload()
+        return list(id: created.id) ?? created
     }
 }

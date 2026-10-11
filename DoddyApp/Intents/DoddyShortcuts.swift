@@ -1,7 +1,7 @@
 import AppIntents
 
-/// Makes `TalkToDoddyIntent`, `NewNoteIntent` (Shared/Shortcuts), `SaveToDoddyIntent` and
-/// `FindInDoddyIntent` appear under Doddy in
+/// Makes `TalkToDoddyIntent`, `NewNoteIntent` (Shared/Shortcuts), `SaveToDoddyIntent`,
+/// `FindInDoddyIntent` and the list intents (ADR-226) appear under Doddy in
 /// Shortcuts, Siri and the Action Button picker with no setup. App target only.
 struct DoddyShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
@@ -41,5 +41,33 @@ struct DoddyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Find in Doddy",
             systemImageName: "magnifyingglass")
+        // Lists (ADR-226). Phrases with \(\.$list) work once the list names are known to Siri
+        // (`updateAppShortcutParameters()` runs when lists change); the items are asked for.
+        AppShortcut(
+            intent: AddToListIntent(),
+            phrases: [
+                "Add to \(\.$list) in \(.applicationName)",
+                "Add to my \(\.$list) list in \(.applicationName)",
+                "Add to a list in \(.applicationName)",
+            ],
+            shortTitle: "Add to a list",
+            systemImageName: "text.badge.plus")
+        AppShortcut(
+            intent: ReadListIntent(),
+            phrases: [
+                "What's on my \(\.$list) list in \(.applicationName)",
+                "Read \(\.$list) in \(.applicationName)",
+                "Read a list in \(.applicationName)",
+            ],
+            shortTitle: "Read a list",
+            systemImageName: "list.bullet")
+        AppShortcut(
+            intent: CheckOffListItemIntent(),
+            phrases: [
+                "Tick something on \(\.$list) in \(.applicationName)",
+                "Tick off an item in \(.applicationName)",
+            ],
+            shortTitle: "Tick an item",
+            systemImageName: "checkmark.circle")
     }
 }

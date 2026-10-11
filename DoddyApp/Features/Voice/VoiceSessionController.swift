@@ -50,6 +50,10 @@ final class VoiceSessionController {
         case translator(toolCallID: String, setup: TranslatorSetup)
         /// "Start a new list?" (ADR-216, L2). The user can fix the name on the card.
         case createList(toolCallID: String, name: String, items: [String])
+        /// "Change this event?" (ADR-229): the event as it is now and as it will be.
+        case changeEvent(toolCallID: String, plan: EventChangePlan)
+        /// "Change this reminder?" or "Mark this reminder done?" (ADR-229).
+        case changeReminder(toolCallID: String, reminder: ReminderSnapshot, draft: ReminderChangeDraft)
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
@@ -57,7 +61,8 @@ final class VoiceSessionController {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
-                 .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _):
+                 .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
+                 .changeEvent(let id, _), .changeReminder(let id, _, _):
                 id
             }
         }
@@ -547,6 +552,10 @@ final class VoiceSessionController {
             }
             let receipt = await setNoteReminder(confirmed)
             await reply(id, Self.noteReminderReply(receipt, note: noteText))
+        case .changeEvent(let id, let plan):
+            await reply(id, changeEvent(plan))
+        case .changeReminder(let id, let reminder, let draft):
+            await reply(id, changeReminder(reminder, draft))
         case .translator(let id, let setup):
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
@@ -664,6 +673,7 @@ final class VoiceSessionController {
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
+        case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -1123,6 +1133,10 @@ final class VoiceSessionController {
                 return
             }
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .changeCalendarEvent(let draft):
+            await proposeEventChange(draft, toolCallID: call.toolCallId)
+        case .changeReminder(let draft):
+            await proposeReminderChange(draft, toolCallID: call.toolCallId)
         case .remindAboutNote(let draft):
             await proposeNoteReminder(draft, toolCallID: call.toolCallId)
         case .needsClarification(let name, let clarification):
@@ -1495,6 +1509,92 @@ final class VoiceSessionController {
         }
     }
 
+    // MARK: Changing events and reminders (ADR-229)
+
+    /// Exactly one event with the title and start the agent read; otherwise the agent asks.
+    private func proposeEventChange(_ draft: EventChangeDraft, toolCallID: String) async {
+        guard devices.access(for: .calendar) == .granted else {
+            await notConnected(toolCallID, .calendar)
+            return
+        }
+        let events = devices.events(in: EventChange.searchRange(draft, calendar: .current))
+        switch EventChange.match(draft, in: events, calendar: .current) {
+        case .none:
+            await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
+        case .several(let found):
+            await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .one(let event):
+            guard let plan = EventChange.plan(draft, for: event, calendar: .current) else {
+                await reply(toolCallID, VoiceToolReply.eventChangeInvalid)
+                return
+            }
+            propose(.changeEvent(toolCallID: toolCallID, plan: plan), toolCallID: toolCallID)
+        }
+    }
+
+    /// Exactly one open reminder with that title; otherwise the agent asks.
+    private func proposeReminderChange(_ draft: ReminderChangeDraft, toolCallID: String) async {
+        guard devices.access(for: .reminders) == .granted else {
+            await notConnected(toolCallID, .reminders)
+            return
+        }
+        do {
+            let open = try await devices.incompleteReminders()
+            switch EventChange.matchReminder(draft.title, in: open) {
+            case .none:
+                await reply(toolCallID, VoiceToolReply.reminderNotFound(draft.title))
+            case .several(let found):
+                await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .one(let reminder):
+                if !draft.markDone, EventChange.sameDue(reminder.due, draft.newDue) {
+                    await reply(toolCallID, VoiceToolReply.changeNothingNew)
+                    return
+                }
+                propose(.changeReminder(toolCallID: toolCallID, reminder: reminder, draft: draft), toolCallID: toolCallID)
+            }
+        } catch {
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+        }
+    }
+
+    /// Checked again at the tap: permission, the time, and that the event still looks as shown.
+    private func changeEvent(_ plan: EventChangePlan) -> String {
+        guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
+            connectionNeeded = .calendar
+            return VoiceToolReply.failed("Calendar isn't connected. Nothing changed.")
+        }
+        if EventChange.startPassed(plan, now: Date(), calendar: .current) { return VoiceToolReply.eventChangeTimePassed }
+        do {
+            switch try devices.changeEvent(plan) {
+            case .verified: return VoiceToolReply.eventChanged(plan.after, calendar: .current)
+            case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
+    private func changeReminder(_ reminder: ReminderSnapshot, _ draft: ReminderChangeDraft) -> String {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return VoiceToolReply.failed("Reminders isn't connected. Nothing changed.")
+        }
+        if EventChange.duePassed(draft.newDue, now: Date(), local: .current) { return VoiceToolReply.eventChangeTimePassed }
+        do {
+            switch try devices.changeReminder(reminder, newDue: draft.newDue, markDone: draft.markDone) {
+            case .verified:
+                return draft.markDone
+                    ? VoiceToolReply.reminderCompleted(reminder.title)
+                    : VoiceToolReply.reminderChanged(reminder.title, due: draft.newDue)
+            case .changedElsewhere: return VoiceToolReply.reminderChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.reminderChangeUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
     /// Look first, write once, read back (DoddyCore `ReminderAction`). Permission is checked again
     /// at the tap, since the user may have changed it while the card waited.
     private func addReminder(_ draft: ReminderDraft) async -> ReminderOutcome {
@@ -1629,7 +1729,7 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList: true
+        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false
         }

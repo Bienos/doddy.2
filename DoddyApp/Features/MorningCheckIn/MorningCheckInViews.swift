@@ -112,9 +112,9 @@ struct MorningCheckInSettingsSection: View {
         let time = String(format: "%02d:%02d", settings.hour, settings.minute)
         switch outcome {
         case .scheduled: return "Set for \(time) \(settings.weekdaysOnly ? "on weekdays" : "every day")."
-        case .off: return "Off. Nothing is scheduled."
-        case .needsPermission: return "Notifications are off for Doddy, so the check-in can't ring. Turn them on in iOS Settings."
-        case .failed: return "The check-in couldn't be set. Try again."
+        case .off: return NSLocalizedString("Off. Nothing is scheduled.", comment: "")
+        case .needsPermission: return NSLocalizedString("Notifications are off for Doddy, so the check-in can't ring. Turn them on in iOS Settings.", comment: "")
+        case .failed: return NSLocalizedString("The check-in couldn't be set. Try again.", comment: "")
         }
     }
 }

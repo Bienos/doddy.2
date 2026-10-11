@@ -77,7 +77,7 @@ final class CallsModel {
                 try await client.deleteCallNote(note.id)
                 self.notes.removeAll { $0.id == note.id }
             } catch {
-                self.message = "Saved to your memories, but it couldn't be removed from this list. Tap Discard to remove it."
+                self.message = NSLocalizedString("Saved to your memories, but it couldn't be removed from this list. Tap Discard to remove it.", comment: "")
             }
         }
     }
@@ -111,10 +111,10 @@ final class CallsModel {
 
     static func text(for error: any Error) -> String {
         switch error as? ServerError {
-        case .notEnabled("no_verified_phone"): "Verify your phone number first, in Settings → Notifications and texts."
-        case .notEnabled("outbound_not_enabled"): "Turn on \"Doddy may call me\" first."
-        case .rateLimited: "That's the limit for calls for now. Try again later."
-        case .notConfigured: "Doddy's phone line isn't set up on the server yet."
+        case .notEnabled("no_verified_phone"): NSLocalizedString("Verify your phone number first, in Settings → Notifications and texts.", comment: "")
+        case .notEnabled("outbound_not_enabled"): NSLocalizedString("Turn on \"Doddy may call me\" first.", comment: "")
+        case .rateLimited: NSLocalizedString("That's the limit for calls for now. Try again later.", comment: "")
+        case .notConfigured: NSLocalizedString("Doddy's phone line isn't set up on the server yet.", comment: "")
         default: UpdatesModel.text(for: error)
         }
     }
