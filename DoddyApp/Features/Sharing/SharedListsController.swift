@@ -188,16 +188,34 @@ final class SharedListsController {
         self.invite = nil
         guard let cloud, let store, let repository else { throw SharingError.notSetUp }
         guard let joined = try await cloud.accept(invite.metadata) else { throw SharingError.gone }
+        // Already joined (the link was opened again): the same list, not a second "(shared)" one
+        // (review I10).
+        if let existing = links.values.first(where: {
+            $0.zoneName == joined.zoneID.zoneName && $0.zoneOwner == joined.zoneID.ownerName
+        }), let list = store.list(id: existing.listID) {
+            return list
+        }
         let name = store.lists.contains { ListMatch.key($0.name) == ListMatch.key(joined.state.name) }
             ? String((joined.state.name + NSLocalizedString(" (shared)", comment: "")).prefix(ListLimits.nameLength))
             : joined.state.name
         let created = try await store.createList(name: name, items: [], source: .typed)
-        let local = SharedListState(name: name, items: joined.state.items)
-        let list = try await store.replaceShared(created.id, with: local)
-        let link = ListShare(
-            listID: list.id, zoneName: joined.zoneID.zoneName, zoneOwner: joined.zoneID.ownerName,
-            role: .participant, base: joined.state, syncedAt: .now)
-        try await repository.save(link)
+        let list: DoddyList
+        let link: ListShare
+        do {
+            let local = SharedListState(name: name, items: joined.state.items)
+            list = try await store.replaceShared(created.id, with: local)
+            link = ListShare(
+                listID: list.id, zoneName: joined.zoneID.zoneName, zoneOwner: joined.zoneID.ownerName,
+                role: .participant, base: joined.state, syncedAt: .now)
+            try await repository.save(link)
+        } catch {
+            // Not joined: the half-made list goes again, so a retry doesn't leave a second
+            // "(shared)" list behind (review I10). Removed without the Undo bar; it was never
+            // the user's list.
+            try? await store.environment.memoryRepository.delete(id: created.id)
+            await store.reload()
+            throw error
+        }
         links[list.id] = link
         await startLiveUpdates()
         return list
