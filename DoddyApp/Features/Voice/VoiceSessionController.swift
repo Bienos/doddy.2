@@ -1967,6 +1967,12 @@ final class VoiceSessionController {
                 await reply(toolCallID, VoiceToolReply.placeNotFound(query))
                 return
             }
+            // Refused here, not in propose(): resetting the choice for a card that isn't shown
+            // would change the place on the card that is (review H8).
+            guard pendingAction == nil else {
+                await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer."))
+                return
+            }
             selectedPlaceIndex = 0
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
                                   savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
