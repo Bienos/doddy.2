@@ -71,17 +71,17 @@ struct ActivityView: View {
             Text("This clears Doddy's list only. Nothing in Reminders, Calendar or your notes changes.")
         }
         .confirmationDialog(
-            confirmUndo?.undo?.question ?? "",
+            confirmUndo?.undo?.question(.current) ?? "",
             isPresented: Binding(get: { confirmUndo != nil }, set: { if !$0 { confirmUndo = nil } }),
             titleVisibility: .visible,
             presenting: confirmUndo
         ) { entry in
-            Button(entry.undo?.buttonTitle ?? "Undo", role: .destructive) {
+            Button(entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), role: .destructive) {
                 Task { await undo(entry) }
             }
             Button("Cancel", role: .cancel) {}
         } message: { entry in
-            Text(entry.undo?.explanation(calendar: .current) ?? "")
+            Text(entry.undo?.explanation(calendar: .current, language: .current) ?? "")
         }
     }
 
@@ -112,7 +112,7 @@ struct ActivityView: View {
                 .accessibilityHint("Looks in Reminders for this reminder. Nothing is added.")
             }
             if entry.canUndo(now: Date()) {
-                Button(undoing.contains(entry.id) ? "Undoing…" : "Undo") { confirmUndo = entry }
+                Button(undoing.contains(entry.id) ? NSLocalizedString("Undoing…", comment: "") : NSLocalizedString("Undo", comment: "")) { confirmUndo = entry }
                     .buttonStyle(.borderless)
                     .disabled(undoing.contains(entry.id))
                     .accessibilityIdentifier("activity.undo")

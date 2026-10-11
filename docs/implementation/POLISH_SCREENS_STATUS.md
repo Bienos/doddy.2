@@ -80,4 +80,10 @@ Don't claim "Doddy is fully in Polish": screens built at run time, long privacy 
   - the Undo sheet's question and explanation and the birthday and calculator replies (DoddyCore).
 - **Verified:** `tools/build_strings_catalog.py --check` PASS; `scripts/ci.sh --core-only` PASS (643 DoddyCore tests).
 - **Not verified:** not read by a native Polish speaker, and not checked on screen for clipped text (checklist PL1).
+- **Undo in Polish (ADR-261, 2026-10-11):**
+  - The Undo confirmation (question, explanation, button) on the What Doddy did sheet and on the voice card follows the iPhone's language (`NotificationLanguage`, as for notifications), e.g. "Usunąć „Dentysta” z Kalendarza?" / "Usuń".
+  - Dates on it are numeric (2026-10-12 18:00) in both languages. A reminder that had no due date reads "Termin zostanie usunięty, jak było przed zmianą".
+  - The row buttons "Undo" / "Undoing…" now go through the catalog ("Cofnij" / "Cofanie…").
+  - The rest of each What Doddy did row (app name, result, notes) is still English: it is made in DoddyCore, like before.
+  - 973 of 992 strings. `ActivityUndoTests.testTheSheetIsInPolishOnAPolishIPhone`.
 

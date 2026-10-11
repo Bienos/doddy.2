@@ -47,40 +47,80 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         return nil
     }
 
-    /// The question on the confirmation sheet.
-    public var question: String {
-        switch self {
-        case .addedEvent(_, let event): "Remove “\(event.title)” from Calendar?"
-        case .addedReminder(_, let title, _): "Remove “\(title)” from Reminders?"
-        case .changedEvent(let plan): "Put “\(plan.before.title)” back?"
-        case .changedReminder(_, let title, _, _, let markedDone):
+    /// The question on the confirmation sheet, in the iPhone's language (Polish or English).
+    public func question(_ language: NotificationLanguage = .english) -> String {
+        switch (self, language) {
+        case (.addedEvent(_, let event), .english): "Remove “\(event.title)” from Calendar?"
+        case (.addedEvent(_, let event), .polish): "Usunąć „\(event.title)” z Kalendarza?"
+        case (.addedReminder(_, let title, _), .english): "Remove “\(title)” from Reminders?"
+        case (.addedReminder(_, let title, _), .polish): "Usunąć „\(title)” z Przypomnień?"
+        case (.changedEvent(let plan), .english): "Put “\(plan.before.title)” back?"
+        case (.changedEvent(let plan), .polish): "Przywrócić „\(plan.before.title)”?"
+        case (.changedReminder(_, let title, _, _, let markedDone), .english):
             markedDone ? "Mark “\(title)” not done?" : "Put back the due of “\(title)”?"
+        case (.changedReminder(_, let title, _, _, let markedDone), .polish):
+            markedDone ? "Oznaczyć „\(title)” jako niezrobione?" : "Przywrócić poprzedni termin „\(title)”?"
         }
     }
 
     /// Exactly what will happen, shown under the question.
-    public func explanation(calendar: Calendar) -> String {
+    public func explanation(calendar: Calendar, language: NotificationLanguage = .english) -> String {
+        let polish = language == .polish
         switch self {
         case .addedEvent(_, let event):
-            return "Doddy added this event for \(Self.when(event, calendar: calendar)). Only this event is removed, and only if it hasn't changed since."
+            let when = Self.when(event, calendar: calendar, language: language)
+            return polish
+                ? "Doddy dodał to wydarzenie na \(when). Usunięte zostanie tylko to wydarzenie i tylko wtedy, gdy od tamtej pory się nie zmieniło."
+                : "Doddy added this event for \(when). Only this event is removed, and only if it hasn't changed since."
         case .addedReminder(_, _, let due):
-            return "Doddy added this reminder (due: \(ReminderText.due(due))). Only this reminder is removed, and only if it is still open and hasn't changed since."
+            let due = Self.due(due, language: language)
+            return polish
+                ? "Doddy dodał to przypomnienie (termin: \(due)). Usunięte zostanie tylko to przypomnienie i tylko wtedy, gdy jest nadal otwarte i od tamtej pory się nie zmieniło."
+                : "Doddy added this reminder (due: \(due)). Only this reminder is removed, and only if it is still open and hasn't changed since."
         case .changedEvent(let plan):
-            let rename = plan.before.title != plan.after.title ? " and its name goes back from “\(plan.after.title)”" : ""
-            return "It moves back to \(Self.when(plan.before, calendar: calendar)) from \(Self.when(plan.after, calendar: calendar))\(rename). Only if it hasn't changed since."
+            let back = Self.when(plan.before, calendar: calendar, language: language)
+            let now = Self.when(plan.after, calendar: calendar, language: language)
+            let renamed = plan.before.title != plan.after.title
+            if polish {
+                let rename = renamed ? ", a jego nazwa wróci z „\(plan.after.title)”" : ""
+                return "Wróci na \(back) z \(now)\(rename). Tylko jeśli od tamtej pory się nie zmieniło."
+            }
+            let rename = renamed ? " and its name goes back from “\(plan.after.title)”" : ""
+            return "It moves back to \(back) from \(now)\(rename). Only if it hasn't changed since."
         case .changedReminder(_, _, let oldDue, let newDue, let markedDone):
-            if markedDone { return "Doddy marked it done. It becomes an open reminder again, only if nothing else changed it since." }
-            return "Due goes back to \(ReminderText.due(oldDue)) from \(ReminderText.due(newDue)). Only if it hasn't changed since."
+            if markedDone {
+                return polish
+                    ? "Doddy oznaczył je jako zrobione. Znowu będzie otwarte, jeśli nic innego go w międzyczasie nie zmieniło."
+                    : "Doddy marked it done. It becomes an open reminder again, only if nothing else changed it since."
+            }
+            let old = Self.due(oldDue, language: language), new = Self.due(newDue, language: language)
+            if polish, oldDue == nil {
+                return "Termin zostanie usunięty, jak było przed zmianą (teraz: \(new)). Tylko jeśli od tamtej pory się nie zmienił."
+            }
+            return polish
+                ? "Termin wróci na \(old) z \(new). Tylko jeśli od tamtej pory się nie zmienił."
+                : "Due goes back to \(old) from \(new). Only if it hasn't changed since."
         }
     }
 
     /// The confirming button.
-    public var buttonTitle: String {
+    public func buttonTitle(_ language: NotificationLanguage = .english) -> String {
+        let polish = language == .polish
         switch self {
-        case .addedEvent, .addedReminder: "Remove"
-        case .changedEvent: "Put back"
-        case .changedReminder(_, _, _, _, let markedDone): markedDone ? "Mark not done" : "Put back"
+        case .addedEvent, .addedReminder: return polish ? "Usuń" : "Remove"
+        case .changedEvent: return polish ? "Przywróć" : "Put back"
+        case .changedReminder(_, _, _, _, let markedDone):
+            if markedDone { return polish ? "Oznacz jako niezrobione" : "Mark not done" }
+            return polish ? "Przywróć" : "Put back"
         }
+    }
+
+    /// A due as on the sheet: English as Reminders writes it; Polish with the same numeric day
+    /// and time the rest of the sheet uses.
+    static func due(_ due: ReminderDue?, language: NotificationLanguage) -> String {
+        guard language == .polish else { return ReminderText.due(due) }
+        guard let due else { return "bez terminu" }
+        return due.localText.replacingOccurrences(of: "T", with: " ")
     }
 
     /// Undo for a reminder Doddy just added: only when Doddy wrote it and read it back, never
@@ -126,9 +166,9 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         return !found.isCompleted && EventChange.sameDue(found.due, newDue)
     }
 
-    private static func when(_ event: CalendarEventSummary, calendar: Calendar) -> String {
+    private static func when(_ event: CalendarEventSummary, calendar: Calendar, language: NotificationLanguage = .english) -> String {
         event.allDay
-            ? "\(VoiceToolReply.localText(event.start, hasTime: false, calendar: calendar)) (all day)"
+            ? "\(VoiceToolReply.localText(event.start, hasTime: false, calendar: calendar)) (\(language == .polish ? "cały dzień" : "all day"))"
             : VoiceToolReply.localText(event.start, hasTime: true, calendar: calendar)
     }
 }

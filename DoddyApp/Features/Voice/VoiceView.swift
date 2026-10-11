@@ -402,9 +402,9 @@ struct VoiceView: View {
             }
         case .undo(_, let entry):
             if let undo = entry.undo {
-                Text(undo.question)
+                Text(undo.question(.current))
                     .font(.headline)
-                Text(undo.explanation(calendar: .current))
+                Text(undo.explanation(calendar: .current, language: .current))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -599,7 +599,7 @@ struct VoiceView: View {
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
-        case .undo(_, let entry): (entry.undo?.buttonTitle ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
+        case .undo(_, let entry): (entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
         }
     }
 

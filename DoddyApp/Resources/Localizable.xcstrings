@@ -9571,6 +9571,17 @@
         }
       }
     },
+    "Undoing…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cofanie…"
+          }
+        }
+      }
+    },
     "Untick all": {
       "extractionState": "manual",
       "localizations": {

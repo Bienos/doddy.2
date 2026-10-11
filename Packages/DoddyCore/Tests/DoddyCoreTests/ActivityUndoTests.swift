@@ -270,23 +270,61 @@ final class ActivityUndoTests: XCTestCase {
 
     // MARK: What the user is asked
 
+    func testTheSheetIsInPolishOnAPolishIPhone() {
+        XCTAssertEqual(NotificationLanguage.preferred(["pl-PL", "en-GB"]), .polish)
+        let added = ActivityUndo.addedEvent(eventID: "E1", event: event(start: date(11, 9)))
+        XCTAssertEqual(added.question(.polish), "Usunąć „Dentist” z Kalendarza?")
+        XCTAssertEqual(added.buttonTitle(.polish), "Usuń")
+        XCTAssertEqual(
+            added.explanation(calendar: calendar, language: .polish),
+            "Doddy dodał to wydarzenie na 2026-10-11 09:00. Usunięte zostanie tylko to wydarzenie i tylko wtedy, gdy od tamtej pory się nie zmieniło.")
+
+        let due = ReminderDue(year: 2026, month: 10, day: 12, hour: 18, minute: 0, timeZoneID: "Europe/Warsaw")
+        let reminder = ActivityUndo.addedReminder(key: "k", title: "Kupić mleko", due: due)
+        XCTAssertEqual(reminder.question(.polish), "Usunąć „Kupić mleko” z Przypomnień?")
+        XCTAssertTrue(reminder.explanation(calendar: calendar, language: .polish).contains("(termin: 2026-10-12 18:00)"))
+        XCTAssertTrue(ActivityUndo.addedReminder(key: "k", title: "x", due: nil).explanation(calendar: calendar, language: .polish).contains("bez terminu"))
+
+        let retimed = ActivityUndo.changedReminder(id: "R1", title: "Zadzwonić do mamy", oldDue: nil, newDue: due, markedDone: false)
+        XCTAssertEqual(retimed.question(.polish), "Przywrócić poprzedni termin „Zadzwonić do mamy”?")
+        XCTAssertEqual(retimed.buttonTitle(.polish), "Przywróć")
+        XCTAssertEqual(
+            retimed.explanation(calendar: calendar, language: .polish),
+            "Termin zostanie usunięty, jak było przed zmianą (teraz: 2026-10-12 18:00). Tylko jeśli od tamtej pory się nie zmienił.")
+        let earlier = ReminderDue(year: 2026, month: 10, day: 11, timeZoneID: nil)
+        XCTAssertEqual(
+            ActivityUndo.changedReminder(id: "R1", title: "x", oldDue: earlier, newDue: due, markedDone: false).explanation(calendar: calendar, language: .polish),
+            "Termin wróci na 2026-10-11 z 2026-10-12 18:00. Tylko jeśli od tamtej pory się nie zmienił.")
+        let ticked = ActivityUndo.changedReminder(id: "R1", title: "Zadzwonić do mamy", oldDue: nil, newDue: nil, markedDone: true)
+        XCTAssertEqual(ticked.buttonTitle(.polish), "Oznacz jako niezrobione")
+
+        let allDay = CalendarEventSummary(title: "Urlop", start: date(12, 0), end: date(13, 0), allDay: true)
+        let moved = ActivityUndo.changedEvent(EventChangePlan(before: allDay, after: CalendarEventSummary(title: "Wolne", start: date(14, 0), end: date(15, 0), allDay: true)))
+        XCTAssertEqual(moved.question(.polish), "Przywrócić „Urlop”?")
+        XCTAssertEqual(
+            moved.explanation(calendar: calendar, language: .polish),
+            "Wróci na 2026-10-12 (cały dzień) z 2026-10-14 (cały dzień), a jego nazwa wróci z „Wolne”. Tylko jeśli od tamtej pory się nie zmieniło.")
+        // English stays the default.
+        XCTAssertEqual(moved.question(), "Put “Urlop” back?")
+    }
+
     func testTheSheetNamesExactlyWhatWillHappen() {
         let added = ActivityUndo.addedEvent(eventID: "E1", event: event(start: date(11, 9)))
-        XCTAssertEqual(added.question, "Remove “Dentist” from Calendar?")
-        XCTAssertEqual(added.buttonTitle, "Remove")
+        XCTAssertEqual(added.question(), "Remove “Dentist” from Calendar?")
+        XCTAssertEqual(added.buttonTitle(), "Remove")
         XCTAssertTrue(added.explanation(calendar: calendar).contains("Only this event is removed"))
 
         let reminder = ActivityUndo.addedReminder(key: "k", title: "Buy milk", due: nil)
-        XCTAssertEqual(reminder.question, "Remove “Buy milk” from Reminders?")
+        XCTAssertEqual(reminder.question(), "Remove “Buy milk” from Reminders?")
         XCTAssertTrue(reminder.explanation(calendar: calendar).contains("No due date"))
 
         let ticked = ActivityUndo.changedReminder(id: "R1", title: "Call mum", oldDue: nil, newDue: nil, markedDone: true)
-        XCTAssertEqual(ticked.question, "Mark “Call mum” not done?")
-        XCTAssertEqual(ticked.buttonTitle, "Mark not done")
+        XCTAssertEqual(ticked.question(), "Mark “Call mum” not done?")
+        XCTAssertEqual(ticked.buttonTitle(), "Mark not done")
 
         let before = event(start: date(11, 9)), after = event("Check-up", start: date(11, 15))
         let moved = ActivityUndo.changedEvent(EventChangePlan(before: before, after: after))
-        XCTAssertEqual(moved.question, "Put “Dentist” back?")
+        XCTAssertEqual(moved.question(), "Put “Dentist” back?")
         XCTAssertTrue(moved.explanation(calendar: calendar).contains("its name goes back from “Check-up”"))
         XCTAssertEqual(moved.app, .calendar)
     }
