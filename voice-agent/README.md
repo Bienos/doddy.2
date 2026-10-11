@@ -97,6 +97,19 @@ Both lines are merged now, so the spec has them all.
 
 **Applied to the live agent 2026-10-10 (ADR-224): translator speaks each language natively.** One line was added to "Translator mode": native pronunciation, plus correct spelling and accents. It keeps Doddy's own voice. Versions: `agtvrsn_0401m4kzqvpkfjb8bqsvnsg2j3nh` (found live, unchanged) → `agtvrsn_1601m4m03vmqe90rh35280g5pxp7`.
 
+**Applied to the live agent 2026-10-11 (ADR-280 to ADR-283): several changes on one card, repeats, event details, alarms part 2.**
+- **Re-read first:** version `agtvrsn_8601m4n87tvmf83azq8ek4wtpst4`, 39 tools.
+- **Updated in place:** `create_calendar_event` and `create_reminder` gained `repeat` and `repeat_until`. `change_calendar_event` gained `new_location` and `add_note`. Every other setting was kept as live.
+- **New client tools:**
+  - `delete_calendar_events` (`tool_8601m4n8q9x6eyjvf1a40p8ktj62`)
+  - `move_reminders` (`tool_3901m4n8qapwe24s7y6fk8dm3r6e`)
+  - `list_alarms` (`tool_4201m4n8qbg3f40agsjckezvanvq`)
+  - `cancel_alarm` (`tool_7901m4n8qcz5f22r1ahkr926kqqm`)
+  - That makes 43 tools on the agent.
+- **Prompt:** the lines in `instructions.md` for these tools, the "cannot do yet" paragraph, and the alarm-off rule. Each was edited into the live prompt.
+- **Version:** `agtvrsn_8601m4n87tvmf83azq8ek4wtpst4` → `agtvrsn_7701m4n8vprrem78gmfjjmq77t96`. Rollback: the first version, which has 39 tools. An installed app without this round replies "unsupported" to the four new tools.
+- **Known drift, kept as found:** the live agent also has `undo_last`, `upcoming_birthdays`, `calculate` and `convert_units`, with their prompt lines, from the unmerged `claude/affectionate-edison-ktc6i6` line. Its "cannot do yet" paragraph also starts with "Convert currencies". This branch's app replies "unsupported" to those four tools until that line is merged.
+
 ## App side (DoddyCore `RealtimeVoice.swift`)
 
 - `RealtimeEvent`: what any provider reports, named after Realtime server events
