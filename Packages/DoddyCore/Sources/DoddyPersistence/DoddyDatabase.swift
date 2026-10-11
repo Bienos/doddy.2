@@ -209,6 +209,86 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
+        // Learning loop (ADR-324, docs/architecture/LEARNING_LOOP.md §8). Three tables of learned
+        // data, never code. Facts and procedures carry provenance and an evidence digest; the
+        // approval of a procedure step is not stored (derived from the tool name at run time).
+        migrator.registerMigration("v11_learned_facts") { db in
+            try db.execute(sql: """
+                CREATE TABLE learned_facts (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    kind TEXT NOT NULL CHECK (kind IN (\(sqlList(LearnedFactKind.allCases.map(\.rawValue))))),
+                    value TEXT NOT NULL CHECK (length(trim(value)) BETWEEN 1 AND \(LearnedFact.maxValueLength)),
+                    search_text TEXT NOT NULL,
+                    scope TEXT NOT NULL DEFAULT 'general',
+                    confidence INTEGER NOT NULL CHECK (confidence BETWEEN 0 AND 100),
+                    provenance_json TEXT NOT NULL,
+                    source_episode_ids_json TEXT NOT NULL,
+                    evidence_digest TEXT NOT NULL UNIQUE,
+                    status TEXT NOT NULL CHECK (status IN (\(sqlList(LearningStatus.allCases.map(\.rawValue))))),
+                    created_at_ms INTEGER NOT NULL,
+                    updated_at_ms INTEGER NOT NULL,
+                    expires_at_ms INTEGER,
+                    confirmed_at_ms INTEGER,
+                    schema_version INTEGER NOT NULL DEFAULT \(LearnedFact.schemaVersion),
+                    CHECK ((status = 'confirmed') = (confirmed_at_ms IS NOT NULL))
+                );
+                CREATE INDEX learned_facts_status ON learned_facts(status, expires_at_ms);
+                CREATE TABLE learned_fact_revisions (
+                    fact_id TEXT NOT NULL REFERENCES learned_facts(id) ON DELETE CASCADE,
+                    number INTEGER NOT NULL CHECK (number >= 1),
+                    value TEXT NOT NULL CHECK (length(trim(value)) > 0),
+                    confirmed_at_ms INTEGER NOT NULL,
+                    PRIMARY KEY (fact_id, number)
+                ) WITHOUT ROWID;
+                """)
+            try db.create(virtualTable: "learned_facts_fts", using: FTS5()) { t in
+                t.synchronize(withTable: "learned_facts")
+                t.tokenizer = .unicode61()
+                t.column("search_text")
+            }
+        }
+        migrator.registerMigration("v12_procedures") { db in
+            try db.execute(sql: """
+                CREATE TABLE procedures (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    trigger_text TEXT NOT NULL CHECK (length(trim(trigger_text)) BETWEEN 1 AND \(Procedure.maxTriggerLength)),
+                    search_text TEXT NOT NULL,
+                    steps_json TEXT NOT NULL,
+                    version INTEGER NOT NULL CHECK (version >= 1),
+                    scope TEXT NOT NULL DEFAULT 'general',
+                    status TEXT NOT NULL CHECK (status IN (\(sqlList(LearningStatus.allCases.map(\.rawValue))))),
+                    provenance_json TEXT NOT NULL,
+                    source_episode_ids_json TEXT NOT NULL,
+                    evidence_digest TEXT NOT NULL UNIQUE,
+                    created_at_ms INTEGER NOT NULL,
+                    updated_at_ms INTEGER NOT NULL,
+                    confirmed_at_ms INTEGER,
+                    last_used_at_ms INTEGER,
+                    use_count INTEGER NOT NULL DEFAULT 0 CHECK (use_count >= 0),
+                    schema_version INTEGER NOT NULL DEFAULT \(Procedure.schemaVersion),
+                    CHECK ((status = 'confirmed') = (confirmed_at_ms IS NOT NULL))
+                );
+                CREATE INDEX procedures_status ON procedures(status, last_used_at_ms);
+                """)
+            try db.create(virtualTable: "procedures_fts", using: FTS5()) { t in
+                t.synchronize(withTable: "procedures")
+                t.tokenizer = .unicode61()
+                t.column("search_text")
+            }
+        }
+        migrator.registerMigration("v13_outcome_events") { db in
+            try db.execute(sql: """
+                CREATE TABLE outcome_events (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    request_id TEXT NOT NULL,
+                    kind TEXT NOT NULL CHECK (kind IN (\(sqlList(OutcomeKind.allCases.map(\.rawValue))))),
+                    detail_json TEXT NOT NULL,
+                    created_at_ms INTEGER NOT NULL
+                );
+                CREATE INDEX outcome_events_created ON outcome_events(created_at_ms);
+                CREATE INDEX outcome_events_request ON outcome_events(request_id);
+                """)
+        }
         return migrator
     }
 

@@ -1,5 +1,5 @@
 # Learning loop — Doddy gets better for one person (design, ADR-324)
-Status: **PROPOSED, design only. Nothing below is implemented.** Phase A of `prompts/LEARNING_LOOP.md`; milestone status in `docs/implementation/M6_LEARNING_LOOP_STATUS.md` (the pack file `MILESTONES.md` is byte-locked). Written 2026-10-11 against the code on `claude/cool-archimedes-9l8l1h`. Code starts only after the owner reviews this document and the decisions at the end.
+Status: **Phase A reviewed (owner, 2026-10-11: "use your proposed defaults"); Phase B (typed core, three migrations, repositories, Linux tests) built on `claude/cool-archimedes-9l8l1h`; Phase C (cards, screen, procedure runs, gap tool) NOT built.** Milestone status and test evidence: `docs/implementation/M6_LEARNING_LOOP_STATUS.md` (the pack file `MILESTONES.md` is byte-locked). Sections 8 and 9 now describe what is in the code; where it differs from the Phase A proposal, the difference is marked.
 
 Doddy accumulates verified context about its one user, learns reusable procedures from repeated requests, records what happened and what the user corrected, and notes what it could not do. Every learned thing is **data**: proposed by a model or a rule, validated by typed code, confirmed by the user, versioned, visible, revertible. Doddy never changes its own code on the iPhone.
 
@@ -42,7 +42,7 @@ evidence (turns, outcome events)
   -> RETIRE    (user "that's wrong" / delete; expiry; procedure unused 90 days)
 ```
 Rules the code enforces at each arrow:
-- **Propose:** a proposal carries `evidenceDigest` (SHA-256 over the ordered source turn ids or outcome event ids). The same digest is never proposed twice. "Never this" stores a rejected row so the evidence is blocked even after the proposal expires.
+- **Propose:** a proposal carries `evidenceDigest` (SHA-256 over the ordered source turn ids or outcome event ids). While any row carries that digest (proposed, confirmed, retired or rejected) the same evidence is not proposed again: the policy refuses it and the table's unique index refuses it too. An unanswered proposal is dropped after 7 days, so its evidence may come back later; "Never this" keeps a `rejected` row, so it never does.
 - **Validate:** a malformed, over-long, out-of-catalog or sensitive proposal is dropped and counted in a local diagnostics counter (no content), never shown, never executed.
 - **Show:** the card text is the stored text. The user confirms *that* string; the confirmation writes the string shown, byte for byte, with `confirmed_at_ms`. Editing on the card produces a new proposal, not a mutation of the old one.
 - **Store:** `status = confirmed` is written only in the transaction that also reads the row back. The UI shows "Saved" only from the returned record (same rule as `MemoryRepository.save`).
@@ -98,8 +98,8 @@ Contract, same UX family as the Memory Wallet (UX-01):
 - **Export** JSON; the counters "corrections this week" and "learned items used this week", computed locally.
 - Copy never says "I learned" before a read-back; while a save is in flight the card says "Saving…".
 
-## 8. Proposed schema (three migrations, appended after `v10_list_shares`; nothing shipped is edited)
-Same conventions as `v9`/`v10`: milliseconds, `WITHOUT ROWID` where the key is text, CHECK on enums inlined from Swift `CaseIterable` raw values via `sqlList`, FTS5 over a folded `search_text` column kept in the same transaction (the `memories` pattern, not external-content triggers).
+## 8. Schema as built (migrations `v11_learned_facts`, `v12_procedures`, `v13_outcome_events`, appended after `v10_list_shares` in `DoddyDatabase.swift`)
+Same conventions as `v9`/`v10`: milliseconds, CHECK on enums inlined from Swift `CaseIterable` raw values via `sqlList`, FTS5 over a folded `search_text` column kept by GRDB's `synchronize(withTable:)` triggers in the same transaction (the `memories` pattern). Differences from the Phase A proposal: the two FTS-indexed tables are ordinary rowid tables (FTS5 content sync needs a rowid, so no `WITHOUT ROWID`); `procedures` also carries `provenance_json` like facts; `learned_fact_revisions` keeps every confirmed wording (the `memory_corrections` pattern); the evidence digest is a UNIQUE column.
 
 ```sql
 -- v11_learned_facts
@@ -107,12 +107,12 @@ CREATE TABLE learned_facts (
     id TEXT PRIMARY KEY NOT NULL,
     kind TEXT NOT NULL CHECK (kind IN ('preference','fact','routine','person','place')),
     value TEXT NOT NULL CHECK (length(trim(value)) BETWEEN 1 AND 400),
-    search_text TEXT NOT NULL,                    -- SearchFolding(value)
+    search_text TEXT NOT NULL,                    -- SearchFolding.fold(value)
     scope TEXT NOT NULL DEFAULT 'general',        -- 'general' or a VoiceConnection raw value
     confidence INTEGER NOT NULL CHECK (confidence BETWEEN 0 AND 100),
-    provenance_json TEXT NOT NULL,                -- {proposer: 'rule'|'model', reason, turn dates}
-    source_episode_ids_json TEXT NOT NULL,        -- ordered ids; evidence_digest is over these
-    evidence_digest TEXT NOT NULL,
+    provenance_json TEXT NOT NULL,                -- {proposer, reason, episodeDates}; never user text
+    source_episode_ids_json TEXT NOT NULL,        -- ordered ids; the digest is over these
+    evidence_digest TEXT NOT NULL UNIQUE,
     status TEXT NOT NULL CHECK (status IN ('proposed','confirmed','retired','rejected')),
     created_at_ms INTEGER NOT NULL,
     updated_at_ms INTEGER NOT NULL,
@@ -120,11 +120,8 @@ CREATE TABLE learned_facts (
     confirmed_at_ms INTEGER,
     schema_version INTEGER NOT NULL DEFAULT 1,
     CHECK ((status = 'confirmed') = (confirmed_at_ms IS NOT NULL))
-) WITHOUT ROWID;
-CREATE UNIQUE INDEX learned_facts_evidence ON learned_facts(evidence_digest);
+);
 CREATE INDEX learned_facts_status ON learned_facts(status, expires_at_ms);
-CREATE VIRTUAL TABLE learned_facts_fts USING fts5(search_text, content='', tokenize='unicode61');
--- revisions of a confirmed fact, like memory_corrections
 CREATE TABLE learned_fact_revisions (
     fact_id TEXT NOT NULL REFERENCES learned_facts(id) ON DELETE CASCADE,
     number INTEGER NOT NULL CHECK (number >= 1),
@@ -132,18 +129,20 @@ CREATE TABLE learned_fact_revisions (
     confirmed_at_ms INTEGER NOT NULL,
     PRIMARY KEY (fact_id, number)
 ) WITHOUT ROWID;
+CREATE VIRTUAL TABLE learned_facts_fts USING fts5(search_text, content='learned_facts', tokenize='unicode61');  -- plus GRDB sync triggers
 
 -- v12_procedures
 CREATE TABLE procedures (
     id TEXT PRIMARY KEY NOT NULL,
     trigger_text TEXT NOT NULL CHECK (length(trim(trigger_text)) BETWEEN 1 AND 120),
-    search_text TEXT NOT NULL,                    -- SearchFolding(trigger_text)
-    steps_json TEXT NOT NULL,                     -- [ProcedureStep], 1..5, validated in Swift
+    search_text TEXT NOT NULL,
+    steps_json TEXT NOT NULL,                     -- [ProcedureStep], 1..5, validated on every read
     version INTEGER NOT NULL CHECK (version >= 1),
     scope TEXT NOT NULL DEFAULT 'general',
     status TEXT NOT NULL CHECK (status IN ('proposed','confirmed','retired','rejected')),
+    provenance_json TEXT NOT NULL,
     source_episode_ids_json TEXT NOT NULL,
-    evidence_digest TEXT NOT NULL,
+    evidence_digest TEXT NOT NULL UNIQUE,
     created_at_ms INTEGER NOT NULL,
     updated_at_ms INTEGER NOT NULL,
     confirmed_at_ms INTEGER,
@@ -151,30 +150,32 @@ CREATE TABLE procedures (
     use_count INTEGER NOT NULL DEFAULT 0 CHECK (use_count >= 0),
     schema_version INTEGER NOT NULL DEFAULT 1,
     CHECK ((status = 'confirmed') = (confirmed_at_ms IS NOT NULL))
-) WITHOUT ROWID;
-CREATE UNIQUE INDEX procedures_evidence ON procedures(evidence_digest);
-CREATE VIRTUAL TABLE procedures_fts USING fts5(search_text, content='', tokenize='unicode61');
+);
+CREATE INDEX procedures_status ON procedures(status, last_used_at_ms);
+CREATE VIRTUAL TABLE procedures_fts USING fts5(search_text, content='procedures', tokenize='unicode61');
 
 -- v13_outcome_events
 CREATE TABLE outcome_events (
     id TEXT PRIMARY KEY NOT NULL,
     request_id TEXT NOT NULL,
     kind TEXT NOT NULL CHECK (kind IN ('completed','corrected','cancelled','redone','declined','capability_gap')),
-    detail_json TEXT NOT NULL,                    -- tool name, procedure id, step, gap category; never user text
+    detail_json TEXT NOT NULL,                    -- OutcomeDetail: tool name, procedure id, step, gap category, correction kind; no text field exists
     created_at_ms INTEGER NOT NULL
-) WITHOUT ROWID;
+);
 CREATE INDEX outcome_events_created ON outcome_events(created_at_ms);
 CREATE INDEX outcome_events_request ON outcome_events(request_id);
 ```
-`ProcedureStep` (JSON inside `steps_json`, validated by Swift, never trusted from the row alone): `{ "number": 1, "toolName": "create_reminder", "fixed": {"list": "Home"}, "asked": ["title", "due"] }`. The approval tier is **not stored**: it is derived at run time from the tool registry, so a row cannot lower it. Outcome events keep 90 days (purged on open, like the activity log's 30-day prune).
+`ProcedureStep` (JSON inside `steps_json`): `{"number":1,"tool":"create_reminder","fixed":{"list":"Home"},"asked":["title","due"]}`. The approval tier is **not stored**: `ProcedureStep.approval` is derived from the tool name (`ProcedureApproval.required(for:)`, always the card, since every allowed tool is a change). A row edited by hand to add `"approval":"none"` decodes with those keys ignored and still shows the card; a row naming a tool outside `PlanTool.allowed` does not decode at all and is reported as corrupt (tested). Outcome events keep 90 days (`prune(olderThan:)`).
 
-## 9. Phase B types (to be written only after review)
-`DoddyCore`: `LearnedFact`, `LearnedFactKind`, `LearningScope`, `Procedure`, `ProcedureStep`, `OutcomeEvent`, `OutcomeKind`, `CapabilityGapCategory`, `LearningProposal` (+ `LearningProposalError`: `malformed`, `tooLong`, `sensitive`, `unknownTool`, `toolLeavesApp`, `connectionOff`, `overDailyCap`, `rejectedBefore`, `tierClaimIgnored`), `LearningPolicy`, ports `LearnedFactRepository`, `ProcedureRepository`, `OutcomeEventRepository`, `LearningContextAssembler`, `LearningBudget`.
-`DoddyPersistence`: `SQLiteLearnedFactRepository`, `SQLiteProcedureRepository`, `SQLiteOutcomeEventRepository`, migrations `v11`–`v13`.
-Tests as listed in the prompt, plus: a procedure row edited by hand to claim `"approval": "none"` still shows every card; a fact whose text is an instruction is returned as text and changes no policy decision; expired fact not returned; `deleteAll` empties the FTS tables; Polish diacritics fixture (`"Kupić mleko u Zosi"` found by `zosi`).
+## 9. Phase B code (built, Linux-tested)
+`DoddyCore/Learning/`: `LearningTypes.swift` (`LearnedFactKind`, `LearningScope`, `LearningStatus`, `LearningProposer`, `LearningProvenance`, `LearningValidationError`, `EvidenceDigest`, `LearnedFact`, `LearnedFactRevision`, `ProcedureApproval`, `ProcedureStep`, `Procedure`, `OutcomeKind`, `CapabilityGapCategory`, `CorrectionKind`, `OutcomeDetail`, `OutcomeEvent`, `LearningJSON`), `LearningProposal.swift` (`FactProposal`, `ProcedureProposal`, `LearningProposal.parse`, `LearningProposalError`), `LearningPolicy.swift` (`LearningLimits` with the owner's defaults, `LearningEnvironment`, `ProposalCounts`, `ValidatedProposal` which only the policy can make, `LearningPolicy.validate`, `SensitiveContentFilter`), `LearningPorts.swift` (`LearnedFactRepository`, `ProcedureRepository`, `OutcomeEventRepository`, `LearningStoreError`, `OutcomeMetrics`), `LearningContextAssembler.swift` (`LearningBudget`, `LearningContext`, `LearningContextAssembler`).
+`DoddyPersistence/`: `SQLiteLearnedFactRepository`, `SQLiteProcedureRepository`, `SQLiteOutcomeEventRepository`; migrations in `DoddyDatabase.swift`.
+Tests: `DoddyCoreTests/LearningTests.swift` (19) and `DoddyPersistenceTests/SQLiteLearningRepositoryTests.swift` (12), real SQLite, no mocks. Evidence in `docs/implementation/M6_LEARNING_LOOP_STATUS.md`.
+
+Not in Phase B (Phase C): the proposers themselves (the `SaveSuggestions` extension and the repeated-sequence detector), the cards, the "What I've learned" screen, running a procedure through the plan card, the `note_capability_gap` agent tool, wiring to `ActivityLog` and `AssistantRequest`, the gateway limit change for learned facts, the "What leaves this iPhone" line, `deleteAll` of learned items from "Delete all notes".
 
 ## 10. Policy map (`docs/trust/config/doddy_rules.yaml`)
-| Rule | Enforced by (planned) | Test (planned) |
+| Rule | Enforced by (Phase B code; UI parts are Phase C) | Test (Linux, 2026-10-11) |
 |---|---|---|
 | DOD-06 user-controlled relevant memory; `explicit_long_term_memory_opt_in_default`, `auto_save_sensitive_data: false`, `require_user_visible_provenance` | `LearningPolicy` (sensitive filter, cap), confirm-only writes in the repositories, provenance columns, learned screen | proposal without confirmation is never `confirmed`; sensitive sentence never proposed; provenance present on every row |
 | DOD-07 scoped action approval; `bind_approval_to_payload_and_identity`, `enforce_current_scope` | procedures expand through `PlanProposal`; tier derived from the registry; connection check at run time | hand-edited step cannot skip a card; step for an off connection is refused |
@@ -192,7 +193,7 @@ Tests as listed in the prompt, plus: a procedure row edited by hand to claim `"a
 - **Embeddings or a cloud store:** `MEMORY_AND_DATA.md` already decides FTS5 first; nothing here needs more.
 - **Writing learned facts into the profile or personality settings:** those are explicit-review-only stores with different guarantees; mixing them would blur provenance.
 
-## 12. Decisions required from the owner
+## 12. Decisions (owner, 2026-10-11: "use your proposed defaults" — all six accepted as proposed)
 1. Daily proposal cap default (proposed 3/day, 1 per conversation end).
 2. Expiry defaults per kind (section 6) and the 90-day retirement for unused procedures.
 3. The never-learned categories (section 6) beyond the ADR-247 secrets list.
