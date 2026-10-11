@@ -188,6 +188,12 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM memories")
             try db.execute(sql: "INSERT INTO memories_fts(memories_fts) VALUES('rebuild')")
+            // Read back before "deleted" is reported (DOD-06): no note, list item or correction left.
+            for table in ["memories", "list_items", "memory_corrections"] {
+                guard try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM \(table)") == 0 else {
+                    throw MemoryStoreError.verificationFailed
+                }
+            }
         }
     }
 
