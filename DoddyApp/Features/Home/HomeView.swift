@@ -114,6 +114,11 @@ struct HomeView: View {
                         ProblemView(message: problem, showsDoddy: true)
                     }
 
+                    // "Continue what I was saving" (ADR-340): opens the capture screen with it.
+                    if let draft = UnfinishedNoteStore.shared.book.newest {
+                        UnfinishedNoteCard(note: draft, more: UnfinishedNoteStore.shared.book.notes.count - 1) { modal = .capture }
+                    }
+
                     VStack(spacing: 12) {
                         Button { router.isVoicePresented = true } label: {
                             HStack { Text("Talk to Doddy"); Spacer(); Image(systemName: "waveform") }
@@ -371,4 +376,44 @@ enum HomeIdle {
     static var played = false
     /// He sat down on his box this launch (ADR-323): later visits show him seated, without replaying.
     static var sat = false
+}
+
+/// The newest unfinished note on Home (ADR-340): Continue opens it on the capture screen; Discard
+/// removes it after asking. It is a draft, not a note.
+private struct UnfinishedNoteCard: View {
+    let note: UnfinishedNote
+    let more: Int
+    let onContinue: () -> Void
+    @State private var confirmDiscard = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Unfinished note", systemImage: "doc.badge.clock").font(.headline)
+            Text(verbatim: note.preview())
+                .lineLimit(2)
+            Text(String(format: NSLocalizedString("Not saved yet · last changed %@", comment: ""),
+                        note.updatedAt.formatted(date: .abbreviated, time: .shortened)))
+                .font(.caption).foregroundStyle(Theme.secondaryText)
+            if more > 0 {
+                Text(String(format: NSLocalizedString("%lld more unfinished notes; each opens when you start a new note.", comment: ""), more))
+                    .font(.caption).foregroundStyle(Theme.secondaryText)
+            }
+            HStack(spacing: 12) {
+                Button(action: onContinue) {
+                    HStack { Text("Continue"); Spacer(); Image(systemName: "square.and.pencil") }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .accessibilityIdentifier("home.unfinishedNote.continue")
+                Button("Discard") { confirmDiscard = true }
+                    .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("home.unfinishedNote")
+        .confirmationDialog("Discard this unfinished note?", isPresented: $confirmDiscard, titleVisibility: .visible) {
+            Button("Discard", role: .destructive) { UnfinishedNoteStore.shared.remove(id: note.id) }
+            Button("Keep it", role: .cancel) {}
+        } message: { Text("It was never saved, so it can't be brought back.") }
+    }
 }

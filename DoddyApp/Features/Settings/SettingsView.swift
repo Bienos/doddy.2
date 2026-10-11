@@ -579,7 +579,7 @@ struct SettingsView: View {
                 Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.")
+                Text("This removes every memory, its search index and any unfinished notes from this iPhone and can't be undone. Exported files and older backups aren't affected.")
             }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)

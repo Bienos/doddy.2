@@ -191,6 +191,8 @@ public enum DataFlow {
     public static func staysOnPhone(_ state: DataFlowState) -> [String] {
         [
             "Your saved notes, except as listed above.",
+            // ADR-340: drafts are never searched, sent, exported or backed up.
+            "Unfinished notes: what you typed before tapping Save, until you save or discard it (30 days at most).",
             // ADR-252: the corrections table is read only by the note screen and exports.
             "Earlier wordings of notes you corrected, except in files you export.",
             "What Doddy did (the activity list).",

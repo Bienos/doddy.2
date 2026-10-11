@@ -338,3 +338,13 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | LS6 | Mute in a conversation (ElevenLabs, then the OpenAI test voice) | The pill (or the voice screen) says "Microphone muted… isn't sent", never "off"; note whether the orange dot stays on for each |
 | LS7 | Nothing listening; ask Siri to stop listening | "Doddy wasn't listening. The microphone is off." |
 | LS8 | Polish iPhone: LS2 and LS3 | Polish pill, button and Siri answer; "Przestań słuchać w aplikacji Doddy" works |
+
+## 4o. Unfinished notes (ADR-340, `UNFINISHED_NOTES_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| UN1 | Type a note; without saving, close Doddy from the app switcher; open it again | Home shows "Unfinished note" with its first line; Continue opens it with every word; nothing in Memories |
+| UN2 | Type, then within half a second press the side button to lock; unlock and kill Doddy; open it | The words are there (written on going to the background) |
+| UN3 | Continue an unfinished note and tap Save | It is a note, once; the Home card is gone |
+| UN4 | Open the capture screen with an unfinished note waiting; tap Start a new note instead, type, Cancel › Keep it for later | Two unfinished notes; Home says "1 more"; each opens in turn |
+| UN5 | Share text with "Save to Doddy" while an unfinished note waits | The shared text shows alone with "You also have an unfinished note…"; the old one is still there afterwards |
+| UN6 | Settings › Delete all memories with an unfinished note waiting | The Home card is gone too; Polish iPhone: the card and capture notices are Polish |

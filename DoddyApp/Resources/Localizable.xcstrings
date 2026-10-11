@@ -45,6 +45,17 @@
         }
       }
     },
+    "%lld more unfinished notes; each opens when you start a new note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niedokończonych notatek więcej: %lld; każda otworzy się, gdy zaczniesz nową notatkę."
+          }
+        }
+      }
+    },
     "A draft, not a note: it's saved only if you tap Save as note.": {
       "extractionState": "manual",
       "localizations": {
@@ -723,6 +734,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Łatwiejszy sposób, żeby się przywitać."
+          }
+        }
+      }
+    },
+    "An unfinished note from before couldn't be read, so it was set aside on this iPhone, not deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wcześniejszej niedokończonej notatki nie udało się odczytać, więc odłożono ją na tym iPhonie, a nie usunięto."
           }
         }
       }
@@ -2454,6 +2476,17 @@
         }
       }
     },
+    "Discard this unfinished note?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzucić tę niedokończoną notatkę?"
+          }
+        }
+      }
+    },
     "Disconnect": {
       "extractionState": "manual",
       "localizations": {
@@ -2575,6 +2608,17 @@
         }
       }
     },
+    "Doddy couldn't keep a copy of this unfinished note on this iPhone (%@). Save it before you leave.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie zdołał zachować kopii tej niedokończonej notatki na tym iPhonie (%@). Zapisz ją, zanim wyjdziesz."
+          }
+        }
+      }
+    },
     "Doddy doesn't speak to anyone here. Use it for a guide, a talk or an announcement, not someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -2604,6 +2648,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy dopasuje się, jeśli zmienisz język w trakcie rozmowy."
+          }
+        }
+      }
+    },
+    "Doddy has no place on this iPhone to keep unfinished notes. Save this one before you leave.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie ma na tym iPhonie miejsca na niedokończone notatki. Zapisz tę, zanim wyjdziesz."
           }
         }
       }
@@ -3983,6 +4038,17 @@
         }
       }
     },
+    "Here is your unfinished note from %@. It isn't saved until you tap Save.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oto Twoja niedokończona notatka z %@. Nie jest zapisana, dopóki nie stukniesz Zapisz."
+          }
+        }
+      }
+    },
     "Here's what I'd do": {
       "extractionState": "manual",
       "localizations": {
@@ -4302,6 +4368,17 @@
         }
       }
     },
+    "It hasn't been saved. Keep it for later and it opens the next time you start a new note; a photo or recording isn't kept with it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie została zapisana. Zachowaj ją na później, a otworzy się, gdy następnym razem zaczniesz nową notatkę; zdjęcie ani nagranie nie są z nią zachowywane."
+          }
+        }
+      }
+    },
     "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs keeps its own record as described in Settings › Privacy.": {
       "extractionState": "manual",
       "localizations": {
@@ -4368,6 +4445,17 @@
         }
       }
     },
+    "It was never saved, so it can't be brought back.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nigdy nie została zapisana, więc nie da się jej przywrócić."
+          }
+        }
+      }
+    },
     "It's too late to undo here. Change it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -4408,6 +4496,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jej pozycje są widoczne na ekranie blokady i w Dynamic Island, dopóki nie odhaczysz wszystkich albo nie zakończysz trybu, więc każdy, kto widzi Twojego iPhone’a, może je przeczytać. Odhaczenie tam odhacza też tutaj."
+          }
+        }
+      }
+    },
+    "Its photo or recording wasn't kept with it. Add it again if you need it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jej zdjęcie lub nagranie nie zostało zachowane. Dodaj je ponownie, jeśli go potrzebujesz."
           }
         }
       }
@@ -4474,6 +4573,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zostaw"
+          }
+        }
+      }
+    },
+    "Keep it for later": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowaj na później"
           }
         }
       }
@@ -5915,6 +6025,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie teraz, zostaw to w Doddym"
+          }
+        }
+      }
+    },
+    "Not saved yet · last changed %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze niezapisana · ostatnia zmiana %@"
           }
         }
       }
@@ -9560,6 +9681,17 @@
         }
       }
     },
+    "Start a new note instead": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij zamiast tego nową notatkę"
+          }
+        }
+      }
+    },
     "Start another": {
       "extractionState": "manual",
       "localizations": {
@@ -11155,13 +11287,13 @@
         }
       }
     },
-    "This removes every memory and its search index from this iPhone and can't be undone. Exported files and older backups aren't affected.": {
+    "This removes every memory, its search index and any unfinished notes from this iPhone and can't be undone. Exported files and older backups aren't affected.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "To usuwa z tego iPhone’a wszystkie wspomnienia i ich indeks wyszukiwania i nie da się tego cofnąć. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
+            "value": "To usuwa z tego iPhone’a wszystkie wspomnienia, ich indeks wyszukiwania i niedokończone notatki i nie da się tego cofnąć. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian."
           }
         }
       }
@@ -11767,6 +11899,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cofanie…"
+          }
+        }
+      }
+    },
+    "Unfinished note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niedokończona notatka"
           }
         }
       }
@@ -12592,6 +12735,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wczoraj"
+          }
+        }
+      }
+    },
+    "You also have an unfinished note from %@. It's kept; it opens the next time you start a new note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masz też niedokończoną notatkę z %@. Jest zachowana; otworzy się, gdy następnym razem zaczniesz nową notatkę."
           }
         }
       }

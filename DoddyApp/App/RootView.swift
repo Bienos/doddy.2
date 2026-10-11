@@ -135,6 +135,8 @@ struct RootView: View {
                     pickUpSharedItem()
                 }
                 if phase == .background {
+                    // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-340).
+                    UnfinishedNoteStore.shared.flush()
                     WidgetSync.shared.refresh()
                     AppLock.shared.wentToBackground()
                 }
