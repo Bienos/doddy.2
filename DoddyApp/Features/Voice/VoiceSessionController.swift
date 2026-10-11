@@ -213,6 +213,10 @@ final class VoiceSessionController {
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
+    /// What earlier tries of a reminder or event meant when its card was shown (ADR-290).
+    private var retryChecks: [String: ActionRetryDecision] = [:]
+    /// The app's read-back and whether it was asked to write, for the entry logged with the reply.
+    private var writeResults: [String: WriteResult] = [:]
     /// Shared with "Hey Doddy" listening, which may have started it (ADR-254).
     private let island = VoiceLiveActivity.shared
     /// True once this conversation has shown its state on the island, so only it ends it.
@@ -740,13 +744,17 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .event(let id, let draft):
-            await reply(id, addEvent(draft))
+            let result = eventResult(addEvent(draft), draft: draft, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .reminder(let id, let draft):
             // The card is already gone (pendingAction is nil), so a second tap does nothing.
             reminderStatus = .adding(draft)
             let outcome = await addReminder(draft)
             reminderStatus = .done(draft, outcome)
-            await reply(id, VoiceToolReply.reminder(outcome))
+            let result = reminderResult(outcome, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
         case .alarm(let id, let draft):
@@ -1529,6 +1537,7 @@ final class VoiceSessionController {
             let events = devices.events(in: range)
             await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
         case .createCalendarEvent(let draft):
+            guard await mayTryAgain(call.toolCallId, app: .calendar) else { return }
             propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .createReminder(let draft):
             // Blocked by iOS: say so now instead of showing a card that can only fail.
@@ -1536,6 +1545,7 @@ final class VoiceSessionController {
                 await notConnected(call.toolCallId, .reminders)
                 return
             }
+            guard await mayTryAgain(call.toolCallId, app: .reminders) else { return }
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .changeCalendarEvent(let draft):
             await proposeEventChange(draft, toolCallID: call.toolCallId)
@@ -1680,6 +1690,10 @@ final class VoiceSessionController {
             if let block = await planBlock(for: step) {
                 blocked[step.number] = block
                 if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
+            } else if let request = step.activity(calendar: .current),
+                      case .stop(let count) = ActionRetry.decide(for: request, in: activity.entries, now: Date()) {
+                // Tried too often without a confirmed result (ADR-290): shown on the card, not run.
+                blocked[step.number] = .tooManyTries(app: request.app, count: count)
             } else if let call = step.cloudCall {
                 // As a single card: the server checks the switch, the connection and the arguments,
                 // and returns the preview the card shows with an approval for exactly these.
@@ -1720,21 +1734,30 @@ final class VoiceSessionController {
         for step in steps {
             let ref = ActivityPlanRef(id: planID, step: step.number, count: steps.count)
             var startedEntry: ActivityEntry?
+            var write: WriteResult?
             let text: String
             if let block = blocked[step.number] {
                 text = block.reply
             } else if !ticked.contains(step.number) {
                 text = PlanReply.unticked
             } else {
-                // On disk before it runs, like a single card (ActivityLog.recoverInterrupted).
-                if let request = step.activity(calendar: .current) {
-                    let entry = ActivityEntry.started(request, at: Date(), plan: ref)
-                    activity.append(entry)
-                    startedEntry = entry
+                // Earlier tries are read before this one is written down (ADR-290).
+                let request = step.activity(calendar: .current)
+                let retry = ActionRetry.decide(for: request, in: activity.entries, now: Date())
+                if case .stop(let count) = retry, let request {
+                    text = VoiceToolReply.retryStopped(count: count, app: request.app)
+                } else {
+                    // On disk before it runs, like a single card (ActivityLog.recoverInterrupted).
+                    if let request {
+                        let entry = ActivityEntry.started(request, at: Date(), plan: ref)
+                        activity.append(entry)
+                        startedEntry = entry
+                    }
+                    write = await runPlanStep(step, approval: approvals[step.number], retry: retry)
+                    text = write?.reply ?? ""
                 }
-                text = await runPlanStep(step, approval: approvals[step.number])
             }
-            planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry)
+            planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry, write: write)
             results.append((step, text))
         }
         planStatus?.isRunning = false
@@ -1742,8 +1765,19 @@ final class VoiceSessionController {
     }
 
     /// Checked again at the tap: the user may have paused or switched off the app while the card waited.
-    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
-        if let block = await planBlock(for: step) { return block.reply }
+    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?, retry: ActionRetryDecision) async -> WriteResult {
+        if let block = await planBlock(for: step) { return WriteResult(reply: block.reply) }
+        switch step.request {
+        case .createCalendarEvent(let draft):
+            return eventResult(addEvent(draft), draft: draft, retry: retry)
+        case .createReminder(let draft):
+            return reminderResult(await addReminder(draft), retry: retry)
+        default:
+            return WriteResult(reply: await runOtherPlanStep(step, approval: approval))
+        }
+    }
+
+    private func runOtherPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
         switch step.request {
         case .saveMemory(let text):
             do {
@@ -1753,10 +1787,6 @@ final class VoiceSessionController {
             } catch {
                 return VoiceToolReply.failed(UserFacingError.message(for: error))
             }
-        case .createCalendarEvent(let draft):
-            return addEvent(draft)
-        case .createReminder(let draft):
-            return VoiceToolReply.reminder(await addReminder(draft))
         case .setTimer(let draft):
             return await startTimer(draft)
         case .cloudTool(let call):
@@ -1835,10 +1865,18 @@ final class VoiceSessionController {
     }
 
     @discardableResult
-    private func logPlanStep(_ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil) -> ActivityEntry? {
+    private func logPlanStep(
+        _ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil, write: WriteResult? = nil
+    ) -> ActivityEntry? {
         guard let request = step.activity(calendar: .current) else { return nil }
-        let entry = ActivityEntry(id: started?.id ?? UUID(), request: request, reply: text, at: started?.at ?? Date(), plan: plan)
-        if started != nil { activity.replace(entry) } else { activity.append(entry) }
+        if let started {
+            let entry = ActivityEntry.finished(
+                started, request: request, reply: text, at: Date(), receipt: write?.receipt, attempted: write?.attempted)
+            activity.replace(entry)
+            return entry
+        }
+        let entry = ActivityEntry(request: request, reply: text, at: Date(), plan: plan, receipt: write?.receipt, attempted: write?.attempted)
+        activity.append(entry)
         return entry
     }
 
@@ -1936,22 +1974,57 @@ final class VoiceSessionController {
         pendingAction = action
     }
 
-    private func addEvent(_ draft: CalendarEventDraft) -> String {
-        guard devices.access(for: .calendar) == .granted else {
-            return VoiceToolReply.notAdded("Calendar isn't connected.")
+    /// Looks in Calendar first, so asking again after an unconfirmed try never adds a second copy;
+    /// the start is checked again too, since it may have passed while the card waited (ADR-128).
+    private func addEvent(_ draft: CalendarEventDraft) -> EventAddOutcome? {
+        guard devices.access(for: .calendar) == .granted else { return nil }
+        return EventAddAction.add(draft, to: devices, now: Date(), calendar: .current)
+    }
+
+    // MARK: Action status (ADR-290)
+
+    /// The reply for the agent, plus what the entry in "What Doddy did" keeps.
+    private struct WriteResult {
+        var reply: String
+        var receipt: ActivityReceipt? = nil
+        var attempted: Bool? = nil
+    }
+
+    /// Stops before the card when this change was already tried too often without a confirmed
+    /// result; otherwise remembers whether an earlier try is open, so the reply can say Doddy checked.
+    private func mayTryAgain(_ toolCallID: String, app: ActivityApp) async -> Bool {
+        let decision = ActionRetry.decide(for: asked[toolCallID], in: activity.entries, now: Date())
+        if case .stop(let count) = decision {
+            await reply(toolCallID, VoiceToolReply.retryStopped(count: count, app: app))
+            return false
         }
-        // The start may have passed while the card waited (ADR-128): ask again, add nothing.
-        if let late = draft.passed(now: Date(), calendar: .current) {
-            return VoiceToolReply.clarification(late, tool: VoiceToolName.createCalendarEvent)
+        retryChecks[toolCallID] = decision
+        return true
+    }
+
+    private func eventResult(_ outcome: EventAddOutcome?, draft: CalendarEventDraft, retry: ActionRetryDecision?) -> WriteResult {
+        guard let outcome else { return WriteResult(reply: VoiceToolReply.notAdded("Calendar isn't connected."), attempted: false) }
+        var result = WriteResult(reply: VoiceToolReply.event(outcome, draft: draft, calendar: .current), attempted: outcome.attemptedWrite)
+        switch outcome {
+        case .added(let event), .alreadyThere(let event):
+            result.receipt = ActivityReceipt(event: event, calendar: .current, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .calendar) }
+        default:
+            break
         }
-        do {
-            switch try devices.addEvent(draft) {
-            case .verified: return VoiceToolReply.eventAdded(draft, calendar: .current)
-            case .unconfirmed: return VoiceToolReply.addUnconfirmed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        return result
+    }
+
+    private func reminderResult(_ outcome: ReminderOutcome, retry: ActionRetryDecision?) -> WriteResult {
+        var result = WriteResult(reply: VoiceToolReply.reminder(outcome), attempted: outcome.attemptedWrite)
+        switch outcome {
+        case .added(let receipt), .alreadyThere(let receipt):
+            result.receipt = ActivityReceipt(reminder: receipt, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .reminders) }
+        default:
+            break
         }
+        return result
     }
 
     // MARK: Changing events and reminders (ADR-229)
@@ -2292,11 +2365,14 @@ final class VoiceSessionController {
     }
 
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false) async {
+        let write = writeResults.removeValue(forKey: toolCallID)
+        retryChecks[toolCallID] = nil
         if let request = asked.removeValue(forKey: toolCallID) {
             if let entry = started.removeValue(forKey: toolCallID) {
-                activity.replace(ActivityEntry(id: entry.id, request: request, reply: text, at: entry.at))
+                activity.replace(ActivityEntry.finished(
+                    entry, request: request, reply: text, at: Date(), receipt: write?.receipt, attempted: write?.attempted))
             } else {
-                activity.append(ActivityEntry(request: request, reply: text, at: Date()))
+                activity.append(ActivityEntry(request: request, reply: text, at: Date(), receipt: write?.receipt, attempted: write?.attempted))
             }
         }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
@@ -2323,6 +2399,8 @@ final class VoiceSessionController {
             }
         }
         askedPlans = [:]
+        retryChecks = [:]
+        writeResults = [:]
     }
 
     private static func microphoneAllowed() async -> Bool {

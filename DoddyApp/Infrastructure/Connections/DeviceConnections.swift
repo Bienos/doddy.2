@@ -133,7 +133,10 @@ final class DeviceConnections {
         "\(event.calendarItemIdentifier)@\(Int(event.startDate.timeIntervalSince1970))"
     }
 
-    func addEvent(_ draft: CalendarEventDraft) throws -> AddOutcome {
+    /// Saves one event in the default calendar and returns it as read back, or nil when the
+    /// read-back doesn't show it (or its repeat). `EventAddAction` looks first and compares
+    /// (CalendarEventWriter, ADR-290).
+    func saveEvent(_ draft: CalendarEventDraft) throws -> CalendarEventSummary? {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
         event.calendar = calendar
@@ -148,9 +151,9 @@ final class DeviceConnections {
         try eventStore.save(event, span: draft.repeats == nil ? .thisEvent : .futureEvents)
         guard let identifier = event.eventIdentifier, let back = eventStore.event(withIdentifier: identifier),
               CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
-            return .unconfirmed
+            return nil
         }
-        return .verified
+        return Self.summary(back)
     }
 
     /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the
@@ -499,6 +502,7 @@ final class DeviceConnections {
 
 /// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).
 extension DeviceConnections: ReminderStore {}
+extension DeviceConnections: CalendarEventWriter {}
 
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.
 private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {

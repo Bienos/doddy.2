@@ -67,13 +67,17 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
+    /// The same change asked again has the same key (ADR-290): new reminders and new events,
+    /// whose adds look first and so can be retried safely. Nil for everything else.
+    public let operationKey: String?
 
-    public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil) {
+    public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil, operationKey: String? = nil) {
         self.app = app
         self.title = title
         self.detail = detail
         self.isLookup = isLookup
         self.reminderKey = reminderKey
+        self.operationKey = operationKey ?? reminderKey
     }
 
     /// Nil for requests that never reach an app (unsupported or invalid tool calls).
@@ -91,7 +95,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .createCalendarEvent(let draft):
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
-            return ActivityRequest(app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false)
+            return ActivityRequest(
+                app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false,
+                operationKey: EventIdempotency.key(draft))
         case .createReminder(let draft):
             let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
@@ -209,11 +215,19 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public var checkedAt: Date?
     /// Set when this was one step of a plan card. Older entries have none.
     public let plan: ActivityPlanRef?
+    // ADR-290. All optional, so entries saved before them still load.
+    /// The same change asked again has the same key (`ActivityRequest.operationKey`).
+    public let operationKey: String?
+    /// What the app read back. Only ever kept on a confirmed entry.
+    public private(set) var receipt: ActivityReceipt?
+    /// True when the app was asked to write; false when Doddy stopped before writing. Nil when not known.
+    public let attempted: Bool?
+    private var statusHistory: [ActivityStatusChange]?
 
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
         outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
-        plan: ActivityPlanRef? = nil
+        plan: ActivityPlanRef? = nil, operationKey: String? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
     ) {
         self.id = id
         self.at = at
@@ -225,22 +239,73 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
         self.plan = plan
+        self.operationKey = operationKey ?? reminderKey
+        self.receipt = outcome.status == .confirmed ? receipt : nil
+        self.attempted = attempted
     }
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
     /// app's own verified result (VoiceToolReply), so the log can never claim more than the agent heard.
-    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil) {
+    /// A receipt is kept only when that reply is a confirmed result.
+    public init(
+        id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil,
+        receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+    ) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
-            note: note, reminderKey: request.reminderKey, plan: plan)
+            note: note, reminderKey: request.reminderKey, plan: plan, operationKey: request.operationKey,
+            receipt: receipt, attempted: attempted)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
     public static func started(_ request: ActivityRequest, at: Date, plan: ActivityPlanRef? = nil) -> ActivityEntry {
-        ActivityEntry(
+        var entry = ActivityEntry(
             at: at, app: request.app, title: request.title, detail: request.detail, outcome: .inProgress,
-            reminderKey: request.reminderKey, plan: plan)
+            reminderKey: request.reminderKey, plan: plan, operationKey: request.operationKey)
+        entry.statusHistory = [ActivityStatusChange(status: .proposed, at: at), ActivityStatusChange(status: .pending, at: at)]
+        return entry
+    }
+
+    /// The result of a started entry: same id and time, its history kept and the result added.
+    public static func finished(
+        _ started: ActivityEntry, request: ActivityRequest, reply: String, at: Date,
+        receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+    ) -> ActivityEntry {
+        var entry = ActivityEntry(
+            id: started.id, request: request, reply: reply, at: started.at, plan: started.plan,
+            receipt: receipt, attempted: attempted)
+        entry.statusHistory = started.history
+        entry.record(entry.status, at: at, note: nil)
+        return entry
+    }
+
+    /// Typed status (ADR-290). Nil for look-ups.
+    public var status: ActionStatus? { outcome.status }
+
+    /// How the status moved, oldest first. Entries saved before ADR-290 show their one known status.
+    public var history: [ActivityStatusChange] {
+        if let statusHistory { return statusHistory }
+        return status.map { [ActivityStatusChange(status: $0, at: at)] } ?? []
+    }
+
+    /// Moves to `outcome` only if the status model allows it; otherwise nothing changes.
+    /// Returns whether it moved.
+    @discardableResult
+    mutating func move(to outcome: ActivityOutcome, at date: Date, note: String?) -> Bool {
+        guard let from = status, let to = outcome.status, from.canMove(to: to) else { return false }
+        self.outcome = outcome
+        self.note = note
+        if to != .confirmed { receipt = nil }
+        record(to, at: date, note: note)
+        return true
+    }
+
+    private mutating func record(_ status: ActionStatus?, at date: Date, note: String?) {
+        guard let status else { return }
+        var steps = history
+        if steps.last?.status != status { steps.append(ActivityStatusChange(status: status, at: date, note: note)) }
+        statusHistory = steps
     }
 
     /// "Check" is offered when Doddy wasn't sure a reminder went in.
@@ -262,7 +327,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        if text.hasPrefix("added:"), text.contains("already in Reminders") { return (.alreadyThere, nil) }
+        if text.hasPrefix("added:"), text.contains("already in Reminders") || text.contains("already in Calendar") {
+            return (.alreadyThere, nil)
+        }
         if text.hasPrefix("added:") || text.hasPrefix("saved:") || text.hasPrefix("drafted:") { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
         // Anything the app didn't phrase as a result is never shown as done.
@@ -297,26 +364,25 @@ public enum ActivityLog {
 
     /// At launch: anything still in progress was cut off (crash, force-quit, iOS ended the app).
     /// It is never shown as done; it becomes "Not sure", and an unsure reminder offers Check.
-    public static func recoverInterrupted(_ entries: [ActivityEntry]) -> [ActivityEntry] {
+    public static func recoverInterrupted(_ entries: [ActivityEntry], at date: Date = Date()) -> [ActivityEntry] {
         entries.map { entry in
             guard entry.outcome == .inProgress else { return entry }
             var recovered = entry
-            recovered.outcome = .notSure
-            recovered.note = interruptedNote
+            recovered.move(to: .notSure, at: date, note: interruptedNote)
             return recovered
         }
     }
 
-    /// Result of looking in Reminders for an entry Doddy wasn't sure about.
+    /// Result of looking in Reminders for an entry Doddy wasn't sure about. Only an unsure entry
+    /// changes: a check never turns a confirmed or failed result into something else.
     public static func checked(_ entry: ActivityEntry, found: Bool, at date: Date) -> ActivityEntry {
+        guard entry.status == .unknown else { return entry }
         var updated = entry
         updated.checkedAt = date
         if found {
-            updated.outcome = .done
-            updated.note = "Found in Reminders when you checked."
+            updated.move(to: .done, at: date, note: "Found in Reminders when you checked.")
         } else {
-            updated.outcome = .notDone
-            updated.note = "Not in Reminders when you checked. You can ask Doddy again."
+            updated.move(to: .notDone, at: date, note: "Not in Reminders when you checked. You can ask Doddy again.")
         }
         return updated
     }

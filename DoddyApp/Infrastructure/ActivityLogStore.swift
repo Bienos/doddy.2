@@ -40,7 +40,8 @@ final class ActivityLogStore {
         guard let fileURL, let data = try? Data(contentsOf: fileURL) else { return }
         let stored = (try? JSONDecoder().decode([ActivityEntry].self, from: data)) ?? []
         // Anything still "in progress" from the last run was cut off; it is never shown as done.
-        entries = ActivityLog.pruned(ActivityLog.recoverInterrupted(stored), now: Date())
+        let now = Date()
+        entries = ActivityLog.pruned(ActivityLog.recoverInterrupted(stored, at: now), now: now)
         if entries != stored { save() }
     }
 

@@ -69,6 +69,7 @@ files=(
   DoddyApp/Infrastructure/PersonalityPreferences.swift
   DoddyApp/Infrastructure/PinnedNotesStorage.swift
   DoddyApp/Infrastructure/ConversationLogStore.swift
+  DoddyApp/Infrastructure/ActivityLogStore.swift
   DoddyApp/Infrastructure/MemoryStore.swift
   DoddyApp/Infrastructure/MemoryStore+Lists.swift
   DoddyApp/Infrastructure/ProfileStore.swift

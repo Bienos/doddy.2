@@ -220,3 +220,12 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | C1 | Dark mode on. Talk to Doddy and lock the iPhone; then turn on Hey Doddy and lock it again | Both Lock Screen cards are cream with dark text and Doddy without a paper box. Mute / End / Stop listening read clearly |
 | C2 | Dark mode on. Start a focus timer, then shopping mode for a list, and lock the iPhone | Both cards are cream with readable text; ticking an item still works |
 
+
+## 4h. Action status and retry (ADR-290, `ACTION_STATUS_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| AS1 | Ask Doddy to add an event tomorrow at 15:00, tap Add, then open Settings → What Doddy did | "Done", and "Read back from Calendar at …" with the title and times. The event is in Calendar once |
+| AS2 | Ask for the same event again and tap Add | Doddy says it was already in Calendar; still one event in Calendar. Repeat with an all-day event |
+| AS3 | Ask for a reminder, tap Add, and force-quit Doddy at once; reopen and look at What Doddy did | "Not sure it happened", with "In progress → Not sure" times. Ask for the same reminder again: one copy only, and Doddy says it checked Reminders first |
+| AS4 | Make Calendar refuse saves (e.g. default calendar read-only) and ask for the same event 4 times | Tries 1–3 say it wasn't added; the 4th shows no card and Doddy asks you to look in Calendar yourself |
+| AS5 | VoiceOver on What Doddy did with a receipt and a history line; Polish language | Reads the receipt and history; the new lines are still English (not yet in the catalog) |
