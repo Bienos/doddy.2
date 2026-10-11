@@ -22,14 +22,20 @@ public struct EventChangeDraft: Equatable, Sendable {
     /// Only this date counts (an all-day event named by its day).
     public let currentIsDayOnly: Bool
     public let newStart: Date?
+    /// `newStart` named only a day ("move it to Friday"): a timed event keeps its time of day.
+    public let newStartIsDayOnly: Bool
     public let newEnd: Date?
     public let newTitle: String?
 
-    public init(title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?) {
+    public init(
+        title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?,
+        newStartIsDayOnly: Bool = false
+    ) {
         self.title = title
         self.currentStart = currentStart
         self.currentIsDayOnly = currentIsDayOnly
         self.newStart = newStart
+        self.newStartIsDayOnly = newStartIsDayOnly
         self.newEnd = newEnd
         self.newTitle = newTitle
     }
@@ -96,6 +102,17 @@ public enum EventChange {
             if event.allDay {
                 start = calendar.startOfDay(for: newStart)
                 end = calendar.date(byAdding: .day, value: max(1, Int((length / 86_400).rounded())), to: start) ?? start
+            } else if draft.newStartIsDayOnly {
+                // A day alone keeps the event's time of day, never midnight (review C7).
+                let time = calendar.dateComponents([.hour, .minute, .second], from: event.start)
+                var moved = calendar.dateComponents([.year, .month, .day], from: newStart)
+                (moved.hour, moved.minute, moved.second) = (time.hour, time.minute, time.second)
+                // A time the clocks skip on that day is not shifted: no plan, and the agent asks.
+                guard let date = calendar.date(from: moved),
+                      calendar.dateComponents([.hour, .minute], from: date) == DateComponents(hour: time.hour, minute: time.minute)
+                else { return nil }
+                start = date
+                end = date.addingTimeInterval(length)
             } else {
                 start = newStart
                 end = newStart.addingTimeInterval(length)
@@ -247,13 +264,14 @@ extension VoiceToolRequest {
         guard case .due(let current) = ReminderDueRules.wallClock(startText, calendar: calendar), let currentStart = current.date(in: calendar) else {
             return .invalid(name: name, reason: "start is not a date")
         }
-        var newStart: Date?, newEnd: Date?
+        var newStart: Date?, newEnd: Date?, newStartIsDayOnly = false
         if let text = args.text("new_start") {
             switch ReminderDueRules.check(text, now: now, calendar: calendar) {
             case .clarify(let clarification): return .needsClarification(name: name, clarification)
             case .due(let due):
                 guard let date = due.date(in: calendar) else { return .invalid(name: name, reason: "new_start is not a date") }
                 newStart = date
+                newStartIsDayOnly = !due.hasTime
             }
         }
         if let text = args.text("new_end") {
@@ -271,7 +289,7 @@ extension VoiceToolRequest {
         if let newTitle, newTitle.count > EventChange.maxTitleLength { return .invalid(name: name, reason: "new_title is too long") }
         return .changeCalendarEvent(EventChangeDraft(
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime,
-            newStart: newStart, newEnd: newEnd, newTitle: newTitle))
+            newStart: newStart, newEnd: newEnd, newTitle: newTitle, newStartIsDayOnly: newStartIsDayOnly))
     }
 
     /// title + start (as read_calendar returned them): the occurrence to delete (ADR-259).

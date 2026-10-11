@@ -151,7 +151,7 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", logDetail: nil, isLookup: false)
         case .changeCalendarEvent(let draft):
             var parts: [String] = []
-            if let start = draft.newStart { parts.append("to \(when(start, hasTime: !draft.currentIsDayOnly))") }
+            if let start = draft.newStart { parts.append("to \(when(start, hasTime: !draft.newStartIsDayOnly))") }
             if let title = draft.newTitle { parts.append("renamed “\(title)”") }
             return ActivityRequest(app: .calendar, title: "Change event", detail: "“\(draft.title)” \(parts.joined(separator: ", "))", isLookup: false)
         case .changeReminder(let draft):
