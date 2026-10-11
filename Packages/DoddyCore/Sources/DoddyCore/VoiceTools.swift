@@ -599,6 +599,15 @@ public enum VoiceToolReply {
         "failed: \(reason) Nothing was saved."
     }
 
+    /// What a failed write left alone, so a failed change or delete doesn't say "saved" (review finding 8).
+    public enum FailedWrite: String, Sendable {
+        case saved, changed, deleted
+    }
+
+    public static func failed(_ reason: String, nothing: FailedWrite) -> String {
+        "failed: \(reason) Nothing was \(nothing.rawValue)."
+    }
+
     public static func unsupported(_ name: String) -> String {
         "The app does not support the tool \"\(name)\". Tell the user this isn't available yet."
     }

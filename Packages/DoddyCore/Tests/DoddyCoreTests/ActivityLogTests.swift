@@ -150,6 +150,16 @@ final class ActivityLogTests: XCTestCase {
         XCTAssertNil(ActivityRequest.describe(.unsupported(name: "send_sms"), calendar: calendar))
     }
 
+    /// Review finding 8: a failed change or delete says what was left alone, not "saved".
+    func testAFailedChangeOrDeleteSaysWhatWasLeftAlone() {
+        XCTAssertEqual(VoiceToolReply.failed("Calendar refused it.", nothing: .deleted), "failed: Calendar refused it. Nothing was deleted.")
+        XCTAssertEqual(VoiceToolReply.failed("Calendar refused it.", nothing: .changed), "failed: Calendar refused it. Nothing was changed.")
+        XCTAssertEqual(VoiceToolReply.failed("The store is locked.", nothing: .saved), VoiceToolReply.failed("The store is locked."))
+        let delete = entry(.createReminder(reminder), reply: VoiceToolReply.failed("Reminders refused it.", nothing: .deleted))
+        XCTAssertEqual(delete.outcome, .notDone)
+        XCTAssertEqual(delete.note, "Reminders refused it.")
+    }
+
     func testOnlineAccountWritesAreReadFromTheServerResult() {
         let draft = VoiceToolRequest.cloudTool(CloudToolCall(name: CloudToolName.draftEmail, arguments: [:]))
         XCTAssertEqual(entry(draft, reply: "drafted: Gmail draft to a@b.pl with subject \"Hi\" was created.").outcome, .done)

@@ -313,7 +313,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     private static func reason(in text: String) -> String? {
         let firstLine = text.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
         var body = String(firstLine.dropFirst("failed:".count)).trimmingCharacters(in: .whitespaces)
-        for tail in [" Nothing was added.", " Nothing was opened.", " Nothing was saved.", " Nothing was changed.", " Nothing was set.", " Nothing was run.", " Nothing was done."] {
+        for tail in [" Nothing was added.", " Nothing was opened.", " Nothing was saved.", " Nothing was changed.", " Nothing was deleted.", " Nothing was set.", " Nothing was run.", " Nothing was done."] {
             if body.hasSuffix(tail) { body.removeLast(tail.count) }
         }
         return body.isEmpty ? nil : body
