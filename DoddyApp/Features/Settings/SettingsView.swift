@@ -22,7 +22,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
     @State private var sessionTokenDraft = ""
-    @State private var hasSessionToken = KeychainSessionStore.read() != nil
+    @State private var hasSessionToken = KeychainSessionStore.hasToken
     @State private var tokenMessage: String?
     @State private var confirmDeleteAll = false
     @State private var choosingRestoreFile = false
@@ -296,13 +296,19 @@ struct SettingsView: View {
                             .accessibilityIdentifier("settings.connectedAppsToken")
                         Button("Save session token") {
                             let token = sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-                            if KeychainSessionStore.save(token) {
-                                hasSessionToken = true
-                                tokenMessage = nil
+                            // The token is kept for this server only and never sent to another (DOD-11).
+                            if let server = URL(string: connectedAppsServerURL.trimmingCharacters(in: .whitespaces)),
+                               server.scheme != nil, server.host != nil {
+                                if KeychainSessionStore.save(token, issuedBy: server) {
+                                    hasSessionToken = true
+                                    tokenMessage = nil
+                                } else {
+                                    tokenMessage = "The Keychain didn't accept the token, so it wasn't saved."
+                                }
+                                sessionTokenDraft = ""
                             } else {
-                                tokenMessage = "The Keychain didn't accept the token, so it wasn't saved."
+                                tokenMessage = "Enter the server address first. The token is kept for that server only."
                             }
-                            sessionTokenDraft = ""
                         }
                         .disabled(sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
@@ -312,7 +318,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Connected Apps server (development)")
                 } footer: {
-                    Text("Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain.")
+                    Text("Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain, for the server address set when you saved it; it is never sent to another address.")
                 }
 
                 Section("What Doddy knows") {

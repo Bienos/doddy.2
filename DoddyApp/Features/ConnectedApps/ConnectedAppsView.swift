@@ -13,10 +13,12 @@ struct ConnectedAppsScreen: View {
 
     @MainActor
     static func makeModel(serverURL: String) -> ConnectedAppsModel {
-        let client = URL(string: serverURL.trimmingCharacters(in: .whitespaces)).flatMap {
-            BackendConnectedAppsClient(baseURL: $0, sessionToken: { KeychainSessionStore.read() }, transport: URLSessionTransport.shared)
+        let url = URL(string: serverURL.trimmingCharacters(in: .whitespaces))
+        let client = url.flatMap {
+            BackendConnectedAppsClient(baseURL: $0, boundToken: { KeychainSessionStore.read() }, transport: URLSessionTransport.shared)
         }
-        let configured = client != nil && KeychainSessionStore.read() != nil
+        // The token is used only with the server that issued it (`BoundSessionToken`).
+        let configured = client != nil && url.flatMap { KeychainSessionStore.read()?.token(for: $0) } != nil
         return ConnectedAppsModel(client: configured ? client : nil, authenticator: SystemWebAuthenticator())
     }
 }
