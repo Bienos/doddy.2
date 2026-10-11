@@ -189,7 +189,7 @@ struct SettingsView: View {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
-                    Text("\(memoriesWhereText) Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.")
+                    Text(memoriesWhereText)
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -613,9 +613,9 @@ struct SettingsView: View {
     private var memoriesWhereText: String {
         let sharedLists = SharedListsController.shared.links.count
         guard memoryCopyOn || sharedLists > 0 else {
-            return NSLocalizedString("Memories live only in this app on this iPhone, protected by iOS Data Protection.", comment: "")
+            return NSLocalizedString("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.", comment: "")
         }
-        var text = NSLocalizedString("Memories are kept in this app on this iPhone, protected by iOS Data Protection.", comment: "")
+        var text = NSLocalizedString("Memories are kept in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.", comment: "")
         if memoryCopyOn {
             text += " " + NSLocalizedString("With Memory on calls on, a copy of your notes is also on your Doddy messaging server.", comment: "")
         }

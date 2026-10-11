@@ -65,7 +65,9 @@ struct CallsSettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         HStack {
-                            Button(model.savedNoteIDs.contains(note.id) ? "Saved. Remove from this list" : "Save to memories") {
+                            Button(model.savedNoteIDs.contains(note.id)
+                                   ? NSLocalizedString("Saved. Remove from this list", comment: "")
+                                   : NSLocalizedString("Save to memories", comment: "")) {
                                 Task { await model.keep(note, into: store) }
                             }
                             .buttonStyle(.borderless)
