@@ -207,7 +207,9 @@ public enum ListMatch {
 
     /// The same words first; then items that contain all the said words as whole words
     /// ("milk" finds "oat milk"). Two or more: `.several`, and nothing is changed.
-    public static func item(_ phrase: String, in items: [ListItem]) -> ListMatchResult<ListItem> {
+    /// `partial: false` is for removing (review C9): an item that only contains the words is
+    /// offered as a choice (`.several`), so "remove milk" never deletes "oat milk" on its own.
+    public static func item(_ phrase: String, in items: [ListItem], partial: Bool = true) -> ListMatchResult<ListItem> {
         let wanted = key(phrase)
         guard !wanted.isEmpty else { return .none }
         let exact = items.filter { key($0.text) == wanted }
@@ -215,6 +217,7 @@ public enum ListMatch {
         if exact.count > 1 { return .several(exact) }
         let words = Set(wanted.split(separator: " ").map(String.init))
         let containing = items.filter { words.isSubset(of: Set(key($0.text).split(separator: " ").map(String.init))) }
+        if !partial { return containing.isEmpty ? .none : .several(containing) }
         switch containing.count {
         case 0: return .none
         case 1: return .one(containing[0])
@@ -346,6 +349,11 @@ extension VoiceToolReply {
             parts.append("\(verb) on \"\(list)\": \(changed.map(\.text).joined(separator: ", ")).")
         }
         for (said, options) in ambiguous {
+            if options.count == 1, let only = options.first {
+                // A partial match offered as a choice (ListMatch.item, partial: false).
+                parts.append("\"\(said)\" only partly matches \"\(only.text)\": not \(verb); ask the user whether they mean it.")
+                continue
+            }
             parts.append("\"\(said)\" matches several items (\(options.map { "\"\($0.text)\"" }.joined(separator: ", "))): not \(verb); ask the user which one.")
         }
         if !notFound.isEmpty {

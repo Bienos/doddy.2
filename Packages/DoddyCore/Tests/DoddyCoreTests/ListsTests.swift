@@ -44,6 +44,19 @@ final class ListsTests: XCTestCase {
         XCTAssertFalse(ListMatch.item("milk", in: [items[0]]) == .one(items[0]))
     }
 
+    /// Review C9: removing takes only the same words; "milk" alone never removes "oat milk".
+    func testRemovingNeverTakesAPartialMatch() {
+        let items = [item("oat milk"), item("eggs"), item("milk chocolate")]
+        XCTAssertEqual(ListMatch.item("milk", in: [items[0], items[1]], partial: false), .several([items[0]]))
+        XCTAssertEqual(ListMatch.item("eggs", in: items, partial: false), .one(items[1]))
+        XCTAssertEqual(ListMatch.item("the oat milk", in: items, partial: false), .one(items[0]))
+        XCTAssertEqual(ListMatch.item("bread", in: items, partial: false), .none)
+        let reply = VoiceToolReply.listChanged(
+            verb: "removed", changed: [], list: "Shopping", notFound: [], ambiguous: [(said: "milk", options: [items[0]])])
+        XCTAssertTrue(reply.hasPrefix("not changed:"), reply)
+        XCTAssertTrue(reply.contains("\"milk\" only partly matches \"oat milk\": not removed; ask the user whether they mean it."), reply)
+    }
+
     func testDuplicates() {
         XCTAssertTrue(ListMatch.isDuplicate("Milk", of: ["milk"]))
         XCTAssertTrue(ListMatch.isDuplicate("the milk", of: ["milk"]))
