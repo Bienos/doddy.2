@@ -8143,6 +8143,17 @@
         }
       }
     },
+    "Palette": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paleta"
+          }
+        }
+      }
+    },
     "Parked": {
       "extractionState": "manual",
       "localizations": {

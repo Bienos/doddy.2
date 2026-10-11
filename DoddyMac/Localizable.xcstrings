@@ -78,6 +78,17 @@
         }
       }
     },
+    "Palette": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paleta"
+          }
+        }
+      }
+    },
     "Quit Doddy": {
       "extractionState": "manual",
       "localizations": {

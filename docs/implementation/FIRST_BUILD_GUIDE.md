@@ -206,3 +206,9 @@ In order of risk:
   - `HSplitView`, and `TextEditor` with `.scrollContentBackground(.hidden)`;
   - `NSApplication.shared.activate()`, which is macOS 14+.
 - **Share extension (ADR-311), Swift 6:** `ShareViewController` no longer sends the main-actor `[NSExtensionItem]` to `Task.detached` or a `sending` parameter, which strict concurrency rejects. The items stay on the main actor, and each attachment is read with `NSItemProvider.loadItem(forTypeIdentifier:options:completionHandler:)` inside `withCheckedContinuation`; only a `String` comes back. Behaviour is unchanged: the first web link (never a file's address), else the plain text.
+- **Smart Stack, palette, iPadOS 26 (ADR-443 to ADR-445):**
+  - `DoddyToolLiveActivity.island(_:)` takes an `ActivityViewContext<DoddyToolAttributes>`;
+  - `DoddyToolLiveActivityWithWatch` uses `.supplementalActivityFamilies([.small])` and `@Environment(\.activityFamily)`;
+  - the bundle's `if #unavailable(iOS 18.0)`: if `WidgetBundleBuilder` rejects it, use `if #available { … } else { … }` or a nested bundle;
+  - `NSPanel` with `NSHostingView`;
+  - `if #available(iOS 26.0, *)` inside `DeviceSupport.hasLiveActivities`.

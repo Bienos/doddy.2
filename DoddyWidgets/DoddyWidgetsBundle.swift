@@ -9,7 +9,13 @@ struct DoddyWidgetsBundle: WidgetBundle {
     var body: some Widget {
         DoddyVoiceLiveActivity()
         ShoppingLiveActivity()
-        DoddyToolLiveActivity()
+        // The tools' Live Activity; from iOS 18 the same one with an Apple Watch layout (ADR-444).
+        if #available(iOS 18.0, *) {
+            DoddyToolLiveActivityWithWatch()
+        }
+        if #unavailable(iOS 18.0) {
+            DoddyToolLiveActivity()
+        }
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
         if #available(iOS 18.0, *) {

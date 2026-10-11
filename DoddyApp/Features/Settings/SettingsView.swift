@@ -391,8 +391,8 @@ struct SettingsView: View {
 
                 Section("Voice") {
                     PersonalityLinkRow()
-                    // The Dynamic Island and Lock Screen styles: iPhone only (ADR-432).
-                    if DeviceSupport.hasLiveActivities { IslandStyleLinkRow() }
+                    // The Dynamic Island and Lock Screen styles: iPhone only (ADR-432, ADR-443).
+                    if DeviceSupport.hasDynamicIsland { IslandStyleLinkRow() }
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
                     Text(listenOnOpen

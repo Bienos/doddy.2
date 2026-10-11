@@ -365,7 +365,7 @@ struct ListDetailView: View {
             .disabled(list.done.isEmpty)
             Button { showReminder = true } label: { Label("Remind me", systemImage: "bell") }
             // Shopping mode (ADR-257): this list on the Lock Screen and in the Dynamic Island.
-            // iPhone only (ADR-432).
+            // Where Live Activities exist: iPhone, and iPad from iPadOS 26 (ADR-432, ADR-443).
             if shopping.isOn(for: list.id) {
                 Button { shopping.end() } label: { Label("End shopping mode", systemImage: "cart.badge.minus") }
             } else if DeviceSupport.hasLiveActivities {

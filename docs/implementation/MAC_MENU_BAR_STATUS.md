@@ -74,8 +74,15 @@ Date: 2026-10-11. Source: the owner's deck "Doddy-Watch-iPad-Mac-Review" (Google
   - On macOS 14 the window may also open by itself at launch. The modifier that stops this needs macOS 15. Check on a Mac, and decide whether to raise the minimum to macOS 15.
   - Whether `NSApplication.shared.activate()` brings the window to the front for a menu bar app.
 
+## The palette (ADR-445, 2026-10-11)
+- **How it opens:** the Doddy window's "Palette" toolbar button shows or hides a small floating panel with a quick note field.
+- **Saving:** Save (Return) and Cancel (Esc), with the same "Saved on this Mac." rule. All three Mac surfaces now share `MacCaptureModel.saveForDisplay`.
+- **Visibility:** it floats over Doddy's windows and hides when another app becomes active (`hidesOnDeactivate`). It comes back with Doddy.
+- **NOT RUN:**
+  - focus and the Return key inside an `NSHostingView` in a utility `NSPanel`;
+  - the panel's behaviour for a menu bar app (no Dock icon) when Doddy is activated again.
+
 ## Not built from the deck (later, each a separate decision)
-- Slide 12, a floating NSPanel.
 - Voice on the Mac.
 - Sync between the Mac and the iPhone.
 

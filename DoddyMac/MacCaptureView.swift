@@ -75,13 +75,14 @@ struct MacCaptureView: View {
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        guard let outcome = await model.save(text) else { return }
-        result = MacSaveResult(outcome)
-        if result == .saved { text = "" }
+        guard let shown = await model.saveForDisplay(text) else { return }
+        result = shown
+        if shown == .saved { text = "" }
     }
 }
 
-/// What the last Save said, in both Mac windows. Saved only from the read-back.
+/// What the last Save said, in the menu bar window, the Doddy window and the palette. Saved only
+/// from the read-back.
 enum MacSaveResult: Equatable {
     case saved
     case problem(String)

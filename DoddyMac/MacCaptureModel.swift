@@ -47,6 +47,11 @@ final class MacCaptureModel {
         return outcome
     }
 
+    /// Save as the windows show it: what to say, or `nil` when the database isn't open.
+    func saveForDisplay(_ text: String) async -> MacSaveResult? {
+        (await save(text)).map(MacSaveResult.init)
+    }
+
     /// The notes on this Mac, so an unconfirmed save can be checked before trying again, and the
     /// desktop widget's count (ADR-439).
     func refresh() async {

@@ -21,6 +21,15 @@ struct MacNotesWindow: View {
                 .frame(minWidth: 220, idealWidth: 280)
         }
         .frame(minWidth: 560, minHeight: 360)
+        .toolbar {
+            // The helper palette (ADR-445): a small floating note field while you use Doddy.
+            Button {
+                MacPaletteController.shared.toggle(model: model)
+            } label: {
+                Label("Palette", systemImage: "rectangle.on.rectangle")
+            }
+            .help("Show or hide a small floating palette for quick notes. It hides when you switch to another app.")
+        }
         .task {
             await model.refresh()
             typing = true
@@ -110,8 +119,8 @@ struct MacNotesWindow: View {
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        guard let outcome = await model.save(text) else { return }
-        result = MacSaveResult(outcome)
-        if result == .saved { text = "" }
+        guard let shown = await model.saveForDisplay(text) else { return }
+        result = shown
+        if shown == .saved { text = "" }
     }
 }
