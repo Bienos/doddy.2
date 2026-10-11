@@ -14,6 +14,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
         NextReminderWidget()
         ListWidget()
         TalkToDoddyWidget()
+        DoddyRestWidget()
         if #available(iOS 18.0, *) {
             TalkToDoddyControl()
             NewNoteControl()

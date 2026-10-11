@@ -64,6 +64,8 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         content.threadIdentifier = Self.threadID
         content.interruptionLevel = .active
         content.userInfo = [Self.memoryIDKey: notification.memoryID.uuidString]
+        // Doddy reaching for it (ADR-313), the pose for a reminder waiting; no extra words.
+        if let art = NotificationArt.attachment(.reachingHigh) { content.attachments = [art] }
 
         switch notification.category {
         case .once: content.categoryIdentifier = Self.categoryID
