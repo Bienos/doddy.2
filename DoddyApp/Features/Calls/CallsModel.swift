@@ -89,7 +89,14 @@ final class CallsModel {
     func callMeNow() async {
         guard let client else { return }
         await run {
-            let request = try await client.callMeNow()
+            let request: CallRequest
+            do {
+                request = try await client.callMeNow()
+            } catch ServerError.providerUnavailable {
+                // 502: the phone service turned the call down, so no call was placed.
+                self.message = NSLocalizedString("The phone service couldn't place the call, so Doddy isn't calling. Try again in a few minutes.", comment: "")
+                return
+            }
             self.message = request.status == "requested"
                 ? "Doddy is calling you now."
                 : "Couldn't confirm the call was placed. Doddy won't redial on its own. Wait a minute before trying again."
