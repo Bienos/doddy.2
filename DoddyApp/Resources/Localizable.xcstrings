@@ -34,6 +34,17 @@
         }
       }
     },
+    "%lld items": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozycje: %lld"
+          }
+        }
+      }
+    },
     "%lld left": {
       "extractionState": "manual",
       "localizations": {
@@ -7976,6 +7987,17 @@
         }
       }
     },
+    "Remove template": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń szablon"
+          }
+        }
+      }
+    },
     "Remove them": {
       "extractionState": "manual",
       "localizations": {
@@ -8328,6 +8350,17 @@
         }
       }
     },
+    "Save as template": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz jako szablon"
+          }
+        }
+      }
+    },
     "Save invite code": {
       "extractionState": "manual",
       "localizations": {
@@ -8500,6 +8533,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano w notatkach, ale nie udało się usunąć tego z tej listy. Stuknij Odrzuć, żeby to usunąć."
+          }
+        }
+      }
+    },
+    "Saved “%@” as a template with %lld items. Start a new list from it under New list, or ask Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano „%@” jako szablon z pozycjami: %lld. Nową listę z niego zaczniesz w Nowa lista albo prosząc Doddy’ego."
           }
         }
       }
@@ -9424,6 +9468,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zacznij skupienie"
+          }
+        }
+      }
+    },
+    "Start from a template": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij od szablonu"
           }
         }
       }
@@ -10880,6 +10935,17 @@
         }
       }
     },
+    "This list is empty, so there's nothing to keep as a template.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta lista jest pusta, więc nie ma czego zapisać jako szablon."
+          }
+        }
+      }
+    },
     "This list is no longer on your iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -11683,6 +11749,17 @@
         }
       }
     },
+    "Updated the “%@” template: %lld items.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaktualizowano szablon „%@”: pozycje: %lld."
+          }
+        }
+      }
+    },
     "Updates as notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -12471,6 +12548,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każde zapisane wspomnienie wybierasz Ty. Zobacz oryginał, zmień go lub usuń."
+          }
+        }
+      }
+    },
+    "You have %lld templates, the most Doddy keeps. Remove one under New list first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masz %lld szablonów, tyle ile Doddy przechowuje. Najpierw usuń jeden w Nowa lista."
           }
         }
       }

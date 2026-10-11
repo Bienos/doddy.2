@@ -235,10 +235,13 @@ public enum ListMatch {
 public struct ListVoiceRequest: Equatable, Sendable {
     public let list: String
     public let items: [String]
+    /// create_list only: the template to start from (ADR-334), as the user named it.
+    public let template: String?
 
-    public init(list: String, items: [String]) {
+    public init(list: String, items: [String], template: String? = nil) {
         self.list = list
         self.items = items
+        self.template = template
     }
 }
 
@@ -258,7 +261,8 @@ extension VoiceToolRequest {
             return .invalid(name: name, reason: "missing \(listKey)")
         }
         let items = (args.texts("items") ?? []).compactMap(ListText.cleaned)
-        let request = ListVoiceRequest(list: list, items: items)
+        let template = name == VoiceToolName.createList ? args.text("template").flatMap(ListText.cleaned) : nil
+        let request = ListVoiceRequest(list: list, items: items, template: template)
         switch name {
         case VoiceToolName.readList:
             return .readList(name: list)

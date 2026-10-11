@@ -360,6 +360,7 @@ final class VoiceSessionController {
             ? VoiceContext.recentConversations(logs.logs)
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
         var listsText = ListsPrompt.render(store.lists)
+        if let templates = ListTemplateStore.current().promptLine { listsText += "\n" + templates }
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
@@ -1745,7 +1746,17 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.listFailed(UserFacingError.listMessage(for: ListError.tooManyLists(maximum: ListLimits.lists))))
                 return
             }
-            propose(.createList(toolCallID: call.toolCallId, name: request.list, items: request.items), toolCallID: call.toolCallId)
+            // From a template (ADR-334): its items first, then any the user said.
+            var items = request.items
+            if let wanted = request.template {
+                let templates = ListTemplateStore.current()
+                guard let template = templates.named(wanted) else {
+                    await reply(call.toolCallId, VoiceToolReply.templateNotFound(wanted, templates: templates))
+                    return
+                }
+                items = ListTemplates.items(from: template, plus: request.items)
+            }
+            propose(.createList(toolCallID: call.toolCallId, name: request.list, items: items), toolCallID: call.toolCallId)
         case .stopTranslator:
             guard translator != nil else {
                 await reply(call.toolCallId, VoiceToolReply.translatorNotOn)

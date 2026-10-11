@@ -327,6 +327,22 @@ struct ListDetailView: View {
         }
     }
 
+    private func saveTemplate(_ list: DoddyList) {
+        errorMessage = nil
+        switch ListTemplateStore.save(list) {
+        case .saved(let template):
+            addNote = String(format: NSLocalizedString("Saved \u{201C}%@\u{201D} as a template with %lld items. Start a new list from it under New list, or ask Doddy.", comment: ""), template.name, template.items.count)
+        case .replaced(let template):
+            addNote = String(format: NSLocalizedString("Updated the \u{201C}%@\u{201D} template: %lld items.", comment: ""), template.name, template.items.count)
+        case .empty:
+            addNote = NSLocalizedString("This list is empty, so there's nothing to keep as a template.", comment: "")
+        case .full:
+            errorMessage = String(format: NSLocalizedString("You have %lld templates, the most Doddy keeps. Remove one under New list first.", comment: ""), ListTemplates.maxTemplates)
+        case nil:
+            errorMessage = NSLocalizedString("That couldn't be saved on this iPhone. Try again.", comment: "")
+        }
+    }
+
     private func menu(_ list: DoddyList) -> some View {
         Menu {
             Button { run { try await store.untickAll(listID: list.id) } } label: {
@@ -359,6 +375,9 @@ struct ListDetailView: View {
                     Button { confirmSharing = true } label: { Label("Share with people…", systemImage: "person.2") }
                 }
             }
+            // List templates (ADR-334): the items as written, ticks not kept.
+            Button { saveTemplate(list) } label: { Label("Save as template", systemImage: "square.on.square") }
+                .disabled(list.items.isEmpty)
             Button { newName = list.name; renaming = true } label: { Label("Rename", systemImage: "pencil") }
             Button { run { try await store.clearTicked(listID: list.id) } } label: {
                 Label("Clear ticked (\(list.done.count))", systemImage: "checkmark")
@@ -468,6 +487,8 @@ struct NewListSheet: View {
     @State private var errorMessage: String?
     /// What came from a photo (ADR-286), said once above the items.
     @State private var photoNote: String?
+    /// Saved list templates (ADR-334).
+    @State private var templates = ListTemplateStore.current()
 
     var body: some View {
         NavigationStack {
@@ -480,6 +501,29 @@ struct NewListSheet: View {
                     TextEditor(text: $items)
                         .frame(minHeight: 120)
                         .accessibilityLabel("First items, one per line")
+                }
+                if !templates.all.isEmpty {
+                    Section("Start from a template") {
+                        ForEach(templates.all) { template in
+                            Button {
+                                if ListText.cleaned(name) == nil { name = template.name }
+                                let existing = items.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                                items = ListTemplates.items(from: template, plus: existing).joined(separator: "\n")
+                            } label: {
+                                HStack {
+                                    Text(template.name)
+                                    Spacer()
+                                    Text(String(format: NSLocalizedString("%lld items", comment: ""), template.items.count))
+                                        .foregroundStyle(Theme.secondaryText)
+                                }
+                            }
+                            .swipeActions {
+                                Button(role: .destructive) {
+                                    if ListTemplateStore.remove(template.id) { templates = ListTemplateStore.current() }
+                                } label: { Label("Remove template", systemImage: "trash") }
+                            }
+                        }
+                    }
                 }
                 Section {
                     ListPhotoPicker { proposal in
