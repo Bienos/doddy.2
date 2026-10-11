@@ -175,3 +175,10 @@ In order of risk:
 - **Quick actions (ADR-339):** the async `windowScene(_:performActionFor:)` on the existing scene delegate; `connectionOptions.shortcutItem` on cold launch.
 - **Memories tags (ADR-333):** `MemoryTagRow` with `ForEach(tags, id: \.tag)` over tuples.
 - **List templates (ADR-334):** `.swipeActions` inside a `Form` section in `NewListSheet`.
+
+### Second Xcode build (owner screenshot, 2026-10-11, Xcode on the watchOS 27 SDK): errors and fixes
+Not re-built after these changes.
+- `DoddyApp/App/DoddyApp.swift`: "Cannot find 'MorningCheckInSettings' / 'TidyUpSettings' / 'EveningWrapUpSettings' / 'WeeklyLookBackSettings' in scope". The file only imported SwiftUI; added `import DoddyCore`.
+- `DoddyApp/Features/Photos/PhotoTextReader.swift`: "'RecognizedText' is ambiguous". The newer Vision SDK declares its own `RecognizedText`. An app-module `typealias RecognizedText = DoddyCore.RecognizedText` now wins everywhere in the app.
+- `DoddyApp/Infrastructure/Connections/DeviceConnections.swift`: `undo(_:)` was not exhaustive over `ActivityUndo` (the list and note cases of ADR-276/277 are reversed by the store). Added a case returning `.notDone` that writes nothing. If your copy shows `<#code#>` placeholders there, Xcode's "add missing cases" fix-it inserted them; take this version instead.
+- Signing: "requires a development team" for Doddy, DoddyWatch, DoddyWidgets, DoddyShare. Not code; choose your team on every target.

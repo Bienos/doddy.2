@@ -2,6 +2,10 @@ import DoddyCore
 import UIKit
 import Vision
 
+// Newer Vision SDKs also declare a `RecognizedText`, which made the name ambiguous here. A declaration
+// in the app module wins over imported ones, so every file in the app means Doddy's own.
+typealias RecognizedText = DoddyCore.RecognizedText
+
 /// Prepares a picked photo for a photo note (ADR-218): scaled down to `PhotoLimits.maxPixels`,
 /// stored as JPEG, and its text read on this iPhone with Vision. Nothing leaves the phone.
 /// Language correction is off, so codes and passwords come back as printed, not "corrected".
