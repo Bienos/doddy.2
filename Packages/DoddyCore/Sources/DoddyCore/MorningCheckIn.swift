@@ -105,7 +105,9 @@ public struct MorningBriefing: Equatable, Sendable {
         now: Date, memories: [MemoryRecord], lists: [DoddyList], reminders: [MemoryReminder],
         calendar: Calendar = .current
     ) -> MorningBriefing {
-        let end = calendar.startOfDay(for: now).addingTimeInterval(24 * 3600)
+        // The next midnight, not 24 hours on: a clock-change day has 23 or 25.
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(24 * 3600)
         let byID = Dictionary(memories.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let today = reminders.compactMap { reminder -> ReminderLine? in
             guard let fire = reminder.nextFire(after: now), fire < end, let note = byID[reminder.memoryID] else { return nil }
