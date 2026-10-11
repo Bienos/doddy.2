@@ -9,7 +9,10 @@ import type { ExecuteCall, ExecuteResult, ToolsProvider } from "./provider.js";
  * is synthetic. It returns the same envelope shapes Composio documents, so the real normalizers
  * run in tests. Scenario switches let tests produce failures and over-broad grants.
  */
-export type ToolsMockScenario = "normal" | "empty" | "malformed" | "provider_error" | "rate_limited" | "expired" | "broad_scope" | "missing_scope";
+export type ToolsMockScenario =
+  | "normal" | "empty" | "malformed" | "provider_error" | "rate_limited" | "expired" | "broad_scope" | "missing_scope"
+  /** A write goes through, then its answer is lost (a timeout): the case ADR-303 settles. */
+  | "lost_answer";
 
 export class MockToolsProvider implements ToolsProvider {
   readonly mode = "mock" as const;
@@ -19,6 +22,8 @@ export class MockToolsProvider implements ToolsProvider {
   readonly calls: string[] = [];
   /** Arguments of every execute call, to prove what would be sent to Composio. */
   readonly executed: { slug: string; arguments: Record<string, unknown> }[] = [];
+  /** Todoist tasks made through this adapter, per Composio user, listed after the demo ones. */
+  private readonly madeTasks = new Map<string, { id: string; content: string }[]>();
 
   setScenario(composioUserId: string, scenario: ToolsMockScenario): void {
     this.scenarios.set(composioUserId, scenario);
@@ -102,7 +107,15 @@ export class MockToolsProvider implements ToolsProvider {
     if (scenario === "rate_limited") throw new ProviderError("rate_limited", 1);
     if (scenario === "expired") throw new ProviderError("connection_expired");
     if (scenario === "malformed") return { raw: { successful: true, data: { messages: "not a list", files: "x", results: 5, tasks: {} } }, providerReference: null };
-    return { raw: envelope(call.slug, call.arguments, scenario === "empty"), providerReference: `mock_log_${randomBytes(4).toString("hex")}` };
+    const made = this.madeTasks.get(call.composioUserId) ?? [];
+    const raw = envelope(call.slug, call.arguments, scenario === "empty", made);
+    if (call.slug === "TODOIST_CREATE_TASK") {
+      made.push({ id: `task_demo_${made.length + 1}`, content: String(call.arguments.content) });
+      this.madeTasks.set(call.composioUserId, made);
+      if (scenario === "lost_answer") throw new ProviderError("provider_timeout");
+    }
+    if (call.slug === "GMAIL_CREATE_EMAIL_DRAFT" && scenario === "lost_answer") throw new ProviderError("provider_timeout");
+    return { raw, providerReference: `mock_log_${randomBytes(4).toString("hex")}` };
   }
 
   async removeConnection(input: { connectionId: string }) {
@@ -114,7 +127,7 @@ export class MockToolsProvider implements ToolsProvider {
 
 const ok = (data: unknown) => ({ successful: true, data, error: null });
 
-function envelope(slug: string, args: Record<string, unknown>, empty: boolean): unknown {
+function envelope(slug: string, args: Record<string, unknown>, empty: boolean, made: { id: string; content: string }[]): unknown {
   switch (slug) {
     case "GMAIL_FETCH_EMAILS":
       return ok({
@@ -157,10 +170,11 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean): 
           : [
               { id: "t1", content: "Demo: renew passport", priority: 4, due: { date: "2026-10-10", string: "today", is_recurring: false } },
               { id: "t2", content: "Demo: buy milk", priority: 1 },
+              ...made.map((t) => ({ id: t.id, content: t.content, priority: 1 })),
             ],
       });
     case "TODOIST_CREATE_TASK":
-      return ok({ id: "task_demo_1", content: String(args.content), priority: 1, ...(args.due_string ? { due: { date: "2026-10-11", string: String(args.due_string), is_recurring: false } } : {}) });
+      return ok({ id: `task_demo_${made.length + 1}`, content: String(args.content), priority: 1, ...(args.due_string ? { due: { date: "2026-10-11", string: String(args.due_string), is_recurring: false } } : {}) });
     default:
       throw new ProviderError("provider_unavailable");
   }

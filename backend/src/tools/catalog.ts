@@ -98,6 +98,8 @@ export interface ToolOutcome {
   items?: ResultItem[];
   /** One line for the receipt. No message bodies. */
   summary: string;
+  /** Writes: the provider's id for what was made (Gmail draft id, Todoist task id), ADR-303. */
+  externalId?: string;
 }
 
 export interface Context {
@@ -117,6 +119,17 @@ export interface CloudToolDefinition {
   toArguments(args: Record<string, unknown>): Record<string, unknown>;
   preview?(args: Record<string, unknown>): ConfirmationPreview;
   normalize(raw: unknown, args: Record<string, unknown>, context: Context): ToolOutcome;
+  /**
+   * Writes (ADR-303): the answer for a repeated run of an approval that already succeeded, built
+   * from the same arguments (the server keeps no email or task text) and the provider's id.
+   */
+  replay?(args: Record<string, unknown>, externalId: string | null): ToolOutcome;
+  /**
+   * Writes that can be looked for (ADR-303): a read that lists what is there, and whether one
+   * listed item is this write. Used only after an earlier try whose outcome is unknown, and only
+   * when the user has that read switched on. Found is proof; not found proves nothing.
+   */
+  findExisting?: { tool: CloudToolDefinition; arguments(args: Record<string, unknown>): Record<string, unknown>; matches(item: ResultItem, args: Record<string, unknown>): boolean };
 }
 
 // ------------------------------------------------------------------ helpers
@@ -267,14 +280,19 @@ export const DRAFT_EMAIL: CloudToolDefinition = {
   normalize: (raw, args) => {
     const data = dataOf(raw);
     if (typeof data.id !== "string" || data.id === "") throw new ProviderError("malformed_provider_result");
-    return {
-      text: `drafted: Gmail draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Gmail.`,
-      count: 1,
-      truncated: false,
-      summary: "Gmail draft created (not sent).",
-    };
+    return { ...draftOutcome(args), externalId: data.id };
   },
+  replay: (args, externalId) => ({ ...draftOutcome(args), ...(externalId ? { externalId } : {}) }),
 };
+
+function draftOutcome(args: Record<string, unknown>): ToolOutcome {
+  return {
+    text: `drafted: Gmail draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Gmail.`,
+    count: 1,
+    truncated: false,
+    summary: "Gmail draft created (not sent).",
+  };
+}
 
 // ------------------------------------------------------------------ Google Drive
 
@@ -469,14 +487,33 @@ export const ADD_TODOIST_TASK: CloudToolDefinition = {
     const due = typeof data.due === "object" && data.due !== null ? (data.due as Record<string, unknown>) : null;
     const dueText = due ? clip(due.string, 40) ?? clip(due.date, 25) : null;
     const content = clip(data.content, 300) ?? (args.content as string);
-    return {
-      text: `added: Todoist task ${JSON.stringify(content)}${dueText ? ` due ${dueText}` : " with no due date"}.`,
-      count: 1,
-      truncated: false,
-      summary: "Todoist task added.",
-    };
+    return { ...taskOutcome(content, dueText), externalId: data.id };
+  },
+  replay: (args, externalId) => ({
+    ...taskOutcome(args.content as string, (args.due as string | undefined) ?? null),
+    ...(externalId ? { externalId } : {}),
+  }),
+  findExisting: {
+    tool: LIST_TODOIST_TASKS,
+    arguments: (args) => ({ when: "all", search: todoistSearchWord(args.content as string).slice(0, 60) || undefined }),
+    matches: (item, args) => sameWords(item.title, args.content as string),
   },
 };
+
+function taskOutcome(content: string, due: string | null): ToolOutcome {
+  return {
+    text: `added: Todoist task ${JSON.stringify(content)}${due ? ` due ${due}` : " with no due date"}.`,
+    count: 1,
+    truncated: false,
+    summary: "Todoist task added.",
+  };
+}
+
+/** The same words, ignoring case and spacing; a listed title is clipped at 120 characters. */
+function sameWords(listed: string, content: string): boolean {
+  const fold = (value: string) => value.toLocaleLowerCase().replace(/\s+/g, " ").trim();
+  return fold(listed) === fold(clip(content, 120) ?? "");
+}
 
 export const CLOUD_TOOLS: readonly CloudToolDefinition[] = [
   CHECK_EMAIL,

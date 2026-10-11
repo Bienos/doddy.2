@@ -148,7 +148,9 @@ public struct ActivityRequest: Equatable, Sendable {
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
-            return describe(cloud: call.name)
+            // Writes carry a key (ADR-303): a hash of the tool and its arguments, never the words.
+            guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
+            return ActivityRequest(app: request.app, title: request.title, detail: request.detail, isLookup: request.isLookup, operationKey: key)
         case .addToList(let request):
             return ActivityRequest(
                 app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false,
@@ -369,7 +371,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
         // Found already there when Doddy looked first (ADR-300, ADR-301): nothing new was written.
-        let foundFirst = ["already in Reminders", "already in Calendar", "was already set", "was already running"]
+        let foundFirst = ["already in Reminders", "already in Calendar", "was already set", "was already running", "from the earlier try, so Doddy did not do it"]
         if text.hasPrefix("saved:"), text.contains("was already saved from the earlier try") { return (.alreadyThere, nil) }
         if text.hasPrefix("added:"), foundFirst.contains(where: text.contains) {
             return (.alreadyThere, nil)

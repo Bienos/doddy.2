@@ -813,7 +813,10 @@ final class VoiceSessionController {
                 ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
         case .cloud(let id, let call, _, let approvalID, _):
-            await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
+            retryChecks[id] = nil
+            let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
+            writeResults[id] = WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
+            await reply(id, record.reply)
         case .noteReminder(let id, let memoryID, let noteText, _, let target):
             guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
@@ -1873,6 +1876,8 @@ final class VoiceSessionController {
             return reminderResult(await addReminder(draft), draft: draft, retry: retry)
         case .setTimer(let draft):
             return await timerResult(draft, retry: retry)
+        case .cloudTool(let call):
+            return await runPlanCloud(call, approval: approval, app: step.activity(calendar: .current)?.app ?? .gmail)
         case .saveMemory(let text):
             if let since = retry.uncheckedSince, let existing = NoteIdempotency.savedSince(since, text: text, in: store.memories) {
                 return WriteResult(
@@ -1903,18 +1908,8 @@ final class VoiceSessionController {
                 }
             }
         default:
-            return WriteResult(reply: await runOtherPlanStep(step, approval: approval))
-        }
-    }
-
-    /// Run by runPlanStep, which already checked Pause all and the switches again at the tap.
-    private func runOtherPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
-        switch step.request {
-        case .cloudTool(let call):
-            return await runPlanCloud(call, approval: approval)
-        default:
             // PlanProposal only makes the kinds above.
-            return VoiceToolReply.notAdded("This step can't run in a plan.")
+            return WriteResult(reply: VoiceToolReply.notAdded("This step can't run in a plan."))
         }
     }
 
@@ -1932,6 +1927,11 @@ final class VoiceSessionController {
         }
         do {
             let prepared = try await client.prepare(call)
+            // An earlier unsure try is already there (ADR-303): shown on the card, not run again.
+            if prepared.earlier?.status == .found {
+                return .blocked(.onlineAccount(
+                    screen: "Already in \(CloudToolName.account(call.name)) from an earlier try", reply: VoiceToolReply.cloudAlreadyThere(call.name)))
+            }
             return .ready(PlanCloudApproval(preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode, preparedAt: Date()))
         } catch {
             return .blocked(.onlineAccount(screen: error.userMessage, reply: VoiceToolReply.cloudFailed(error, tool: call.name)))
@@ -1940,20 +1940,35 @@ final class VoiceSessionController {
 
     /// The server's approval works once and lasts two minutes. If the card waited longer, a fresh
     /// one is asked for the same arguments the user saw; the server checks them again.
-    private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?) async -> String {
+    private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?, app: ActivityApp) async -> WriteResult {
+        func written(_ record: CloudWriteRecord) -> WriteResult {
+            WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
+        }
         guard let client = OnlineAccountsClientFactory.make() else {
-            return VoiceToolReply.cloudFailed(.notConfigured, tool: call.name)
+            return written(CloudWriteRecord(.failure(.notConfigured), tool: call.name, app: app, readAt: Date()))
         }
-        do {
-            var approvalID = approval?.approvalID
-            if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
-                approvalID = try await client.prepare(call).approvalId
+        var approvalID = approval?.approvalID
+        if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
+            do {
+                let prepared = try await client.prepare(call)
+                if prepared.earlier?.status == .found {
+                    return WriteResult(reply: VoiceToolReply.cloudAlreadyThere(call.name), attempted: false)
+                }
+                approvalID = prepared.approvalId
+            } catch {
+                return written(CloudWriteRecord(.failure(error), tool: call.name, app: app, readAt: Date()))
             }
-            let result = try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            return VoiceToolReply.cloudResult(result)
-        } catch {
-            return VoiceToolReply.cloudFailed(error, tool: call.name)
         }
+        guard let approvalID else {
+            // A read in a plan runs without a confirmation.
+            do {
+                return WriteResult(reply: VoiceToolReply.cloudResult(try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: nil)))
+            } catch {
+                return WriteResult(reply: VoiceToolReply.cloudFailed(error, tool: call.name))
+            }
+        }
+        let outcome = await CloudRun.confirmed(call, approvalId: approvalID, timeZone: TimeZone.current.identifier, client: client)
+        return written(CloudWriteRecord(outcome, tool: call.name, app: app, readAt: Date()))
     }
 
     private func planBlock(for step: PlanStep) async -> PlanBlock? {
@@ -1999,7 +2014,15 @@ final class VoiceSessionController {
         }
         do {
             if cloud.isWrite {
+                // Tried too often without a confirmed result: stop before the card (ADR-303).
+                guard await mayTryAgain(toolCallID, app: asked[toolCallID]?.app ?? .gmail) else { return }
                 let prepared = try await client.prepare(cloud)
+                // An earlier unsure try is already there (the server looked): nothing more to do.
+                if prepared.earlier?.status == .found {
+                    writeResults[toolCallID] = WriteResult(reply: "", attempted: false)
+                    await reply(toolCallID, VoiceToolReply.cloudAlreadyThere(cloud.name))
+                    return
+                }
                 propose(
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
@@ -2012,17 +2035,14 @@ final class VoiceSessionController {
         }
     }
 
-    /// The user tapped the card. The approval is for exactly the arguments the card showed.
-    private func runConfirmedCloud(_ cloud: CloudToolCall, approvalID: UUID) async -> String {
+    /// The user tapped the card. The approval is for exactly the arguments the card showed. A lost
+    /// answer is asked for once more with the same approval, which can't run it twice (ADR-303).
+    private func runConfirmedCloud(_ cloud: CloudToolCall, approvalID: UUID, app: ActivityApp) async -> CloudWriteRecord {
         guard let client = OnlineAccountsClientFactory.make() else {
-            return VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name)
+            return CloudWriteRecord(.failure(.notConfigured), tool: cloud.name, app: app, readAt: Date())
         }
-        do {
-            let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            return VoiceToolReply.cloudResult(result)
-        } catch {
-            return VoiceToolReply.cloudFailed(error, tool: cloud.name)
-        }
+        let outcome = await CloudRun.confirmed(cloud, approvalId: approvalID, timeZone: TimeZone.current.identifier, client: client)
+        return CloudWriteRecord(outcome, tool: cloud.name, app: app, readAt: Date())
     }
 
     /// Finds the quoted note and, for a place, looks it up in Apple Maps before showing the card.

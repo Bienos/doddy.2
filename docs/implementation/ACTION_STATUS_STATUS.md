@@ -1,4 +1,4 @@
-# Action status model: status (ADR-300, timers and alarms ADR-301, notes and lists ADR-302)
+# Action status model: status (ADR-300, timers and alarms ADR-301, notes and lists ADR-302, online accounts ADR-303)
 Date: 2026-10-11. Owner instruction: "start the action status model". This covers OP-012 (action receipts and status history) and OP-013 (recoverable failure and retry) from the research backlog.
 
 ## What was already there
@@ -156,6 +156,63 @@ Owner instruction: "extend it to notes and lists".
     - the no-double-note look ignoring when the try was.
 - **NOT RUN:** on a device, and Mac checklist items AS10 to AS12.
 
+## Online accounts (ADR-303)
+Owner instruction: "extend it to online accounts". Gmail drafts and Todoist tasks are made by Doddy's server (`backend/`), so most of this is on the server.
+
+### What was wrong before
+- Each confirmation (approval) was single use. A second run with the same approval came back as "the confirmation expired", even when the first run had made the draft or task and only its answer was lost. That was untrue.
+- The draft and task ids were thrown away.
+
+### Server (`backend/src/tools/service.ts`, `store.ts`, `catalog.ts`)
+- An approval still runs at most once. Its outcome is now recorded on it, in three new columns on `approvals`, added to older databases on start:
+  - `succeeded`, with the provider's id;
+  - `outcome_unknown`;
+  - `failed`.
+- The server stores no email or task text, only the argument digest, as before. A test checks that the text isn't in the table.
+- **A repeat with the same approval:**
+  - after `succeeded`: the first answer again (`replayed: true`, `externalId`), rebuilt from the same arguments. Nothing runs.
+  - after `outcome_unknown`, or used but not finished (still running, or the server stopped mid-run): 403 with a receipt `status: outcome_unknown`, `errorCode: earlier_outcome_unknown`.
+  - after `failed`: a fresh confirmation is needed (`confirmation_required`), as before.
+- **Prepare** looks for the same write (user, tool, argument digest) that finished in the last day:
+  - `succeeded`: "Doddy already did exactly this once in the last day." is added to the card.
+  - `outcome_unknown`: "An earlier try in the last day may have gone through. Check <account> before doing it again."
+  - For Todoist only, the server first runs one `TODOIST_GET_ALL_TASKS` search, and only if "List my tasks" is switched on (otherwise Doddy doesn't read the user's tasks). The same words found means `found`: "already in Todoist". Not listed proves nothing and stays `outcome_unknown`.
+- The mock provider now remembers tasks it made and has a `lost_answer` case: the write goes through, then a timeout.
+
+### Phone (`CloudActions.swift`, `VoiceCloudTools.swift`, `ActivityLog.swift`, `VoiceSessionController.swift`)
+- **One safe repeat** (`CloudRun.confirmed`): a confirmed write whose answer is lost on the way (no connection, an unreadable answer) is asked for once more with the same approval. The server can't run it twice. Server answers and reads are not repeated.
+- **Keys:** online writes get an operation key (`CloudIdempotency.key`, a hash of the tool and its sorted arguments) and the 3-try stop.
+- **Receipts:** a confirmed write's receipt has the provider's id and the server's summary line; the agent never hears the id.
+- **Attempts:** a provably-not-run refusal doesn't count as a try.
+- **Found:** `earlier.found` is answered without a card ("already in Todoist from the earlier try"), logged as "Already there". In a plan, the step is shown as already there and isn't run.
+- **Unsure repeat:** `earlier_outcome_unknown` is told to the agent as "unknown", never "expired".
+
+### Verified (Linux)
+- **Backend** (`npm test`, Node): 143 tests pass, 10 of them new. They cover:
+  - a repeat gives the first answer and runs nothing;
+  - a lost answer, then a repeat: "may have gone through";
+  - a provably-failed write still needs a fresh confirmation;
+  - the card warning, the 24-hour window and other arguments;
+  - the Todoist look with the list read on and off, and "not listed" staying unknown;
+  - Gmail only warns;
+  - no text in the approvals table;
+  - the old-database upgrade;
+  - a repeat while the first run is unfinished.
+- **Swift:** 7 new `CloudActionsTests` (contract fields from the regenerated fixtures, keys, the one repeat with the same approval, the log). `scripts/ci.sh --core-only` PASS for core-only scope, with 771 package tests. Messaging database tests SKIPPED; iOS app NOT RUN.
+- **Planted bugs**, each caught and restored:
+  - used approvals accepted again: 6 backend failures;
+  - a lost answer recorded as failed: 4;
+  - the Todoist look with the list read off: 1;
+  - the phone repeating after any error: 1;
+  - the phone repeating with a new approval: 1.
+- **Fixtures:** `contracts/online-accounts` were regenerated (`npm run fixtures`). Only files whose content changed are committed: `run-result-draft`, `receipts`, and the new `run-result-draft-replayed` and `prepare-result-draft-again`. The rest differed only in random ids and were left as they were. `error-confirmation-expired` is now made with an approval the server never issued, since a used one now answers again.
+
+### NOT RUN
+- Against real Gmail and Todoist through Composio (the live path was never verified, as before).
+- Whether Todoist's search finds a task just made.
+- The app wiring compiled with Xcode.
+- Mac checklist items AS13 to AS15.
+
 ## Constitution evidence log
 | Rule | How it applies | Enforcing code | Tests run | Gap / claim to limit |
 |---|---|---|---|---|
@@ -165,3 +222,5 @@ Owner instruction: "extend it to notes and lists".
 | DOD-11 observable privacy | The app's identifiers stay in the on-device activity file; the agent never hears them | `VoiceToolReply.reminder`/`event` | `testTheAgentNeverHearsTheExternalID` | — |
 | DOD-08 / "unknown never blindly retried" (timers, alarms) | An unsure timer is repeated only after a look for the running copy; an alarm always looks first and counts as set only when AlarmKit lists its id | `TimerStartAction`, `AlarmSetAction` | `TimerAlarmActionsTests` (15) | AlarmKit/notifications not run on a device |
 | DOD-08 / DOD-06 (notes, lists) | An unsure note or list change is settled only from Doddy's own database, after it has loaded; a note isn't saved twice after an unconfirmed try | `LocalCheck`, `NoteIdempotency.savedSince`, `settleLocalEntries` guard | `NoteListActionsTests` (9) | The load guard is app code, not compiled here |
+| DOD-04/05/08 (online accounts) | A confirmation still runs at most once; a repeat gets the recorded outcome, never a second run and never a false "expired"; "found" only from the provider's own list | `CloudToolsService.run`/`prepare`, `Store.finishApproval`/`approvalOutcome`, `CloudRun.confirmed` | backend `tools.test.ts` (10 new), `CloudActionsTests` (7) | Not run against live Composio; app wiring not compiled |
+| DOD-11 (online accounts) | The server keeps outcome and provider id per approval, no text, deleted a day after expiry; the Todoist look runs only with "List my tasks" on | `store.ts` columns, `foundExisting` | "the server keeps what happened to a write, never its words", "…only with the list read switched on" | — |

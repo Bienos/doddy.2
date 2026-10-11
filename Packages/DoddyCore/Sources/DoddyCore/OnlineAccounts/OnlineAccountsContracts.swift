@@ -88,6 +88,22 @@ public struct PrepareResult: Codable, Equatable, Sendable {
     public let preview: ToolPreview
     public let approvalId: UUID
     public let expiresAt: String
+    /// The same write ran in the last day (ADR-303); nil otherwise and from older servers.
+    public let earlier: EarlierWrite?
+}
+
+/// What the server knows about an earlier run of the same write (ADR-303).
+public struct EarlierWrite: Codable, Equatable, Sendable {
+    public enum Status: String, Codable, Sendable {
+        case succeeded
+        case outcomeUnknown = "outcome_unknown"
+        /// It may have gone through, and the server's look found it there.
+        case found
+    }
+
+    public let status: Status
+    /// ISO time it finished.
+    public let at: String
 }
 
 public struct RunResult: Codable, Equatable, Sendable {
@@ -97,6 +113,11 @@ public struct RunResult: Codable, Equatable, Sendable {
     public let text: String
     public let count: Int
     public let truncated: Bool
+    /// Writes: the provider's id for the draft or task (ADR-303). Stays on the phone.
+    public let externalId: String?
+    /// True when the server answered a repeated run of an approval that already succeeded:
+    /// nothing ran again.
+    public let replayed: Bool?
     public let receipt: OnlineToolReceipt
 }
 

@@ -1,7 +1,7 @@
 {
   "receipts": [
     {
-      "operationId": "d0002b07-ea41-4eb4-b845-3e4ceda94e72",
+      "operationId": "b2a1f601-f3d1-4f27-a586-8dc4974c79f5",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -13,7 +13,19 @@
       "providerReference": null
     },
     {
-      "operationId": "73a4555a-42fb-438c-bbf0-f3d87c255c08",
+      "operationId": "da367d4e-df7b-4912-9799-8f9f89f39ef4",
+      "operation": "write",
+      "toolkit": "gmail",
+      "tool": "draft_email",
+      "timestamp": "2026-10-10T10:00:00.000Z",
+      "mode": "mock",
+      "status": "succeeded",
+      "summary": "Gmail draft created (not sent). Answer from the first try; nothing ran again.",
+      "errorCode": null,
+      "providerReference": null
+    },
+    {
+      "operationId": "90d7aac3-c693-4de9-a749-31e59d69a44a",
       "operation": "write",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -22,10 +34,10 @@
       "status": "succeeded",
       "summary": "Gmail draft created (not sent).",
       "errorCode": null,
-      "providerReference": "mock_log_dec6eb31"
+      "providerReference": "mock_log_20c45d2c"
     },
     {
-      "operationId": "993a1089-f80b-47d0-944a-14c3fd5291fb",
+      "operationId": "b1907d30-26ee-4e3e-8010-fe8b5539bd1e",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "draft_email",
@@ -37,7 +49,7 @@
       "providerReference": null
     },
     {
-      "operationId": "4bb34dbe-76af-4a67-ba3f-3fb1102911c1",
+      "operationId": "5667317a-3f8e-482c-b688-5054c12d119f",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -46,10 +58,10 @@
       "status": "succeeded",
       "summary": "Checked email: 2 messages listed.",
       "errorCode": null,
-      "providerReference": "mock_log_1ec7e638"
+      "providerReference": "mock_log_dd440651"
     },
     {
-      "operationId": "a44064b2-0ff5-4785-91da-a8c14eecfef4",
+      "operationId": "68a8f9c1-711b-4089-9d16-ea6315f13f55",
       "operation": "switch",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -61,7 +73,7 @@
       "providerReference": null
     },
     {
-      "operationId": "71db1d96-d7bd-45b2-be39-047d2e094fa9",
+      "operationId": "160a7026-ec51-468b-8574-ae0af7d71e41",
       "operation": "connect",
       "toolkit": "gmail",
       "tool": null,
@@ -73,7 +85,7 @@
       "providerReference": null
     },
     {
-      "operationId": "47c886b6-20b3-491f-a172-9ddacd72c566",
+      "operationId": "cf97f066-9b66-440a-b456-f102d99c57b2",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",

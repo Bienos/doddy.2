@@ -134,6 +134,13 @@ export class Store {
       );
       CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
     `);
+    // ADR-303: what happened when an approval was used. Outcome and the provider's id only, never
+    // the email or task text. Added to databases made before it.
+    const columns = new Set((this.db.prepare("PRAGMA table_info(approvals)").all() as { name: string }[]).map((c) => c.name));
+    for (const [name, type] of [["outcome", "TEXT"], ["external_id", "TEXT"], ["finished_at", "INTEGER"]] as const) {
+      if (!columns.has(name)) this.db.exec(`ALTER TABLE approvals ADD COLUMN ${name} ${type}`);
+    }
+    this.db.exec("CREATE INDEX IF NOT EXISTS approvals_writes ON approvals(user_id, capability, args_digest, finished_at)");
   }
 
   close(): void {
@@ -476,4 +483,46 @@ export class Store {
         .changes === 1;
     });
   }
+
+  /** Records what happened after a used approval ran (ADR-303). Only the first record counts. */
+  finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number): void {
+    this.db
+      .prepare("UPDATE approvals SET outcome = ?, external_id = ?, finished_at = ? WHERE approval_id = ? AND consumed_at IS NOT NULL AND outcome IS NULL")
+      .run(outcome, externalId, now, approvalId);
+  }
+
+  /**
+   * What happened when this approval was used, for the same user, tool, account and arguments.
+   * Null when it was never used. `outcome` null: used, but its run hasn't finished (or the server
+   * stopped mid-run), so it may or may not have gone through.
+   */
+  approvalOutcome(input: { approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string }): {
+    outcome: WriteOutcome | null;
+    externalId: string | null;
+  } | null {
+    const row = this.db
+      .prepare(
+        `SELECT outcome, external_id FROM approvals
+         WHERE approval_id = ? AND user_id = ? AND capability = ? AND account_id = ? AND args_digest = ? AND consumed_at IS NOT NULL`,
+      )
+      .get(input.approvalId, input.userId, input.capability, input.accountId, input.argsDigest) as
+      | { outcome: WriteOutcome | null; external_id: string | null }
+      | undefined;
+    return row ? { outcome: row.outcome, externalId: row.external_id } : null;
+  }
+
+  /** The newest run of the same write (user, tool, arguments) since `since` that did or may have gone through. */
+  latestWrite(input: { userId: string; capability: string; argsDigest: string; since: number }): { outcome: WriteOutcome; finishedAt: number } | null {
+    const row = this.db
+      .prepare(
+        `SELECT outcome, finished_at FROM approvals
+         WHERE user_id = ? AND capability = ? AND args_digest = ? AND finished_at >= ? AND outcome IN ('succeeded', 'outcome_unknown')
+         ORDER BY finished_at DESC LIMIT 1`,
+      )
+      .get(input.userId, input.capability, input.argsDigest, input.since) as { outcome: WriteOutcome; finished_at: number } | undefined;
+    return row ? { outcome: row.outcome, finishedAt: row.finished_at } : null;
+  }
 }
+
+/** How a used approval's run ended (ADR-303). */
+export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";

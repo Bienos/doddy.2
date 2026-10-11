@@ -54,6 +54,23 @@ grants acceptable → (writes) approval → limits → provider call → normali
 write first calls `/v1/tools/prepare`, which returns the preview and a single-use approval for exactly those arguments;
 the app shows the card; the tap sends `/v1/tools/run` with that approval.
 
+**What happened to each approval (ADR-303).** An approval still runs at most once. Its outcome is recorded on it:
+succeeded with the provider's id (Gmail draft id, Todoist task id), may-or-may-not (`outcome_unknown`), or failed.
+The email or task text is not stored; only the argument digest, as before.
+- A repeated `/run` with an approval that already **succeeded** gets the first answer again (`replayed: true`, the
+  provider's id in `externalId`) and nothing runs.
+- A repeat of one whose first run **may have gone through**, or hasn't finished, gets 403 with a receipt
+  `status: outcome_unknown`, `errorCode: earlier_outcome_unknown`. It never gets "expired".
+- A repeat of one that provably **didn't run** needs a fresh confirmation (`confirmation_required`), as before.
+- So the app asks once more with the same approval when an answer is lost on the way (no connection, unreadable).
+- `/prepare` adds `earlier: {status, at}` and a line on the card when the same write (same arguments) ran in the
+  last day: `succeeded` ("Doddy already did exactly this once"), `outcome_unknown` ("may have gone through; check
+  first"), or `found`.
+- `found` is for Todoist only. After a try whose outcome is unknown, the server lists the user's tasks (one
+  `TODOIST_GET_ALL_TASKS` search), and only if "List my tasks" is switched on. Found means the task is there and the app
+  answers without a card. Not listed proves nothing. Gmail drafts can't be looked for: the card only warns.
+- Approvals, with their outcome, are deleted a day after they expire, as before.
+
 ## API (all authenticated, strict bodies)
 
 `GET /v1/tools` · `PUT /v1/tools/switch {tool, enabled}` · `POST /v1/tools/{gmail|googledrive|notion|todoist}/{connect|complete|disconnect}` ·
