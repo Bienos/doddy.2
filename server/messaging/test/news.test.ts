@@ -36,6 +36,19 @@ test("RSS and Atom parsing: entities, CDATA, tags, links", () => {
   assert.throws(() => parseFeed("<html><body>hi</body></html>", "x"));
 });
 
+test("entity bombs in a feed are refused, not expanded", () => {
+  // Nested entities are not expanded recursively (billion laughs).
+  let nested = '<!ENTITY a0 "lollollollol">';
+  for (let i = 1; i <= 9; i++) nested += `<!ENTITY a${i} "${`&a${i - 1};`.repeat(10)}">`;
+  const laughs = parseFeed(`<?xml version="1.0"?><!DOCTYPE rss [${nested}]><rss><channel><title>t</title>`
+    + "<item><title>&a9;</title><link>https://x.com/1</link></item></channel></rss>", "x");
+  assert.ok((laughs.items[0]?.title.length ?? 0) < 1000);
+  // Many references to one large entity hit the parser's expansion cap (fast-xml-parser 5.x).
+  const wide = `<?xml version="1.0"?><!DOCTYPE rss [<!ENTITY a0 "${"x".repeat(9_999)}">]><rss><channel><title>t</title>`
+    + `<item><title>${"&a0;".repeat(400_000)}</title><link>https://x.com/1</link></item></channel></rss>`;
+  assert.throws(() => parseFeed(wide, "x"), /limit exceeded/);
+});
+
 test("daily time in the user's zone, across the October DST change", () => {
   // Warsaw leaves summer time on 2026-10-25.
   assert.equal(nextRunAt(new Date("2026-10-24T05:00:00Z"), "08:00", "Europe/Warsaw").toISOString(), "2026-10-24T06:00:00.000Z");
