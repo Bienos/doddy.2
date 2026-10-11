@@ -8,6 +8,7 @@ import { SharedRateLimiter } from '../src/ratelimit.js';
 import { handleRegister } from '../src/register.js';
 import { createLimits } from '../src/runtime.js';
 import { createRestStore, StoreUnavailableError } from '../src/store.js';
+import { inviteTag } from '../src/token.js';
 import { assistRequest, DEVICE, ENV, fakeProvider, fixture, INVITE, NOW_MS, providerOk, SECRET, token } from './helpers.js';
 
 // No network anywhere in this file: the shared store is an in-process fake of the Upstash REST API.
@@ -238,6 +239,24 @@ test('budget: the per-install cap stops one install without stopping others', as
   assert.equal(again.res.status, 429);
   assert.equal(again.json.error.code, 'dailyLimitReached');
   assert.equal((await call(deps, token({ deviceId: OTHER_DEVICE }))).res.status, 200);
+});
+
+test('budget: the per-invite cap stops new device ids on one invite without stopping other invites', async () => {
+  const store = fakeStore();
+  const env = { ...SHARED_ENV, OPENAI_PRICE_INPUT_PER_MTOK_USD: '1', OPENAI_PRICE_OUTPUT_PER_MTOK_USD: '1', DAILY_BUDGET_PER_INVITE_USD: '0.01' };
+  const provider = fakeProvider(providerOk({ answer: 'ok', sources: [] }, { input_tokens: 9_000, output_tokens: 0 }));
+  const { deps } = sharedDeps(store, { env, provider });
+  assert.equal((await call(deps)).res.status, 200);
+  const fresh = await call(deps, token({ deviceId: OTHER_DEVICE }));
+  assert.equal(fresh.res.status, 429, 'a new device id on the same invite does not get a fresh budget');
+  assert.equal(fresh.json.error.code, 'dailyLimitReached');
+  assert.equal((await call(deps, token({ deviceId: OTHER_DEVICE, inviteTag: inviteTag('OTHER-INVITE-0002', SECRET) }))).res.status, 200);
+});
+
+test('config: the per-invite budget defaults to half the daily budget and rejects bad values', () => {
+  const loaded = loadConfig({ ...ENV, DAILY_BUDGET_USD: '4' });
+  assert.equal(loaded.ok && loaded.config.inviteBudgetMicros, 2_000_000);
+  assert.deepEqual(loadConfig({ ...ENV, DAILY_BUDGET_PER_INVITE_USD: 'x' }).missing, ['DAILY_BUDGET_PER_INVITE_USD']);
 });
 
 test('budget: a 4xx provider rejection releases the reservation; a timeout or 5xx keeps the estimate booked', async () => {

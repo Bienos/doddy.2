@@ -107,6 +107,7 @@ async function assist(request, deps) {
     reserved = await deps.spend.reserve([
       { scope: 'all', capMicros: config.dailyBudgetMicros },
       { scope: `dev:${claims.deviceId}`, capMicros: config.installBudgetMicros },
+      { scope: `inv:${claims.inviteTag}`, capMicros: config.inviteBudgetMicros },
     ], worstCase, nowMs);
   } catch (err) {
     if (err instanceof StoreUnavailableError) return fail('providerUnavailable', { ...counts, cause: 'limitStore' }, { requestId: req.requestId });

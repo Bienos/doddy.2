@@ -35,6 +35,7 @@ npm run typecheck     # tsc over api/ and src/ (JSDoc types)
 | `REQUIRE_SHARED_LIMITS` | optional | `1` = refuse to serve (`503 notConfigured`) unless the shared store is configured. Always on when Vercel sets `VERCEL_ENV=production`; elsewhere a missing store means per-instance limits (dev/preview only, warned in the logs). |
 | `DAILY_BUDGET_USD` | no | Hard cap on estimated provider spend for **everyone** per UTC day. Default `1.00`. |
 | `DAILY_BUDGET_PER_INSTALL_USD` | no | Same cap for **one install** (device id) per UTC day. Default `0.25`. |
+| `DAILY_BUDGET_PER_INVITE_USD` | no | Same cap for **all installs on one invite code** per UTC day (device ids are chosen by the app, so this is what stops one invite minting fresh budgets). Default: half of `DAILY_BUDGET_USD`. |
 | `OPENAI_PRICE_INPUT_PER_MTOK_USD` / `OPENAI_PRICE_OUTPUT_PER_MTOK_USD` | **set them** | Your model's price in USD per 1M input / output tokens, copied from OpenAI's pricing page. Defaults `10` / `40` are **pessimistic placeholders, not a real price** (no model price could be verified when this was written); with them the cap trips early, which is the safe direction. A `placeholderPrices` warning is logged until both are set. |
 
 If a required variable is missing, or a limit/budget/store variable is set but invalid, every endpoint answers `503 notConfigured` (fails closed) and logs only the variable *names*.
@@ -43,7 +44,7 @@ If a required variable is missing, or a limit/budget/store variable is set but i
 
 ```
 /api/assist: token ─▶ rate limits (device/min, device/day, invite/day, global/day; stop at first refusal)
-                  ─▶ validate ─▶ reserve worst-case cost on [everyone today, this install today]
+                  ─▶ validate ─▶ reserve worst-case cost on [everyone today, this install today, this invite today]
                   ─▶ OpenAI ─▶ replace the reservation with usage × price ─▶ answer
 ```
 

@@ -16,6 +16,7 @@ import { inviteTag } from './token.js';
  * @property {{url: string, token: string} | null} sharedStore   null = per-instance memory limits (dev only)
  * @property {number} dailyBudgetMicros       everyone, per UTC day
  * @property {number} installBudgetMicros     one install (device id), per UTC day
+ * @property {number} inviteBudgetMicros      every install on one invite code, per UTC day
  * @property {import('./budget.js').Prices} prices
  */
 
@@ -83,10 +84,13 @@ export function loadConfig(env) {
   missing.push(...shared.problems);
   const dailyUsd = positive(env.DAILY_BUDGET_USD, DEFAULT_DAILY_BUDGET_USD);
   const installUsd = positive(env.DAILY_BUDGET_PER_INSTALL_USD, DEFAULT_INSTALL_BUDGET_USD);
+  // Device ids are chosen by the client, so one invite could otherwise spend the whole day's budget.
+  const inviteUsd = positive(env.DAILY_BUDGET_PER_INVITE_USD, (dailyUsd ?? DEFAULT_DAILY_BUDGET_USD) / 2);
   const inputPrice = positive(env.OPENAI_PRICE_INPUT_PER_MTOK_USD, DEFAULT_PRICES.inputPerMTok);
   const outputPrice = positive(env.OPENAI_PRICE_OUTPUT_PER_MTOK_USD, DEFAULT_PRICES.outputPerMTok);
   if (dailyUsd === null) missing.push('DAILY_BUDGET_USD');
   if (installUsd === null) missing.push('DAILY_BUDGET_PER_INSTALL_USD');
+  if (inviteUsd === null) missing.push('DAILY_BUDGET_PER_INVITE_USD');
   if (inputPrice === null) missing.push('OPENAI_PRICE_INPUT_PER_MTOK_USD');
   if (outputPrice === null) missing.push('OPENAI_PRICE_OUTPUT_PER_MTOK_USD');
   /** @type {Record<string, number | null>} */
@@ -97,7 +101,7 @@ export function loadConfig(env) {
     GATEWAY_INVITE_PER_DAY: int(env.GATEWAY_INVITE_PER_DAY, 600),
   };
   for (const [name, value] of Object.entries(ints)) if (value === null) missing.push(name);
-  if (missing.length > 0 || dailyUsd === null || installUsd === null || inputPrice === null || outputPrice === null) {
+  if (missing.length > 0 || dailyUsd === null || installUsd === null || inviteUsd === null || inputPrice === null || outputPrice === null) {
     return { ok: false, missing };
   }
   return {
@@ -118,6 +122,7 @@ export function loadConfig(env) {
       sharedStore: shared.store,
       dailyBudgetMicros: Math.round(dailyUsd * 1_000_000),
       installBudgetMicros: Math.round(installUsd * 1_000_000),
+      inviteBudgetMicros: Math.round(inviteUsd * 1_000_000),
       prices: { inputPerMTok: inputPrice, outputPerMTok: outputPrice },
     },
   };
