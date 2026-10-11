@@ -4,6 +4,7 @@ import UserNotifications
 
 /// Puts the morning check-in's repeating notification in iOS (ADR-220) and reads it back. The
 /// notification carries only "Good morning · A quick look at your day?", never a note.
+@MainActor
 enum MorningCheckInScheduler {
     enum Outcome: Equatable {
         /// Read back from iOS's pending list: this many requests (1, or 5 on weekdays only).
@@ -14,8 +15,22 @@ enum MorningCheckInScheduler {
         case failed
     }
 
+    /// The apply still running, if any. Each apply waits for the one before it, so quick changes
+    /// can't interleave their remove and add steps and leave duplicate or stale notifications.
+    private static var running: Task<Outcome, Never>?
+
     /// Replaces whatever check-in requests are pending with the ones `settings` asks for.
     static func apply(_ settings: MorningCheckInSettings) async -> Outcome {
+        let previous = running
+        let task = Task {
+            _ = await previous?.value
+            return await replace(with: settings)
+        }
+        running = task
+        return await task.value
+    }
+
+    private static func replace(with settings: MorningCheckInSettings) async -> Outcome {
         let center = UNUserNotificationCenter.current()
         let pending = await center.pendingNotificationRequests().map(\.identifier)
         center.removePendingNotificationRequests(withIdentifiers: pending.filter(MorningCheckIn.isCheckIn(notificationID:)))
@@ -46,8 +61,21 @@ enum MorningCheckInScheduler {
                 return .failed
             }
         }
-        let wanted = Set(requests.map(\.id))
-        let now = Set(await center.pendingNotificationRequests().map(\.identifier))
-        return wanted.isSubset(of: now) ? .scheduled(wanted.count) : .failed
+        // Read back from iOS: every wanted request at the wanted time, and no other check-in.
+        let checkIns = await center.pendingNotificationRequests().filter { MorningCheckIn.isCheckIn(notificationID: $0.identifier) }
+        let stale = checkIns.map(\.identifier).filter { id in !requests.contains { $0.id == id } }
+        if !stale.isEmpty {
+            center.removePendingNotificationRequests(withIdentifiers: stale)
+            let left = Set(await center.pendingNotificationRequests().map(\.identifier))
+            guard left.isDisjoint(with: stale) else { return .failed }
+        }
+        let allThere = requests.allSatisfy { wanted in
+            checkIns.contains { request in
+                guard request.identifier == wanted.id,
+                      let when = (request.trigger as? UNCalendarNotificationTrigger)?.dateComponents else { return false }
+                return when.hour == wanted.hour && when.minute == wanted.minute && when.weekday == wanted.weekday
+            }
+        }
+        return allThere ? .scheduled(requests.count) : .failed
     }
 }

@@ -4,10 +4,25 @@ import UserNotifications
 
 /// Puts the evening wrap-up's daily notification in iOS and reads it back (ADR-261). The
 /// notification says only "Good evening · Anything to move to tomorrow?".
+@MainActor
 enum EveningWrapUpScheduler {
     enum Outcome: Equatable { case scheduled, off, needsPermission, failed }
 
+    /// The apply still running, if any. Each apply waits for the one before it, so quick changes
+    /// can't interleave their remove and add steps and leave a stale notification.
+    private static var running: Task<Outcome, Never>?
+
     static func apply(_ settings: EveningWrapUpSettings) async -> Outcome {
+        let previous = running
+        let task = Task {
+            _ = await previous?.value
+            return await replace(with: settings)
+        }
+        running = task
+        return await task.value
+    }
+
+    private static func replace(with settings: EveningWrapUpSettings) async -> Outcome {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [EveningWrapUp.notificationID])
         guard settings.isOn else { return .off }
@@ -28,8 +43,13 @@ enum EveningWrapUpScheduler {
             identifier: EveningWrapUp.notificationID, content: content,
             trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true))
         do { try await center.add(request) } catch { return .failed }
-        let pending = await center.pendingNotificationRequests().map(\.identifier)
-        return pending.contains(EveningWrapUp.notificationID) ? .scheduled : .failed
+        // Read back from iOS: the notification is there, at the wanted time.
+        let isThere = await center.pendingNotificationRequests().contains { pendingRequest in
+            guard pendingRequest.identifier == EveningWrapUp.notificationID,
+                  let fires = (pendingRequest.trigger as? UNCalendarNotificationTrigger)?.dateComponents else { return false }
+            return fires.hour == settings.hour && fires.minute == settings.minute
+        }
+        return isThere ? .scheduled : .failed
     }
 }
 
