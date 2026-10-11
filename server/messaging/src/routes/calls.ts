@@ -114,14 +114,19 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const target = rows[0];
     if (!target) return reply.code(409).send({ error: "no_verified_phone" });
     if (!target.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
-    const today = await db.query<{ n: number }>(
-      `SELECT count(*)::int AS n FROM calls WHERE account_id = $1 AND direction = 'outbound'
-       AND created_at > now() - interval '1 day'`, [accountId]);
-    if ((today.rows[0]?.n ?? 0) >= OUTBOUND_DAILY_LIMIT) return reply.code(429).send({ error: "daily_limit" });
-
     const callId = randomUUID();
-    await db.query(
-      "INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'outbound', 'requested')", [callId, accountId]);
+    const underLimit = await inTransaction(db, async (c) => {
+      // Count and insert under one per-account lock, so parallel taps can't pass the limit together.
+      await c.query("SELECT pg_advisory_xact_lock(hashtext('outbound_calls:' || $1))", [accountId]);
+      const today = await c.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM calls WHERE account_id = $1 AND direction = 'outbound'
+         AND created_at > now() - interval '1 day'`, [accountId]);
+      if ((today.rows[0]?.n ?? 0) >= OUTBOUND_DAILY_LIMIT) return false;
+      await c.query(
+        "INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'outbound', 'requested')", [callId, accountId]);
+      return true;
+    });
+    if (!underLimit) return reply.code(429).send({ error: "daily_limit" });
     const variables = await openSession(db, accountId, callId, "outbound");
     const outcome = await deps.outbound.placeCall(target.e164, { ...variables });
     const status = outcome.kind === "accepted" ? "requested" : outcome.kind === "unknown" ? "unknown" : "failed";

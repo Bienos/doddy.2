@@ -163,6 +163,15 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     await noPush.app.close();
   });
 
+  test("parallel note saves can't overfill the inbox", async () => {
+    const { accountId } = await user("+48500000018", { pin: "258025", inbound: true });
+    const s = (await ring("+48500000018")).secret__doddy_session!;
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s);
+    await Promise.all(Array.from({ length: 30 }, (_, i) => el("/webhooks/elevenlabs/tools/save-note", { text: `note ${i}` }, s)));
+    const { rows } = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM call_notes WHERE account_id = $1", [accountId]);
+    assert.equal(rows[0]!.n, 20);
+  });
+
   test("memory text is encrypted at rest", async () => {
     await user("+48500000004", { pin: "258025", inbound: true, memories: ["Hasło do wifi: zielony-kot-77"] });
     const { rows } = await db.query<{ ciphertext: Buffer }>("SELECT ciphertext FROM memory_copies");

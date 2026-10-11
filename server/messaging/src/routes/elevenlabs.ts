@@ -153,17 +153,23 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
     if (!deps.cipher) return { status: "unavailable" };
     const body = noteBody.safeParse(req.body);
     if (!body.success) return { status: "empty" };
-    const { rows } = await db.query<{ n: number }>(
-      "SELECT count(*)::int AS n FROM call_notes WHERE account_id = $1", [s.accountId]);
-    if ((rows[0]?.n ?? 0) >= MAX_PENDING_NOTES) return { status: "inbox_full" };
-
+    const cipher = deps.cipher;
     const id = randomUUID();
-    const { rows: call } = await db.query<{ conversation_id: string | null }>(
-      "SELECT c.conversation_id FROM call_sessions s LEFT JOIN calls c ON c.id = s.call_id WHERE s.id = $1", [s.id]);
-    await db.query(
-      `INSERT INTO call_notes (id, account_id, key_version, ciphertext, conversation_id) VALUES ($1, $2, $3, $4, $5)`,
-      [id, s.accountId, deps.cipher.keyVersion, deps.cipher.encrypt(body.data.text, `${s.accountId}:note:${id}`),
-        call[0]?.conversation_id ?? null]);
+    const saved = await inTransaction(db, async (c) => {
+      // Serialises notes per account so parallel tool calls can't overfill the inbox.
+      await c.query("SELECT pg_advisory_xact_lock(hashtext('call_notes:' || $1))", [s.accountId]);
+      const { rows } = await c.query<{ n: number }>(
+        "SELECT count(*)::int AS n FROM call_notes WHERE account_id = $1", [s.accountId]);
+      if ((rows[0]?.n ?? 0) >= MAX_PENDING_NOTES) return false;
+      const { rows: call } = await c.query<{ conversation_id: string | null }>(
+        "SELECT c.conversation_id FROM call_sessions s LEFT JOIN calls c ON c.id = s.call_id WHERE s.id = $1", [s.id]);
+      await c.query(
+        `INSERT INTO call_notes (id, account_id, key_version, ciphertext, conversation_id) VALUES ($1, $2, $3, $4, $5)`,
+        [id, s.accountId, cipher.keyVersion, cipher.encrypt(body.data.text, `${s.accountId}:note:${id}`),
+          call[0]?.conversation_id ?? null]);
+      return true;
+    });
+    if (!saved) return { status: "inbox_full" };
     // The notification never contains the note itself.
     if (deps.push && await canPush(db, s.accountId)) {
       await enqueue(db, s.accountId, ["push"], "Doddy took a note on your call. Open Doddy to confirm it.", new Date(), `call-note:${id}`);

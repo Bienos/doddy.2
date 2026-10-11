@@ -36,16 +36,22 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     // Per destination number and per server, whatever account asks: new accounts can't be used
     // to text one number over and over, and a flood can't run up the SMS bill (ADR-175).
     const phoneHash = createHash("sha256").update(body.phone).digest();
-    const { rows: [counts] } = await db.query<{ hour: number; day: number; server: number }>(
-      `SELECT count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 hour')::int AS hour,
-              count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 day')::int AS day,
-              count(*) FILTER (WHERE started_at > date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')::int AS server
-       FROM phone_verification_starts WHERE started_at > now() - interval '1 day'`, [phoneHash]);
-    if (counts!.hour >= VERIFY_PER_NUMBER_HOUR || counts!.day >= VERIFY_PER_NUMBER_DAY || counts!.server >= (deps.verifyDailyCap ?? 200)) {
-      return reply.code(429).send({ error: "too_many_attempts" });
-    }
-    await db.query("INSERT INTO phone_verification_starts (phone_hash) VALUES ($1)", [phoneHash]);
-    await db.query("DELETE FROM phone_verification_starts WHERE started_at < now() - interval '2 days'");
+    const allowed = await inTransaction(db, async (c) => {
+      // The caps include a server-wide one, so count and insert under one lock.
+      await c.query("SELECT pg_advisory_xact_lock(4242002)");
+      const { rows: [counts] } = await c.query<{ hour: number; day: number; server: number }>(
+        `SELECT count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 hour')::int AS hour,
+                count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 day')::int AS day,
+                count(*) FILTER (WHERE started_at > date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')::int AS server
+         FROM phone_verification_starts WHERE started_at > now() - interval '1 day'`, [phoneHash]);
+      if (counts!.hour >= VERIFY_PER_NUMBER_HOUR || counts!.day >= VERIFY_PER_NUMBER_DAY || counts!.server >= (deps.verifyDailyCap ?? 200)) {
+        return false;
+      }
+      await c.query("INSERT INTO phone_verification_starts (phone_hash) VALUES ($1)", [phoneHash]);
+      await c.query("DELETE FROM phone_verification_starts WHERE started_at < now() - interval '2 days'");
+      return true;
+    });
+    if (!allowed) return reply.code(429).send({ error: "too_many_attempts" });
     try {
       await verifier.start(body.phone);
     } catch (err) {
