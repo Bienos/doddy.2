@@ -3,9 +3,10 @@ import Foundation
 import SwiftUI
 import WatchConnectivity
 
-/// The iPhone's side of the Apple Watch app (ADR-232). Sends the same snapshot the widgets get
-/// (or an empty "off" one), and answers the watch's two requests from the store, read back. The
-/// guard script keeps WatchConnectivity in this folder and the watch app.
+/// The iPhone's side of the Apple Watch app (ADR-232). Sends the widgets' snapshot, built with the
+/// watch's own switch instead of the widgets' (an empty "off" one when it is off), and answers the
+/// watch's requests from the store, read back. The guard script keeps WatchConnectivity in this
+/// folder and the watch app.
 @MainActor
 final class PhoneWatchLink: NSObject {
     static let shared = PhoneWatchLink()
@@ -34,8 +35,7 @@ final class PhoneWatchLink: NSObject {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
         let content = Self.isOn ? snapshot : .off(at: snapshot.writtenAt)
-        if let lastSent, lastSent.isOn == content.isOn, lastSent.pinned == content.pinned,
-           lastSent.reminders == content.reminders, lastSent.lists == content.lists { return }
+        if let lastSent, lastSent.hasSameContent(as: content) { return }
         guard let data = try? content.encoded() else { return }
         do {
             try session.updateApplicationContext([WatchLinkVersion.snapshotKey: data])

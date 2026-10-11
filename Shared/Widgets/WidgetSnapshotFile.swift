@@ -47,3 +47,11 @@ enum WidgetSnapshotFile {
         }
     }
 }
+
+extension WidgetSnapshot {
+    /// Same switch, pinned notes, reminders and lists. The time stamp alone isn't news, so the
+    /// widgets and the watch aren't sent a snapshot that only says a later time (review I11).
+    func hasSameContent(as other: WidgetSnapshot) -> Bool {
+        isOn == other.isOn && pinned == other.pinned && reminders == other.reminders && lists == other.lists
+    }
+}

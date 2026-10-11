@@ -54,7 +54,8 @@ final class WatchLink: NSObject {
         guard let data = context[WatchLinkVersion.snapshotKey] as? Data, let decoded = WidgetSnapshot.decoded(data) else { return }
         snapshot = decoded
         // The complications (ADR-262) read the same snapshot from the watch's App Group folder.
-        // "Show in widgets" off arrives as an empty snapshot, so nothing of the user's stays there.
+        // "Show notes and lists on Apple Watch" off arrives as an empty snapshot, so nothing of the
+        // user's stays there.
         // Without the App Group the write fails and the complications say to open Doddy.
         // Reloaded after every write attempt (review I1), so a failed read-back never leaves the
         // complications showing what the iPhone has deleted or turned off.

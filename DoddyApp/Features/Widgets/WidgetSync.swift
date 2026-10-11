@@ -30,23 +30,20 @@ final class WidgetSync {
         ShoppingModeController.shared.refresh()
         // Shared lists (ADR-263) send a local change to iCloud.
         SharedListsController.shared.listsChanged()
-        let snapshot = WidgetSnapshot.make(
-            memories: store.memories, lists: store.lists,
-            pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
-            reminders: reminders?.reminders ?? [],
-            showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
-            isOn: Self.isOn, now: now)
-        // The Apple Watch gets the same content, under its own switch (ADR-232).
-        PhoneWatchLink.shared.send(WidgetSnapshot.make(
-            memories: store.memories, lists: store.lists,
-            pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
-            reminders: reminders?.reminders ?? [],
-            showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
-            isOn: true, now: now))
+        let pinned = PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes))
+        let showReminderText = UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
+        let current = reminders?.reminders ?? []
+        func build(isOn: Bool) -> WidgetSnapshot {
+            WidgetSnapshot.make(
+                memories: store.memories, lists: store.lists, pinned: pinned, reminders: current,
+                showReminderText: showReminderText, isOn: isOn, now: now)
+        }
+        let snapshot = build(isOn: Self.isOn)
+        // The Apple Watch gets the same content, under its own switch (ADR-232), applied there.
+        PhoneWatchLink.shared.send(build(isOn: true))
         guard isAvailable else { return }
-        // Same content as last time: no write, no widget reload (the time stamp alone isn't news).
-        if let lastWritten, lastWritten.isOn == snapshot.isOn, lastWritten.pinned == snapshot.pinned,
-           lastWritten.reminders == snapshot.reminders, lastWritten.lists == snapshot.lists { return }
+        // Same content as last time: no write, no widget reload.
+        if let lastWritten, lastWritten.hasSameContent(as: snapshot) { return }
         do {
             try WidgetSnapshotFile.write(snapshot)
             lastWritten = snapshot
