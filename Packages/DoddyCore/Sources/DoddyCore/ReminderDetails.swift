@@ -52,23 +52,44 @@ public struct ReminderListRef: Codable, Equatable, Sendable {
     }
 }
 
+/// A reminder's repeat, changed by voice (ADR-312): set to a rule, or stopped.
+public enum ReminderRepeatChange: Equatable, Sendable {
+    case set(CalendarRepeat)
+    case stop
+}
+
 /// What changes besides the due, resolved and checked, as the card shows it.
 public struct ReminderDetailsChange: Equatable, Sendable {
     public let addNote: String?
     public let priority: ReminderPriority?
     public let toList: ReminderListRef?
+    /// A new title (ADR-312).
+    public let newTitle: String?
+    /// A new repeat, or none (ADR-312). Needs a due.
+    public let repeatChange: ReminderRepeatChange?
+    /// The notes replaced by this text; "" clears them (ADR-312). The card shows the old notes.
+    public let replaceNotes: String?
 
-    public init(addNote: String? = nil, priority: ReminderPriority? = nil, toList: ReminderListRef? = nil) {
+    public init(addNote: String? = nil, priority: ReminderPriority? = nil, toList: ReminderListRef? = nil,
+                newTitle: String? = nil, repeatChange: ReminderRepeatChange? = nil, replaceNotes: String? = nil) {
         self.addNote = addNote
         self.priority = priority
         self.toList = toList
+        self.newTitle = newTitle
+        self.repeatChange = repeatChange
+        self.replaceNotes = replaceNotes
     }
 
-    public var isEmpty: Bool { addNote == nil && priority == nil && toList == nil }
+    public var isEmpty: Bool {
+        addNote == nil && priority == nil && toList == nil && newTitle == nil && repeatChange == nil && replaceNotes == nil
+    }
 }
 
 public enum ReminderDetails {
     public static let maxNoteLength = EventChange.maxNoteLength
+    public static let maxTitleLength = EventChange.maxTitleLength
+    /// Replaced notes may be longer than one added line, but still short enough to read on a card.
+    public static let maxReplacedNotesLength = 2000
 
     /// The list the user named: exactly one list whose name matches, ignoring case, accents and
     /// punctuation. Otherwise nothing is guessed.
@@ -88,6 +109,13 @@ public enum ReminderDetails {
         guard !back.isCompleted else { return false }
         if let newDue, !EventChange.sameDue(back.due, newDue) { return false }
         if let line = change.addNote, !(notes ?? "").hasSuffix(line) { return false }
+        if let text = change.replaceNotes, (notes ?? "") != text { return false }
+        if let title = change.newTitle, back.title != title { return false }
+        switch change.repeatChange {
+        case .set(let rule)?: if !rule.sameRule(as: back.repeats) { return false }
+        case .stop?: if back.repeats != nil { return false }
+        case nil: break
+        }
         if let priority = change.priority, back.priority != priority { return false }
         if let list = change.toList, back.listID != list.id { return false }
         return true
@@ -97,6 +125,13 @@ public enum ReminderDetails {
     public static func changesNothing(_ reminder: ReminderSnapshot, change: ReminderDetailsChange, newDue: ReminderDue?) -> Bool {
         if newDue != nil, !EventChange.sameDue(reminder.due, newDue) { return false }
         if change.addNote != nil { return false }
+        if let text = change.replaceNotes, text != (reminder.notes ?? "") { return false }
+        if let title = change.newTitle, title != reminder.title { return false }
+        switch change.repeatChange {
+        case .set(let rule)?: if !rule.sameRule(as: reminder.repeats) { return false }
+        case .stop?: if reminder.repeats != nil { return false }
+        case nil: break
+        }
         if let priority = change.priority, priority != reminder.priority { return false }
         if let list = change.toList, list.id != reminder.listID { return false }
         return true
@@ -105,7 +140,14 @@ public enum ReminderDetails {
     /// The changes as one phrase, for the agent and the log: "note added, high priority, moved to "Shopping"".
     public static func summary(_ change: ReminderDetailsChange) -> String {
         var parts: [String] = []
+        if let title = change.newTitle { parts.append("renamed to \"\(title)\"") }
         if change.addNote != nil { parts.append("note added") }
+        if let text = change.replaceNotes { parts.append(text.isEmpty ? "notes cleared" : "notes replaced") }
+        switch change.repeatChange {
+        case .set(let rule)?: parts.append("repeats \(rule.text)")
+        case .stop?: parts.append("no longer repeats")
+        case nil: break
+        }
         if let priority = change.priority { parts.append(priority == .none ? "priority removed" : priority.text) }
         if let list = change.toList { parts.append("moved to the list \"\(list.title)\"") }
         return parts.joined(separator: ", ")
@@ -113,6 +155,8 @@ public enum ReminderDetails {
 }
 
 extension VoiceToolReply {
+    public static let reminderRepeatNeedsDue = "not changed: a repeating reminder needs a due day. Nothing changed; ask the user when it should first be due and try again with new_due."
+
     public static func reminderDetailsChanged(_ title: String, change: ReminderDetailsChange, due: ReminderDue?) -> String {
         var text = "changed: reminder \"\(title)\": \(ReminderDetails.summary(change))"
         if let due { text += ", now due \(ReminderText.due(due))" }

@@ -2160,7 +2160,8 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
         case .one(let event):
             let place = draft.newLocation == nil ? nil : devices.eventLocation(event)
-            guard let plan = EventChange.plan(draft, for: event, locationBefore: place, calendar: .current) else {
+            let notes = draft.replaceNotes == nil ? nil : devices.eventNotes(event)
+            guard let plan = EventChange.plan(draft, for: event, locationBefore: place, notesBefore: notes, calendar: .current) else {
                 await reply(toolCallID, VoiceToolReply.eventChangeInvalid)
                 return
             }
@@ -2197,6 +2198,11 @@ final class VoiceSessionController {
             case .several(let found):
                 await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
             case .one(let reminder):
+                // A repeat needs a due (Reminders' rule, ADR-312).
+                if case .set? = draft.repeatChange, reminder.due == nil, draft.newDue == nil {
+                    await reply(toolCallID, VoiceToolReply.reminderRepeatNeedsDue)
+                    return
+                }
                 let nothingNew = draft.changesDetails
                     ? ReminderDetails.changesNothing(reminder, change: draft.details, newDue: draft.newDue)
                     : !draft.markDone && EventChange.sameDue(reminder.due, draft.newDue)
