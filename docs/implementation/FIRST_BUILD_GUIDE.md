@@ -174,3 +174,13 @@ In order of risk:
 - **Quick actions (ADR-339):** the async `windowScene(_:performActionFor:)` on the existing scene delegate; `connectionOptions.shortcutItem` on cold launch.
 - **Memories tags (ADR-333):** `MemoryTagRow` with `ForEach(tags, id: \.tag)` over tuples.
 - **List templates (ADR-334):** `.swipeActions` inside a `Form` section in `NewListSheet`.
+
+### Watch, iPad and Mac round (2026-10-11, ADR-430 to ADR-433): most likely to need a fix
+**First build: still BLOCKED** (no Xcode here; the hosted jobs end in seconds with no logs, so no runner starts). In order of risk:
+- **iPad sidebar (ADR-430), `DoddyApp/App/SidebarLayout.swift`:**
+  - `struct SidebarLayout<Detail: View>` with a `@ViewBuilder var detail: Detail` stored property, built with a trailing closure in `RootView.tabContent`;
+  - `NavigationSplitView(columnVisibility:)` with `.navigationSplitViewStyle(.balanced)`, and Home's and Memories' own `NavigationStack`s inside the detail column (check for a doubled navigation bar);
+  - `List(selection: Binding<SidebarItem?>)` with `.tag(SidebarItem...)` on `Label`s; a `Binding(get:set:)` whose setter writes two `@Binding`s (same pattern as the Settings pickers);
+  - `RootView.tabContent` is now `@ViewBuilder` with an `if`/`else`, and `selectedScreen` a `switch` over `AppTab`.
+- **The opening (ADR-431):** `OpeningSceneView.stage` converts `OpeningScene.stageWidth(...)` (a `Double`) to `CGFloat`.
+- **iPad tests (ADR-432):** `DoddyTests` and `DoddyUITests` now have `TARGETED_DEVICE_FAMILY "1,2"`. `LaunchSmokeTests.testBackTapCardCanBeDeferredAndNeverShowsAsVerified` is now `throws` (for `XCTSkipIf`). Run once on an iPad simulator: `DODDY_DESTINATION='platform=iOS Simulator,name=iPad Air 11-inch (M3)' scripts/ci.sh` (use a name from `xcrun simctl list devices available`).

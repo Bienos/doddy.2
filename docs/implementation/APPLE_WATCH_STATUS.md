@@ -42,7 +42,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
   - delivery of the application context;
   - `sendMessageData` while the iPhone app is in the background (iOS wakes the app for messages, but this is untested);
   - watchOS dictation in Polish.
-- The watch app has no icon yet (it is needed for the App Store) and no Polish catalog of its own.
+- ~~The watch app has no icon yet and no Polish catalog of its own.~~ Both closed since (checked 2026-10-11): `DoddyWatch/Assets.xcassets/AppIcon` is the iPhone's candidate icon, byte-identical (SHA-256 `52674c1a…`, ADR-050, ADR-336), and `DoddyWatch/Localizable.xcstrings` is written by `tools/build_strings_catalog.py` (`--check` PASS). The icon stays a candidate until the owner approves a final one.
 
 ## Decisions for the owner
 - On by default, like widgets. The owner left this as built (2026-10-11, ADR-234).
@@ -62,3 +62,11 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
 - **Unreachable iPhone:** nothing is queued; the watch says so, as before.
 - **Not built:** a full voice conversation on the watch. The ElevenLabs voice runs on the iPhone; the watch covers saving a dictated note, adding a dictated item and ticking.
 - **Tests:** `WatchListAddTests` (1). **NOT RUN:** never on a watch; dictation into a watchOS `TextField` is assumed, not tried.
+
+## 2026-10-11: run of `prompts/APPLE_PLATFORMS_WATCH_IPAD_MAC.md` Phase 3 (Linux)
+- **BLOCKED / NOT RUN:** no Xcode and no watch simulator in the session. Nothing in the "NOT RUN / UNVERIFIED" list above or in `WATCH_COMPLICATIONS_STATUS.md` could be checked: Embed Watch Content, the paired-simulator checks, the complication screenshots and Always On.
+- **What did run (Swift 6.1.2 on Linux):**
+  - `swiftc -parse` on `DoddyWatch/*.swift` and `DoddyWatchWidgets/*.swift`: PASS;
+  - DoddyCore tests including `WatchLinkTests`, `WatchListAddTests` and `WatchComplicationTests`: PASS (863 in all, 0 failures);
+  - the strings `--check` (watch catalogs included): PASS.
+- No watch code changed in this round.

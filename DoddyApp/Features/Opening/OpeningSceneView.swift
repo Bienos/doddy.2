@@ -110,7 +110,8 @@ struct OpeningSceneView: View {
 
     /// Everything on the court, through the camera (zoom about a moving point, and the shake).
     private func stage(_ frame: OpeningFrame, at t: TimeInterval, drawsReadyDoddy: Bool, size: CGSize) -> some View {
-        let w = size.width
+        // Full width on a phone in portrait; on a wider screen the whole stage fits the height (ADR-431).
+        let w = CGFloat(OpeningScene.stageWidth(screenWidth: Double(size.width), screenHeight: Double(size.height)))
         return ZStack {
             Group {
                 court(w)

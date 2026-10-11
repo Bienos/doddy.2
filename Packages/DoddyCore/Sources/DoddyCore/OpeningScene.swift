@@ -225,6 +225,13 @@ public enum OpeningLayout {
 public enum OpeningScene {
     public static let stageHeight = 2.0
 
+    /// The stage's width in points, centred on the screen. A phone in portrait gets the full
+    /// width; a wider screen (iPad, landscape) gets the width at which the whole stage fits the
+    /// height, so the floor and Doddy never fall off the bottom (ADR-431).
+    public static func stageWidth(screenWidth width: Double, screenHeight height: Double) -> Double {
+        min(width, height / stageHeight)
+    }
+
     /// The timeline, in seconds from the start. Quick on purpose: 2.3 s, and a tap ends it.
     public enum Beat {
         /// The pen draws the dribble pose, one stroke after another.
@@ -579,8 +586,10 @@ public enum OpeningHandover {
     /// (it is from `Beat.cameraSettled` on). Same placement as `OpeningLayout.ready` on the stage.
     public static func courtBox(screenWidth width: Double, screenHeight height: Double) -> ScreenBox {
         let ready = OpeningLayout.ready
-        let top = (height - OpeningScene.stageHeight * width) / 2
-        return ScreenBox(centerX: ready.center.x * width, centerY: top + ready.center.y * width, height: ready.height * width)
+        let w = OpeningScene.stageWidth(screenWidth: width, screenHeight: height)
+        let left = (width - w) / 2
+        let top = (height - OpeningScene.stageHeight * w) / 2
+        return ScreenBox(centerX: left + ready.center.x * w, centerY: top + ready.center.y * w, height: ready.height * w)
     }
 
     /// From `Beat.handoverStart` Doddy leaves `court` along an arc and arrives in `home` at

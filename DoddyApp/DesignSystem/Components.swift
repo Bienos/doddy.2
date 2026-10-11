@@ -212,4 +212,10 @@ extension MemoryCategory {
 enum DeviceSupport {
     /// Accessibility › Touch › Back Tap is an iPhone setting; iPad has none.
     @MainActor static var hasBackTap: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+    /// Live Activities (the Lock Screen and the Dynamic Island) are iPhone-only; iPad has none,
+    /// so their settings and shopping mode are hidden there instead of saying "turn them on" (ADR-432).
+    @MainActor static var hasLiveActivities: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+    /// The sidebar replaces the tab bar on a wide screen (ADR-430), but not on an iPhone: a large
+    /// iPhone in landscape is regular width too, and keeps the tab bar.
+    @MainActor static var hasSidebar: Bool { UIDevice.current.userInterfaceIdiom != .phone }
 }
