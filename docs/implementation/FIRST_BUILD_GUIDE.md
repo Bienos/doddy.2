@@ -184,3 +184,8 @@ In order of risk:
   - `RootView.tabContent` is now `@ViewBuilder` with an `if`/`else`, and `selectedScreen` a `switch` over `AppTab`.
 - **The opening (ADR-431):** `OpeningSceneView.stage` converts `OpeningScene.stageWidth(...)` (a `Double`) to `CGFloat`.
 - **iPad tests (ADR-432):** `DoddyTests` and `DoddyUITests` now have `TARGETED_DEVICE_FAMILY "1,2"`. `LaunchSmokeTests.testBackTapCardCanBeDeferredAndNeverShowsAsVerified` is now `throws` (for `XCTSkipIf`). Run once on an iPad simulator: `DODDY_DESTINATION='platform=iOS Simulator,name=iPad Air 11-inch (M3)' scripts/ci.sh` (use a name from `xcrun simctl list devices available`).
+- **Watch "New note" complication (ADR-434):**
+  - `NewNoteComplication` with a nested `Entry` and `Provider` and `.widgetURL(...)` inside `StaticConfiguration`;
+  - in `WatchRootView`, `.navigationDestination(isPresented:)` on the `List` and `.onOpenURL` on the `NavigationStack`.
+- **Mac menu bar (ADR-435):** build with `xcodebuild -project Doddy.xcodeproj -scheme DoddyMac -destination 'platform=macOS' build`.
+  - Likely fixes: the `DoddyPersistence` package product on a macOS target (GRDB builds for macOS); `MenuBarExtra(... systemImage:)` with `.menuBarExtraStyle(.window)`; `@FocusState` set in `.task`; signing with no team (choose "Sign to Run Locally").

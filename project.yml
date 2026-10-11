@@ -7,6 +7,8 @@ options:
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
+    # The Mac menu bar prototype (ADR-435).
+    macOS: "14.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
 packages:
@@ -226,6 +228,33 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
+  DoddyMac:
+    # Doddy in the Mac menu bar (ADR-435), the first Mac prototype from the owner's Watch, iPad
+    # and Mac review. Type a note, Save or Cancel; saved in its own SQLite database on that Mac
+    # (sandbox container), read back before "Saved". No network, no microphone, no sync with the
+    # iPhone. Not embedded in or needed by the iPhone app; build it with the DoddyMac scheme.
+    type: application
+    platform: macOS
+    sources:
+      - path: DoddyMac
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+      - package: DoddyCore
+        product: DoddyPersistence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac
+        PRODUCT_NAME: Doddy
+        CODE_SIGN_ENTITLEMENTS: Config/DoddyMac.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        # Menu bar only: no Dock icon, no main window.
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
   DoddyTests:
     type: bundle.unit-test
     platform: iOS
@@ -261,3 +290,7 @@ schemes:
       targets:
         - DoddyTests
         - DoddyUITests
+  DoddyMac:
+    build:
+      targets:
+        DoddyMac: all

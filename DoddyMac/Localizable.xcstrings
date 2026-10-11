@@ -1,0 +1,83 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj"
+          }
+        }
+      }
+    },
+    "New note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa notatka"
+          }
+        }
+      }
+    },
+    "Notes saved here stay on this Mac. They aren't on your iPhone, and your iPhone's notes aren't here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki zapisane tutaj zostają na tym Macu. Nie ma ich na Twoim iPhonie, a notatek z iPhone'a nie ma tutaj."
+          }
+        }
+      }
+    },
+    "Quit Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ Doddy"
+          }
+        }
+      }
+    },
+    "Recent on this Mac": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnie na tym Macu"
+          }
+        }
+      }
+    },
+    "Saved on this Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano na tym Macu."
+          }
+        }
+      }
+    },
+    "Your note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja notatka"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

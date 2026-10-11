@@ -192,10 +192,68 @@ extension ComplicationContent {
         at: .now)
 }
 
+/// "New note" (ADR-434): a complication that only opens the watch app on its note screen. It
+/// shows nothing of the user's, so it never changes and never reads the snapshot. Nothing is
+/// recorded until the person taps the text field there.
+struct NewNoteComplication: Widget {
+    static let kind = "com.bienos.doddy2.watch.newnote"
+
+    struct Entry: TimelineEntry { let date: Date }
+
+    struct Provider: TimelineProvider {
+        func placeholder(in context: Context) -> Entry { Entry(date: .now) }
+        func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) { completion(Entry(date: .now)) }
+        func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
+            completion(Timeline(entries: [Entry(date: .now)], policy: .never))
+        }
+    }
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: Provider()) { _ in
+            NewNoteComplicationView()
+                .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(WatchCaptureLink.url)
+        }
+        .configurationDisplayName("New note")
+        .description("Opens Doddy's new note. Nothing is recorded until you tap to write or dictate.")
+        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryInline, .accessoryRectangular])
+    }
+}
+
+struct NewNoteComplicationView: View {
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: "square.and.pencil").font(.title3)
+            }
+            .widgetAccentable()
+            .accessibilityLabel("New note in Doddy")
+        case .accessoryCorner:
+            Image(systemName: "square.and.pencil")
+                .font(.title3)
+                .widgetLabel { Text("New note") }
+                .accessibilityLabel("New note in Doddy")
+        case .accessoryInline:
+            Label("New note", systemImage: "square.and.pencil")
+        default:
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Doddy").font(.headline).widgetAccentable()
+                Label("New note", systemImage: "square.and.pencil").font(.caption)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
 @main
 struct DoddyWatchWidgetsBundle: WidgetBundle {
     var body: some Widget {
         DoddyComplication()
+        NewNoteComplication()
     }
 }
 
@@ -210,4 +268,10 @@ struct DoddyWatchWidgetsBundle: WidgetBundle {
     DoddyComplication()
 } timeline: {
     ComplicationEntry(date: .now, content: .previewContent, relevance: nil)
+}
+
+#Preview("New note", as: .accessoryCircular) {
+    NewNoteComplication()
+} timeline: {
+    NewNoteComplication.Entry(date: .now)
 }

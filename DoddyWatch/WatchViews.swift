@@ -3,6 +3,9 @@ import SwiftUI
 
 struct WatchRootView: View {
     @Environment(WatchLink.self) private var link
+    /// Set by the "New note" complication (ADR-434). Opens the note screen; nothing records until
+    /// the person taps its text field.
+    @State private var showsNewNote = false
 
     var body: some View {
         NavigationStack {
@@ -33,6 +36,10 @@ struct WatchRootView: View {
                 }
             }
             .navigationTitle("Doddy")
+            .navigationDestination(isPresented: $showsNewNote) { WatchNoteEntry() }
+        }
+        .onOpenURL { url in
+            if WatchCaptureLink.isNewNote(url) { showsNewNote = true }
         }
     }
 

@@ -1,4 +1,6 @@
 # Mac spike report (ADR-433)
+
+> **Update, 2026-10-11:** the owner's review deck chose a native Mac menu bar app first (slide 13). That is now built as a prototype, ADR-435 and `MAC_MENU_BAR_STATUS.md`. The comparison below stays as background.
 Date: 2026-10-11. From `prompts/APPLE_PLATFORMS_WATCH_IPAD_MAC.md` Phase 5, run in a Linux cloud session.
 
 **Nothing was built or run on a Mac.** This report comes from reading the code and from Apple's and the packages' own documentation. Every runtime behaviour marked "unknown" needs a Mac. No Mac build setting, entitlement or `#if` was added; the choice of route is the owner's.

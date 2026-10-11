@@ -5523,6 +5523,17 @@
         }
       }
     },
+    "New note in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa notatka w Doddym"
+          }
+        }
+      }
+    },
     "Newest first": {
       "extractionState": "manual",
       "localizations": {
@@ -6003,6 +6014,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notatki z Twoich rozmów telefonicznych"
+          }
+        }
+      }
+    },
+    "Notes saved here stay on this Mac. They aren't on your iPhone, and your iPhone's notes aren't here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki zapisane tutaj zostają na tym Macu. Nie ma ich na Twoim iPhonie, a notatek z iPhone'a nie ma tutaj."
           }
         }
       }
@@ -7558,6 +7580,17 @@
         }
       }
     },
+    "Quit Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ Doddy"
+          }
+        }
+      }
+    },
     "Reach Doddy with two taps": {
       "extractionState": "manual",
       "localizations": {
@@ -7708,6 +7741,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ostatnie rozmowy"
+          }
+        }
+      }
+    },
+    "Recent on this Mac": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnie na tym Macu"
           }
         }
       }
@@ -8588,6 +8632,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano w Doddym na iPhonie."
+          }
+        }
+      }
+    },
+    "Saved on this Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano na tym Macu."
           }
         }
       }
