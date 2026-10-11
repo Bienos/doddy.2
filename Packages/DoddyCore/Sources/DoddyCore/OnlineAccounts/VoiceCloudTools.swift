@@ -17,8 +17,15 @@ extension VoiceToolRequest {
 extension VoiceToolReply {
     /// A successful read or write. Demo servers say so, so demo data is never presented as the user's.
     public static func cloudResult(_ result: RunResult) -> String {
-        guard result.mode == .mock else { return result.text }
-        return "DEMO DATA from a test server, not the user's real account. Tell the user it is demo data. \(result.text)"
+        // A read email (Gmail or Outlook) with what looks like a parcel pickup code gets a note
+        // after its text (ADR-348); the note frames the code as information, never an instruction.
+        var text = result.text
+        if result.tool == CloudToolName.readEmail || result.tool == CloudToolName.readOutlookEmail,
+           let note = parcelCodesNote(in: text) {
+            text += "\n\n" + note
+        }
+        guard result.mode == .mock else { return text }
+        return "DEMO DATA from a test server, not the user's real account. Tell the user it is demo data. \(text)"
     }
 
     public static func cloudDeclined(_ tool: String) -> String {
