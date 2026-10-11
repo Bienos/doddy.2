@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Save to Doddy</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main id="content" aria-live="polite">
+    <h1 id="heading"></h1>
+    <p id="loading" class="muted"></p>
+
+    <section id="page" hidden>
+      <h2 id="titleLabel" class="label"></h2>
+      <p id="pageTitle" class="value"></p>
+      <h2 id="urlLabel" class="label"></h2>
+      <p id="pageUrl" class="value url"></p>
+      <div id="selectionBlock" hidden>
+        <h2 id="selectionLabel" class="label"></h2>
+        <blockquote id="selectionText" class="selection"></blockquote>
+      </div>
+      <p id="notSavedNote" class="muted"></p>
+    </section>
+
+    <p id="result" class="result" role="status" hidden></p>
+
+    <div class="buttons">
+      <button type="button" id="sendButton" class="primary" hidden></button>
+      <button type="button" id="cancelButton"></button>
+    </div>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

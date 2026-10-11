@@ -7,6 +7,7 @@ options:
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
+    macOS: "14.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
 packages:
@@ -53,6 +54,11 @@ settings:
     # Watch complications (ADR-262) read the snapshot from the watch's App Group (used by the
     # watch app and its widget extension).
     DODDY_WATCH_ENTITLEMENTS: Config/DoddyWatch.entitlements
+    # The native Mac app (ADR-351) keeps its own notes and shares a clip inbox with its Share and
+    # Safari extensions through this App Group (ADR-352). Set to "" to build without it: the
+    # extensions then say sending to Doddy isn't set up. On macOS the group must be registered for
+    # the team; Xcode's automatic signing does that.
+    DODDY_MAC_APP_GROUP: group.$(DODDY_APP_BUNDLE_IDENTIFIER).mac
     # Shared lists through iCloud (ADR-263), off by default (needs a paid team with iCloud). To
     # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
     # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or
@@ -229,6 +235,92 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
+  DoddyMac:
+    # Native Mac app (ADR-351): notes, lists and waiting clips on this Mac, a menu bar quick note.
+    # Its own notes file; no sync with the iPhone, no network, no voice yet.
+    type: application
+    platform: macOS
+    sources:
+      - path: DoddyMac
+      - path: Shared/Mac
+    dependencies:
+      - target: DoddyMacShare
+      - target: DoddyMacSafari
+      - package: DoddyCore
+        product: DoddyCore
+      - package: DoddyCore
+        product: DoddyPersistence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac
+        CODE_SIGN_ENTITLEMENTS: Config/DoddyMac.entitlements
+        PRODUCT_NAME: Doddy
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyMac-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        # No app icon yet: only the owner's Doddy art may be used (CLAUDE.md), and none has been
+        # supplied for the Mac. The system's default icon shows until it is.
+        ENABLE_HARDENED_RUNTIME: YES
+  DoddyMacShare:
+    # "Save to Doddy" in the Mac Share menu (ADR-352): leaves a clip in the clip inbox. Saves no
+    # note, opens no database, no network.
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: DoddyMacShare
+      - path: Shared/Mac
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Config/DoddyMacShare.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac.share
+        PRODUCT_NAME: DoddyMacShare
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyMacShare-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Save to Doddy
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
+  DoddyMacSafari:
+    # Safari web extension (ADR-353): a toolbar button that sends the page's title, address and
+    # selected text, on the person's click, to the clip inbox. The page files are resources at the
+    # top level of the extension bundle; _locales keeps its folders. No network.
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: DoddyMacSafari/SafariWebExtensionHandler.swift
+      - path: Shared/Mac
+      - path: DoddyMacSafari/Resources/manifest.json
+        buildPhase: resources
+      - path: DoddyMacSafari/Resources/popup.html
+        buildPhase: resources
+      - path: DoddyMacSafari/Resources/popup.js
+        buildPhase: resources
+      - path: DoddyMacSafari/Resources/popup.css
+        buildPhase: resources
+      - path: DoddyMacSafari/Resources/_locales
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: Config/DoddyMacSafari.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac.safari
+        PRODUCT_NAME: DoddyMacSafari
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyMacSafari-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        ENABLE_HARDENED_RUNTIME: YES
+        SKIP_INSTALL: YES
   DoddyTests:
     type: bundle.unit-test
     platform: iOS
@@ -264,3 +356,7 @@ schemes:
       targets:
         - DoddyTests
         - DoddyUITests
+  DoddyMac:
+    build:
+      targets:
+        DoddyMac: all

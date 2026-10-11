@@ -27,6 +27,10 @@ TARGETS = [
     ("DoddyShare/Localizable.xcstrings", ("DoddyShare",)),
     ("DoddyWatch/Localizable.xcstrings", ("DoddyWatch",)),
     ("DoddyWatchWidgets/Localizable.xcstrings", ("DoddyWatchWidgets",)),
+    # The native Mac app and its Share extension (ADR-351, ADR-352). The Safari extension's own
+    # words are in DoddyMacSafari/Resources/_locales (web extensions use their own format).
+    ("DoddyMac/Localizable.xcstrings", ("DoddyMac",)),
+    ("DoddyMacShare/Localizable.xcstrings", ("DoddyMacShare",)),
 ]
 # System permission prompts (INFOPLIST_KEY_NS…UsageDescription in project.yml, app target):
 # l10n/pl_infoplist.json holds the English each translation was made from, so a changed prompt

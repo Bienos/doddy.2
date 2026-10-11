@@ -45,6 +45,28 @@
         }
       }
     },
+    "%@. Tap to tick.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. Kliknij, aby zaznaczyć."
+          }
+        }
+      }
+    },
+    "%lld clips waiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czekające wycinki: %lld"
+          }
+        }
+      }
+    },
     "%lld days before, at 9:00": {
       "extractionState": "manual",
       "localizations": {
@@ -100,6 +122,17 @@
         }
       }
     },
+    "A clip is not a note. It becomes one only when you press Save in the Clips list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycinek nie jest notatką. Staje się nią dopiero po kliknięciu Zapisz na liście wycinków."
+          }
+        }
+      }
+    },
     "A handwritten or printed list. Doddy reads it on this iPhone; the photo isn't kept or sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -118,6 +151,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zdanie o dzisiejszym dniu"
+          }
+        }
+      }
+    },
+    "A list name can have up to %lld characters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa listy może mieć do %lld znaków."
           }
         }
       }
@@ -332,6 +376,17 @@
       }
     },
     "A stored memory couldn't be read. Nothing was deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać zapisanej notatki. Nic nie zostało usunięte."
+          }
+        }
+      }
+    },
+    "A stored note couldn't be read. Nothing was deleted.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
@@ -1871,6 +1926,17 @@
         }
       }
     },
+    "Clear ticked items": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń zaznaczone pozycje"
+          }
+        }
+      }
+    },
     "Clearing removes this list only. Reminders, events and notes Doddy added stay where they are.": {
       "extractionState": "manual",
       "localizations": {
@@ -1878,6 +1944,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czyszczenie usuwa tylko tę listę. Przypomnienia, wydarzenia i notatki dodane przez Doddy’ego zostają tam, gdzie są."
+          }
+        }
+      }
+    },
+    "Clips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycinki"
           }
         }
       }
@@ -2190,6 +2267,17 @@
         }
       }
     },
+    "Corrected %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poprawiono: %@"
+          }
+        }
+      }
+    },
     "Couldn't check": {
       "extractionState": "manual",
       "localizations": {
@@ -2498,6 +2586,17 @@
         }
       }
     },
+    "Delete list…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń listę…"
+          }
+        }
+      }
+    },
     "Delete my Doddy messaging data": {
       "extractionState": "manual",
       "localizations": {
@@ -2505,6 +2604,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usuń moje dane wiadomości Doddy’ego"
+          }
+        }
+      }
+    },
+    "Delete note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń notatkę"
           }
         }
       }
@@ -2597,6 +2707,17 @@
         }
       }
     },
+    "Delete this note?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć tę notatkę?"
+          }
+        }
+      }
+    },
     "Delete this reminder?": {
       "extractionState": "manual",
       "localizations": {
@@ -2626,6 +2747,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć Twoje dane wiadomości Doddy’ego?"
+          }
+        }
+      }
+    },
+    "Delete “%@”?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć „%@”?"
           }
         }
       }
@@ -2861,6 +2993,17 @@
         }
       }
     },
+    "Doddy already has %lld clips waiting. Open Doddy and save or discard some, then try again. Nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ma już %lld oczekujących wycinków. Otwórz Doddy i zapisz lub odrzuć część z nich, a potem spróbuj ponownie. Nic nie zostało zapisane."
+          }
+        }
+      }
+    },
     "Doddy asks for “While Using” only, never “Always”.": {
       "extractionState": "manual",
       "localizations": {
@@ -2927,6 +3070,17 @@
         }
       }
     },
+    "Doddy couldn't open its notes file, so saving is switched off. Nothing was deleted or reset. Try quitting and reopening Doddy. (%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł otworzyć pliku z notatkami, więc zapisywanie jest wyłączone. Nic nie zostało usunięte ani zresetowane. Zamknij Doddy i otwórz go ponownie. (%@)"
+          }
+        }
+      }
+    },
     "Doddy couldn't read a date or a length from this note, so check both.": {
       "extractionState": "manual",
       "localizations": {
@@ -2967,6 +3121,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy dopasuje się, jeśli zmienisz język w trakcie rozmowy."
+          }
+        }
+      }
+    },
+    "Doddy for Mac doesn't talk or listen yet. Talking to Doddy is on your iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy na Maca jeszcze nie mówi ani nie słucha. Rozmowa z Doddym jest dostępna na iPhonie."
           }
         }
       }
@@ -3055,6 +3220,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy korzysta tylko z Twoich notatek: bez kalendarza, przypomnień, kontaktów, innych aplikacji i kont online."
+          }
+        }
+      }
+    },
+    "Doddy keeps this in its list of waiting clips on your Mac. Nothing is saved until you press Save there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy trzyma to na liście oczekujących wycinków na Macu. Nic nie jest zapisane, dopóki tam nie klikniesz Zapisz."
+          }
+        }
+      }
+    },
+    "Doddy keeps up to %lld lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przechowuje do %lld list."
           }
         }
       }
@@ -3477,6 +3664,17 @@
         }
       }
     },
+    "Done: %@. Tap to untick.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrobione: %@. Kliknij, aby odznaczyć."
+          }
+        }
+      }
+    },
     "Double Back Tap": {
       "extractionState": "manual",
       "localizations": {
@@ -3583,6 +3781,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przy każdym otwarciu Doddy’ego: dwusekundowa animacja. Pióro rysuje Doddy’ego, on trafia do kosza i wyskakuje gotowy do rozmowy, a potem wjeżdżają przyciski. Stuknij, aby pominąć. Przy włączonym Ograniczeniu ruchu to nieruchomy obrazek; przy ukrytej grafice postaci lub włączonym VoiceOver się nie odtwarza."
+          }
+        }
+      }
+    },
+    "Edit and save…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj i zapisz…"
           }
         }
       }
@@ -3840,6 +4049,17 @@
         }
       }
     },
+    "Everything you write here stays on this Mac. Doddy for Mac doesn't use the internet, has no account, and sends nothing anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko, co tu piszesz, zostaje na tym Macu. Doddy na Maca nie korzysta z internetu, nie ma konta i niczego nigdzie nie wysyła."
+          }
+        }
+      }
+    },
     "Expired": {
       "extractionState": "manual",
       "localizations": {
@@ -3869,6 +4089,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eksportuj jako Markdown"
+          }
+        }
+      }
+    },
+    "Export as a text file…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksportuj jako plik tekstowy…"
           }
         }
       }
@@ -3924,6 +4155,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ekspresja"
+          }
+        }
+      }
+    },
+    "Extensions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozszerzenia"
           }
         }
       }
@@ -4115,6 +4357,17 @@
         }
       }
     },
+    "First version: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pierwsza wersja: %@"
+          }
+        }
+      }
+    },
     "First, let's make Doddy easy to reach. I'll walk you through Double Back Tap, one step at a time.": {
       "extractionState": "manual",
       "localizations": {
@@ -4199,6 +4452,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Do przewodnika, wykładu lub komunikatu. Doddy tłumaczy na Twój język i nigdy nie mówi do ludzi wokół Ciebie. Nie do czyjejś prywatnej rozmowy."
+          }
+        }
+      }
+    },
+    "For now, talk to Doddy on your iPhone. On this Mac you can write notes and lists, and send pages from Safari or the Share menu.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie rozmawiaj z Doddym na iPhonie. Na tym Macu możesz pisać notatki i listy oraz wysyłać strony z Safari lub z menu Udostępnij."
           }
         }
       }
@@ -4698,6 +4962,17 @@
         }
       }
     },
+    "In any app, choose Share › Doddy. If it isn't listed, turn it on in System Settings › Privacy & Security › Extensions › Sharing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W dowolnej aplikacji wybierz Udostępnij › Doddy. Jeśli go nie ma, włącz go w Ustawieniach systemowych › Prywatność i ochrona › Rozszerzenia › Udostępnianie."
+          }
+        }
+      }
+    },
     "In progress": {
       "extractionState": "manual",
       "localizations": {
@@ -4804,6 +5079,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie została zapisana."
+          }
+        }
+      }
+    },
+    "It is removed from this Mac. This can't be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zostanie usunięta z tego Maca. Tego nie można cofnąć."
           }
         }
       }
@@ -5358,6 +5644,17 @@
         }
       }
     },
+    "List actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Działania na liście"
+          }
+        }
+      }
+    },
     "List items ticked off: %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -5666,6 +5963,17 @@
         }
       }
     },
+    "Make list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz listę"
+          }
+        }
+      }
+    },
     "Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -5673,6 +5981,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Utwórz ją tutaj albo powiedz Doddy’emu: „dodaj mleko do listy zakupów”. Listy zostają na tym iPhonie."
+          }
+        }
+      }
+    },
+    "Make one with the + button.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz ją przyciskiem +."
           }
         }
       }
@@ -6645,6 +6964,17 @@
         }
       }
     },
+    "Not set up in this build: the shared folder (App Group) is missing, so the extensions can't hand clips to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie skonfigurowano w tej wersji: brakuje wspólnego folderu (App Group), więc rozszerzenia nie mogą przekazać wycinków aplikacji Doddy."
+          }
+        }
+      }
+    },
     "Not the same words. Check it's the one you meant.": {
       "extractionState": "manual",
       "localizations": {
@@ -6689,6 +7019,17 @@
         }
       }
     },
+    "Note text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekst notatki"
+          }
+        }
+      }
+    },
     "Notes": {
       "extractionState": "manual",
       "localizations": {
@@ -6718,6 +7059,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notatki i listy są ukryte. Włącz „Pokazuj notatki i listy na Apple Watch” w Ustawieniach Doddy’ego na iPhonie."
+          }
+        }
+      }
+    },
+    "Notes file": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik z notatkami"
           }
         }
       }
@@ -7470,6 +7822,17 @@
         }
       }
     },
+    "Open Doddy to check it and press Save. It isn't saved yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy, sprawdź to i kliknij Zapisz. Jeszcze nic nie jest zapisane."
+          }
+        }
+      }
+    },
     "Open Doddy to check it and tap Save. It isn't saved yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -7767,6 +8130,17 @@
         }
       }
     },
+    "Or press ⌘N to write one. Your notes stay on this Mac.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Albo naciśnij ⌘N, aby napisać nową. Twoje notatki zostają na tym Macu."
+          }
+        }
+      }
+    },
     "Order": {
       "extractionState": "manual",
       "localizations": {
@@ -7818,6 +8192,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "PIN"
+          }
+        }
+      }
+    },
+    "Pages from Safari and things from the Share menu wait here until you save them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strony z Safari i rzeczy z menu Udostępnij czekają tutaj, aż je zapiszesz."
           }
         }
       }
@@ -8240,6 +8625,17 @@
         }
       }
     },
+    "Press ⌘N to write the first one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naciśnij ⌘N, aby napisać pierwszą."
+          }
+        }
+      }
+    },
     "Preview": {
       "extractionState": "manual",
       "localizations": {
@@ -8357,6 +8753,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przywracam…"
+          }
+        }
+      }
+    },
+    "Quick note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szybka notatka"
           }
         }
       }
@@ -8489,6 +8896,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe w Doddym"
+          }
+        }
+      }
+    },
+    "Ready. Clips wait in a folder only Doddy and its extensions can open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Wycinki czekają w folderze, który mogą otworzyć tylko Doddy i jego rozszerzenia."
           }
         }
       }
@@ -8845,6 +9263,17 @@
         }
       }
     },
+    "Remove %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń: %@"
+          }
+        }
+      }
+    },
     "Remove AccessKey": {
       "extractionState": "manual",
       "localizations": {
@@ -9065,6 +9494,17 @@
         }
       }
     },
+    "Rename…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień nazwę…"
+          }
+        }
+      }
+    },
     "Renews": {
       "extractionState": "manual",
       "localizations": {
@@ -9230,6 +9670,17 @@
         }
       }
     },
+    "Safari": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Safari"
+          }
+        }
+      }
+    },
     "Sample": {
       "extractionState": "manual",
       "localizations": {
@@ -9329,6 +9780,17 @@
         }
       }
     },
+    "Save as note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz jako notatkę"
+          }
+        }
+      }
+    },
     "Save as template": {
       "extractionState": "manual",
       "localizations": {
@@ -9336,6 +9798,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisz jako szablon"
+          }
+        }
+      }
+    },
+    "Save changes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz zmiany"
           }
         }
       }
@@ -9538,6 +10011,17 @@
         }
       }
     },
+    "Saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano."
+          }
+        }
+      }
+    },
     "Saved. Remove from this list": {
       "extractionState": "manual",
       "localizations": {
@@ -9545,6 +10029,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano. Usuń z tej listy"
+          }
+        }
+      }
+    },
+    "Saves every note and list as one plain text file, where you choose.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisuje wszystkie notatki i listy w jednym pliku tekstowym, w wybranym miejscu."
           }
         }
       }
@@ -9648,6 +10143,17 @@
         }
       }
     },
+    "Search notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj w notatkach"
+          }
+        }
+      }
+    },
     "Search saved notes": {
       "extractionState": "manual",
       "localizations": {
@@ -9710,6 +10216,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyślij"
+          }
+        }
+      }
+    },
+    "Send a page from Safari or use the Share menu in any app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij stronę z Safari albo użyj menu Udostępnij w dowolnej aplikacji."
           }
         }
       }
@@ -10022,6 +10539,17 @@
         }
       }
     },
+    "Share menu": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu Udostępnij"
+          }
+        }
+      }
+    },
     "Share text": {
       "extractionState": "manual",
       "localizations": {
@@ -10110,6 +10638,17 @@
         }
       }
     },
+    "Sharing to Doddy isn't set up in this version of the app. Nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnianie do Doddy nie jest skonfigurowane w tej wersji aplikacji. Nic nie zostało zapisane."
+          }
+        }
+      }
+    },
     "Sharing to Doddy isn't set up in this version of the app. Nothing was saved. You can use the Save to Doddy shortcut instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -10172,6 +10711,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż w Finderze"
           }
         }
       }
@@ -10414,6 +10964,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Coś w tym żądaniu nie zostało przyjęte. Nic się nie zmieniło."
+          }
+        }
+      }
+    },
+    "Something went wrong and nothing was changed. (%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś poszło nie tak i nic nie zostało zmienione. (%@)"
           }
         }
       }
@@ -10836,6 +11397,17 @@
         }
       }
     },
+    "Tags": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tagi"
+          }
+        }
+      }
+    },
     "Talk again": {
       "extractionState": "manual",
       "localizations": {
@@ -11045,6 +11617,17 @@
         }
       }
     },
+    "That clip couldn't be thrown away. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odrzucić tego wycinka. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "That code has expired. Ask for a new one.": {
       "extractionState": "manual",
       "localizations": {
@@ -11188,6 +11771,28 @@
         }
       }
     },
+    "That item is already on the list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta pozycja jest już na liście."
+          }
+        }
+      }
+    },
+    "That item is too long.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta pozycja jest za długa."
+          }
+        }
+      }
+    },
     "That line couldn't be removed. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -11239,6 +11844,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tej notatki już nie ma."
+          }
+        }
+      }
+    },
+    "That note no longer exists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta notatka już nie istnieje."
           }
         }
       }
@@ -11364,6 +11980,17 @@
         }
       }
     },
+    "That's %lld characters; the limit is %lld. Nothing was cut and nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To %lld znaków, a limit wynosi %lld. Nic nie zostało obcięte ani zapisane."
+          }
+        }
+      }
+    },
     "That's the limit for calls for now. Try again later.": {
       "extractionState": "manual",
       "localizations": {
@@ -11393,6 +12020,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer wiadomości Doddy’ego nie jest jeszcze do tego skonfigurowany (brak kluczy dostawcy). Nic nie zostało wysłane."
+          }
+        }
+      }
+    },
+    "The Safari extension sends Doddy only the page title, the address and the text you selected, and only when you press its button. It doesn't read other pages, and it has no network access.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozszerzenie Safari wysyła do Doddy tylko tytuł strony, adres i zaznaczony tekst, i to wyłącznie po kliknięciu jego przycisku. Nie czyta innych stron i nie ma dostępu do sieci."
           }
         }
       }
@@ -11441,6 +12079,17 @@
         }
       }
     },
+    "The change couldn't be confirmed, so it isn't counted as saved. Your text is still here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić zmiany, więc nie jest uznana za zapisaną. Twój tekst nadal tu jest."
+          }
+        }
+      }
+    },
     "The check-in couldn't be set. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -11481,6 +12130,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Okres musi wynosić od 1 do 120 miesięcy."
+          }
+        }
+      }
+    },
+    "The list and its items are removed from this Mac. This can't be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista i jej pozycje zostaną usunięte z tego Maca. Tego nie można cofnąć."
+          }
+        }
+      }
+    },
+    "The list is full.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista jest pełna."
           }
         }
       }
@@ -11562,6 +12233,17 @@
         }
       }
     },
+    "The note was saved, but its clip couldn't be cleared from the inbox. It is hidden for now; you can delete the clip file in Settings › Extensions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatka została zapisana, ale nie udało się usunąć jej wycinka ze skrzynki. Na razie jest ukryty; plik wycinka możesz usunąć w Ustawieniach › Rozszerzenia."
+          }
+        }
+      }
+    },
     "The note was saved, but its photo couldn't be kept on this iPhone. The note's words are all there.": {
       "extractionState": "manual",
       "localizations": {
@@ -11591,6 +12273,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zdjęcie notatki"
+          }
+        }
+      }
+    },
+    "The notes file isn't available on this Mac right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik z notatkami jest teraz niedostępny na tym Macu."
+          }
+        }
+      }
+    },
+    "The notes file isn't available right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik z notatkami jest teraz niedostępny."
           }
         }
       }
@@ -11859,6 +12563,17 @@
         }
       }
     },
+    "These notes are kept on this Mac only. They don't sync with Doddy on your iPhone, and they are not backed up by Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te notatki są przechowywane tylko na tym Macu. Nie synchronizują się z Doddym na iPhonie i Doddy nie tworzy ich kopii zapasowej."
+          }
+        }
+      }
+    },
     "Things you said that might be useful later, in your words. Tick what to save; nothing is saved otherwise. Doddy picked these on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -11903,6 +12618,17 @@
         }
       }
     },
+    "This build has no shared folder for the Share menu and Safari. See Settings › Extensions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta wersja nie ma wspólnego folderu dla menu Udostępnij i Safari. Zobacz Ustawienia › Rozszerzenia."
+          }
+        }
+      }
+    },
     "This build of Doddy can't receive notifications (it needs an Apple developer team with Push Notifications). Daily news still works in the app.": {
       "extractionState": "manual",
       "localizations": {
@@ -11921,6 +12647,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta wersja Doddy’ego nie może niczego udostępniać widżetom (nie jest podpisana grupą aplikacji Doddy’ego), więc widżety pokazują tylko „Otwórz Doddy’ego”."
+          }
+        }
+      }
+    },
+    "This can't be changed as it is.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego nie można zmienić w takiej postaci."
           }
         }
       }
@@ -12273,6 +13010,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Te stuknięcia mają już przypisaną akcję."
+          }
+        }
+      }
+    },
+    "Throw away": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzuć"
           }
         }
       }
@@ -12816,6 +13564,17 @@
         }
       }
     },
+    "Turn on “Doddy” in Safari › Settings › Extensions. Then use its button in the toolbar to send the page you are on, or the text you selected.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz „Doddy” w Safari › Ustawienia › Rozszerzenia. Potem użyj jego przycisku na pasku narzędzi, aby wysłać stronę, na której jesteś, lub zaznaczony tekst."
+          }
+        }
+      }
+    },
     "Turned off in Doddy's Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -13267,6 +14026,17 @@
         }
       }
     },
+    "Waiting since %@. It is not a note until you save it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka od %@. To nie jest notatka, dopóki jej nie zapiszesz."
+          }
+        }
+      }
+    },
     "Warm and engaging": {
       "extractionState": "manual",
       "localizations": {
@@ -13685,6 +14455,17 @@
         }
       }
     },
+    "Where clips wait": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdzie czekają wycinki"
+          }
+        }
+      }
+    },
     "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.": {
       "extractionState": "manual",
       "localizations": {
@@ -13861,6 +14642,17 @@
         }
       }
     },
+    "Written %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisano: %@"
+          }
+        }
+      }
+    },
     "YOUR SAVED NOTES": {
       "extractionState": "manual",
       "localizations": {
@@ -13890,6 +14682,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wczoraj"
+          }
+        }
+      }
+    },
+    "You already have a list with that name.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masz już listę o tej nazwie."
           }
         }
       }
@@ -14242,6 +15045,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Notatki zostają. Usuwane są tylko przypomnienia."
+          }
+        }
+      }
+    },
+    "Your notes were saved by a newer version of Doddy, so this version can't open them. Nothing was deleted or reset. Install the latest version of Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje notatki zapisała nowsza wersja Doddy, więc ta wersja nie może ich otworzyć. Nic nie zostało usunięte ani zresetowane. Zainstaluj najnowszą wersję Doddy."
           }
         }
       }

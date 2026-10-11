@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the DoddyMacSafari extension (merged with the generated keys).
+  "Save to Doddy" in Safari on the Mac (ADR-353): a toolbar button whose popup shows the page's
+  title, address and selected text, and after "Send to Doddy" leaves them in the Mac clip inbox
+  in the App Group for the app. No network, no database, no content script on page load.
+-->
+<plist version="1.0">
+<dict>
+	<!-- Shared folder with the Mac app; only works when the build is signed with the App Group. -->
+	<key>DoddyAppGroup</key>
+	<string>$(DODDY_MAC_APP_GROUP)</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.Safari.web-extension</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).SafariWebExtensionHandler</string>
+	</dict>
+</dict>
+</plist>

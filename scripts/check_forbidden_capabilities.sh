@@ -37,7 +37,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyShare DoddyWatch DoddyWatchWidgets Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyShare DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacShare DoddyMacSafari Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
@@ -215,8 +215,32 @@ fi
 if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v -e "^$alarms_dir/" -e "^Shared/Alarms/DoddyAlarmMetadata.swift:" -e "^DoddyWidgets/AlarmLiveActivity.swift:"; then
   echo "FAIL: AlarmKit outside $alarms_dir." >&2; status=1
 fi
-if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
+if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare DoddyMac DoddyMacShare DoddyMacSafari Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), on-device translation only in Translate text, no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+# The Mac app and its two extensions (ADR-351 to ADR-353): no network of any kind, no personal-data
+# or device entitlements. The Safari extension's page files may not fetch, inject markup, evaluate
+# text as code or name a web address, and its manifest asks only for activeTab, scripting and
+# nativeMessaging, with no host permissions, no content scripts and no background page.
+if grep -nE 'com\.apple\.security\.(network\.|personal-information|device\.|files\.(downloads|all)|temporary-exception|automation)' Config/DoddyMac*.entitlements | code_only; then
+  echo "FAIL: the Mac app and its extensions may not have network, personal-data or device entitlements." >&2; status=1
+fi
+mac_web=DoddyMacSafari/Resources
+if [ -d "$mac_web" ]; then
+  if grep -RInE --exclude-dir=_locales 'fetch[[:space:]]*\(|XMLHttpRequest|WebSocket|EventSource|sendBeacon|importScripts|\.innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval[[:space:]]*\(|new[[:space:]]+Function|https?://|localStorage|sessionStorage|indexedDB|\.cookie|history\.|runtime\.connect|tabs\.(create|update|sendMessage)|webRequest|downloads\.' "$mac_web" | code_only; then
+    echo "FAIL: the Safari extension's files may not use the network, inject markup, run text as code or store anything (ADR-353)." >&2; status=1
+  fi
+  if grep -nE '"(host_permissions|content_scripts|background|web_accessible_resources|externally_connectable|optional_permissions|optional_host_permissions|declarative_net_request)"' "$mac_web/manifest.json"; then
+    echo "FAIL: the Safari extension's manifest may not ask for hosts, content scripts, a background page or more (ADR-353)." >&2; status=1
+  fi
+  if ! python3 -I - "$mac_web/manifest.json" <<'PY'
+import json, sys
+permissions = json.load(open(sys.argv[1])).get("permissions", [])
+sys.exit(0 if sorted(permissions) == ["activeTab", "nativeMessaging", "scripting"] else 1)
+PY
+  then
+    echo "FAIL: the Safari extension's permissions must be exactly activeTab, scripting and nativeMessaging (ADR-353)." >&2; status=1
+  fi
+fi
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), on-device translation only in Translate text, no Always/background location, the Mac app and Safari extension with no network and no extra permissions, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

@@ -1,0 +1,92 @@
+/* Save to Doddy popup. System fonts and colours only; follows light and dark. */
+:root {
+  color-scheme: light dark;
+  --accent: AccentColor;
+  --muted: color-mix(in srgb, CanvasText 62%, Canvas);
+  --line: color-mix(in srgb, CanvasText 18%, Canvas);
+  --panel: color-mix(in srgb, CanvasText 6%, Canvas);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  width: 340px;
+  max-width: 100vw;
+  background: Canvas;
+  color: CanvasText;
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+main { padding: 16px; }
+
+h1 { margin: 0 0 12px; font-size: 15px; font-weight: 600; }
+
+.label {
+  margin: 12px 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.value { margin: 0; overflow-wrap: anywhere; }
+.value.url { font-size: 12px; color: var(--muted); }
+
+.selection {
+  margin: 2px 0 0;
+  padding: 8px 10px;
+  max-height: 140px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+.muted { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
+
+.result {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.buttons { display: flex; gap: 8px; margin-top: 16px; }
+
+button {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: CanvasText;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+button.primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: AccentColorText;
+}
+
+button:disabled { opacity: 0.5; cursor: default; }
+
+button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[hidden] { display: none !important; }
+
+@media (prefers-reduced-motion: no-preference) {
+  button { transition: opacity 0.15s ease; }
+}

@@ -1,0 +1,70 @@
+{
+  "extensionName": {
+    "message": "Zapisz w Doddy",
+    "description": "Name of the Safari extension and the title of its toolbar button."
+  },
+  "extensionDescription": {
+    "message": "Wysyła do Doddy stronę, na której jesteś, albo zaznaczony tekst. Nic nie zostanie zapisane, dopóki nie naciśniesz Zapisz w Doddy.",
+    "description": "Extension description shown in Safari settings."
+  },
+  "loading": {
+    "message": "Odczytuję tę stronę…",
+    "description": "Shown briefly while the title, address and selection are read."
+  },
+  "titleLabel": {
+    "message": "Tytuł",
+    "description": "Label above the page title."
+  },
+  "addressLabel": {
+    "message": "Adres strony",
+    "description": "Label above the page address."
+  },
+  "selectionLabel": {
+    "message": "Zaznaczony tekst",
+    "description": "Label above the text the user had selected."
+  },
+  "noTitle": {
+    "message": "(bez tytułu)",
+    "description": "Shown when the page has no title."
+  },
+  "notSavedNote": {
+    "message": "Wysyłane są tylko tytuł, adres i zaznaczony tekst. Nic nie zostanie zapisane, dopóki nie naciśniesz Zapisz w Doddy.",
+    "description": "Privacy note under the page details."
+  },
+  "sendButton": {
+    "message": "Wyślij do Doddy",
+    "description": "Primary button."
+  },
+  "cancelButton": {
+    "message": "Anuluj",
+    "description": "Closes the popup without sending."
+  },
+  "closeButton": {
+    "message": "Zamknij",
+    "description": "Closes the popup after a result is shown."
+  },
+  "cantRead": {
+    "message": "Doddy nie może odczytać tej strony. Otwórz stronę internetową i spróbuj ponownie. Nic nie zostało wysłane.",
+    "description": "Shown when the page can't be read, for example on the Safari start page."
+  },
+  "resultSent": {
+    "message": "Gotowe w Doddy. Otwórz Doddy i naciśnij Zapisz. Jeszcze nie jest zapisane.",
+    "description": "Result: the clip is waiting in Doddy."
+  },
+  "resultFull": {
+    "message": "W Doddy czeka już 20 wycinków do przejrzenia. Otwórz Doddy, zapisz lub odrzuć część z nich i spróbuj ponownie. Nic nie zostało zapisane.",
+    "description": "Result: the clip inbox is full."
+  },
+  "resultNotSetUp": {
+    "message": "Wysyłanie do Doddy nie jest skonfigurowane w tej wersji aplikacji. Nic nie zostało zapisane.",
+    "description": "Result: this build has no shared folder with the Mac app."
+  },
+  "resultNothing": {
+    "message": "Nie ma tu nic, co Doddy mogłoby zachować. Nic nie zostało zapisane.",
+    "description": "Result: no usable title, address or selection."
+  },
+  "resultFailed": {
+    "message": "Nie udało się przekazać tego do Doddy. Nic nie zostało zapisane. Spróbuj ponownie.",
+    "description": "Result: the hand-over failed."
+  }
+}

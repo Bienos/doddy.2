@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the native Mac app (merged with the generated keys; ADR-351).
+  No usage-description keys: the Mac app asks for no Calendar, Contacts, location, microphone or
+  other permission, and makes no network request.
+-->
+<plist version="1.0">
+<dict>
+	<!-- Shared folder with the Mac Share extension and the Safari extension (clip inbox, ADR-352). -->
+	<key>DoddyAppGroup</key>
+	<string>$(DODDY_MAC_APP_GROUP)</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+</dict>
+</plist>

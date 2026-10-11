@@ -1,0 +1,70 @@
+{
+  "extensionName": {
+    "message": "Save to Doddy",
+    "description": "Name of the Safari extension and the title of its toolbar button."
+  },
+  "extensionDescription": {
+    "message": "Send the page you are on, or the text you selected, to Doddy. Nothing is saved until you press Save in Doddy.",
+    "description": "Extension description shown in Safari settings."
+  },
+  "loading": {
+    "message": "Reading this page…",
+    "description": "Shown briefly while the title, address and selection are read."
+  },
+  "titleLabel": {
+    "message": "Title",
+    "description": "Label above the page title."
+  },
+  "addressLabel": {
+    "message": "Web address",
+    "description": "Label above the page address."
+  },
+  "selectionLabel": {
+    "message": "Selected text",
+    "description": "Label above the text the user had selected."
+  },
+  "noTitle": {
+    "message": "(no title)",
+    "description": "Shown when the page has no title."
+  },
+  "notSavedNote": {
+    "message": "Only the title, the address and the text you selected are sent. Nothing is saved until you press Save in Doddy.",
+    "description": "Privacy note under the page details."
+  },
+  "sendButton": {
+    "message": "Send to Doddy",
+    "description": "Primary button."
+  },
+  "cancelButton": {
+    "message": "Cancel",
+    "description": "Closes the popup without sending."
+  },
+  "closeButton": {
+    "message": "Close",
+    "description": "Closes the popup after a result is shown."
+  },
+  "cantRead": {
+    "message": "Doddy can't read this page. Open a web page and try again. Nothing was sent.",
+    "description": "Shown when the page can't be read, for example on the Safari start page."
+  },
+  "resultSent": {
+    "message": "Ready in Doddy. Open Doddy and press Save. It isn't saved yet.",
+    "description": "Result: the clip is waiting in Doddy."
+  },
+  "resultFull": {
+    "message": "Doddy already has 20 clips waiting. Open Doddy and save or discard some, then try again. Nothing was saved.",
+    "description": "Result: the clip inbox is full."
+  },
+  "resultNotSetUp": {
+    "message": "Sending to Doddy isn't set up in this version of the app. Nothing was saved.",
+    "description": "Result: this build has no shared folder with the Mac app."
+  },
+  "resultNothing": {
+    "message": "There's nothing here Doddy can keep. Nothing was saved.",
+    "description": "Result: no usable title, address or selection."
+  },
+  "resultFailed": {
+    "message": "That couldn't be handed to Doddy. Nothing was saved. Try again.",
+    "description": "Result: the hand-over failed."
+  }
+}
