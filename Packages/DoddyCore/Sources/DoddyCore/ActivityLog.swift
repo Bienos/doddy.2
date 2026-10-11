@@ -264,6 +264,16 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         // A change to an event or reminder, checked by reading it back (ADR-229).
         if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
         if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
+        // Lists (ADR-216), answered from the store's own result (ADR-259). Something was added,
+        // ticked, removed or a list was made; or nothing was, and why.
+        if text.hasPrefix("created:") || text.hasPrefix("added to \"") || text.hasPrefix("ticked on \"") || text.hasPrefix("removed on \"") {
+            return (.done, nil)
+        }
+        if text.hasPrefix("not added:") {
+            let onlyDuplicates = text.contains("Already on the list") && !text.contains("Too long") && !text.contains("the list is full")
+            return onlyDuplicates ? (.alreadyThere, nil) : (.notDone, nil)
+        }
+        if text.hasPrefix("not created:") { return (.notDone, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
