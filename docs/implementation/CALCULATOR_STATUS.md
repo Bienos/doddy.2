@@ -1,5 +1,5 @@
-# Sums and unit conversions on the iPhone: status (ADR-267)
-Date: 2026-10-11. Owner: "build next", after ADR-266. Claude's proposal list item 3: "calculator, unit and currency conversion". Currencies are left out (see Decisions).
+# Sums and unit conversions on the iPhone: status (ADR-269)
+Date: 2026-10-11. Owner: "build next", after ADR-268. Claude's proposal list item 3: "calculator, unit and currency conversion". Currencies are left out (see Decisions).
 
 ## Why
 Language models often get arithmetic wrong. With these two tools the agent passes the sum or the conversion, and reads back the number the app worked out.

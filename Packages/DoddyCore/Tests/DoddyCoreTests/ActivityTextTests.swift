@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// "What Doddy did" in Polish (ADR-272): every row Doddy can write has a Polish title, Doddy's own
+/// "What Doddy did" in Polish (ADR-274): every row Doddy can write has a Polish title, Doddy's own
 /// notes are translated, and anything else is shown exactly as kept.
 final class ActivityTextTests: XCTestCase {
     private var calendar: Calendar = {

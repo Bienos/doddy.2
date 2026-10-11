@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Every result the app sends the agent lands on an honest row in "What Doddy did" (ADR-269):
+/// Every result the app sends the agent lands on an honest row in "What Doddy did" (ADR-271):
 /// a change that happened is "Done", one that didn't is "Didn't happen", and only a result
 /// Doddy really can't confirm is "Not sure". Built from the app's own reply builders, so a new
 /// wording that the log doesn't know fails here instead of showing "Not sure" for real work.

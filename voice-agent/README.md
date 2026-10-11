@@ -10,6 +10,11 @@ adding one adapter, not rewriting the app or the agent.
 | `tools.json` | 10 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy` | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
+**OpenAI Realtime test voice (ADR-265):** Home's switch can now run these same files on OpenAI Realtime.
+The app bundles `instructions.md`, `tools.json` and `session.json`, renders the prompt itself and sends it
+with the tools in `session.update`; see `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`. A change here
+reaches OpenAI with the next app build, and ElevenLabs only after the sync below.
+
 ## Source of truth and syncing
 
 **Applied to the live agent 2026-10-11 (ADR-254, owner: "you do it"):** done as described below; read back after

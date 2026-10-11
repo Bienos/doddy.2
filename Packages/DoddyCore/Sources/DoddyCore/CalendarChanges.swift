@@ -146,7 +146,7 @@ public enum EventChange {
 
     /// An occurrence's id is its calendar item id and its start, so it changes when it moves.
     public static func occurrenceID(itemID: String, start: Date) -> String {
-        // One format for the whole app (ADR-265 merge): CalendarEventSummary builds it.
+        // One format for the whole app (ADR-267 merge): CalendarEventSummary builds it.
         CalendarEventSummary.occurrenceID(itemID: itemID, start: start)
     }
 

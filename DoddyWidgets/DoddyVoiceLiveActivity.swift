@@ -11,16 +11,15 @@ import WidgetKit
 /// When the app has not refreshed the activity for `VoiceLiveActivity.staleAfter` (iOS ended
 /// it in the background), iOS marks it stale and this view says so instead of "Listening".
 ///
-/// The Lock Screen card follows the phone's light/dark setting (paper card in light, Night card
-/// in dark, colours from this target's asset catalog), with the approved pose art (`DoddyArt`).
+/// The Lock Screen card is cream in light and dark mode (ADR-266, `doddyCreamLockScreen`), with
+/// the approved pose art (`DoddyArt`).
 /// The Dynamic Island is always black and follows the owner's V4 boards (`Shared/IslandArt`).
 /// No words from the conversation appear here: the Lock Screen is visible to anyone.
 struct DoddyVoiceLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DoddyVoiceAttributes.self) { context in
             LockScreenView(shown: Shown(context), startedAt: context.state.conversationStart(activityStartedAt: context.attributes.startedAt))
-                .activityBackgroundTint(Palette.card)
-                .activitySystemActionForegroundColor(Palette.ink)
+                .doddyCreamLockScreen()
         } dynamicIsland: { context in
             let shown = Shown(context)
             let scene = context.state.islandScene(isStale: context.isStale)
@@ -80,7 +79,8 @@ private struct Shown {
 private enum Palette {
     /// The bright orange cue (design token). Decoration only, never reading text on paper.
     static let orange = Color(red: 0xF5 / 255, green: 0x8A / 255, blue: 0x24 / 255)
-    /// Lock Screen roles, light/dark from the asset catalog (Pocket Notebook semantic colours).
+    /// Lock Screen roles from the asset catalog (Pocket Notebook semantic colours). The card
+    /// draws in the light scheme (ADR-266), so these are always their dark-on-cream values.
     static let card = Color("CardBackground")
     static let ink = Color("Ink")
     static let secondary = Color("SecondaryText")
@@ -94,8 +94,8 @@ private enum Palette {
 /// Doddy himself, from the owner's approved numbered pack (`UploadedDoddy_*`, byte-identical to
 /// the ZIP; see docs/design/UPLOADED_MEMORY_ASSETS.md): listening while the conversation runs;
 /// once it has ended, the fist-pump "kept" pose if a note was saved, else sitting.
-/// Lock Screen only. The drawings are cream and black with no dark variant, so on the dark
-/// Lock Screen they sit on a light paper backing, as `UploadedCharacterView` does in the app.
+/// Lock Screen only. The card is cream (ADR-266), so the drawing needs no backing; the paper
+/// backing below stays for a dark colour scheme, should a card ever draw in one again.
 private struct DoddyArt: View {
     let shown: Shown
     let size: CGFloat

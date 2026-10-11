@@ -1,5 +1,5 @@
-# "Whose birthday is coming up?": status (ADR-266)
-Date: 2026-10-11. Owner: "build nex", after ADR-265. Claude's proposal list item 2/4: "people memory" and "birthdays this week". The notes half of "What do I know about Anna?" already works through `search_memories`; what was missing was the birthdays on contact cards.
+# "Whose birthday is coming up?": status (ADR-268)
+Date: 2026-10-11. Owner: "build nex", after ADR-267. Claude's proposal list item 2/4: "people memory" and "birthdays this week". The notes half of "What do I know about Anna?" already works through `search_memories`; what was missing was the birthdays on contact cards.
 
 ## What ships
 - **A new phone tool, `upcoming_birthdays`** (`voice-agent/tools.json`, 33 tools). It takes an optional `days`: 1 to 60, today included, default 7.

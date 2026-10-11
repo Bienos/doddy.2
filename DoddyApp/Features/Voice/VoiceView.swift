@@ -123,6 +123,13 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
+                        // Testing only (ADR-265): the copy below names ElevenLabs; say plainly when it isn't.
+                        if controller.provider == .openAIRealtime {
+                            Label("Test voice: OpenAI runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.", systemImage: "testtube.2")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.secondaryText)
+                                .accessibilityIdentifier("voice.openAITest")
+                        }
                         if controller.audioPausedByOtherApp && controller.isLive {
                             Label("Another app has Doddy's audio. He can't hear you until it lets go.", systemImage: "pause.circle")
                                 .font(.footnote)

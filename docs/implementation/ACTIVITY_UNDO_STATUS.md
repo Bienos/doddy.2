@@ -1,6 +1,6 @@
-# Undo in "What Doddy did", and "undo that" by voice: status (ADR-265, ADR-268)
+# Undo in "What Doddy did", and "undo that" by voice: status (ADR-267, ADR-270)
 
-> Not to be confused with `UNDO_STATUS.md` (ADR-258 on the default line: Undo for a change on the voice screen, 10 minutes). This file is Undo in Settings → What Doddy did (ADR-265), for adds and changes, and "undo that" by voice (ADR-268). After either Undo succeeds the other is cleared; both use `EventChange.reversed`.
+> Not to be confused with `UNDO_STATUS.md` (ADR-258 on the default line: Undo for a change on the voice screen, 10 minutes). This file is Undo in Settings → What Doddy did (ADR-267), for adds and changes, and "undo that" by voice (ADR-270). After either Undo succeeds the other is cleared; both use `EventChange.reversed`.
 Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the last action" as the first next build.
 
 ## What ships
@@ -87,7 +87,7 @@ Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the la
 - "Undo that" by voice (a new agent tool; needs a live agent update).
 - Undo for plan-card steps, notes saved by voice, and list changes.
 
-## ADR-268 (2026-10-11, owner: "build next"): plan steps and "undo that" by voice
+## ADR-270 (2026-10-11, owner: "build next"): plan steps and "undo that" by voice
 - **Plan-card steps.** An event or reminder added by a step of a plan card now gets Undo in What Doddy did, exactly like one from its own card. `runPlanStep` returns what Undo needs, and `logPlanStep` keeps it. As before, an unticked or blocked step never ran, so it gets no Undo.
 - **"Undo that" by voice:** a new phone tool, `undo_last` (no parameters, 36 tools in total).
   - **What it picks:** the newest row **from this conversation** that can still be undone. Never one from an earlier conversation; for those the agent points to Settings, What Doddy did.
