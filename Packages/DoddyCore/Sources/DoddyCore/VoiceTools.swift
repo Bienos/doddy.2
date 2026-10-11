@@ -589,8 +589,10 @@ public enum VoiceToolReply {
         return lines.joined(separator: "\n")
     }
 
+    /// The note follows as data (ToolData).
     public static func saved(_ record: MemoryRecord) -> String {
-        "saved: \"\(record.currentText)\" (saved \(timestamp(record.capturedAt)))."
+        "saved: one note (saved \(timestamp(record.capturedAt))). Its exact text:\n"
+            + ToolData.block(["\"\(ToolData.clean(record.currentText))\""])
     }
 
     public static func failed(_ reason: String) -> String {

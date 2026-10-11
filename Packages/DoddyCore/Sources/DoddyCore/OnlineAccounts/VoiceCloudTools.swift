@@ -17,8 +17,17 @@ extension VoiceToolRequest {
 extension VoiceToolReply {
     /// A successful read or write. Demo servers say so, so demo data is never presented as the user's.
     public static func cloudResult(_ result: RunResult) -> String {
-        guard result.mode == .mock else { return result.text }
-        return "DEMO DATA from a test server, not the user's real account. Tell the user it is demo data. \(result.text)"
+        let text = cloudData(result.text)
+        guard result.mode == .mock else { return text }
+        return "DEMO DATA from a test server, not the user's real account. Tell the user it is demo data. \(text)"
+    }
+
+    /// The server's first line says what happened; the lines after it quote emails, file names,
+    /// pages, tasks or web pages, so they follow as data (ToolData, review finding 3).
+    static func cloudData(_ text: String) -> String {
+        let lines = text.split(whereSeparator: \.isNewline).map { ToolData.clean(String($0)) }
+        guard let first = lines.first else { return text }
+        return lines.count == 1 ? first : first + "\n" + ToolData.block(Array(lines.dropFirst()))
     }
 
     public static func cloudDeclined(_ tool: String) -> String {
