@@ -2,9 +2,19 @@ import Foundation
 
 /// The looks the voice island can take (ADR-239): the owner's V4 boards that have a voice
 /// conversation state, and Whole Doddy (ADR-264), his whole body from the owner's pose pack.
-/// Chosen in Settings → Voice → Dynamic Island style; Lean In by default.
+/// Chosen in Settings → Voice → Dynamic Island style; Whole Doddy until the user picks one
+/// (ADR-267). Settings lists them in this order.
 enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
-    case leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou, wholeDoddy
+    case wholeDoddy, leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou
+
+    /// The style used until the user picks one in Settings (owner: "make whole doddy the default
+    /// style", ADR-267). A style the user picked is stored and kept.
+    static let preferredDefault: IslandStyle = .wholeDoddy
+
+    /// The style stored in Settings, or the default when none is (or an unknown one is) stored.
+    static func stored(_ raw: String?) -> IslandStyle {
+        raw.flatMap(IslandStyle.init(rawValue:)) ?? preferredDefault
+    }
 
     var board: IslandBoard {
         switch self {

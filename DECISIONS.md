@@ -591,3 +591,9 @@ Numbering: written as ADR-235 on `claude/blissful-einstein-5msya4`; renumbered t
 |---|---|---|
 | 266 | **Doddy's Lock Screen cards are cream in light and dark mode** (owner, after the Whole Doddy mockups: "make the lock screen card cream too", "make it cream in the app and deploy it"). The voice conversation, tool (focus, breathing, read aloud) and shopping Live Activities used `CardBackground`, which turned Night blue in dark mode. All three now use `doddyCreamLockScreen()` (`DoddyWidgets/LockScreenCream.swift`): a fixed cream background (`CardBackground`'s light value, #FFF7E9), the system action colour fixed to ink, and the card's contents drawn in the light colour scheme so the catalog's text colours keep their dark-on-cream values. Doddy's Lock Screen art then needs no paper backing. The Dynamic Island stays black (iOS draws it). | Built on Linux only (the widget extension can't compile here). **iOS build NOT RUN**; Mac checklist C1–C2. |
 
+## Whole Doddy is the default island style (2026-10-11)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 267 | **Whole Doddy is the default Dynamic Island style** (owner: "make whole doddy the default style"; changes ADR-264's "Lean In stays the default"). `IslandStyle.preferredDefault = .wholeDoddy`, read through `IslandStyle.stored(_:)` by the voice conversation, Hey Doddy and Settings, which lists it first. A style the user already picked in Settings is stored and kept. The activity content's own decoding fallback stays Lean In: it only covers content from builds that had no other style. | Linux: `scripts/check_island_art.sh` PASS with checks for the default, a kept choice, an unknown stored value and the Settings order. **iOS build NOT RUN**; Mac checklist W1. |
+

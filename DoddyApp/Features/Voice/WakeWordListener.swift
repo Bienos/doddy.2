@@ -392,7 +392,7 @@ final class WakeWordListener {
     /// The island looks the way the user picked in Settings (ADR-239), like a conversation's.
     private static func styled(_ state: DoddyVoiceAttributes.ContentState) -> DoddyVoiceAttributes.ContentState {
         var state = state
-        state.islandStyle = IslandStyle(rawValue: UserDefaults.standard.string(forKey: PreferenceKey.islandStyle) ?? "") ?? .leanIn
+        state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
         return state
     }
 

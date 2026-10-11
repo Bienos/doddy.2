@@ -6,7 +6,8 @@ is a private Artifact in the owner's account.
 **Built on Linux only. The iOS app has not been compiled or run with this change.**
 
 ## What ships
-- Settings → Voice → Dynamic Island style gains **Whole Doddy**, next to the V4 styles. Lean In stays the default.
+- Settings → Voice → Dynamic Island style gains **Whole Doddy**, next to the V4 styles. Since ADR-267 it is the
+  default and listed first; a style the user already picked is kept.
 - With it chosen, the expanded voice island draws Doddy's whole body from the owner's pose pack, one pose per state:
 
 | State | Pose |
@@ -52,6 +53,6 @@ Checklist W1–W6: that it compiles (SwiftUI `Image` from the widget's catalog, 
 island size, the cream edge, the face crops, and memory use in the widget extension.
 
 ## Decisions for the owner
-- Whether Whole Doddy should become the default style.
+- ~~Whether Whole Doddy should become the default style~~: yes (owner, 2026-10-11, ADR-267).
 - A cut-out wave from the pack (`016_doddy_wave_v01.png` is a strip on paper) would suit the greeting better than
   "arms out".
