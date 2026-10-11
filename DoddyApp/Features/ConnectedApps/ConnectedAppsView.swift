@@ -27,6 +27,8 @@ struct ConnectedAppsView: View {
     @State private var confirmConnect = false
     @State private var confirmDisconnect = false
     @State private var savedEvents: Set<Int> = []
+    /// Events being saved right now, so a double tap can't save one twice (DOD-06).
+    @State private var savingEvents: Set<Int> = []
     @State private var saveError: String?
 
     init(model: ConnectedAppsModel) {
@@ -261,7 +263,7 @@ struct ConnectedAppsView: View {
                     } else {
                         Button("Save") { Task { await save(event, index: index, window: result.window) } }
                             .buttonStyle(.borderless)
-                            .disabled(!store.isStorageAvailable)
+                            .disabled(!store.isStorageAvailable || savingEvents.contains(index))
                             .accessibilityLabel("Save \(event.title) to memories")
                     }
                 }
@@ -299,6 +301,9 @@ struct ConnectedAppsView: View {
 
     /// Explicit save only: one tap, one event, stored as a note that names its source.
     private func save(_ event: CalendarEventItem, index: Int, window: EventsWindow) async {
+        guard !savingEvents.contains(index), !savedEvents.contains(index) else { return }
+        savingEvents.insert(index)
+        defer { savingEvents.remove(index) }
         do {
             _ = try await store.save(
                 text: ConnectedAppsDates.memoryText(for: event, window: window), category: .commitment, source: .sharedContent)
