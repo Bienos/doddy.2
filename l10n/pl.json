@@ -904,5 +904,15 @@
  "Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": "Notatki są tylko w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj.",
  "Include voice memos": "Dołącz notatki głosowe",
  "Remind you about this list?": "Przypomnieć Ci o tej liście?",
- "Your list in Doddy. The notification doesn't name it or its items.": "Twoja lista w Doddym. Powiadomienie nie podaje jej nazwy ani pozycji."
+ "Your list in Doddy. The notification doesn't name it or its items.": "Twoja lista w Doddym. Powiadomienie nie podaje jej nazwy ani pozycji.",
+ "End shopping mode": "Zakończ tryb zakupów",
+ "Shopping mode": "Tryb zakupów",
+ "Show this list on your Lock Screen?": "Pokazać tę listę na ekranie blokady?",
+ "Start shopping mode": "Włącz tryb zakupów",
+ "Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.": "Jej pozycje są widoczne na ekranie blokady i w Dynamic Island, dopóki nie odhaczysz wszystkich albo nie zakończysz trybu, więc każdy, kto widzi Twojego iPhone’a, może je przeczytać. Odhaczenie tam odhacza też tutaj.",
+ "Shopping mode is on: this list is on your Lock Screen.": "Tryb zakupów jest włączony: ta lista jest na ekranie blokady.",
+ "Live Activities are off for Doddy. Turn them on in the Settings app, under Doddy.": "Aktywności na żywo są wyłączone dla Doddy’ego. Włącz je w aplikacji Ustawienia, w sekcji Doddy.",
+ "Shopping mode couldn't start. Try again.": "Nie udało się włączyć trybu zakupów. Spróbuj ponownie.",
+ "All ticked. Shopping mode ends by itself.": "Wszystko odhaczone. Tryb zakupów zakończy się sam.",
+ "Open Doddy to see the list as it is now.": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
 }

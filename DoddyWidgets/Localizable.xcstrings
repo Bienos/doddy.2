@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All ticked. Shopping mode ends by itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone. Tryb zakupów zakończy się sam."
+          }
+        }
+      }
+    },
     "Choose a list": {
       "extractionState": "manual",
       "localizations": {
@@ -111,6 +122,17 @@
         }
       }
     },
+    "Open Doddy to see the list as it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
+          }
+        }
+      }
+    },
     "Opens Doddy and starts a voice conversation. Doddy listens only while the conversation is open.": {
       "extractionState": "manual",
       "localizations": {
@@ -140,6 +162,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypięte"
+          }
+        }
+      }
+    },
+    "Shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb zakupów"
           }
         }
       }

@@ -375,6 +375,17 @@
         }
       }
     },
+    "All ticked. Shopping mode ends by itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone. Tryb zakupów zakończy się sam."
+          }
+        }
+      }
+    },
     "Allow notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -2553,6 +2564,17 @@
         }
       }
     },
+    "End shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ tryb zakupów"
+          }
+        }
+      }
+    },
     "Ended": {
       "extractionState": "manual",
       "localizations": {
@@ -3455,6 +3477,17 @@
         }
       }
     },
+    "Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jej pozycje są widoczne na ekranie blokady i w Dynamic Island, dopóki nie odhaczysz wszystkich albo nie zakończysz trybu, więc każdy, kto widzi Twojego iPhone’a, może je przeczytać. Odhaczenie tam odhacza też tutaj."
+          }
+        }
+      }
+    },
     "Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving.": {
       "extractionState": "manual",
       "localizations": {
@@ -3814,6 +3847,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drobiazgi, zachowane"
+          }
+        }
+      }
+    },
+    "Live Activities are off for Doddy. Turn them on in the Settings app, under Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktywności na żywo są wyłączone dla Doddy’ego. Włącz je w aplikacji Ustawienia, w sekcji Doddy."
           }
         }
       }
@@ -5145,6 +5189,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz raz Doddy’ego na iPhonie, żeby zobaczyć tu swoje notatki i listy."
+          }
+        }
+      }
+    },
+    "Open Doddy to see the list as it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
           }
         }
       }
@@ -6909,6 +6964,39 @@
         }
       }
     },
+    "Shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb zakupów"
+          }
+        }
+      }
+    },
+    "Shopping mode couldn't start. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się włączyć trybu zakupów. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Shopping mode is on: this list is on your Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb zakupów jest włączony: ta lista jest na ekranie blokady."
+          }
+        }
+      }
+    },
     "Shortcut and Back Tap": {
       "extractionState": "manual",
       "localizations": {
@@ -6993,6 +7081,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż notatki jednego typu"
+          }
+        }
+      }
+    },
+    "Show this list on your Lock Screen?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazać tę listę na ekranie blokady?"
           }
         }
       }
@@ -7136,6 +7235,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zacznij słuchać, gdy otwieram Doddy’ego"
+          }
+        }
+      }
+    },
+    "Start shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz tryb zakupów"
           }
         }
       }

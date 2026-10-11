@@ -7,6 +7,7 @@ import WidgetKit
 struct DoddyWidgetsBundle: WidgetBundle {
     var body: some Widget {
         DoddyVoiceLiveActivity()
+        ShoppingLiveActivity()
         PinnedNotesWidget()
         NextReminderWidget()
         ListWidget()
