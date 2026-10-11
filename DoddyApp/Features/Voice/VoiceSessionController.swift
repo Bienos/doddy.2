@@ -882,7 +882,11 @@ final class VoiceSessionController {
         case .leaveBy(let id, let plan):
             // A local notification at the leave time, read back from iOS (ADR-335).
             switch await LeaveByScheduler.schedule(plan) {
-            case .scheduled: await reply(id, VoiceToolReply.leaveBySet(plan, calendar: .current))
+            case .scheduled:
+                // The countdown only if switched on on the card and iOS accepted it (ADR-347).
+                let countdown = leaveByCountdown && LeaveByCountdownActivity.start(plan)
+                leaveByCountdown = false
+                await reply(id, VoiceToolReply.leaveBySet(plan, calendar: .current, countdown: countdown))
             case .notAllowed: await reply(id, VoiceToolReply.leaveByNotAllowed)
             case .failed: await reply(id, VoiceToolReply.leaveByFailed)
             }
@@ -1031,7 +1035,9 @@ final class VoiceSessionController {
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
-        case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
+        case .leaveBy(let id, _):
+            leaveByCountdown = false
+            await reply(id, VoiceToolReply.leaveByDeclined)
         case .diary(let id, _, _): await reply(id, VoiceToolReply.diaryDeclined)
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
@@ -2174,7 +2180,9 @@ final class VoiceSessionController {
             return
         }
         switch LeaveBy.plan(request, placeName: place.name, placeAddress: place.address, travelSeconds: seconds, now: Date()) {
-        case .success(let plan): propose(.leaveBy(toolCallID: toolCallID, plan: plan), toolCallID: toolCallID)
+        case .success(let plan):
+            leaveByCountdown = false
+            propose(.leaveBy(toolCallID: toolCallID, plan: plan), toolCallID: toolCallID)
         case .failure(.tooLate(let leaveAt)): await reply(toolCallID, VoiceToolReply.leaveByTooLate(leaveAt, calendar: .current))
         case .failure(.tooFar): await reply(toolCallID, VoiceToolReply.leaveByTooFar)
         }
@@ -2421,6 +2429,8 @@ final class VoiceSessionController {
 
     /// Ingredients the user unticked on the card (ADR-305), by position.
     private(set) var ingredientsUnticked: Set<Int> = []
+    /// The leave-by card's "Countdown on the Lock Screen" switch (ADR-347); off for each new card.
+    var leaveByCountdown = false
 
     func toggleIngredient(_ index: Int) {
         if ingredientsUnticked.contains(index) { ingredientsUnticked.remove(index) } else { ingredientsUnticked.insert(index) }

@@ -64,3 +64,21 @@ extension LeaveByTests {
         XCTAssertTrue(note.body.contains("Około 30 min komunikacją miejską"))
     }
 }
+
+/// The leave-by countdown (ADR-347).
+final class LeaveByCountdownTests: XCTestCase {
+    func testOnlyWithinEightHoursAndEndsAtArrival() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        func plan(leaveIn: TimeInterval) -> LeaveByPlan {
+            let request = LeaveByRequest(place: "Dentist", arriveBy: now.addingTimeInterval(leaveIn + 1800), bufferMinutes: 0)
+            guard case .success(let plan) = LeaveBy.plan(request, placeName: "Dentist", placeAddress: "", travelSeconds: 1800, now: now) else {
+                fatalError("plan")
+            }
+            return plan
+        }
+        XCTAssertTrue(LeaveByCountdown.isAvailable(plan(leaveIn: 3600), now: now))
+        XCTAssertFalse(LeaveByCountdown.isAvailable(plan(leaveIn: 9 * 3600), now: now))
+        XCTAssertFalse(LeaveByCountdown.isOver(arriveBy: now.addingTimeInterval(60), now: now))
+        XCTAssertTrue(LeaveByCountdown.isOver(arriveBy: now, now: now))
+    }
+}

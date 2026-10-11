@@ -1244,6 +1244,17 @@
         }
       }
     },
+    "Be there by %@. Traffic may have changed since you set this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bądź na miejscu o %@. Ruch mógł się zmienić od ustawienia."
+          }
+        }
+      }
+    },
     "Before it slips away": {
       "extractionState": "manual",
       "localizations": {
@@ -2241,6 +2252,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się ustawić przypomnienia. Nic nie zostało zaplanowane, a notatka jest bez zmian."
+          }
+        }
+      }
+    },
+    "Countdown on the Lock Screen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odliczanie na ekranie blokady"
           }
         }
       }
@@ -5123,6 +5145,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyjdź o %@"
+          }
+        }
+      }
+    },
+    "Leave at %@ to be there by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjdź o %@, żeby być na %@"
+          }
+        }
+      }
+    },
+    "Leave in": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjdź za"
           }
         }
       }
@@ -10099,6 +10143,17 @@
         }
       }
     },
+    "Shows the place and the time left on the Lock Screen, and on your Apple Watch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazuje miejsce i pozostały czas na ekranie blokady i na Apple Watch."
+          }
+        }
+      }
+    },
     "Sign in to iCloud in iOS Settings to keep shared lists up to date.": {
       "extractionState": "manual",
       "localizations": {
@@ -12108,6 +12163,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Godzina"
+          }
+        }
+      }
+    },
+    "Time to leave": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas wychodzić"
           }
         }
       }

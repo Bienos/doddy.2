@@ -10,6 +10,8 @@ struct DoddyWidgetsBundle: WidgetBundle {
         DoddyVoiceLiveActivity()
         ShoppingLiveActivity()
         DoddyToolLiveActivity()
+        // When to leave (ADR-347), only if switched on for that reminder.
+        LeaveByLiveActivity()
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
         if #available(iOS 18.0, *) {

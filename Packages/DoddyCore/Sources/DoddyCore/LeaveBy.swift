@@ -125,10 +125,11 @@ extension VoiceToolRequest {
 }
 
 extension VoiceToolReply {
-    public static func leaveBySet(_ plan: LeaveByPlan, calendar: Calendar) -> String {
+    public static func leaveBySet(_ plan: LeaveByPlan, calendar: Calendar, countdown: Bool = false) -> String {
         "added: a reminder to leave at \(LeaveBy.clock(plan.leaveAt, calendar: calendar)) on \(LeaveBy.day(plan.leaveAt, calendar: calendar)) "
             + "for \(plan.placeName), to arrive by \(LeaveBy.clock(plan.request.arriveBy, calendar: calendar)): "
             + "about \(plan.travelMinutes) min \(plan.request.mode.phrase) plus \(plan.request.bufferMinutes) min spare. "
+            + (countdown ? "A countdown to the leave time is on the Lock Screen. " : "")
             + "Apple Maps worked out the travel time just now; traffic can change, so say so."
     }
 
@@ -162,4 +163,20 @@ extension VoiceToolReply {
 
     public static let leaveByNotAllowed = "failed: notifications are off for Doddy, so it can't remind the user. Tell them they can allow notifications in iOS Settings, Doddy. Nothing was set."
     public static let leaveByFailed = "failed: the reminder couldn't be set on this iPhone. Nothing was set."
+}
+
+/// The leave-by countdown on the Lock Screen and in the Dynamic Island (ADR-347). Only if the user
+/// switches it on on the card, because it shows the place on the Lock Screen, and only when the
+/// leave time is within 8 hours, the longest iOS keeps a Live Activity running. On a watch with
+/// watchOS 11 or later, iOS shows it in the Smart Stack too.
+public enum LeaveByCountdown {
+    public static let maxAhead: TimeInterval = 8 * 3600
+
+    public static func isAvailable(_ plan: LeaveByPlan, now: Date) -> Bool {
+        let ahead = plan.leaveAt.timeIntervalSince(now)
+        return ahead > 0 && ahead <= maxAhead
+    }
+
+    /// Ended once the arrival time has passed.
+    public static func isOver(arriveBy: Date, now: Date) -> Bool { now >= arriveBy }
 }

@@ -45,6 +45,17 @@
         }
       }
     },
+    "Be there by %@. Traffic may have changed since you set this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bądź na miejscu o %@. Ruch mógł się zmienić od ustawienia."
+          }
+        }
+      }
+    },
     "Breathing": {
       "extractionState": "manual",
       "localizations": {
@@ -155,6 +166,28 @@
         }
       }
     },
+    "Leave at %@ to be there by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjdź o %@, żeby być na %@"
+          }
+        }
+      }
+    },
+    "Leave in": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjdź za"
+          }
+        }
+      }
+    },
     "List": {
       "extractionState": "manual",
       "localizations": {
@@ -239,6 +272,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na tej liście jeszcze nic nie ma."
+          }
+        }
+      }
+    },
+    "Now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz"
           }
         }
       }
@@ -536,6 +580,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odhacz pozycję na liście w Doddym"
+          }
+        }
+      }
+    },
+    "Time to leave": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas wychodzić"
           }
         }
       }

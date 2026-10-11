@@ -658,6 +658,14 @@ struct VoiceView: View {
             Label(String(format: NSLocalizedString("About %lld min of travel, plus %lld min spare", comment: ""), plan.travelMinutes, plan.request.bufferMinutes), systemImage: "car")
             Label(String(format: NSLocalizedString("Leave at %@", comment: ""), plan.leaveAt.formatted(date: .omitted, time: .shortened)), systemImage: "bell")
                 .font(.headline)
+            // ADR-347: off on every new card, because it shows the place on the Lock Screen.
+            if LeaveByCountdown.isAvailable(plan, now: .now) {
+                Toggle("Countdown on the Lock Screen", isOn: Binding(get: { controller.leaveByCountdown }, set: { controller.leaveByCountdown = $0 }))
+                    .accessibilityIdentifier("voice.leaveBy.countdown")
+                Text("Shows the place and the time left on the Lock Screen, and on your Apple Watch.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Text("Apple Maps worked out the travel time just now, from where your iPhone is; traffic can change. Your position isn't kept.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
