@@ -410,7 +410,7 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "name": {"type": "string", "description": "The exact name of the user's Shortcut, as the user said it."}
+          "name": {"type": "string", "description": "The exact name of the user's Shortcut, as the user said it. When the user asks to open the camera, use 'Doddy Camera'."}
         },
         "required": ["name"]
       },
