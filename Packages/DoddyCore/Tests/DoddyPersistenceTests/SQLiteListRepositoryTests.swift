@@ -119,6 +119,24 @@ final class SQLiteListRepositoryTests: XCTestCase {
         } catch ListError.notFound {}
     }
 
+    /// Review B5: the database counts code points, so 50 family emoji (250 code points) are too
+    /// long; they are reported, and the rest of the voice add is still saved.
+    func testEmojiItemTooLongForTheDatabaseIsReportedNotRolledBack() async throws {
+        let (_, lists, _) = try make()
+        let list = try await lists.create(name: "Shopping", items: [], source: .voice)
+        let emoji = String(repeating: "👨‍👩‍👧", count: 50)
+        let result = try await lists.add(["milk", emoji, "eggs"], to: list.id, source: .voice)
+        XCTAssertEqual(result.added.map(\.text), ["milk", "eggs"])
+        XCTAssertEqual(result.tooLong, [emoji])
+        let stored = try await lists.list(id: list.id)
+        XCTAssertEqual(stored?.items.map(\.text), ["milk", "eggs"])
+
+        // An export with such an item (e.g. edited by hand) restores the rest of the list.
+        let item = ListItem(id: UUID(), listID: list.id, text: emoji, source: .typed, addedAt: clock, doneAt: nil, position: 9)
+        let data = try MemoryExport.json([list.record], listItems: (stored?.items ?? []) + [item], exportedAt: clock)
+        XCTAssertEqual(try MemoryRestore.listItems(data).map(\.text), ["milk", "eggs"])
+    }
+
     func testReminderTextForAListShowsOpenItems() async throws {
         let (database, lists, _) = try make()
         let list = try await lists.create(name: "Shopping", items: ["milk", "eggs"], source: .voice)

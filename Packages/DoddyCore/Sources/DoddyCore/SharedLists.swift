@@ -75,7 +75,7 @@ public struct SharedListState: Codable, Equatable, Sendable {
         guard let name = try? ListText.checkedName(name) else { return nil }
         var seen: Set<UUID> = []
         let kept = items.compactMap { item -> SharedListItem? in
-            guard seen.insert(item.id).inserted, let text = ListText.cleaned(item.text), text.count <= ListLimits.itemLength else { return nil }
+            guard seen.insert(item.id).inserted, let text = ListText.cleaned(item.text), ListText.fitsItemLength(text) else { return nil }
             return SharedListItem(id: item.id, text: text, doneAt: item.doneAt, position: max(item.position, 0), addedAt: item.addedAt)
         }
         return SharedListState(name: name, items: Array(kept.prefix(ListLimits.itemsPerList)))

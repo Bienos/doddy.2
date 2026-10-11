@@ -104,7 +104,7 @@ public enum MemoryRestore {
         struct Items: Decodable { let listItems: [ListItem]? }
         guard data.count <= maxBytes else { throw .tooLarge(bytes: data.count, maximum: maxBytes) }
         guard let items = try? JSONDecoder().decode(Items.self, from: data) else { throw .notADoddyExport }
-        return (items.listItems ?? []).filter { ListText.cleaned($0.text) != nil && $0.text.count <= ListLimits.itemLength }
+        return (items.listItems ?? []).filter { ListText.cleaned($0.text) != nil && ListText.fitsItemLength($0.text) }
     }
 
     public static func plan(

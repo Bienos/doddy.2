@@ -162,6 +162,12 @@ public enum ListText {
         return trimmed.isEmpty ? nil : trimmed
     }
 
+    /// Whether an item fits `ListLimits.itemLength` as the database counts it: in Unicode code
+    /// points, not visible characters, so a line of emoji can't break the database rule.
+    public static func fitsItemLength(_ text: String) -> Bool {
+        text.unicodeScalars.count <= ListLimits.itemLength
+    }
+
     public static func checkedName(_ name: String) throws(ListError) -> String {
         guard let cleaned = cleaned(name) else { throw .emptyName }
         guard cleaned.count <= ListLimits.nameLength else { throw .nameTooLong(maximum: ListLimits.nameLength) }

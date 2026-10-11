@@ -174,7 +174,7 @@ public final class SQLiteListRepository: ListRepository {
         var added: [ListItem] = [], alreadyThere: [String] = [], tooLong: [String] = [], noRoom: [String] = []
         for raw in texts {
             guard let text = ListText.cleaned(raw) else { continue }
-            if text.count > ListLimits.itemLength { tooLong.append(text); continue }
+            if !ListText.fitsItemLength(text) { tooLong.append(text); continue }
             if ListMatch.isDuplicate(text, of: openTexts) { alreadyThere.append(text); continue }
             if count >= ListLimits.itemsPerList { noRoom.append(text); continue }
             let item = ListItem(id: UUID(), listID: listID, text: text, source: source, addedAt: date, doneAt: nil, position: position)
