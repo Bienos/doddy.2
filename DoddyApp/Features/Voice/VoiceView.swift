@@ -219,7 +219,7 @@ struct VoiceView: View {
                                 .id("contactCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
+                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -524,6 +524,14 @@ struct VoiceView: View {
             Text("This can't be undone from Doddy.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .undo(_, let entry):
+            if let undo = entry.undo {
+                Text(undo.question(.current))
+                    .font(.headline)
+                Text(undo.explanation(calendar: .current, language: .current))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -584,17 +592,17 @@ struct VoiceView: View {
                 let request = step.activity(calendar: .current)
                 let result = status.results[step.number]
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(step.number). \(request?.title ?? step.toolName) · \(request?.app.title ?? "")")
+                    Text(verbatim: "\(step.number). \(request.map { ActivityText.title($0.title, .current) } ?? step.toolName) · \(request?.app.title(.current) ?? "")")
                         .font(.body)
                     if let detail = request?.detail {
                         Text(detail)
                             .font(.subheadline)
                             .foregroundStyle(Theme.secondaryText)
                     }
-                    Text(result?.outcome.text ?? "Waiting")
+                    Text(result?.outcome.text(.current) ?? NSLocalizedString("Waiting", comment: ""))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(result.map { $0.outcome == .notDone || $0.outcome == .notSure } == true ? Theme.error : Theme.ink)
-                    if let note = result?.note {
+                    if let note = result?.note(.current) {
                         Text(note)
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
@@ -724,6 +732,7 @@ struct VoiceView: View {
              NSLocalizedString("Not now", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
+        case .undo(_, let entry): (entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
         }
     }
 

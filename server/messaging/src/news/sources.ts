@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Db } from "../db.js";
-import { parseFeed, plainText, type NewsItem } from "./feeds.js";
+import { httpUrl, parseFeed, plainText, type NewsItem } from "./feeds.js";
 import { safeFetchText } from "./safeFetch.js";
 
 export interface FeedSource {
@@ -22,10 +22,10 @@ export class HttpFeedSource implements FeedSource {
 
 /** GNews search (https://docs.gnews.io/endpoints/search-endpoint). Paid plans for commercial use. */
 export class GNewsSearch implements NewsSearch {
-  constructor(private readonly apiKey: string, private readonly timeoutMs = 10_000) {}
+  constructor(private readonly apiKey: string, private readonly timeoutMs = 10_000, private readonly baseURL = "https://gnews.io") {}
 
   async search(query: string, lang: "en" | "pl", since: Date): Promise<NewsItem[]> {
-    const url = new URL("https://gnews.io/api/v4/search");
+    const url = new URL("/api/v4/search", this.baseURL);
     url.searchParams.set("q", query.slice(0, 200));
     url.searchParams.set("lang", lang);
     url.searchParams.set("max", "10");
@@ -34,10 +34,16 @@ export class GNewsSearch implements NewsSearch {
     const res = await fetch(url, { headers: { "X-Api-Key": this.apiKey }, signal: AbortSignal.timeout(this.timeoutMs) });
     if (!res.ok) throw new Error(`gnews HTTP ${res.status}`);
     const json = (await res.json()) as { articles?: { title: string; description: string | null; url: string; publishedAt: string; source: { name: string } }[] };
-    return (json.articles ?? []).map((a) => ({
-      title: plainText(a.title, 200), url: a.url, source: plainText(a.source?.name, 80) || "GNews",
-      summary: plainText(a.description, 300), publishedAt: a.publishedAt ?? null,
-    }));
+    // Same rule as feed links: only http(s) URLs reach the app as tappable links.
+    return (json.articles ?? []).flatMap((a) => {
+      const link = typeof a.url === "string" ? httpUrl(a.url) : null;
+      const title = plainText(a.title, 200);
+      if (!link || !title) return [];
+      return [{
+        title, url: link, source: plainText(a.source?.name, 80) || "GNews",
+        summary: plainText(a.description, 300), publishedAt: a.publishedAt ?? null,
+      }];
+    });
   }
 }
 

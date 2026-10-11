@@ -15,7 +15,7 @@ import Foundation
 
 /// A due day, or day and time, as wall-clock fields. `timeZoneID` is the zone the user meant;
 /// nil only for reminders read back without one (made "floating" in the Reminders app).
-public struct ReminderDue: Equatable, Sendable {
+public struct ReminderDue: Codable, Equatable, Sendable {
     public let year: Int
     public let month: Int
     public let day: Int
@@ -379,7 +379,7 @@ public struct ReminderReceipt: Equatable, Sendable {
     public let listTitle: String
     public let due: ReminderDue?
     public let repeats: CalendarRepeat?
-    /// Reminders' own identifier for it (ADR-290). Stays on this iPhone; never sent to the agent.
+    /// Reminders' own identifier for it (ADR-291). Stays on this iPhone; never sent to the agent.
     public let id: String?
 
     public init(title: String, listTitle: String, due: ReminderDue?, repeats: CalendarRepeat? = nil, id: String? = nil) {
@@ -552,7 +552,7 @@ extension VoiceToolReply {
         case .notAdded(.saveFailed(let reason)):
             return notAdded(reason)
         case .unknown:
-            // Asking again is safe: ReminderAction looks before it writes (ADR-290).
+            // Asking again is safe: ReminderAction looks before it writes (ADR-291).
             return unconfirmedLooksFirst(app: .reminders, tool: VoiceToolName.createReminder)
         case .needsClarification(let clarification):
             return reminderClarification(clarification)

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyPluginAsync } from "fastify";
+import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
@@ -25,6 +26,10 @@ const snapshotBody = z.object({
 }).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
 
+/** A changed or removed PIN also ends the access that calls in progress got with the old one. */
+const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
+  c.query("UPDATE call_sessions SET pin_verified_at = NULL WHERE account_id = $1", [accountId]);
+
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
@@ -33,25 +38,28 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
 
   app.get("/v1/calls/settings", { preHandler: auth }, async (req) => {
     const { accountId } = principal(req);
+    // One round trip; the settings row may not exist yet.
     const { rows } = await db.query<{
-      inbound_enabled: boolean; pin_set: boolean; pin_locked: boolean; outbound: boolean; memory_on: boolean;
+      inbound_enabled: boolean | null; pin_set: boolean | null; pin_locked: boolean | null; outbound: boolean | null;
+      memory_on: boolean | null; copies: number; phone: boolean;
     }>(
-      `SELECT inbound_enabled, pin_hash IS NOT NULL AS pin_set, coalesce(pin_locked_until > now(), false) AS pin_locked,
-              outbound_consent_at IS NOT NULL AS outbound, memory_copy_enabled_at IS NOT NULL AS memory_on
-       FROM call_settings WHERE account_id = $1`, [accountId]);
-    const s = rows[0];
-    const count = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM memory_copies WHERE account_id = $1", [accountId]);
-    const phone = await db.query("SELECT 1 FROM phone_numbers WHERE account_id = $1", [accountId]);
+      `SELECT s.inbound_enabled, s.pin_hash IS NOT NULL AS pin_set, coalesce(s.pin_locked_until > now(), false) AS pin_locked,
+              s.outbound_consent_at IS NOT NULL AS outbound, s.memory_copy_enabled_at IS NOT NULL AS memory_on,
+              (SELECT count(*)::int FROM memory_copies WHERE account_id = $1) AS copies,
+              EXISTS (SELECT 1 FROM phone_numbers WHERE account_id = $1) AS phone
+       FROM (SELECT $1::uuid AS account_id) a LEFT JOIN call_settings s ON s.account_id = a.account_id`, [accountId]);
+    const r = rows[0]!;
+    const s = r.inbound_enabled === null ? undefined : r;
     return {
       // What the server can actually do; the app shows "needs setup" otherwise.
       available: { inbound: !!(deps.toolSecret && deps.cipher), outbound: !!(deps.outbound && deps.toolSecret && deps.cipher) },
       doddyNumber: deps.doddyPhoneNumber ?? null,
-      phoneVerified: (phone.rowCount ?? 0) > 0,
+      phoneVerified: r.phone,
       inboundEnabled: s?.inbound_enabled ?? false,
       pinSet: s?.pin_set ?? false,
       pinLocked: s?.pin_locked ?? false,
       outboundConsent: s?.outbound ?? false,
-      memoryCopy: { enabled: s?.memory_on ?? false, count: count.rows[0]?.n ?? 0 },
+      memoryCopy: { enabled: s?.memory_on ?? false, count: r.copies },
     };
   });
 
@@ -80,14 +88,22 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!isAcceptablePin(body.pin)) return reply.code(400).send({ error: "weak_pin" });
     const { accountId } = principal(req);
     await ensureRow(accountId);
-    await db.query(
-      `UPDATE call_settings SET pin_hash = $2, pin_failed_attempts = 0, pin_lock_count = 0, pin_locked_until = NULL, updated_at = now()
-       WHERE account_id = $1`, [accountId, await hashPin(body.pin)]);
+    const hash = await hashPin(body.pin);
+    await inTransaction(db, async (c) => {
+      await c.query(
+        `UPDATE call_settings SET pin_hash = $2, pin_failed_attempts = 0, pin_lock_count = 0, pin_locked_until = NULL, updated_at = now()
+         WHERE account_id = $1`, [accountId, hash]);
+      await forgetPinOnCalls(c, accountId);
+    });
     return reply.code(204).send();
   });
 
   app.delete("/v1/calls/pin", { preHandler: auth }, async (req, reply) => {
-    await db.query("UPDATE call_settings SET pin_hash = NULL, updated_at = now() WHERE account_id = $1", [principal(req).accountId]);
+    const { accountId } = principal(req);
+    await inTransaction(db, async (c) => {
+      await c.query("UPDATE call_settings SET pin_hash = NULL, updated_at = now() WHERE account_id = $1", [accountId]);
+      await forgetPinOnCalls(c, accountId);
+    });
     return reply.code(204).send();
   });
 
@@ -101,14 +117,19 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const target = rows[0];
     if (!target) return reply.code(409).send({ error: "no_verified_phone" });
     if (!target.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
-    const today = await db.query<{ n: number }>(
-      `SELECT count(*)::int AS n FROM calls WHERE account_id = $1 AND direction = 'outbound'
-       AND created_at > now() - interval '1 day'`, [accountId]);
-    if ((today.rows[0]?.n ?? 0) >= OUTBOUND_DAILY_LIMIT) return reply.code(429).send({ error: "daily_limit" });
-
     const callId = randomUUID();
-    await db.query(
-      "INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'outbound', 'requested')", [callId, accountId]);
+    const underLimit = await inTransaction(db, async (c) => {
+      // Count and insert under one per-account lock, so parallel taps can't pass the limit together.
+      await c.query("SELECT pg_advisory_xact_lock(hashtext('outbound_calls:' || $1))", [accountId]);
+      const today = await c.query<{ n: number }>(
+        `SELECT count(*)::int AS n FROM calls WHERE account_id = $1 AND direction = 'outbound'
+         AND created_at > now() - interval '1 day'`, [accountId]);
+      if ((today.rows[0]?.n ?? 0) >= OUTBOUND_DAILY_LIMIT) return false;
+      await c.query(
+        "INSERT INTO calls (id, account_id, direction, status) VALUES ($1, $2, 'outbound', 'requested')", [callId, accountId]);
+      return true;
+    });
+    if (!underLimit) return reply.code(429).send({ error: "daily_limit" });
     const variables = await openSession(db, accountId, callId, "outbound");
     const outcome = await deps.outbound.placeCall(target.e164, { ...variables });
     const status = outcome.kind === "accepted" ? "requested" : outcome.kind === "unknown" ? "unknown" : "failed";
@@ -136,9 +157,18 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date }>(
       "SELECT id, ciphertext, created_at FROM call_notes WHERE account_id = $1 ORDER BY created_at", [accountId]);
     const cipher = deps.cipher;
-    return {
-      notes: rows.map((r) => ({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at })),
-    };
+    // A note that won't decrypt (e.g. after a key change) must not hide the others; it is listed
+    // separately (older apps ignore the field) so it can still be discarded.
+    const notes: { id: string; text: string; createdAt: Date }[] = [];
+    const unreadable: { id: string; createdAt: Date }[] = [];
+    for (const r of rows) {
+      try {
+        notes.push({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at });
+      } catch {
+        unreadable.push({ id: r.id, createdAt: r.created_at });
+      }
+    }
+    return { notes, unreadable };
   });
 
   app.delete("/v1/call-notes/:id", { preHandler: auth }, async (req, reply) => {

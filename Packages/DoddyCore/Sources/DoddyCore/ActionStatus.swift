@@ -1,6 +1,6 @@
 import Foundation
 
-// Action status model (OP-012 / OP-013, ADR-290). Every change Doddy makes in another app has:
+// Action status model (OP-012 / OP-013, ADR-291). Every change Doddy makes in another app has:
 //  - a typed status, where only `confirmed` counts as success, and only from the app's own read-back;
 //  - a receipt: what the app read back, and its own identifier for it;
 //  - a history of how the status moved (approved → running → not sure → checked: found);
@@ -210,9 +210,10 @@ public enum EventIdempotency {
 public protocol CalendarEventWriter: AnyObject {
     /// Events overlapping the range, in every calendar.
     func events(in range: VoiceTimeRange) -> [CalendarEventSummary]
-    /// Saves one event in the default calendar and returns it as read back, or nil when the read-back
-    /// doesn't show what was written (its repeat included). A throw does not prove nothing was written.
-    func saveEvent(_ draft: CalendarEventDraft) throws -> CalendarEventSummary?
+    /// Saves one event in the default calendar and returns it as read back with Calendar's identifier
+    /// for it (which Undo uses, ADR-268), or nil when the read-back doesn't show what was written
+    /// (its repeat included). A throw does not prove nothing was written.
+    func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)?
 }
 
 public enum EventMatching {
@@ -248,7 +249,9 @@ public enum EventMatching {
 }
 
 public enum EventAddOutcome: Equatable, Sendable {
-    case added(CalendarEventSummary)
+    /// `eventID` is Calendar's identifier when the save itself returned it; nil when the event was
+    /// found by a fresh look after a failed save (then Undo isn't offered).
+    case added(CalendarEventSummary, eventID: String?)
     /// The same event was already there (an earlier tap or an unconfirmed try); nothing was written.
     case alreadyThere(CalendarEventSummary)
     /// Not written: the save failed and a fresh look shows it isn't there.
@@ -281,7 +284,7 @@ public enum EventAddAction {
         }
 
         // 2. Write.
-        let saved: CalendarEventSummary?
+        let saved: (event: CalendarEventSummary, eventID: String)?
         do {
             saved = try writer.saveEvent(draft)
         } catch {
@@ -291,12 +294,12 @@ public enum EventAddAction {
             }
             // A repeat can't be seen in a summary, so a repeating event found this way stays unsure.
             guard draft.repeats == nil, EventMatching.confirms(found, draft, calendar: calendar) else { return .unknown }
-            return .added(found)
+            return .added(found, eventID: nil)
         }
 
         // 3b. The read-back must match what the card showed.
-        guard let back = saved, EventMatching.confirms(back, draft, calendar: calendar) else { return .unknown }
-        return .added(back)
+        guard let saved, EventMatching.confirms(saved.event, draft, calendar: calendar) else { return .unknown }
+        return .added(saved.event, eventID: saved.eventID)
     }
 
     private static func message(for error: Error) -> String {

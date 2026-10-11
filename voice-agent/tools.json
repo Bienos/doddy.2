@@ -145,6 +145,17 @@
     },
     {
       "type": "function",
+      "name": "undo_last",
+      "description": "Undo the newest change you made in this conversation in Calendar or Reminders: an event or reminder you added, an event you moved or renamed, or a reminder you re-timed or marked done. The app finds it and shows the user a card; nothing changes until they tap. It only puts back what Doddy did, and leaves it alone if it changed since. It can't undo a delete, notes, lists, timers, alarms, emails, tasks or anything from an earlier conversation (the user can use Settings, What Doddy did).",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6501m4n80qyqee09pksxpdztmy18"}
+    },
+    {
+      "type": "function",
       "name": "delete_calendar_events",
       "description": "Propose deleting every event that starts in a time range on the user's iPhone Calendar, on one card. Use it only when the user clearly asks to clear or cancel everything in a time (e.g. 'clear my Thursday afternoon'); for one event use delete_calendar_event. Give from and to in local time; a day alone as to means the whole day; at most 31 days. The card lists each event, all ticked; the user can untick any and taps Delete. A repeating event loses only the time in the range. Doddy can't undo it. The result starts with 'deleted' (all ticked ones gone, each checked), 'partly deleted' (it names the ones that weren't), 'declined', 'not changed' (nothing in that range, or too many), 'unknown' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen which ones I should delete.' (Polish: 'Potwierdź na ekranie, które mam usunąć.'). Never say they were deleted unless the result says so, and name the ones it says weren't.",
       "parameters": {
@@ -202,6 +213,47 @@
         "required": ["name"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_5301m4f2xzp9f5qr5wezynzyjkkx"}
+    },
+    {
+      "type": "function",
+      "name": "upcoming_birthdays",
+      "description": "Read the birthdays saved on the user's iPhone contact cards, from today for the next few days. You receive each person's name and the day and month only, never a birth year or age. Only mention birthdays the tool returned; contacts without a saved birthday are unknown. Nothing is added anywhere: if the user wants a reminder, use create_reminder. If the result says Contacts isn't connected, tell the user they can connect it in Settings, Connections.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "days": {"type": "integer", "description": "How many days to look ahead, today included: 1 for today only, 7 for this week (the default), up to 60."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_4501m4n80mxyfb3b0fhbeveh5ddb"}
+    },
+    {
+      "type": "function",
+      "name": "calculate",
+      "description": "Work out a sum on the user's iPhone. Use it for every calculation the user asks for (totals, splitting a bill, tips, percentages, recipe scaling) instead of doing the maths yourself, then say the result it returns. Only numbers with a dot for decimals, + - * / ^ for powers, % (a percent of the number before it) and brackets; no words, units or currency signs. For '15% of 80' send '80 * 15%'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "expression": {"type": "string", "description": "The sum, e.g. '(124.50 + 37) / 3' or '80 * 15%'. At most 200 characters."}
+        },
+        "required": ["expression"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "tool_7001m4n80pe0f7wrkgp6kcv9h5wj"}
+    },
+    {
+      "type": "function",
+      "name": "convert_units",
+      "description": "Convert a measurement on the user's iPhone: length, weight, volume (US cups, pints, gallons; 'uk gal' for imperial), temperature, speed, area or time. Use it instead of converting yourself, then say the result it returns. It cannot convert currencies.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "value": {"type": "number", "description": "The amount to convert, e.g. 5 or 2.5."},
+          "from": {"type": "string", "description": "The unit it is in, as a standard symbol or English name, e.g. 'mi', 'lb', 'cup', '°F', 'km/h', 'ft2'."},
+          "to": {"type": "string", "description": "The unit to convert to, e.g. 'km', 'kg', 'ml', '°C', 'mph', 'm2'."}
+        },
+        "required": ["value", "from", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "tool_3801m4n80q65ekpb1zc8mhst0zp0"}
     },
     {
       "type": "function",

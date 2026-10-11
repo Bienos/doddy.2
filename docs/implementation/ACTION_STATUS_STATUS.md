@@ -1,4 +1,4 @@
-# Action status model: status (ADR-290)
+# Action status model: status (ADR-291)
 Date: 2026-10-11. Owner instruction: "start the action status model". This covers OP-012 (action receipts and status history) and OP-013 (recoverable failure and retry) from the research backlog.
 
 ## What was already there

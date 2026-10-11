@@ -82,5 +82,8 @@ function ipv6Prefix64(/** @type {string} */ address) {
 export function clientAddress(request) {
   const forwarded = request.headers.get('x-vercel-forwarded-for') ?? request.headers.get('x-real-ip') ?? '';
   const address = forwarded.split(',')[0].trim() || 'unknown';
+  // An IPv4 client seen through IPv6 (::ffff:a.b.c.d) is that IPv4 address, not one shared /64.
+  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(address);
+  if (mapped) return mapped[1];
   return address.includes(':') ? ipv6Prefix64(address) : address;
 }

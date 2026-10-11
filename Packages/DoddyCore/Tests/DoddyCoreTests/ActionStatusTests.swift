@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-290 (OP-012 / OP-013): typed action status, receipts, status history, and retry that
+/// ADR-291 (OP-012 / OP-013): typed action status, receipts, status history, and retry that
 /// checks before repeating. EventKit itself is only exercised on a device.
 final class ActionStatusTests: XCTestCase {
     private var calendar: Calendar = {
@@ -83,7 +83,7 @@ final class ActionStatusTests: XCTestCase {
         XCTAssertFalse(VoiceToolReply.reminder(.alreadyThere(snapshot)).contains("EK-SECRET-ID"))
         let event = CalendarEventSummary(id: "EK-EVENT-ID", title: "Dentist", start: date(12, 15), end: date(12, 16), allDay: false)
         XCTAssertFalse(VoiceToolReply.event(.alreadyThere(event), draft: dentist, calendar: calendar).contains("EK-EVENT-ID"))
-        XCTAssertFalse(VoiceToolReply.event(.added(event), draft: dentist, calendar: calendar).contains("EK-EVENT-ID"))
+        XCTAssertFalse(VoiceToolReply.event(.added(event, eventID: "EK-EVENT-ID"), draft: dentist, calendar: calendar).contains("EK-EVENT-ID"))
     }
 
     // MARK: History
@@ -112,7 +112,7 @@ final class ActionStatusTests: XCTestCase {
         XCTAssertEqual(recovered.history.last, ActivityStatusChange(status: .unknown, at: now + 600, note: ActivityLog.interruptedNote))
     }
 
-    /// Planted-bug guard: before ADR-290 a check rewrote any entry it was given.
+    /// Planted-bug guard: before ADR-291 a check rewrote any entry it was given.
     func testACheckNeverRewritesAFinalResult() {
         let asked = request(.createReminder(milk))
         let receipt = ReminderReceipt(title: "Buy milk", listTitle: "Home", due: milk.due, id: "x-1")
@@ -123,7 +123,7 @@ final class ActionStatusTests: XCTestCase {
     }
 
     func testEntriesSavedBeforeThisStillLoad() throws {
-        // An entry as ActivityLogStore wrote it before ADR-290: none of the new keys.
+        // An entry as ActivityLogStore wrote it before ADR-291: none of the new keys.
         let old = #"[{"id":"6F1B2C9E-1C1A-4B6D-9F51-0B1D2C3E4F50","at":781790400,"app":"reminders","title":"Add reminder","detail":"“Buy milk”","outcome":"notSure","reminderKey":"v1-abc"}]"#
         let entries = try JSONDecoder().decode([ActivityEntry].self, from: Data(old.utf8))
         XCTAssertEqual(entries.count, 1)
@@ -185,7 +185,7 @@ final class ActionStatusTests: XCTestCase {
         let nothingWritten = (0..<5).map { tried(key, clarify, at: now - Double($0 + 1) * 60, attempted: false) }
         XCTAssertEqual(ActionRetry.decide(key: key, in: nothingWritten, now: now), .go)
 
-        let added = VoiceToolReply.event(.added(CalendarEventSummary(title: "Dentist", start: date(12, 15), end: date(12, 16), allDay: false)), draft: dentist, calendar: calendar)
+        let added = VoiceToolReply.event(.added(CalendarEventSummary(title: "Dentist", start: date(12, 15), end: date(12, 16), allDay: false), eventID: nil), draft: dentist, calendar: calendar)
         let log = [
             tried(key, failed, at: now - 900, attempted: true),
             tried(key, failed, at: now - 800, attempted: true),
@@ -242,8 +242,9 @@ final class ActionStatusTests: XCTestCase {
     func testAnEventIsWrittenOnceAndAskingAgainFindsIt() {
         let writer = FakeEventWriter()
         let first = EventAddAction.add(dentist, to: writer, now: now, calendar: calendar)
-        guard case .added(let back) = first else { return XCTFail("\(first)") }
+        guard case .added(let back, let eventID) = first else { return XCTFail("\(first)") }
         XCTAssertEqual(back.id, "ev1")
+        XCTAssertEqual(eventID, "id-ev1", "Calendar's identifier comes back for Undo")
         XCTAssertTrue(first.attemptedWrite)
 
         let again = EventAddAction.add(
@@ -317,7 +318,7 @@ final class ActionStatusTests: XCTestCase {
         func outcome(_ result: EventAddOutcome) -> ActivityOutcome {
             ActivityEntry.outcome(of: VoiceToolReply.event(result, draft: dentist, calendar: calendar), isLookup: false).0
         }
-        XCTAssertEqual(outcome(.added(event)), .done)
+        XCTAssertEqual(outcome(.added(event, eventID: "x")), .done)
         XCTAssertEqual(outcome(.alreadyThere(event)), .alreadyThere)
         XCTAssertEqual(outcome(.unknown), .notSure)
         XCTAssertEqual(outcome(.notAdded("x")), .notDone)
@@ -356,7 +357,7 @@ private final class FakeEventWriter: CalendarEventWriter {
         items.filter { $0.start < range.end && $0.end > range.start }
     }
 
-    func saveEvent(_ draft: CalendarEventDraft) throws -> CalendarEventSummary? {
+    func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         if behaviour == .throwOnly { throw ReadOnly() }
         saves += 1
         var saved = CalendarEventSummary(id: "ev\(nextID)", title: draft.title, start: draft.start, end: draft.end, allDay: draft.allDay)
@@ -364,6 +365,6 @@ private final class FakeEventWriter: CalendarEventWriter {
         if let alterOnSave { saved = alterOnSave(saved) }
         items.append(saved)
         if behaviour == .writeThenThrow { throw ReadOnly() }
-        return hideReadBack ? nil : saved
+        return hideReadBack ? nil : (saved, "id-\(saved.id ?? "")")
     }
 }

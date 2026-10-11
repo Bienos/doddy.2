@@ -284,6 +284,16 @@ export class Store {
     });
   }
 
+  /** Queues remote removal of a connection Doddy never recorded (e.g. a completion that failed). */
+  queueCleanup(connectionId: string, userId: string, provider: string, now: number): void {
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO cleanups (connection_id, user_id, provider, state, attempts, last_error, created_at)
+         VALUES (?, ?, ?, 'pending', 0, NULL, ?)`,
+      )
+      .run(connectionId, userId, provider, now);
+  }
+
   finishCleanup(connectionId: string): void {
     this.db.prepare("DELETE FROM cleanups WHERE connection_id = ?").run(connectionId);
   }
@@ -381,6 +391,34 @@ export class Store {
     });
   }
 
+  /**
+   * Retention (review 2026-10-11): drops attempts and approvals a day after they expire, usage
+   * periods no limit reads any more, and receipts older than 90 days or beyond the newest 200 per
+   * user (per table). Returns how many rows went, per table.
+   */
+  prune(now: number): Record<string, number> {
+    const DAY = 86_400_000;
+    const dayCutoff = `day:${new Date(now - 62 * DAY).toISOString().slice(0, 10)}`;
+    const monthCutoff = `month:${new Date(now - 400 * DAY).toISOString().slice(0, 7)}`;
+    return this.transaction(() => {
+      const run = (sql: string, ...params: (string | number)[]) => Number(this.db.prepare(sql).run(...params).changes);
+      const receipts = (table: "receipts" | "tool_receipts") =>
+        run(`DELETE FROM ${table} WHERE created_at < ?`, now - 90 * DAY) +
+        run(`DELETE FROM ${table} WHERE rowid IN (
+               SELECT rowid FROM (SELECT rowid, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, rowid DESC) AS rn FROM ${table})
+               WHERE rn > 200)`);
+      return {
+        attempts: run("DELETE FROM attempts WHERE expires_at < ?", now - DAY),
+        approvals: run("DELETE FROM approvals WHERE expires_at < ?", now - DAY),
+        usage:
+          run("DELETE FROM usage WHERE period LIKE 'day:%' AND period < ?", dayCutoff) +
+          run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < ?", monthCutoff),
+        receipts: receipts("receipts"),
+        toolReceipts: receipts("tool_receipts"),
+      };
+    });
+  }
+
   usage(counter: string, period: string): number {
     const row = this.db.prepare("SELECT count FROM usage WHERE counter = ? AND period = ?").get(counter, period) as
       | { count: number }
@@ -416,7 +454,7 @@ export class Store {
     accountId: string;
     argsDigest: string;
     now: number;
-  }): boolean {
+  }, opts: { checkOnly?: boolean } = {}): boolean {
     return this.transaction(() => {
       const row = this.db.prepare("SELECT * FROM approvals WHERE approval_id = ?").get(input.approvalId) as
         | { user_id: string; capability: string; account_id: string; args_digest: string; expires_at: number; consumed_at: number | null }
@@ -432,6 +470,8 @@ export class Store {
       ) {
         return false;
       }
+      // checkOnly: would it be accepted? Lets the caller pass its limits first without burning it.
+      if (opts.checkOnly) return true;
       return this.db.prepare("UPDATE approvals SET consumed_at = ? WHERE approval_id = ? AND consumed_at IS NULL").run(input.now, input.approvalId)
         .changes === 1;
     });

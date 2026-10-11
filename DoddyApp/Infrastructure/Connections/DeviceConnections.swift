@@ -130,13 +130,13 @@ final class DeviceConnections {
 
     /// Repeating events share one identifier, so the start time is added: one id per occurrence.
     private static func occurrenceID(_ event: EKEvent) -> String {
-        "\(event.calendarItemIdentifier)@\(Int(event.startDate.timeIntervalSince1970))"
+        CalendarEventSummary.occurrenceID(itemID: event.calendarItemIdentifier, start: event.startDate)
     }
 
-    /// Saves one event in the default calendar and returns it as read back, or nil when the
-    /// read-back doesn't show it (or its repeat). `EventAddAction` looks first and compares
-    /// (CalendarEventWriter, ADR-290).
-    func saveEvent(_ draft: CalendarEventDraft) throws -> CalendarEventSummary? {
+    /// Saves one event in the default calendar and returns it as read back with its identifier
+    /// (which Undo uses, ADR-268), or nil when the read-back doesn't show it (or its repeat).
+    /// `EventAddAction` looks first and compares (CalendarEventWriter, ADR-291).
+    func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
         event.calendar = calendar
@@ -153,7 +153,7 @@ final class DeviceConnections {
               CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
             return nil
         }
-        return Self.summary(back)
+        return (Self.summary(back), identifier)
     }
 
     /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the
@@ -227,6 +227,87 @@ final class DeviceConnections {
                 && (plan.addNote == nil && plan.removeNote == nil || (found.notes ?? "") == (notes ?? ""))
         }
         return readBack ? .verified : .unconfirmed
+    }
+
+    // MARK: Undo (ADR-268)
+
+    /// Puts back exactly what Doddy did, only if it still looks exactly as Doddy left it. Nothing
+    /// else is ever removed or changed. "Undone" only after a read-back agrees. When a write
+    /// throws, a fresh look decides: still as Doddy left it means nothing was written.
+    func undo(_ undo: ActivityUndo) async -> UndoResult {
+        switch undo {
+        case .addedEvent(let eventID, let added):
+            guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
+            guard let event = eventStore.event(withIdentifier: eventID), !event.hasRecurrenceRules,
+                  ActivityUndo.unchanged(Self.summary(event), since: added) else { return .leftAlone }
+            do {
+                try eventStore.remove(event, span: .thisEvent, commit: true)
+            } catch {
+                eventStore.reset()
+                return eventStore.event(withIdentifier: eventID) == nil ? .notSure : .notDone(UserFacingError.message(for: error))
+            }
+            return eventStore.event(withIdentifier: eventID) == nil ? .undone : .notSure
+
+        case .changedEvent(let plan):
+            guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
+            do {
+                // The same guarded write as a change by voice: found by its current occurrence,
+                // which must look exactly as Doddy left it, then read back.
+                switch try changeEvent(ActivityUndo.reversed(plan)) {
+                case .verified: return .undone
+                case .changedElsewhere: return .leftAlone
+                case .unconfirmed: return .notSure
+                }
+            } catch {
+                return .notSure
+            }
+
+        case .addedReminder(let key, let title, let due):
+            guard access(for: .reminders) == .granted else { return .notDone("Reminders isn't connected.") }
+            guard let open = try? await incompleteReminders() else { return .notDone("Doddy couldn't read Reminders.") }
+            guard let mine = ActivityUndo.addedReminder(key: key, in: open),
+                  ActivityUndo.unchanged(mine, key: key, title: title, due: due),
+                  let reminder = eventStore.calendarItem(withIdentifier: mine.id) as? EKReminder else { return .leftAlone }
+            do {
+                try eventStore.remove(reminder, commit: true)
+            } catch {
+                eventStore.reset()
+                return eventStore.calendarItem(withIdentifier: mine.id) == nil ? .notSure : .notDone(UserFacingError.message(for: error))
+            }
+            return eventStore.calendarItem(withIdentifier: mine.id) == nil ? .undone : .notSure
+
+        case .changedReminder(let id, let title, let oldDue, let newDue, let markedDone):
+            guard access(for: .reminders) == .granted else { return .notDone("Reminders isn't connected.") }
+            guard let reminder = eventStore.calendarItem(withIdentifier: id) as? EKReminder,
+                  ActivityUndo.unchangedSinceChange(Self.snapshot(reminder), title: title, newDue: newDue, oldDue: oldDue, markedDone: markedDone)
+            else { return .leftAlone }
+            if markedDone {
+                reminder.isCompleted = false
+            } else {
+                reminder.dueDateComponents = oldDue.map(Self.components)
+                // An alarm Doddy moved with the due moves back with it.
+                if let newDue, let from = EventChange.moment(newDue, local: .current),
+                   let oldDue, let to = EventChange.moment(oldDue, local: .current) {
+                    for alarm in reminder.alarms ?? [] where alarm.absoluteDate == from {
+                        alarm.absoluteDate = to
+                    }
+                }
+            }
+            do {
+                try eventStore.save(reminder, commit: true)
+            } catch {
+                eventStore.reset()
+                guard let fresh = eventStore.calendarItem(withIdentifier: id) as? EKReminder else { return .notSure }
+                return ActivityUndo.unchangedSinceChange(Self.snapshot(fresh), title: title, newDue: newDue, oldDue: oldDue, markedDone: markedDone)
+                    ? .notDone(UserFacingError.message(for: error)) : .notSure
+            }
+            guard let back = eventStore.calendarItem(withIdentifier: id) as? EKReminder else { return .notSure }
+            let snapshot = Self.snapshot(back)
+            let restored = markedDone
+                ? !snapshot.isCompleted
+                : !snapshot.isCompleted && EventChange.sameDue(snapshot.due, oldDue)
+            return restored ? .undone : .notSure
+        }
     }
 
     /// The place an occurrence has now, for the change card only (ADR-281). Never sent to the agent.
@@ -477,6 +558,26 @@ final class DeviceConnections {
                 phoneNumbers: contact.phoneNumbers.map { $0.value.stringValue },
                 emailAddresses: contact.emailAddresses.map { $0.value as String })
         }
+    }
+
+    /// Name and birthday of every contact that has one, for "whose birthday is coming up"
+    /// (ADR-269). Nothing else is read.
+    /// Only the day and month reach the agent (`VoiceToolReply.birthdays`); the year stays here.
+    func contactBirthdays() throws -> [ContactBirthday] {
+        let keys: [CNKeyDescriptor] = [
+            CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
+            CNContactBirthdayKey as CNKeyDescriptor,
+        ]
+        var found: [ContactBirthday] = []
+        try contactStore.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
+            // Gregorian birthdays only; a card with only a non-Gregorian date is skipped.
+            guard let birthday = contact.birthday, let month = birthday.month, let day = birthday.day,
+                  birthday.calendar == nil || birthday.calendar?.identifier == .gregorian else { return }
+            found.append(ContactBirthday(
+                name: CNContactFormatter.string(from: contact, style: .fullName) ?? "Unnamed contact",
+                month: month, day: day, year: birthday.year))
+        }
+        return found
     }
 
     /// Contacts with a birthday (ADR-288): name and day only, read on this iPhone. Nil without

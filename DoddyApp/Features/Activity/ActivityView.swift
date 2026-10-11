@@ -3,13 +3,18 @@ import SwiftUI
 
 /// Settings → What Doddy did. Newest first, grouped by day. Each row says what was asked and
 /// what actually happened; a reminder Doddy wasn't sure about can be checked in Reminders.
-/// The steps of one plan card are shown together under one heading (ADR-208).
+/// The steps of one plan card are shown together under one heading (ADR-208). For a day, an
+/// event or reminder Doddy added or changed can be undone, after a confirmation (ADR-268).
 struct ActivityView: View {
+    @Environment(MemoryStore.self) private var store
     @State private var activity = ActivityLogStore.shared
     @State private var devices = DeviceConnections()
     @State private var checking: Set<UUID> = []
     @State private var checkProblem: String?
     @State private var confirmClear = false
+    @State private var undoing: Set<UUID> = []
+    /// The entry whose Undo sheet is showing.
+    @State private var confirmUndo: ActivityEntry?
 
     private var days: [(day: Date, items: [ActivityItem])] {
         let calendar = Calendar.current
@@ -66,12 +71,25 @@ struct ActivityView: View {
         } message: {
             Text("This clears Doddy's list only. Nothing in Reminders, Calendar or your notes changes.")
         }
+        .confirmationDialog(
+            confirmUndo?.undo?.question(.current) ?? "",
+            isPresented: Binding(get: { confirmUndo != nil }, set: { if !$0 { confirmUndo = nil } }),
+            titleVisibility: .visible,
+            presenting: confirmUndo
+        ) { entry in
+            Button(entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), role: .destructive) {
+                Task { await undo(entry) }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { entry in
+            Text(entry.undo?.explanation(calendar: .current, language: .current) ?? "")
+        }
     }
 
     private func row(_ entry: ActivityEntry) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
-                Text(entry.title).font(.body.weight(.semibold))
+                Text(entry.title(.current)).font(.body.weight(.semibold))
                 Spacer(minLength: 8)
                 Text(entry.at, style: .time)
                     .font(.footnote).monospacedDigit()
@@ -80,13 +98,13 @@ struct ActivityView: View {
             if let detail = entry.detail {
                 Text(detail).font(.subheadline)
             }
-            Text("\(entry.app.title) · \(entry.outcome.text)")
+            Text(entry.statusText(.current))
                 .font(.footnote.weight(.semibold))
-                .foregroundStyle(color(entry.outcome))
-            if let note = entry.note {
+                .foregroundStyle(entry.undoState == nil ? color(entry.outcome) : Theme.secondaryText)
+            if let note = entry.note(.current) {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
             }
-            // What the app itself read back (ADR-290); kept only on confirmed entries.
+            // What the app itself read back (ADR-291); kept only on confirmed entries.
             if let receipt = entry.receipt {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Read back from \(receipt.app.title) at \(receipt.readAt.formatted(date: .omitted, time: .shortened))")
@@ -115,6 +133,13 @@ struct ActivityView: View {
                 .disabled(checking.contains(entry.id))
                 .accessibilityHint("Looks in Reminders for this reminder. Nothing is added.")
             }
+            if entry.canUndo(now: Date()) {
+                Button(undoing.contains(entry.id) ? NSLocalizedString("Undoing…", comment: "") : NSLocalizedString("Undo", comment: "")) { confirmUndo = entry }
+                    .buttonStyle(.borderless)
+                    .disabled(undoing.contains(entry.id))
+                    .accessibilityIdentifier("activity.undo")
+                    .accessibilityHint("Asks first. Puts back only what Doddy did, if it hasn't changed since.")
+            }
         }
         .padding(.vertical, 2)
         .accessibilityElement(children: .combine)
@@ -124,9 +149,9 @@ struct ActivityView: View {
     private func planRow(_ steps: [ActivityEntry]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Label(ActivityPlanSummary.title(steps), systemImage: "list.number")
+                Label(ActivityPlanSummary.title(steps, language: .current), systemImage: "list.number")
                     .font(.body.weight(.semibold))
-                Text(ActivityPlanSummary.outcomes(steps))
+                Text(ActivityPlanSummary.outcomes(steps, language: .current))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -154,6 +179,29 @@ struct ActivityView: View {
         }
         checkProblem = nil
         activity.replace(ActivityLog.checked(entry, found: found, at: Date()))
+    }
+
+    /// Checked again at the tap: Pause all and the connection's switch, then the guarded write
+    /// and read-back in DeviceConnections. The row then says what actually happened.
+    private func undo(_ entry: ActivityEntry) async {
+        guard let undo = entry.undo, entry.canUndo(now: Date()), !undoing.contains(entry.id) else { return }
+        undoing.insert(entry.id)
+        defer { undoing.remove(entry.id) }
+        let defaults = UserDefaults.standard
+        let result: UndoResult
+        if let reason = undo.blocked(
+            pauseAll: defaults.bool(forKey: ConnectionPause.preferenceKey),
+            connectionOn: undo.connection.map { defaults.bool(forKey: $0.preferenceKey) } ?? true) {
+            result = .notDone(reason)
+        } else if undo.listID != nil {
+            // Lists are Doddy's own (ADR-276): the store reverses and reads them back.
+            result = await store.undoFromActivity(undo)
+        } else {
+            result = await devices.undo(undo)
+        }
+        // The entry as it is now, in case it changed while Undo ran.
+        let current = activity.entries.first { $0.id == entry.id } ?? entry
+        activity.replace(ActivityLog.undid(current, result: result, at: Date()))
     }
 
     private func color(_ outcome: ActivityOutcome) -> Color {

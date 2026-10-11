@@ -199,6 +199,38 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 |---|---|---|
 | PL1 | iPhone language Polish; go through Home, New note, Memories, Lists, Settings | Polish everywhere listed in `POLISH_SCREENS_STATUS.md`; note clipped buttons and any English left on a main screen |
 
+## 15. Undo in What Doddy did (ADR-268)
+| # | Do this | Expect |
+|---|---|---|
+| U1 | Ask Doddy to add an event; Settings → What Doddy did → Undo → Remove | The event is gone from Calendar; the row says "Calendar · Undone" |
+| U2 | Ask Doddy to add a reminder; rename it in Reminders; Undo | "Not undone: it changed in Reminders since Doddy did this…"; the reminder stays |
+| U3 | Have your own reminder "Buy milk", ask Doddy to add "Buy milk" (already there) | No Undo on that row |
+| U4 | Ask Doddy to move an event; Undo → Put back | Old time and name back; row "Undone" |
+| U5 | Ask Doddy to mark a reminder done; Undo → Mark not done | Open again in Reminders |
+| U6 | Turn on Pause all; Undo | "Not undone: Connections are paused in Settings. Nothing changed."; Undo still offered |
+| U7 | Plan card with an event and a reminder → Add; What Doddy did | Both steps show Undo |
+| U8 | (after the live agent update) Ask Doddy to add a reminder, then say "undo that" → Remove | Card names the reminder; it's gone from Reminders; Doddy says it was undone |
+| U9 | (after the live agent update) New conversation, say "undo that" | Doddy says there's nothing to undo from this conversation |
+| U10 | Ask Doddy to add "milk, eggs" to Shopping; tick eggs yourself; What Doddy did → Undo → Remove | Milk is gone; eggs stay; row "Notes · Undone" |
+| U11 | Ask Doddy to remove "bread" from Shopping; Undo → Put back | Bread is back where it was |
+| U12 | Ask Doddy to add an item, then delete the whole list; Undo | "Not undone: it changed in the list since…" |
+
+## 16. Birthdays from Contacts (ADR-269; needs the live agent update first)
+| # | Do this | Expect |
+|---|---|---|
+| BD1 | Give two contacts birthdays this week (one without a year); ask "whose birthday is this week?" | Doddy names both with the day; never a year or age |
+| BD2 | Contacts switch off; ask again | "Contacts isn't connected …"; nothing read |
+| BD3 | Pause all on; ask again | Paused reply; nothing read |
+| BD4 | "Remind me the day before Anna's birthday" | A create_reminder card; nothing added before the tap |
+
+## 17. Sums and unit conversions (ADR-270; needs the live agent update first)
+| # | Do this | Expect |
+|---|---|---|
+| C1 | "What's 124.50 plus 37, split three ways?" | About 53.83; nothing logged in What Doddy did |
+| C2 | "How many kilometres is 5 miles?" / "350 Fahrenheit in Celsius?" | 8.05 km / about 177 °C |
+| C3 | "Convert 20 euros to złoty" | Doddy says it can't convert currencies yet |
+| C4 | Pause all on; ask a sum | Still answered (no other app is used) |
+
 ## Result log
 | Item | Xcode / iOS / device | Result | Notes |
 |---|---|---|---|
@@ -211,7 +243,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | W2 | Choose Whole Doddy, talk to Doddy, go to the Home Screen and long-press the island | The expanded island shows the pose for each state as it changes (connecting = stretch). The pose is sharp, not blurry, and the cream edge is even |
 | W3 | Look at compact and minimal (open another app with its own activity for minimal) | A round face crop: the listening face while live, shush when muted. Not cut off, not blurry |
 | W4 | Ask Doddy to save a note, tap Save; ask for a reminder and Add | Reaching high while it waits; a fist pump only after Saved / Reminders confirmed it |
-| W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, arms out with the greeting, leaning while paused |
+| W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, waving with the greeting (no paper edge around the wave), leaning while paused |
 | W6 | Start the translator from Home with Whole Doddy chosen | Language Bridge as before, no pose |
 
 ## 4g. Cream Lock Screen cards (ADR-266)
@@ -221,7 +253,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | C2 | Dark mode on. Start a focus timer, then shopping mode for a list, and lock the iPhone | Both cards are cream with readable text; ticking an item still works |
 
 
-## 4h. Action status and retry (ADR-290, `ACTION_STATUS_STATUS.md`)
+## 4h. Action status and retry (ADR-291, `ACTION_STATUS_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | AS1 | Ask Doddy to add an event tomorrow at 15:00, tap Add, then open Settings → What Doddy did | "Done", and "Read back from Calendar at …" with the title and times. The event is in Calendar once |

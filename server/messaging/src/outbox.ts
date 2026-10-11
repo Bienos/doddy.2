@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
+import { sha256, type TextCipher } from "./crypto.js";
+import { log } from "./log.js";
 import type { Db } from "./db.js";
 import type { PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 
@@ -27,38 +29,74 @@ export async function smsNumber(db: Queryable, accountId: string): Promise<strin
   return rows[0]?.e164;
 }
 
+/** The wanted channels that can reach this account right now (set up and consented), in order. */
+export async function usableChannels(db: Queryable, accountId: string, wanted: readonly Channel[]): Promise<Channel[]> {
+  const out: Channel[] = [];
+  for (const ch of wanted) {
+    if (ch === "push" ? await canPush(db, accountId) : await smsNumber(db, accountId)) out.push(ch);
+  }
+  return out;
+}
+
 export interface QueuedMessage { id: string; channel: Channel; state: string }
 
-/** Inserts one row per channel. Re-sending the same idempotency key returns the existing rows. */
+/** The same idempotency key was used before with a different payload (DOD-07). */
+export class IdempotencyConflict extends Error {
+  constructor() { super("idempotency_mismatch"); }
+}
+
+/** Associated data binding an encrypted message body to its account and row. */
+export const bodyAad = (accountId: string, messageId: string) => `${accountId}:outbound:${messageId}`;
+
+export interface EnqueueOptions {
+  /** What the idempotency key is bound to (defaults to the body). */
+  fingerprint?: string;
+  /** When set, the body is stored encrypted instead of in plain text. */
+  cipher?: TextCipher;
+}
+
+/**
+ * Inserts one row per channel. Re-sending the same idempotency key with the same payload returns
+ * the existing rows; with a different payload it throws IdempotencyConflict and queues nothing.
+ */
 export async function enqueue(
   db: Queryable, accountId: string, channels: Channel[], body: string, sendAt: Date, idempotencyKey: string,
+  opts: EnqueueOptions = {},
 ): Promise<QueuedMessage[]> {
+  const payloadHash = sha256(opts.fingerprint ?? body);
   const out: QueuedMessage[] = [];
   for (const channel of channels) {
+    const id = randomUUID();
+    const sealed = opts.cipher?.encrypt(body, bodyAad(accountId, id));
     await db.query(
-      `INSERT INTO outbound_messages (id, account_id, channel, idempotency_key, body, send_at, state)
-       VALUES ($1, $2, $3, $4, $5, $6, 'queued')
+      `INSERT INTO outbound_messages
+         (id, account_id, channel, idempotency_key, body, body_ciphertext, body_key_version, send_at, state, payload_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'queued', $9)
        ON CONFLICT (account_id, channel, idempotency_key) DO NOTHING`,
-      [randomUUID(), accountId, channel, idempotencyKey, body, sendAt]);
-    const { rows } = await db.query<QueuedMessage>(
-      `SELECT id, channel, state FROM outbound_messages
+      [id, accountId, channel, idempotencyKey, sealed ? null : body, sealed ?? null,
+        sealed ? opts.cipher!.keyVersion : null, sendAt, payloadHash]);
+    const { rows } = await db.query<QueuedMessage & { payload_hash: Buffer | null }>(
+      `SELECT id, channel, state, payload_hash FROM outbound_messages
        WHERE account_id = $1 AND channel = $2 AND idempotency_key = $3`,
       [accountId, channel, idempotencyKey]);
-    out.push(rows[0]!);
+    const row = rows[0]!;
+    if (row.payload_hash && !row.payload_hash.equals(payloadHash)) throw new IdempotencyConflict();
+    out.push({ id: row.id, channel: row.channel, state: row.state });
   }
   return out;
 }
 
 export async function cancelQueuedSms(db: Queryable, accountId: string): Promise<void> {
   await db.query(
-    `UPDATE outbound_messages SET state = 'cancelled', error_code = 'sms_not_enabled', body = NULL, updated_at = now()
+    `UPDATE outbound_messages SET state = 'cancelled', error_code = 'sms_not_enabled', body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
      WHERE account_id = $1 AND channel = 'sms' AND state = 'queued'`,
     [accountId]);
 }
 
 interface Claimed { id: string; account_id: string; channel: Channel; body: string; attempts: number }
+interface ClaimedRow extends Omit<Claimed, "body"> { body: string | null; body_ciphertext: Buffer | null }
 
-export interface Senders { push?: PushSender; sms?: SmsSender }
+export interface Senders { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }
 
 export interface DispatchResult { reaped: number; processed: number }
 
@@ -69,10 +107,10 @@ export interface DispatchResult { reaped: number; processed: number }
 export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise<DispatchResult> {
   const reaped = await db.query(
     `UPDATE outbound_messages
-     SET state = 'unknown', error_code = 'worker_interrupted', body = NULL, updated_at = now()
+     SET state = 'unknown', error_code = 'worker_interrupted', body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
      WHERE state = 'sending' AND updated_at < now() - $1::interval`,
     [STALE_SENDING]);
-  const { rows } = await db.query<Claimed>(
+  const { rows } = await db.query<ClaimedRow>(
     `WITH due AS (
        SELECT id FROM outbound_messages
        WHERE state = 'queued' AND send_at <= now()
@@ -80,9 +118,22 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
      UPDATE outbound_messages m
      SET state = 'sending', attempts = m.attempts + 1, updated_at = now()
      FROM due WHERE m.id = due.id
-     RETURNING m.id, m.account_id, m.channel, m.body, m.attempts`,
+     RETURNING m.id, m.account_id, m.channel, m.body, m.body_ciphertext, m.attempts`,
     [batch]);
-  for (const msg of rows) {
+  for (const row of rows) {
+    // Claimed rows wait their turn in this batch. Refresh the claim just before sending so the
+    // stale-`sending` reaper times each message, not the whole batch; if another worker already
+    // reaped it as unknown, it must not be sent now.
+    const fresh = await db.query(
+      "UPDATE outbound_messages SET updated_at = now() WHERE id = $1 AND state = 'sending'", [row.id]);
+    if (!fresh.rowCount) continue;
+    const body = row.body ?? openBody(senders.cipher, row);
+    const msg: Claimed = { ...row, body: body ?? "" };
+    if (body === undefined) {
+      // Encrypted with a key this server doesn't have: never sent, so a definite failure.
+      await finalize(db, msg, { kind: "rejected", code: "body_unreadable" });
+      continue;
+    }
     let outcome: SendOutcome | { kind: "cancelled"; code: string };
     try {
       outcome = msg.channel === "push" ? await sendPush(db, senders.push, msg) : await sendSms(db, senders.sms, msg);
@@ -92,6 +143,15 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
     await finalize(db, msg, outcome);
   }
   return { reaped: reaped.rowCount ?? 0, processed: rows.length };
+}
+
+function openBody(cipher: TextCipher | undefined, row: ClaimedRow): string | undefined {
+  if (!cipher || !row.body_ciphertext) return undefined;
+  try {
+    return cipher.decrypt(row.body_ciphertext, bodyAad(row.account_id, row.id));
+  } catch {
+    return undefined;
+  }
 }
 
 async function sendPush(db: Db, sender: PushSender | undefined, msg: Claimed): Promise<SendOutcome | { kind: "cancelled"; code: string }> {
@@ -133,11 +193,15 @@ async function sendSms(db: Db, sender: SmsSender | undefined, msg: Claimed): Pro
 }
 
 async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelled"; code: string }): Promise<void> {
-  const final = (state: string, code: string | null, providerId: string | null = null) => db.query(
-    `UPDATE outbound_messages
-     SET state = $2, error_code = $3, provider_message_id = $4, body = NULL, updated_at = now()
-     WHERE id = $1 AND state = 'sending'`,
-    [msg.id, state, code, providerId]);
+  const final = async (state: string, code: string | null, providerId: string | null = null) => {
+    const r = await db.query(
+      `UPDATE outbound_messages
+       SET state = $2, error_code = $3, provider_message_id = $4, body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
+       WHERE id = $1 AND state = 'sending'`,
+      [msg.id, state, code, providerId]);
+    // The row was reaped meanwhile: the real outcome would otherwise vanish without a trace.
+    if (!r.rowCount) log("outcome after reap", { id: msg.id, outcome: state, code });
+  };
   switch (o.kind) {
     case "accepted": await final("sent", null, o.providerId); break;
     case "rejected": await final("failed", o.code); break;

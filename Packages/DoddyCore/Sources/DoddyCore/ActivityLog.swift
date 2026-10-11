@@ -67,7 +67,7 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
-    /// The same change asked again has the same key (ADR-290): new reminders and new events,
+    /// The same change asked again has the same key (ADR-291): new reminders and new events,
     /// whose adds look first and so can be retried safely. Nil for everything else.
     public let operationKey: String?
 
@@ -119,6 +119,8 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", isLookup: false)
         case .lookupContact(let name):
             return ActivityRequest(app: .contacts, title: "Looked for a contact", detail: "“\(name)”", isLookup: true)
+        case .upcomingBirthdays(let days):
+            return ActivityRequest(app: .contacts, title: "Read birthdays", detail: days == 1 ? "Today" : "Next \(days) days", isLookup: true)
         case .setTimer(let draft):
             let minutes = draft.seconds / 60, seconds = draft.seconds % 60
             let length = minutes > 0 ? "\(minutes) min\(seconds > 0 ? " \(seconds) s" : "")" : "\(seconds) s"
@@ -130,8 +132,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .runShortcut(let name):
             return ActivityRequest(app: .shortcuts, title: "Run shortcut", detail: "“\(name)”", isLookup: false)
         case .draftMessage(let draft):
-            let kind = draft.channel == .text ? "text" : "email"
-            return ActivityRequest(app: .messages, title: "Draft a \(kind)", detail: "to \(draft.recipientName)", isLookup: false)
+            return ActivityRequest(
+                app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
+                detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             return describe(cloud: call.name)
         case .addToList(let request):
@@ -164,9 +167,13 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .reminders, title: "Move reminders", detail: "due by \(ReminderText.due(dueBy)) → \(ReminderText.due(to))", isLookup: false)
         case .deleteReminder(let title):
             return ActivityRequest(app: .reminders, title: "Delete reminder", detail: "“\(title)”", isLookup: false)
-        case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:
+        case .undoLast:
+            // The row being undone records what happened (ActivityLog.undid), not a new row.
+            return nil
+        case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
-            // uses no app either, and leaves no trace of the conversation (ADR-215).
+            // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
+            // unit conversions are worked out inside Doddy and use no app (ADR-270).
             return nil
         }
     }
@@ -215,7 +222,11 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public var checkedAt: Date?
     /// Set when this was one step of a plan card. Older entries have none.
     public let plan: ActivityPlanRef?
-    // ADR-290. All optional, so entries saved before them still load.
+    /// What Doddy needs to put it back (ADR-268). Only kept for changes Doddy made and checked.
+    public let undo: ActivityUndo?
+    /// Set after the user tapped Undo.
+    public var undoState: UndoState?
+    // ADR-291. All optional, so entries saved before them still load.
     /// The same change asked again has the same key (`ActivityRequest.operationKey`).
     public let operationKey: String?
     /// What the app read back. Only ever kept on a confirmed entry.
@@ -227,7 +238,8 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
         outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
-        plan: ActivityPlanRef? = nil, operationKey: String? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+        plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil,
+        operationKey: String? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
     ) {
         self.id = id
         self.at = at
@@ -239,6 +251,8 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
         self.plan = plan
+        self.undo = outcome == .done ? undo : nil
+        self.undoState = undoState
         self.operationKey = operationKey ?? reminderKey
         self.receipt = outcome.status == .confirmed ? receipt : nil
         self.attempted = attempted
@@ -246,15 +260,16 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
     /// app's own verified result (VoiceToolReply), so the log can never claim more than the agent heard.
-    /// A receipt is kept only when that reply is a confirmed result.
+    /// `undo` is kept only when that reply says the change was made and checked; a receipt only
+    /// when it is a confirmed result.
     public init(
         id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil,
-        receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+        undo: ActivityUndo? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
     ) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
-            note: note, reminderKey: request.reminderKey, plan: plan, operationKey: request.operationKey,
+            note: note, reminderKey: request.reminderKey, plan: plan, undo: undo, operationKey: request.operationKey,
             receipt: receipt, attempted: attempted)
     }
 
@@ -270,20 +285,20 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     /// The result of a started entry: same id and time, its history kept and the result added.
     public static func finished(
         _ started: ActivityEntry, request: ActivityRequest, reply: String, at: Date,
-        receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+        undo: ActivityUndo? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
     ) -> ActivityEntry {
         var entry = ActivityEntry(
             id: started.id, request: request, reply: reply, at: started.at, plan: started.plan,
-            receipt: receipt, attempted: attempted)
+            undo: undo, receipt: receipt, attempted: attempted)
         entry.statusHistory = started.history
         entry.record(entry.status, at: at, note: nil)
         return entry
     }
 
-    /// Typed status (ADR-290). Nil for look-ups.
+    /// Typed status (ADR-291). Nil for look-ups.
     public var status: ActionStatus? { outcome.status }
 
-    /// How the status moved, oldest first. Entries saved before ADR-290 show their one known status.
+    /// How the status moved, oldest first. Entries saved before ADR-291 show their one known status.
     public var history: [ActivityStatusChange] {
         if let statusHistory { return statusHistory }
         return status.map { [ActivityStatusChange(status: $0, at: at)] } ?? []
@@ -331,6 +346,21 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
             return (.alreadyThere, nil)
         }
         if text.hasPrefix("added:") || text.hasPrefix("saved:") || text.hasPrefix("drafted:") { return (.done, nil) }
+        // A change to an event or reminder, checked by reading it back (ADR-229).
+        if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
+        // A delete, checked by looking again (ADR-259 on the default line).
+        if text.hasPrefix("deleted:") { return (.done, nil) }
+        if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
+        // Lists (ADR-216), answered from the store's own result (ADR-272). Something was added,
+        // ticked, removed or a list was made; or nothing was, and why.
+        if text.hasPrefix("created:") || text.hasPrefix("added to \"") || text.hasPrefix("ticked on \"") || text.hasPrefix("removed on \"") {
+            return (.done, nil)
+        }
+        if text.hasPrefix("not added:") {
+            let onlyDuplicates = text.contains("Already on the list") && !text.contains("Too long") && !text.contains("the list is full")
+            return onlyDuplicates ? (.alreadyThere, nil) : (.notDone, nil)
+        }
+        if text.hasPrefix("not created:") { return (.notDone, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
