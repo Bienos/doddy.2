@@ -96,8 +96,8 @@ Created by hand rather than with `render.yaml`: the blueprint would also create
 The server creates its tables on first start (migrations run automatically).
 
 ## 4. The app (about 15 minutes, on a Mac with Xcode)
-1. Notification path only: in `project.yml` set `DODDY_PUSH_ENTITLEMENTS: DoddyApp/Doddy.entitlements`
-   (it is empty by default so a free Apple ID can build; ADR-174).
+1. Notification path only: in `project.yml` set `DODDY_APP_ENTITLEMENTS: Config/Doddy-Push-AppGroup.entitlements`
+   (push plus the App Group, which is on since 2026-10-11; push stays off by default, ADR-174).
 2. `xcodegen generate`, open `Doddy.xcodeproj`, target **Doddy** → Signing & Capabilities →
    choose your **Team** (`DEVELOPMENT_TEAM` is empty in the repo on purpose). On the notification
    path, check Push Notifications is listed.
@@ -122,7 +122,7 @@ The server creates its tables on first start (migrations run automatically).
 | "Updates need a Doddy messaging server" | The address is empty, not https, or has a path |
 | Test notification never arrives | Bundle ID on Render ≠ the app's, Push not enabled on the App ID, the key's Team ID ≠ the signing team, or notifications are off in iOS Settings |
 | Digest says "Only here: notifications or texts weren't on" | You chose Notification, but notifications aren't on for this iPhone (step 4.4). The digest is still in the app |
-| "This build of Doddy can't receive notifications" | The build has no push permission: set `DODDY_PUSH_ENTITLEMENTS` and sign with a paid team (step 4.1) |
+| "This build of Doddy can't receive notifications" | The build has no push permission: set `DODDY_APP_ENTITLEMENTS` to `Config/Doddy-Push-AppGroup.entitlements` and sign with a paid team (step 4.1) |
 | Server answers 429 `too_many_attempts` on a code | Verify codes are limited per number (3 an hour, 6 a day) and per server per day |
 | Lines are plain headlines, no AI line | No AI key, or it was rejected, or the answer couldn't be used; the log line `news writer failed` gives a code (`writer_http_401` = wrong key, `writer_http_429` = no credit or rate limit) |
 | Own keyword topic finds nothing | No `GNEWS_API_KEY`; only RSS stories are searched |

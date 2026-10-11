@@ -138,7 +138,7 @@ In order of risk:
   - `ShareModel.extract(_ items: sending [NSExtensionItem])` is `nonisolated` and is called from `Task.detached`, because item providers aren't Sendable. Swift 6 region checks may still object; the fallback is to load the strings inside `viewDidLoad` with completion handlers.
   - `NSItemProvider.loadItem(forTypeIdentifier:)` with `async` and `as? URL` / `as? String`.
   - `Config/DoddyShare-Info.plist`'s `NSExtensionPrincipalClass` is `$(PRODUCT_MODULE_NAME).ShareViewController`.
-  - With the App Group on, also set `DODDY_SHARE_ENTITLEMENTS`.
+  - The App Group is now on by default (owner, 2026-10-11). Signing needs the team chosen for every target, and the group registered (automatic signing does it). If a simulator `xcodebuild test` without a team refuses the entitlements, run it with the four `DODDY_*_ENTITLEMENTS` set to `""`.
 - **Focus filter (ADR-312):**
   - `SetFocusFilterIntent` with `static var description: IntentDescription?`;
   - `@Parameter(default: false)` on a `Bool`;

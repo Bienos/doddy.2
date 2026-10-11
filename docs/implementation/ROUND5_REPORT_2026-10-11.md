@@ -83,7 +83,7 @@ Don't say "implemented", "tested" or "privacy guaranteed" about any of this. It 
 
 1. **CarPlay:** answered 2026-10-11, **yes**, a spoken "yes" is enough for a local, undoable note or list item. Still to do: the owner sends the entitlement request (`CARPLAY_PLAN.md`).
 2. **Private notes in backups:** answered 2026-10-11, **keep them, encrypted.** The backup file is already sealed with the passphrase (ADR-222), so nothing changed.
-3. **Share extension:** turn on `DODDY_SHARE_ENTITLEMENTS` with the App Group for the next device build?
+3. **Share extension:** answered 2026-10-11, **on.** The App Group is now the default for the app, widgets, share extension and watch.
 
 ## Next recommended step
 
