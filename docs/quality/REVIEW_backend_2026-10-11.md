@@ -94,3 +94,23 @@ No critical issues found. Several areas are strong:
   - Store keys use a separate Composio user id.
   - Gaps: findings 2 and 5.
 - **Claims to limit:** Everything was tested against mocks. No live Composio or OAuth flow was run.
+
+---
+
+## Fix status (2026-10-11, owner approved "fix all")
+
+| # | Status | Commit |
+|---|---|---|
+| 1 | fixed: writes are `failed` only for codes that prove nothing ran; otherwise `outcome_unknown` | `0fef8b3` |
+| 2 | fixed: a completion that doesn't end recorded removes the remote connections known to be this user's (the pending id, or the redeemed id); a failed removal stays queued, shows `remoteCleanup: failed` and is retried before the next connect. The callback hint is never removed. The tests fail on the old code. | `ad7db03` |
+| 3 | fixed: approval checked first and consumed right before the provider call, inside the concurrency slot | `c4ee2bc` |
+| 4 | fixed: `providers/composioShared.ts` used by both adapters; a revoke timeout stops before delete in both | `1d14bca` |
+| 5 | fixed (pruning): `Store.prune` at start and hourly. **Erase-account route: not built, owner decision.** | `36a7376` |
+| 6 | fixed: a 404 on `tools.execute` → `provider_unavailable`; `ComposioConnectedAccountNotFoundError` still → `connection_expired`. Not verified against the real Composio API. | `1d14bca` |
+
+Tests after the fixes: `npm test` (includes the `tsc` build) → **132 pass, 0 fail** (Node 22.22).
+
+**Behaviour changes to note:**
+- A canceled or denied connect now also deletes its pending Composio connection.
+- Completing a connect can take a little longer when cleanup runs.
+- Receipts older than 90 days, or beyond the newest 200 per user, are deleted.
