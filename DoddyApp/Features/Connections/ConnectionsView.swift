@@ -148,6 +148,7 @@ struct ConnectionSheet: View {
     let controller: ConnectionController
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @State private var isWorking = false
     @State private var refusal: String?
 
@@ -194,6 +195,10 @@ struct ConnectionSheet: View {
 
                     section("What stays here") {
                         Text(info.staysHere)
+                    }
+
+                    if connection == .shortcuts {
+                        cameraShortcut
                     }
 
                     if let refusal {
@@ -247,6 +252,37 @@ struct ConnectionSheet: View {
                 Task { _ = await controller.setOn(connection, false) }
             }
             .buttonStyle(SecondaryButtonStyle())
+        }
+    }
+
+    /// "Open the camera" needs the user's "Doddy Camera" Shortcut (ADR-291). With the owner's shared
+    /// copy it is one tap to add; without it, the steps to make it.
+    private var cameraShortcut: some View {
+        section("Open the camera") {
+            Text("Say “open the camera” and Doddy runs your \(CameraShortcut.name) shortcut, which opens the Camera app. Doddy never uses the camera itself and can't see your photos.")
+            if let link = CameraShortcut.installLink {
+                Text("Add the shortcut once. Shortcuts shows it first, and you tap Add Shortcut.")
+                    .foregroundStyle(Theme.secondaryText)
+                Button {
+                    openURL(link)
+                } label: {
+                    Label("Add camera shortcut", systemImage: "camera")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("connection.addCameraShortcut")
+            } else {
+                Text("Make it once in the Shortcuts app: tap +, add the action Open App, choose Camera, and name the shortcut \(CameraShortcut.name).")
+                    .foregroundStyle(Theme.secondaryText)
+                if let shortcuts = URL(string: "shortcuts://") {
+                    Button {
+                        openURL(shortcuts)
+                    } label: {
+                        Label("Open Shortcuts", systemImage: "square.stack.3d.up")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("connection.openShortcuts")
+                }
+            }
         }
     }
 
@@ -348,7 +384,7 @@ struct ConnectionInfo {
         case .shortcuts:
             ConnectionInfo(
                 symbol: "square.stack.3d.up",
-                examples: ["Run my morning routine", "Start the movie shortcut"],
+                examples: ["Run my morning routine", "Start the movie shortcut", "Open the camera"],
                 canDo: [
                     "Run one of your Shortcuts, after you tap Run",
                     "The Shortcuts app opens for a moment",

@@ -498,6 +498,30 @@ public enum OpenLinks {
     }
 }
 
+/// "Open camera" runs the user's "Doddy Camera" Shortcut, which opens the Camera app (ADR-291):
+/// iOS gives other apps no public way to open Camera, and Doddy itself never uses the camera.
+/// `installLink` is the owner's shared iCloud copy of that Shortcut, so a user can add it with one
+/// tap instead of building it; nil until the owner shares one, and then the app shows the steps.
+public enum CameraShortcut {
+    /// Must match the name in `voice-agent/instructions.md` and `tools.json`.
+    public static let name = "Doddy Camera"
+
+    /// The owner's shared copy. Set it with `installLink(from:)` so a mistyped link fails a test.
+    public static let installLink: URL? = nil
+
+    /// Only an iCloud Shortcuts share link (`https://www.icloud.com/shortcuts/<32 hex>`) is
+    /// accepted, so the button can never open anything else.
+    public static func installLink(from text: String) -> URL? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmed), url.scheme == "https", url.host == "www.icloud.com",
+              url.query == nil, url.fragment == nil else { return nil }
+        let parts = url.path.split(separator: "/", omittingEmptySubsequences: true)
+        guard parts.count == 2, parts[0] == "shortcuts", parts[1].count == 32,
+              parts[1].allSatisfy(\.isHexDigit) else { return nil }
+        return url
+    }
+}
+
 /// Text returned to the agent. Written for the model: it states only what the app verified.
 /// Result prefixes ("added", "declined", "failed", "unknown", "saved", "opened") are what the
 /// agent's prompt tells it to look for, so they must not change without changing the prompt.
