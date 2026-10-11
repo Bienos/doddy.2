@@ -2630,6 +2630,17 @@
         }
       }
     },
+    "Doddy opens this on the capture screen next time you open the app. Nothing is saved until you tap Save there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy otworzy to na ekranie zapisu, gdy następnym razem otworzysz aplikację. Nic nie zostanie zapisane, dopóki nie stukniesz tam Zapisz."
+          }
+        }
+      }
+    },
     "Doddy reminder %@": {
       "extractionState": "manual",
       "localizations": {
@@ -6436,6 +6447,17 @@
         }
       }
     },
+    "Open Doddy to check it and tap Save. It isn't saved yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, sprawdź to i stuknij Zapisz. To jeszcze nie jest zapisane."
+          }
+        }
+      }
+    },
     "Open Doddy to check the steps": {
       "extractionState": "manual",
       "localizations": {
@@ -7356,6 +7378,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe (jeszcze nie sprawdzone z prawdziwym serwerem)"
+          }
+        }
+      }
+    },
+    "Ready in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe w Doddym"
           }
         }
       }
@@ -8515,6 +8548,17 @@
         }
       }
     },
+    "Send to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij do Doddy’ego"
+          }
+        }
+      }
+    },
     "Sent, with your current settings": {
       "extractionState": "manual",
       "localizations": {
@@ -8819,6 +8863,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnianie list nie jest skonfigurowane w tej wersji Doddy’ego."
+          }
+        }
+      }
+    },
+    "Sharing to Doddy isn't set up in this version of the app. Nothing was saved. You can use the Save to Doddy shortcut instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnianie do Doddy’ego nie jest skonfigurowane w tej wersji aplikacji. Nic nie zostało zapisane. Możesz zamiast tego użyć skrótu Zapisz w Doddym."
           }
         }
       }
@@ -9703,6 +9758,17 @@
         }
       }
     },
+    "That couldn't be handed to Doddy. Nothing was saved. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przekazać tego Doddy’emu. Nic nie zostało zapisane. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "That couldn't be saved on this iPhone. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -10385,6 +10451,17 @@
         }
       }
     },
+    "There's no text or web link here that Doddy can keep. Nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma tu tekstu ani linku, który Doddy mógłby zachować. Nic nie zostało zapisane."
+          }
+        }
+      }
+    },
     "Things you said that might be useful later, in your words. Tick what to save; nothing is saved otherwise. Doddy picked these on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -10711,6 +10788,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To usuwa z tego iPhone’a to, co powiedziałeś Doddy’emu na powitanie. Zapisane wspomnienia zostają."
+          }
+        }
+      }
+    },
+    "This replaces something you shared earlier that isn't saved yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To zastąpi wcześniej udostępnioną treść, która nie jest jeszcze zapisana."
           }
         }
       }

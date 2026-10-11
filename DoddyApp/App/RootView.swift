@@ -120,6 +120,7 @@ struct RootView: View {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
                 if scenePhase == .active { heyDoddyAppBecameActive() }
+                pickUpSharedItem()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -128,6 +129,7 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
+                    pickUpSharedItem()
                 }
                 if phase == .background {
                     WidgetSync.shared.refresh()
@@ -178,6 +180,13 @@ struct RootView: View {
 
     /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
     /// started while Doddy was in the background, if it is running or left notes to look at.
+    /// Text or a link shared from another app with "Save to Doddy" (ADR-309): opens the capture
+    /// screen with it, as the shortcut does. Nothing is saved until Save there.
+    private func pickUpSharedItem() {
+        guard let item = ShareInboxFile.take() else { return }
+        ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
+    }
+
     private func heyDoddyAppBecameActive() {
         let listener = WakeWordListener.shared
         if listener.hasConversationToShow {
