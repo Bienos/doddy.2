@@ -740,20 +740,25 @@ public struct TranslatorSession: Sendable {
         let route = router.route(agentLine: trimmed, after: original, held: held)
         held = nil
         if careful == nil { careful = CarefulTopics.topic(in: trimmed) }
-        var facts = ExactFacts.extract(trimmed)
-        if case .translation = route, let original {
-            for fact in ExactFacts.extract(original) where !facts.contains(fact) { facts.append(fact) }
-        }
-        let turn = TranslatorTurn(original: original, text: trimmed, route: route, facts: Array(facts.prefix(ExactFacts.limit)))
+        let turn = TranslatorTurn(original: original, text: trimmed, route: route, facts: Self.facts(in: trimmed, original: original, route: route))
         turns.append(turn)
         return turn
     }
 
-    /// The agent corrected a line after an interruption.
+    /// The agent corrected a line after an interruption. Facts from what was said are kept.
     public mutating func correct(_ original: String, to corrected: String) {
         guard let index = turns.lastIndex(where: { $0.text == original }) else { return }
         turns[index].text = corrected
-        turns[index].facts = ExactFacts.extract(corrected)
+        turns[index].facts = Self.facts(in: corrected, original: turns[index].original, route: turns[index].route)
+    }
+
+    /// Doddy's line's facts, then those of what it translated, up to the limit.
+    private static func facts(in line: String, original: String?, route: TranslatorRoute) -> [String] {
+        var facts = ExactFacts.extract(line)
+        if case .translation = route, let original {
+            for fact in ExactFacts.extract(original) where !facts.contains(fact) { facts.append(fact) }
+        }
+        return Array(facts.prefix(ExactFacts.limit))
     }
 
     public func latest(_ direction: TranslatorDirection) -> TranslatorTurn? {

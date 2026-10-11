@@ -196,6 +196,16 @@ final class TranslatorTests: XCTestCase {
         XCTAssertEqual(CarefulTopics.topic(in: "Zavolejte policie."), .law)
     }
 
+    func testACorrectedLineKeepsTheFactsOfWhatWasSaid() throws {
+        var session = TranslatorSession(setup: faceToFace(), startedAt: Date())
+        session.heard("Pociąg jest o 15:30, peron 4, bilet 18,50 zł.")
+        let turn = try XCTUnwrap(session.said("El tren sale a las 15:30."))
+        XCTAssertEqual(turn.facts, ["15:30", "18,50 zł"])
+        session.correct("El tren sale a las 15:30.", to: "El tren sale a las 15:30, andén 4.")
+        XCTAssertEqual(session.turns.last?.text, "El tren sale a las 15:30, andén 4.")
+        XCTAssertEqual(session.turns.last?.facts, ["15:30", "18,50 zł"])
+    }
+
     func testSessionKeepsTurnsCarefulModeAndTheFiveMinuteSummary() throws {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         var session = TranslatorSession(setup: faceToFace(), startedAt: start)
