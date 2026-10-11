@@ -48,6 +48,10 @@ final class SharedListsController {
     }
 
     private var syncAgain = false
+    /// After a failed sync, a local change doesn't start another one until then (review I2).
+    private var retryAfter: Date?
+    private var retryTask: Task<Void, Never>?
+    static let retryPause: TimeInterval = 60
     private let cloud = ListCloud.make()
 
     private init() {}
@@ -159,6 +163,7 @@ final class SharedListsController {
     /// After a local change: syncs only the shared lists that differ from their last sync.
     func listsChanged() {
         guard isAvailable, !links.isEmpty, let store else { return }
+        if let retryAfter, retryAfter > Date() { return }
         let changed = links.values.contains { link in store.list(id: link.listID).map(SharedListState.init) != link.base }
         if changed { Task { await syncAll() } }
     }
@@ -186,6 +191,22 @@ final class SharedListsController {
                 }
             }
             problem = failed ? NSLocalizedString("A shared list couldn't be updated. Doddy will try again.", comment: "") : nil
+            if failed {
+                // A failing sync must not start itself again straight away (review I2): its own
+                // writes change the lists, which asked for another sync, and that looped without a
+                // pause. Local changes wait `retryPause`, then one retry; opening Doddy, Update
+                // now and iCloud's wake-ups still sync at once.
+                syncAgain = false
+                retryAfter = Date(timeIntervalSinceNow: Self.retryPause)
+                retryTask?.cancel()
+                retryTask = Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(Self.retryPause))
+                    guard !Task.isCancelled else { return }
+                    self?.listsChanged()
+                }
+            } else {
+                retryAfter = nil
+            }
         } while syncAgain
     }
 
