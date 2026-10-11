@@ -76,6 +76,11 @@ public enum ActivityText {
         "Delete event": "Usuń wydarzenie",
         "Delete reminder": "Usuń przypomnienie",
         "Set alarm": "Ustaw budzik",
+        // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
+        "Read alarms": "Odczytano budziki",
+        "Turn off alarm": "Wyłącz budzik",
+        "Delete events": "Usuń wydarzenia",
+        "Move reminders": "Przenieś przypomnienia",
     ]
 
     /// Doddy's own fixed notes, in Polish. Built from the same text the app writes, so they match.
@@ -88,6 +93,7 @@ public enum ActivityText {
             "Found in Reminders when you checked.": "Znalezione w Przypomnieniach przy sprawdzaniu.",
             "Not in Reminders when you checked. You can ask Doddy again.": "Nie było w Przypomnieniach przy sprawdzaniu. Możesz poprosić Doddy’ego ponownie.",
             "The conversation ended before you answered.": "Rozmowa skończyła się przed Twoją odpowiedzią.",
+            ActivityLog.partlyNote: "Zmieniono tylko część z nich.",
         ]
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."

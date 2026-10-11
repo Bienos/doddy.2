@@ -282,6 +282,10 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
         // A delete, checked by looking again (ADR-259 on the default line).
         if text.hasPrefix("deleted:") { return (.done, nil) }
+        // Round 3 (ADR-280, ADR-283): several reminders moved, an alarm turned off, each read
+        // back. "partly" means some of the ticked ones changed, so the row says which part.
+        if text.hasPrefix("moved:") || text.hasPrefix("turned off:") { return (.done, nil) }
+        if text.hasPrefix("partly ") { return (.done, ActivityLog.partlyNote) }
         if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
         // Lists (ADR-216), answered from the store's own result (ADR-272). Something was added,
         // ticked, removed or a list was made; or nothing was, and why.
@@ -321,6 +325,9 @@ public enum ActivityLog {
         let cutoff = now.addingTimeInterval(-Double(keepDays) * 86_400)
         return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries))
     }
+
+    /// The note on a several-at-once row where only some changed (ADR-280).
+    public static let partlyNote = "Only some of them were changed."
 
     public static let interruptedNote = "Doddy closed before this finished. Check before asking again, so it isn't done twice."
 
