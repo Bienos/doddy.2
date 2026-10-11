@@ -375,6 +375,17 @@
         }
       }
     },
+    "All ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone"
+          }
+        }
+      }
+    },
     "All ticked. Shopping mode ends by itself.": {
       "extractionState": "manual",
       "localizations": {
@@ -1057,6 +1068,17 @@
         }
       }
     },
+    "Changed “%@”: now %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmieniono „%@”: teraz %@."
+          }
+        }
+      }
+    },
     "Check and add": {
       "extractionState": "manual",
       "localizations": {
@@ -1086,6 +1108,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź słowa, potem stuknij Zapisz."
+          }
+        }
+      }
+    },
+    "Checking tomorrow…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam jutro…"
           }
         }
       }
@@ -1922,6 +1955,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozłączyć Kalendarz Google?"
+          }
+        }
+      }
+    },
+    "Disconnecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozłączam…"
           }
         }
       }
@@ -2850,6 +2894,17 @@
         }
       }
     },
+    "Finding saved words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam zapisanych słów"
+          }
+        }
+      }
+    },
     "Fine-tune": {
       "extractionState": "manual",
       "localizations": {
@@ -3433,6 +3488,28 @@
         }
       }
     },
+    "It may not have gone back. Check it in Calendar or Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mogło nie wrócić do poprzedniego stanu. Sprawdź to w Kalendarzu lub Przypomnieniach."
+          }
+        }
+      }
+    },
+    "It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W międzyczasie zmieniono to gdzie indziej, więc Doddy tego nie ruszał. Sprawdź to w Kalendarzu lub Przypomnieniach."
+          }
+        }
+      }
+    },
     "It was in Keep's trash.": {
       "extractionState": "manual",
       "localizations": {
@@ -3451,6 +3528,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Było długie, więc dodano tylko pierwszą część."
+          }
+        }
+      }
+    },
+    "It's too late to undo here. Change it in Calendar or Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na cofnięcie tutaj jest już za późno. Zmień to w Kalendarzu lub Przypomnieniach."
           }
         }
       }
@@ -3873,6 +3961,17 @@
         }
       }
     },
+    "Loading notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytuję notatki"
+          }
+        }
+      }
+    },
     "Location Services are off on this iPhone. Nothing was set. Turn them on in Settings, Privacy & Security.": {
       "extractionState": "manual",
       "localizations": {
@@ -3957,6 +4056,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Oznaczyć to przypomnienie jako zrobione?"
+          }
+        }
+      }
+    },
+    "Marked “%@” done in Reminders.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oznaczono „%@” jako zrobione w Przypomnieniach."
           }
         }
       }
@@ -4529,6 +4639,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie połączono"
+          }
+        }
+      }
+    },
+    "Not everything this import added could be removed. Check your notes and lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć wszystkiego, co dodał ten import. Sprawdź swoje notatki i listy."
           }
         }
       }
@@ -5123,6 +5244,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko przypomnienia ustawione przez Ciebie."
+          }
+        }
+      }
+    },
+    "Only the notes and lists this import added are removed. Nothing else changes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuwane są tylko notatki i listy dodane przez ten import. Nic innego się nie zmienia."
           }
         }
       }
@@ -5798,6 +5930,17 @@
         }
       }
     },
+    "Put back as it was. Checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywrócono do poprzedniego stanu. Sprawdzone."
+          }
+        }
+      }
+    },
     "Put the phone on the table between you. Their half of the screen faces them, and Doddy first tells them, in their language, that he's an AI translator.": {
       "extractionState": "manual",
       "localizations": {
@@ -5805,6 +5948,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Połóż telefon na stole między wami. Ich połowa ekranu jest zwrócona do nich, a Doddy najpierw mówi im w ich języku, że jest tłumaczem SI."
+          }
+        }
+      }
+    },
+    "Putting it back…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przywracam…"
           }
         }
       }
@@ -6205,6 +6359,17 @@
         }
       }
     },
+    "Remove them": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń je"
+          }
+        }
+      }
+    },
     "Remove this number": {
       "extractionState": "manual",
       "localizations": {
@@ -6234,6 +6399,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć to nagranie?"
+          }
+        }
+      }
+    },
+    "Remove what this import added?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to, co dodał ten import?"
+          }
+        }
+      }
+    },
+    "Removed what this import added (%lld). Checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięto to, co dodał ten import (%lld). Sprawdzone."
           }
         }
       }
@@ -8988,6 +9175,17 @@
         }
       }
     },
+    "Undo this import": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cofnij ten import"
+          }
+        }
+      }
+    },
     "Untick all": {
       "extractionState": "manual",
       "localizations": {
@@ -9626,6 +9824,17 @@
         }
       }
     },
+    "Working…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pracuję…"
+          }
+        }
+      }
+    },
     "Write it out in another language": {
       "extractionState": "manual",
       "localizations": {
@@ -10073,6 +10282,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "“%@” is now due %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” ma teraz termin %@."
           }
         }
       }

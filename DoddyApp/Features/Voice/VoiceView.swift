@@ -172,6 +172,11 @@ struct VoiceView: View {
                                 .id("listReceipt")
                         }
 
+                        if let receipt = controller.changeReceipt {
+                            changeReceiptCard(receipt, controller: controller)
+                                .id("changeReceipt")
+                        }
+
                         if let status = controller.noteReminderStatus {
                             noteReminderStatusCard(status, controller: controller)
                                 .id("noteReminderStatus")
@@ -773,6 +778,37 @@ struct VoiceView: View {
 
     /// What a list change by voice did (ADR-216), with Undo and, when "milk" matched two items,
     /// the items to tap. Read back from the store before it is shown.
+    /// A change in Calendar or Reminders, checked, with Undo (ADR-253).
+    private func changeReceiptCard(_ receipt: ChangeReceipt, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
+                Label(receipt.message, systemImage: "checkmark.circle").foregroundStyle(Theme.confirmed)
+                Spacer()
+                Button { controller.dismissChangeReceipt() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            switch receipt.state {
+            case .available:
+                Button { Task { await controller.undoLastChange() } } label: {
+                    Label("Undo", systemImage: "arrow.uturn.backward").frame(minHeight: 44)
+                }
+                .accessibilityIdentifier("voice.undoChange")
+            case .working:
+                ProgressView("Putting it back…")
+            case .undone:
+                Label("Put back as it was. Checked.", systemImage: "arrow.uturn.backward.circle")
+                    .foregroundStyle(Theme.confirmed)
+            case .failed(let message):
+                Label(message, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
     private func listReceiptCard(_ receipt: ListReceipt, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {

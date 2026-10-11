@@ -221,3 +221,19 @@ extension MemoryStore {
         return list(id: created.id) ?? created
     }
 }
+
+/// Undo of an import (ADR-253): exactly the notes and lists that import added are removed, and
+/// the store is reloaded to check they're gone.
+extension MemoryStore {
+    @discardableResult
+    func removeImported(_ ids: [UUID]) async throws -> Int {
+        var removed = 0
+        for id in ids where record(id: id) != nil {
+            try await environment.memoryRepository.delete(id: id)
+            removed += 1
+        }
+        await reload()
+        guard ids.allSatisfy({ record(id: $0) == nil }) else { throw MemoryStoreError.verificationFailed }
+        return removed
+    }
+}

@@ -92,6 +92,17 @@ final class CalendarChangeTests: XCTestCase {
         XCTAssertFalse(EventChange.duePassed(ReminderDue(year: 2026, month: 10, day: 9, timeZoneID: nil), now: now, local: calendar), "a day without a time never counts as passed")
     }
 
+    /// ADR-253: undo is the same checked change backwards, with the moved occurrence's id.
+    func testUndoIsTheChangeBackwards() throws {
+        let event = CalendarEventSummary(id: "abc@\(Int(at(10, 9, 30).timeIntervalSince1970))", title: "Dentist", start: at(10, 9, 30), end: at(10, 10, 30), allDay: false)
+        let move = EventChangeDraft(title: "Dentist", currentStart: at(10, 9, 30), currentIsDayOnly: false, newStart: at(12, 15), newEnd: nil, newTitle: "Dentist (Nowak)")
+        let plan = try XCTUnwrap(EventChange.plan(move, for: event, calendar: calendar))
+        let undo = EventChange.reversed(plan)
+        XCTAssertEqual(undo.before.id, "abc@\(Int(at(12, 15).timeIntervalSince1970))")
+        XCTAssertEqual(undo.before.title, "Dentist (Nowak)")
+        XCTAssertEqual(undo.after, event, "back exactly as it was")
+    }
+
     func testRemindersMatchOpenOnesOnly() {
         let open = ReminderSnapshot(id: "1", title: "Call mum", listTitle: "Home", due: nil, markerURL: nil)
         let done = ReminderSnapshot(id: "2", title: "call mum", listTitle: "Home", due: nil, markerURL: nil, isCompleted: true)

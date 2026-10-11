@@ -154,6 +154,8 @@ final class VoiceSessionController {
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
+    /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-253).
+    private(set) var changeReceipt: ChangeReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession?
@@ -231,6 +233,7 @@ final class VoiceSessionController {
         checkInNeedsBriefing = checkIn != nil
         translator = nil
         listReceipt = nil
+        changeReceipt = nil
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -1580,7 +1583,9 @@ final class VoiceSessionController {
         if EventChange.startPassed(plan, now: Date(), calendar: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
             switch try devices.changeEvent(plan) {
-            case .verified: return VoiceToolReply.eventChanged(plan.after, calendar: .current)
+            case .verified:
+                changeReceipt = ChangeReceipt(kind: .event(plan), message: ChangeReceipt.message(for: plan))
+                return VoiceToolReply.eventChanged(plan.after, calendar: .current)
             case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
             }
@@ -1596,8 +1601,13 @@ final class VoiceSessionController {
         }
         if EventChange.duePassed(draft.newDue, now: Date(), local: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
-            switch try devices.changeReminder(reminder, newDue: draft.newDue, markDone: draft.markDone) {
+            switch try devices.changeReminder(reminder, draft.markDone ? .complete : .due(draft.newDue)) {
             case .verified:
+                if let after = devices.reminderSnapshot(id: reminder.id) {
+                    changeReceipt = ChangeReceipt(
+                        kind: .reminder(before: reminder, after: after),
+                        message: ChangeReceipt.message(reminder: after, completed: draft.markDone))
+                }
                 return draft.markDone
                     ? VoiceToolReply.reminderCompleted(reminder.title)
                     : VoiceToolReply.reminderChanged(reminder.title, due: draft.newDue)
@@ -1608,6 +1618,47 @@ final class VoiceSessionController {
             return VoiceToolReply.failed(UserFacingError.message(for: error))
         }
     }
+
+    /// Undo on the change receipt (ADR-253): the same checked change, backwards. The item must
+    /// still look exactly as Doddy left it; the result is read back and Doddy is told.
+    func undoLastChange(now: Date = .now) async {
+        guard var receipt = changeReceipt, receipt.state == .available else { return }
+        guard now.timeIntervalSince(receipt.madeAt) <= ChangeReceipt.undoFor else {
+            receipt.state = .failed(NSLocalizedString("It's too late to undo here. Change it in Calendar or Reminders.", comment: ""))
+            changeReceipt = receipt
+            return
+        }
+        receipt.state = .working
+        changeReceipt = receipt
+        let outcome: DeviceConnections.ChangeOutcome
+        do {
+            switch receipt.kind {
+            case .event(let plan):
+                outcome = try devices.changeEvent(EventChange.reversed(plan))
+            case .reminder(let before, let after):
+                let change: ReminderChange = after.isCompleted != before.isCompleted
+                    ? (after.isCompleted ? .reopen : .complete) : .due(before.due)
+                outcome = try devices.changeReminder(after, change)
+            }
+        } catch {
+            receipt.state = .failed(UserFacingError.message(for: error))
+            changeReceipt = receipt
+            return
+        }
+        switch outcome {
+        case .verified:
+            receipt.state = .undone
+            await sendToAgent("The user tapped Undo on screen: \(receipt.agentUndoText) It was checked. Don't change it again unless they ask.")
+        case .changedElsewhere:
+            receipt.state = .failed(NSLocalizedString("It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.", comment: ""))
+        case .unconfirmed:
+            receipt.state = .failed(NSLocalizedString("It may not have gone back. Check it in Calendar or Reminders.", comment: ""))
+            await sendToAgent("The user tapped Undo, but the app couldn't confirm it. Don't say it was undone.")
+        }
+        changeReceipt = receipt
+    }
+
+    func dismissChangeReceipt() { changeReceipt = nil }
 
     /// Look first, write once, read back (DoddyCore `ReminderAction`). Permission is checked again
     /// at the tap, since the user may have changed it while the card waited.
@@ -1746,6 +1797,49 @@ private extension VoiceSessionController.PendingAction {
         case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false
+        }
+    }
+}
+
+/// A change Doddy made in Calendar or Reminders this conversation, shown with Undo (ADR-253).
+struct ChangeReceipt: Equatable, Identifiable {
+    enum Kind: Equatable {
+        case event(EventChangePlan)
+        /// The reminder before the change and as it was read back after it.
+        case reminder(before: ReminderSnapshot, after: ReminderSnapshot)
+    }
+    enum UndoState: Equatable {
+        case available, working, undone
+        case failed(String)
+    }
+
+    /// Undo is offered this long after the change.
+    static let undoFor: TimeInterval = 10 * 60
+
+    let id = UUID()
+    let kind: Kind
+    let message: String
+    let madeAt = Date()
+    var state: UndoState = .available
+
+    static func message(for plan: EventChangePlan) -> String {
+        let when = plan.after.allDay
+            ? plan.after.start.formatted(date: .abbreviated, time: .omitted)
+            : plan.after.start.formatted(date: .abbreviated, time: .shortened)
+        return String(format: NSLocalizedString("Changed “%@”: now %@.", comment: ""), plan.after.title, when)
+    }
+
+    static func message(reminder: ReminderSnapshot, completed: Bool) -> String {
+        completed
+            ? String(format: NSLocalizedString("Marked “%@” done in Reminders.", comment: ""), reminder.title)
+            : String(format: NSLocalizedString("“%@” is now due %@.", comment: ""), reminder.title, ReminderText.due(reminder.due))
+    }
+
+    /// For the agent, in English.
+    var agentUndoText: String {
+        switch kind {
+        case .event(let plan): "the event \"\(plan.before.title)\" is back as it was before Doddy changed it."
+        case .reminder(let before, _): "the reminder \"\(before.title)\" is back as it was before Doddy changed it."
         }
     }
 }

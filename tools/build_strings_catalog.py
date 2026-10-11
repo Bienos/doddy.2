@@ -38,7 +38,7 @@ SHORTCUTS_TABLE = os.path.join(ROOT, "l10n", "pl_shortcuts.json")
 SHORTCUTS_SOURCE = os.path.join(ROOT, "DoddyApp", "Intents", "DoddyShortcuts.swift")
 SHORTCUTS_CATALOG = os.path.join(ROOT, "DoddyApp", "Resources", "AppShortcuts.xcstrings")
 CALLS = (r'(?:Text|Button|Label|Toggle|Section|navigationTitle|TextField|SecureField|DisclosureGroup|Picker|'
-         r'confirmationDialog|alert|LabeledContent|Link|ShareLink|DatePicker|Stepper|accessibilityLabel|accessibilityHint)')
+         r'confirmationDialog|alert|LabeledContent|Link|ShareLink|DatePicker|Stepper|ProgressView|accessibilityLabel|accessibilityHint)')
 LITERAL = re.compile(CALLS + r'\(\s*"((?:[^"\\]|\\.)*)"')
 NAMED = re.compile(r'(?:eyebrow|title|subtitle):\s*"((?:[^"\\]|\\.)*)"')
 # Strings made in code (ADR-223 follow-up): NSLocalizedString("…"), App Intent titles and
@@ -152,9 +152,13 @@ def check_extra(problems):
 
 def main():
     table = json.load(open(TABLE, encoding="utf-8"))
-    bad = [k for k, v in table.items() if "%" in k or not v.strip()]
+    # A % is allowed only in a format string from code (NSLocalizedString("Moved %@")): the
+    # Polish line must keep exactly the same placeholders, in the same order.
+    spec = re.compile(r"%(?:@|lld|d|%)")
+    bad = [k for k, v in table.items()
+           if not v.strip() or ("%" in k and (re.sub(spec, "", k).count("%") > 0 or spec.findall(k) != spec.findall(v)))]
     if bad:
-        sys.exit(f"FAIL: keys with % or empty Polish lines in l10n/pl.json: {bad[:5]}")
+        sys.exit(f"FAIL: empty Polish lines, or a % that isn't a matching placeholder, in l10n/pl.json: {bad[:5]}")
     in_app = app_strings()
     stale = sorted(k for k in table if k not in in_app)
     problems = []

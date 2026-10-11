@@ -48,6 +48,20 @@ public struct ReminderChangeDraft: Equatable, Sendable {
 public struct EventChangePlan: Equatable, Sendable {
     public let before: CalendarEventSummary
     public let after: CalendarEventSummary
+
+    public init(before: CalendarEventSummary, after: CalendarEventSummary) {
+        self.before = before
+        self.after = after
+    }
+}
+
+/// What a reminder change does on the iPhone (ADR-229, ADR-253).
+public enum ReminderChange: Equatable, Sendable {
+    /// A new due, or nil to clear it (only Undo clears a due).
+    case due(ReminderDue?)
+    case complete
+    /// Undo of a completion: the reminder is open again.
+    case reopen
 }
 
 public enum EventChange {
@@ -127,6 +141,25 @@ public enum EventChange {
         return date <= now
     }
 
+    /// An occurrence's id is its calendar item id and its start, so it changes when it moves.
+    public static func occurrenceID(itemID: String, start: Date) -> String {
+        "\(itemID)@\(Int(start.timeIntervalSince1970))"
+    }
+
+    /// Undo (ADR-253): the change backwards. Its "before" is the event as Doddy left it, with the
+    /// occurrence id it has at its new start, so the usual check (it must still look exactly so)
+    /// refuses an undo after anyone else changed it.
+    public static func reversed(_ plan: EventChangePlan) -> EventChangePlan {
+        let itemID = plan.before.id.map { $0.split(separator: "@", maxSplits: 1).first.map(String.init) ?? $0 }
+        let now = CalendarEventSummary(
+            id: itemID.map { occurrenceID(itemID: $0, start: plan.after.start) }, title: plan.after.title,
+            start: plan.after.start, end: plan.after.end, allDay: plan.after.allDay)
+        let back = CalendarEventSummary(
+            id: itemID.map { occurrenceID(itemID: $0, start: plan.before.start) }, title: plan.before.title,
+            start: plan.before.start, end: plan.before.end, allDay: plan.before.allDay)
+        return EventChangePlan(before: now, after: back)
+    }
+
     /// Exactly one open reminder with this title.
     public static func matchReminder(_ title: String, in reminders: [ReminderSnapshot]) -> ListMatchResult<ReminderSnapshot> {
         let wanted = SearchFolding.tokens(title).joined(separator: " ")
@@ -187,6 +220,7 @@ extension VoiceToolReply {
     }
 
     public static let reminderChangedElsewhere = "failed: the reminder changed, was completed or disappeared in Reminders since the card was shown. Nothing was changed by Doddy. Ask the user to check Reminders."
+    public static let undoUnconfirmed = "unknown: Calendar or Reminders didn't confirm putting it back. Ask the user to check."
     public static let reminderChangeUnconfirmed = "unknown: Reminders didn't confirm the change. Ask the user to check Reminders before trying again."
 }
 

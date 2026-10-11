@@ -32,6 +32,10 @@ struct NoteImportView: View {
     @State private var ticked: Set<UUID> = []
     @State private var isImporting = false
     @State private var receipt: String?
+    /// What this import added, for "Undo this import" (ADR-253).
+    @State private var importedIDs: [UUID] = []
+    @State private var confirmUndo = false
+    @State private var undoReceipt: String?
     @State private var problem: String?
 
     private static let markdown = UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText
@@ -48,6 +52,12 @@ struct NoteImportView: View {
                         Label(receipt, systemImage: "checkmark.circle").foregroundStyle(Theme.confirmed)
                             .accessibilityIdentifier("import.receipt")
                         if let problem { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error) }
+                        if let undoReceipt {
+                            Label(undoReceipt, systemImage: "arrow.uturn.backward.circle")
+                        } else if !importedIDs.isEmpty {
+                            Button("Undo this import", role: .destructive) { confirmUndo = true }
+                                .accessibilityIdentifier("import.undo")
+                        }
                         Button("Done") { dismiss() }
                     }
                 } else {
@@ -69,6 +79,12 @@ struct NoteImportView: View {
             .onChange(of: splitParagraphs) { rebuild() }
         }
         .interactiveDismissDisabled(isImporting)
+        .confirmationDialog("Remove what this import added?", isPresented: $confirmUndo, titleVisibility: .visible) {
+            Button("Remove them", role: .destructive) { Task { await undoImport() } }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Only the notes and lists this import added are removed. Nothing else changes.")
+        }
     }
 
     private var intro: some View {
@@ -168,23 +184,39 @@ struct NoteImportView: View {
         let selection = chosen
         let records = selection.compactMap { NoteImport.record(for: $0, now: Date()) }
         var notes = 0, lists = 0, notKept = 0
+        var added: [UUID] = []
         if !records.isEmpty {
-            do { notes = try await store.restore(records).count } catch { notKept += records.count }
+            do {
+                let restored = try await store.restore(records)
+                notes = restored.count
+                added += restored.map(\.id)
+            } catch { notKept += records.count }
         }
         for candidate in selection {
             guard case .list(let part)? = candidate.content else { continue }
             do {
-                try await store.importList(part)
+                added.append(try await store.importList(part).id)
                 lists += 1
             } catch {
                 notKept += 1
             }
         }
+        importedIDs = added
         receipt = notes + lists == 0
             ? "Nothing was imported."
             : "Imported \(NoteImport.summary(notes: notes, lists: lists)), each checked in Doddy's storage."
         problem = notKept == 0 ? nil : "\(notKept == 1 ? "1 item" : "\(notKept) items") couldn't be imported. Nothing was half-saved; try those again."
         UIAccessibility.post(notification: .announcement, argument: receipt ?? "")
+    }
+
+    private func undoImport() async {
+        do {
+            let removed = try await store.removeImported(importedIDs)
+            undoReceipt = String(format: NSLocalizedString("Removed what this import added (%lld). Checked.", comment: ""), removed)
+            importedIDs = []
+        } catch {
+            problem = NSLocalizedString("Not everything this import added could be removed. Check your notes and lists.", comment: "")
+        }
     }
 
     static func reason(_ problem: NoteImport.Problem?) -> String {

@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "All ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone"
+          }
+        }
+      }
+    },
     "All ticked. Shopping mode ends by itself.": {
       "extractionState": "manual",
       "localizations": {
