@@ -6,8 +6,8 @@ import GRDB
 /// `list`; deleting that row deletes its items (foreign key, cascade). Every change is one
 /// transaction and is read back before it is returned.
 public final class SQLiteListRepository: ListRepository {
-    private let dbQueue: DatabaseQueue
-    private let now: @Sendable () -> Date
+    fileprivate let dbQueue: DatabaseQueue
+    fileprivate let now: @Sendable () -> Date
 
     public init(database: DoddyDatabase, now: @escaping @Sendable () -> Date = Date.init) {
         self.dbQueue = database.queue
@@ -211,7 +211,7 @@ public final class SQLiteListRepository: ListRepository {
         try Row.fetchOne(db, sql: "SELECT * FROM list_items WHERE id = ?", arguments: [id.uuidString]).map(item(from:))
     }
 
-    private static func item(from row: Row) throws -> ListItem {
+    fileprivate static func item(from row: Row) throws -> ListItem {
         let idString: String = row["id"]
         guard let id = UUID(uuidString: idString), let listID = UUID(uuidString: row["list_id"]),
               let source = ListItemSource(rawValue: row["source"])
@@ -223,7 +223,7 @@ public final class SQLiteListRepository: ListRepository {
             position: row["position"])
     }
 
-    private static func record(from row: Row) throws -> MemoryRecord {
+    fileprivate static func record(from row: Row) throws -> MemoryRecord {
         let idString: String = row["id"]
         guard let id = UUID(uuidString: idString), let source = MemorySource(rawValue: row["source"]) else {
             throw MemoryStoreError.corruptRecord(idString)
@@ -238,5 +238,65 @@ public final class SQLiteListRepository: ListRepository {
         } catch {
             throw MemoryStoreError.corruptRecord(idString)
         }
+    }
+}
+
+// MARK: Shared lists (ADR-258)
+
+extension SQLiteListRepository {
+    public func replaceShared(listID: UUID, with state: SharedListState) async throws -> DoddyList {
+        let name = try ListText.checkedName(state.name)
+        let date = DoddyDatabase.truncatedToMilliseconds(now())
+        return try await dbQueue.write { db in
+            guard let list = try Self.listForShare(listID, db) else { throw ListError.notFound }
+            if list.name != name {
+                let others = try Row.fetchAll(
+                    db, sql: "SELECT current_text FROM memories WHERE category = ? AND id != ?",
+                    arguments: [MemoryCategory.list.rawValue, listID.uuidString]
+                ).map { $0["current_text"] as String }
+                if others.contains(where: { ListMatch.key($0) == ListMatch.key(name) }) { throw ListError.nameTaken(name) }
+                try db.execute(
+                    sql: "UPDATE memories SET current_text = ?, updated_at_ms = ?, user_edited = 1, search_text = ? WHERE id = ?",
+                    arguments: [name, DoddyDatabase.milliseconds(date), SearchFolding.fold(name), listID.uuidString])
+            }
+            let existing = Dictionary(list.items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            let wanted = Set(state.items.map(\.id))
+            for item in list.items where !wanted.contains(item.id) {
+                try db.execute(sql: "DELETE FROM list_items WHERE id = ?", arguments: [item.id.uuidString])
+            }
+            for item in state.items {
+                if existing[item.id] != nil {
+                    try db.execute(
+                        sql: "UPDATE list_items SET text = ?, done_at_ms = ?, position = ? WHERE id = ? AND list_id = ?",
+                        arguments: [item.text, item.doneAt.map(DoddyDatabase.milliseconds), item.position,
+                                    item.id.uuidString, listID.uuidString])
+                } else {
+                    try db.execute(
+                        sql: """
+                            INSERT INTO list_items (id, list_id, text, source, added_at_ms, done_at_ms, position)
+                            VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """,
+                        arguments: [
+                            item.id.uuidString, listID.uuidString, item.text, ListItemSource.typed.rawValue,
+                            DoddyDatabase.milliseconds(item.addedAt), item.doneAt.map(DoddyDatabase.milliseconds), item.position,
+                        ])
+                }
+            }
+            guard let stored = try Self.listForShare(listID, db),
+                  SharedListState(stored) == SharedListState(name: name, items: state.items)
+            else { throw MemoryStoreError.verificationFailed }
+            return stored
+        }
+    }
+
+    private static func listForShare(_ id: UUID, _ db: Database) throws -> DoddyList? {
+        guard let row = try Row.fetchOne(
+            db, sql: "SELECT * FROM memories WHERE id = ? AND category = ?",
+            arguments: [id.uuidString, MemoryCategory.list.rawValue])
+        else { return nil }
+        let items = try Row.fetchAll(
+            db, sql: "SELECT * FROM list_items WHERE list_id = ? ORDER BY position", arguments: [id.uuidString]
+        ).map(item(from:))
+        return DoddyList(record: try record(from: row), items: items)
     }
 }

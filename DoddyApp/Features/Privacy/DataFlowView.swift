@@ -32,7 +32,8 @@ struct DataFlowView: View {
             messagingServerSet: ServerConfig.baseURL() != nil,
             pushOn: pushOn,
             memoryCopyOn: memoryCopyOn,
-            morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey))
+            morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
+            sharedLists: SharedListsController.shared.links.count)
     }
 
     var body: some View {

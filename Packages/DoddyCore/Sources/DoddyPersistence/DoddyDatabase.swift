@@ -178,6 +178,20 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
+        // Shared lists (ADR-258): which local list is linked to which iCloud zone, and what both
+        // sides had at the last sync (JSON). Deleted with the list.
+        migrator.registerMigration("v9_list_shares") { db in
+            try db.execute(sql: """
+                CREATE TABLE list_shares (
+                    list_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    zone_name TEXT NOT NULL CHECK (length(zone_name) BETWEEN 1 AND 100),
+                    zone_owner TEXT NOT NULL CHECK (length(zone_owner) BETWEEN 1 AND 200),
+                    role TEXT NOT NULL CHECK (role IN (\(sqlList(ListShareRole.allCases.map(\.rawValue))))),
+                    base_json TEXT NOT NULL,
+                    synced_at_ms INTEGER NOT NULL
+                );
+                """)
+        }
         return migrator
     }
 

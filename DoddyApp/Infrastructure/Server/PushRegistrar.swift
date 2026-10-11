@@ -54,6 +54,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         return true
     }
 
+    /// The scene delegate only receives shared-list links (ADR-258); SwiftUI still draws the window.
+    func application(
+        _ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        configuration.delegateClass = ShareAcceptSceneDelegate.self
+        return configuration
+    }
+
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         PushRegistrar.shared.didRegister(deviceToken)
     }

@@ -42,6 +42,12 @@ settings:
     # default. To turn on: DODDY_WATCH_ENTITLEMENTS = Config/DoddyWatch.entitlements (it is used by
     # the watch app and its widget extension).
     DODDY_WATCH_ENTITLEMENTS: ""
+    # Shared lists through iCloud (ADR-258), off by default (needs a paid team with iCloud). To
+    # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
+    # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or
+    # Config/Doddy-Push-AppGroup-iCloud.entitlements with push). Create the container in the
+    # developer account first. Empty: Doddy never touches CloudKit and offers no sharing.
+    DODDY_CLOUD_CONTAINER: ""
 targets:
   Doddy:
     type: application

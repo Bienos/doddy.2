@@ -75,6 +75,14 @@ extension MemoryStore {
         await listChanged(listID)
     }
 
+    /// A shared list after a sync (ADR-258): exactly the merged name and items, read back.
+    @discardableResult
+    func replaceShared(_ listID: UUID, with state: SharedListState) async throws -> DoddyList {
+        let list = try await environment.listRepository.replaceShared(listID: listID, with: state)
+        await listChanged(listID)
+        return list
+    }
+
     func renameList(_ listID: UUID, to name: String) async throws {
         _ = try await environment.listRepository.rename(listID: listID, to: name)
         await listChanged(listID)

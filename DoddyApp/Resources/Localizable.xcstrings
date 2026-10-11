@@ -1,6 +1,17 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    " (shared)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " (udostępniona)"
+          }
+        }
+      }
+    },
     "\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.": {
       "extractionState": "manual",
       "localizations": {
@@ -162,6 +173,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się odczytać zapisanego ustawienia. Nic nie zostało usunięte."
+          }
+        }
+      }
+    },
+    "A shared list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniona lista"
+          }
+        }
+      }
+    },
+    "A shared list couldn't be updated. Doddy will try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zaktualizować udostępnionej listy. Doddy spróbuje ponownie."
           }
         }
       }
@@ -3741,6 +3774,28 @@
         }
       }
     },
+    "Join list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dołącz do listy"
+          }
+        }
+      }
+    },
+    "Joining adds this list to Doddy on this iPhone. Its items, and the changes anyone makes, go through iCloud to everyone who shares it. Your notes and other lists aren't shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dołączenie dodaje tę listę do Doddy’ego na tym iPhonie. Jej pozycje i zmiany wprowadzane przez kogokolwiek trafiają przez iCloud do wszystkich, którzy ją współdzielą. Twoje notatki i inne listy nie są udostępniane."
+          }
+        }
+      }
+    },
     "Keep Precise Location on, or iOS can't tell when you get there.": {
       "extractionState": "manual",
       "localizations": {
@@ -3880,6 +3935,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ostatni test"
+          }
+        }
+      }
+    },
+    "Last updated %@. Changes from others show when Doddy is open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnia aktualizacja: %@. Zmiany innych pojawiają się, gdy Doddy jest otwarty."
           }
         }
       }
@@ -4672,6 +4738,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bez folderów. Dokładnie Twoje słowa."
+          }
+        }
+      }
+    },
+    "No internet connection. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak połączenia z internetem. Spróbuj jeszcze raz."
           }
         }
       }
@@ -7426,6 +7503,17 @@
         }
       }
     },
+    "Share": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij"
+          }
+        }
+      }
+    },
     "Share as text": {
       "extractionState": "manual",
       "localizations": {
@@ -7448,6 +7536,28 @@
         }
       }
     },
+    "Share with people…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij innym…"
+          }
+        }
+      }
+    },
+    "Shared by %@ through iCloud.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnione przez: %@, przez iCloud."
+          }
+        }
+      }
+    },
     "Shared into Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -7466,6 +7576,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnione do Doddy’ego ze skrótu. Sprawdź, zmień, jeśli chcesz, a potem stuknij Zapisz. Nic nie zostanie zapisane, dopóki tego nie zrobisz."
+          }
+        }
+      }
+    },
+    "Shared list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniona lista"
+          }
+        }
+      }
+    },
+    "Sharing lists isn't set up in this version of Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnianie list nie jest skonfigurowane w tej wersji Doddy’ego."
           }
         }
       }
@@ -7631,6 +7763,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Za każdym razem pokazuje kartę i czeka na Twoje stuknięcie"
+          }
+        }
+      }
+    },
+    "Sign in to iCloud in iOS Settings to keep shared lists up to date.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się do iCloud w Ustawieniach iOS, aby udostępnione listy były aktualne."
+          }
+        }
+      }
+    },
+    "Sign in to iCloud in iOS Settings to share lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się do iCloud w Ustawieniach iOS, aby udostępniać listy."
           }
         }
       }
@@ -8317,6 +8471,17 @@
         }
       }
     },
+    "That list is no longer shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta lista nie jest już udostępniana."
+          }
+        }
+      }
+    },
     "That list no longer exists.": {
       "extractionState": "manual",
       "localizations": {
@@ -8522,6 +8687,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się ustawić porannego podsumowania. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa i pozycje listy zostaną skopiowane do Twojego iCloud, a Ty wybierzesz, kogo zaprosić. Każdy zaproszony może widzieć, dodawać i odhaczać pozycje; ich zmiany wracają tutaj. Twoje notatki i inne listy nie są udostępniane."
           }
         }
       }
@@ -10429,6 +10605,17 @@
         }
       }
     },
+    "Your iCloud storage is full.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój iCloud jest pełny."
+          }
+        }
+      }
+    },
     "Your list in Doddy. The notification doesn't name it or its items.": {
       "extractionState": "manual",
       "localizations": {
@@ -10649,6 +10836,17 @@
         }
       }
     },
+    "iCloud didn't confirm it. Nothing is counted as done; try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iCloud tego nie potwierdził. Nic nie jest uznane za zrobione; spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
     "iOS notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -10667,6 +10865,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "“%@” is no longer shared. It stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„%@” nie jest już udostępniana. Zostaje na tym iPhonie."
           }
         }
       }
