@@ -448,6 +448,14 @@ public enum OpenLinks {
 /// Result prefixes ("added", "declined", "failed", "unknown", "saved", "opened") are what the
 /// agent's prompt tells it to look for, so they must not change without changing the prompt.
 public enum VoiceToolReply {
+    /// How a reply starts when the change happened and was read back. "What Doddy did" and the
+    /// plan summary both read these, so a new result verb must be added here (review C1, D3).
+    public static let donePrefixes = ["added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:"]
+    /// List results name the list first: `added to "Shopping": milk.` (listAdded, listChanged).
+    public static let listDonePrefixes = ["added to \"", "ticked on \"", "removed on \""]
+    /// Nothing changed; the agent asks the user which one, or offers something else.
+    public static let nothingChangedPrefixes = ["not changed:", "not added:", "not created:"]
+
     public static let declined = "declined: the user chose not to save this note. Nothing was saved."
     public static let declinedEvent = "declined: the user chose not to add this event. Nothing was added."
     public static let declinedReminder = "declined: the user chose not to add this reminder. Nothing was added."

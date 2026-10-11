@@ -244,16 +244,23 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
             let (outcome, note) = Self.outcome(of: String(text[range.upperBound...]), isLookup: isLookup)
             return (outcome, note ?? "Demo data from a test server, not your account.")
         }
+        // Only the start of the reply is read: a note or a title quoted later in it can't change
+        // the outcome (review C1).
+        func starts(_ prefixes: [String]) -> Bool { prefixes.contains { text.hasPrefix($0) } }
         if text.hasPrefix("failed:") { return (.notDone, reason(in: text)) }
         if text.hasPrefix("paused:") { return (.notDone, "Connections were paused.") }
-        if text.contains("isn't connected") {
-            return (.notDone, text.components(separatedBy: ". ").first.map { $0 + "." })
+        if text.hasPrefix("refused:") { return (.notDone, "Translator mode was on, so nothing was run.") }
+        // VoiceToolReply.notConnected: "Calendar isn't connected. Tell the user …"
+        if let connection = VoiceConnection.allCases.first(where: { text.hasPrefix("\($0.title) isn't connected") }) {
+            return (.notDone, "\(connection.title) isn't connected.")
         }
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        if text.hasPrefix("added:"), text.contains("already in Reminders") { return (.alreadyThere, nil) }
-        if text.hasPrefix("added:") || text.hasPrefix("saved:") || text.hasPrefix("drafted:") { return (.done, nil) }
+        if text.hasPrefix("not found:") { return (.notDone, "Doddy couldn't find it, so nothing changed.") }
+        if starts(VoiceToolReply.nothingChangedPrefixes) { return (.notDone, nil) }
+        if text.hasPrefix("added:"), text.hasSuffix(VoiceToolReply.alreadyInRemindersTail) { return (.alreadyThere, nil) }
+        if starts(VoiceToolReply.donePrefixes) || starts(VoiceToolReply.listDonePrefixes) { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
