@@ -148,6 +148,11 @@ final class VoiceSessionController {
         didSet {
             Self.conversationInProgress = isLive
             syncIsland()
+            // Listening comes only from the provider's own event, so this marks a conversation
+            // that really connected, not a tap that failed (ADR-326).
+            if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
+                UserDefaults.standard.set(true, forKey: PreferenceKey.hadFirstConversation)
+            }
         }
     }
     /// True while any conversation holds the microphone (the island keeps it alive in other
@@ -215,6 +220,8 @@ final class VoiceSessionController {
     private(set) var readAloudProblem: String?
     /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
     private var checkInNeedsBriefing = false
+    /// The user's first conversation (ADR-401): after the greeting, the app asks for the short tour.
+    private var firstConversationNeedsTour = false
     /// How this conversation was started, and whether it started with the saved notes, profile and
     /// lists in the agent's context (not from Home's Translate). Translating then starts a fresh
     /// conversation, because that context can't be taken back out (review H3).
@@ -332,6 +339,10 @@ final class VoiceSessionController {
         // A translator start sends no notes or lists, so it never carries a check-in too.
         let checkIn = preset == nil ? checkIn : nil
         checkInNeedsBriefing = checkIn != nil
+        let isFirstConversation = FirstConversationPrompt.isFirst(
+            hadConversationBefore: UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation),
+            translator: preset != nil, morningCheckIn: checkIn != nil)
+        firstConversationNeedsTour = isFirstConversation
         translator = nil
         listReceipt = nil
         changeReceipt = nil
@@ -429,6 +440,7 @@ final class VoiceSessionController {
             TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
             ListsPrompt.variableName: listsText,
             MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
+            FirstConversationPrompt.variableName: FirstConversationPrompt.render(isFirst: isFirstConversation),
             // What Doddy says first (ADR-254): the greeting after "Hey Doddy", otherwise his
             // usual opening. Used once the agent's first message is {{opening_line}}
             // (voice-agent/session.json); an agent without it ignores the variable.
@@ -1539,6 +1551,12 @@ final class VoiceSessionController {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
         }
+        // Only if the user hasn't already spoken: then their own request comes first, no tour.
+        if !fromUser, firstConversationNeedsTour {
+            firstConversationNeedsTour = false
+            Task { await sendToAgent(FirstConversationPrompt.appMessage) }
+        }
+        if fromUser { firstConversationNeedsTour = false }
         // The greeting stays on the island only until the user answers.
         if fromUser, wakeGreeting != nil { wakeGreeting = nil }
     }

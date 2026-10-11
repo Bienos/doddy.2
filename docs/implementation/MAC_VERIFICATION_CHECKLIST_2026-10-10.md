@@ -320,6 +320,9 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Q3 | Fresh install; skip; **Turn these on**; don't allow | Three "Notifications are off for Doddy…" lines, nothing claimed as set |
 | Q5 | Fresh install; skip; **Turn these on** with the look-back ticked; allow notifications | "Weekly look-back set."; Settings › Weekly look-back shows Sunday 19:00, the tidy-up Sunday 18:00 |
 | Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |
+## 4l. First-use fixes (ADR-325)
+| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
+| O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
 ## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
 | H1 | Settings › turn on "Hide character artwork"; look at every widget, the Lock Screen Talk to Doddy, StandBy, a conversation's island and Lock Screen card, a focus timer, shopping mode, a snoozed alarm | No Doddy anywhere: the island shows its board, the cards and widgets their symbols or text only. Turn it off: he's back after the widgets reload |
 | H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
@@ -330,11 +333,22 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | # | Do this | Expect |
 |---|---|---|
 | A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
+## 4m. Home's first visit (ADR-326)
+| H1 | Fresh install, finish onboarding | Home: under Talk to Doddy, "Try saying: “Remember the gate code is 4821.” …"; no Back Tap card; no Today card. Bottom: "Doddy is an AI, not a person." and What leaves this iPhone |
+| H2 | Tap What leaves this iPhone; Done. Then Settings › Privacy | The row-by-row screen opens as a sheet and closes. Settings › Privacy starts with the paragraph that used to be on Home |
+| H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count |
 ## 4l. Previews, watch icon and Doddy UI tests (ADR-336)
 | P1 | Open `DoddyApp/DesignSystem/DoddyArtPreviews.swift`, `DoddyWidgets/DoddyWidgetPreviews.swift` and the end of `DoddyWatchWidgets/DoddyWatchComplications.swift` in Xcode's canvas | Every pose, strip, scenery strip, the storybook, share card, Siri snippet, widgets, Live Activities and complications draw; use this before tapping through the app |
 | P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
 | P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |
 
+
+## 4p. A guided first conversation (ADR-401)
+Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.
+| # | Do this | Expect |
+|---|---|---|
+| F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
+| F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
 ## 4m. The whole wave and the storyboards (ADR-380)
 | W1 | Delete the app, install, launch on a morning (before noon) with the opening off; open Home | He waves once (five frames, ending on the open hand), then sits on his box. Relaunch the same morning: breaths, not a wave. Next morning: a wave again |
 | W2 | Open the morning check-in | A small Doddy waves once at the bottom of the coffee-shop strip, over the strip only, not over any text |

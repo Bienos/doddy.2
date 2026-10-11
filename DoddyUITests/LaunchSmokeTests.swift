@@ -9,7 +9,7 @@ final class LaunchSmokeTests: XCTestCase {
 
     @MainActor
     private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false,
-                        listen: Bool = false, extra: [String] = []) -> XCUIApplication {
+                        listen: Bool = false, firstVisit: Bool = false, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         // Overrides UserDefaults for this launch only. The opening and listening on open are on by
         // default; most tests turn them off and start straight on Home (UITestLaunch).
@@ -17,6 +17,9 @@ final class LaunchSmokeTests: XCTestCase {
             store: .inMemory, onboardingDone: onboardingDone, backTapSetup: backTapSetup, opening: opening, listen: listen)
         // The Quick start (ADR-324) shows once per install; UserDefaults outlive the in-memory store.
         if !onboardingDone { app.launchArguments += ["-quickStartOffered", "NO"] }
+        // Most tests are about someone who has talked to Doddy before; Home's first visit
+        // (ADR-326) holds back the Back Tap and Today cards until then.
+        app.launchArguments += ["-hadFirstConversation", firstVisit ? "NO" : "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launchArguments += extra
         app.launch()
@@ -98,6 +101,23 @@ final class LaunchSmokeTests: XCTestCase {
         }
         XCTAssertTrue(microphone.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Only while talking"].exists)
+    }
+
+    @MainActor
+    func testFirstVisitHomeKeepsToTalkingAndLinksToPrivacy() {
+        // ADR-326: before the first conversation, a hint under Talk and no setup cards.
+        let app = launch(onboardingDone: true, backTapSetup: "notStarted", firstVisit: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["home.firstHint"].exists)
+        XCTAssertFalse(app.buttons["home.backTap.setup"].exists, "held back until the first conversation")
+        XCTAssertFalse(app.buttons["today.openSettings"].exists, "nothing connected yet, so no Today card")
+
+        let link = app.buttons["home.dataFlow"]
+        for _ in 0..<6 where !(link.exists && link.isHittable) { app.swipeUp() }
+        link.tap()
+        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForNonExistence(timeout: 5))
     }
 
     @MainActor
@@ -260,13 +280,15 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testListeningOnOpenIsOnByDefaultAndOpensTheConversation() {
-        // Default listening switch; no agent ID, so the conversation stops at "Couldn't connect"
-        // before it ever asks for the microphone or reaches ElevenLabs.
+    func testListeningOnOpenIsOnByDefaultButWaitsForTheMicrophone() {
+        // ADR-325: with the microphone never asked about, nothing opens by itself, so iOS's
+        // question can only follow a tap on Talk to Doddy. (Opening once it's allowed is covered
+        // by OpeningPolicyTests; a UI test can't grant the microphone.)
+        XCUIApplication().resetAuthorizationStatus(for: .microphone)
         let app = launch(onboardingDone: true, listen: true)
-        XCTAssertTrue(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 5), "opened by itself")
-        XCTAssertEqual(app.staticTexts["voice.status"].label, "Couldn't connect")
-        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 3), "nothing opens before the microphone is allowed")
+        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the test voice switch is in Settings now")
 
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
