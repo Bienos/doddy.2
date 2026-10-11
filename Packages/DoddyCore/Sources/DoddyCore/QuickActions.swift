@@ -1,6 +1,6 @@
 import Foundation
 
-/// Long-press the app icon (ADR-331): New note, Talk to Doddy, Find, and Where I parked when a
+/// Long-press the app icon (ADR-339): New note, Talk to Doddy, Find, and Where I parked when a
 /// spot is saved. Each only opens a screen; nothing is saved or changed by the action itself.
 public enum QuickAction: String, CaseIterable, Sendable {
     case newNote = "doddy.quick.newNote"

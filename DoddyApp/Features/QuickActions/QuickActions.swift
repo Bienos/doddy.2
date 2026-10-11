@@ -1,7 +1,7 @@
 import DoddyCore
 import UIKit
 
-/// The app icon's long-press menu (ADR-331). Each action only opens a screen, through the same
+/// The app icon's long-press menu (ADR-339). Each action only opens a screen, through the same
 /// router as the shortcuts and controls; nothing is saved or changed by the action itself.
 @MainActor
 enum QuickActions {

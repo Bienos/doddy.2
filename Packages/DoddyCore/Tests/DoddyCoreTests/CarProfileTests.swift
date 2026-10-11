@@ -49,7 +49,7 @@ final class CarProfileTests: XCTestCase {
     }
 }
 
-/// Home Screen quick actions (ADR-331).
+/// Home Screen quick actions (ADR-339).
 final class QuickActionTests: XCTestCase {
     func testParkingOnlyWithASpotAndTypesRoundTrip() {
         XCTAssertEqual(QuickAction.shown(hasParkingSpot: false), [.talk, .newNote, .find])
