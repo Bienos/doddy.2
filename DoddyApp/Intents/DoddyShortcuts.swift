@@ -1,7 +1,7 @@
 import AppIntents
 
 /// Makes `TalkToDoddyIntent`, `NewNoteIntent` (Shared/Shortcuts), `SaveToDoddyIntent`,
-/// `FindInDoddyIntent`, `AskDoddyNoteIntent` (ADR-248), `StopListeningIntent` (ADR-335) and the list intents (ADR-226) appear under Doddy in
+/// `FindInDoddyIntent`, `AskDoddyNoteIntent` (ADR-248), `StopListeningIntent` (ADR-361) and the list intents (ADR-226) appear under Doddy in
 /// Shortcuts, Siri and the Action Button picker with no setup. App target only.
 struct DoddyShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
@@ -14,7 +14,7 @@ struct DoddyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Talk to Doddy",
             systemImageName: "waveform")
-        // Turns things off only, so it works with the iPhone locked (ADR-335).
+        // Turns things off only, so it works with the iPhone locked (ADR-361).
         AppShortcut(
             intent: StopListeningIntent(),
             phrases: [

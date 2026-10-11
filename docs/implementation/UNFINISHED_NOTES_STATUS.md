@@ -1,4 +1,4 @@
-# Unfinished notes: status (ADR-340)
+# Unfinished notes: status (ADR-362)
 Date: 2026-10-11. Owner instruction: "start OP-042" (resume interrupted user draft), from the research backlog. User story: "Continue what I was saving." → "Here is your unfinished note." Acceptance: crash/restart consistency.
 
 ## What was wrong
@@ -65,7 +65,7 @@ What the user typed on the capture screen lived only in the screen's memory. If 
 - **Not tried on a device:** a real crash or a kill from the app switcher (UN1–UN6).
 - **File protection:** that iOS applies `.completeFileProtection` to the file isn't checked off a device.
 - **Not covered:**
-  - the voice screen's dropped-conversation draft (ADR-330 keeps it on screen only, by decision);
+  - the voice screen's dropped-conversation draft (ADR-360 keeps it on screen only, by decision);
   - drafts on other screens (note edits, lists);
   - photos and recordings in a draft;
   - sync to other devices (the backlog leaves it for later).

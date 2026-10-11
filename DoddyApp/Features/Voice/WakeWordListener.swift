@@ -42,7 +42,7 @@ final class WakeWordListener {
 
     @ObservationIgnored private var manager: PorcupineManager?
     @ObservationIgnored private var running = false
-    /// Porcupine's recorder is running (Stop listening reads it, ADR-335).
+    /// Porcupine's recorder is running (Stop listening reads it, ADR-361).
     var isEngineRunning: Bool { running }
     @ObservationIgnored private var gate = WakeGate()
     @ObservationIgnored private var inForeground = false

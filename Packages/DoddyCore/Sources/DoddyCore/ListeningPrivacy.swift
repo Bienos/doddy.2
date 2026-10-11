@@ -1,6 +1,6 @@
 import Foundation
 
-// Audio privacy signal and stop (OP-024, ADR-335). Doddy has three things that can have the
+// Audio privacy signal and stop (OP-024, ADR-361). Doddy has three things that can have the
 // microphone open: a voice conversation, "Hey Doddy" waiting for its wake word, and a voice memo
 // being recorded. While any of them has it, Doddy shows one indicator that says which, above
 // every screen, with Stop listening. "Stop listening" (the indicator, or Siri) ends the

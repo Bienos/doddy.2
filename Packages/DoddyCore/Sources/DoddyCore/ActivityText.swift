@@ -18,7 +18,7 @@ extension ActivityApp {
         case .maps: return "Mapy"
         case .shortcuts: return "Skróty"
         case .messages: return "Wiadomości i e-mail"
-        case .gmail, .drive, .notion, .todoist: return title
+        case .gmail, .drive, .notion, .todoist, .outlook: return title
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
         }
@@ -47,6 +47,8 @@ public enum ActivityText {
         "Searched your notes": "Przeszukano notatki",
         "Save a note": "Zapisz notatkę",
         "Read your calendar": "Odczytano kalendarz",
+        "Looked for free time": "Szukano wolnego czasu",
+        "Remind when to leave": "Przypomnij, kiedy wyjść",
         "Add event": "Dodaj wydarzenie",
         "Add reminder": "Dodaj przypomnienie",
         "Remind about a note": "Przypomnij o notatce",

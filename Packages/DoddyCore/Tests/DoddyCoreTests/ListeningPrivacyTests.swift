@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// OP-024, ADR-335: one indicator while anything in Doddy has the microphone open, and a Stop
+/// OP-024, ADR-361: one indicator while anything in Doddy has the microphone open, and a Stop
 /// listening that says "Stopped" only when each one says it is closed and iOS let go of the audio.
 final class ListeningPrivacyTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_791_630_000)

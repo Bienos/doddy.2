@@ -1,4 +1,4 @@
-# Voice session recovery: status (ADR-330)
+# Voice session recovery: status (ADR-360)
 Date: 2026-10-11. Owner instruction: "start OP-023" (voice fallback and session recovery), from the research backlog. User story: "Were you still listening?" → "Audio stopped. I saved a partial draft, not a memory."
 
 ## What was wrong

@@ -1,4 +1,4 @@
-# Audio privacy signal and stop: status (ADR-335)
+# Audio privacy signal and stop: status (ADR-361)
 Date: 2026-10-11. Owner instruction: "do the Polish pass then OP-024" (audio privacy signal and stop), from the research backlog. User story: "Stop listening now." → "Stopped." Acceptance: audio capture actually closed.
 
 ## What was wrong
@@ -16,7 +16,7 @@ Date: 2026-10-11. Owner instruction: "do the Polish pass then OP-024" (audio pri
   - Paused or waiting "Hey Doddy" doesn't show (it isn't listening). Stop listening still turns it off.
 - **Stop listening** (pill button, or Siri: "Stop listening in Doddy", "Tell Doddy to stop listening"; works with the iPhone locked, the app doesn't open):
   1. "Hey Doddy" is turned **off** (the Settings switch), first, so the conversation ending doesn't hand it the microphone.
-  2. The conversation ends (`stop(.stoppedListening)`); a "Save this note?" card that was showing is kept as a draft on the voice screen, with Save as note and Discard (ADR-330's card).
+  2. The conversation ends (`stop(.stoppedListening)`); a "Save this note?" card that was showing is kept as a draft on the voice screen, with Save as note and Discard (ADR-360's card).
   3. A voice memo stops; what was recorded stays with the note being written as its draft, as when the 5-minute limit is reached. Nothing is saved.
   4. Each is read again. Only when none is still open does Doddy ask iOS to deactivate its audio session. iOS answering "busy" means it stopped something still running, which counts as released.
   5. **"Stopped. Doddy isn't listening."** only when every one says closed and iOS released the audio. Otherwise it names what is still on ("Doddy couldn't stop the conversation. Try again; if iOS's orange microphone dot stays on, close Doddy from the app switcher.") or that iOS didn't release the audio. "Doddy wasn't listening" when nothing was on.

@@ -105,6 +105,9 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        # iPad (ADR-337): every orientation, so Doddy works in Split View and Slide Over.
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only these permissions. Each is asked for only when the user turns the matching toggle on in Settings, Connections.
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's test voice to OpenAI. A voice memo you record on a note stays on this iPhone."
         # Voice memos only (ADR-230): on-device recognition is required, so the audio isn't sent.
@@ -112,7 +115,7 @@ targets:
         INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."
         INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
         # Place reminders only (ADR-196): "While Using", never "Always"; iOS watches the place itself.
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave) and to save where you parked. It stays on this iPhone. Doddy doesn't track where you go."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go."
         INFOPLIST_KEY_NSFaceIDUsageDescription: "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched."
         INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name when you ask, and reads birthdays for the people you pick to be reminded of. The details stay on this iPhone. Turn this off in Settings, Connections."
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
@@ -134,6 +137,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: $(DODDY_WIDGET_ENTITLEMENTS)
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).widgets
         PRODUCT_NAME: DoddyWidgets
+        TARGETED_DEVICE_FAMILY: "1,2"
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
@@ -159,6 +163,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: $(DODDY_SHARE_ENTITLEMENTS)
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).share
         PRODUCT_NAME: DoddyShare
+        TARGETED_DEVICE_FAMILY: "1,2"
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
@@ -183,9 +188,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
         CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
-        # The watch app's catalog holds Doddy's pictures only (ADR-323); no watch app icon yet,
-        # so actool must not look for one (ADR-331). Add an icon set before App Store submission.
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # The watch app's icon is the iPhone's candidate icon, byte-identical (ADR-050, ADR-336):
+        # DoddyWatch/Assets.xcassets/AppIcon. It changes with the iPhone's when the owner decides.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_FILE: Config/DoddyWatch-Info.plist
         PRODUCT_NAME: DoddyWatch
         MARKETING_VERSION: "0.0.1"

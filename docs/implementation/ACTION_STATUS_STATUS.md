@@ -219,7 +219,7 @@ Text is kept in English and translated when it is shown, as for the rest of What
 - **Receipts:** the heading and Doddy's own labels (`ActivityReceipt.heading`/`lines(_:)`): "Lista:", "Dodano:", "Już na liście:", "Dzwoni o", the server's write summaries and the replay line.
 - **Notes:** the notes written when Doddy settles notes and lists itself, including the list-name forms, and the 3-try stop note for every app (through `ActivityText.note`).
 - **Plan cards:** every blocked-step line (`PlanBlock.screenText(_:)`). Before, every kind of block line was English only.
-- **Session recovery (ADR-330):** the end titles and lines (`SessionRecovery.status(_:connected:language:)`), and the draft card's labels (`l10n/pl.json`).
+- **Session recovery (ADR-360):** the end titles and lines (`SessionRecovery.status(_:connected:language:)`), and the draft card's labels (`l10n/pl.json`).
 
 Kept as written: list names, items, titles, the user's words, a reason a service gave, and dates in receipts (still the English date format, as elsewhere in receipts).
 

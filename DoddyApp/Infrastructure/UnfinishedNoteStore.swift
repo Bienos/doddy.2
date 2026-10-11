@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Unfinished notes (OP-042, ADR-340), kept as JSON in the app's protected container so what the
+/// Unfinished notes (OP-042, ADR-362), kept as JSON in the app's protected container so what the
 /// user typed survives Doddy being closed or crashing. Every write is read back; when it can't
 /// be, the capture screen says so. Never a note: not searched, sent, exported or backed up.
 @MainActor

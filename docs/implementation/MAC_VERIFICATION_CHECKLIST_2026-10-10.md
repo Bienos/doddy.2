@@ -299,7 +299,15 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
 | H3 | Settings › Widgets: turn "Show in widgets" off; on the watch, hide notes and lists | Widgets (small and medium, full colour): Doddy turned away beside "Turned off in Doddy's Settings."; the watch: turned away above its hidden message |
 | H4 | Build everything (app, widgets, watch app, watch widgets) | Compiles. If not, the errors are new to this checklist: the four batches before were never compiled |
-## 4l. Action status and retry (ADR-319 to ADR-322, `ACTION_STATUS_STATUS.md`)
+
+## 4l. Previews, watch icon and Doddy UI tests (ADR-336)
+| # | Do this | Expect |
+|---|---|---|
+| P1 | Open `DoddyApp/DesignSystem/DoddyArtPreviews.swift`, `DoddyWidgets/DoddyWidgetPreviews.swift` and the end of `DoddyWatchWidgets/DoddyWatchComplications.swift` in Xcode's canvas | Every pose, strip, scenery strip, the storybook, share card, Siri snippet, widgets, Live Activities and complications draw; use this before tapping through the app |
+| P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
+| P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |
+
+## 4m. Action status and retry (ADR-319 to ADR-322, `ACTION_STATUS_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | AS1 | Ask Doddy to add an event tomorrow at 15:00, tap Add, then open Settings → What Doddy did | "Done", and "Read back from Calendar at …" with the title and times. The event is in Calendar once |
@@ -318,7 +326,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | AS14 | Same, with Gmail: create a draft, cut the connection mid-way, then ask for the same draft again | The card says an earlier try may have gone through and to check Gmail; Gmail has at most the drafts you confirmed |
 | AS15 | With "List my tasks" on: make a task's answer get lost (server timeout), then ask for the same task | Doddy says it's already in Todoist and shows no card; with "List my tasks" off it shows the card with the warning line |
 
-## 4m. Voice session recovery (ADR-330, `SESSION_RECOVERY_STATUS.md`)
+## 4n. Voice session recovery (ADR-360, `SESSION_RECOVERY_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | SR1 | Talk to Doddy; mid-sentence turn on Airplane mode | "You're offline" (or "The conversation dropped"), never "Conversation ended"; the offline card holds what Doddy last heard |
@@ -327,7 +335,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | SR4 | After SR2, tap Talk again within 15 minutes ("Remember recent conversations" on) | Doddy says the last conversation was cut off and offers to carry on; with the setting off or Private, it doesn't |
 | SR5 | Say goodbye so Doddy ends the call; then tap End in another conversation | Both show "Conversation ended", never "dropped" (checks that end_call arrives as the SDK's own end) |
 
-## 4n. Stop listening and the listening indicator (ADR-335, `LISTENING_PRIVACY_STATUS.md`)
+## 4o. Stop listening and the listening indicator (ADR-361, `LISTENING_PRIVACY_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | LS1 | Turn on "Hey Doddy"; open Settings, then the note screen | The pill "Listening for “Hey Doddy”" shows at the top over both; taps beside it still work |
@@ -339,7 +347,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | LS7 | Nothing listening; ask Siri to stop listening | "Doddy wasn't listening. The microphone is off." |
 | LS8 | Polish iPhone: LS2 and LS3 | Polish pill, button and Siri answer; "Przestań słuchać w aplikacji Doddy" works |
 
-## 4o. Unfinished notes (ADR-340, `UNFINISHED_NOTES_STATUS.md`)
+## 4p. Unfinished notes (ADR-362, `UNFINISHED_NOTES_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | UN1 | Type a note; without saving, close Doddy from the app switcher; open it again | Home shows "Unfinished note" with its first line; Continue opens it with every word; nothing in Memories |

@@ -16,8 +16,8 @@
   "pl": "Doddy dodaje, zmienia, kończy lub usuwa przypomnienie tylko po stuknięciu Dodaj, Zmień, Oznacz jako zrobione lub Usuń. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
  },
  "NSLocationWhenInUseUsageDescription": {
-  "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave) and to save where you parked. It stays on this iPhone. Doddy doesn't track where you go.",
-  "pl": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu) oraz do zapisania miejsca parkowania. Zostaje na tym iPhonie. Doddy nie śledzi, dokąd chodzisz."
+  "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go.",
+  "pl": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu), do zapisania miejsca parkowania i do obliczenia z Mapami Apple, kiedy wyjść, żeby gdzieś dotrzeć. Doddy jej nie przechowuje i nie śledzi, dokąd chodzisz."
  },
  "NSContactsUsageDescription": {
   "en": "Doddy looks up a contact by name when you ask, and reads birthdays for the people you pick to be reminded of. The details stay on this iPhone. Turn this off in Settings, Connections.",

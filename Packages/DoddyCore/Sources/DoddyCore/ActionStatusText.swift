@@ -1,6 +1,6 @@
 import Foundation
 
-// The action status model (ADR-319 to ADR-322) and voice session recovery (ADR-330) in the
+// The action status model (ADR-319 to ADR-322) and voice session recovery (ADR-360) in the
 // iPhone's language, as "What Doddy did" is (ADR-275): kept in English, translated when shown.
 // The user's own words, list names and what an app or server said stay exactly as kept.
 

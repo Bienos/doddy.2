@@ -1,4 +1,4 @@
-// Runs UnfinishedNoteStore (ADR-340) against real files: scripts/check_unfinished_note_store.sh.
+// Runs UnfinishedNoteStore (ADR-362) against real files: scripts/check_unfinished_note_store.sh.
 import Foundation
 @MainActor func run() async {
     let dir = FileManager.default.temporaryDirectory.appendingPathComponent("drafts-\(UUID())")

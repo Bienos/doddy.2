@@ -198,3 +198,16 @@ struct DoddyWatchWidgetsBundle: WidgetBundle {
         DoddyComplication()
     }
 }
+
+// Xcode canvas previews (ADR-336): Doddy's face on the complications. Made-up content only.
+#Preview("Circular", as: .accessoryCircular) {
+    DoddyComplication()
+} timeline: {
+    ComplicationEntry(date: .now, content: .previewContent, relevance: nil)
+}
+
+#Preview("Rectangular", as: .accessoryRectangular) {
+    DoddyComplication()
+} timeline: {
+    ComplicationEntry(date: .now, content: .previewContent, relevance: nil)
+}

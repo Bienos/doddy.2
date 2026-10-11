@@ -44,7 +44,7 @@ final class ActivityTextTests: XCTestCase {
             let polish = ActivityText.title(row.title, .polish)
             XCTAssertNotEqual(polish, row.title, "no Polish title for \(row.title)")
             XCTAssertEqual(ActivityText.title(row.title, .english), row.title)
-            if ![ActivityApp.gmail, .drive, .notion, .todoist].contains(row.app) {
+            if ![ActivityApp.gmail, .drive, .notion, .todoist, .outlook].contains(row.app) {
                 XCTAssertNotEqual(row.app.title(.polish), row.app.title, "no Polish name for \(row.app)")
             }
         }

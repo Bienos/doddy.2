@@ -127,6 +127,46 @@
       ]
     },
     {
+      "id": "outlook",
+      "title": "Outlook",
+      "access": "Doddy can list your recent Outlook emails (sender, subject, a short preview), read one email aloud when you ask, read your Outlook calendar for the days you ask about, and create drafts after you tap Create. Doddy never sends, deletes or moves email, and never changes your calendar.",
+      "needsAccount": true,
+      "status": "disconnected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "check_outlook_email",
+          "title": "Check my Outlook email",
+          "blurb": "Lists your newest Outlook emails: sender, subject and a short preview. It doesn't open full messages. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "read_outlook_email",
+          "title": "Read an Outlook email",
+          "blurb": "Reads one Outlook email aloud when you ask, the newest that matches. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "draft_outlook_email",
+          "title": "Draft an Outlook email",
+          "blurb": "Creates a draft in Outlook after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "read_outlook_calendar",
+          "title": "Read my Outlook calendar",
+          "blurb": "Reads your Outlook calendar for the days you ask about: title, time and place. It can't change events. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        }
+      ]
+    },
+    {
       "id": "websearch",
       "title": "Web search",
       "access": "Doddy can look things up on the web when you ask: your search words go to Doddy's server and on to a search provider through Monid. No sign-in. Doddy pays for searches and there's a daily limit.",

@@ -140,16 +140,16 @@ public enum DataFlow {
                 when: "When you ask Doddy to convert money, at most every six hours.", isActive: !state.pauseAll,
                 note: state.pauseAll ? "Connections are paused, so the rates aren't fetched." : "The amount and currencies stay on this iPhone; the conversion is worked out here."),
             DataFlowRow(
-                id: "placeSearch", destination: "Apple Maps (place search)",
-                what: "The words you type to find a place, and roughly where you are if Doddy already knows.",
-                when: "Only when you search for a place for a reminder.", isActive: true,
+                id: "placeSearch", destination: "Apple Maps (place search and travel time)",
+                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going.",
+                when: "Only when you search for a place for a reminder, or ask when to leave.", isActive: true,
                 note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "Your access code.", when: "When a conversation starts.", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
             DataFlowRow(
-                id: "doddyServer", destination: "Your Doddy server (Google, Notion, Todoist via Composio)",
+                id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
                 what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
                 when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
                 isActive: state.doddyServerSet,
@@ -191,7 +191,7 @@ public enum DataFlow {
     public static func staysOnPhone(_ state: DataFlowState) -> [String] {
         [
             "Your saved notes, except as listed above.",
-            // ADR-340: drafts are never searched, sent, exported or backed up.
+            // ADR-362: drafts are never searched, sent, exported or backed up.
             "Unfinished notes: what you typed before tapping Save, until you save or discard it (30 days at most).",
             // ADR-252: the corrections table is read only by the note screen and exports.
             "Earlier wordings of notes you corrected, except in files you export.",

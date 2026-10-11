@@ -5,7 +5,7 @@ import SwiftUI
 import UIKit
 import os
 
-/// Audio privacy signal and stop (OP-024, ADR-335). Rules and words are in DoddyCore
+/// Audio privacy signal and stop (OP-024, ADR-361). Rules and words are in DoddyCore
 /// (ListeningPrivacy.swift); this reads each microphone user's own state, stops them, and shows
 /// the indicator above every screen.
 @MainActor

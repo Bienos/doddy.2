@@ -63,7 +63,7 @@ test("everything starts off and nothing runs until the user switches it on", asy
   rig = await start();
   const catalog = await rig.call("GET", "/v1/tools");
   assert.equal(catalog.status, 200);
-  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "websearch"]);
+  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "websearch"]);
   for (const toolkit of catalog.body.toolkits) {
     // Web search has no account (test/websearch.test.ts); every account starts disconnected.
     assert.equal(toolkit.status, toolkit.id === "websearch" ? "connected" : "disconnected");

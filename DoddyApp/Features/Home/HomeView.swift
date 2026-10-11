@@ -114,7 +114,7 @@ struct HomeView: View {
                         ProblemView(message: problem, showsDoddy: true)
                     }
 
-                    // "Continue what I was saving" (ADR-340): opens the capture screen with it.
+                    // "Continue what I was saving" (ADR-362): opens the capture screen with it.
                     if let draft = UnfinishedNoteStore.shared.book.newest {
                         UnfinishedNoteCard(note: draft, more: UnfinishedNoteStore.shared.book.notes.count - 1) { modal = .capture }
                     }
@@ -167,7 +167,8 @@ struct HomeView: View {
 
                     TodayCard(openSettings: { selectedTab = .settings })
 
-                    if router.setup.phase == .notStarted {
+                    // Back Tap exists only on iPhone (ADR-337).
+                    if router.setup.phase == .notStarted, DeviceSupport.hasBackTap {
                         backTapCard
                     }
                     aboutYou
@@ -378,7 +379,7 @@ enum HomeIdle {
     static var sat = false
 }
 
-/// The newest unfinished note on Home (ADR-340): Continue opens it on the capture screen; Discard
+/// The newest unfinished note on Home (ADR-362): Continue opens it on the capture screen; Discard
 /// removes it after asking. It is a draft, not a note.
 private struct UnfinishedNoteCard: View {
     let note: UnfinishedNote

@@ -1,6 +1,6 @@
 import Foundation
 
-// Unfinished notes (OP-042, ADR-340). While the user writes a note on the capture screen, what
+// Unfinished notes (OP-042, ADR-362). While the user writes a note on the capture screen, what
 // they have typed is kept in a small protected file on this iPhone, so it survives Doddy being
 // closed, iOS ending it, or a crash. It is a draft, never a note: it isn't searched, sent to the
 // voice agent, exported or backed up, and it becomes a note only when the user taps Save. Saving

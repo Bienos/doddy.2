@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// OP-042, ADR-340: an unfinished note survives a restart as a draft, never as a note.
+/// OP-042, ADR-362: an unfinished note survives a restart as a draft, never as a note.
 final class UnfinishedNotesTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_791_630_000)
 

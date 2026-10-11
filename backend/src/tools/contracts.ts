@@ -102,7 +102,7 @@ export const ResultItemSchema = z
     kind: z.enum(["email", "task"]),
     /** Email subject or task text. */
     title: z.string(),
-    /** Email sender as Gmail gives it; null for tasks. */
+    /** Email sender as Gmail gives it (Outlook: "Name <address>"); null for tasks. */
     from: z.string().nullable(),
     /** Email received time or task due, in the user's time zone, as text; null when unknown. */
     when: z.string().nullable(),
@@ -120,7 +120,7 @@ export const RunResultSchema = z
     text: z.string(),
     count: z.number().int().min(0),
     truncated: z.boolean(),
-    /** check_email and list_todoist_tasks only: the same items as `text`, without previews. */
+    /** check_email, check_outlook_email and list_todoist_tasks only: the same items as `text`, without previews. */
     items: z.array(ResultItemSchema).optional(),
     /** Writes: the provider's id for the draft or task (ADR-322). */
     externalId: z.string().optional(),

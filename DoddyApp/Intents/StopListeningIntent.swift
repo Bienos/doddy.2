@@ -1,7 +1,7 @@
 import AppIntents
 import DoddyCore
 
-/// "Stop listening in Doddy" (OP-024, ADR-335): ends a voice conversation, turns "Hey Doddy" off
+/// "Stop listening in Doddy" (OP-024, ADR-361): ends a voice conversation, turns "Hey Doddy" off
 /// and stops a voice memo, then says "Stopped" only when each says its microphone is closed.
 /// Works with the iPhone locked: it only turns things off. The app doesn't open. App target only.
 struct StopListeningIntent: AppIntent {

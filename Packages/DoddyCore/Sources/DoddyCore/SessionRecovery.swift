@@ -1,6 +1,6 @@
 import Foundation
 
-// Voice fallback and session recovery (OP-023, ADR-330). A voice conversation that stops before
+// Voice fallback and session recovery (OP-023, ADR-360). A voice conversation that stops before
 // the user or Doddy ended it is never shown as a normal ending: the screen says it dropped, what
 // Doddy last heard and hadn't answered is offered as a draft (a draft, not a note: nothing is saved
 // without a tap), and the next conversation is told it was cut off, so Doddy doesn't pretend it
@@ -15,7 +15,7 @@ public enum VoiceSessionEnd: Equatable, Sendable {
     case doddyEnded
     /// Started by "Hey Doddy" and nobody spoke (ADR-254).
     case quietTimeout
-    /// "Stop listening" (OP-024, ADR-335): from Siri or the listening indicator, which also turn
+    /// "Stop listening" (OP-024, ADR-361): from Siri or the listening indicator, which also turn
     /// off "Hey Doddy" and stop a voice memo.
     case stoppedListening
     /// It stopped before either side ended it.

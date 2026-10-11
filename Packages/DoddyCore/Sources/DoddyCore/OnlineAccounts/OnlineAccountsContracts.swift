@@ -156,14 +156,20 @@ public enum CloudToolName {
     public static let draftEmailReply = "draft_email_reply"
     /// One Notion page's text, the best match among pages shared with Doddy (round 5). Off until switched on.
     public static let readNotionPage = "read_notion_page"
+    /// Microsoft Outlook (ADR-340): the same reads and draft as Gmail, plus reading its calendar.
+    public static let checkOutlookEmail = "check_outlook_email"
+    public static let readOutlookEmail = "read_outlook_email"
+    public static let draftOutlookEmail = "draft_outlook_email"
+    public static let readOutlookCalendar = "read_outlook_calendar"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"
 
     public static let all: Set<String> = [checkEmail, draftEmail, readEmail, draftEmailReply, findDriveFile, searchNotion,
                                           readNotionPage, listTodoistTasks, addTodoistTask, completeTodoistTask,
-                                          moveTodoistTask, webSearch]
+                                          moveTodoistTask, webSearch, checkOutlookEmail, readOutlookEmail,
+                                          draftOutlookEmail, readOutlookCalendar]
     /// These change something in the user's account and wait for a tap on the card.
-    public static let writes: Set<String> = [draftEmail, draftEmailReply, addTodoistTask, completeTodoistTask, moveTodoistTask]
+    public static let writes: Set<String> = [draftEmail, draftEmailReply, draftOutlookEmail, addTodoistTask, completeTodoistTask, moveTodoistTask]
 
     public static func isWrite(_ name: String) -> Bool { writes.contains(name) }
 
@@ -181,6 +187,10 @@ public enum CloudToolName {
         case readEmail: "Read an email"
         case draftEmailReply: "Draft a reply"
         case readNotionPage: "Read a Notion page"
+        case checkOutlookEmail: "Check Outlook email"
+        case readOutlookEmail: "Read an Outlook email"
+        case draftOutlookEmail: "Draft an Outlook email"
+        case readOutlookCalendar: "Read the Outlook calendar"
         case webSearch: "Search the web"
         default: name
         }
@@ -191,6 +201,7 @@ public enum CloudToolName {
         case checkEmail, draftEmail, readEmail, draftEmailReply: "Gmail"
         case findDriveFile: "Google Drive"
         case searchNotion, readNotionPage: "Notion"
+        case checkOutlookEmail, readOutlookEmail, draftOutlookEmail, readOutlookCalendar: "Outlook"
         case webSearch: "Web search"
         default: "Todoist"
         }

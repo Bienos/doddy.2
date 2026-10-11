@@ -28,7 +28,7 @@ final class VoiceMemoRecorder {
     private var ticker: Task<Void, Never>?
 
     var isRecording: Bool { if case .recording = state { true } else { false } }
-    /// The microphone is recording now, as AVAudioRecorder says (Stop listening, ADR-335).
+    /// The microphone is recording now, as AVAudioRecorder says (Stop listening, ADR-361).
     var isCapturing: Bool { recorder?.isRecording == true }
 
     /// Asks for the microphone once (the same permission as talking to Doddy), then records.
@@ -101,7 +101,7 @@ final class VoiceMemoRecorder {
         return Recording(url: recorder.url, durationMilliseconds: milliseconds)
     }
 
-    /// Stop listening (ADR-335): the microphone stops now, and the note's screen keeps what was
+    /// Stop listening (ADR-361): the microphone stops now, and the note's screen keeps what was
     /// recorded as its draft, as when the 5-minute limit is reached (`stoppedByItself`). True when
     /// it is long enough to keep.
     func stopFromOutside() -> Bool {

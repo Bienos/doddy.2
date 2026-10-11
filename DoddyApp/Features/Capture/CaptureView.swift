@@ -25,7 +25,7 @@ struct CaptureView: View {
     @State private var memo: VoiceMemoDraft?
     @State private var memoProblem: String?
     @FocusState private var editorFocused: Bool
-    /// Unfinished notes (ADR-340): this screen's draft, kept on the iPhone until Save or Discard.
+    /// Unfinished notes (ADR-362): this screen's draft, kept on the iPhone until Save or Discard.
     private let drafts = UnfinishedNoteStore.shared
     private let sharedText: String?
     @State private var draftID = UUID()
@@ -160,7 +160,7 @@ struct CaptureView: View {
                     drafts.remove(id: draftID)
                     dismiss()
                 }
-                // Only offered while the copy on the iPhone is confirmed (ADR-340).
+                // Only offered while the copy on the iPhone is confirmed (ADR-362).
                 if drafts.problem == nil && !text.allSatisfy(\.isWhitespace) {
                     Button("Keep it for later") {
                         drafts.flush()
@@ -270,13 +270,13 @@ struct CaptureView: View {
             memo.discardFile()
             self.memo = nil
         }
-        // A note now: the draft goes (ADR-340).
+        // A note now: the draft goes (ADR-362).
         drafts.remove(id: draftID)
         saved = record
     }
 }
 
-/// "Here is your unfinished note" at the top of a capture screen that opened with one (ADR-340).
+/// "Here is your unfinished note" at the top of a capture screen that opened with one (ADR-362).
 private struct ResumedDraftNotice: View {
     let note: UnfinishedNote
     let onStartNew: () -> Void

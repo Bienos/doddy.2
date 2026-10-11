@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// The action status model (ADR-319 to ADR-322) and voice session recovery (ADR-330) in Polish:
+/// The action status model (ADR-319 to ADR-322) and voice session recovery (ADR-360) in Polish:
 /// every fixed text Doddy writes for them has Polish, and the user's own words stay as kept.
 final class ActionStatusTextTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_791_630_000)

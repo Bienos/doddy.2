@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unfinished notes (ADR-340): builds the app's UnfinishedNoteStore with the core draft rules and
+# Unfinished notes (ADR-362): builds the app's UnfinishedNoteStore with the core draft rules and
 # runs it against real files: written after the delay, read back after a "restart", removed on
 # save, an unreadable file set aside, Delete all, a failed write reported. Foundation only, so it
 # runs on Linux; the app's own build is still needed for the screens.

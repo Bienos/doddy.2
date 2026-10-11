@@ -214,3 +214,20 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Prompt:** the round 5 lines of `instructions.md`, plus "What you cannot do yet" and the online-account rule. The camera line is kept as it was live.
 - **Version:** `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89` → `agtvrsn_7001m4nt39q1fhwrhtsyqdegf35g`, 51 tools. The stored prompt was read back.
 - **Mixed versions:** an installed app from before this round answers "unsupported" to the two new tools and doesn't act on the new `change_reminder`/`change_calendar_event` fields. A backend without round 5 refuses the two online-account tools as unknown.
+
+**Applied to the live agent 2026-10-11 (round 6, ADR-332 to ADR-335 and ADR-340).**
+- **Re-read first:** version `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` (51 tools, the same ids as after round 5). Its prompt was round 5's, with two differences:
+  - the camera line is still the ADR-291 wording, as before;
+  - two lines from ADR-324 ("unlock as you go", branch `claude/lucid-johnson-pmwwg4`, not merged into this line yet) were applied by that session: the connections line ("Nothing is asked up front…") and the online-account "declined"/"iPhone doesn't allow" rule.
+  Both are kept live. `instructions.md` on this branch doesn't have the ADR-324 lines; they arrive with that branch's merge.
+- **New client tools:**
+  - `find_free_time` (`tool_3201m4nyakxvf7ht6vxqyywxjf43`)
+  - `remind_when_to_leave` (`tool_4801m4nyams5ff79cbnt0j8vweds`)
+  - `check_outlook_email` (`tool_1401m4nyap0tfdvbspd4a6717pnh`)
+  - `read_outlook_email` (`tool_1901m4nyaq66ew6bkbvqby0049mv`)
+  - `draft_outlook_email` (`tool_9501m4nyarbhfx8sjxt8jdg88nja`)
+  - `read_outlook_calendar` (`tool_1301m4nyas4zf8bbxnwb6q0jvpyb`)
+- **Updated in place:** `search_memories` (the `#tag` sentence) and `create_list` (the `template` parameter).
+- **Prompt:** the round 6 lines of `instructions.md` (tags, free time, leave-by, Outlook, list templates, "What you cannot do yet", the online-account rule), merged with the live-only lines above.
+- **Version:** `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` → `agtvrsn_9901m4nydc9qegk8npkv8jvprm90`, 57 tools. The stored prompt and tool list were read back from the save.
+- **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools and ignores `template`. A backend without round 6 refuses the four Outlook tools as unknown, and the Outlook toolkit only runs against the mock until a Composio Outlook auth config exists (`docs/implementation/ROUND6_REPORT_2026-10-11.md`).

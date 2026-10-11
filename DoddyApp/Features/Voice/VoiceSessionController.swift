@@ -73,6 +73,8 @@ final class VoiceSessionController {
         case undo(toolCallID: String, entry: ActivityEntry)
         /// "Save your parking spot here?" (ADR-301): the position read just now, and the user's note.
         case parking(toolCallID: String, spot: ParkingSpot)
+        /// "Remind me when to leave" (ADR-335): the place Maps found, the travel time and when to leave.
+        case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
 
@@ -82,7 +84,7 @@ final class VoiceSessionController {
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
-                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _),
+                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _):
                 id
             }
@@ -157,10 +159,10 @@ final class VoiceSessionController {
     /// True while any conversation holds the microphone (the island keeps it alive in other
     /// screens). Voice samples in Settings don't play then, so they never take over its audio.
     static private(set) var conversationInProgress = false
-    /// The conversation that is connecting or live, for Stop listening (ADR-335).
+    /// The conversation that is connecting or live, for Stop listening (ADR-361).
     static private(set) weak var current: VoiceSessionController?
 
-    /// What the listening indicator says about the conversation (ADR-335).
+    /// What the listening indicator says about the conversation (ADR-361).
     static var microphone: MicrophoneSnapshot.Conversation {
         guard let current, current.isLive else { return .none }
         if current.phase == .connecting { return .connecting }
@@ -318,7 +320,7 @@ final class VoiceSessionController {
     ) async {
         guard !isLive else { return }
         // The previous conversation's lines and unanswered cards are kept before they're cleared,
-        // even when it ended in a failure nothing else recorded (ADR-330).
+        // even when it ended in a failure nothing else recorded (ADR-360).
         keepLog()
         isOffline = false
         offlineSaved = nil
@@ -389,11 +391,12 @@ final class VoiceSessionController {
         await store.reload()
         // Private notes (ADR-310) never reach the voice agent.
         var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
-        // After a drop the agent is told it was cut off (ADR-330), within the same switch.
+        // After a drop the agent is told it was cut off (ADR-360), within the same switch.
         var recent = logs.isEnabled
             ? SessionRecovery.withResumeNote(VoiceContext.recentConversations(logs.logs), logs: logs.logs, now: Date())
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
         var listsText = ListsPrompt.render(store.lists)
+        if let templates = ListTemplateStore.current().promptLine { listsText += "\n" + templates }
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
@@ -473,7 +476,7 @@ final class VoiceSessionController {
             }
         }
         config.onDisconnect = { reason in
-            // `.agent`: the connection was closed from the other side (ADR-330).
+            // `.agent`: the connection was closed from the other side (ADR-360).
             let kind: VoiceSessionEnd.Disconnect = switch reason {
             case .user: .user
             case .agent: .agent
@@ -739,7 +742,7 @@ final class VoiceSessionController {
         WakeWordListener.shared.conversationAudioReleased()
     }
 
-    /// Stop listening from Siri or the indicator (OP-024, ADR-335): ends the conversation like End,
+    /// Stop listening from Siri or the indicator (OP-024, ADR-361): ends the conversation like End,
     /// but keeps a "Save this note?" card that was showing as a draft. True when it kept one.
     func stopListening() async -> Bool {
         if sessionEnd == nil { sessionEnd = .stoppedListening }
@@ -906,6 +909,13 @@ final class VoiceSessionController {
             } catch {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
+        case .leaveBy(let id, let plan):
+            // A local notification at the leave time, read back from iOS (ADR-335).
+            switch await LeaveByScheduler.schedule(plan) {
+            case .scheduled: await reply(id, VoiceToolReply.leaveBySet(plan, calendar: .current))
+            case .notAllowed: await reply(id, VoiceToolReply.leaveByNotAllowed)
+            case .failed: await reply(id, VoiceToolReply.leaveByFailed)
+            }
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-301).
             let saved = ParkingStore.save(spot)
@@ -1058,6 +1068,7 @@ final class VoiceSessionController {
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
+        case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
             await reply(id, VoiceToolReply.ingredientsDeclined)
@@ -1602,7 +1613,7 @@ final class VoiceSessionController {
         keepRecoveryDraft()
         phase = .failed(message)
         pendingAction = nil
-        // The lines and unanswered cards are kept now, not only at the next Close (ADR-330).
+        // The lines and unanswered cards are kept now, not only at the next Close (ADR-360).
         keepLog()
         // A conversation that was running is ended, so it doesn't hold the microphone.
         if wasLive, let active = conversation {
@@ -1624,7 +1635,7 @@ final class VoiceSessionController {
         pendingAction = nil
         keepLog()
         if case .failed = phase { return }
-        // A drop is never shown as a normal end (ADR-330).
+        // A drop is never shown as a normal end (ADR-360).
         if let end = sessionEnd, end.isDrop, wasLive {
             phase = .failed(SessionRecovery.status(end, connected: connectedOnce, language: .current).detail ?? "")
             offerSaveSuggestions()
@@ -1634,7 +1645,7 @@ final class VoiceSessionController {
         offerSaveSuggestions()
     }
 
-    // MARK: Session recovery (OP-023, ADR-330)
+    // MARK: Session recovery (OP-023, ADR-360)
 
     /// How this conversation ended; nil while it runs.
     private(set) var sessionEnd: VoiceSessionEnd?
@@ -1690,7 +1701,7 @@ final class VoiceSessionController {
     /// Picks what the user said that may be worth keeping, on the phone, from their own lines only.
     /// Not for a private conversation, not when switched off, not when notes can't be saved.
     private func offerSaveSuggestions() {
-        // After an end, and after a drop once Doddy had been listening (ADR-330).
+        // After an end, and after a drop once Doddy had been listening (ADR-360).
         let dropped = sessionEnd?.isDrop == true && connectedOnce
         guard !suggestionsOffered, phase == .ended || dropped else { return }
         suggestionsOffered = true
@@ -1758,6 +1769,12 @@ final class VoiceSessionController {
         }
         switch request {
         case .searchMemories(let query):
+            // "#car": exactly the notes with that tag (ADR-333). Private notes stay out.
+            if let tag = NoteTags.tagQuery(query) {
+                let notes = NoteTags.filter(PrivateNotesStore.current().shareable(store.memories), tag: tag)
+                await reply(call.toolCallId, VoiceToolReply.taggedNotes(tag, notes: notes))
+                return
+            }
             do {
                 let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
                 await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query))
@@ -1777,6 +1794,15 @@ final class VoiceSessionController {
             }
             let events = devices.events(in: range)
             await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
+        case .findFreeTime(let request):
+            // Read-only (ADR-332): gaps worked out here from the iPhone's calendars.
+            guard devices.access(for: .calendar) == .granted else {
+                await notConnected(call.toolCallId, .calendar)
+                return
+            }
+            let events = devices.events(in: request.range(calendar: .current))
+            let days = FreeTime.days(request, events: events, now: Date(), calendar: .current)
+            await reply(call.toolCallId, VoiceToolReply.freeTime(days, request: request, calendar: .current))
         case .createCalendarEvent(let draft):
             guard await mayTryAgain(call.toolCallId, app: .calendar) else { return }
             propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
@@ -1831,6 +1857,8 @@ final class VoiceSessionController {
             await reply(call.toolCallId, VoiceToolReply.conversion(request))
         case .parkingSpot(let action):
             await handleParking(action, toolCallID: call.toolCallId)
+        case .leaveBy(let request):
+            await handleLeaveBy(request, toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
@@ -1930,7 +1958,17 @@ final class VoiceSessionController {
                 return
             }
             guard await mayTryAgain(call.toolCallId, app: .memories) else { return }
-            propose(.createList(toolCallID: call.toolCallId, name: request.list, items: request.items), toolCallID: call.toolCallId)
+            // From a template (ADR-334): its items first, then any the user said.
+            var items = request.items
+            if let wanted = request.template {
+                let templates = ListTemplateStore.current()
+                guard let template = templates.named(wanted) else {
+                    await reply(call.toolCallId, VoiceToolReply.templateNotFound(wanted, templates: templates))
+                    return
+                }
+                items = ListTemplates.items(from: template, plus: request.items)
+            }
+            propose(.createList(toolCallID: call.toolCallId, name: request.list, items: items), toolCallID: call.toolCallId)
         case .stopTranslator:
             guard translator != nil else {
                 await reply(call.toolCallId, VoiceToolReply.translatorNotOn)
@@ -2280,6 +2318,35 @@ final class VoiceSessionController {
     /// call is left without an answer.
     /// Parking (ADR-301). Location is read once, only for "save" and, if location is already
     /// allowed, for the distance on "find"; the agent hears no coordinates.
+    /// "Remind me when to leave" (ADR-335): one position, an Apple Maps search near it and the
+    /// travel time; the card shows what Maps found. Nothing is set until Set reminder.
+    private func handleLeaveBy(_ request: LeaveByRequest, toolCallID: String) async {
+        let location = PlaceLocation.shared
+        var readiness = await location.readiness()
+        if readiness == .notDetermined { readiness = await location.requestWhenInUse() }
+        guard readiness == .ready || readiness == .approximateOnly else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoLocation(readiness))
+            return
+        }
+        guard let here = await location.currentFix(within: 3_000)?.coordinate else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoLocation(nil))
+            return
+        }
+        guard let place = (try? await location.search(request.place, near: here))?.first else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoPlace(request.place))
+            return
+        }
+        guard let seconds = try? await location.travelTime(from: here, to: place.coordinate, mode: request.mode, arriveBy: request.arriveBy) else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoRoute(request.mode))
+            return
+        }
+        switch LeaveBy.plan(request, placeName: place.name, placeAddress: place.address, travelSeconds: seconds, now: Date()) {
+        case .success(let plan): propose(.leaveBy(toolCallID: toolCallID, plan: plan), toolCallID: toolCallID)
+        case .failure(.tooLate(let leaveAt)): await reply(toolCallID, VoiceToolReply.leaveByTooLate(leaveAt, calendar: .current))
+        case .failure(.tooFar): await reply(toolCallID, VoiceToolReply.leaveByTooFar)
+        }
+    }
+
     private func handleParking(_ action: ParkingAction, toolCallID: String) async {
         switch action {
         case .save(let note):
@@ -2919,7 +2986,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .translator, .plan, .undo: false

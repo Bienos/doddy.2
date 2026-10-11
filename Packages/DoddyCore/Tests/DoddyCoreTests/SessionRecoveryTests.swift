@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-330 (OP-023): a voice conversation that drops is never shown as a normal end, what Doddy
+/// ADR-360 (OP-023): a voice conversation that drops is never shown as a normal end, what Doddy
 /// last heard is offered as a draft (not a note), and the next conversation is told it was cut off.
 final class SessionRecoveryTests: XCTestCase {
     private let utc = TimeZone(identifier: "UTC")!
@@ -78,7 +78,7 @@ final class SessionRecoveryTests: XCTestCase {
         XCTAssertTrue(note.contains("Do not assume you heard anything after them"))
         XCTAssertNil(SessionRecovery.resumeNote(newest: dropped, now: t0 + SessionRecovery.resumeWindow + 1, timeZone: utc), "too long ago")
         XCTAssertNil(SessionRecovery.resumeNote(newest: log("user", endedAt: t0), now: t0 + 60), "ended normally")
-        XCTAssertNil(SessionRecovery.resumeNote(newest: log(nil, endedAt: t0), now: t0 + 60), "kept before ADR-330")
+        XCTAssertNil(SessionRecovery.resumeNote(newest: log(nil, endedAt: t0), now: t0 + 60), "kept before ADR-360")
         XCTAssertNil(SessionRecovery.resumeNote(newest: nil, now: t0))
     }
 
