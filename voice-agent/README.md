@@ -196,6 +196,6 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
   - `change_reminder` gained `add_note`, `priority` and `move_to_list`.
   - `check_email` points to `read_email`.
   - `list_todoist_tasks` explains the `[id …]` ids.
-- **Prompt:** `instructions.md` as committed with round 4. After the merge with the default branch, `instructions.md` also has the "Opening the camera" line (ADR-291, another session). That session recorded it as not yet applied to the live agent, so the live prompt is `instructions.md` without that one line, until that session applies it.
+- **Prompt:** `instructions.md` as committed with round 4. After the merge with the default branch, `instructions.md` also has the "Opening the camera" line (ADR-291, another session). That session has since applied it (version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`, read again here: 49 tools, round 4 lines and the camera lines all present), so the live prompt is `instructions.md`.
 - **Version:** `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` → `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx`, 49 tools. The stored prompt was read back.
 - **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools. A backend without round 4 refuses the three online-account tools as unknown.
