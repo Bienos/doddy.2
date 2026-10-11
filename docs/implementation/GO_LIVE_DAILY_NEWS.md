@@ -16,9 +16,12 @@
 > https://doddy-messaging-zw1n.onrender.com, default branch `claude/loving-dirac-uuxoux`, auto-deploy off,
 > `RUN_WORKER_IN_WEB=1`, `TRUST_PROXY_HOPS=1`, `NODE_VERSION=22`). Created with the Render API, so the build and start
 > commands `cd server/messaging` first and there is no health check path (set `/healthz` in the dashboard if wanted).
-> Verified: the build succeeds; the server then stops because `DATABASE_URL` is not set yet. Still to do by the owner,
-> typed in Render only: `DATABASE_URL` (the database's **Internal Database URL**) and an AI key (`ANTHROPIC_API_KEY`
-> or `OPENAI_API_KEY`). The old SLIYD service and database are not used any more; delete them there.
+> Verified 2026-10-11 after the owner set `DATABASE_URL` (Internal Database URL) and an AI key in Render: the service
+> is live, `GET /healthz` answers `{"ok":true}` (it checks the database), and the log shows `configured features` with
+> `newsWriter: true`, `push: false`, `sms: false`, `newsSearch: false`, plus "worker started in the web process".
+> (A first attempt hung on an unreachable `DATABASE_URL` and failed after about 2 minutes with `ETIMEDOUT`: use the new
+> database's Internal URL.) Not verified yet: the app talking to it and a real digest being built.
+> The old SLIYD service and database are not used any more; delete them there.
 
 Date: 2026-10-10. Turns on **one** messaging-server feature: a short daily news digest at your
 chosen time. Two ways (ADR-174):
