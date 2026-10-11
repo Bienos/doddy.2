@@ -46,7 +46,8 @@ struct AlarmLiveActivity: Widget {
     private func countdown(_ state: AlarmPresentationState) -> some View {
         switch state.mode {
         case .countdown(let countdown):
-            Text(timerInterval: Date.now...countdown.fireDate, countsDown: true)
+            // Never a backwards range, even if this draws after the alarm was due (ADR-331).
+            Text(timerInterval: Date.now...max(Date.now, countdown.fireDate), countsDown: true)
         default:
             Image(systemName: "alarm")
         }
