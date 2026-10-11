@@ -191,48 +191,61 @@ final class SharedListsController {
 
     private func sync(_ link: ListShare, cloud: ListCloud, store: MemoryStore) async throws {
         guard let repository else { return }
-        await store.reload()
-        guard let list = store.list(id: link.listID) else {
-            // Deleted on this iPhone: the link went with it (cascade).
-            links[link.listID] = nil
-            return
-        }
-        let database = cloud.database(link.role)
-        let zoneID = ListCloud.zoneID(link)
-        guard let zone = try await cloud.fetch(zoneID, in: database), let remote = zone.state else {
-            // Sharing stopped, or this user left or was removed: keep the list here, unshared.
-            try await repository.remove(listID: link.listID)
-            links[link.listID] = nil
-            problem = String(format: NSLocalizedString("“%@” is no longer shared. It stays on this iPhone.", comment: ""), list.name)
-            return
-        }
-        let local = SharedListState(list)
-        var result = SharedListMerge.merge(base: link.base, local: local, remote: remote)
-        if result.localChanged {
-            do {
-                _ = try await store.replaceShared(link.listID, with: result.merged)
-            } catch ListError.nameTaken {
-                // Another list here has the new name: this iPhone keeps its name, and sends it.
-                let keepName = SharedListState(name: local.name, items: result.merged.items)
-                result = SharedListMerge.Result(merged: keepName, localChanged: true, remoteChanged: true, conflicts: result.conflicts)
-                _ = try await store.replaceShared(link.listID, with: keepName)
+        // The list is read, iCloud is read, and the merge is written over the list. A change made
+        // on this iPhone while iCloud was being read would be overwritten and lost everywhere
+        // (review F1), so the list is read again just before writing; if it changed, the merge
+        // starts again from the new list. After three tries the next sync picks it up.
+        for _ in 1...3 {
+            await store.reload()
+            guard let list = store.list(id: link.listID) else {
+                // Deleted on this iPhone: the link went with it (cascade).
+                links[link.listID] = nil
+                return
             }
+            let database = cloud.database(link.role)
+            let zoneID = ListCloud.zoneID(link)
+            guard let zone = try await cloud.fetch(zoneID, in: database), let remote = zone.state else {
+                // Sharing stopped, or this user left or was removed: keep the list here, unshared.
+                try await repository.remove(listID: link.listID)
+                links[link.listID] = nil
+                problem = String(format: NSLocalizedString("“%@” is no longer shared. It stays on this iPhone.", comment: ""), list.name)
+                return
+            }
+            let local = SharedListState(list)
+            // Read again after iCloud; nothing is written over a list that changed meanwhile.
+            await store.reload()
+            guard store.list(id: link.listID).map(SharedListState.init) == local else { continue }
+            var result = SharedListMerge.merge(base: link.base, local: local, remote: remote)
+            if result.localChanged {
+                do {
+                    _ = try await store.replaceShared(link.listID, with: result.merged)
+                } catch ListError.nameTaken {
+                    // Another list here has the new name: this iPhone keeps its name, and sends it.
+                    guard store.list(id: link.listID).map(SharedListState.init) == local else { continue }
+                    let keepName = SharedListState(name: local.name, items: result.merged.items)
+                    result = SharedListMerge.Result(merged: keepName, localChanged: true, remoteChanged: true, conflicts: result.conflicts)
+                    _ = try await store.replaceShared(link.listID, with: keepName)
+                }
+            }
+            if result.merged != remote {
+                try await cloud.push(result.merged, over: zone, zoneID: zoneID, in: database, me: me)
+            }
+            // Both sides read back before the merge is remembered as the last sync.
+            await store.reload()
+            let back = try await cloud.fetch(zoneID, in: database)
+            guard store.list(id: link.listID).map(SharedListState.init) == result.merged, back?.state == result.merged
+            else { throw SharingError.unconfirmed }
+            if let back { people.merge(back.people) { _, new in new } }
+            if let share = try? await cloud.existingShare(link) { names.merge(ListCloud.names(in: share)) { _, new in new } }
+            let synced = ListShare(
+                listID: link.listID, zoneName: link.zoneName, zoneOwner: link.zoneOwner, role: link.role,
+                base: result.merged, syncedAt: .now)
+            try await repository.save(synced)
+            links[link.listID] = synced
+            return
         }
-        if result.merged != remote {
-            try await cloud.push(result.merged, over: zone, zoneID: zoneID, in: database, me: me)
-        }
-        // Both sides read back before the merge is remembered as the last sync.
-        await store.reload()
-        let back = try await cloud.fetch(zoneID, in: database)
-        guard store.list(id: link.listID).map(SharedListState.init) == result.merged, back?.state == result.merged
-        else { throw SharingError.unconfirmed }
-        if let back { people.merge(back.people) { _, new in new } }
-        if let share = try? await cloud.existingShare(link) { names.merge(ListCloud.names(in: share)) { _, new in new } }
-        let synced = ListShare(
-            listID: link.listID, zoneName: link.zoneName, zoneOwner: link.zoneOwner, role: link.role,
-            base: result.merged, syncedAt: .now)
-        try await repository.save(synced)
-        links[link.listID] = synced
+        // Changed on this iPhone during every try: nothing was written, and the next sync merges it.
+        throw SharingError.unconfirmed
     }
 }
 
