@@ -15,11 +15,15 @@ struct VoiceDoddyView: View {
 
     var body: some View {
         if !hideCharacterArt {
-            figure
-                .id(art)
-                .transition(.opacity)
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: art)
-                .accessibilityHidden(true)
+            // The animation sits on a container that stays, so the swap between poses fades
+            // (on the view that changes identity it would never see `art` change).
+            ZStack {
+                figure
+                    .id(art)
+                    .transition(.opacity)
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: art)
+            .accessibilityHidden(true)
         }
     }
 

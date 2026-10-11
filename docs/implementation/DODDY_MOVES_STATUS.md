@@ -70,3 +70,30 @@ only when the user shares it.
 Not built (need the owner's decision): weather (umbrella pose; a weather source and location) and
 app icon choices (brand). Known gap: widgets, Live Activities and the watch don't read Hide Doddy's
 pictures. Checklist 4j, Z1–Z7. Not compiled for iOS or watchOS.
+
+## ADR-331: hiding pictures everywhere, turned away, and the code review
+- "Hide character artwork" now reaches widgets, Live Activities and the watch through the shared
+  snapshot (`hidesDoddy`). The island falls back to its V4 board; cards and widgets keep their
+  symbols and words.
+- Doddy turned away on "Turned off in Doddy's Settings." (small and medium widgets) and on the
+  watch's hidden-notes screen.
+- A static review of ADR-299/308/313/323 found no definite compile error in the app. Fixed: the
+  watch app catalog's missing AppIcon (build setting), the widget bundle's eleven entries (nested
+  bundle), a possible alarm countdown crash, the voice pose fade, Home's sit cut short, the turn
+  replaying, `ProblemView` accessibility, the share preview with pictures hidden, and one
+  untranslated line. Not a substitute for a build: checklist 4k, H4.
+
+## ADR-380: the whole wave and the storyboards (11 October 2026)
+
+- **Wave:** `DoddyMotion.wave` (five frames, 0.14 s each, once). Home plays it instead of the breaths the
+  first time it shows before noon on a day, then he sits as before. `MorningWave` (DoddyCore, 4 tests)
+  decides and the app keeps only the day, on this iPhone (`home.lastWaveDay`). The morning check-in and
+  the note-reminder explainer wave once too.
+- **Storyboards:** `PanelStory` (page, phone, door, ink, keys) and `PanelStoryView` cross-fade the pack's
+  panels, once. Page: the welcome (as before). Phone: Back Tap intro. Ink: "What I can do". Door: the Face ID
+  cover; it opens only after iOS says yes, for 0.8 s, and a tap skips it. Keys: a six-picture example with
+  captions under "What I can do", never the user's data.
+- **Not built:** the five foreground layers (see ADR-380) and the umbrella pose (weather needs the owner).
+- **Reduce Motion / Hide character artwork:** last panel at once / no pictures (text for the keys example).
+- **Verified (Linux):** `swiftc -parse` of every changed file, core CI, island and strings checks.
+  **Not verified:** everything that draws; Mac checklist 4m.

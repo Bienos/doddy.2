@@ -45,6 +45,9 @@ struct AppEnvironment: Sendable {
     /// Which note carries which recording (ADR-230), and the folder of recordings next to the database.
     var audioRepository: any AudioRepository = UnavailableAudioRepository()
     var audioFiles: AudioFiles = .unavailable
+    /// The learning loop (ADR-440): learned facts, procedures and outcome events, in the same file.
+    /// `nil` when the memory store is not open.
+    var learningService: LearningService?
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -91,7 +94,11 @@ struct AppEnvironment: Sendable {
                 photoRepository: SQLitePhotoRepository(database: database),
                 photoFiles: databaseFile.map(PhotoFiles.beside(database:)) ?? .temporary(),
                 audioRepository: SQLiteAudioRepository(database: database),
-                audioFiles: databaseFile.map(AudioFiles.beside(database:)) ?? .temporary())
+                audioFiles: databaseFile.map(AudioFiles.beside(database:)) ?? .temporary(),
+                learningService: LearningService(
+                    facts: SQLiteLearnedFactRepository(database: database),
+                    procedures: SQLiteProcedureRepository(database: database),
+                    outcomes: SQLiteOutcomeEventRepository(database: database)))
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

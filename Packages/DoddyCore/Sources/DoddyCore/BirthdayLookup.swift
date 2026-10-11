@@ -116,9 +116,11 @@ extension VoiceToolReply {
             default: when = formatter.string(from: birthday.date)
             }
             let leap = birthday.movedFromLeapDay ? " (born 29 Feb)" : ""
-            return "\"\(birthday.name)\" \(when)\(leap)"
+            return "- \"\(ToolData.clean(birthday.name))\" \(when)\(leap)"
         }
-        let more = found.count > UpcomingBirthdays.maxListed ? "; and \(found.count - UpcomingBirthdays.maxListed) more" : ""
-        return "birthdays: from the user's Contacts \(period): \(listed.joined(separator: "; "))\(more). Ages and years are not shared with you; don't guess them."
+        // The names are from Contacts, so they follow as data (ToolData).
+        let more = found.count > UpcomingBirthdays.maxListed ? "…and \(found.count - UpcomingBirthdays.maxListed) more. " : ""
+        return "birthdays: from the user's Contacts \(period), each name with its day:\n" + ToolData.block(Array(listed))
+            + "\n\(more)Ages and years are not shared with you; don't guess them."
     }
 }

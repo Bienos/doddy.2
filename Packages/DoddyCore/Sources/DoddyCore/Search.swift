@@ -94,7 +94,7 @@ public enum MemoryExport {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(
             formatVersion: formatVersion,
-            exportedAtMs: Int64((exportedAt.timeIntervalSince1970 * 1000).rounded()),
+            exportedAtMs: EpochMilliseconds.rounded(exportedAt),
             memories: records,
             listItems: listItems.isEmpty ? nil : listItems,
             corrections: history.isEmpty ? nil : history))

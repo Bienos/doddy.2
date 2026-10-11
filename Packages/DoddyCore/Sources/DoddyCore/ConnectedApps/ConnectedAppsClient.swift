@@ -62,10 +62,23 @@ public struct BackendConnectedAppsClient: ConnectedAppsClient {
         self.transport = transport
     }
 
-    public static func isAllowed(_ url: URL) -> Bool {
+    /// Same, with a token that is sent only to the server it was issued for.
+    public init?(baseURL: URL, boundToken: @escaping @Sendable () -> BoundSessionToken?, transport: any HTTPTransport) {
+        self.init(baseURL: baseURL, sessionToken: { boundToken()?.token(for: baseURL) }, transport: transport)
+    }
+
+    /// Plain http to this machine is for local development (the Simulator); release builds refuse
+    /// it, so a bearer token never travels unencrypted from a shipped app (DOD-11).
+    #if DEBUG
+    public static let allowsLoopbackHTTP = true
+    #else
+    public static let allowsLoopbackHTTP = false
+    #endif
+
+    public static func isAllowed(_ url: URL, allowLoopbackHTTP: Bool = allowsLoopbackHTTP) -> Bool {
         guard let scheme = url.scheme?.lowercased(), let host = url.host?.lowercased(), url.query == nil else { return false }
         if scheme == "https" { return true }
-        return scheme == "http" && ["localhost", "127.0.0.1", "::1"].contains(host)
+        return allowLoopbackHTTP && scheme == "http" && ["localhost", "127.0.0.1", "::1"].contains(host)
     }
 
     private static let path = "v1/connected-apps/google-calendar"
@@ -124,6 +137,31 @@ public struct BackendConnectedAppsClient: ConnectedAppsClient {
         if status == 401 { throw .unauthenticated }
         guard let body = try? decoder.decode(ConnectedAppsErrorBody.self, from: data) else { throw .unreadableResponse }
         throw .server(code: body.error.code, message: body.error.message, retryAfterSeconds: body.error.retryAfterSeconds, receipt: body.error.receipt)
+    }
+}
+
+/// A Doddy server session token together with the server that issued it. The clients send it only
+/// to that server, so changing the address in Settings can't hand the token to another host (DOD-11).
+public struct BoundSessionToken: Codable, Equatable, Sendable {
+    public let token: String
+    /// `scheme://host:port` of the server that issued the token.
+    public let origin: String
+
+    public init?(token: String, issuedBy server: URL) {
+        guard !token.isEmpty, let origin = Self.origin(of: server) else { return nil }
+        self.token = token
+        self.origin = origin
+    }
+
+    /// The token, or nil when `server` is not the one it was issued for.
+    public func token(for server: URL) -> String? {
+        Self.origin(of: server) == origin ? token : nil
+    }
+
+    static func origin(of url: URL) -> String? {
+        guard let scheme = url.scheme?.lowercased(), let host = url.host?.lowercased(), !host.isEmpty else { return nil }
+        let port = url.port ?? (scheme == "https" ? 443 : scheme == "http" ? 80 : -1)
+        return "\(scheme)://\(host):\(port)"
     }
 }
 

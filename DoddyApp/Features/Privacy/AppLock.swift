@@ -80,12 +80,59 @@ enum PrivateNotesStore {
 }
 
 /// What covers Doddy while it is locked (ADR-310): nothing of the app shows through.
+/// The door (ADR-380): while locked, Doddy draws a door (the pack's 039, panel 2). When iOS says
+/// yes, RootView keeps this cover up for `doorTime` while the door opens and he walks through
+/// (panels 3 and 4); a tap skips it. Only after a real unlock, and never with Reduce Motion or
+/// "Hide Doddy's pictures".
 struct AppLockView: View {
+    static let doorTime = 0.8
     private let lock = AppLock.shared
+    /// Called by a tap while the door opens: take the cover away now.
+    var skip: () -> Void = {}
+    @State private var walkedThrough = false
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     var body: some View {
+        if lock.isLocked {
+            locked
+        } else {
+            door
+        }
+    }
+
+    private var door: some View {
+        ZStack {
+            Image(decorative: PanelStory.door.assetName(3)).resizable().scaledToFit()
+            Image(decorative: PanelStory.door.assetName(4)).resizable().scaledToFit()
+                .opacity(walkedThrough ? 1 : 0)
+        }
+        .frame(height: 280)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .animation(.easeInOut(duration: 0.3), value: walkedThrough)
+        .accessibilityHidden(true)
+        .doddyArtMarker("doddy.story.door")
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.canvas)
+        .contentShape(Rectangle())
+        .onTapGesture { skip() }
+        .task {
+            try? await Task.sleep(for: .seconds(AppLockView.doorTime / 2))
+            walkedThrough = true
+        }
+    }
+
+    private var locked: some View {
         VStack(spacing: 16) {
-            Image(systemName: "lock.fill").font(.largeTitle).accessibilityHidden(true)
+            if hideCharacterArt {
+                Image(systemName: "lock.fill").font(.largeTitle).accessibilityHidden(true)
+            } else {
+                Image(decorative: PanelStory.door.assetName(2))
+                    .resizable().scaledToFit()
+                    .frame(height: 220)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .accessibilityHidden(true)
+                    .doddyArtMarker("doddy.story.door")
+            }
             Text("Doddy is locked").font(.title2.weight(.medium))
             Button {
                 Task { await lock.unlock(reason: NSLocalizedString("Open Doddy", comment: "")) }

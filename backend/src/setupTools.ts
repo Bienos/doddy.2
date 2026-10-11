@@ -2,12 +2,12 @@ import { Composio } from "@composio/core";
 import { CLOUD_TOOLS, TOOLKIT_IDS, TOOLKITS, type ToolkitId } from "./tools/catalog.js";
 
 /**
- * Owner-only, one-time development setup for the online accounts (Gmail, Drive, Notion, Todoist).
+ * Owner-only, one-time development setup for the online accounts (Gmail, Drive, Notion, Todoist, Outlook).
  * Reads COMPOSIO_API_KEY from the environment (never prints it).
  *   npm run setup:tools                       list existing auth configs and the tool versions to pin
  *   npm run setup:tools -- --create           also create a Composio-managed auth config per toolkit
  *   npm run setup:tools -- --create gmail     only for the named toolkit(s)
- * Auth configs for Gmail and Drive are limited to the scopes Doddy needs (see tools/catalog.ts).
+ * Auth configs for Gmail, Drive and Outlook are limited to the scopes Doddy needs (see tools/catalog.ts).
  * Prints the non-secret lines to copy into backend/.env.local. Creating an auth config is free and
  * is undone by deleting it in the Composio dashboard. NOT RUN in CI: it needs a real project key.
  */

@@ -57,13 +57,18 @@ final class PlanTests: XCTestCase {
         let text = refusal(parse(#"[{"tool":"save_memory","text":"Key in the blue tin"},{"tool":"create_reminder","title":"Take the key","due":"2026-10-10T09:00"}]"#))
         XCTAssertTrue(text.hasPrefix("failed: not added yet: step 2 (create_reminder)"), text)
         XCTAssertTrue(text.contains("call propose_plan again"), text)
-        XCTAssertTrue(text.hasSuffix("Nothing was done."), text)
+        // The problem quotes what the agent sent, so it follows the first line as data.
+        let firstLine = text.components(separatedBy: "\n")[0]
+        XCTAssertTrue(firstLine.hasSuffix("Nothing was done."), text)
+        XCTAssertTrue(text.contains("\n<<<DATA\nProblem: 2026-10-10 09:00 has already passed"), text)
     }
 
     func testToolsThatLeaveDoddyOrNeedTheServerAreNotSteps() {
         for tool in [VoiceToolName.openMap, VoiceToolName.draftMessage, VoiceToolName.runShortcut, "check_email", "web_search", VoiceToolName.proposePlan] {
             let text = refusal(parse([["tool": tool, "place": "Hala Koszyki"]]))
-            XCTAssertTrue(text.contains("step 1 (\(tool)) can't be part of a plan"), text)
+            XCTAssertTrue(text.hasPrefix("failed: step 1 can't be part of a plan"), text)
+            // The name is the agent's text, so it follows as data.
+            XCTAssertTrue(text.hasSuffix("\n<<<DATA\nTool: \"\(tool)\"\nDATA>>>"), text)
         }
     }
 
@@ -133,9 +138,36 @@ final class PlanTests: XCTestCase {
         XCTAssertEqual(PlanProposal.confirmTitle([parsed[0]]), "Draft 1 email")
         XCTAssertEqual(PlanProposal.confirmTitle([parsed[1], parsed[1]]), "Add 2 tasks")
         XCTAssertEqual(PlanProposal.confirmTitle(parsed), "Do 2 things")
-        XCTAssertTrue(refusal(parse([["tool": "draft_email", "to": ["not", "an", "object"]], ["tool": "x"]])).contains("step 2 (x)"))
+        let unknown = refusal(parse([["tool": "draft_email", "to": ["not", "an", "object"]], ["tool": "x"]]))
+        XCTAssertTrue(unknown.hasPrefix("failed: step 2 can't be part of a plan") && unknown.contains("Tool: \"x\""), unknown)
         let blocked = PlanBlock.onlineAccount(screen: "Gmail isn't connected", reply: "failed: Gmail isn't connected or needs reconnecting. Nothing was done.")
         XCTAssertEqual(blocked.screenText, "Gmail isn't connected")
         XCTAssertTrue(PlanReply.summary([(parsed[0], "drafted: ok")]).contains("\"drafted:\""))
+    }
+
+    /// Review D3: every step a plan may hold, when done, starts as the summary tells the agent a
+    /// done step starts, including a list step.
+    func testTheSummaryCountsEveryDoneStepAsDone() throws {
+        let listID = UUID()
+        let milk = ListItem(id: UUID(), listID: listID, text: "milk", source: .voice, addedAt: now, doneAt: nil, position: 0)
+        let note = try MemoryRecord(id: UUID(), rawText: "Mum's number", source: .explicitVoice, capturedAt: now)
+        let receipt = ReminderReceipt(title: "Rent", listTitle: "Reminders", due: nil)
+        let event = CalendarEventDraft(title: "Lunch", start: now, end: now.addingTimeInterval(3600), allDay: false, location: nil, notes: nil)
+        let done = [
+            VoiceToolReply.listAdded(ListAddResult(added: [milk], alreadyThere: [], tooLong: [], noRoom: []), list: "Shopping"),
+            VoiceToolReply.saved(note),
+            VoiceToolReply.reminder(.added(receipt)),
+            VoiceToolReply.eventAdded(event, calendar: calendar),
+            VoiceToolReply.timerAdded(TimerDraft(seconds: 60, label: nil), endsAt: now, calendar: calendar),
+        ]
+        let summary = PlanReply.summary([])
+        for reply in done {
+            let prefix = PlanReply.donePrefixes.first { reply.hasPrefix($0) }
+            XCTAssertNotNil(prefix, reply)
+            XCTAssertTrue(summary.contains("\"\(prefix ?? "")\""), summary)
+        }
+        // Nothing added is not a done step.
+        let nothing = VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "Shopping")
+        XCTAssertFalse(PlanReply.donePrefixes.contains { nothing.hasPrefix($0) })
     }
 }

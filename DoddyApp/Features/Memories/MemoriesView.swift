@@ -15,6 +15,8 @@ struct MemoriesView: View {
     @State private var pinMessage: String?
     /// Notes or Lists (ADR-216).
     @AppStorage(PreferenceKey.memoriesShowsLists) private var showsLists = false
+    /// One tag's notes (ADR-333); cleared when no note has it any more.
+    @State private var tag: String?
 
     /// The filter in effect: the chosen type, but only while a filter is offered and a note of
     /// that type exists. When it stops applying the choice is cleared (see `onChange` below),
@@ -71,10 +73,17 @@ struct MemoriesView: View {
                         if !choices.isEmpty {
                             MemoryTypeFilterRow(choices: choices, total: store.memories.count, selection: $category, active: active)
                         }
+                        // Tags the user wrote with # (ADR-333). A private note's tags only after Face ID.
+                        let tagged = AppLock.shared.privateUnlocked ? store.memories : PrivateNotesStore.current().shareable(store.memories)
+                        let tags = NoteTags.counts(tagged)
+                        let activeTag = tags.contains { $0.tag == tag } ? tag : nil
+                        if !tags.isEmpty {
+                            MemoryTagRow(tags: tags, selection: $tag, active: activeTag)
+                        }
                         let pins = PinnedNotes(stored: pinnedRaw)
                         LazyVStack(spacing: 12) {
                             // Pinned notes first (ADR-187), then the chosen order.
-                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories)))) { record in
+                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: NoteTags.filter(MemoryFilter.apply(active, to: store.memories), tag: activeTag)))) { record in
                                 let isPinned = pins.isPinned(record.id)
                                 let hides = PrivateNotesStore.current().contains(record.id) && !AppLock.shared.privateUnlocked
                                 MemoryLinkCard(record: record, isPinned: isPinned, hidesText: hides)
@@ -161,6 +170,39 @@ private struct MemorySortMenu: View {
         }
         .accessibilityLabel("Order, \(Self.title(MemorySort(stored: sortRaw)))")
         .accessibilityIdentifier("memories.sort")
+    }
+}
+
+/// One chip per tag in use (ADR-333), most used first. Selecting the active chip again clears it.
+struct MemoryTagRow: View {
+    let tags: [(tag: String, count: Int)]
+    @Binding var selection: String?
+    let active: String?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(tags, id: \.tag) { item in
+                    let isOn = active == item.tag
+                    Button {
+                        selection = isOn ? nil : item.tag
+                    } label: {
+                        Text("#\(item.tag) \(item.count)")
+                            .font(.subheadline)
+                            .padding(.horizontal, 14)
+                            .frame(minHeight: 44)
+                            .background(isOn ? Theme.ink : Theme.quietSurface, in: Capsule())
+                            .foregroundStyle(isOn ? Theme.canvas : Theme.ink)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(String(format: NSLocalizedString("Tag %@, %lld notes", comment: ""), item.tag, item.count))
+                    .accessibilityAddTraits(isOn ? .isSelected : [])
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(NSLocalizedString("Show notes with one tag", comment: ""))
+        .accessibilityIdentifier("memories.tags")
     }
 }
 

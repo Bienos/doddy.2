@@ -41,13 +41,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy looks up a contact by name when you ask, and reads birthdays for the people you pick to be reminded of. The details stay on this iPhone. Turn this off in Settings, Connections."
+            "value": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy wyszukuje kontakt po imieniu, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. Szczegóły zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+            "value": "Doddy wyszukuje kontakt po imieniu albo sprawdza, czyje urodziny się zbliżają, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. W rozmowie głosowej znalezione imiona oraz dzień i miesiąc urodzin trafiają do ElevenLabs, które obsługuje głos Doddy'ego; numery, adresy e-mail i lata urodzenia zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
         }
       }
@@ -75,13 +75,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave) and to save where you parked. It stays on this iPhone. Doddy doesn't track where you go."
+            "value": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu) oraz do zapisania miejsca parkowania. Zostaje na tym iPhonie. Doddy nie śledzi, dokąd chodzisz."
+            "value": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu), do zapisania miejsca parkowania i do obliczenia z Mapami Apple, kiedy wyjść, żeby gdzieś dotrzeć. Doddy jej nie przechowuje i nie śledzi, dokąd chodzisz."
           }
         }
       }
