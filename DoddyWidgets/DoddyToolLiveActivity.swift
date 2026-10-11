@@ -11,8 +11,7 @@ struct DoddyToolLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DoddyToolAttributes.self) { context in
             ToolLockScreenView(attributes: context.attributes, state: context.state, isStale: context.isStale)
-                .activityBackgroundTint(Color("CardBackground"))
-                .activitySystemActionForegroundColor(Color("Ink"))
+                .doddyCreamLockScreen()
         } dynamicIsland: { context in
             let scene = context.attributes.islandScene(context.state, isStale: context.isStale)
             let startedAt = context.attributes.startedAt
