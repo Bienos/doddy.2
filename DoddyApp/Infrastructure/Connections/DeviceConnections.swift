@@ -151,7 +151,8 @@ final class DeviceConnections {
               CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
             return (.unconfirmed, nil)
         }
-        return (.verified, identifier)
+        // Undo removes a single event only, so a repeating one isn't offered for undo.
+        return (.verified, draft.repeats == nil ? identifier : nil)
     }
 
     /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the

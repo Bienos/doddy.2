@@ -114,6 +114,7 @@ extension MemoryStore {
     /// Doddy left them (ActivityUndo.listItemsToUndo), then the list is read back. When a write
     /// throws, a fresh look decides: all still as Doddy left them means nothing was written.
     func undoFromActivity(_ undo: ActivityUndo) async -> UndoResult {
+        if case .savedNote(let id, let text) = undo { return await undoSavedNote(id: id, text: text) }
         guard let listID = undo.listID else { return .notDone("That isn't a list change.") }
         await reload()
         guard let items = undo.listItemsToUndo(in: list(id: listID)), !items.isEmpty else { return .leftAlone }
@@ -132,6 +133,32 @@ extension MemoryStore {
         }
         await listChanged(listID)
         return undo.listUndoChecks(items, after: list(id: listID)) ? .undone : .notSure
+    }
+
+    /// Undo of a note Doddy saved by voice (ADR-277): deleted only while it is exactly as saved,
+    /// with nothing added to it; then the store is read again to check it's gone. The notes
+    /// screen still offers its own short Undo for the delete, as for any delete.
+    private func undoSavedNote(id: UUID, text: String) async -> UndoResult {
+        await reload()
+        guard let record = record(id: id) else { return .leftAlone }
+        let hasReminder: Bool
+        do {
+            hasReminder = try await environment.noteReminders?.reminder(forMemory: id) != nil
+        } catch {
+            return .notDone("Doddy couldn't check the note's reminder.")
+        }
+        guard ActivityUndo.noteUnchanged(
+            record, savedText: text, corrections: corrections.filter { $0.memoryID == id }.count,
+            hasPhoto: photos[id] != nil, hasRecording: recordings[id] != nil, hasReminder: hasReminder) else {
+            return .leftAlone
+        }
+        do {
+            try await delete(id: id)
+        } catch {
+            await reload()
+            return self.record(id: id) == nil ? .notSure : .notDone(UserFacingError.message(for: error))
+        }
+        return self.record(id: id) == nil ? .undone : .notSure
     }
 
     private func listChanged(_ listID: UUID) async {

@@ -215,7 +215,9 @@ public struct ActivityRequest: Equatable, Sendable {
             case .clear: return ActivityRequest(app: .memories, title: "Clear parking spot", detail: nil, isLookup: false)
             }
         case .addIngredients(let proposal):
-            return ActivityRequest(app: .memories, title: "Add ingredients to a list", detail: "“\(proposal.list)” · \(proposal.dish)", isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Add ingredients to a list", detail: "“\(proposal.list)” · \(proposal.dish)",
+                logDetail: "\(proposal.items.count) item\(proposal.items.count == 1 ? "" : "s")", isLookup: false)
         case .convertCurrency(let request):
             // Only that the rates file was fetched; the amount stays in the conversation (ADR-300).
             return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
@@ -346,9 +348,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
         if text.hasPrefix("not found:") { return (.notDone, "Doddy couldn't find it, so nothing changed.") }
-        // Round 4 (ADR-301, ADR-303): a parking spot removed and checked; a Todoist task moved,
-        // with the due Todoist sent back.
-        if text.hasPrefix("cleared:") || text.hasPrefix("moved: Todoist task") { return (.done, nil) }
+        // Round 3 (ADR-280, ADR-283): "partly" means only some of the ticked ones changed, so the
+        // row says which part.
+        if text.hasPrefix("partly ") { return (.done, ActivityLog.partlyNote) }
         // Lists (ADR-272): nothing new added only because every item was already there.
         if text.hasPrefix("not added:"), text.contains("Already on the list, not added again:"),
            !text.contains("Too long"), !text.contains("the list is full") {
@@ -398,6 +400,9 @@ public enum ActivityLog {
             id: entry.id, at: entry.at, app: entry.app, title: entry.title, detail: nil, outcome: entry.outcome,
             note: entry.note, reminderKey: entry.reminderKey, checkedAt: entry.checkedAt, plan: entry.plan)
     }
+
+    /// The note on a several-at-once row where only some changed (ADR-280).
+    public static let partlyNote = "Only some of them were changed."
 
     public static let interruptedNote = "Doddy closed before this finished. Check before asking again, so it isn't done twice."
 

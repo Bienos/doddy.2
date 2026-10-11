@@ -591,7 +591,12 @@ public enum CameraShortcut {
 public enum VoiceToolReply {
     /// How a reply starts when the change happened and was read back. "What Doddy did" and the
     /// plan summary both read these, so a new result verb must be added here (review C1, D3).
-    public static let donePrefixes = ["added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:"]
+    public static let donePrefixes = [
+        "added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:",
+        // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
+        // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
+        "moved:", "turned off:", "cleared:",
+    ]
     /// List results: `added to the list: 1 item.`, then the list's name and the items as data
     /// (listAdded, listChanged).
     public static let listDonePrefixes = ["added to the list:", "ticked on the list:", "removed on the list:"]
