@@ -15,24 +15,26 @@ says yes.
   | Morning check-in | 08:00, weekdays only | yes | local notification, shows no note; iOS asks first |
   | Evening wrap-up | 21:00 every day | only with Reminders connected | same; without Reminders its screen has nothing to show (owner, 2026-10-11) |
   | Weekly tidy-up | Sunday 18:00 | yes | same; nothing is deleted unless tapped |
+  | Weekly look-back (ADR-306) | Sunday 19:00 | yes | same; an hour after the tidy-up so they never arrive together (owner, 2026-10-11). Settings' own default (18:00) is unchanged |
   | Use "About you" answers in voice conversations | — | **no** | sends the answers to ElevenLabs; only offered when answers are saved |
 - **Rules** (`Packages/DoddyCore/Sources/DoddyCore/QuickStart.swift`, `QuickStart.plan`):
   - nothing changes until **Turn these on**;
   - an unticked item is left as it is, never turned off;
   - an item already on is neither offered nor changed, so a time picked in Settings is kept.
 - **Applying:** each setting is stored, then applied through the existing
-  `MorningCheckInScheduler`, `EveningWrapUpScheduler` and `TidyUpScheduler`, one after the other, so
+  `MorningCheckInScheduler`, `EveningWrapUpScheduler`, `TidyUpScheduler` and
+  `WeeklyLookBackScheduler`, one after the other, so
   iOS asks about notifications only once. The result screen reports only what was read back from
   iOS's pending notifications, or from UserDefaults for the profile switch. If notifications are off,
   it says so and doesn't claim anything is set.
 - **Unchanged:** the defaults in Settings. Anyone who taps **Not now** has exactly the settings they
   had before this change.
-- **Polish:** 18 new lines in `l10n/pl.json`; catalog rebuilt.
+- **Polish:** 20 new lines in `l10n/pl.json`; catalog rebuilt.
 
 ## Tests
-- `Packages/DoddyCore/Tests/DoddyCoreTests/QuickStartTests.swift` (8) covers what is pre-ticked (the
+- `Packages/DoddyCore/Tests/DoddyCoreTests/QuickStartTests.swift` (9) covers what is pre-ticked (the
   wrap-up only with Reminders connected), the
-  owner's times, that unticked and already-on items are left alone, that the profile is shared only
+  owner's times, that the look-back and the tidy-up never share a minute, that unticked and already-on items are left alone, that the profile is shared only
   when ticked and saved, and that the stored settings read back unchanged.
 - `DoddyUITests/LaunchSmokeTests.swift`: the first-use tests now pass through the Quick start. With
   nothing saved, the profile row is absent. After saving answers, the profile row is shown and unticked.
