@@ -47,6 +47,8 @@ private struct ToolButtons: View {
     let kind: DoddyToolAttributes.Kind
     let state: DoddyToolAttributes.ContentState
     let scene: IslandScene
+    /// The Lock Screen card has room for 44 pt tap areas; the island keeps 34 pt.
+    var tall = false
 
     private var over: Bool { state.isFinished || (!scene.live && !state.isPaused) }
 
@@ -57,17 +59,17 @@ private struct ToolButtons: View {
                     Button(intent: ToggleDoddyToolPauseIntent(kind)) {
                         IslandPillLabel(title: state.isPaused ? "Resume" : "Pause",
                                         systemImage: state.isPaused ? "play.fill" : "pause.fill",
-                                        prominent: state.isPaused)
+                                        prominent: state.isPaused, tall: tall)
                     }
                     .buttonStyle(.plain)
                 }
                 Button(intent: StopDoddyToolIntent(kind)) {
-                    IslandPillLabel(title: "Stop", systemImage: "stop.fill")
+                    IslandPillLabel(title: "Stop", systemImage: "stop.fill", tall: tall)
                 }
                 .buttonStyle(.plain)
             } else {
                 Button(intent: StopDoddyToolIntent(kind)) {
-                    IslandPillLabel(title: "Dismiss", systemImage: "xmark")
+                    IslandPillLabel(title: "Dismiss", systemImage: "xmark", tall: tall)
                 }
                 .buttonStyle(.plain)
             }
@@ -112,7 +114,7 @@ private struct ToolLockScreenView: View {
                         .foregroundStyle(Color("AccentText"))
                 }
             }
-            ToolButtons(kind: attributes.kind, state: state, scene: scene)
+            ToolButtons(kind: attributes.kind, state: state, scene: scene, tall: true)
         }
         .padding(16)
     }

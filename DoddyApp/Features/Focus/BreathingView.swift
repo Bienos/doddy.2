@@ -125,7 +125,7 @@ struct BreathingView: View {
                                   live: true, maxSize: CGSize(width: 160, height: 140))
                         .scaleEffect(reduceMotion ? 1 : (breathingIn ? 0.9 + 0.15 * phase.progress : 1.05 - 0.15 * phase.progress))
                     Text(breathingIn ? "Breathe in" : "Breathe out")
-                        .font(.system(size: 32, weight: .medium))
+                        .scaledSystemFont(size: 32, weight: .medium, relativeTo: .title)
                         .foregroundStyle(Color.islandCream)
                         .accessibilityAddTraits(.updatesFrequently)
                     Text("\(Int(phase.secondsLeft.rounded(.up)))")

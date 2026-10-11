@@ -340,6 +340,7 @@ struct VoiceChoiceView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.title3)
                             .foregroundStyle(Theme.ink)
+                            .accessibilityHidden(true)
                     }
                 }
                 .contentShape(Rectangle())

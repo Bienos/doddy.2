@@ -67,6 +67,17 @@
         }
       }
     },
+    "%lld items left": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozostało pozycji: %lld"
+          }
+        }
+      }
+    },
     "%lld left": {
       "extractionState": "manual",
       "localizations": {
@@ -679,6 +690,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Po zmianie"
+          }
+        }
+      }
+    },
+    "Alarm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budzik"
           }
         }
       }
@@ -2817,6 +2839,17 @@
         }
       }
     },
+    "Doddy alarm, snoozed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budzik Doddy, drzemka"
+          }
+        }
+      }
+    },
     "Doddy asks for “While Using” only, never “Always”.": {
       "extractionState": "manual",
       "localizations": {
@@ -3462,6 +3495,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stuknij dwukrotnie, aby pominąć."
+          }
+        }
+      }
+    },
+    "Double-tap to start, double-tap again to stop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dotknij dwukrotnie, aby zacząć, i jeszcze raz dwukrotnie, aby zakończyć"
           }
         }
       }
@@ -4375,6 +4419,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ugruntowany"
+          }
+        }
+      }
+    },
+    "Held": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przytrzymane"
           }
         }
       }
@@ -5853,6 +5908,17 @@
         }
       }
     },
+    "Muted": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciszony"
+          }
+        }
+      }
+    },
     "My feeds": {
       "extractionState": "manual",
       "localizations": {
@@ -6135,6 +6201,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Następnie"
+          }
+        }
+      }
+    },
+    "Next reminder at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Następne przypomnienie o %@"
           }
         }
       }
@@ -6531,6 +6608,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To nie te same słowa. Sprawdź, czy chodziło Ci o tę notatkę."
+          }
+        }
+      }
+    },
+    "Not ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niezaznaczone"
           }
         }
       }
@@ -7026,6 +7114,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "OK"
+          }
+        }
+      }
+    },
+    "Off": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączone"
           }
         }
       }
@@ -9670,6 +9769,17 @@
         }
       }
     },
+    "Set": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione"
+          }
+        }
+      }
+    },
     "Set alarm": {
       "extractionState": "manual",
       "localizations": {
@@ -12145,6 +12255,17 @@
         }
       }
     },
+    "Ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznaczone"
+          }
+        }
+      }
+    },
     "Ticked by %@": {
       "extractionState": "manual",
       "localizations": {
@@ -13080,6 +13201,17 @@
         }
       }
     },
+    "Waiting for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka na Ciebie"
+          }
+        }
+      }
+    },
     "Warm and engaging": {
       "extractionState": "manual",
       "localizations": {
@@ -13593,6 +13725,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Słowa zostają dokładnie takie jak w pliku. Listy kontrolne z Keep stają się listami. Zdjęcia, nagrania i etykiety z Keep nie są importowane. Zaimportowane notatki są oznaczone „Zaimportowano z pliku”."
+          }
+        }
+      }
+    },
+    "Working": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W toku"
           }
         }
       }

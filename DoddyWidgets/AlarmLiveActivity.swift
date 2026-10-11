@@ -25,6 +25,7 @@ struct AlarmLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.leading) {
                     if WidgetDoddyArt.isHidden {
                         Image(systemName: "alarm")
+                            .accessibilityHidden(true)
                     } else {
                         IslandPoseView(pose: .yawnStretch, maxSize: CGSize(width: 44, height: 52))
                             .padding(.leading, 6)
@@ -34,10 +35,12 @@ struct AlarmLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.bottom) { Text("Snoozed").font(.caption) }
             } compactLeading: {
                 Image(systemName: "zzz")
+                    .accessibilityLabel("Snoozed")
             } compactTrailing: {
                 countdown(context.state).monospacedDigit().frame(maxWidth: 44)
             } minimal: {
                 Image(systemName: "alarm")
+                    .accessibilityLabel("Doddy alarm, snoozed")
             }
         }
     }
@@ -50,6 +53,7 @@ struct AlarmLiveActivity: Widget {
             Text(timerInterval: Date.now...max(Date.now, countdown.fireDate), countsDown: true)
         default:
             Image(systemName: "alarm")
+                .accessibilityLabel("Alarm")
         }
     }
 }

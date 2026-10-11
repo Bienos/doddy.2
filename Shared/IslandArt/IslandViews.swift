@@ -188,9 +188,7 @@ struct IslandSignView: View {
             }
             .accessibilityHidden(true)
         case .symbol(let name, let tint):
-            Image(systemName: name)
-                .font(presentation == .expanded ? .body : .caption)
-                .foregroundStyle(color(tint))
+            symbolImage(name, tint)
         case .text(let text):
             Text(text)
                 .font(.system(size: presentation == .minimal ? 12 : 13, weight: .bold))
@@ -211,6 +209,31 @@ struct IslandSignView: View {
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(live ? Color.islandOrange : Color.islandSecondary)
+                .accessibilityLabel("Done")
+        }
+    }
+
+    /// Expanded, the title and subtitle beside the sign already say it, so the symbol stays silent.
+    /// Compact and minimal have no text, so the known symbols are named; any other stays silent.
+    @ViewBuilder
+    private func symbolImage(_ name: String, _ tint: IslandTint) -> some View {
+        let image = Image(systemName: name)
+            .font(presentation == .expanded ? .body : .caption)
+            .foregroundStyle(color(tint))
+        if presentation != .expanded, let label = symbolLabel(name) {
+            image.accessibilityLabel(label)
+        } else {
+            image.accessibilityHidden(true)
+        }
+    }
+
+    private func symbolLabel(_ name: String) -> String? {
+        switch name {
+        case "exclamationmark.triangle.fill": NSLocalizedString("Needs attention", comment: "")
+        case "mic.slash.fill": NSLocalizedString("Muted", comment: "")
+        case "hand.tap.fill": NSLocalizedString("Waiting for you", comment: "")
+        case "pause.fill": NSLocalizedString("Paused", comment: "")
+        default: nil
         }
     }
 
@@ -252,16 +275,19 @@ struct IslandPillLabel: View {
     let title: String
     let systemImage: String
     var prominent = false
+    /// 44 pt tall for the Lock Screen card, which has room; the island keeps the boards' 34 pt.
+    var tall = false
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
+                .accessibilityHidden(true)
             Text(title)
         }
         .font(.system(size: 13, weight: .semibold))
         .foregroundStyle(prominent ? Color.islandBlack : Color.islandCream)
         .padding(.horizontal, 15)
-        .frame(height: 34)
+        .frame(height: tall ? 44 : 34)
         .background(prominent ? Color.islandCream : Color.islandPill, in: Capsule())
         .contentShape(Capsule())
     }

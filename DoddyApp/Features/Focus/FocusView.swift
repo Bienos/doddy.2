@@ -98,7 +98,7 @@ struct FocusView: View {
                                 .monospacedDigit()
                         }
                     }
-                    .font(.system(size: 44, weight: .medium))
+                    .scaledSystemFont(size: 44, weight: .medium, relativeTo: .largeTitle)
                     .foregroundStyle(Color.islandCream)
                     .accessibilityIdentifier("focus.timeLeft")
                     Text(session.label ?? (session.isPaused ? "Ready when you are" : "One thing at a time"))

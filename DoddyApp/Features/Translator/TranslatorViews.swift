@@ -9,6 +9,7 @@ import SwiftUI
 struct TranslatorScreen: View {
     let controller: VoiceSessionController
     let session: TranslatorSession
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         switch session.setup.kind {
@@ -180,7 +181,12 @@ struct TranslatorScreen: View {
                 .onChanged { _ in if controller.heldSide != side { Task { await controller.beginHold(side) } } }
                 .onEnded { _ in Task { await controller.endHold() } })
             .accessibilityAddTraits(.isButton)
-            .accessibilityValue(held ? "Held" : "")
+            .accessibilityValue(held ? NSLocalizedString("Held", comment: "") : "")
+            // VoiceOver can't hold: a double-tap starts it and another ends it.
+            .accessibilityHint("Double-tap to start, double-tap again to stop")
+            .accessibilityAction {
+                Task { if controller.heldSide == side { await controller.endHold() } else { await controller.beginHold(side) } }
+            }
     }
 
     // MARK: Listen only
@@ -236,7 +242,7 @@ struct TranslatorScreen: View {
                     }
                 }
                 .onChange(of: session.turns.count) { _, _ in
-                    if let last = session.turns.last { withAnimation { proxy.scrollTo(last.id, anchor: .bottom) } }
+                    if let last = session.turns.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
             }
             Button { Task { await controller.toggleMute() } } label: {

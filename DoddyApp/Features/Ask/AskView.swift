@@ -206,7 +206,7 @@ struct AskView: View {
                 Button {
                     send()
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill").font(.title)
+                    Image(systemName: "arrow.up.circle.fill").font(.title).frame(width: 44, height: 44)
                 }
                 .disabled(!controller.canSend)
                 .accessibilityLabel("Send")

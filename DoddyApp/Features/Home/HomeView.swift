@@ -338,12 +338,13 @@ extension HomeView {
 private struct SlideIn: ViewModifier {
     let shown: Bool
     let delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
             .opacity(shown ? 1 : 0)
             .offset(y: shown ? 0 : 28)
-            .animation(.spring(duration: 0.5, bounce: 0.3).delay(delay), value: shown)
+            .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.3).delay(delay), value: shown)
     }
 }
 

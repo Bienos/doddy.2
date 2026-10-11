@@ -287,9 +287,14 @@ struct DoddyTabBar: View {
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .foregroundStyle(selectedTab == tab ? Theme.ink : Theme.secondaryText)
+            // Bold and a pill, not only a darker colour, so the open tab is clear without colour.
+            .fontWeight(selectedTab == tab ? .bold : .regular)
+            .background(selectedTab == tab ? Theme.canvas : Color.clear, in: Capsule())
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain).accessibilityIdentifier(id).accessibilityLabel(title)
+        // At the largest text sizes the bar stays compact; holding a tab shows it large.
+        .accessibilityShowsLargeContentViewer { Label(title, systemImage: icon) }
         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
     }
 }

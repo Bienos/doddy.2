@@ -252,6 +252,7 @@ private struct LockScreenView: View {
                 if shown.state.savedCount > 0 {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Palette.confirmed)
+                        .accessibilityHidden(true)
                 }
                 Text(shown.detail ?? "")
                     .foregroundStyle(shown.state.savedCount > 0 ? Palette.confirmed : Palette.secondary)

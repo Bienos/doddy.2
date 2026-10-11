@@ -108,6 +108,7 @@ struct WatchListView: View {
                     }
                     .disabled(working != nil)
                     .accessibilityLabel("\(item.text), \(item.isDone ? "ticked" : "not ticked")")
+                    .accessibilityValue(working == item.id ? NSLocalizedString("Working", comment: "") : "")
                 }
                 if list.openCount + list.doneCount > list.items.count {
                     Text("More on your iPhone.").font(.caption2).foregroundStyle(.secondary)

@@ -144,6 +144,17 @@
         }
       }
     },
+    "Working": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W toku"
+          }
+        }
+      }
+    },
     "Your note": {
       "extractionState": "manual",
       "localizations": {

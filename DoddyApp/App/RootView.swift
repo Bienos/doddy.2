@@ -354,6 +354,7 @@ private struct UndoDeleteBar: View {
         HStack(spacing: 12) {
             Image(systemName: failed ? "exclamationmark.triangle" : "trash")
                 .foregroundStyle(failed ? Theme.error : Theme.secondaryText)
+                .accessibilityHidden(true)
             Text(failed
                  ? "Couldn't bring the \(deleted.record.category == .list ? "list" : "note") back."
                  : deleted.record.category == .list ? "List deleted." : "Note deleted.")

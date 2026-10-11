@@ -110,6 +110,7 @@ struct EveningWrapUpView: View {
                         HStack(alignment: .firstTextBaseline, spacing: 12) {
                             Image(systemName: selected.contains(reminder.id) ? "checkmark.circle.fill" : "circle")
                                 .foregroundStyle(selected.contains(reminder.id) ? Theme.accentText : Theme.secondaryText)
+                                .accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(reminder.title)
                                 Text("\(reminder.listTitle) · \(ReminderText.due(reminder.due))")

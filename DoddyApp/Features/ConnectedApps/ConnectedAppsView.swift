@@ -261,11 +261,12 @@ struct ConnectedAppsView: View {
                     } else {
                         Button("Save") { Task { await save(event, index: index, window: result.window) } }
                             .buttonStyle(.borderless)
+                            .frame(minHeight: 44)
                             .disabled(!store.isStorageAvailable)
                             .accessibilityLabel("Save \(event.title) to memories")
                     }
                 }
-                .accessibilityElement(children: .combine)
+                .accessibilityElement(children: .contain)
             }
             if result.truncated {
                 Text("Showing the first \(result.events.count) events.").font(.footnote)

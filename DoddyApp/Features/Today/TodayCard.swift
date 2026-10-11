@@ -184,7 +184,8 @@ struct TodayCard: View {
                 nudgeMenu(event)
             }
         }
-        .accessibilityElement(children: .combine)
+        // Not .combine: it can hide the nudge menu from VoiceOver.
+        .accessibilityElement(children: .contain)
     }
 
     private func nudgeText(_ nudge: ScheduledNudge, event: CalendarEventSummary) -> String {
@@ -208,7 +209,10 @@ struct TodayCard: View {
             }
         } label: {
             Image(systemName: model.nudge(for: event) == nil ? "bell" : "bell.fill")
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
                 .accessibilityLabel("Nudge before \(event.title)")
+                .accessibilityValue(model.nudge(for: event) == nil ? NSLocalizedString("Off", comment: "") : NSLocalizedString("Set", comment: ""))
         }
         .accessibilityIdentifier("today.nudge")
     }
@@ -219,6 +223,7 @@ struct TodayCard: View {
             Image(systemName: "circle")
                 .foregroundStyle(Theme.secondaryText)
                 .frame(minWidth: 56, alignment: .leading)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(reminder.title)
                 if overdue {

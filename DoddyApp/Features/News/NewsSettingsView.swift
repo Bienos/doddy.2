@@ -66,7 +66,7 @@ struct NewsSettingsView: View {
                         Text(topic.label).foregroundStyle(Theme.ink)
                         Spacer()
                         if model.selectedCatalog.contains(topic.id) {
-                            Image(systemName: "checkmark").foregroundStyle(Theme.accentText)
+                            Image(systemName: "checkmark").foregroundStyle(Theme.accentText).accessibilityHidden(true)
                         }
                     }
                 }

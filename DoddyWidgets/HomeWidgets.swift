@@ -356,6 +356,7 @@ struct TalkToDoddyWidgetView: View {
                         WidgetPose(pose: .wave, height: 76)
                     } else {
                         Image(systemName: "waveform").font(.largeTitle)
+                            .accessibilityHidden(true)
                     }
                     Text("Talk to Doddy").font(.headline)
                 }

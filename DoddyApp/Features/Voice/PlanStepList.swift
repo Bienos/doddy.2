@@ -26,6 +26,7 @@ struct PlanStepList: View {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Image(systemName: block != nil ? "minus.circle" : isTicked ? "checkmark.square.fill" : "square")
                         .foregroundStyle(block != nil ? Theme.secondaryText : Theme.ink)
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
                         if let prepared = cloud[step.number] {
                             if prepared.mode == .mock {

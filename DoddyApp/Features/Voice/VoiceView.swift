@@ -553,6 +553,7 @@ struct VoiceView: View {
                 Button { controller.toggleBulkItem(item.id) } label: {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Image(systemName: controller.bulkUnticked.contains(item.id) ? "circle" : "checkmark.circle.fill")
+                            .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item.title)
                             Text(bulkDetail(item)).font(.caption).foregroundStyle(Theme.secondaryText)
@@ -605,6 +606,7 @@ struct VoiceView: View {
                 Button { controller.toggleIngredient(index) } label: {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Image(systemName: controller.ingredientsUnticked.contains(index) ? "circle" : "checkmark.circle.fill")
+                            .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(item)
                             if alreadyOpen.contains(index) {
@@ -786,7 +788,10 @@ struct VoiceView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(item.state == .saving)
-                        .accessibilityLabel(item.isTicked ? "Ticked: save this" : "Not ticked")
+                        // Named for the note it saves, so each row sounds different.
+                        .accessibilityLabel(item.text)
+                        .accessibilityValue(item.isTicked ? NSLocalizedString("Ticked", comment: "") : NSLocalizedString("Not ticked", comment: ""))
+                        .accessibilityAddTraits(.isToggle)
                         .accessibilityIdentifier("voice.suggestion.tick.\(item.id)")
                         TextField("Note", text: Binding(
                             get: { item.text },

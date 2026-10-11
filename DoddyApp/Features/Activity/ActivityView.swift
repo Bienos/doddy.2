@@ -122,19 +122,22 @@ struct ActivityView: View {
                     Task { await check(entry) }
                 }
                 .buttonStyle(.borderless)
+                .frame(minHeight: 44)
                 .disabled(checking.contains(entry.id))
                 .accessibilityHint("Looks in Reminders for this reminder. Nothing is added.")
             }
             if entry.canUndo(now: Date()) {
                 Button(undoing.contains(entry.id) ? NSLocalizedString("Undoing…", comment: "") : NSLocalizedString("Undo", comment: "")) { confirmUndo = entry }
                     .buttonStyle(.borderless)
+                    .frame(minHeight: 44)
                     .disabled(undoing.contains(entry.id))
                     .accessibilityIdentifier("activity.undo")
                     .accessibilityHint("Asks first. Puts back only what Doddy did, if it hasn't changed since.")
             }
         }
         .padding(.vertical, 2)
-        .accessibilityElement(children: .combine)
+        // Not .combine: it can make the Undo and Check buttons unreachable for VoiceOver.
+        .accessibilityElement(children: .contain)
     }
 
     /// One plan card: a heading with what happened overall, then each step as its own row.

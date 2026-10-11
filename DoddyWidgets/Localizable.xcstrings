@@ -23,6 +23,17 @@
         }
       }
     },
+    "Alarm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budzik"
+          }
+        }
+      }
+    },
     "All ticked": {
       "extractionState": "manual",
       "localizations": {
@@ -100,6 +111,17 @@
         }
       }
     },
+    "Doddy alarm, snoozed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budzik Doddy, drzemka"
+          }
+        }
+      }
+    },
     "Doing the plan": {
       "extractionState": "manual",
       "localizations": {
@@ -107,6 +129,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wykonuję plan"
+          }
+        }
+      }
+    },
+    "Done": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe"
           }
         }
       }
@@ -217,6 +250,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wycisz lub wyłącz wyciszenie Doddy’ego"
+          }
+        }
+      }
+    },
+    "Muted": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciszony"
+          }
+        }
+      }
+    },
+    "Needs attention": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymaga uwagi"
           }
         }
       }
@@ -635,6 +690,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czekam na potwierdzenie z Przypomnień"
+          }
+        }
+      }
+    },
+    "Waiting for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka na Ciebie"
           }
         }
       }

@@ -80,15 +80,22 @@ struct ComplicationView: View {
                     Image(systemName: "bell")
                     Text(next, format: .dateTime.hour().minute()).font(.system(size: 11)).minimumScaleFactor(0.6)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(String(format: NSLocalizedString("Next reminder at %@", comment: ""),
+                                           next.formatted(date: .omitted, time: .shortened)))
             } else if content.state == .ready, content.openItems > 0 {
                 VStack(spacing: 0) {
                     Image(systemName: "checklist")
                     Text("\(content.openItems)").font(.headline)
                 }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(String(format: NSLocalizedString("%lld items left", comment: ""),
+                                           content.openItems))
             } else if !entry.hidesDoddy, WatchDoddyFace.shows(in: renderingMode) {
                 WatchDoddyFace(size: 34)
             } else {
                 Image(systemName: "bubble.left")
+                    .accessibilityLabel("Doddy")
             }
         }
         .widgetAccentable()

@@ -207,15 +207,24 @@ extension MemoryCategory {
         }
     }
 }
+}
 
-/// What this device can do that the iPhone-only parts of Doddy need (ADR-337).
-enum DeviceSupport {
-    /// An iPhone, an iPad, or a Mac running the iPad app (ADR-349).
-    @MainActor static var host: HostDevice {
-        if ProcessInfo.processInfo.isiOSAppOnMac { return .mac }
-        return UIDevice.current.userInterfaceIdiom == .phone ? .phone : .pad
+/// A fixed-size system font that still follows Dynamic Type: `size` is the base at the default
+/// text size and grows or shrinks with `relativeTo` (accessibility pass, ADR-350).
+private struct ScaledSystemFont: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+    private let weight: Font.Weight
+
+    init(size: CGFloat, weight: Font.Weight, relativeTo style: Font.TextStyle) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: style)
+        self.weight = weight
     }
 
-    /// Accessibility › Touch › Back Tap is an iPhone setting; iPad and Mac have none.
-    @MainActor static var hasBackTap: Bool { host.supports(.backTap) }
+    func body(content: Content) -> some View { content.font(.system(size: size, weight: weight)) }
+}
+
+extension View {
+    func scaledSystemFont(size: CGFloat, weight: Font.Weight = .regular, relativeTo style: Font.TextStyle = .body) -> some View {
+        modifier(ScaledSystemFont(size: size, weight: weight, relativeTo: style))
+    }
 }

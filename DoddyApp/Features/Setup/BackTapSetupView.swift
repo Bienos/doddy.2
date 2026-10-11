@@ -155,6 +155,7 @@ struct BackTapSetupView: View {
             if !isLast {
                 Button("Skip ahead to the tap test") { model.send(.startTest(now: .now)) }
                     .font(.footnote)
+                    .frame(minHeight: 44)
                     .foregroundStyle(Theme.accentText)
             }
             hint("Guidance follows what you report, not your screen. Doddy can't see Settings and can't assign Back Tap for you.")
@@ -196,6 +197,7 @@ struct BackTapSetupView: View {
                 dismiss()
             }
             .font(.footnote)
+            .frame(minHeight: 44)
             .foregroundStyle(Theme.accentText)
             hint("A received shortcut proves the route reached Doddy. You then say whether Double Back Tap triggered it.")
         }
