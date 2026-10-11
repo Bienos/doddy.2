@@ -294,12 +294,28 @@ struct HomeView: View {
                 Text("Recently saved")
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
+                // "Ask me about it" (ADR-403): a conversation about that note; never on a private one.
+                let privateNotes = PrivateNotesStore.current()
+                let canTalk = store.environment.capabilities.isAvailable(.voiceInput)
                 ForEach(store.memories.prefix(3)) { record in
-                    NavigationLink(value: record.id) {
-                        MemoryRow(record: record)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 8) {
+                        NavigationLink(value: record.id) {
+                            MemoryRow(record: record)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        if canTalk && NoteQuestion.canAsk(about: record, privateNotes: privateNotes) {
+                            Button { router.askAboutNote(record.id) } label: {
+                                Image(systemName: "waveform.circle")
+                                    .font(.title2)
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(Theme.accentText)
+                            .accessibilityLabel("Ask me about it")
+                            .accessibilityIdentifier("home.recent.ask")
+                        }
                     }
-                    .buttonStyle(.plain)
                     Divider()
                 }
             }

@@ -215,6 +215,8 @@ final class VoiceSessionController {
     private(set) var readAloudProblem: String?
     /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
     private var checkInNeedsBriefing = false
+    /// "Ask me about it" (ADR-403): after the greeting, the app names the note.
+    private var noteQuestion: String?
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
@@ -291,7 +293,7 @@ final class VoiceSessionController {
     /// "Hey Doddy" started the conversation (ADR-254): Doddy says it first and the island shows it.
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
-        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
+        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil
     ) async {
         guard !isLive else { return }
         isOffline = false
@@ -306,6 +308,13 @@ final class VoiceSessionController {
         // A translator start sends no notes or lists, so it never carries a check-in too.
         let checkIn = preset == nil ? checkIn : nil
         checkInNeedsBriefing = checkIn != nil
+        // Only a plain conversation, and never a private note (ADR-310).
+        noteQuestion = nil
+        if preset == nil, checkIn == nil, let aboutNote,
+           let record = store.memories.first(where: { $0.id == aboutNote }),
+           NoteQuestion.canAsk(about: record, privateNotes: PrivateNotesStore.current()) {
+            noteQuestion = NoteQuestion.appMessage(for: record)
+        }
         translator = nil
         listReceipt = nil
         changeReceipt = nil
@@ -1456,6 +1465,10 @@ final class VoiceSessionController {
         if !fromUser, checkInNeedsBriefing {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
+        }
+        if !fromUser, let question = noteQuestion {
+            noteQuestion = nil
+            Task { await sendToAgent(question) }
         }
         // The greeting stays on the island only until the user answers.
         if fromUser, wakeGreeting != nil { wakeGreeting = nil }

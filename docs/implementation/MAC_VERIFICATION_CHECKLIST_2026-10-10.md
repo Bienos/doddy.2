@@ -306,3 +306,10 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | P1 | Open `DoddyApp/DesignSystem/DoddyArtPreviews.swift`, `DoddyWidgets/DoddyWidgetPreviews.swift` and the end of `DoddyWatchWidgets/DoddyWatchComplications.swift` in Xcode's canvas | Every pose, strip, scenery strip, the storybook, share card, Siri snippet, widgets, Live Activities and complications draw; use this before tapping through the app |
 | P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
 | P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |
+
+## 4r. "Ask me about it" (ADR-403)
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
+
