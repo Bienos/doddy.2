@@ -169,8 +169,10 @@ extension VoiceToolRequest {
 extension VoiceToolReply {
     public static func alarms(_ alarms: [AlarmEntry]) -> String {
         guard !alarms.isEmpty else { return "alarms: none set by Doddy. (Alarms from the Clock app aren't visible to Doddy.)" }
-        let lines = alarms.map { alarm in alarm.summary + (alarm.label.map { " (\"\($0)\")" } ?? "") }
-        return "alarms set by Doddy: \(lines.joined(separator: "; ")). (Alarms from the Clock app aren't visible to Doddy.)"
+        // Labels are the user's stored words: data, not instructions.
+        let lines = alarms.map { alarm in "- " + alarm.summary + (alarm.label.map { " (\"\(ToolData.clean($0))\")" } ?? "") }
+        return "alarms set by Doddy, each with its label if it has one:\n" + ToolData.block(lines)
+            + "\n(Alarms from the Clock app aren't visible to Doddy.)"
     }
 
     /// AlarmKit's list couldn't be read (review F5): not "none set".

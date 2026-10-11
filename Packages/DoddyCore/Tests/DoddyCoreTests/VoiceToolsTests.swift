@@ -357,7 +357,8 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.messageOpened(draft, recipient: "Marta").contains("Nothing was sent by Doddy"))
         XCTAssertTrue(VoiceToolReply.messageOpened(draft, recipient: "Marta").hasPrefix("opened: Messages"))
         XCTAssertTrue(VoiceToolReply.shortcutRequested("Morning routine").contains("can't see whether it finished"))
-        XCTAssertTrue(VoiceToolReply.noAddress("Marta", channel: .email).hasPrefix("failed: Marta has no email address"))
+        XCTAssertEqual(VoiceToolReply.noAddress("Marta", channel: .email),
+                       "failed: the contact below has no email address in Contacts. Nothing was opened.\n<<<DATA\nContact: \"Marta\"\nDATA>>>")
         XCTAssertTrue(VoiceToolReply.declinedMessage.hasPrefix("declined: "))
         XCTAssertEqual(VoiceToolReply.notOpened("Maps didn't open."), "failed: Maps didn't open. Nothing was opened.")
     }

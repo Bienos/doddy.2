@@ -290,8 +290,10 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     }
 
     /// "failed: Reminders isn't connected. Nothing was added." → "Reminders isn't connected."
+    /// Only the first line: data that follows (ToolData) never becomes the shown reason.
     private static func reason(in text: String) -> String? {
-        var body = String(text.dropFirst("failed:".count)).trimmingCharacters(in: .whitespaces)
+        let firstLine = text.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
+        var body = String(firstLine.dropFirst("failed:".count)).trimmingCharacters(in: .whitespaces)
         for tail in [" Nothing was added.", " Nothing was opened.", " Nothing was saved.", " Nothing was changed.", " Nothing was set.", " Nothing was run.", " Nothing was done."] {
             if body.hasSuffix(tail) { body.removeLast(tail.count) }
         }

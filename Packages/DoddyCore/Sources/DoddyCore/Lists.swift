@@ -349,13 +349,18 @@ extension VoiceToolReply {
         ToolData.block(lists.map { "- \"\(ToolData.clean($0.name))\"" })
     }
 
+    /// The list's name and the stored items follow as data (ToolData); a shared list's name and
+    /// items can come from someone else.
     public static func listAdded(_ result: ListAddResult, list: String) -> String {
-        var parts: [String] = []
+        let name = "Name: \"\(ToolData.clean(list))\""
+        var text: String
         if result.added.isEmpty {
-            parts.append("not added: nothing new was added to \"\(list)\".")
+            text = "not added: nothing new was added to the list. Its name:\n" + ToolData.block([name])
         } else {
-            parts.append("added to \"\(list)\": \(result.added.map(\.text).joined(separator: ", ")).")
+            text = "added to the list: \(itemCount(result.added.count)). Its name, then the items added:\n"
+                + ToolData.block([name] + result.added.map { "- \(ToolData.clean($0.text))" })
         }
+        var parts: [String] = []
         if !result.alreadyThere.isEmpty {
             parts.append("Already on the list, not added again: \(result.alreadyThere.joined(separator: ", ")).")
         }
@@ -365,8 +370,11 @@ extension VoiceToolReply {
         if !result.noRoom.isEmpty {
             parts.append("Not added, the list is full (\(ListLimits.itemsPerList) items): \(result.noRoom.joined(separator: ", ")).")
         }
-        return parts.joined(separator: " ")
+        if !parts.isEmpty { text += "\n" + parts.joined(separator: " ") }
+        return text
     }
+
+    private static func itemCount(_ count: Int) -> String { "\(count) item\(count == 1 ? "" : "s")" }
 
     public static func listRead(_ list: DoddyList) -> String {
         // The name and items are the user's words, between the data markers (review C4).
@@ -382,28 +390,38 @@ extension VoiceToolReply {
         return text + "\nRead the items in the user's own words; never add any."
     }
 
-    /// `changed` were ticked or removed; the rest could not be matched.
+    /// `changed` were ticked or removed; the rest could not be matched. The list's name, the
+    /// changed items and the items a word could mean follow as data (ToolData).
     public static func listChanged(
         verb: String, changed: [ListItem], list: String, notFound: [String], ambiguous: [(said: String, options: [ListItem])]
     ) -> String {
-        var parts: [String] = []
+        var data = ["Name: \"\(ToolData.clean(list))\""]
+        var text: String
         if changed.isEmpty {
-            parts.append("not changed: nothing on \"\(list)\" was \(verb).")
+            text = "not changed: nothing on the list was \(verb)."
         } else {
-            parts.append("\(verb) on \"\(list)\": \(changed.map(\.text).joined(separator: ", ")).")
+            text = "\(verb) on the list: \(itemCount(changed.count))."
+            data += changed.map { "- \(ToolData.clean($0.text))" }
         }
         for (said, options) in ambiguous {
+            let word = "\"\(ToolData.clean(said))\""
             if options.count == 1, let only = options.first {
                 // A partial match offered as a choice (ListMatch.item, partial: false).
-                parts.append("\"\(said)\" only partly matches \"\(only.text)\": not \(verb); ask the user whether they mean it.")
-                continue
+                data.append("\(word) only partly matches \"\(ToolData.clean(only.text))\"")
+            } else {
+                data.append("\(word) matches several items: \(options.map { "\"\(ToolData.clean($0.text))\"" }.joined(separator: ", "))")
             }
-            parts.append("\"\(said)\" matches several items (\(options.map { "\"\($0.text)\"" }.joined(separator: ", "))): not \(verb); ask the user which one.")
+        }
+        text += changed.isEmpty ? " Its name" : " Its name, then the items \(verb)"
+        text += ambiguous.isEmpty ? ":\n" : ", then the words that matched more than one item or only part of one:\n"
+        text += ToolData.block(data)
+        if !ambiguous.isEmpty {
+            text += "\nThose words were not \(verb); ask the user which item they mean."
         }
         if !notFound.isEmpty {
-            parts.append("Not on the list: \(notFound.joined(separator: ", ")).")
+            text += "\nNot on the list: \(notFound.joined(separator: ", "))."
         }
-        return parts.joined(separator: " ")
+        return text
     }
 
     public static func listCreated(_ list: DoddyList) -> String {

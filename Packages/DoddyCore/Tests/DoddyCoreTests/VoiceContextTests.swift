@@ -59,6 +59,50 @@ final class VoiceContextTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.listAmbiguous("x", lists: [list, list]).hasPrefix("not changed:"))
     }
 
+    /// Every other reply that carries stored text, or text from Contacts, Calendar or Reminders,
+    /// marks it the same way, and keeps the prefix the agent and "What Doddy did" read.
+    func testOtherRepliesWithStoredOrOtherAppsTextMarkIt() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = warsaw
+        let item = ListItem(id: UUID(), listID: UUID(), text: injection, source: .voice, addedAt: t0, doneAt: nil, position: 0)
+        let added = VoiceToolReply.listAdded(ListAddResult(added: [item], alreadyThere: [], tooLong: [], noRoom: []), list: "Shopping")
+        XCTAssertTrue(added.hasPrefix("added to the list: 1 item."), added)
+        assertOneBlock(added)
+        assertOneBlock(VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: injection))
+        let ticked = VoiceToolReply.listChanged(verb: "ticked", changed: [item], list: "Shopping", notFound: [], ambiguous: [])
+        XCTAssertTrue(ticked.hasPrefix("ticked on the list: 1 item."), ticked)
+        assertOneBlock(ticked)
+        assertOneBlock(VoiceToolReply.listChanged(
+            verb: "removed", changed: [], list: "Shopping", notFound: [], ambiguous: [(said: "lunch", options: [item, item])]))
+        assertOneBlock(VoiceToolReply.contactMatches([injection], query: "Lunch"))
+        assertOneBlock(VoiceToolReply.noAddress(injection, channel: .text))
+        assertOneBlock(VoiceToolReply.alarms([AlarmEntry(id: UUID(), clock: "07:00", label: injection, summary: "07:00 on weekdays")]))
+
+        let event = CalendarEventSummary(title: injection, start: t0, end: t0.addingTimeInterval(3600), allDay: false)
+        let replies = [
+            VoiceToolReply.eventChanged(event, calendar: calendar), VoiceToolReply.eventDeleted(event, calendar: calendar),
+            VoiceToolReply.reminderChanged(injection, due: nil), VoiceToolReply.reminderCompleted(injection),
+            VoiceToolReply.reminderDeleted(injection),
+        ]
+        for reply in replies {
+            assertOneBlock(reply)
+            XCTAssertTrue(VoiceToolReply.donePrefixes.contains { reply.hasPrefix($0) }, reply)
+        }
+        let reminder = MemoryReminder(id: UUID(), memoryID: UUID(), fireAt: t0.addingTimeInterval(3600), timeZoneID: "Europe/Warsaw", createdAt: t0)
+        assertOneBlock(VoiceToolReply.noteReminderSet(reminder, note: injection))
+        assertOneBlock(VoiceToolReply.noteReminderInDoddyOnly(reminder, note: injection))
+        let bulk = VoiceToolReply.bulkResult([(.deleteEvent(event), .failed)], verb: "deleted", skipped: [])
+        XCTAssertTrue(bulk.hasPrefix("failed: none changed."), bulk)
+        assertOneBlock(bulk)
+
+        // "What Doddy did" shows only the first line as the reason, never the data after it.
+        let (outcome, reason) = ActivityEntry.outcome(of: VoiceToolReply.noAddress(injection, channel: .text), isLookup: false)
+        XCTAssertEqual(outcome, .notDone)
+        XCTAssertEqual(reason, "the contact below has no phone number in Contacts.")
+        XCTAssertEqual(ActivityEntry.outcome(of: added, isLookup: false).0, .done)
+        XCTAssertEqual(ActivityEntry.outcome(of: ticked, isLookup: false).0, .done)
+    }
+
     /// The context variables sit between markers in the instructions; their content can't close them.
     func testContextVariablesCantCloseTheirBlock() throws {
         let notes = VoiceContext.savedNotes([try record(injection, at: t0)], timeZone: warsaw).text

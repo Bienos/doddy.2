@@ -257,7 +257,12 @@ extension VoiceToolReply {
         let when = after.allDay
             ? "\(localText(after.start, hasTime: false, calendar: calendar)) (all day)"
             : "\(localText(after.start, hasTime: true, calendar: calendar))–\(localText(after.end, hasTime: true, calendar: calendar))"
-        return "changed: \"\(after.title)\" is now \(when). Checked in Calendar."
+        return "changed: the event is now \(when). Checked in Calendar.\n" + eventTitle(after.title)
+    }
+
+    /// A title read from Calendar or Reminders, as data (ToolData): an invite's title is someone else's text.
+    private static func eventTitle(_ title: String) -> String {
+        ToolData.block(["Title: \"\(ToolData.clean(title))\""])
     }
 
     /// With the place or an added note (ADR-281). The old place is never sent to the agent.
@@ -267,7 +272,9 @@ extension VoiceToolReply {
         if let note = plan.addNote { extra += " Added to its notes: \"\(note)\"." }
         if plan.removeNote != nil { extra += " The added line came off its notes again." }
         let base = eventChanged(plan.after, calendar: calendar)
-        return String(base.dropLast(" Checked in Calendar.".count)) + extra + " Checked in Calendar."
+        let checked = " Checked in Calendar.\n"
+        guard let cut = base.range(of: checked) else { return base }
+        return String(base[..<cut.lowerBound]) + extra + checked + String(base[cut.upperBound...])
     }
 
     public static let eventChangeTimePassed = "failed: the new time passed while the card was waiting. Nothing changed. Ask the user for a new time."
@@ -288,21 +295,22 @@ extension VoiceToolReply {
     }
 
     public static func reminderChanged(_ title: String, due: ReminderDue?) -> String {
-        "changed: the reminder \"\(title)\" is now due \(due.map(ReminderText.due) ?? "with no date"). Checked in Reminders."
+        "changed: the reminder is now due \(due.map(ReminderText.due) ?? "with no date"). Checked in Reminders.\n" + eventTitle(title)
     }
 
     public static func reminderCompleted(_ title: String) -> String {
-        "completed: the reminder \"\(title)\" is marked done in Reminders. Checked."
+        "completed: the reminder is marked done in Reminders. Checked.\n" + eventTitle(title)
     }
 
     public static let reminderChangedElsewhere = "failed: the reminder changed, was completed or disappeared in Reminders since the card was shown. Nothing was changed by Doddy. Ask the user to check Reminders."
     public static let undoUnconfirmed = "unknown: Calendar or Reminders didn't confirm putting it back. Ask the user to check."
     public static func eventDeleted(_ event: CalendarEventSummary, calendar: Calendar) -> String {
-        "deleted: \"\(event.title)\" (\(localText(event.start, hasTime: !event.allDay, calendar: calendar))) is gone from Calendar. Checked."
+        "deleted: the event at \(localText(event.start, hasTime: !event.allDay, calendar: calendar)) is gone from Calendar. Checked.\n"
+            + eventTitle(event.title)
     }
 
     public static func reminderDeleted(_ title: String) -> String {
-        "deleted: the reminder \"\(title)\" is gone from Reminders. Checked."
+        "deleted: the reminder is gone from Reminders. Checked.\n" + eventTitle(title)
     }
 
     public static let deleteDeclined = "declined: the user chose not to delete it. Nothing changed."

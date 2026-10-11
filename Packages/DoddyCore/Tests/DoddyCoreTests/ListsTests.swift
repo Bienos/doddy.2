@@ -68,7 +68,7 @@ final class ListsTests: XCTestCase {
         let reply = VoiceToolReply.listChanged(
             verb: "removed", changed: [], list: "Shopping", notFound: [], ambiguous: [(said: "milk", options: [items[0]])])
         XCTAssertTrue(reply.hasPrefix("not changed:"), reply)
-        XCTAssertTrue(reply.contains("\"milk\" only partly matches \"oat milk\": not removed; ask the user whether they mean it."), reply)
+        XCTAssertTrue(reply.contains("\n\"milk\" only partly matches \"oat milk\"\nDATA>>>\nThose words were not removed; ask the user which item they mean."), reply)
     }
 
     func testDuplicates() {
@@ -122,15 +122,22 @@ final class ListsTests: XCTestCase {
         let added = item("eggs")
         let reply = VoiceToolReply.listAdded(
             ListAddResult(added: [added], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "Shopping")
-        XCTAssertEqual(reply, "added to \"Shopping\": eggs. Already on the list, not added again: milk.")
+        XCTAssertEqual(reply, "added to the list: 1 item. Its name, then the items added:\n<<<DATA\nName: \"Shopping\"\n- eggs\nDATA>>>\nAlready on the list, not added again: milk.")
         XCTAssertTrue(VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "S").hasPrefix("not added:"))
         XCTAssertTrue(VoiceToolReply.listNotFound("groceries", lists: [try list("Shopping")]).contains("\"Shopping\""))
         let changed = VoiceToolReply.listChanged(
             verb: "ticked", changed: [item("eggs")], list: "Shopping", notFound: ["bread"],
             ambiguous: [(said: "milk", options: [item("oat milk"), item("milk chocolate")])])
-        XCTAssertTrue(changed.hasPrefix("ticked on \"Shopping\": eggs."))
-        XCTAssertTrue(changed.contains("\"milk\" matches several items (\"oat milk\", \"milk chocolate\"): not ticked; ask the user which one."))
-        XCTAssertTrue(changed.contains("Not on the list: bread."))
+        XCTAssertEqual(changed, """
+            ticked on the list: 1 item. Its name, then the items ticked, then the words that matched more than one item or only part of one:
+            <<<DATA
+            Name: "Shopping"
+            - eggs
+            "milk" matches several items: "oat milk", "milk chocolate"
+            DATA>>>
+            Those words were not ticked; ask the user which item they mean.
+            Not on the list: bread.
+            """)
 
         let long = try list("Long", (0..<12).map { item("item \($0)", position: $0) })
         let read = VoiceToolReply.listRead(long)

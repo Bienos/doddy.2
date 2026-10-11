@@ -521,8 +521,9 @@ public enum VoiceToolReply {
     /// How a reply starts when the change happened and was read back. "What Doddy did" and the
     /// plan summary both read these, so a new result verb must be added here (review C1, D3).
     public static let donePrefixes = ["added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:"]
-    /// List results name the list first: `added to "Shopping": milk.` (listAdded, listChanged).
-    public static let listDonePrefixes = ["added to \"", "ticked on \"", "removed on \""]
+    /// List results: `added to the list: 1 item.`, then the list's name and the items as data
+    /// (listAdded, listChanged).
+    public static let listDonePrefixes = ["added to the list:", "ticked on the list:", "removed on the list:"]
     /// Nothing changed; the agent asks the user which one, or offers something else.
     public static let nothingChangedPrefixes = ["not changed:", "not added:", "not created:"]
 
@@ -633,10 +634,12 @@ public enum VoiceToolReply {
         return "opened: \(app) opened with the draft for \(recipient). Nothing was sent by Doddy; the user sends it there."
     }
 
-    /// The contact has no phone number or email for the channel the agent asked for.
+    /// The contact has no phone number or email for the channel the agent asked for. The name
+    /// is from Contacts, so it follows as data.
     public static func noAddress(_ recipient: String, channel: MessageChannel) -> String {
         let what = channel == .text ? "phone number" : "email address"
-        return "failed: \(recipient) has no \(what) in Contacts. Nothing was opened."
+        return "failed: the contact below has no \(what) in Contacts. Nothing was opened.\n"
+            + ToolData.block(["Contact: \"\(ToolData.clean(recipient))\""])
     }
 
     /// The app could not open the other app.
@@ -657,8 +660,10 @@ public enum VoiceToolReply {
         guard !names.isEmpty else {
             return "No contact matched \"\(query)\". Tell the user you couldn't find them in Contacts. Do not guess."
         }
-        let list = names.joined(separator: ", ")
-        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\": \(list). Their details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
+        // Names are from Contacts: data, not instructions.
+        return "Found \(names.count) contact\(names.count == 1 ? "" : "s") matching \"\(query)\", names only:\n"
+            + ToolData.block(names.map { "- \(ToolData.clean($0))" })
+            + "\nTheir details are on the user's screen. Say you've put them on the screen; never read out or guess a number or address."
     }
 
     private static func durationText(_ seconds: Int) -> String {

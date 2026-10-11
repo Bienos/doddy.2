@@ -125,12 +125,17 @@ extension VoiceToolReply {
 
     /// `summary` is `ReminderFormat.summary` of the stored reminder. `previous` is the reminder
     /// the note had before, which this one replaced (review C3).
+    /// The note's stored text follows as data (ToolData).
     public static func noteReminderSet(_ reminder: MemoryReminder, note: String, replacing previous: MemoryReminder? = nil) -> String {
-        "added: a reminder about \"\(note)\": \(phrase(reminder)). It is a notification on this iPhone.\(replaced(previous))"
+        "added: a reminder about the note below: \(phrase(reminder)). It is a notification on this iPhone.\(replaced(previous))\n" + noteData(note)
     }
 
     public static func noteReminderInDoddyOnly(_ reminder: MemoryReminder, note: String, replacing previous: MemoryReminder? = nil) -> String {
-        "added: a reminder about \"\(note)\": \(phrase(reminder)), kept in Doddy only. Notifications are off for Doddy, so the iPhone won't alert; it shows on Doddy's Home when due. Tell the user this.\(replaced(previous))"
+        "added: a reminder about the note below: \(phrase(reminder)), kept in Doddy only. Notifications are off for Doddy, so the iPhone won't alert; it shows on Doddy's Home when due. Tell the user this.\(replaced(previous))\n" + noteData(note)
+    }
+
+    private static func noteData(_ note: String) -> String {
+        ToolData.block(["Note: \"\(ToolData.clean(note))\""])
     }
 
     private static func replaced(_ previous: MemoryReminder?) -> String {
