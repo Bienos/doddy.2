@@ -17,6 +17,7 @@ struct MemoriesView: View {
     @AppStorage(PreferenceKey.memoriesShowsLists) private var showsLists = false
     /// One tag's notes (ADR-333); cleared when no note has it any more.
     @State private var tag: String?
+    @AppStorage(Diary.enabledKey) private var diaryOn = false
 
     /// The filter in effect: the chosen type, but only while a filter is offered and a note of
     /// that type exists. When it stops applying the choice is cleared (see `onChange` below),
@@ -85,6 +86,20 @@ struct MemoriesView: View {
                         if !people.isEmpty {
                             MemoryPeopleRow(people: people)
                         }
+                        // The diary (ADR-345), only while it is on; its lines never show among notes.
+                        if diaryOn {
+                            NavigationLink(value: MemoryNavigationRoute.diary) {
+                                HStack {
+                                    Image(systemName: "book.closed").accessibilityHidden(true)
+                                    Text("Diary")
+                                    Spacer()
+                                    Image(systemName: "chevron.right").foregroundStyle(Theme.secondaryText).accessibilityHidden(true)
+                                }
+                                .frame(minHeight: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("memories.diary")
+                        }
                         // Warranties kept for receipts (ADR-342), only once there is one.
                         let warrantyCount = WarrantyStore.current().items.count
                         if warrantyCount > 0 {
@@ -142,6 +157,7 @@ struct MemoriesView: View {
                 case .person(let name): PersonNotesView(person: name)
                 case .warranties: WarrantiesView()
                 case .renewals: RenewalsView()
+                case .diary: DiaryView()
                 }
             }
             .onChange(of: activeCategory) { _, active in

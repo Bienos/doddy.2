@@ -100,6 +100,17 @@
         }
       }
     },
+    "A line about today": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdanie o dzisiejszym dniu"
+          }
+        }
+      }
+    },
     "A little\ntidier.": {
       "extractionState": "manual",
       "localizations": {
@@ -558,6 +569,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj do listy w Doddym"
+          }
+        }
+      }
+    },
+    "Add to your diary?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dopisać do dziennika?"
           }
         }
       }
@@ -2366,6 +2388,17 @@
         }
       }
     },
+    "Delete every line in your diary?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć wszystkie wpisy z dziennika?"
+          }
+        }
+      }
+    },
     "Delete list": {
       "extractionState": "manual",
       "localizations": {
@@ -2388,6 +2421,17 @@
         }
       }
     },
+    "Delete the diary": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń dziennik"
+          }
+        }
+      }
+    },
     "Delete the list": {
       "extractionState": "manual",
       "localizations": {
@@ -2395,6 +2439,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usuń listę"
+          }
+        }
+      }
+    },
+    "Delete the whole diary": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń cały dziennik"
           }
         }
       }
@@ -2604,6 +2659,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ustawienie deweloperskie. Użyj https albo http://localhost w Symulatorze. Token pochodzi od właściciela serwera i jest przechowywany tylko w pęku kluczy tego iPhone’a."
+          }
+        }
+      }
+    },
+    "Diary": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziennik"
           }
         }
       }
@@ -4775,6 +4841,17 @@
         }
       }
     },
+    "Keep a diary": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prowadź dziennik"
+          }
+        }
+      }
+    },
     "Keep editing": {
       "extractionState": "manual",
       "localizations": {
@@ -4793,6 +4870,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zostaw"
+          }
+        }
+      }
+    },
+    "Keep it under %lld characters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmieść się w %lld znakach."
           }
         }
       }
@@ -4859,6 +4947,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przechowywane tylko na tym iPhonie, nigdy nigdzie nie wysyłane. Nie ma go w eksportach; w pliku kopii zapasowej tylko wtedy, gdy je dołączysz."
+          }
+        }
+      }
+    },
+    "Kept only on this iPhone. Doddy's voice can add to your diary but can't read it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zostaje tylko na tym iPhonie. Głos Doddy może dopisywać do dziennika, ale nie może go czytać."
           }
         }
       }
@@ -6938,6 +7037,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "O jedną rzecz\nmniej do pamiętania."
+          }
+        }
+      }
+    },
+    "One line about your day, when you want to. Type it here or say “add to my diary: …” and tap Save. It stays on this iPhone, apart from your notes: Doddy's voice can add to it but can't read it, and it isn't in search, widgets or the watch. Doddy won't ask you to write.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedno zdanie o Twoim dniu, kiedy masz ochotę. Wpisz je tutaj albo powiedz „dopisz do dziennika: …” i dotknij Zapisz. Dziennik zostaje na tym iPhonie, osobno od notatek: głos Doddy może do niego dopisywać, ale nie może go czytać, i nie ma go w wyszukiwaniu, widżetach ani na zegarku. Doddy nie będzie namawiać do pisania."
           }
         }
       }
@@ -10792,6 +10902,17 @@
         }
       }
     },
+    "That line couldn't be removed. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć tego wpisu. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "That list is no longer shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -11041,6 +11162,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się ustawić porannego podsumowania. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "The diary couldn't be deleted. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć dziennika. Spróbuj ponownie."
           }
         }
       }
@@ -11514,6 +11646,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie może tego cofnąć."
+          }
+        }
+      }
+    },
+    "This can't be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego nie można cofnąć."
           }
         }
       }
@@ -13505,6 +13648,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój dzień\nw skrócie."
+          }
+        }
+      }
+    },
+    "Your diary is off. Saving turns it on; you can turn it off in Settings, Diary.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziennik jest wyłączony. Zapisanie go włączy; wyłączysz go w Ustawieniach, Dziennik."
           }
         }
       }

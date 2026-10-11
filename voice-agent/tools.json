@@ -269,6 +269,19 @@
     },
     {
       "type": "function",
+      "name": "add_to_diary",
+      "description": "Propose one line for the user's diary in Doddy. Use it only when the user clearly asks to add something to their diary or journal (e.g. 'add to my diary: long walk by the river'). Write the line in the user's own words and language; don't add to it, sum it up or comment on it. The app shows the line on a card and keeps it only when the user taps Save; if the diary is off, Save turns it on. The result starts with 'saved', 'declined' or 'failed'. Before this tool runs, say only one short line, e.g. 'Confirm on screen and I'll add it.' (Polish: 'Potwierdź na ekranie, a dopiszę.'). You can never read the diary. Never suggest writing in it, never ask how their day was for it, and never mention streaks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "text": {"type": "string", "description": "The line exactly as the user said it, at most 500 characters."}
+        },
+        "required": ["text"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+    },
+    {
+      "type": "function",
       "name": "calculate",
       "description": "Work out a sum on the user's iPhone. Use it for every calculation the user asks for (totals, splitting a bill, tips, percentages, recipe scaling) instead of doing the maths yourself, then say the result it returns. Only numbers with a dot for decimals, + - * / ^ for powers, % (a percent of the number before it) and brackets; no words, units or currency signs. For '15% of 80' send '80 * 15%'.",
       "parameters": {

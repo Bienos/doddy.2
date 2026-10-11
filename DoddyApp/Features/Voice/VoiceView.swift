@@ -629,6 +629,19 @@ struct VoiceView: View {
             Text("Kept only on this iPhone, and replaces any spot saved before. Doddy hears when you saved it, not where.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .diary(_, let text, let turnsOn):
+            // ADR-345: the line exactly as it will be kept.
+            Text("Add to your diary?")
+                .font(.headline)
+            Text(verbatim: "\u{201C}\(text)\u{201D}")
+            if turnsOn {
+                Text("Your diary is off. Saving turns it on; you can turn it off in Settings, Diary.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            Text("Kept only on this iPhone. Doddy's voice can add to your diary but can't read it.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .leaveBy(_, let plan):
             // ADR-335: what Apple Maps found, so a wrong place can be turned down.
             Text("Remind you when to leave?")
@@ -862,6 +875,7 @@ struct VoiceView: View {
         case .undo(_, let entry): (entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
         case .parking: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
         case .leaveBy: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Not now", comment: ""))
+        case .diary: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
         }

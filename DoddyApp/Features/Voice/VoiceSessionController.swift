@@ -75,6 +75,8 @@ final class VoiceSessionController {
         case parking(toolCallID: String, spot: ParkingSpot)
         /// "Remind me when to leave" (ADR-335): the place Maps found, the travel time and when to leave.
         case leaveBy(toolCallID: String, plan: LeaveByPlan)
+        /// "Add to your diary?" (ADR-345): the line exactly; Save turns the diary on if it is off.
+        case diary(toolCallID: String, text: String, turnsOn: Bool)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
 
@@ -85,7 +87,7 @@ final class VoiceSessionController {
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
-                 .ingredients(let id, _, _, _, _, _):
+                 .diary(let id, _, _), .ingredients(let id, _, _, _, _, _):
                 id
             }
         }
@@ -870,6 +872,13 @@ final class VoiceSessionController {
             } catch {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
+        case .diary(let id, let text, let turnsOn):
+            // On this iPhone only, read back (ADR-345). The tap on Save is what turns the diary on.
+            if turnsOn { UserDefaults.standard.set(true, forKey: Diary.enabledKey) }
+            switch DiaryStore.add(text) {
+            case .saved(let entry): await reply(id, VoiceToolReply.diarySaved(entry))
+            case .problem, .notSaved: await reply(id, VoiceToolReply.diaryFailed, isError: true)
+            }
         case .leaveBy(let id, let plan):
             // A local notification at the leave time, read back from iOS (ADR-335).
             switch await LeaveByScheduler.schedule(plan) {
@@ -1023,6 +1032,7 @@ final class VoiceSessionController {
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
         case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
+        case .diary(let id, _, _): await reply(id, VoiceToolReply.diaryDeclined)
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
             await reply(id, VoiceToolReply.ingredientsDeclined)
@@ -1650,6 +1660,9 @@ final class VoiceSessionController {
             }
             let events = devices.events(in: range)
             await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
+        case .addToDiary(let text):
+            // A card with the line exactly (ADR-345); nothing is kept until Save.
+            propose(.diary(toolCallID: call.toolCallId, text: text, turnsOn: !DiaryStore.isOn), toolCallID: call.toolCallId)
         case .upcomingRenewals(let days):
             // Read-only (ADR-344): what the user typed in, on this iPhone.
             let upcoming = RenewalStore.current().upcoming(now: Date(), calendar: .current)
@@ -2914,7 +2927,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .diary: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .translator, .plan, .undo: false

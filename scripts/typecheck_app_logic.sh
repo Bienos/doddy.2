@@ -92,6 +92,7 @@ files=(
   DoddyApp/Features/Lists/ListTemplateStore.swift
   DoddyApp/Features/Lists/UsualItemsStore.swift
   DoddyApp/Features/Warranties/WarrantyStore.swift
+  DoddyApp/Features/Diary/DiaryStore.swift
   Shared/Widgets/WidgetSnapshotFile.swift
   Shared/Share/ShareInboxFile.swift
   # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.

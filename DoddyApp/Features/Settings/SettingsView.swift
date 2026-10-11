@@ -230,6 +230,13 @@ struct SettingsView: View {
                     AppLockToggle()
                     // iPhone search (ADR-330), off until switched on.
                     SpotlightToggle()
+                    // The diary (ADR-345), off until switched on there.
+                    NavigationLink {
+                        DiaryView()
+                    } label: {
+                        Label("Diary", systemImage: "book.closed")
+                    }
+                    .accessibilityIdentifier("settings.diary")
                     NavigationLink {
                         DataFlowView()
                     } label: {

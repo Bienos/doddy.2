@@ -49,6 +49,7 @@ public enum ActivityText {
         "Read your calendar": "Odczytano kalendarz",
         "Looked for free time": "Szukano wolnego czasu",
         "Read bills and subscriptions": "Odczytano rachunki i subskrypcje",
+        "Add to diary": "Dopisanie do dziennika",
         "Remind when to leave": "Przypomnij, kiedy wyjść",
         "Add event": "Dodaj wydarzenie",
         "Add reminder": "Dodaj przypomnienie",

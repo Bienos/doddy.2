@@ -148,6 +148,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return describe(cloud: call.name)
         case .addToList(let request):
             return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+        case .addToDiary:
+            // The diary's words never go in the log (ADR-345).
+            return ActivityRequest(app: .memories, title: "Add to diary", detail: nil, isLookup: false)
         case .upcomingRenewals:
             return ActivityRequest(app: .memories, title: "Read bills and subscriptions", detail: nil, isLookup: true)
         case .readList(let name):

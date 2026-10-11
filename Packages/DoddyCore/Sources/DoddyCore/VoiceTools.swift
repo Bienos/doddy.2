@@ -221,6 +221,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case leaveBy(LeaveByRequest)
     /// Bills and subscriptions the user typed in (ADR-344), read-only.
     case upcomingRenewals(days: Int)
+    /// One line for the user's diary (ADR-345): a card, and the diary turns on only from it.
+    case addToDiary(text: String)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -273,6 +275,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseParking(args, name: name)
         case VoiceToolName.upcomingRenewals:
             return parseRenewals(args, name: name)
+        case VoiceToolName.addToDiary:
+            return parseDiary(args, name: name)
         case VoiceToolName.addIngredients:
             return parseIngredients(args, name: name)
         case VoiceToolName.undoLast:

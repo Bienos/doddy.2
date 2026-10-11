@@ -12,7 +12,7 @@ public enum ConnectionPause {
     public static func applies(to request: VoiceToolRequest) -> Bool {
         switch request {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
-             .calculate, .convertUnits, .parkingSpot, .addIngredients, .upcomingRenewals,
+             .calculate, .convertUnits, .parkingSpot, .addIngredients, .upcomingRenewals, .addToDiary,
              .addToList, .readList, .checkOff, .removeFromList, .createList:
             false
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,

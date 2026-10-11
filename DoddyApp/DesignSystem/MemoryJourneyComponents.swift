@@ -16,6 +16,8 @@ enum MemoryNavigationRoute: Hashable {
     case warranties
     /// Bills and subscriptions (ADR-344).
     case renewals
+    /// The diary (ADR-345), when it is on.
+    case diary
 }
 
 struct DoddyWordmark: View {
