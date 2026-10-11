@@ -86,11 +86,11 @@ struct SettingsView: View {
 
                 Section {
                     Link(destination: Self.tiktokURL) {
-                        Label("TikTok · doddy_mate", systemImage: "play.rectangle")
+                        Label("TikTok",systemImage: "play.rectangle")
                     }
                     .accessibilityIdentifier("settings.tiktok")
                     Link(destination: Self.instagramURL) {
-                        Label("Instagram · doddy_mate", systemImage: "camera")
+                        Label("Instagram",systemImage: "camera")
                     }
                     .accessibilityIdentifier("settings.instagram")
                 } header: {
