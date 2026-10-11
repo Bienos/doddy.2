@@ -10,6 +10,8 @@ struct DoddyMotionView: View {
     var height: CGFloat = 96
     /// The box's width; nil: the strip's own width at this height.
     var width: CGFloat?
+    /// False: the still frame only, without playing (ADR-323), e.g. an entry undone earlier.
+    var playing = true
     @State private var start = Date()
     @State private var finished = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -21,7 +23,7 @@ struct DoddyMotionView: View {
             let box = motion.figure
             let size = CGSize(width: width ?? height * CGFloat(box.width / box.height) / 1.5, height: height)
             Group {
-                if reduceMotion || motion.frames.count == 1 {
+                if reduceMotion || !playing || motion.frames.count == 1 {
                     frame(motion.stillFrame, size)
                 } else {
                     TimelineView(.animation(minimumInterval: motion.frameDuration, paused: finished)) { context in

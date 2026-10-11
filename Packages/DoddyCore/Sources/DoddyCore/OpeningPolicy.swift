@@ -6,7 +6,7 @@ import Foundation
 // opens the microphone silently: the conversation screen comes up, says "Listening" from real
 // session events, and iOS shows its microphone indicator. It starts by itself only once iOS has
 // allowed the microphone, so the first microphone question always follows the user's own tap on
-// Talk to Doddy, never an app launch (ADR-320).
+// Talk to Doddy, never an app launch (ADR-325).
 
 public struct OpeningConditions: Equatable, Sendable {
     /// Settings → Appearance → "Doddy's opening". On unless turned off.

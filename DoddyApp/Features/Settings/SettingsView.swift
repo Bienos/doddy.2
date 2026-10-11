@@ -459,9 +459,13 @@ struct SettingsView: View {
                 } header: {
                     Text("Connections")
                 } footer: {
-                    Text(pauseAllConnections
-                        ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
-                        : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    HStack(alignment: .top, spacing: 12) {
+                        // Paused: Doddy lies low, crouching (ADR-323).
+                        if pauseAllConnections { WholeDoddyView(pose: .sneakyCrouch, height: 56) }
+                        Text(pauseAllConnections
+                            ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
+                            : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    }
                 }
 
                 Section {
@@ -937,7 +941,7 @@ struct JSONExport: Transferable {
 /// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to compare
 /// them. Same notes, lists, tools and cards either way; it takes effect when the next conversation
 /// starts, and Settings › What leaves this iPhone follows it. Here rather than on Home, where it sat
-/// under Talk to Doddy for every new user (ADR-320).
+/// under Talk to Doddy for every new user (ADR-325).
 struct VoiceProviderTestSwitch: View {
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
 

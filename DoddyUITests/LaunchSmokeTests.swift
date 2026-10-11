@@ -246,7 +246,7 @@ final class LaunchSmokeTests: XCTestCase {
 
     @MainActor
     func testListeningOnOpenIsOnByDefaultButWaitsForTheMicrophone() {
-        // ADR-320: with the microphone never asked about, nothing opens by itself, so iOS's
+        // ADR-325: with the microphone never asked about, nothing opens by itself, so iOS's
         // question can only follow a tap on Talk to Doddy. (Opening once it's allowed is covered
         // by OpeningPolicyTests; a UI test can't grant the microphone.)
         XCUIApplication().resetAuthorizationStatus(for: .microphone)
