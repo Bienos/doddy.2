@@ -200,9 +200,19 @@ final class DeviceConnections {
               Self.summary(event) == plan.before else {
             return .changedElsewhere
         }
+        // A new place (ADR-265) only if the place is still what the card showed.
+        if plan.newLocation != nil, (event.location ?? "") != (plan.locationBefore ?? "") { return .changedElsewhere }
+        var notes = event.notes
+        if let line = plan.removeNote {
+            guard let removed = EventChange.notes(event.notes, removing: line) else { return .changedElsewhere }
+            notes = removed
+        }
+        if let line = plan.addNote { notes = EventChange.notes(notes, adding: line) }
         event.title = plan.after.title
         event.startDate = plan.after.start
         event.endDate = plan.after.end
+        if let place = plan.newLocation { event.location = place.isEmpty ? nil : place }
+        if plan.addNote != nil || plan.removeNote != nil { event.notes = notes }
         try eventStore.save(event, span: .thisEvent)
         let itemID = event.calendarItemIdentifier
         let eventID = event.eventIdentifier
@@ -210,8 +220,16 @@ final class DeviceConnections {
             (found.calendarItemIdentifier == itemID || (eventID != nil && found.eventIdentifier == eventID))
                 && (found.title ?? "Untitled") == plan.after.title
                 && found.startDate == plan.after.start && found.endDate == plan.after.end
+                && (plan.newLocation.map { (found.location ?? "") == $0 } ?? true)
+                && (plan.addNote == nil && plan.removeNote == nil || (found.notes ?? "") == (notes ?? ""))
         }
         return readBack ? .verified : .unconfirmed
+    }
+
+    /// The place an occurrence has now, for the change card only (ADR-265). Never sent to the agent.
+    func eventLocation(_ event: CalendarEventSummary) -> String? {
+        guard access(for: .calendar) == .granted else { return nil }
+        return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.location
     }
 
     private func rawEvents(from start: Date, to end: Date) -> [EKEvent] {

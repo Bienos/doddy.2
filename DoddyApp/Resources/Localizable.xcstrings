@@ -408,6 +408,17 @@
         }
       }
     },
+    "Adds to its notes: “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dopisuje do notatek: „%@”"
+          }
+        }
+      }
+    },
     "After": {
       "extractionState": "manual",
       "localizations": {
@@ -3763,6 +3774,17 @@
         }
       }
     },
+    "Its notes are only added to, never replaced.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do notatek wydarzenia tylko się dopisuje, nigdy ich nie zastępuje."
+          }
+        }
+      }
+    },
     "Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving.": {
       "extractionState": "manual",
       "localizations": {
@@ -6102,6 +6124,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Miejsce"
+          }
+        }
+      }
+    },
+    "Place: %@ → %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miejsce: %@ → %@"
           }
         }
       }
@@ -10931,6 +10964,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "none": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "brak"
           }
         }
       }

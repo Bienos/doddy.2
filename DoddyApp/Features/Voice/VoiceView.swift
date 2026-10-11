@@ -420,6 +420,19 @@ struct VoiceView: View {
                 .font(.headline)
             changeRow(after: false, title: plan.before.title, when: eventWhen(plan.before))
             changeRow(after: true, title: plan.after.title, when: eventWhen(plan.after))
+            // Place and notes (ADR-265): shown here only; the old place never goes to Doddy's voice.
+            if let place = plan.newLocation {
+                Label(String(format: NSLocalizedString("Place: %@ → %@", comment: ""),
+                             plan.locationBefore?.isEmpty == false ? plan.locationBefore! : NSLocalizedString("none", comment: ""),
+                             place.isEmpty ? NSLocalizedString("none", comment: "") : place),
+                      systemImage: "mappin.and.ellipse")
+            }
+            if let note = plan.addNote {
+                Label(String(format: NSLocalizedString("Adds to its notes: “%@”", comment: ""), note), systemImage: "text.append")
+                Text("Its notes are only added to, never replaced.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Text("If it repeats, only this time changes. Nothing is deleted.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)

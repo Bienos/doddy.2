@@ -1755,7 +1755,8 @@ final class VoiceSessionController {
         case .several(let found):
             await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
         case .one(let event):
-            guard let plan = EventChange.plan(draft, for: event, calendar: .current) else {
+            let place = draft.newLocation == nil ? nil : devices.eventLocation(event)
+            guard let plan = EventChange.plan(draft, for: event, locationBefore: place, calendar: .current) else {
                 await reply(toolCallID, VoiceToolReply.eventChangeInvalid)
                 return
             }
@@ -1799,7 +1800,7 @@ final class VoiceSessionController {
             switch try devices.changeEvent(plan) {
             case .verified:
                 changeReceipt = ChangeReceipt(kind: .event(plan), message: ChangeReceipt.message(for: plan))
-                return VoiceToolReply.eventChanged(plan.after, calendar: .current)
+                return VoiceToolReply.eventChanged(plan, calendar: .current)
             case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
             }

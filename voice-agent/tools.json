@@ -85,7 +85,7 @@
     {
       "type": "function",
       "name": "change_calendar_event",
-      "description": "Propose moving or renaming one event already in the user's iPhone Calendar. Use it only when the user clearly asks to move, reschedule or rename an event. First call read_calendar for that day and pass the event's exact title and start as it returned them. Turn relative dates into a date using the current date and time you were given; if the new time is unclear, ask one short question first. A repeating event changes only this occurrence. It never deletes an event; use delete_calendar_event for that. The app shows the event as it is now and after the change, and the user must tap Change; the result starts with 'changed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed unless the result starts with changed. If the result says more than one event matches, ask the user which one.",
+      "description": "It can also give the event a new place (new_location) or add a line to its notes (add_note); notes are only ever added to. Propose moving or renaming one event already in the user's iPhone Calendar. Use it only when the user clearly asks to move, reschedule or rename an event. First call read_calendar for that day and pass the event's exact title and start as it returned them. Turn relative dates into a date using the current date and time you were given; if the new time is unclear, ask one short question first. A repeating event changes only this occurrence. It never deletes an event; use delete_calendar_event for that. The app shows the event as it is now and after the change, and the user must tap Change; the result starts with 'changed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed unless the result starts with changed. If the result says more than one event matches, ask the user which one.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -93,6 +93,8 @@
           "start": {"type": "string", "description": "The event's current start exactly as read_calendar returned it, as YYYY-MM-DDTHH:MM in local time, or YYYY-MM-DD for an all-day event."},
           "new_start": {"type": "string", "description": "The new start in the user's local time as YYYY-MM-DDTHH:MM (YYYY-MM-DD for an all-day event). Always the full day, no time zone or offset, later than now. The event keeps its length. Leave out if the time doesn't change."},
           "new_end": {"type": "string", "description": "A new end as YYYY-MM-DDTHH:MM, only if the user asked for a different end or length."},
+          "new_location": {"type": "string", "description": "A new place for the event, in the user's words, only if they asked to change where it is."},
+          "add_note": {"type": "string", "description": "A line to add at the end of the event's notes, in the user's words, only if they asked to add a note. Never repeat the existing notes."},
           "new_title": {"type": "string", "description": "A new title in the user's words, only if the user asked to rename it."}
         },
         "required": ["title", "start"]

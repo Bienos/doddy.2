@@ -995,5 +995,9 @@
  "Repeats every two weeks": "Powtarza się co dwa tygodnie",
  "Repeats every month": "Powtarza się co miesiąc",
  "Repeats every year": "Powtarza się co rok",
- "until %@": "do %@"
+ "until %@": "do %@",
+ "Place: %@ → %@": "Miejsce: %@ → %@",
+ "none": "brak",
+ "Adds to its notes: “%@”": "Dopisuje do notatek: „%@”",
+ "Its notes are only added to, never replaced.": "Do notatek wydarzenia tylko się dopisuje, nigdy ich nie zastępuje."
 }
