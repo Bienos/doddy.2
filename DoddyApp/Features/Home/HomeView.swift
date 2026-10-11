@@ -14,6 +14,13 @@ struct HomeView: View {
     /// buttons slide in. Absent in previews and tests.
     @Environment(OpeningModel.self) private var opening: OpeningModel?
     @State private var modal: MemoryModal?
+    /// Doddy's idle breaths are playing (ADR-313).
+    @State private var breathing = false
+    /// He has sat down on his box after the breaths (ADR-323).
+    @State private var seated = HomeIdle.sat
+    /// The sit plays only right after the breaths; a redraw meanwhile doesn't cut it short (ADR-331).
+    @State private var sitPlays = false
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
@@ -32,6 +39,22 @@ struct HomeView: View {
         memoryCopyOn
             ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
             : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+    }
+
+    /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
+    /// four times and sits down on his box (ADR-323). Waits a moment first, so an opening that is
+    /// about to start wins. The opening's hand-over still lands on the usual sitting picture.
+    private func breatheOnce() async {
+        guard !HomeIdle.played, !reduceMotion, !hideCharacterArt else { return }
+        try? await Task.sleep(for: .seconds(0.6))
+        guard !Task.isCancelled, !HomeIdle.played, opening?.play == nil, opening?.ready == nil, ready == nil else { return }
+        HomeIdle.played = true
+        breathing = true
+        try? await Task.sleep(for: .seconds(DoddyMotion.idle.duration + 0.2))
+        sitPlays = true
+        seated = true
+        breathing = false
+        HomeIdle.sat = true
     }
 
     var body: some View {
@@ -56,7 +79,22 @@ struct HomeView: View {
                         Text("Save a detail.\nFind it when you need it.")
                             .font(.subheadline).foregroundStyle(Theme.secondaryText)
                     }
-                    UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
+                    Group {
+                        if breathing {
+                            // Idle (ADR-313): he stands and breathes, on the sitting pose's floor.
+                            DoddyMotionView(motion: .idle, height: 170)
+                                .padding(.bottom, 31)
+                                .frame(height: 210, alignment: .bottom)
+                        } else if seated, ready == nil {
+                            // Then he sits down on his box (ADR-323) and stays there this launch.
+                            // Same scale and floor as the breaths (both strips' boxes end at 564/600).
+                            DoddyMotionView(motion: .sit, height: 166, playing: sitPlays)
+                                .padding(.bottom, 31)
+                                .frame(height: 210, alignment: .bottom)
+                        } else {
+                            UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
+                        }
+                    }
                         // The opening lands Doddy exactly here, so it needs to know where "here" is.
                         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
                             Task { @MainActor in
@@ -70,9 +108,20 @@ struct HomeView: View {
                         .id(ready != nil)
                         .transition(.opacity)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: breathing)
+                        .task { await breatheOnce() }
+                        // An opening (a later return) lands on the usual sitting picture: off the box.
+                        .onChange(of: opening?.play == nil) { _, nothingPlaying in
+                            if !nothingPlaying { seated = false; HomeIdle.sat = false }
+                        }
+                        // Doddy's room behind Doddy only, edge to edge; no text over it (ADR-308).
+                        .background {
+                            SceneryBackdrop(place: .home, height: 270, focus: 0.2)
+                                .padding(.horizontal, -24)
+                        }
 
                     if let problem = store.environment.storageProblem {
-                        ProblemView(message: problem)
+                        ProblemView(message: problem, showsDoddy: true)
                     }
 
                     VStack(spacing: 12) {
@@ -123,7 +172,8 @@ struct HomeView: View {
 
                     TodayCard(openSettings: { selectedTab = .settings })
 
-                    if router.setup.phase == .notStarted {
+                    // Back Tap exists only on iPhone (ADR-337).
+                    if router.setup.phase == .notStarted, DeviceSupport.hasBackTap {
                         backTapCard
                     }
                     aboutYou
@@ -324,4 +374,12 @@ private struct HomeActionTile: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 17))
         .overlay(RoundedRectangle(cornerRadius: 17).strokeBorder(Theme.separator, lineWidth: 1))
     }
+}
+
+/// Whether Home's idle breaths have played in this launch (ADR-313).
+@MainActor
+enum HomeIdle {
+    static var played = false
+    /// He sat down on his box this launch (ADR-323): later visits show him seated, without replaying.
+    static var sat = false
 }

@@ -23,6 +23,28 @@
         }
       }
     },
+    "%@ shared a reminder at “%@”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ udostępnia przypomnienie w miejscu „%@”."
+          }
+        }
+      }
+    },
+    "%lld items": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozycje: %lld"
+          }
+        }
+      }
+    },
     "%lld left": {
       "extractionState": "manual",
       "localizations": {
@@ -144,6 +166,17 @@
         }
       }
     },
+    "A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna notatka zostaje na tym iPhonie i nie trafia do głosu Doddy’ego, Siri, Zapytaj Doddy’ego, widżetów, zegarka ani kopii do rozmów. Jej słowa widać po Face ID."
+          }
+        }
+      }
+    },
     "A project, hobby or routine. Share only what would help.": {
       "extractionState": "manual",
       "localizations": {
@@ -162,6 +195,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szybki sposób, żeby mnie znaleźć"
+          }
+        }
+      }
+    },
+    "A quiet week: nothing saved, ticked or changed, and nothing coming up that Doddy can see.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spokojny tydzień: nic nie zapisano, nie odhaczono ani nie zmieniono, a Doddy nie widzi nic nadchodzącego."
           }
         }
       }
@@ -265,6 +309,17 @@
         }
       }
     },
+    "About %lld min of travel, plus %lld min spare": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Około %lld min drogi, plus %lld min zapasu"
+          }
+        }
+      }
+    },
     "About this build": {
       "extractionState": "manual",
       "localizations": {
@@ -331,6 +386,28 @@
         }
       }
     },
+    "Add %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj %lld"
+          }
+        }
+      }
+    },
+    "Add %lld to the list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj %lld do listy"
+          }
+        }
+      }
+    },
     "Add a preference": {
       "extractionState": "manual",
       "localizations": {
@@ -386,6 +463,17 @@
         }
       }
     },
+    "Add to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do"
+          }
+        }
+      }
+    },
     "Add to a list": {
       "extractionState": "manual",
       "localizations": {
@@ -404,6 +492,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj do listy w Doddym"
+          }
+        }
+      }
+    },
+    "Added %lld to %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodano %lld do: %@."
           }
         }
       }
@@ -448,6 +547,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaje pozycje do jednej z Twoich list w Doddym. Kilka pozycji oddziel przecinkami."
+          }
+        }
+      }
+    },
+    "Adds to a new list called “To do”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doda je do nowej listy „Do zrobienia”."
           }
         }
       }
@@ -562,6 +672,17 @@
         }
       }
     },
+    "Already on the list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Już jest na liście"
+          }
+        }
+      }
+    },
     "Always linked to your original note.": {
       "extractionState": "manual",
       "localizations": {
@@ -602,6 +723,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Analityka i telemetria"
+          }
+        }
+      }
+    },
+    "And %lld more": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I jeszcze: %lld"
           }
         }
       }
@@ -738,6 +870,17 @@
         }
       }
     },
+    "Apple Maps worked out the travel time just now, from where your iPhone is; traffic can change. Your position isn't kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple obliczyły czas dojazdu przed chwilą, z miejsca, gdzie jest Twój iPhone; ruch może się zmienić. Twoja pozycja nie jest przechowywana."
+          }
+        }
+      }
+    },
     "Apple Reminders": {
       "extractionState": "manual",
       "localizations": {
@@ -778,6 +921,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Działa od następnej rozmowy głosowej. Nastrój zmienia to, jak Doddy brzmi, a nie to, co czuje: jest SI i nie ma nastrojów."
+          }
+        }
+      }
+    },
+    "Arrive by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na miejscu do %@"
           }
         }
       }
@@ -855,6 +1009,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw pyta. Cofa tylko to, co zrobił Doddy, i tylko jeśli od tamtej pory nic się nie zmieniło."
+          }
+        }
+      }
+    },
+    "Asks for Face ID or your passcode when Doddy opens and after a minute away. Private notes always ask before showing their words.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prosi o Face ID lub kod, gdy otwierasz Doddy’ego i po minucie nieobecności. Prywatne notatki zawsze pytają, zanim pokażą swoje słowa."
           }
         }
       }
@@ -1200,6 +1365,17 @@
         }
       }
     },
+    "Change Doddy's lock": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień blokadę Doddy’ego"
+          }
+        }
+      }
+    },
     "Change event": {
       "extractionState": "manual",
       "localizations": {
@@ -1515,6 +1691,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kod"
+          }
+        }
+      }
+    },
+    "Coming up this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tym tygodniu"
           }
         }
       }
@@ -2421,6 +2608,17 @@
         }
       }
     },
+    "Doddy during this Focus": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy w tym trybie skupienia"
+          }
+        }
+      }
+    },
     "Doddy follows you if you switch language while you talk.": {
       "extractionState": "manual",
       "localizations": {
@@ -2472,6 +2670,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy to SI, nie człowiek. Twoje pytanie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do OpenAI, aby napisać odpowiedź. Nic nie jest zapisywane, dopóki sam tego nie zapiszesz."
+          }
+        }
+      }
+    },
+    "Doddy is locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy jest zablokowany"
           }
         }
       }
@@ -2553,6 +2762,17 @@
         }
       }
     },
+    "Doddy opens this on the capture screen next time you open the app. Nothing is saved until you tap Save there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy otworzy to na ekranie zapisu, gdy następnym razem otworzysz aplikację. Nic nie zostanie zapisane, dopóki nie stukniesz tam Zapisz."
+          }
+        }
+      }
+    },
     "Doddy reminder %@": {
       "extractionState": "manual",
       "localizations": {
@@ -2625,7 +2845,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Budziki Doddy'ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy'ego, nie te z aplikacji Zegar."
+            "value": "Budziki Doddy’ego dzwonią nawet w trybie cichym i przy włączonym skupieniu. Widać tu tylko budziki ustawione przez Doddy’ego, nie te z aplikacji Zegar."
           }
         }
       }
@@ -2868,6 +3088,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe"
+          }
+        }
+      }
+    },
+    "Done with Doddy, and checked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrobione z Doddym i sprawdzone"
           }
         }
       }
@@ -3132,6 +3363,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każde pytanie jest opcjonalne. Przejrzysz wszystko, zanim to zachowam, i możesz to zmienić lub zapomnieć w Ustawieniach."
+          }
+        }
+      }
+    },
+    "Everyone on the list can be reminded at “%@”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszyscy na liście mogą dostać przypomnienie w miejscu „%@”."
           }
         }
       }
@@ -3565,6 +3807,28 @@
         }
       }
     },
+    "Found by simple rules on this iPhone, so check them. Adding them doesn't save the note; Save does.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znalezione prostymi regułami na tym iPhonie, więc je sprawdź. Dodanie ich nie zapisuje notatki; robi to Zapisz."
+          }
+        }
+      }
+    },
+    "From Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od Doddy’ego"
+          }
+        }
+      }
+    },
     "From Google Keep: in Google Takeout, export Keep. In the Files app, tap the .zip to unpack it, open the Keep folder and pick the .json files. You can also pick .txt and .md files.": {
       "extractionState": "manual",
       "localizations": {
@@ -3708,6 +3972,17 @@
         }
       }
     },
+    "Hey Doddy paused": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Hey Doddy” wstrzymane"
+          }
+        }
+      }
+    },
     "Hey.\nLet's talk.": {
       "extractionState": "manual",
       "localizations": {
@@ -3726,6 +4001,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ukryj grafikę postaci"
+          }
+        }
+      }
+    },
+    "High": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysoki"
           }
         }
       }
@@ -4093,17 +4379,6 @@
         }
       }
     },
-    "Its notes are only added to, never replaced.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Do notatek wydarzenia tylko się dopisuje, nigdy ich nie zastępuje."
-          }
-        }
-      }
-    },
     "Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving.": {
       "extractionState": "manual",
       "localizations": {
@@ -4203,6 +4478,17 @@
         }
       }
     },
+    "Kept only on this iPhone, and replaces any spot saved before. Doddy hears when you saved it, not where.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane tylko na tym iPhonie; zastępuje wcześniej zapisane miejsce. Doddy wie, kiedy je zapisano, a nie gdzie jest."
+          }
+        }
+      }
+    },
     "Kept only on this iPhone, never sent anywhere. Not in exports.": {
       "extractionState": "manual",
       "localizations": {
@@ -4243,6 +4529,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Słowa kluczowe, oddzielone przecinkami"
+          }
+        }
+      }
+    },
+    "LOOKS LIKE THINGS TO DO": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WYGLĄDA NA RZECZY DO ZROBIENIA"
           }
         }
       }
@@ -4346,6 +4643,17 @@
         }
       }
     },
+    "Leave at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjdź o %@"
+          }
+        }
+      }
+    },
     "Leave it": {
       "extractionState": "manual",
       "localizations": {
@@ -4434,6 +4742,17 @@
         }
       }
     },
+    "List items ticked off: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhaczone pozycje z list: %lld"
+          }
+        }
+      }
+    },
     "List name": {
       "extractionState": "manual",
       "localizations": {
@@ -4452,6 +4771,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opcje listy"
+          }
+        }
+      }
+    },
+    "List to show first": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista na początku"
           }
         }
       }
@@ -4643,6 +4973,28 @@
         }
       }
     },
+    "Lock Doddy with Face ID": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blokuj Doddy’ego przez Face ID"
+          }
+        }
+      }
+    },
+    "Locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zablokowana"
+          }
+        }
+      }
+    },
     "Looking for": {
       "extractionState": "manual",
       "localizations": {
@@ -4661,6 +5013,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Szuka tego przypomnienia w Przypomnieniach. Nic nie jest dodawane."
+          }
+        }
+      }
+    },
+    "Low": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niski"
+          }
+        }
+      }
+    },
+    "Made on this iPhone from your notes, lists and What Doddy did. Nothing is sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowane na tym iPhonie z Twoich notatek, list i „Co zrobił Doddy”. Nic nie jest nigdzie wysyłane."
           }
         }
       }
@@ -4727,6 +5101,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Może nie zgadzać się z inną notatką"
+          }
+        }
+      }
+    },
+    "Medium": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Średni"
           }
         }
       }
@@ -5199,7 +5584,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Brak budzików od Doddy'ego. Poproś Doddy'ego, na przykład „Obudź mnie o siódmej”."
+            "value": "Brak budzików od Doddy’ego. Poproś Doddy’ego, na przykład „Obudź mnie o siódmej”."
           }
         }
       }
@@ -5347,6 +5732,17 @@
         }
       }
     },
+    "None": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak"
+          }
+        }
+      }
+    },
     "None of your contacts has a birthday saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -5420,6 +5816,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie zbudowane · nie zaplanowane"
+          }
+        }
+      }
+    },
+    "Not changed: Face ID didn't confirm it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez zmian: Face ID tego nie potwierdził."
           }
         }
       }
@@ -5600,6 +6007,17 @@
         }
       }
     },
+    "Notes saved: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane notatki: %lld"
+          }
+        }
+      }
+    },
     "Nothing coming up.": {
       "extractionState": "manual",
       "localizations": {
@@ -5677,6 +6095,17 @@
         }
       }
     },
+    "Nothing left.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie zostało."
+          }
+        }
+      }
+    },
     "Nothing new for your topics right now.": {
       "extractionState": "manual",
       "localizations": {
@@ -5684,6 +6113,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na razie nic nowego w Twoich tematach."
+          }
+        }
+      }
+    },
+    "Nothing new was added; those are already on the list or it's full.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nowego nie dodano; te pozycje już są na liście albo lista jest pełna."
           }
         }
       }
@@ -5886,6 +6326,17 @@
         }
       }
     },
+    "Notifications are off for Doddy, so the look-back can't arrive. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia Doddy’ego są wyłączone, więc podsumowanie nie dotrze. Włącz je w Ustawieniach iOS."
+          }
+        }
+      }
+    },
     "Notifications are off for Doddy, so the tidy-up can't ring. Turn them on in iOS Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -6025,6 +6476,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Raz w tygodniu Doddy podsuwa notatki zapisane dwa razy, przypomnienia, których czas minął, i listy z odhaczonymi wszystkimi pozycjami. Nic nie jest usuwane, dopóki tego nie stukniesz."
+          }
+        }
+      }
+    },
+    "Once a week a notification says only \"Your week with Doddy\". Its screen shows what you saved, ticked off and asked Doddy to do, and what's coming up. No streaks or scores.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raz w tygodniu powiadomienie mówi tylko „Twój tydzień z Doddym”. Na ekranie widać, co zapisano, odhaczono i zlecono Doddy’emu, oraz co nadchodzi. Bez serii i punktów."
           }
         }
       }
@@ -6227,6 +6689,17 @@
         }
       }
     },
+    "Open Doddy to check it and tap Save. It isn't saved yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, sprawdź to i stuknij Zapisz. To jeszcze nie jest zapisane."
+          }
+        }
+      }
+    },
     "Open Doddy to check the steps": {
       "extractionState": "manual",
       "localizations": {
@@ -6355,6 +6828,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz przegląd teraz"
+          }
+        }
+      }
+    },
+    "Open the look-back now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz podsumowanie teraz"
           }
         }
       }
@@ -6557,6 +7041,17 @@
         }
       }
     },
+    "Parked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaparkowano"
+          }
+        }
+      }
+    },
     "Passphrase": {
       "extractionState": "manual",
       "localizations": {
@@ -6575,6 +7070,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powtórz hasło"
+          }
+        }
+      }
+    },
+    "Pause Hey Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj „Hey Doddy”"
+          }
+        }
+      }
+    },
+    "Pause Hey Doddy and put one list first in your lists while this Focus is on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj „Hey Doddy” i pokaż jedną listę na początku, gdy ten tryb skupienia jest włączony."
           }
         }
       }
@@ -6608,6 +7125,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wstrzymane"
+          }
+        }
+      }
+    },
+    "Paused by your Focus. It listens again when that Focus ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymane przez tryb skupienia. Doddy znów nasłuchuje, gdy ten tryb się skończy."
           }
         }
       }
@@ -6964,6 +7492,17 @@
         }
       }
     },
+    "Private note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna notatka"
+          }
+        }
+      }
+    },
     "Private-beta feature. Doddy's server keeps the AI key, so no key is stored on your iPhone. The invite code and a random install ID (not linked to you) are kept in the iOS Keychain on this iPhone to prove it may use the server.": {
       "extractionState": "manual",
       "localizations": {
@@ -7125,6 +7664,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe (jeszcze nie sprawdzone z prawdziwym serwerem)"
+          }
+        }
+      }
+    },
+    "Ready in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe w Doddym"
           }
         }
       }
@@ -7305,6 +7855,17 @@
         }
       }
     },
+    "Remind me there too": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypominaj mi tam też"
+          }
+        }
+      }
+    },
     "Remind you about this list?": {
       "extractionState": "manual",
       "localizations": {
@@ -7323,6 +7884,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnieć Ci o tej notatce?"
+          }
+        }
+      }
+    },
+    "Remind you when to leave?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnieć ci, kiedy wyjść?"
           }
         }
       }
@@ -7378,6 +7950,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnienia to potwierdziły"
+          }
+        }
+      }
+    },
+    "Reminders due by the end of next week, overdue included: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia do końca przyszłego tygodnia, łącznie z zaległymi: %lld"
           }
         }
       }
@@ -7510,6 +8093,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usuń token sesji"
+          }
+        }
+      }
+    },
+    "Remove template": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń szablon"
           }
         }
       }
@@ -7866,6 +8460,17 @@
         }
       }
     },
+    "Save as template": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz jako szablon"
+          }
+        }
+      }
+    },
     "Save invite code": {
       "extractionState": "manual",
       "localizations": {
@@ -7954,6 +8559,17 @@
         }
       }
     },
+    "Save your parking spot here?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisać tu miejsce parkowania?"
+          }
+        }
+      }
+    },
     "Saved": {
       "extractionState": "manual",
       "localizations": {
@@ -8027,6 +8643,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisano w notatkach, ale nie udało się usunąć tego z tej listy. Stuknij Odrzuć, żeby to usunąć."
+          }
+        }
+      }
+    },
+    "Saved “%@” as a template with %lld items. Start a new list from it under New list, or ask Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano „%@” jako szablon z pozycjami: %lld. Nową listę z niego zaczniesz w Nowa lista albo prosząc Doddy’ego."
           }
         }
       }
@@ -8262,6 +8889,17 @@
         }
       }
     },
+    "Send to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij do Doddy’ego"
+          }
+        }
+      }
+    },
     "Sent, with your current settings": {
       "extractionState": "manual",
       "localizations": {
@@ -8394,6 +9032,17 @@
         }
       }
     },
+    "Set. The look-back comes once a week.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione. Podsumowanie przychodzi raz w tygodniu."
+          }
+        }
+      }
+    },
     "Set. The tidy-up notification comes once a week.": {
       "extractionState": "manual",
       "localizations": {
@@ -8460,6 +9109,17 @@
         }
       }
     },
+    "Share as a picture": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij jako obrazek"
+          }
+        }
+      }
+    },
     "Share as text": {
       "extractionState": "manual",
       "localizations": {
@@ -8478,6 +9138,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnij tekst"
+          }
+        }
+      }
+    },
+    "Share this place with everyone on the list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij to miejsce wszystkim na liście"
           }
         }
       }
@@ -8544,6 +9215,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnianie list nie jest skonfigurowane w tej wersji Doddy’ego."
+          }
+        }
+      }
+    },
+    "Sharing to Doddy isn't set up in this version of the app. Nothing was saved. You can use the Save to Doddy shortcut instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnianie do Doddy’ego nie jest skonfigurowane w tej wersji aplikacji. Nic nie zostało zapisane. Możesz zamiast tego użyć skrótu Zapisz w Doddym."
           }
         }
       }
@@ -8658,6 +9340,17 @@
         }
       }
     },
+    "Show notes in iPhone search": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazuj notatki w wyszukiwaniu iPhone’a"
+          }
+        }
+      }
+    },
     "Show notes of one type": {
       "extractionState": "manual",
       "localizations": {
@@ -8665,6 +9358,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż notatki jednego typu"
+          }
+        }
+      }
+    },
+    "Show notes with one tag": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż notatki z jednym tagiem"
           }
         }
       }
@@ -8687,6 +9391,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż, co powiedzieli"
+          }
+        }
+      }
+    },
+    "Show your private note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż swoją prywatną notatkę"
           }
         }
       }
@@ -8775,6 +9490,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drzemka"
+          }
+        }
+      }
+    },
+    "Someone on the list shared a reminder at “%@”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ktoś z listy udostępnia przypomnienie w miejscu „%@”."
           }
         }
       }
@@ -8874,6 +9600,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zacznij skupienie"
+          }
+        }
+      }
+    },
+    "Start from a template": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij od szablonu"
           }
         }
       }
@@ -9054,6 +9791,17 @@
         }
       }
     },
+    "Stop sharing this place": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań udostępniać to miejsce"
+          }
+        }
+      }
+    },
     "Stop this reminder?": {
       "extractionState": "manual",
       "localizations": {
@@ -9160,6 +9908,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Synchronizacja między urządzeniami"
+          }
+        }
+      }
+    },
+    "Tag %@, %lld notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tag %@, notatki: %lld"
           }
         }
       }
@@ -9391,6 +10150,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ten kod jest nieprawidłowy. Sprawdź SMS-a i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "That couldn't be handed to Doddy. Nothing was saved. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przekazać tego Doddy’emu. Nic nie zostało zapisane. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "That couldn't be saved on this iPhone. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się tego zapisać na tym iPhonie. Spróbuj ponownie."
           }
         }
       }
@@ -9736,6 +10517,17 @@
         }
       }
     },
+    "The look-back couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić podsumowania. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "The memory store isn't available on this iPhone right now.": {
       "extractionState": "manual",
       "localizations": {
@@ -10055,6 +10847,17 @@
         }
       }
     },
+    "There's no text or web link here that Doddy can keep. Nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma tu tekstu ani linku, który Doddy mógłby zachować. Nic nie zostało zapisane."
+          }
+        }
+      }
+    },
     "Things you said that might be useful later, in your words. Tick what to save; nothing is saved otherwise. Doddy picked these on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -10209,6 +11012,17 @@
         }
       }
     },
+    "This iPhone has no passcode or Face ID set up, so Doddy can't lock.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie ma ustawionego kodu ani Face ID, więc Doddy nie może się zablokować."
+          }
+        }
+      }
+    },
     "This iPhone's Doddy messaging account no longer exists. Try again to start a new one.": {
       "extractionState": "manual",
       "localizations": {
@@ -10249,6 +11063,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ten tekst widać na ekranie blokady i w Dynamic Island, gdy odliczanie trwa. Zostaw puste, żeby pokazywać tylko czas."
+          }
+        }
+      }
+    },
+    "This list is empty, so there's nothing to keep as a template.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta lista jest pusta, więc nie ma czego zapisać jako szablon."
           }
         }
       }
@@ -10308,6 +11133,17 @@
         }
       }
     },
+    "This note is private. Its words show after Face ID or your passcode.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta notatka jest prywatna. Jej słowa widać po Face ID lub kodzie."
+          }
+        }
+      }
+    },
     "This note's photo file is missing on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -10359,6 +11195,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "To usuwa z tego iPhone’a to, co powiedziałeś Doddy’emu na powitanie. Zapisane wspomnienia zostają."
+          }
+        }
+      }
+    },
+    "This replaces something you shared earlier that isn't saved yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To zastąpi wcześniej udostępnioną treść, która nie jest jeszcze zapisana."
+          }
+        }
+      }
+    },
+    "This replaces your own reminder for this list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To zastąpi Twoje własne przypomnienie dla tej listy."
           }
         }
       }
@@ -10513,6 +11371,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tytuł"
+          }
+        }
+      }
+    },
+    "To do": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do zrobienia"
           }
         }
       }
@@ -10891,6 +11760,17 @@
         }
       }
     },
+    "Undo isn't available for these changes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cofnięcie nie działa dla tych zmian."
+          }
+        }
+      }
+    },
     "Undo this import": {
       "extractionState": "manual",
       "localizations": {
@@ -10909,6 +11789,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cofanie…"
+          }
+        }
+      }
+    },
+    "Unlock": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odblokuj"
           }
         }
       }
@@ -10986,6 +11877,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Do 5 minut. Doddy zapisuje ją jako tekst na tym iPhonie; nagranie nigdy nie jest nigdzie wysyłane."
+          }
+        }
+      }
+    },
+    "Updated the “%@” template: %lld items.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaktualizowano szablon „%@”: pozycje: %lld."
           }
         }
       }
@@ -11276,6 +12178,17 @@
         }
       }
     },
+    "Weekly look-back": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie tygodnia"
+          }
+        }
+      }
+    },
     "Weekly tidy-up": {
       "extractionState": "manual",
       "localizations": {
@@ -11540,6 +12453,17 @@
         }
       }
     },
+    "Where I parked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miejsce parkowania"
+          }
+        }
+      }
+    },
     "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.": {
       "extractionState": "manual",
       "localizations": {
@@ -11782,6 +12706,17 @@
         }
       }
     },
+    "You have %lld templates, the most Doddy keeps. Remove one under New list first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masz %lld szablonów, tyle ile Doddy przechowuje. Najpierw usuń jeden w Nowa lista."
+          }
+        }
+      }
+    },
     "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": {
       "extractionState": "manual",
       "localizations": {
@@ -12002,6 +12937,17 @@
         }
       }
     },
+    "Your notes and lists can be found from the iPhone's search. The index stays on this iPhone. Private notes are never included, and turning this off removes them all from search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje notatki i listy można znaleźć w wyszukiwaniu iPhone’a. Indeks zostaje na tym iPhonie. Prywatne notatki nigdy nie są uwzględniane, a wyłączenie tej opcji usuwa wszystkie z wyszukiwania."
+          }
+        }
+      }
+    },
     "Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs and are always on.": {
       "extractionState": "manual",
       "localizations": {
@@ -12013,13 +12959,13 @@
         }
       }
     },
-    "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes, your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft or task you confirm) to your Doddy server, which talks to Google, Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to ElevenLabs like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back. Nothing else is sent anywhere.": {
+    "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to ElevenLabs like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Twoje notatki zostają na tym iPhonie. Podczas rozmowy głosowej Twój głos, rozmowa, zapisane notatki, nazwy list (pozycje listy tylko wtedy, gdy Doddy ją czyta lub zmienia), ustawienia osobowości oraz (jeśli są włączone) kilka ostatnich rozmów i odpowiedzi z przedstawienia się są wysyłane do ElevenLabs, który obsługuje agenta głosowego. Trafiają tam też wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice wiadomości, których Doddy użyje w rozmowie. Gdy pytasz o pogodę lub fakty, ElevenLabs sprawdza je dla Doddy’ego: nazwa miejsca i współrzędne trafiają do Open-Meteo, a szukane słowa do Wikipedii; ta aplikacja sama nie wysyła takich zapytań. ElevenLabs przechowuje nagranie i zapis każdej rozmowy. Jeśli ustawiono serwer tokenów, rozpoczęcie rozmowy wysyła do niego także Twój kod dostępu. Jeśli używasz Połączonych aplikacji lub włączysz narzędzie konta online, aplikacja wysyła to, o co prosisz (datę, szukane słowo albo treść potwierdzonego szkicu lub zadania), do Twojego serwera Doddy, który łączy się z Google, Notion lub Todoist przez Composio; wyniki wracają do aplikacji i w trakcie rozmowy do ElevenLabs, żeby Doddy mógł odpowiedzieć; Twoje zapisane notatki nigdy nie trafiają na ten serwer. Jeśli poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane” (można to wyłączyć poniżej), Doddy szuka na tym iPhonie i przekazuje pasującą notatkę Siri, asystentowi Apple, do przeczytania na głos; Siri obsługuje to, co mówisz, i odpowiedź zgodnie z Twoimi ustawieniami Siri. Jeśli włączysz „Hey Doddy”, mikrofon nasłuchuje słowa wybudzającego na tym iPhonie, a to, co usłyszy, nie jest przechowywane ani wysyłane; Picovoice dostaje Twój AccessKey, żeby go sprawdzić, a rozmowa rozpoczęta tym słowem trafia do ElevenLabs jak każda inna. Jeśli włączysz wyszukiwanie w sieci, szukane słowa trafiają tą samą drogą do Twojego serwera Doddy, który wyszukuje je przez Monid (płatną usługę wyszukiwania używaną przez serwer Doddy’ego; nie logujesz się do niej). Jeśli włączysz Zapytaj Doddy’ego, wpisane pytania (oraz, jeśli pozwolisz, pasujące do nich zapisane notatki) trafiają do bramki Zapytaj Doddy’ego, osobnego serwera, który przekazuje je do OpenAI. Jeśli ustawiono serwer wiadomości Doddy i włączysz powiadomienia, SMS-y, połączenia telefoniczne lub codzienne wiadomości, dostaje on anonimowy token konta, token powiadomień tego iPhone’a, Twój numer telefonu po potwierdzeniu go kodem oraz wybrane tematy wiadomości; wysyła przez Apple i Twilio, prowadzi połączenia w ElevenLabs i pisze wiadomości z pomocą AI (Anthropic lub OpenAI, zależnie od konfiguracji serwera; ekran Codzienne wiadomości podaje którego) i GNews. Twoje zapisane notatki trafiają tam tylko, jeśli włączysz „Pozwól Doddy’emu używać moich wspomnień w rozmowach telefonicznych”. Jeśli szukasz miejsca dla przypomnienia, wpisane słowa (oraz przybliżone położenie, jeśli Doddy już je zna) trafiają do Apple Maps; wybrane miejsce zostaje na tym iPhonie, a to iOS, nie Doddy, zauważa, kiedy tam dotrzesz. W trybie tłumacza głos drugiej osoby też trafia do ElevenLabs (tryb słuchania słyszy tylko osoby w pobliżu); po uruchomieniu z Tłumacz na ekranie głównym Twoje notatki, rozmowy i profil nie są wysyłane, a nic z tego nie zostaje na tym iPhonie, chyba że w ciągu 5 minut stukniesz Kopiuj lub Zapisz. Jeśli udostępnisz listę, jej nazwa i pozycje trafiają do Twojego iCloud (Apple) i do zaproszonych osób, a ich zmiany wracają do Ciebie. Nic innego nie jest nigdzie wysyłane."
+            "value": "Twoje notatki zostają na tym iPhonie. Podczas rozmowy głosowej Twój głos, rozmowa, zapisane notatki (oprócz oznaczonych jako prywatne), nazwy list (pozycje listy tylko wtedy, gdy Doddy ją czyta lub zmienia), ustawienia osobowości oraz (jeśli są włączone) kilka ostatnich rozmów i odpowiedzi z przedstawienia się są wysyłane do ElevenLabs, który obsługuje agenta głosowego. Trafiają tam też wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice wiadomości, których Doddy użyje w rozmowie. Gdy pytasz o pogodę lub fakty, ElevenLabs sprawdza je dla Doddy’ego: nazwa miejsca i współrzędne trafiają do Open-Meteo, a szukane słowa do Wikipedii; ta aplikacja sama nie wysyła takich zapytań. ElevenLabs przechowuje nagranie i zapis każdej rozmowy. Jeśli ustawiono serwer tokenów, rozpoczęcie rozmowy wysyła do niego także Twój kod dostępu. Jeśli używasz Połączonych aplikacji lub włączysz narzędzie konta online, aplikacja wysyła to, o co prosisz (datę, szukane słowo albo treść potwierdzonego szkicu, odpowiedzi lub zadania), do Twojego serwera Doddy, który łączy się z Google, Microsoft (Outlook), Notion lub Todoist przez Composio; wyniki wracają do aplikacji i w trakcie rozmowy do ElevenLabs, żeby Doddy mógł odpowiedzieć; Twoje zapisane notatki nigdy nie trafiają na ten serwer. Jeśli poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane” (można to wyłączyć poniżej), Doddy szuka na tym iPhonie i przekazuje pasującą notatkę Siri, asystentowi Apple, do przeczytania na głos; Siri obsługuje to, co mówisz, i odpowiedź zgodnie z Twoimi ustawieniami Siri. Jeśli włączysz „Hey Doddy”, mikrofon nasłuchuje słowa wybudzającego na tym iPhonie, a to, co usłyszy, nie jest przechowywane ani wysyłane; Picovoice dostaje Twój AccessKey, żeby go sprawdzić, a rozmowa rozpoczęta tym słowem trafia do ElevenLabs jak każda inna. Jeśli włączysz wyszukiwanie w sieci, szukane słowa trafiają tą samą drogą do Twojego serwera Doddy, który wyszukuje je przez Monid (płatną usługę wyszukiwania używaną przez serwer Doddy’ego; nie logujesz się do niej). Jeśli włączysz Zapytaj Doddy’ego, wpisane pytania (oraz, jeśli pozwolisz, pasujące do nich zapisane notatki) trafiają do bramki Zapytaj Doddy’ego, osobnego serwera, który przekazuje je do OpenAI. Jeśli ustawiono serwer wiadomości Doddy i włączysz powiadomienia, SMS-y, połączenia telefoniczne lub codzienne wiadomości, dostaje on anonimowy token konta, token powiadomień tego iPhone’a, Twój numer telefonu po potwierdzeniu go kodem oraz wybrane tematy wiadomości; wysyła przez Apple i Twilio, prowadzi połączenia w ElevenLabs i pisze wiadomości z pomocą AI (Anthropic lub OpenAI, zależnie od konfiguracji serwera; ekran Codzienne wiadomości podaje którego) i GNews. Twoje zapisane notatki trafiają tam tylko, jeśli włączysz „Pozwól Doddy’emu używać moich wspomnień w rozmowach telefonicznych”. Jeśli szukasz miejsca dla przypomnienia, wpisane słowa (oraz przybliżone położenie, jeśli Doddy już je zna) trafiają do Apple Maps; wybrane miejsce zostaje na tym iPhonie, a to iOS, nie Doddy, zauważa, kiedy tam dotrzesz. W trybie tłumacza głos drugiej osoby też trafia do ElevenLabs (tryb słuchania słyszy tylko osoby w pobliżu); po uruchomieniu z Tłumacz na ekranie głównym Twoje notatki, rozmowy i profil nie są wysyłane, a nic z tego nie zostaje na tym iPhonie, chyba że w ciągu 5 minut stukniesz Kopiuj lub Zapisz. Jeśli udostępnisz listę, jej nazwa i pozycje trafiają do Twojego iCloud (Apple) i do zaproszonych osób, a ich zmiany wracają do Ciebie; miejsce przypomnienia listy trafia tam tylko wtedy, gdy stukniesz Udostępnij to miejsce. Jeśli poprosisz Doddy’ego o przeliczenie waluty, aplikacja pobiera publiczny plik kursów Europejskiego Banku Centralnego; nic o Tobie nie jest przy tym wysyłane. Jeśli włączysz „Read an email” (Przeczytaj e-mail) lub „Read a Notion page” (Przeczytaj stronę Notion), ten jeden e-mail (nadawca, temat i treść) lub strona (tytuł i treść), o które pytasz, skrócone, przychodzą z Twojego serwera Doddy i trafiają do ElevenLabs w tej rozmowie. Tekst udostępniony do Doddy’ego z innej aplikacji, zadania znalezione w notatce głosowej i ustawienia trybów skupienia zostają na tym iPhonie; widżet parkowania pokazuje, kiedy zaparkowano, i Twoją notatkę, nigdy miejsce. Jeśli poprosisz Doddy’ego o przypomnienie, kiedy wyjść, położenie Twojego iPhone’a i miejsce, do którego jedziesz, trafiają raz do Map Apple, żeby obliczyć czas dojazdu; nic z tego nie jest przechowywane. Jeśli włączysz Pokazuj notatki w wyszukiwaniu iPhone’a, Twoje notatki i listy (nigdy prywatne) są indeksowane przez iOS na tym iPhonie. Nic innego nie jest nigdzie wysyłane."
           }
         }
       }
@@ -12042,6 +12988,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój numer"
+          }
+        }
+      }
+    },
+    "Your parking spot": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje miejsce parkowania"
           }
         }
       }
@@ -12097,6 +13054,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoja notatka głosowa"
+          }
+        }
+      }
+    },
+    "Your week\nwith Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój tydzień\\nz Doddym"
           }
         }
       }

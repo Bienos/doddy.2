@@ -21,6 +21,9 @@ struct DoddyToolAttributes: ActivityAttributes {
         var label: String?
         /// The time ran out, the exercise ended or the note was read to the end.
         var isFinished = false
+        /// The island style picked in Settings when this was sent (ADR-299): with Whole Doddy the
+        /// read-aloud island shows his reading pose. Nil from older builds: the board's art.
+        var islandStyle: IslandStyle?
     }
 
     var kind: Kind

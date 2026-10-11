@@ -35,20 +35,24 @@ settings:
     DEVELOPMENT_TEAM: ""
     # Override this at build time for an isolated simulator install; keep the owner's default.
     DODDY_APP_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
-    # Push notifications from the Doddy messaging server (ADR-142, ADR-174). Off by default so a
-    # free Apple ID can still build to a device (free teams can't use Push). With a paid team that
-    # has Push enabled, set this to DoddyApp/Doddy.entitlements (here or on the xcodebuild line).
+    # Push notifications from the Doddy messaging server (ADR-142, ADR-174). Off by default. Now that
+    # the App Group is on (below), turn push on with DODDY_APP_ENTITLEMENTS =
+    # Config/Doddy-Push-AppGroup.entitlements (push and the App Group together). This variable is
+    # kept for older xcodebuild lines and is no longer used by any target.
     DODDY_PUSH_ENTITLEMENTS: ""
-    # Widgets (ADR-219) read a snapshot from an App Group. Off by default, like push. To turn on:
-    # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements (or Config/Doddy-Push-AppGroup.entitlements
-    # with push) and DODDY_WIDGET_ENTITLEMENTS = Config/DoddyWidgets.entitlements. Without it the
-    # widgets say "Open Doddy to set up widgets" and the app writes nothing.
-    DODDY_APP_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
-    DODDY_WIDGET_ENTITLEMENTS: ""
-    # Watch complications (ADR-262) read the snapshot from the watch's App Group, also off by
-    # default. To turn on: DODDY_WATCH_ENTITLEMENTS = Config/DoddyWatch.entitlements (it is used by
-    # the watch app and its widget extension).
-    DODDY_WATCH_ENTITLEMENTS: ""
+    # The App Group `group.$(DODDY_APP_BUNDLE_IDENTIFIER)` is ON (owner, 2026-10-11: paid Apple
+    # Developer account). It is the shared folder the widgets (ADR-219), "Save to Doddy" in the
+    # Share Sheet (ADR-311) and the parking widget (ADR-315) need. Choose the team in Xcode;
+    # automatic signing registers the group. With push as well, set DODDY_APP_ENTITLEMENTS to
+    # Config/Doddy-Push-AppGroup.entitlements. To build without the App Group (e.g. a free Apple
+    # ID), set these four to "": the widgets then say "Open Doddy to set up widgets" and the
+    # share extension says sharing isn't set up.
+    DODDY_APP_ENTITLEMENTS: Config/Doddy-AppGroup.entitlements
+    DODDY_WIDGET_ENTITLEMENTS: Config/DoddyWidgets.entitlements
+    DODDY_SHARE_ENTITLEMENTS: Config/DoddyShare.entitlements
+    # Watch complications (ADR-262) read the snapshot from the watch's App Group (used by the
+    # watch app and its widget extension).
+    DODDY_WATCH_ENTITLEMENTS: Config/DoddyWatch.entitlements
     # Shared lists through iCloud (ADR-263), off by default (needs a paid team with iCloud). To
     # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
     # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or
@@ -72,6 +76,8 @@ targets:
         buildPhase: resources
     dependencies:
       - target: DoddyWidgets
+      # "Save to Doddy" in the Share Sheet (ADR-311).
+      - target: DoddyShare
       # The Apple Watch app (ADR-232), embedded in the iPhone app.
       - target: DoddyWatch
       - package: DoddyCore
@@ -99,6 +105,9 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
+        # iPad (ADR-337): every orientation, so Doddy works in Split View and Slide Over.
+        TARGETED_DEVICE_FAMILY: "1,2"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only these permissions. Each is asked for only when the user turns the matching toggle on in Settings, Connections.
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's test voice to OpenAI. A voice memo you record on a note stays on this iPhone."
         # Voice memos only (ADR-230): on-device recognition is required, so the audio isn't sent.
@@ -106,7 +115,8 @@ targets:
         INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."
         INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
         # Place reminders only (ADR-196): "While Using", never "Always"; iOS watches the place itself.
-        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only for reminders you set at a place: to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave. Doddy doesn't track where you go."
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go."
+        INFOPLIST_KEY_NSFaceIDUsageDescription: "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched."
         INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds go to ElevenLabs, which runs Doddy's voice; other details stay on this iPhone. Turn this off in Settings, Connections."
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
@@ -127,6 +137,7 @@ targets:
         CODE_SIGN_ENTITLEMENTS: $(DODDY_WIDGET_ENTITLEMENTS)
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).widgets
         PRODUCT_NAME: DoddyWidgets
+        TARGETED_DEVICE_FAMILY: "1,2"
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
         GENERATE_INFOPLIST_FILE: YES
@@ -135,6 +146,30 @@ targets:
         SKIP_INSTALL: YES
         # Shared/ intents check this to skip app-only code (TalkToDoddyIntent runs in the app).
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DODDY_WIDGET_EXTENSION"
+  DoddyShare:
+    # Share extension (ADR-311): "Save to Doddy" in the Share Sheet. Shows the shared text or web
+    # link and, after Send to Doddy, leaves it in the App Group; the app opens the capture screen
+    # with it. No networking, no database, saves no note.
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DoddyShare
+      - path: Shared/Share
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_SHARE_ENTITLEMENTS)
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).share
+        PRODUCT_NAME: DoddyShare
+        TARGETED_DEVICE_FAMILY: "1,2"
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyShare-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Save to Doddy
+        SKIP_INSTALL: YES
   DoddyWatch:
     # Apple Watch app (ADR-232): shows the snapshot the iPhone sends (pinned notes, next note
     # reminders, lists) and asks the iPhone to tick an item or save a note. No database, no
@@ -153,6 +188,9 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
         CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
+        # The watch app's icon is the iPhone's candidate icon, byte-identical (ADR-050, ADR-336):
+        # DoddyWatch/Assets.xcassets/AppIcon. It changes with the iPhone's when the owner decides.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_FILE: Config/DoddyWatch-Info.plist
         PRODUCT_NAME: DoddyWatch
         MARKETING_VERSION: "0.0.1"

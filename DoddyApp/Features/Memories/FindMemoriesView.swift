@@ -36,7 +36,7 @@ struct FindMemoriesView: View {
                     .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: 1))
                 }
                 if let problem = store.environment.storageProblem ?? store.loadError ?? searchError {
-                    ProblemView(message: problem)
+                    ProblemView(message: problem, showsDoddy: true)
                 } else if isRunning {
                     ProgressView("Finding saved words")
                 } else {
@@ -101,7 +101,14 @@ private struct MeaningHitsView: View {
                 .font(.footnote).foregroundStyle(Theme.secondaryText)
             ForEach(hits) { hit in
                 NavigationLink(value: MemoryNavigationRoute.note(hit.record.id)) {
-                    Text(hit.record.currentText).lineLimit(3)
+                    Group {
+                        // A private note's words only after Face ID (ADR-310).
+                        if PrivateNotesStore.current().contains(hit.record.id) && !AppLock.shared.privateUnlocked {
+                            Label("Private note", systemImage: "lock.fill").foregroundStyle(Theme.secondaryText)
+                        } else {
+                            Text(hit.record.currentText).lineLimit(3)
+                        }
+                    }
                         .padding(14)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator))
@@ -222,7 +229,8 @@ private struct RecallResultsView: View {
                 Text("No note has those words.").font(.subheadline).foregroundStyle(Theme.secondaryText)
                     .accessibilityIdentifier("memories.noMatch")
             case .some(.noMatch):
-                UploadedCharacterView(assetName: "UploadedDoddy_Inspect", height: 170).frame(maxWidth: .infinity)
+                // Open hands: nothing to show, and nothing made up (ADR-299).
+                WholeDoddyView(pose: .shrug, height: 170).frame(maxWidth: .infinity)
                 JourneyHeading(eyebrow: "No match in your saved notes", title: "I haven't\nfound that.",
                                subtitle: "I won't fill in the gaps. Try a distinctive word from the note.")
                 Text(RecallCopy.noMatch).font(.subheadline).foregroundStyle(Theme.secondaryText)

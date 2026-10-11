@@ -32,3 +32,6 @@ backend/data/
 *.sqlite-shm
 *.log
 npm-debug.log*
+# Python bytecode
+__pycache__/
+*.pyc

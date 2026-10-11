@@ -17,6 +17,10 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
+**Not yet applied (ADR-309, camera shortcut help):** one sentence in the "Opening the camera" line differs from the live prompt on purpose. In `instructions.md`, the "camera didn't open" sentence sends the user to "Don't have the shortcut?" on the camera card or to Settings, Connections, Shortcuts. The live prompt still has the ADR-291 sentence. Apply it once an app build with that card button ships; until then, the compare step reports this one sentence.
+
+**Applied to the live agent 2026-10-11 (ADR-291, open camera; owner: "Zgoda", then "zrob to ty"):** `run_shortcut` (`tool_1601m4gj37f5etbres37pgtvrq3c`) has the new `name` sentence. Two edits went into the live prompt in place: the "Opening the camera" line after `run_shortcut`, and "open the camera" in the last strict timer/map/shortcut rule. Version `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx` (rollback) → `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`. Both the tool and the prompt were read back after saving; the tool list is unchanged.
+
 **Applied to the live agent 2026-10-11 (ADR-254, owner: "you do it"):** done as described below; read back after
 saving. Version `agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm` (rollback) → `agtvrsn_2701m4mc8sejfzkbjmekv9nczdrp` (first
 message and placeholder) → `agtvrsn_6701m4mc9b7wekgb2jeg1c6pwnyv` (Polish preset). What was changed: `session.json` first message
@@ -200,3 +204,50 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - Drift: export the live phone agent's prompt and tools as above and run `voice_agent_spec.py compare EXPORT.json --agent phone`.
 - Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
 
+
+**Applied to the live agent 2026-10-11 (ADR-300 to ADR-305): round 4.**
+- **Re-read first:** version `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` (43 tools), unchanged since round 3. `instructions.md`, which includes the affectionate-edison lines merged in PR #27, matched it except for the order of one sentence.
+- **New client tools:**
+  - `convert_currency` (`tool_9001m4nf3w1demytz6bvyxvyj756`)
+  - `parking_spot` (`tool_8001m4nf3xc5e2asz2rxpya9f102`)
+  - `read_email` (`tool_2901m4nf3yzbeeq9jy2hp5jhwzef`)
+  - `complete_todoist_task` (`tool_7101m4nf40ase7bsx8qa68ty4eh4`)
+  - `move_todoist_task` (`tool_0401m4nf41j9ex08e5ksevh06rht`)
+  - `add_ingredients` (`tool_9201m4nf430kezd9s0fpxznfkppr`)
+- **Updated in place:**
+  - `change_reminder` gained `add_note`, `priority` and `move_to_list`.
+  - `check_email` points to `read_email`.
+  - `list_todoist_tasks` explains the `[id …]` ids.
+- **Prompt:** `instructions.md` as committed with round 4. After the merge with the default branch, `instructions.md` also has the "Opening the camera" line (ADR-291, another session). That session has since applied it (version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`, read again here: 49 tools, round 4 lines and the camera lines all present), so the live prompt is `instructions.md`.
+- **Version:** `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` → `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx`, 49 tools. The stored prompt was read back.
+- **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools. A backend without round 4 refuses the three online-account tools as unknown.
+
+**Applied to the live agent 2026-10-11 (round 5, ADR-314 and ADR-316).**
+- **Re-read first:** version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89` (49 tools). Its prompt was `instructions.md` from before this round, except for the camera line: the live agent keeps the ADR-291 wording until a build with the camera shortcut section (ADR-309) ships, as that change says. It still does.
+- **New client tools:**
+  - `draft_email_reply` (`tool_9001m4nt0dfmecabw665gm7xqwcs`)
+  - `read_notion_page` (`tool_5301m4nszh67fbqbhsg52p4r7ynp`)
+- **Updated in place:**
+  - `change_reminder` gained `new_title`, `repeat` (with `none`), `repeat_until`, `replace_notes` and `clear_notes`.
+  - `change_calendar_event` gained `replace_notes` and `clear_notes`.
+  - `search_notion` now points to `read_notion_page`.
+- **Prompt:** the round 5 lines of `instructions.md`, plus "What you cannot do yet" and the online-account rule. The camera line is kept as it was live.
+- **Version:** `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89` → `agtvrsn_7001m4nt39q1fhwrhtsyqdegf35g`, 51 tools. The stored prompt was read back.
+- **Mixed versions:** an installed app from before this round answers "unsupported" to the two new tools and doesn't act on the new `change_reminder`/`change_calendar_event` fields. A backend without round 5 refuses the two online-account tools as unknown.
+
+**Applied to the live agent 2026-10-11 (round 6, ADR-332 to ADR-335 and ADR-340).**
+- **Re-read first:** version `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` (51 tools, the same ids as after round 5). Its prompt was round 5's, with two differences:
+  - the camera line is still the ADR-291 wording, as before;
+  - two lines from ADR-324 ("unlock as you go", branch `claude/lucid-johnson-pmwwg4`, not merged into this line yet) were applied by that session: the connections line ("Nothing is asked up front…") and the online-account "declined"/"iPhone doesn't allow" rule.
+  Both are kept live. `instructions.md` on this branch doesn't have the ADR-324 lines; they arrive with that branch's merge.
+- **New client tools:**
+  - `find_free_time` (`tool_3201m4nyakxvf7ht6vxqyywxjf43`)
+  - `remind_when_to_leave` (`tool_4801m4nyams5ff79cbnt0j8vweds`)
+  - `check_outlook_email` (`tool_1401m4nyap0tfdvbspd4a6717pnh`)
+  - `read_outlook_email` (`tool_1901m4nyaq66ew6bkbvqby0049mv`)
+  - `draft_outlook_email` (`tool_9501m4nyarbhfx8sjxt8jdg88nja`)
+  - `read_outlook_calendar` (`tool_1301m4nyas4zf8bbxnwb6q0jvpyb`)
+- **Updated in place:** `search_memories` (the `#tag` sentence) and `create_list` (the `template` parameter).
+- **Prompt:** the round 6 lines of `instructions.md` (tags, free time, leave-by, Outlook, list templates, "What you cannot do yet", the online-account rule), merged with the live-only lines above.
+- **Version:** `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` → `agtvrsn_9901m4nydc9qegk8npkv8jvprm90`, 57 tools. The stored prompt and tool list were read back from the save.
+- **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools and ignores `template`. A backend without round 6 refuses the four Outlook tools as unknown, and the Outlook toolkit only runs against the mock until a Composio Outlook auth config exists (`docs/implementation/ROUND6_REPORT_2026-10-11.md`).

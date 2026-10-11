@@ -196,6 +196,10 @@ struct ConnectionSheet: View {
                         Text(info.staysHere)
                     }
 
+                    if connection == .shortcuts {
+                        cameraShortcut
+                    }
+
                     if let refusal {
                         ProblemView(message: refusal)
                     }
@@ -247,6 +251,13 @@ struct ConnectionSheet: View {
                 Task { _ = await controller.setOn(connection, false) }
             }
             .buttonStyle(SecondaryButtonStyle())
+        }
+    }
+
+    /// "Open the camera" needs the user's "Doddy Camera" Shortcut (ADR-291, ADR-309).
+    private var cameraShortcut: some View {
+        section("Open the camera") {
+            CameraShortcutHelp(style: .full)
         }
     }
 
@@ -348,7 +359,7 @@ struct ConnectionInfo {
         case .shortcuts:
             ConnectionInfo(
                 symbol: "square.stack.3d.up",
-                examples: ["Run my morning routine", "Start the movie shortcut"],
+                examples: ["Run my morning routine", "Start the movie shortcut", "Open the camera"],
                 canDo: [
                     "Run one of your Shortcuts, after you tap Run",
                     "The Shortcuts app opens for a moment",

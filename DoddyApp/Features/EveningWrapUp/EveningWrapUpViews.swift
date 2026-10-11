@@ -36,6 +36,8 @@ enum EveningWrapUpScheduler {
         let content = UNMutableNotificationContent()
         content.title = EveningWrapUp.title(language)
         content.body = EveningWrapUp.body(language)
+        // Doddy sitting cross-legged, winding down (ADR-323); the words are unchanged.
+        if let art = NotificationArt.attachment(.crosslegged) { content.attachments = [art] }
         var when = DateComponents()
         when.hour = settings.hour
         when.minute = settings.minute

@@ -55,7 +55,7 @@ struct PinnedNotesView: View {
 
     var body: some View {
         if let message = WidgetCopy.message(for: entry.snapshot) {
-            WidgetMessage(text: message)
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
         } else if let notes = entry.snapshot?.pinned, !notes.isEmpty {
             let shown = Array(notes.prefix(family == .systemMedium ? 4 : family == .systemSmall ? 2 : 1))
             VStack(alignment: .leading, spacing: 6) {
@@ -97,11 +97,12 @@ struct NextReminderWidget: Widget {
 
 struct NextReminderView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: SnapshotEntry
 
     var body: some View {
         if let message = WidgetCopy.message(for: entry.snapshot) {
-            WidgetMessage(text: message)
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
         } else if let next = entry.snapshot?.reminders(after: entry.date).first {
             let what = next.text ?? "A note reminder"
             let when = Text(next.fireAt, format: .dateTime.weekday(.abbreviated).hour().minute())
@@ -111,7 +112,14 @@ struct NextReminderView: View {
                     .widgetURL(WidgetLink.open(next.memoryID))
             default:
                 VStack(alignment: .leading, spacing: 4) {
-                    Label { when.font(.headline) } icon: { Image(systemName: "bell.fill") }
+                    HStack(alignment: .top, spacing: 4) {
+                        Label { when.font(.headline) } icon: { Image(systemName: "bell.fill") }
+                        // Reaching for it (ADR-299): the island's pose for a reminder waiting.
+                        if family == .systemSmall, renderingMode == .fullColor {
+                            Spacer(minLength: 0)
+                            WidgetPose(pose: .reachingHigh, height: 44)
+                        }
+                    }
                     Text(what).font(.subheadline).lineLimit(family == .systemSmall ? 4 : 2).privacySensitive()
                     Spacer(minLength: 0)
                 }
@@ -120,6 +128,54 @@ struct NextReminderView: View {
             }
         } else {
             WidgetMessage(text: "No reminders coming up.")
+        }
+    }
+}
+
+// MARK: Where did I park
+
+/// The parking spot (ADR-315): when it was saved and the user's note, never the position. A tap
+/// opens Doddy, which opens the spot in Maps.
+struct ParkingWidget: Widget {
+    static let kind = "com.bienos.doddy2.parking"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { entry in
+            ParkingWidgetView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Where I parked")
+        .description("When you saved your parking spot, and your note. Tap to open it in Maps.")
+        .supportedFamilies([.systemSmall, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+struct ParkingWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: SnapshotEntry
+
+    var body: some View {
+        if let message = WidgetCopy.message(for: entry.snapshot) {
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
+        } else if let parked = entry.snapshot?.parking {
+            let when = Text(parked.savedAt, format: .dateTime.weekday(.abbreviated).hour().minute())
+            switch family {
+            case .accessoryInline:
+                Label { when } icon: { Image(systemName: "car") }
+                    .widgetURL(DeepLink.parking.url)
+            default:
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Parked", systemImage: "car.fill").font(.headline)
+                    when.font(.subheadline)
+                    if let note = parked.note {
+                        Text(note).font(.footnote).lineLimit(family == .systemSmall ? 3 : 1).privacySensitive()
+                    }
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .widgetURL(DeepLink.parking.url)
+            }
+        } else {
+            WidgetMessage(text: "No parking spot saved. Tell Doddy \u{201C}I parked here\u{201D}.")
         }
     }
 }
@@ -215,7 +271,7 @@ struct ListWidgetView: View {
 
     var body: some View {
         if let message = WidgetCopy.message(for: entry.snapshot) {
-            WidgetMessage(text: message)
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
         } else if let list = entry.list {
             VStack(alignment: .leading, spacing: family == .accessoryRectangular ? 1 : 6) {
                 HStack {
@@ -270,14 +326,37 @@ struct TalkToDoddyWidget: Widget {
 
 struct TalkToDoddyWidgetView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
         Button(intent: TalkToDoddyIntent()) {
             if family == .accessoryCircular {
-                Image(systemName: "waveform").font(.title2).accessibilityLabel("Talk to Doddy")
+                // Doddy's face on the Lock Screen (ADR-313), the watch complication's crop. iOS draws
+                // Lock Screen widgets in one tint, so the cream face reads light and his lines dark.
+                ZStack {
+                    AccessoryWidgetBackground()
+                    if WidgetDoddyArt.isHidden {
+                        // "Hide character artwork" is on in Doddy (ADR-331).
+                        Image(systemName: "waveform").font(.title2)
+                    } else {
+                        Image("WidgetDoddy_face")
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(Circle())
+                            .padding(4)
+                    }
+                }
+                .accessibilityElement()
+                .accessibilityLabel("Talk to Doddy")
             } else {
                 VStack(spacing: 8) {
-                    Image(systemName: "waveform").font(.largeTitle)
+                    // Doddy waving hello (ADR-299), as when "Hey Doddy" greets you. Tinted and
+                    // clear Home Screens keep the symbol: the drawing doesn't tint well.
+                    if renderingMode == .fullColor, !WidgetDoddyArt.isHidden {
+                        WidgetPose(pose: .wave, height: 76)
+                    } else {
+                        Image(systemName: "waveform").font(.largeTitle)
+                    }
                     Text("Talk to Doddy").font(.headline)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -287,9 +366,91 @@ struct TalkToDoddyWidgetView: View {
     }
 }
 
+// MARK: Doddy, resting (StandBy)
+
+/// Made for StandBy (ADR-313): Doddy stretching, eyes closed, and the time of the next note
+/// reminder. Only the time, never the note's words: StandBy is seen across the room. Works as
+/// a small Home Screen widget too.
+struct DoddyRestWidget: Widget {
+    static let kind = "com.bienos.doddy2.rest"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: SnapshotProvider()) { entry in
+            DoddyRestView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Doddy, resting")
+        .description("Doddy and the time of your next reminder. Made for StandBy. No note words are shown.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+struct DoddyRestView: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
+    let entry: SnapshotEntry
+
+    var body: some View {
+        VStack(spacing: 6) {
+            // A tinted Home Screen flattens the drawing into one colour; there it is left out.
+            if renderingMode != .accented {
+                WidgetPose(pose: .yawnStretch, height: 92)
+            }
+            if let message = WidgetCopy.message(for: entry.snapshot) {
+                Text(message).font(.caption).multilineTextAlignment(.center).foregroundStyle(.secondary)
+            } else if let next = entry.snapshot?.reminders(after: entry.date).first {
+                Label { Text(next.fireAt, format: .dateTime.weekday(.abbreviated).hour().minute()) } icon: { Image(systemName: "bell") }
+                    .font(.headline)
+                    .monospacedDigit()
+            } else {
+                Text("No reminders coming up.").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
 // MARK: Shared pieces
 
+/// Doddy in a Home Screen widget (ADR-299): a Whole Doddy pose from the owner's pack, the same
+/// as the island's for the same meaning. Decorative; full-colour widgets only. In dark
+/// appearance the outline gets the island's thin cream edge.
+struct WidgetPose: View {
+    let pose: IslandPose
+    let height: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        // Nothing when "Hide character artwork" is on in Doddy (ADR-331).
+        if !WidgetDoddyArt.isHidden {
+            let box = pose.figure
+            let width = height * CGFloat(box.width / box.height) / 1.5
+            IslandPoseView(pose: pose, maxSize: CGSize(width: width, height: height), edged: colorScheme == .dark)
+        }
+    }
+}
+
+/// "Hide character artwork" in the app (ADR-331), passed on in the shared snapshot. Widgets and
+/// Live Activities then leave Doddy's pictures out; the island falls back to its board. A build
+/// without the App Group can't know, and shows him.
+enum WidgetDoddyArt {
+    static var isHidden: Bool { WidgetSnapshotFile.read()?.hidesPictures == true }
+}
+
+extension IslandScene {
+    /// The scene as a widget draws it: no Whole Doddy pose when his pictures are hidden (ADR-331).
+    var respectingHiddenArt: IslandScene {
+        guard WidgetDoddyArt.isHidden else { return self }
+        var scene = self
+        scene.pose = nil
+        return scene
+    }
+}
+
 enum WidgetCopy {
+    /// Widgets were turned off in Doddy's Settings: there is a snapshot, and it says off.
+    static func isTurnedOff(_ snapshot: WidgetSnapshot?) -> Bool {
+        WidgetSnapshotFile.url != nil && snapshot.map { !$0.isOn } == true
+    }
+
     /// Why a widget shows none of the user's things, or nil when it can.
     static func message(for snapshot: WidgetSnapshot?) -> String? {
         guard WidgetSnapshotFile.url != nil else { return "Open Doddy to set up widgets." }
@@ -300,10 +461,20 @@ enum WidgetCopy {
 
 struct WidgetMessage: View {
     let text: String
+    /// The user turned widgets off in Doddy (ADR-331): Doddy turned away, not looking. Home Screen
+    /// sizes in full colour only; `WidgetPose` also respects "Hide character artwork".
+    var turnedAway = false
+    @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
-        Text(text).font(.footnote).foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        HStack(alignment: .center, spacing: 10) {
+            if turnedAway, renderingMode == .fullColor, family == .systemSmall || family == .systemMedium {
+                WidgetPose(pose: .turnedAway, height: 60)
+            }
+            Text(text).font(.footnote).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 }
 
@@ -319,6 +490,7 @@ extension WidgetSnapshot {
                 .init(id: UUID(), text: "Oat milk", isDone: false),
                 .init(id: UUID(), text: "Eggs", isDone: false),
                 .init(id: UUID(), text: "Bread", isDone: true),
-            ])])
+            ])],
+            parking: .init(savedAt: .now.addingTimeInterval(-5400), note: "Level 2, row C"))
     }()
 }

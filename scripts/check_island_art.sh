@@ -13,12 +13,14 @@ cd "$(dirname "$0")/.."
 command -v swiftc >/dev/null 2>&1 || { echo "NOT RUN: swiftc not found on PATH"; exit 2; }
 
 work="$(mktemp -d)"
-trap 'rm -rf "$work"' EXIT
+art=Shared/IslandArt/IslandBoardArt.generated.swift
+# The generator writes over the committed file; put it back however this script ends (an
+# interrupted run must not leave a modified tracked file).
+trap '[ -f "$work/committed.swift" ] && cp "$work/committed.swift" "$art"; rm -rf "$work"' EXIT
 
-cp Shared/IslandArt/IslandBoardArt.generated.swift "$work/committed.swift"
+cp "$art" "$work/committed.swift"
 python3 -I tools/island_boards/generate_island_art.py >/dev/null
-if ! cmp -s "$work/committed.swift" Shared/IslandArt/IslandBoardArt.generated.swift; then
-    cp "$work/committed.swift" Shared/IslandArt/IslandBoardArt.generated.swift
+if ! cmp -s "$work/committed.swift" "$art"; then
     echo "FAIL: IslandBoardArt.generated.swift differs from a fresh run of the generator"
     exit 1
 fi
@@ -46,6 +48,27 @@ for name in $("$work/island-check" --pose-assets); do
             fi
         done
     done
+done
+for name in $("$work/island-check" --talking-assets); do
+    for file in Contents.json art@2x.png art@3x.png; do
+        if [ ! -f "DoddyApp/Resources/Assets.xcassets/$name.imageset/$file" ]; then
+            echo "FAIL: DoddyApp/Resources/Assets.xcassets/$name.imageset/$file is missing"; missing=1
+        fi
+    done
+done
+# The watch app's two poses (ADR-323), in its own catalog.
+for name in WatchDoddy_crosslegged WatchDoddy_fistpump WatchDoddy_turned_away; do
+    for file in Contents.json art@2x.png; do
+        if [ ! -f "DoddyWatch/Assets.xcassets/$name.imageset/$file" ]; then
+            echo "FAIL: DoddyWatch/Assets.xcassets/$name.imageset/$file is missing"; missing=1
+        fi
+    done
+done
+# The Lock Screen widget's face (ADR-313), widget catalog only.
+for file in Contents.json art@2x.png art@3x.png; do
+    if [ ! -f "DoddyWidgets/Assets.xcassets/WidgetDoddy_face.imageset/$file" ]; then
+        echo "FAIL: DoddyWidgets/Assets.xcassets/WidgetDoddy_face.imageset/$file is missing"; missing=1
+    fi
 done
 [ "$missing" -eq 0 ] || exit 1
 "$work/island-check" "$@"

@@ -52,19 +52,36 @@
         }
       }
     },
+    "NSFaceIDUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy używa Face ID, żeby otworzyć aplikację albo prywatną notatkę, gdy włączysz blokadę. iOS sprawdza Twoją twarz; Doddy dowiaduje się tylko, czy się zgadza."
+          }
+        }
+      }
+    },
     "NSLocationWhenInUseUsageDescription": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy uses your location only for reminders you set at a place: to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave. Doddy doesn't track where you go."
+            "value": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy używa Twojej lokalizacji tylko do przypomnień ustawionych w danym miejscu: żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł Ci przypomnieć, gdy tam dotrzesz albo stamtąd wyjdziesz. Doddy nie śledzi, dokąd chodzisz."
+            "value": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu), do zapisania miejsca parkowania i do obliczenia z Mapami Apple, kiedy wyjść, żeby gdzieś dotrzeć. Doddy jej nie przechowuje i nie śledzi, dokąd chodzisz."
           }
         }
       }

@@ -16,12 +16,20 @@ struct WatchRootView: View {
                     if snapshot.isOn {
                         content(snapshot)
                     } else {
-                        Text("Notes and lists are hidden. Turn on “Show notes and lists on Apple Watch” in Doddy's Settings on your iPhone.")
-                            .font(.footnote)
+                        VStack(spacing: 6) {
+                            // Hidden from the watch: Doddy turned away, not looking (ADR-331).
+                            WatchDoddyPicture(name: "WatchDoddy_turned_away", height: 64)
+                            Text("Notes and lists are hidden. Turn on “Show notes and lists on Apple Watch” in Doddy's Settings on your iPhone.")
+                                .font(.footnote)
+                        }
                     }
                 } else {
-                    Text("Open Doddy on your iPhone once to see your notes and lists here.")
-                        .font(.footnote)
+                    VStack(spacing: 6) {
+                        // Nothing here yet: he waits, cross-legged (ADR-323).
+                        WatchDoddyPicture(name: "WatchDoddy_crosslegged", height: 64)
+                        Text("Open Doddy on your iPhone once to see your notes and lists here.")
+                            .font(.footnote)
+                    }
                 }
             }
             .navigationTitle("Doddy")
@@ -150,6 +158,9 @@ struct WatchNoteEntry: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
                 if saved {
+                    // Shown only once the iPhone confirms the save: the fist pump (ADR-323).
+                    WatchDoddyPicture(name: "WatchDoddy_fistpump", height: 70)
+                        .frame(maxWidth: .infinity)
                     Label("Saved in Doddy on your iPhone.", systemImage: "checkmark.circle")
                     Button("Done") { dismiss() }
                 } else {
@@ -179,5 +190,34 @@ struct WatchNoteEntry: View {
         } else {
             message = outcome.message
         }
+    }
+}
+
+/// Doddy in the watch app (ADR-323): a pose from the owner's pack (`WatchDoddy_*` in the watch
+/// app's catalog), with a thin cream edge so his black outline reads on the watch's black.
+/// Decorative. Left out when "Hide character artwork" is on in Doddy on the iPhone (ADR-331);
+/// before the iPhone has sent anything that isn't known yet, so he shows.
+struct WatchDoddyPicture: View {
+    let name: String
+    let height: CGFloat
+    @Environment(WatchLink.self) private var link
+    private let cream = Color(red: 245 / 255, green: 239 / 255, blue: 226 / 255)
+
+    var body: some View {
+        if link.snapshot?.hidesPictures != true {
+            picture
+        }
+    }
+
+    private var picture: some View {
+        Image(name)
+            .resizable()
+            .scaledToFit()
+            .frame(height: height)
+            .shadow(color: cream, radius: 0, x: 1, y: 0)
+            .shadow(color: cream, radius: 0, x: -1, y: 0)
+            .shadow(color: cream, radius: 0, x: 0, y: 1)
+            .shadow(color: cream, radius: 0, x: 0, y: -1)
+            .accessibilityHidden(true)
     }
 }

@@ -15,11 +15,27 @@ struct MemoryDetailView: View {
     @State private var errorMessage: String?
     @State private var copied = false
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
+    /// Re-read after a change, so the switch shows what was stored (ADR-310).
+    @State private var isPrivate = false
+    private let lock = AppLock.shared
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                if let record = store.record(id: memoryID) {
+                if store.record(id: memoryID) != nil, isPrivate, !lock.privateUnlocked {
+                    // A private note before Face ID (ADR-310): nothing of it is shown.
+                    JourneyHeading(eyebrow: "Private note", title: "Locked")
+                    Text("This note is private. Its words show after Face ID or your passcode.")
+                        .foregroundStyle(Theme.secondaryText)
+                    Button {
+                        Task { await lock.unlock(reason: NSLocalizedString("Show your private note", comment: "")) }
+                    } label: {
+                        HStack { Text("Unlock"); Spacer(); Image(systemName: "faceid") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityIdentifier("detail.unlock")
+                    if let problem = lock.problem { ProblemView(message: problem) }
+                } else if let record = store.record(id: memoryID) {
                     JourneyHeading(eyebrow: "Straight from your note", title: "The original\nis right here.")
                     MemoryPaperCard(record: record, textIdentifier: "detail.currentText")
                     NotePhotoSection(memoryID: memoryID)
@@ -68,6 +84,12 @@ struct MemoryDetailView: View {
                     Text("Your note, your choice. No inferred facts.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                     if let errorMessage { ProblemView(message: errorMessage) }
+                    // ADR-310: kept out of the voice agent, Siri, Ask Doddy, widgets, the watch and the call copy.
+                    Toggle("Private", isOn: Binding(get: { isPrivate }, set: { setPrivate($0) }))
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("detail.private")
+                    Text("A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
                     NoteReminderSection(memoryID: memoryID)
                     Button { correction = record } label: {
                         HStack { Text("Edit this note"); Spacer(); Image(systemName: "pencil") }
@@ -100,6 +122,7 @@ struct MemoryDetailView: View {
             }.padding(24)
         }
         .background(Theme.canvas).foregroundStyle(Theme.ink)
+        .onAppear { isPrivate = PrivateNotesStore.current().contains(memoryID) }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .toolbar { ToolbarItem(placement: .principal) { DoddyWordmark() } }
@@ -129,6 +152,19 @@ struct MemoryDetailView: View {
         } catch {
             errorMessage = UserFacingError.message(for: error)
         }
+    }
+
+    private func setPrivate(_ on: Bool) {
+        guard PrivateNotesStore.set(memoryID, isPrivate: on) else {
+            errorMessage = NSLocalizedString("That couldn't be saved on this iPhone. Try again.", comment: "")
+            isPrivate = PrivateNotesStore.current().contains(memoryID)
+            return
+        }
+        isPrivate = PrivateNotesStore.current().contains(memoryID)
+        errorMessage = nil
+        // What leaves the app follows straight away: widgets, the watch and the call copy.
+        WidgetSync.shared.refresh()
+        MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
     }
 
     private func togglePin(_ record: MemoryRecord) {

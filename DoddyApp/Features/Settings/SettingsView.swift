@@ -198,6 +198,8 @@ struct SettingsView: View {
 
                 EveningWrapUpSettingsSection()
 
+                WeeklyLookBackSettingsSection()
+
                 TidyUpSettingsSection()
 
                 BackupSettingsSection()
@@ -225,6 +227,10 @@ struct SettingsView: View {
                 }
 
                 Section("Privacy") {
+                    // ADR-310: Face ID when Doddy opens, and after a minute away.
+                    AppLockToggle()
+                    // iPhone search (ADR-330), off until switched on.
+                    SpotlightToggle()
                     NavigationLink {
                         DataFlowView()
                     } label: {
@@ -243,7 +249,7 @@ struct SettingsView: View {
                     StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs (voice); OpenAI if Ask Doddy is on" : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncText)
                     // DataFlow (What leaves this iPhone) restates this paragraph row by row; change both together.
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes, your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft or task you confirm) to your Doddy server, which talks to Google, Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on \u{201C}Hey Doddy\u{201D}, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to ElevenLabs like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back. Nothing else is sent anywhere.")
+                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on \u{201C}Hey Doddy\u{201D}, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to ElevenLabs like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -405,13 +411,16 @@ struct SettingsView: View {
                 // ADR-254: "Hey Doddy" wake word, off unless turned on.
                 HeyDoddySettingsSection()
 
-                Section("Back Tap and Siri") {
-                    StatusRow(title: "Double Back Tap", value: backTapStatus)
-                        .accessibilityIdentifier("settings.backTap.status")
-                    Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
-                        router.isSetupPresented = true
+                Section {
+                    // Back Tap exists only on iPhone (ADR-337).
+                    if DeviceSupport.hasBackTap {
+                        StatusRow(title: "Double Back Tap", value: backTapStatus)
+                            .accessibilityIdentifier("settings.backTap.status")
+                        Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
+                            router.isSetupPresented = true
+                        }
+                        .accessibilityIdentifier("settings.backTap")
                     }
-                    .accessibilityIdentifier("settings.backTap")
                     Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -421,6 +430,8 @@ struct SettingsView: View {
                     Text("Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                } header: {
+                    if DeviceSupport.hasBackTap { Text("Back Tap and Siri") } else { Text("Siri") }
                 }
 
                 Section {
@@ -461,9 +472,13 @@ struct SettingsView: View {
                 } header: {
                     Text("Connections")
                 } footer: {
-                    Text(pauseAllConnections
-                        ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
-                        : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    HStack(alignment: .top, spacing: 12) {
+                        // Paused: Doddy lies low, crouching (ADR-323).
+                        if pauseAllConnections { WholeDoddyView(pose: .sneakyCrouch, height: 56) }
+                        Text(pauseAllConnections
+                            ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
+                            : "Each one starts off. Turning one on asks iPhone for permission first.")
+                    }
                 }
 
                 Section {

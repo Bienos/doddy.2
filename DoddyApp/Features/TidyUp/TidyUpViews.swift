@@ -74,8 +74,12 @@ struct TidyUpView: View {
                     let reminders = tidy.passedReminders.filter { !kept.contains($0.id) }
                     let lists = tidy.finishedLists.filter { !kept.contains($0.id) }
                     if duplicates.isEmpty && reminders.isEmpty && lists.isEmpty {
-                        Text("Nothing to tidy right now.").foregroundStyle(Theme.secondaryText)
-                            .accessibilityIdentifier("tidy.nothing")
+                        HStack(spacing: 14) {
+                            // Nothing to do: he waits, cross-legged (ADR-313).
+                            WholeDoddyView(pose: .crosslegged, height: 80)
+                            Text("Nothing to tidy right now.").foregroundStyle(Theme.secondaryText)
+                                .accessibilityIdentifier("tidy.nothing")
+                        }
                     }
                     if !duplicates.isEmpty {
                         section("Saved twice") {

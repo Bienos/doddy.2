@@ -49,6 +49,8 @@ enum MorningCheckInScheduler {
             let content = UNMutableNotificationContent()
             content.title = MorningCheckIn.title(language)
             content.body = MorningCheckIn.body(language)
+            // Doddy stretching awake (ADR-323); the words are unchanged.
+            if let art = NotificationArt.attachment(.yawnStretch) { content.attachments = [art] }
             content.sound = .default
             var when = DateComponents()
             when.hour = request.hour

@@ -24,25 +24,34 @@ final class WidgetSync {
         UserDefaults.standard.object(forKey: PreferenceKey.widgetsShowContent) as? Bool ?? true
     }
 
+    /// "Hide character artwork" (ADR-331): passed on so widgets and the watch hide Doddy too.
+    static var hidesDoddy: Bool {
+        UserDefaults.standard.bool(forKey: PreferenceKey.hideCharacterArt)
+    }
+
     func refresh(now: Date = .now) {
         guard let store, store.hasLoaded else { return }
+        // iPhone search (ADR-330) follows the same changes, when switched on.
+        SpotlightSync.shared.store = store
+        SpotlightSync.shared.refresh()
         // Shopping mode (ADR-257) follows the same changes, ticks from the Lock Screen included.
         ShoppingModeController.shared.refresh()
         // Shared lists (ADR-263) send a local change to iCloud.
         SharedListsController.shared.listsChanged()
+        // Private notes (ADR-310) never appear on widgets or the watch.
+        let shareable = PrivateNotesStore.current().shareable(store.memories)
         let pinned = PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes))
         let showReminderText = UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
         let current = reminders?.reminders ?? []
-        func build(isOn: Bool) -> WidgetSnapshot {
-            WidgetSnapshot.make(
-                memories: store.memories, lists: store.lists, pinned: pinned, reminders: current,
-                showReminderText: showReminderText, isOn: isOn, now: now)
-        }
-        let snapshot = build(isOn: Self.isOn)
+        let snapshot = WidgetSnapshot.make(
+            memories: shareable, lists: store.lists, pinned: pinned, reminders: current,
+            showReminderText: showReminderText, isOn: Self.isOn, now: now, parking: ParkingStore.current(), hidesDoddy: Self.hidesDoddy)
         // The Apple Watch gets the same content, under its own switch (ADR-232), applied there.
-        PhoneWatchLink.shared.send(build(isOn: true))
+        PhoneWatchLink.shared.send(WidgetSnapshot.make(
+            memories: shareable, lists: store.lists, pinned: pinned, reminders: current,
+            showReminderText: showReminderText, isOn: true, now: now, hidesDoddy: Self.hidesDoddy))
         guard isAvailable else { return }
-        // Same content as last time: no write, no widget reload.
+        // Same content as last time: no write, no widget reload (the time stamp alone isn't news).
         if let lastWritten, lastWritten.hasSameContent(as: snapshot) { return }
         do {
             try WidgetSnapshotFile.write(snapshot)

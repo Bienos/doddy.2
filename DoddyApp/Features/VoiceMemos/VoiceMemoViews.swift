@@ -34,6 +34,9 @@ struct CaptureVoiceMemo: View {
         VStack(alignment: .leading, spacing: 12) {
             if let draft {
                 recorded(draft)
+                if let transcript = draft.transcript, !isWritingOut {
+                    MemoTodosCard(transcript: transcript)
+                }
             } else if recorder.isRecording {
                 recording
             } else {
@@ -243,6 +246,87 @@ struct NoteRecordingSection: View {
         do {
             try await store.removeRecording(from: memoryID)
             problem = nil
+        } catch {
+            problem = UserFacingError.message(for: error)
+        }
+    }
+}
+
+/// "Looks like things to do" (ADR-318): sentences from the written-out memo that sound like
+/// to-dos, unticked. Ticked ones go on the chosen Doddy list when the user taps Add; what the
+/// list read back is reported. Separate from saving the note.
+struct MemoTodosCard: View {
+    @Environment(MemoryStore.self) private var store
+    let transcript: String
+    @State private var ticked: Set<String> = []
+    @State private var listID: UUID?
+    @State private var isAdding = false
+    @State private var receipt: String?
+    @State private var problem: String?
+
+    private var items: [String] { MemoTodos.suggest(transcript) }
+
+    var body: some View {
+        if !items.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("LOOKS LIKE THINGS TO DO").font(.caption2).tracking(1.2).foregroundStyle(Theme.secondaryText)
+                ForEach(items, id: \.self) { item in
+                    Toggle(isOn: Binding(
+                        get: { ticked.contains(item) },
+                        set: { on in if on { ticked.insert(item) } else { ticked.remove(item) } })) {
+                        Text(item)
+                    }
+                    .toggleStyle(.switch)
+                }
+                if store.lists.isEmpty {
+                    Text("Adds to a new list called \u{201C}To do\u{201D}.").font(.footnote).foregroundStyle(Theme.secondaryText)
+                } else {
+                    Picker("Add to", selection: Binding(get: { listID ?? store.lists.first?.id }, set: { listID = $0 })) {
+                        ForEach(store.lists) { list in Text(list.name).tag(Optional(list.id)) }
+                    }
+                }
+                Button {
+                    Task { await add() }
+                } label: {
+                    Text(String(format: NSLocalizedString("Add %lld to the list", comment: ""), ticked.count))
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(ticked.isEmpty || isAdding || !store.isStorageAvailable)
+                .accessibilityIdentifier("capture.memoTodosAdd")
+                if let receipt {
+                    Label(receipt, systemImage: "checkmark").font(.footnote).accessibilityIdentifier("capture.memoTodosReceipt")
+                }
+                if let problem { ProblemView(message: problem) }
+                Text("Found by simple rules on this iPhone, so check them. Adding them doesn't save the note; Save does.")
+                    .font(.caption).foregroundStyle(Theme.secondaryText)
+            }
+            .padding(14)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+            .accessibilityIdentifier("capture.memoTodos")
+            .onChange(of: transcript) { ticked = []; receipt = nil; problem = nil }
+        }
+    }
+
+    private func add() async {
+        let chosen = items.filter { ticked.contains($0) }
+        guard !chosen.isEmpty else { return }
+        isAdding = true
+        defer { isAdding = false }
+        receipt = nil
+        problem = nil
+        do {
+            if let id = listID ?? store.lists.first?.id {
+                let result = try await store.addToList(chosen, listID: id, source: .voice)
+                let name = store.lists.first { $0.id == id }?.name ?? ""
+                receipt = result.added.isEmpty
+                    ? NSLocalizedString("Nothing new was added; those are already on the list or it's full.", comment: "")
+                    : String(format: NSLocalizedString("Added %lld to %@.", comment: ""), result.added.count, name)
+                ticked.subtract(result.added.map(\.text))
+            } else {
+                let list = try await store.createList(name: NSLocalizedString("To do", comment: ""), items: chosen, source: .voice)
+                receipt = String(format: NSLocalizedString("Added %lld to %@.", comment: ""), list.items.count, list.name)
+                ticked = []
+            }
         } catch {
             problem = UserFacingError.message(for: error)
         }
