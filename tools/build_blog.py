@@ -70,6 +70,9 @@ def inline(text: str) -> str:
 
     def link(m: re.Match) -> str:
         label, url = m.group(1), html.unescape(m.group(2))
+        # Only web, mail and on-site links; anything else (javascript:, data:) stops the build.
+        if not re.match(r"(https?://|mailto:|/|#)", url):
+            sys.exit(f"FAIL: link {url!r} must start with https://, http://, mailto:, / or #")
         external = url.startswith("http")
         attrs = ' target="_blank" rel="noopener"' if external else ""
         return f'<a class="text-link" href="{html.escape(url)}"{attrs}>{label}</a>'

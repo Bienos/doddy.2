@@ -82,9 +82,28 @@ files=(
   DoddyApp/Features/Alarms/AlarmScheduler.swift
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
   Shared/Widgets/WidgetSnapshotFile.swift
+  DoddyApp/Features/Voice/VoiceConfig.swift
+  DoddyApp/Infrastructure/ActivityLogStore.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
 swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
+
+# App files that import no UI framework but aren't in the list: most use types this script can't
+# build on Linux (URLSession transports, the EventKit wrapper). Named here so a new one gets noticed
+# and added when it can be. The island art files are compiled by scripts/check_island_art.sh.
+others=()
+while IFS= read -r f; do
+  case " ${files[*]} " in *" $f "*) continue ;; esac
+  case "$f" in Shared/IslandArt/*) continue ;; esac
+  if ! grep -E '^[[:space:]]*(@preconcurrency[[:space:]]+)?import[[:space:]]' "$f" \
+      | grep -qvE 'import[[:space:]]+(Foundation|Observation|DoddyCore|os|OSLog)[[:space:]]*$'; then
+    others+=("$f")
+  fi
+done < <(find DoddyApp Shared -name '*.swift' | sort)
+if [ "${#others[@]}" -gt 0 ]; then
+  echo "NOTE: ${#others[@]} app files import no UI framework but aren't type-checked here:"
+  printf '  %s\n' "${others[@]}"
+fi

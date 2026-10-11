@@ -50,10 +50,10 @@ else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
 
-if command -v node >/dev/null 2>&1; then
-  run_step "Voice token server tests" node --test server/voice-token/test/handler.test.js
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  run_step "Voice token server tests" npm test --prefix server/voice-token
 else
-  not_run "Voice token server tests" "node not found on PATH"
+  not_run "Voice token server tests" "node/npm not found on PATH"
 fi
 if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   node --version
@@ -104,9 +104,13 @@ else
     sim_id=$(xcrun simctl list devices available | grep -E '^ +iPhone' | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
     dest="platform=iOS Simulator,id=${sim_id}"
   fi
-  echo "Destination: $dest"
-  run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
-  run_step "xcodebuild test (unit + UI)" xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "$dest"
+  if [ "$dest" = "platform=iOS Simulator,id=" ]; then
+    not_run "iOS app build + tests" "no available iPhone simulator; install one or set DODDY_DESTINATION"
+  else
+    echo "Destination: $dest"
+    run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
+    run_step "xcodebuild test (unit + UI)" xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "$dest"
+  fi
 fi
 
 echo; echo "================ SUMMARY"
