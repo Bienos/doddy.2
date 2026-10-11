@@ -99,6 +99,48 @@ final class ActivityLogTests: XCTestCase {
         XCTAssertEqual(entry(add, reply: VoiceToolReply.reminder(.alreadyThere(receipt))).outcome, .alreadyThere)
     }
 
+    /// Review C2: the log outlives a deleted note or "Delete all memories", so it keeps no note
+    /// text, search, list name or item; the card still shows them before the user confirms.
+    func testNotesAndListsRowsKeepNoNoteText() {
+        let at = now.addingTimeInterval(86_400)
+        let requests: [VoiceToolRequest] = [
+            .saveMemory(text: "My PIN hint is the dog's name"),
+            .searchMemories(query: "dog's name"),
+            .remindAboutNote(NoteReminderVoiceDraft(noteText: "Dog's vet", target: .time(at, timeZoneID: "Europe/Warsaw"))),
+            .remindAboutNote(NoteReminderVoiceDraft(noteText: "Dog's vet", target: .place(query: "Vet clinic", onArrival: true))),
+            .addToList(ListVoiceRequest(list: "Pharmacy", items: ["sertraline", "plasters"])),
+            .checkOff(ListVoiceRequest(list: "Pharmacy", items: ["sertraline"])),
+            .removeFromList(ListVoiceRequest(list: "Pharmacy", items: ["plasters"])),
+            .readList(name: "Pharmacy"),
+            .createList(ListVoiceRequest(list: "Pharmacy", items: [])),
+        ]
+        for request in requests {
+            let described = ActivityRequest.describe(request, calendar: calendar)!
+            XCTAssertNotNil(described.detail, "the card still shows what is asked")
+            for logged in [ActivityEntry(request: described, reply: "saved: x", at: now), ActivityEntry.started(described, at: now)] {
+                for secret in ["dog", "Dog", "Vet", "Pharmacy", "sertraline", "plasters"] {
+                    XCTAssertFalse(logged.detail?.contains(secret) ?? false, "\(described.title): \(logged.detail ?? "")")
+                }
+            }
+        }
+        let ticked = ActivityEntry(request: ActivityRequest.describe(requests[4], calendar: calendar)!, reply: "", at: now)
+        XCTAssertEqual(ticked.detail, "2 items")
+        let timed = ActivityEntry(request: ActivityRequest.describe(requests[2], calendar: calendar)!, reply: "", at: now)
+        XCTAssertEqual(timed.detail, "2026-10-11 12:00")
+        // Other apps keep their detail.
+        XCTAssertEqual(entry(.openMap(place: "Hala Koszyki"), reply: VoiceToolReply.mapOpened("Hala Koszyki")).detail, "“Hala Koszyki”")
+    }
+
+    /// Review C2: rows an older version wrote with note text lose it the next time the log is pruned.
+    func testOlderNoteTextIsDroppedWhenTheLogIsPruned() {
+        let old = ActivityEntry(at: now, app: .memories, title: "Save a note", detail: "“My PIN hint”", outcome: .done)
+        let map = ActivityEntry(at: now, app: .maps, title: "Open in Maps", detail: "“Hala Koszyki”", outcome: .opened)
+        let pruned = ActivityLog.pruned([old, map], now: now)
+        XCTAssertEqual(pruned.first { $0.id == old.id }?.detail, nil)
+        XCTAssertEqual(pruned.first { $0.id == old.id }?.outcome, .done)
+        XCTAssertEqual(pruned.first { $0.id == map.id }?.detail, "“Hala Koszyki”")
+    }
+
     func testLookupsAreLoggedButFailuresStillShow() {
         let search = VoiceToolRequest.searchMemories(query: "klucze")
         XCTAssertEqual(entry(search, reply: VoiceToolReply.search(.noMatch)).outcome, .lookedUp)
