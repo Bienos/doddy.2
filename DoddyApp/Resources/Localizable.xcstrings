@@ -23,6 +23,17 @@
         }
       }
     },
+    "%@ at %@. Notes from the week, ticked items and what's coming up. No scores or streaks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@. Notatki z tygodnia, odhaczone pozycje i to, co przed Tobą. Bez punktów i serii."
+          }
+        }
+      }
+    },
     "%@ at %@. Notes saved twice and finished lists; nothing is deleted unless you tap it.": {
       "extractionState": "manual",
       "localizations": {
@@ -11701,6 +11712,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowanie tygodnia"
+          }
+        }
+      }
+    },
+    "Weekly look-back set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie tygodnia ustawione."
           }
         }
       }

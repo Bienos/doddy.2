@@ -1,5 +1,6 @@
 {
  " (shared)": " (udostępniona)",
+ "%@ at %@. Notes from the week, ticked items and what's coming up. No scores or streaks.": "%@, %@. Notatki z tygodnia, odhaczone pozycje i to, co przed Tobą. Bez punktów i serii.",
  "%@ at %@. Notes saved twice and finished lists; nothing is deleted unless you tap it.": "%@, %@. Notatki zapisane dwa razy i ukończone listy; nic nie zostanie usunięte, dopóki tego nie stukniesz.",
  "%@ every day. Move today's open reminders to tomorrow. Needs Reminders on in Connections.": "%@ codziennie. Przenieś dzisiejsze niezałatwione przypomnienia na jutro. Wymaga włączonych Przypomnień w Połączeniach.",
  "%@ on weekdays. A quick look at your day: reminders and lists.": "%@ w dni robocze. Szybki rzut oka na dzień: przypomnienia i listy.",
@@ -1062,6 +1063,7 @@
  "Weekdays": "Dni robocze",
  "Weekdays only": "Tylko dni robocze",
  "Weekly look-back": "Podsumowanie tygodnia",
+ "Weekly look-back set.": "Podsumowanie tygodnia ustawione.",
  "Weekly tidy-up": "Cotygodniowe porządki",
  "Weekly tidy-up set.": "Cotygodniowe porządki ustawione.",
  "What Doddy calls you": "Jak Doddy się do Ciebie zwraca",

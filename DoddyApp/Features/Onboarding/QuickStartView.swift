@@ -29,6 +29,7 @@ struct QuickStartView: View {
         morningCheckIn: MorningCheckInSettings.stored().isOn,
         eveningWrapUp: EveningWrapUpSettings.stored().isOn,
         weeklyTidyUp: TidyUpSettings.stored().isOn,
+        weeklyLookBack: WeeklyLookBackSettings.stored().isOn,
         useProfileInVoice: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
 
     private var plan: QuickStart.Plan { QuickStart.plan(choices, profileSaved: profileSaved, current: current) }
@@ -76,6 +77,14 @@ struct QuickStartView: View {
                                        Calendar.current.weekdaySymbols[QuickStart.tidyUp.weekday - 1],
                                        Self.time(QuickStart.tidyUp.hour, QuickStart.tidyUp.minute)),
                         isOn: $choices.weeklyTidyUp, id: "quickStart.tidyUp")
+                }
+                if !current.weeklyLookBack {
+                    QuickStartRow(
+                        title: "Weekly look-back",
+                        detail: String(format: NSLocalizedString("%@ at %@. Notes from the week, ticked items and what's coming up. No scores or streaks.", comment: ""),
+                                       Calendar.current.weekdaySymbols[QuickStart.lookBack.weekday - 1],
+                                       Self.time(QuickStart.lookBack.hour, QuickStart.lookBack.minute)),
+                        isOn: $choices.weeklyLookBack, id: "quickStart.lookBack")
                 }
                 Text("iOS will ask whether Doddy may send notifications. They never show your notes.")
                     .font(.footnote)
@@ -163,6 +172,15 @@ struct QuickStartView: View {
             case .off, .failed: .failed
             }
             receipts.append(receipt("tidyUp", outcome, set: NSLocalizedString("Weekly tidy-up set.", comment: "")))
+        }
+        if let lookBack = plan.lookBack {
+            lookBack.store()
+            let outcome: QuickStart.Outcome = switch await WeeklyLookBackScheduler.apply(lookBack) {
+            case .scheduled: .set
+            case .needsPermission: .needsPermission
+            case .off, .failed: .failed
+            }
+            receipts.append(receipt("lookBack", outcome, set: NSLocalizedString("Weekly look-back set.", comment: "")))
         }
         if plan.useProfileInVoice {
             let defaults = UserDefaults.standard
