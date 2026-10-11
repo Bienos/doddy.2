@@ -79,7 +79,7 @@
     {
       "type": "function",
       "name": "change_calendar_event",
-      "description": "Propose moving or renaming one event already in the user's iPhone Calendar. Use it only when the user clearly asks to move, reschedule or rename an event. First call read_calendar for that day and pass the event's exact title and start as it returned them. Turn relative dates into a date using the current date and time you were given; if the new time is unclear, ask one short question first. A repeating event changes only this occurrence. It never deletes an event. The app shows the event as it is now and after the change, and the user must tap Change; the result starts with 'changed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed unless the result starts with changed. If the result says more than one event matches, ask the user which one.",
+      "description": "Propose moving or renaming one event already in the user's iPhone Calendar. Use it only when the user clearly asks to move, reschedule or rename an event. First call read_calendar for that day and pass the event's exact title and start as it returned them. Turn relative dates into a date using the current date and time you were given; if the new time is unclear, ask one short question first. A repeating event changes only this occurrence. It never deletes an event; use delete_calendar_event for that. The app shows the event as it is now and after the change, and the user must tap Change; the result starts with 'changed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed unless the result starts with changed. If the result says more than one event matches, ask the user which one.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -96,7 +96,7 @@
     {
       "type": "function",
       "name": "change_reminder",
-      "description": "Propose changing when one open reminder in the user's iPhone Reminders app is due, or marking it done. Use it only when the user clearly asks to move a reminder or says it's done. Pass the reminder's exact title; if you aren't sure of it, ask. Give either new_due or done: true, never both. Turn relative dates into a date using the current date and time you were given; if the time is unclear, ask one short question first. It never deletes a reminder. The app shows the change and the user must tap Change or Mark done; the result starts with 'changed', 'completed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed or done unless the result starts with changed or completed. If the result says more than one reminder matches, ask the user which one.",
+      "description": "Propose changing when one open reminder in the user's iPhone Reminders app is due, or marking it done. Use it only when the user clearly asks to move a reminder or says it's done. Pass the reminder's exact title; if you aren't sure of it, ask. Give either new_due or done: true, never both. Turn relative dates into a date using the current date and time you were given; if the time is unclear, ask one short question first. It never deletes a reminder; use delete_reminder for that. The app shows the change and the user must tap Change or Mark done; the result starts with 'changed', 'completed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed or done unless the result starts with changed or completed. If the result says more than one reminder matches, ask the user which one.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -107,6 +107,33 @@
         "required": ["title"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_8901m4m3zy2verh9ssjb9kyrv2rc"}
+    },
+    {
+      "type": "function",
+      "name": "delete_calendar_event",
+      "description": "Propose deleting one event from the user's iPhone Calendar. Use it only when the user clearly asks to delete, remove or cancel a specific event. First call read_calendar for that day and pass the event's exact title and start as it returned them; if you aren't sure which event, ask. A repeating event loses only this occurrence. The app shows the event and the user must tap Delete; Doddy can't undo it. The result starts with 'deleted', 'declined', 'not found', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should delete this.' (Polish: 'Potwierdź na ekranie, jeśli mam to usunąć.'). Never say it was deleted unless the result starts with deleted. If the result says more than one event matches, ask the user which one.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as read_calendar returned it."},
+          "start": {"type": "string", "description": "The event's start exactly as read_calendar returned it, as YYYY-MM-DDTHH:MM in local time, or YYYY-MM-DD for an all-day event."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+    },
+    {
+      "type": "function",
+      "name": "delete_reminder",
+      "description": "Propose deleting one open reminder from the user's iPhone Reminders app. Use it only when the user clearly asks to delete or remove a reminder (if they say it's done, use change_reminder with done instead). Pass the reminder's exact title; if you aren't sure of it, ask. The app shows the reminder and the user must tap Delete; Doddy can't undo it. The result starts with 'deleted', 'declined', 'not found', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should delete this.' (Polish: 'Potwierdź na ekranie, jeśli mam to usunąć.'). Never say it was deleted unless the result starts with deleted. If the result says more than one reminder matches, ask the user which one.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The reminder's exact title, in the user's language."}
+        },
+        "required": ["title"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
     },
     {
       "type": "function",

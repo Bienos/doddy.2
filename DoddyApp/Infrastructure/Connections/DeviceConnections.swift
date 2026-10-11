@@ -271,6 +271,33 @@ final class DeviceConnections {
         }
     }
 
+    /// Deletes exactly the occurrence the card showed (ADR-254). It must still look as it did,
+    /// or nothing is deleted. A repeating event loses only this occurrence. Then Calendar is read
+    /// again: verified only when that occurrence is gone.
+    func deleteEvent(_ event: CalendarEventSummary) throws -> ChangeOutcome {
+        guard access(for: .calendar) == .granted else { return .changedElsewhere }
+        guard let found = rawEvents(from: event.start, to: event.end).first(where: { Self.occurrenceID($0) == event.id }),
+              Self.summary(found) == event else {
+            return .changedElsewhere
+        }
+        try eventStore.remove(found, span: .thisEvent)
+        let stillThere = rawEvents(from: event.start, to: event.end).contains { Self.occurrenceID($0) == event.id }
+        return stillThere ? .unconfirmed : .verified
+    }
+
+    /// Deletes exactly the open reminder the card showed (ADR-254), if it still looks as it did.
+    /// Verified only when Reminders no longer has it.
+    func deleteReminder(_ before: ReminderSnapshot) throws -> ChangeOutcome {
+        guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }
+        guard let reminder = eventStore.calendarItem(withIdentifier: before.id) as? EKReminder,
+              !reminder.isCompleted, reminder.isCompleted == before.isCompleted, (reminder.title ?? "") == before.title,
+              EventChange.sameDue(Self.snapshot(reminder).due, before.due) else {
+            return .changedElsewhere
+        }
+        try eventStore.remove(reminder, commit: true)
+        return eventStore.calendarItem(withIdentifier: before.id) == nil ? .verified : .unconfirmed
+    }
+
     /// The reminder as Reminders has it now (for Undo's starting point), or nil.
     func reminderSnapshot(id: String) -> ReminderSnapshot? {
         guard access(for: .reminders) == .granted,

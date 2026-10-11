@@ -54,6 +54,10 @@ final class VoiceSessionController {
         case changeEvent(toolCallID: String, plan: EventChangePlan)
         /// "Change this reminder?" or "Mark this reminder done?" (ADR-229).
         case changeReminder(toolCallID: String, reminder: ReminderSnapshot, draft: ReminderChangeDraft)
+        /// "Delete this event?" (ADR-254): one occurrence, exactly as Calendar has it.
+        case deleteEvent(toolCallID: String, event: CalendarEventSummary)
+        /// "Delete this reminder?" (ADR-254): one open reminder, exactly as Reminders has it.
+        case deleteReminder(toolCallID: String, reminder: ReminderSnapshot)
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
@@ -62,7 +66,7 @@ final class VoiceSessionController {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
-                 .changeEvent(let id, _), .changeReminder(let id, _, _):
+                 .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _):
                 id
             }
         }
@@ -559,6 +563,10 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan))
         case .changeReminder(let id, let reminder, let draft):
             await reply(id, changeReminder(reminder, draft))
+        case .deleteEvent(let id, let event):
+            await reply(id, deleteEvent(event))
+        case .deleteReminder(let id, let reminder):
+            await reply(id, deleteReminder(reminder))
         case .translator(let id, let setup):
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
@@ -677,6 +685,7 @@ final class VoiceSessionController {
         case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
+        case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -1140,6 +1149,10 @@ final class VoiceSessionController {
             await proposeEventChange(draft, toolCallID: call.toolCallId)
         case .changeReminder(let draft):
             await proposeReminderChange(draft, toolCallID: call.toolCallId)
+        case .deleteCalendarEvent(let draft):
+            await proposeEventDelete(draft, toolCallID: call.toolCallId)
+        case .deleteReminder(let title):
+            await proposeReminderDelete(title, toolCallID: call.toolCallId)
         case .remindAboutNote(let draft):
             await proposeNoteReminder(draft, toolCallID: call.toolCallId)
         case .needsClarification(let name, let clarification):
@@ -1619,6 +1632,74 @@ final class VoiceSessionController {
         }
     }
 
+    // MARK: Deleting events and reminders (ADR-254)
+
+    /// Exactly one event with the title and start the agent read; otherwise the agent asks.
+    private func proposeEventDelete(_ draft: EventChangeDraft, toolCallID: String) async {
+        guard devices.access(for: .calendar) == .granted else {
+            await notConnected(toolCallID, .calendar)
+            return
+        }
+        let events = devices.events(in: EventChange.searchRange(draft, calendar: .current))
+        switch EventChange.match(draft, in: events, calendar: .current) {
+        case .none: await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
+        case .several(let found): await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .one(let event): propose(.deleteEvent(toolCallID: toolCallID, event: event), toolCallID: toolCallID)
+        }
+    }
+
+    /// Exactly one open reminder with that title; otherwise the agent asks.
+    private func proposeReminderDelete(_ title: String, toolCallID: String) async {
+        guard devices.access(for: .reminders) == .granted else {
+            await notConnected(toolCallID, .reminders)
+            return
+        }
+        do {
+            let open = try await devices.incompleteReminders()
+            switch EventChange.matchReminder(title, in: open) {
+            case .none: await reply(toolCallID, VoiceToolReply.reminderNotFound(title))
+            case .several(let found): await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .one(let reminder): propose(.deleteReminder(toolCallID: toolCallID, reminder: reminder), toolCallID: toolCallID)
+            }
+        } catch {
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+        }
+    }
+
+    /// Checked again at the tap: permission, and that the event still looks as shown. "Deleted"
+    /// only when Calendar no longer has it.
+    private func deleteEvent(_ event: CalendarEventSummary) -> String {
+        guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
+            connectionNeeded = .calendar
+            return VoiceToolReply.failed("Calendar isn't connected. Nothing was deleted.")
+        }
+        do {
+            switch try devices.deleteEvent(event) {
+            case .verified: return VoiceToolReply.eventDeleted(event, calendar: .current)
+            case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
+    private func deleteReminder(_ reminder: ReminderSnapshot) -> String {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return VoiceToolReply.failed("Reminders isn't connected. Nothing was deleted.")
+        }
+        do {
+            switch try devices.deleteReminder(reminder) {
+            case .verified: return VoiceToolReply.reminderDeleted(reminder.title)
+            case .changedElsewhere: return VoiceToolReply.reminderChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
     /// Undo on the change receipt (ADR-253): the same checked change, backwards. The item must
     /// still look exactly as Doddy left it; the result is read back and Doddy is told.
     func undoLastChange(now: Date = .now) async {
@@ -1794,7 +1875,8 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder: true
+        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
+             .deleteEvent, .deleteReminder: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false
         }

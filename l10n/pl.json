@@ -934,5 +934,10 @@
  "Remove them": "Usuń je",
  "Only the notes and lists this import added are removed. Nothing else changes.": "Usuwane są tylko notatki i listy dodane przez ten import. Nic innego się nie zmienia.",
  "Removed what this import added (%lld). Checked.": "Usunięto to, co dodał ten import (%lld). Sprawdzone.",
- "Not everything this import added could be removed. Check your notes and lists.": "Nie udało się usunąć wszystkiego, co dodał ten import. Sprawdź swoje notatki i listy."
+ "Not everything this import added could be removed. Check your notes and lists.": "Nie udało się usunąć wszystkiego, co dodał ten import. Sprawdź swoje notatki i listy.",
+ "Don't delete": "Nie usuwaj",
+ "Delete this event?": "Usunąć to wydarzenie?",
+ "Delete this reminder?": "Usunąć to przypomnienie?",
+ "This can't be undone from Doddy.": "Doddy nie może tego cofnąć.",
+ "If it repeats, only this time is deleted. This can't be undone from Doddy.": "Jeśli się powtarza, usunięte zostanie tylko to jedno. Doddy nie może tego cofnąć."
 }

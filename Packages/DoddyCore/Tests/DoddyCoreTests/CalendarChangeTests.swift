@@ -103,6 +103,21 @@ final class CalendarChangeTests: XCTestCase {
         XCTAssertEqual(undo.after, event, "back exactly as it was")
     }
 
+    /// ADR-254: deleting names the thing exactly; it is paused and logged like other app changes.
+    func testDeletingIsParsedPausedAndLogged() {
+        guard case .deleteCalendarEvent(let draft) = parse(VoiceToolName.deleteCalendarEvent, #"{"title":"Dentist","start":"2026-10-10T09:30"}"#) else {
+            return XCTFail()
+        }
+        XCTAssertEqual(draft.currentStart, at(10, 9, 30))
+        guard case .invalid = parse(VoiceToolName.deleteCalendarEvent, #"{"title":"Dentist"}"#) else { return XCTFail("the start is needed") }
+        XCTAssertEqual(parse(VoiceToolName.deleteReminder, #"{"title":"Call mum"}"#), .deleteReminder(title: "Call mum"))
+        XCTAssertEqual(VoiceConnection.serving(VoiceToolName.deleteCalendarEvent), .calendar)
+        XCTAssertEqual(VoiceConnection.serving(VoiceToolName.deleteReminder), .reminders)
+        XCTAssertTrue(ConnectionPause.applies(to: .deleteReminder(title: "x")))
+        XCTAssertEqual(ActivityRequest.describe(.deleteReminder(title: "Call mum"), calendar: calendar)?.title, "Delete reminder")
+        XCTAssertTrue(VoiceToolReply.reminderDeleted("Call mum").hasPrefix("deleted:"))
+    }
+
     func testRemindersMatchOpenOnesOnly() {
         let open = ReminderSnapshot(id: "1", title: "Call mum", listTitle: "Home", due: nil, markerURL: nil)
         let done = ReminderSnapshot(id: "2", title: "call mum", listTitle: "Home", due: nil, markerURL: nil, isCompleted: true)

@@ -392,6 +392,26 @@ struct VoiceView: View {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
             }
+        case .deleteEvent(_, let event):
+            Text("Delete this event?")
+                .font(.headline)
+            Text(event.title)
+                .font(.body)
+            Text(eventWhen(event))
+                .foregroundStyle(Theme.secondaryText)
+            Text("If it repeats, only this time is deleted. This can't be undone from Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .deleteReminder(_, let reminder):
+            Text("Delete this reminder?")
+                .font(.headline)
+            Text(reminder.title)
+                .font(.body)
+            Text("In \(reminder.listTitle) · \(ReminderText.due(reminder.due))")
+                .foregroundStyle(Theme.secondaryText)
+            Text("This can't be undone from Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -502,6 +522,7 @@ struct VoiceView: View {
         case .translator: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
+        case .deleteEvent, .deleteReminder: (NSLocalizedString("Delete", comment: ""), NSLocalizedString("Don't delete", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         }

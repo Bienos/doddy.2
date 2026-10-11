@@ -10,6 +10,9 @@ import Foundation
 extension VoiceToolName {
     public static let changeCalendarEvent = "change_calendar_event"
     public static let changeReminder = "change_reminder"
+    /// Deleting (ADR-254): one event occurrence, or one open reminder, after a card.
+    public static let deleteCalendarEvent = "delete_calendar_event"
+    public static let deleteReminder = "delete_reminder"
 }
 
 public struct EventChangeDraft: Equatable, Sendable {
@@ -221,6 +224,16 @@ extension VoiceToolReply {
 
     public static let reminderChangedElsewhere = "failed: the reminder changed, was completed or disappeared in Reminders since the card was shown. Nothing was changed by Doddy. Ask the user to check Reminders."
     public static let undoUnconfirmed = "unknown: Calendar or Reminders didn't confirm putting it back. Ask the user to check."
+    public static func eventDeleted(_ event: CalendarEventSummary, calendar: Calendar) -> String {
+        "deleted: \"\(event.title)\" (\(localText(event.start, hasTime: !event.allDay, calendar: calendar))) is gone from Calendar. Checked."
+    }
+
+    public static func reminderDeleted(_ title: String) -> String {
+        "deleted: the reminder \"\(title)\" is gone from Reminders. Checked."
+    }
+
+    public static let deleteDeclined = "declined: the user chose not to delete it. Nothing changed."
+    public static let deleteUnconfirmed = "unknown: Calendar or Reminders didn't confirm it's gone. Ask the user to check before trying again."
     public static let reminderChangeUnconfirmed = "unknown: Reminders didn't confirm the change. Ask the user to check Reminders before trying again."
 }
 
@@ -259,6 +272,17 @@ extension VoiceToolRequest {
         return .changeCalendarEvent(EventChangeDraft(
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime,
             newStart: newStart, newEnd: newEnd, newTitle: newTitle))
+    }
+
+    /// title + start (as read_calendar returned them): the occurrence to delete (ADR-254).
+    static func parseEventDelete(_ args: Arguments, name: String, calendar: Calendar) -> VoiceToolRequest {
+        guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
+        guard let startText = args.text("start") else { return .invalid(name: name, reason: "missing start (the event's current start, as read_calendar gave it)") }
+        guard case .due(let current) = ReminderDueRules.wallClock(startText, calendar: calendar), let currentStart = current.date(in: calendar) else {
+            return .invalid(name: name, reason: "start is not a date")
+        }
+        return .deleteCalendarEvent(EventChangeDraft(
+            title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime, newStart: nil, newEnd: nil, newTitle: nil))
     }
 
     /// title (exact), and new_due or done: true. Never both.

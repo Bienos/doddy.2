@@ -1805,6 +1805,17 @@
         }
       }
     },
+    "Delete this event?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to wydarzenie?"
+          }
+        }
+      }
+    },
     "Delete this memory?": {
       "extractionState": "manual",
       "localizations": {
@@ -1812,6 +1823,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć to wspomnienie?"
+          }
+        }
+      }
+    },
+    "Delete this reminder?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to przypomnienie?"
           }
         }
       }
@@ -2351,6 +2373,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie zmieniaj"
+          }
+        }
+      }
+    },
+    "Don't delete": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie usuwaj"
           }
         }
       }
@@ -3330,6 +3363,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jeśli się powtarza, zmieni się tylko ten raz. Nic nie zostanie usunięte."
+          }
+        }
+      }
+    },
+    "If it repeats, only this time is deleted. This can't be undone from Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli się powtarza, usunięte zostanie tylko to jedno. Doddy nie może tego cofnąć."
           }
         }
       }
@@ -8511,6 +8555,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta wersja Doddy’ego nie może niczego udostępniać widżetom (nie jest podpisana grupą aplikacji Doddy’ego), więc widżety pokazują tylko „Otwórz Doddy’ego”."
+          }
+        }
+      }
+    },
+    "This can't be undone from Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie może tego cofnąć."
           }
         }
       }
