@@ -229,7 +229,8 @@ struct NoteImportView: View {
         case .inTrash: NSLocalizedString("It was in Keep's trash.", comment: "")
         case .tooLong(let length): "It's \(length) characters; a note can be up to \(MemoryLimits.maxTextLength). Nothing is cut."
         case .listNameTooLong: "The list's name is longer than \(ListLimits.nameLength) characters."
-        case .tooManyItems: "The list has more than \(ListLimits.itemsPerList) items, or an item longer than \(ListLimits.itemLength) characters."
+        case .tooManyItems: "The list has more than \(ListLimits.itemsPerList) items."
+        case .listItemTooLong: "An item in the list is longer than \(ListLimits.itemLength) characters. Nothing is cut."
         case .listNameTaken(let name): "You already have a list called “\(name)”."
         case .alreadySaved: NSLocalizedString("Already in Doddy.", comment: "")
         }
