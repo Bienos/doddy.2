@@ -193,6 +193,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
 
     public static func parse(name: String, parametersJSON: Data, now: Date = Date(), calendar: Calendar = .current) -> VoiceToolRequest {
         let args = Arguments(parametersJSON)
+        // Online-account arguments are checked by Doddy's server (ADR-209).
+        if !CloudToolName.all.contains(name), let (key, limit) = args.firstTooLong() {
+            return .invalid(name: name, reason: "\(key) is longer than \(limit) characters")
+        }
         switch name {
         case VoiceToolName.searchMemories:
             guard let query = args.text("query") else { return .invalid(name: name, reason: "missing query") }
@@ -402,6 +406,36 @@ struct Arguments {
 
     func number(_ key: String) -> Double? {
         values[key] as? Double
+    }
+
+    /// The first text argument longer than its bound, if any (review C11). Too long is refused,
+    /// never cut: the agent hears which argument and asks the user. List items are bounded by
+    /// the list itself (ListLimits.itemLength), item by item.
+    func firstTooLong() -> (key: String, limit: Int)? {
+        for key in values.keys.sorted() {
+            guard let value = values[key] as? String else { continue }
+            let limit = VoiceTextLimits.limit(for: key)
+            if value.unicodeScalars.count > limit { return (key, limit) }
+        }
+        return nil
+    }
+}
+
+/// Bounds on text the model sends to a phone tool (review C11). A note, or a note quoted back,
+/// may be as long as a saved note; notes on an event or reminder and a message body are
+/// paragraphs; everything else (titles, names, labels, times) is a line.
+public enum VoiceTextLimits {
+    public static let line = EventChange.maxTitleLength
+    public static let paragraph = 2_000
+    public static let search = 500
+
+    public static func limit(for key: String) -> Int {
+        switch key {
+        case "text", "note": MemoryLimits.maxTextLength
+        case "notes", "body": paragraph
+        case "query", "place": search
+        default: line
+        }
     }
 }
 
