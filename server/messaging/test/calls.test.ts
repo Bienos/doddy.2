@@ -131,6 +131,38 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.ok(!(alerts[0]!.body ?? "").includes("+48"), "no phone number in the alert");
   });
 
+  test("changing or removing the PIN ends memory access for calls already verified", async () => {
+    const { h } = await user("+48500000016", { pin: "258025", inbound: true, memories: ["Spare key under the mat"] });
+    const s = (await ring("+48500000016")).secret__doddy_session!;
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s);
+    assert.equal((await el("/webhooks/elevenlabs/tools/search-memories", { query: "key" }, s)).json().status, "ok");
+    assert.equal((await call("PUT", "/v1/calls/pin", h, { pin: "369147" })).statusCode, 204);
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/search-memories", { query: "key" }, s)).json(), { status: "pin_required" });
+    await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "369147" }, s);
+    assert.equal((await call("DELETE", "/v1/calls/pin", h)).statusCode, 204);
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/search-memories", { query: "key" }, s)).json(), { status: "pin_required" });
+  });
+
+  test("a PIN lock queues no alert when push isn't configured on the server", async () => {
+    const noPush = await testApp(db, { push: undefined });
+    const r = await noPush.app.inject({ method: "POST", url: "/v1/accounts" });
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    const hh = { authorization: `Bearer ${deviceToken}` };
+    const inj = (method: "POST" | "PUT", url: string, payload: object, headers: Record<string, string> = hh) =>
+      noPush.app.inject({ method, url, headers, payload });
+    await inj("POST", "/v1/phone/verification/check", { phone: "+48500000017", code: "123456" });
+    await inj("PUT", "/v1/calls/pin", { pin: "258025" });
+    await inj("PUT", "/v1/calls/settings", { inboundEnabled: true });
+    await inj("PUT", "/v1/device/push-token", { token: "e".repeat(64), environment: "sandbox" });
+    const start = await inj("POST", "/webhooks/elevenlabs/call-start", { caller_id: "+48500000017" }, { "x-doddy-tool-secret": TOOL_SECRET });
+    const s = start.json().dynamic_variables.secret__doddy_session;
+    for (let i = 0; i < 5; i++) {
+      await inj("POST", "/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, { "x-doddy-tool-secret": TOOL_SECRET, "x-doddy-session": s });
+    }
+    assert.equal((await db.query("SELECT 1 FROM outbound_messages WHERE account_id = $1", [accountId])).rowCount, 0);
+    await noPush.app.close();
+  });
+
   test("memory text is encrypted at rest", async () => {
     await user("+48500000004", { pin: "258025", inbound: true, memories: ["Hasło do wifi: zielony-kot-77"] });
     const { rows } = await db.query<{ ciphertext: Buffer }>("SELECT ciphertext FROM memory_copies");

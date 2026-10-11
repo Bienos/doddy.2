@@ -104,7 +104,7 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
            pin_locked_until = CASE WHEN $3 THEN now() + make_interval(mins => $4) ELSE pin_locked_until END
          WHERE account_id = $1`,
         [s.accountId, lock ? 0 : attempts, lock, minutes]);
-      if (lock && await canPush(c, s.accountId)) {
+      if (lock && deps.push && await canPush(c, s.accountId)) {
         // Tell the owner: someone may be guessing their PIN. No caller number in the text.
         await enqueue(c, s.accountId, ["push"],
           `Someone entered a wrong Doddy PIN ${PIN_MAX_ATTEMPTS} times on a phone call. PIN entry is locked for ${minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`}. If it wasn't you, change your PIN in Doddy.`,

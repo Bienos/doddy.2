@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { FastifyPluginAsync } from "fastify";
+import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
@@ -24,6 +25,10 @@ const snapshotBody = z.object({
   })).max(5000),
 }).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
+
+/** A changed or removed PIN also ends the access that calls in progress got with the old one. */
+const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
+  c.query("UPDATE call_sessions SET pin_verified_at = NULL WHERE account_id = $1", [accountId]);
 
 export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
@@ -80,14 +85,22 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!isAcceptablePin(body.pin)) return reply.code(400).send({ error: "weak_pin" });
     const { accountId } = principal(req);
     await ensureRow(accountId);
-    await db.query(
-      `UPDATE call_settings SET pin_hash = $2, pin_failed_attempts = 0, pin_lock_count = 0, pin_locked_until = NULL, updated_at = now()
-       WHERE account_id = $1`, [accountId, await hashPin(body.pin)]);
+    const hash = await hashPin(body.pin);
+    await inTransaction(db, async (c) => {
+      await c.query(
+        `UPDATE call_settings SET pin_hash = $2, pin_failed_attempts = 0, pin_lock_count = 0, pin_locked_until = NULL, updated_at = now()
+         WHERE account_id = $1`, [accountId, hash]);
+      await forgetPinOnCalls(c, accountId);
+    });
     return reply.code(204).send();
   });
 
   app.delete("/v1/calls/pin", { preHandler: auth }, async (req, reply) => {
-    await db.query("UPDATE call_settings SET pin_hash = NULL, updated_at = now() WHERE account_id = $1", [principal(req).accountId]);
+    const { accountId } = principal(req);
+    await inTransaction(db, async (c) => {
+      await c.query("UPDATE call_settings SET pin_hash = NULL, updated_at = now() WHERE account_id = $1", [accountId]);
+      await forgetPinOnCalls(c, accountId);
+    });
     return reply.code(204).send();
   });
 
