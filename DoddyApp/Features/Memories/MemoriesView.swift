@@ -36,6 +36,10 @@ struct MemoriesView: View {
                     }
                     JourneyHeading(eyebrow: "Little things, kept", title: "Your memories.",
                                    subtitle: "Your words. Ready when you need them.")
+                    // A strip of the memory library, edge to edge, between the heading and the
+                    // notes; no text over it (ADR-308).
+                    SceneryBackdrop(place: .memory, height: 110, focus: 0.3)
+                        .padding(.horizontal, -24)
                     Button { showFind = true } label: {
                         HStack { Image(systemName: "magnifyingglass"); Text("Find something you saved"); Spacer() }
                     }
@@ -93,8 +97,6 @@ struct MemoriesView: View {
                     }
                 }
                 .padding(24)
-                // The memory library behind the heading (ADR-299).
-                .background(alignment: .top) { SceneryBackdrop(place: .memory) }
             }
             .background(Theme.canvas).foregroundStyle(Theme.ink)
             .toolbar(.hidden, for: .navigationBar, .tabBar)

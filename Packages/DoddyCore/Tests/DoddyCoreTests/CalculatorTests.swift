@@ -129,7 +129,7 @@ final class CalculatorTests: XCTestCase {
         XCTAssertEqual(
             VoiceToolReply.conversion(UnitConversionRequest(value: 5, from: "kg", to: "cup")),
             "failed: kg is a mass and cup is a volume; they can't be converted into each other.")
-        XCTAssertTrue(VoiceToolReply.conversion(UnitConversionRequest(value: 20, from: "PLN", to: "EUR")).contains("Currencies can't be converted."))
+        XCTAssertTrue(VoiceToolReply.conversion(UnitConversionRequest(value: 20, from: "PLN", to: "EUR")).contains("For money, use convert_currency."))
     }
 
     // MARK: Tool calls

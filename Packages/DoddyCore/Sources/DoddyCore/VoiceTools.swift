@@ -173,6 +173,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Arithmetic and unit conversion, worked out on the iPhone (ADR-270).
     case calculate(expression: String)
     case convertUnits(UnitConversionRequest)
+    /// Converted with the ECB's daily rates, fetched by the app (ADR-300).
+    case convertCurrency(CurrencyConversionRequest)
+    /// Save, find or clear the one parking spot kept on this iPhone (ADR-301).
+    case parkingSpot(ParkingAction)
+    /// A dish's ingredients on one card with ticks, added to a list on a tap (ADR-305).
+    case addIngredients(IngredientsProposal)
     /// "Undo that": the newest undoable change from this conversation, after a card (ADR-271).
     case undoLast
     case setTimer(TimerDraft)
@@ -251,6 +257,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCalculate(args, name: name)
         case VoiceToolName.convertUnits:
             return parseConversion(args, name: name)
+        case VoiceToolName.convertCurrency:
+            return parseCurrency(args, name: name)
+        case VoiceToolName.parkingSpot:
+            return parseParking(args, name: name)
+        case VoiceToolName.addIngredients:
+            return parseIngredients(args, name: name)
         case VoiceToolName.undoLast:
             return .undoLast
         case VoiceToolName.setTimer:
@@ -495,6 +507,37 @@ public enum OpenLinks {
     /// Encodes everything except letters and digits, so "+", "&" and spaces survive the trip.
     private static func encode(_ text: String) -> String {
         text.addingPercentEncoding(withAllowedCharacters: .alphanumerics) ?? text
+    }
+}
+
+/// "Open camera" runs the user's "Doddy Camera" Shortcut, which opens the Camera app (ADR-291):
+/// iOS gives other apps no public way to open Camera, and Doddy itself never uses the camera.
+/// `installLink` is the owner's shared iCloud copy of that Shortcut, so a user can add it with one
+/// tap instead of building it; nil until the owner shares one, and then the app shows the steps.
+public enum CameraShortcut {
+    /// Must match the name in `voice-agent/instructions.md` and `tools.json`.
+    public static let name = "Doddy Camera"
+
+    /// The run card is the camera one when the agent asks for this shortcut, whatever the case
+    /// or spacing it used.
+    public static func isCamera(_ shortcutName: String) -> Bool {
+        shortcutName.trimmingCharacters(in: .whitespacesAndNewlines)
+            .compare(name, options: [.caseInsensitive]) == .orderedSame
+    }
+
+    /// The owner's shared copy. Set it with `installLink(from:)` so a mistyped link fails a test.
+    public static let installLink: URL? = nil
+
+    /// Only an iCloud Shortcuts share link (`https://www.icloud.com/shortcuts/<32 hex>`) is
+    /// accepted, so the button can never open anything else.
+    public static func installLink(from text: String) -> URL? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: trimmed), url.scheme == "https", url.host == "www.icloud.com",
+              url.query == nil, url.fragment == nil else { return nil }
+        let parts = url.path.split(separator: "/", omittingEmptySubsequences: true)
+        guard parts.count == 2, parts[0] == "shortcuts", parts[1].count == 32,
+              parts[1].allSatisfy(\.isHexDigit) else { return nil }
+        return url
     }
 }
 

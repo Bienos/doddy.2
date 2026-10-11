@@ -64,14 +64,21 @@ final class PlaceLocation: NSObject, CLLocationManagerDelegate {
 
     /// One position accurate to 150 m, or `nil` after 15 seconds. Nothing is kept.
     func currentCoordinate() async -> PlaceCoordinate? {
-        await withTaskGroup(of: PlaceCoordinate?.self) { group in
+        await currentFix(within: 150)?.coordinate
+    }
+
+    /// One position at least as sure as `meters`, with how sure iOS was, or `nil` after 15
+    /// seconds. Read once, only when asked (a place reminder, or saving a parking spot, ADR-301).
+    func currentFix(within meters: Double) async -> (coordinate: PlaceCoordinate, accuracy: Double)? {
+        await withTaskGroup(of: (coordinate: PlaceCoordinate, accuracy: Double)?.self) { group in
             group.addTask {
                 do {
                     for try await update in CLLocationUpdate.liveUpdates() {
                         if let location = update.location,
-                           location.horizontalAccuracy >= 0, location.horizontalAccuracy <= 150 {
-                            return PlaceCoordinate(
-                                latitude: location.coordinate.latitude, longitude: location.coordinate.longitude)
+                           location.horizontalAccuracy >= 0, location.horizontalAccuracy <= meters {
+                            return (PlaceCoordinate(
+                                latitude: location.coordinate.latitude, longitude: location.coordinate.longitude),
+                                location.horizontalAccuracy)
                         }
                     }
                 } catch {}

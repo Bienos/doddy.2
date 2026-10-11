@@ -7,6 +7,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
     case web
+    /// The ECB's public rates file (ADR-300).
+    case exchangeRates
 
     public var title: String {
         switch self {
@@ -23,6 +25,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .notion: "Notion"
         case .todoist: "Todoist"
         case .web: "Web search"
+        case .exchangeRates: "Exchange rates"
         }
     }
 }
@@ -147,7 +150,14 @@ public struct ActivityRequest: Equatable, Sendable {
             if let title = draft.newTitle { parts.append("renamed “\(title)”") }
             return ActivityRequest(app: .calendar, title: "Change event", detail: "“\(draft.title)” \(parts.joined(separator: ", "))", isLookup: false)
         case .changeReminder(let draft):
-            let what = draft.markDone ? "mark done" : "due \(draft.newDue.map(ReminderText.due) ?? "")"
+            var parts: [String] = []
+            if draft.markDone { parts.append("mark done") }
+            if let due = draft.newDue { parts.append("due \(ReminderText.due(due))") }
+            // ADR-302: which details, not the note's text.
+            if draft.addNote != nil { parts.append("add a note") }
+            if let priority = draft.priority { parts.append(priority.text) }
+            if let list = draft.listName { parts.append("to the list “\(list)”") }
+            let what = parts.joined(separator: ", ")
             return ActivityRequest(app: .reminders, title: "Change reminder", detail: "“\(draft.title)” · \(what)", isLookup: false)
         case .deleteCalendarEvent(let draft):
             return ActivityRequest(app: .calendar, title: "Delete event", detail: "“\(draft.title)” \(when(draft.currentStart, hasTime: !draft.currentIsDayOnly))", isLookup: false)
@@ -164,6 +174,18 @@ public struct ActivityRequest: Equatable, Sendable {
         case .undoLast:
             // The row being undone records what happened (ActivityLog.undid), not a new row.
             return nil
+        case .parkingSpot(let action):
+            // No coordinates in the log, only what was asked (ADR-301).
+            switch action {
+            case .save: return ActivityRequest(app: .memories, title: "Save parking spot", detail: nil, isLookup: false)
+            case .find: return ActivityRequest(app: .memories, title: "Found parking spot", detail: nil, isLookup: true)
+            case .clear: return ActivityRequest(app: .memories, title: "Clear parking spot", detail: nil, isLookup: false)
+            }
+        case .addIngredients(let proposal):
+            return ActivityRequest(app: .memories, title: "Add ingredients to a list", detail: "“\(proposal.list)” · \(proposal.dish)", isLookup: false)
+        case .convertCurrency(let request):
+            // Only that the rates file was fetched; the amount stays in the conversation (ADR-300).
+            return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
@@ -177,6 +199,9 @@ public struct ActivityRequest: Equatable, Sendable {
         switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
+        case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
+        case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
+        case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)
         case CloudToolName.findDriveFile: ActivityRequest(app: .drive, title: "Looked for a file", detail: nil, isLookup: true)
         case CloudToolName.searchNotion: ActivityRequest(app: .notion, title: "Searched Notion", detail: nil, isLookup: true)
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
@@ -282,6 +307,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
         // A delete, checked by looking again (ADR-259 on the default line).
         if text.hasPrefix("deleted:") { return (.done, nil) }
+        // Round 4 (ADR-301, ADR-303): a parking spot removed and checked; a Todoist task moved,
+        // with the due Todoist sent back.
+        if text.hasPrefix("cleared:") || text.hasPrefix("moved: Todoist task") { return (.done, nil) }
         if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
         // Lists (ADR-216), answered from the store's own result (ADR-272). Something was added,
         // ticked, removed or a list was made; or nothing was, and why.

@@ -17,7 +17,9 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
-**Partly applied to the live agent 2026-10-11 (ADR-291, open camera):** `run_shortcut` (`tool_1601m4gj37f5etbres37pgtvrq3c`) has the new `name` sentence, updated in place and read back. The two prompt edits (the "Opening the camera" line after `run_shortcut`, and "open the camera" in the last strict timer/map/shortcut rule) are **not live yet**: the prompt write was refused in that session. Put them into the live prompt in place, since the live prompt is ahead of `instructions.md`; it was `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx` when read.
+**Not yet applied (ADR-309, camera shortcut help):** one sentence in the "Opening the camera" line differs from the live prompt on purpose. In `instructions.md`, the "camera didn't open" sentence sends the user to "Don't have the shortcut?" on the camera card or to Settings, Connections, Shortcuts. The live prompt still has the ADR-291 sentence. Apply it once an app build with that card button ships; until then, the compare step reports this one sentence.
+
+**Applied to the live agent 2026-10-11 (ADR-291, open camera; owner: "Zgoda", then "zrob to ty"):** `run_shortcut` (`tool_1601m4gj37f5etbres37pgtvrq3c`) has the new `name` sentence. Two edits went into the live prompt in place: the "Opening the camera" line after `run_shortcut`, and "open the camera" in the last strict timer/map/shortcut rule. Version `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx` (rollback) → `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`. Both the tool and the prompt were read back after saving; the tool list is unchanged.
 
 **Applied to the live agent 2026-10-11 (ADR-254, owner: "you do it"):** done as described below; read back after
 saving. Version `agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm` (rollback) → `agtvrsn_2701m4mc8sejfzkbjmekv9nczdrp` (first
@@ -182,3 +184,20 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - Drift: export the live phone agent's prompt and tools as above and run `voice_agent_spec.py compare EXPORT.json --agent phone`.
 - Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
 
+
+**Applied to the live agent 2026-10-11 (ADR-300 to ADR-305): round 4.**
+- **Re-read first:** version `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` (43 tools), unchanged since round 3. `instructions.md`, which includes the affectionate-edison lines merged in PR #27, matched it except for the order of one sentence.
+- **New client tools:**
+  - `convert_currency` (`tool_9001m4nf3w1demytz6bvyxvyj756`)
+  - `parking_spot` (`tool_8001m4nf3xc5e2asz2rxpya9f102`)
+  - `read_email` (`tool_2901m4nf3yzbeeq9jy2hp5jhwzef`)
+  - `complete_todoist_task` (`tool_7101m4nf40ase7bsx8qa68ty4eh4`)
+  - `move_todoist_task` (`tool_0401m4nf41j9ex08e5ksevh06rht`)
+  - `add_ingredients` (`tool_9201m4nf430kezd9s0fpxznfkppr`)
+- **Updated in place:**
+  - `change_reminder` gained `add_note`, `priority` and `move_to_list`.
+  - `check_email` points to `read_email`.
+  - `list_todoist_tasks` explains the `[id …]` ids.
+- **Prompt:** `instructions.md` as committed with round 4. After the merge with the default branch, `instructions.md` also has the "Opening the camera" line (ADR-291, another session). That session has since applied it (version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`, read again here: 49 tools, round 4 lines and the camera lines all present), so the live prompt is `instructions.md`.
+- **Version:** `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` → `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx`, 49 tools. The stored prompt was read back.
+- **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools. A backend without round 4 refuses the three online-account tools as unknown.
