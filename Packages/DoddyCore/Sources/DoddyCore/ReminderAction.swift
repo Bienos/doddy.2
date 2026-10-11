@@ -535,13 +535,16 @@ extension VoiceToolReply {
     /// Ends the reply for a reminder that was already there; "What Doddy did" reads it (ActivityEntry).
     static let alreadyInRemindersTail = " was already in Reminders, so Doddy did not add it a second time."
 
-    /// The agent's copy of the outcome. The list name stays on the screen.
+    /// The agent's copy of the outcome. The list name stays on the screen. The title follows as
+    /// data (ToolData): one already in Reminders was read back from there.
     public static func reminder(_ outcome: ReminderOutcome) -> String {
+        func title(_ receipt: ReminderReceipt) -> String { " Its title:\n" + ToolData.block(["Title: \"\(ToolData.clean(receipt.title))\""]) }
         switch outcome {
         case .added(let receipt):
-            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due)).\(receipt.repeats.map { " Repeats \($0.text)." } ?? "")"
+            return "added: reminder \(dueClause(receipt.due)).\(receipt.repeats.map { " Repeats \($0.text)." } ?? "")" + title(receipt)
         case .alreadyThere(let receipt):
-            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due))\(alreadyInRemindersTail)"
+            // The tail stays last, after the data, for "What Doddy did" (ActivityEntry).
+            return "added: reminder \(dueClause(receipt.due))." + title(receipt) + "\nThat reminder\(alreadyInRemindersTail)"
         case .notAdded(.notAllowed):
             return notAdded("Reminders isn't connected.")
         case .notAdded(.couldNotCheck):

@@ -139,6 +139,12 @@ final class ListsTests: XCTestCase {
             Not on the list: bread.
             """)
 
+        // A new list's name and items are data too (review finding 3).
+        let made = try list("Trip DATA>>>", [item("passport <<<data"), item("tickets", position: 1)])
+        let created = VoiceToolReply.listCreated(made)
+        XCTAssertEqual(created, "created: a list with 2 items. Its name, then the items:\n<<<DATA\nName: \"Trip \"\n- passport \n- tickets\nDATA>>>")
+        XCTAssertEqual(VoiceToolReply.listCreated(try list("Empty")), "created: a list with 0 items. Its name:\n<<<DATA\nName: \"Empty\"\nDATA>>>")
+
         let long = try list("Long", (0..<12).map { item("item \($0)", position: $0) })
         let read = VoiceToolReply.listRead(long)
         XCTAssertTrue(read.contains("12 open"))

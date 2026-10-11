@@ -255,10 +255,16 @@ extension VoiceToolReply {
     public static let eventChangeInvalid = "failed: that change doesn't make sense (the end would be before the start, or nothing would change). Nothing changed. Ask the user what they want."
 
     public static func eventChanged(_ after: CalendarEventSummary, calendar: Calendar) -> String {
+        eventChanged(after, extra: "", data: [], calendar: calendar)
+    }
+
+    /// The title, and any new place or added note, follow as data (ToolData).
+    private static func eventChanged(_ after: CalendarEventSummary, extra: String, data: [String], calendar: Calendar) -> String {
         let when = after.allDay
             ? "\(localText(after.start, hasTime: false, calendar: calendar)) (all day)"
             : "\(localText(after.start, hasTime: true, calendar: calendar))–\(localText(after.end, hasTime: true, calendar: calendar))"
-        return "changed: the event is now \(when). Checked in Calendar.\n" + eventTitle(after.title)
+        return "changed: the event is now \(when).\(extra) Checked in Calendar.\n"
+            + ToolData.block(["Title: \"\(ToolData.clean(after.title))\""] + data)
     }
 
     /// A title read from Calendar or Reminders, as data (ToolData): an invite's title is someone else's text.
@@ -269,13 +275,17 @@ extension VoiceToolReply {
     /// With the place or an added note (ADR-281). The old place is never sent to the agent.
     public static func eventChanged(_ plan: EventChangePlan, calendar: Calendar) -> String {
         var extra = ""
-        if let place = plan.newLocation { extra += place.isEmpty ? " Its place was cleared." : " Its place is now \"\(place)\"." }
-        if let note = plan.addNote { extra += " Added to its notes: \"\(note)\"." }
+        var data: [String] = []
+        if let place = plan.newLocation {
+            extra += place.isEmpty ? " Its place was cleared." : " Its place changed."
+            if !place.isEmpty { data.append("New place: \"\(ToolData.clean(place))\"") }
+        }
+        if let note = plan.addNote {
+            extra += " A line was added to its notes."
+            data.append("Added to its notes: \"\(ToolData.clean(note))\"")
+        }
         if plan.removeNote != nil { extra += " The added line came off its notes again." }
-        let base = eventChanged(plan.after, calendar: calendar)
-        let checked = " Checked in Calendar.\n"
-        guard let cut = base.range(of: checked) else { return base }
-        return String(base[..<cut.lowerBound]) + extra + checked + String(base[cut.upperBound...])
+        return eventChanged(plan.after, extra: extra, data: data, calendar: calendar)
     }
 
     public static let eventChangeTimePassed = "failed: the new time passed while the card was waiting. Nothing changed. Ask the user for a new time."
