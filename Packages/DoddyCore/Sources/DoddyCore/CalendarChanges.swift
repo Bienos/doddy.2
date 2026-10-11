@@ -60,7 +60,7 @@ public struct ReminderChangeDraft: Equatable, Sendable {
 }
 
 /// What the card shows and what is written: the event as it is now and as it will be.
-public struct EventChangePlan: Equatable, Sendable {
+public struct EventChangePlan: Codable, Equatable, Sendable {
     public let before: CalendarEventSummary
     public let after: CalendarEventSummary
     /// The place now, read on this iPhone for the card and the stale check only (ADR-281).
@@ -204,14 +204,15 @@ public enum EventChange {
 
     /// An occurrence's id is its calendar item id and its start, so it changes when it moves.
     public static func occurrenceID(itemID: String, start: Date) -> String {
-        "\(itemID)@\(Int(start.timeIntervalSince1970))"
+        // One format for the whole app (ADR-268 merge): CalendarEventSummary builds it.
+        CalendarEventSummary.occurrenceID(itemID: itemID, start: start)
     }
 
     /// Undo (ADR-258): the change backwards. Its "before" is the event as Doddy left it, with the
     /// occurrence id it has at its new start, so the usual check (it must still look exactly so)
     /// refuses an undo after anyone else changed it.
     public static func reversed(_ plan: EventChangePlan) -> EventChangePlan {
-        let itemID = plan.before.id.map { $0.split(separator: "@", maxSplits: 1).first.map(String.init) ?? $0 }
+        let itemID = plan.before.id.map { CalendarEventSummary.itemID(fromOccurrence: $0) ?? $0 }
         let now = CalendarEventSummary(
             id: itemID.map { occurrenceID(itemID: $0, start: plan.after.start) }, title: plan.after.title,
             start: plan.after.start, end: plan.after.end, allDay: plan.after.allDay)

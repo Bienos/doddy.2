@@ -15,7 +15,7 @@ import Foundation
 
 /// A due day, or day and time, as wall-clock fields. `timeZoneID` is the zone the user meant;
 /// nil only for reminders read back without one (made "floating" in the Reminders app).
-public struct ReminderDue: Equatable, Sendable {
+public struct ReminderDue: Codable, Equatable, Sendable {
     public let year: Int
     public let month: Int
     public let day: Int

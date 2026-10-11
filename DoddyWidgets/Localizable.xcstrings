@@ -12,6 +12,17 @@
         }
       }
     },
+    "Adding reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaję przypomnienie"
+          }
+        }
+      }
+    },
     "All ticked": {
       "extractionState": "manual",
       "localizations": {
@@ -30,6 +41,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wszystko odhaczone. Tryb zakupów zakończy się sam."
+          }
+        }
+      }
+    },
+    "Breathing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oddychanie"
+          }
+        }
+      }
+    },
+    "Breathing done": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oddychanie zakończone"
           }
         }
       }
@@ -56,6 +89,17 @@
         }
       }
     },
+    "Doing the plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wykonuję plan"
+          }
+        }
+      }
+    },
     "End conversation with Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -63,6 +107,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zakończ rozmowę z Doddym"
+          }
+        }
+      }
+    },
+    "Finished reading": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytanie zakończone"
+          }
+        }
+      }
+    },
+    "Focusing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skupienie trwa"
           }
         }
       }
@@ -78,6 +144,17 @@
         }
       }
     },
+    "Kept in Doddy on this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane w Doddym na tym iPhonie"
+          }
+        }
+      }
+    },
     "List": {
       "extractionState": "manual",
       "localizations": {
@@ -85,6 +162,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lista"
+          }
+        }
+      }
+    },
+    "Live, Doddy can hear you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na żywo, Doddy Cię słyszy"
           }
         }
       }
@@ -122,6 +210,28 @@
         }
       }
     },
+    "Nicely done": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dobra robota"
+          }
+        }
+      }
+    },
+    "Note saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatka zapisana"
+          }
+        }
+      }
+    },
     "Nothing on this list yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -140,6 +250,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz Doddy’ego"
+          }
+        }
+      }
+    },
+    "Open Doddy to Save or Don't save": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby zapisać albo nie"
+          }
+        }
+      }
+    },
+    "Open Doddy to check the steps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby sprawdzić kroki"
+          }
+        }
+      }
+    },
+    "Open Doddy to confirm it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby to potwierdzić"
+          }
+        }
+      }
+    },
+    "Open Doddy to follow along": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby śledzić"
+          }
+        }
+      }
+    },
+    "Open Doddy to read it again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby przeczytać ponownie"
           }
         }
       }
@@ -177,6 +342,17 @@
         }
       }
     },
+    "Pause or resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj lub wznów"
+          }
+        }
+      }
+    },
     "Paused": {
       "extractionState": "manual",
       "localizations": {
@@ -188,6 +364,17 @@
         }
       }
     },
+    "Pick up where you left off": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontynuuj od miejsca przerwania"
+          }
+        }
+      }
+    },
     "Pinned": {
       "extractionState": "manual",
       "localizations": {
@@ -195,6 +382,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypięte"
+          }
+        }
+      }
+    },
+    "Plan ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan gotowy"
+          }
+        }
+      }
+    },
+    "Reading aloud": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytam na głos"
+          }
+        }
+      }
+    },
+    "Reminder set": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie ustawione"
+          }
+        }
+      }
+    },
+    "Reminders confirmed it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia to potwierdziły"
           }
         }
       }
@@ -254,6 +485,17 @@
         }
       }
     },
+    "Stopped": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymano"
+          }
+        }
+      }
+    },
     "Talk to Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -287,6 +529,28 @@
         }
       }
     },
+    "Time's up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas minął"
+          }
+        }
+      }
+    },
+    "Tool": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Narzędzie"
+          }
+        }
+      }
+    },
     "Translating": {
       "extractionState": "manual",
       "localizations": {
@@ -294,6 +558,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tłumaczę"
+          }
+        }
+      }
+    },
+    "Waiting for Reminders to confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czekam na potwierdzenie z Przypomnień"
           }
         }
       }

@@ -85,7 +85,7 @@ public enum DataFlow {
         if state.rememberConversations { voice.append("your last few conversations") }
         if state.morningCheckInOn { voice.append("today's Doddy reminders and lists with things left, when you talk through the morning check-in") }
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
-        if !apps.isEmpty { voice.append("calendar entries, reminders, contact names or drafts Doddy uses (\(names(apps)))") }
+        if !apps.isEmpty { voice.append("calendar entries, reminders, contact names and birthdays (day and month) or drafts Doddy uses (\(names(apps)))") }
         if state.doddyServerSet && !state.pauseAll { voice.append("results from your online accounts that Doddy uses") }
 
         var messaging = ["an anonymous account token"]

@@ -66,7 +66,9 @@ final class ActivityLogTests: XCTestCase {
             (add, VoiceToolReply.listAdded(ListAddResult(added: [milk], alreadyThere: [], tooLong: [], noRoom: []), list: "Shopping"), .done),
             (tick, VoiceToolReply.listChanged(verb: "ticked", changed: [milk], list: "Shopping", notFound: [], ambiguous: []), .done),
             (remove, VoiceToolReply.listChanged(verb: "removed", changed: [milk], list: "Shopping", notFound: [], ambiguous: []), .done),
-            (add, VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "Shopping"), .notDone),
+            // Every item was already on the list: nothing to do, so "already there" (ADR-272).
+            (add, VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "Shopping"), .alreadyThere),
+            (add, VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: ["x"], noRoom: []), list: "Shopping"), .notDone),
             (tick, VoiceToolReply.listChanged(verb: "ticked", changed: [], list: "Shopping", notFound: ["eggs"], ambiguous: []), .notDone),
             (add, VoiceToolReply.listNotFound("Groceries", lists: [shopping]), .notDone),
             (add, VoiceToolReply.listAmbiguous("Shop", lists: [shopping, shopping]), .notDone),
