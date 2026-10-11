@@ -46,12 +46,28 @@ public struct ReminderChangeDraft: Equatable, Sendable {
     public let title: String
     public let newDue: ReminderDue?
     public let markDone: Bool
+    /// A line to add at the end of the notes (ADR-302).
+    public let addNote: String?
+    public let priority: ReminderPriority?
+    /// The Reminders list the user named; matched on the iPhone into `toList`.
+    public let listName: String?
+    /// The one list `listName` matched, set by the app before the card is shown.
+    public var toList: ReminderListRef?
 
-    public init(title: String, newDue: ReminderDue?, markDone: Bool) {
+    public init(title: String, newDue: ReminderDue?, markDone: Bool, addNote: String? = nil,
+                priority: ReminderPriority? = nil, listName: String? = nil, toList: ReminderListRef? = nil) {
         self.title = title
         self.newDue = newDue
         self.markDone = markDone
+        self.addNote = addNote
+        self.priority = priority
+        self.listName = listName
+        self.toList = toList
     }
+
+    /// The details change as the card shows it (ADR-302); empty for a due or done alone.
+    public var details: ReminderDetailsChange { ReminderDetailsChange(addNote: addNote, priority: priority, toList: toList) }
+    public var changesDetails: Bool { addNote != nil || priority != nil || listName != nil }
 }
 
 /// What the card shows and what is written: the event as it is now and as it will be.
@@ -88,6 +104,8 @@ public enum ReminderChange: Equatable, Sendable {
     case complete
     /// Undo of a completion: the reminder is open again.
     case reopen
+    /// A note, priority or list, with a new due or nil to keep it (ADR-302), in one save.
+    case details(newDue: ReminderDue?, ReminderDetailsChange)
 }
 
 public enum EventChange {
@@ -344,7 +362,8 @@ extension VoiceToolRequest {
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime, newStart: nil, newEnd: nil, newTitle: nil))
     }
 
-    /// title (exact), and new_due or done: true. Never both.
+    /// title (exact), and done: true on its own, or any of new_due, add_note, priority and
+    /// move_to_list (ADR-302).
     static func parseReminderChange(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
         guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
         let done = args.flag("done")
@@ -355,7 +374,23 @@ extension VoiceToolRequest {
             case .due(let due): newDue = due
             }
         }
-        guard done != (newDue != nil) else { return .invalid(name: name, reason: "give either new_due or done: true") }
-        return .changeReminder(ReminderChangeDraft(title: title, newDue: newDue, markDone: done))
+        let addNote = args.text("add_note")?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let addNote, addNote.count > ReminderDetails.maxNoteLength { return .invalid(name: name, reason: "add_note is too long") }
+        var priority: ReminderPriority?
+        if let text = args.text("priority") {
+            guard let value = ReminderPriority(rawValue: text.lowercased()) else {
+                return .invalid(name: name, reason: "priority must be high, medium, low or none")
+            }
+            priority = value
+        }
+        let listName = args.text("move_to_list")
+        let details = addNote != nil || priority != nil || listName != nil
+        if done {
+            guard newDue == nil, !details else { return .invalid(name: name, reason: "done: true goes on its own; mark it done first, or change it without done") }
+        } else {
+            guard newDue != nil || details else { return .invalid(name: name, reason: "give new_due, add_note, priority or move_to_list, or done: true") }
+        }
+        return .changeReminder(ReminderChangeDraft(
+            title: title, newDue: newDue, markDone: done, addNote: addNote, priority: priority, listName: listName))
     }
 }
