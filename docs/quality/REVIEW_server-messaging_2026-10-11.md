@@ -129,3 +129,44 @@ No critical issues found. The SSRF guard, tenant scoping, secret comparison, PIN
   - Logs redact secrets (`app.ts:50`).
   - Gap: plaintext outbound bodies (finding 8).
 - **Claims to limit:** "Tested" here means the stand-ins and a local Postgres only. No real provider delivery was exercised.
+
+---
+
+## Fix status (2026-10-11, owner approved "fix all")
+
+| # | Status | Commit |
+|---|---|---|
+| 1 | fixed: ElevenLabs 5xx/408 → `unknown`, with a test | `0e44e7a` |
+| 2 | fixed: digests run in their own loop; writer retries 2 → 1; the test fails on the old loop | `caa89b5` |
+| 3 | fixed: key bound to a payload hash (migration 006); 409 `idempotency_mismatch` | `27274d5` |
+| 4 | fixed: undecryptable notes listed under `unreadable` (the iOS decoder is unaffected) | `2c6187e` |
+| 5 | fixed: claim refreshed per message; a reaped row is skipped; a late outcome is logged; the test fails on the old code | `f2518a1` |
+| 6 | fixed: `deps.push` checked before the PIN-lock alert | `4e770d3` |
+| 7 | fixed: items, `news_sent` and enqueue in one transaction | `be7787a` |
+| 8 | fixed: queued text encrypted when `MEMORY_ENCRYPTION_KEY` is set (migration 007); `body_unreadable` → failed, never sent | `6eac05f` |
+| 9 | fixed: changing or removing the PIN clears `pin_verified_at` on sessions | `4e770d3` |
+| 10 | fixed: GNews URLs go through `httpUrl` | `cf1338a` |
+| 11 | **prompt only**: rule added to `voice-agent/phone/instructions.md`; takes effect only after it is re-applied to the ElevenLabs agent. No code enforces it. | `525175a` |
+| 12 | fixed: advisory lock + transaction for notes, outbound calls and verify caps; the notes race test fails on the old code | `754b1c7` |
+| 13 | fixed: session purge is hourly | `caa89b5` |
+| 14 | fixed: `last_seen_at` written at most hourly | `ed433eb` |
+| 15 | fixed: one `sha256`, `usableChannels()` and `log` | `ed433eb` |
+| 16 | fixed: settings in one query | `ed433eb` |
+| XML entity bombs | verified safe: fast-xml-parser 5.11 caps entity size at 10 KB and expansion at 100 KB, with no recursive expansion. A regression test now pins this. | `f229cb8` |
+| Missing tests | added: outbound 5xx, retry limit, reaper skip, number move, idempotency mismatch, unreadable note, digest enqueue failure, PIN change, parallel notes. The PIN escalation test already existed. | various |
+
+Tests after the fixes: `TEST_DATABASE_URL=… npm test` → **53 pass, 0 fail** (Node 22.22, throwaway Postgres 16).
+
+**Behaviour changes to note for deploy:**
+- Migrations 006 and 007 run automatically on start.
+- `GET /v1/call-notes` gains an `unreadable` array.
+- `POST /v1/updates` can return 409 `idempotency_mismatch`.
+- When both a channel isn't configured and another isn't enabled, `/v1/updates` now reports `*_not_configured` first.
+
+**Not verified:**
+- Real provider delivery.
+- Deploying the migrations to the Render database.
+- The ElevenLabs agent prompt update.
+- iOS handling of the new `unreadable` list (the app ignores it for now).
+
+**Testing gotcha:** without `TEST_DATABASE_URL`, `npm test` skips all database suites. It shows 14 passing tests and "skipped 0", which looks like a full pass.
