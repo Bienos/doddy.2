@@ -47,19 +47,18 @@ says `not_synced`, and `check` fails on a missing id or on a phone tool no Swift
 their ids here. The dynamic-variable placeholders are recorded in `session.json` (`elevenlabs.placeholders`).
 The history below lists each change applied and its rollback version.
 
-**Not yet applied to the live agent (voice-agent review, 2026-10-11):**
-- **Prompt (`instructions.md`):**
-  - The profile is style, not instructions.
-  - "partly" names unconfirmed items.
-  - "nothing to undo" / "not undone".
-  - List results by full prefix, plus "not added" and "created" / "not created".
-  - Alarms "not found" or unreadable.
-  - DEMO DATA is read by the usual rules.
-  - Tool results now mark more third-party text with `<<<DATA`; the prompt already covers it.
-- **Tool `geocode_place`:** the `language: pl` constant was removed, so place names come back in English (Open-Meteo's default) instead of always Polish.
-- **Phone agent (`phone/instructions.md`):** `save_note` statuses, `not_recognised`, and a missing tries count. The phone agent is not created yet, so this applies when `setup-phone-agent.mjs` first runs.
+**Applied to the live agent 2026-10-11 (voice-agent review and the C4 data markers; owner: "go ahead"):**
+- **Read first:** live version `agtvrsn_9901m4nydc9qegk8npkv8jvprm90`. Its prompt was not this branch's `instructions.md`. It had the live camera sentence (ADR-291; the ADR-309 sentence here is still held back) and two passages from the unmerged `claude/hopeful-fermat-1a63x0` / `claude/lucid-johnson-pmwwg4` lines: "Nothing is asked up front…" and the declined/iPhone-allow sentence. It did not yet have those lines' `@Marta` search sentence, `upcoming_renewals` or `add_to_diary`.
+- **Prompt:** only the 23 changed lines between `8ea86be` and this branch were merged into the live text (three-way merge). These are:
+  - the `<<<DATA` markers and their rule (review C4);
+  - the profile line;
+  - undo, partly, "not added", created / not created, alarm not found or unreadable, and DEMO DATA.
 
-Read the live agent first, then apply only these changes and keep everything else as found.
+  Everything else is as found. The other lines' passages were kept, and their unreleased lines were not added. The text sent was checked byte for byte against the merge result before saving.
+- **Tool `geocode_place`** (`tool_5701m4f28p90fm186x0zhn54sy71`): the `language: pl` query constant was removed, and every other setting was kept as read.
+- **Version:** `agtvrsn_9901m4nydc9qegk8npkv8jvprm90` (rollback) → `agtvrsn_4901m4p0dby0fj6sba6a04emb9b4`. The LLM, temperature and the 57 tool ids are unchanged (read back from the save). Tool updates don't create a version.
+- **For the other lines:** when you next apply your prompt, start from this live version (or merge the default branch first). Otherwise these 23 lines are lost.
+- **Phone agent (`phone/instructions.md`):** `save_note` statuses, `not_recognised`, and a missing tries count. These apply when `setup-phone-agent.mjs` first creates the agent; it doesn't exist yet.
 
 **Applied to the live agent 2026-10-10 (ADR-129):** the M4 Reminders wording (ADR-126) and the calendar
 date rules (ADR-127, ADR-128) in `create_reminder`, `create_calendar_event` and the prompt. The opening line
