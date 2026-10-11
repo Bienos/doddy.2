@@ -72,7 +72,7 @@ public enum PlanBlock: Equatable, Sendable {
     /// Doddy's server didn't prepare a Gmail or Todoist step (not set up, switched off, not
     /// connected, unreachable). `screen` is for the card; `reply` is the agent's line.
     case onlineAccount(screen: String, reply: String)
-    /// Tried `count` times in the last day without a confirmed result (ActionRetry, ADR-300).
+    /// Tried `count` times in the last day without a confirmed result (ActionRetry, ADR-309).
     case tooManyTries(app: ActivityApp, count: Int)
 
     public var screenText: String {

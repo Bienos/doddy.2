@@ -134,7 +134,7 @@ export class Store {
       );
       CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
     `);
-    // ADR-303: what happened when an approval was used. Outcome and the provider's id only, never
+    // ADR-312: what happened when an approval was used. Outcome and the provider's id only, never
     // the email or task text. Added to databases made before it.
     const columns = new Set((this.db.prepare("PRAGMA table_info(approvals)").all() as { name: string }[]).map((c) => c.name));
     for (const [name, type] of [["outcome", "TEXT"], ["external_id", "TEXT"], ["finished_at", "INTEGER"]] as const) {
@@ -484,7 +484,7 @@ export class Store {
     });
   }
 
-  /** Records what happened after a used approval ran (ADR-303). Only the first record counts. */
+  /** Records what happened after a used approval ran (ADR-312). Only the first record counts. */
   finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number): void {
     this.db
       .prepare("UPDATE approvals SET outcome = ?, external_id = ?, finished_at = ? WHERE approval_id = ? AND consumed_at IS NOT NULL AND outcome IS NULL")
@@ -492,20 +492,21 @@ export class Store {
   }
 
   /**
-   * What happened when this approval was used, for the same user, tool, account and arguments.
+   * What happened when this approval was used, for the same user, tool, account and (unless
+   * `argsDigest` is null, for a tool whose approval is bound to a looked-up target) arguments.
    * Null when it was never used. `outcome` null: used, but its run hasn't finished (or the server
    * stopped mid-run), so it may or may not have gone through.
    */
-  approvalOutcome(input: { approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string }): {
+  approvalOutcome(input: { approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string | null }): {
     outcome: WriteOutcome | null;
     externalId: string | null;
   } | null {
     const row = this.db
       .prepare(
         `SELECT outcome, external_id FROM approvals
-         WHERE approval_id = ? AND user_id = ? AND capability = ? AND account_id = ? AND args_digest = ? AND consumed_at IS NOT NULL`,
+         WHERE approval_id = ? AND user_id = ? AND capability = ? AND account_id = ? AND (? IS NULL OR args_digest = ?) AND consumed_at IS NOT NULL`,
       )
-      .get(input.approvalId, input.userId, input.capability, input.accountId, input.argsDigest) as
+      .get(input.approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.argsDigest) as
       | { outcome: WriteOutcome | null; external_id: string | null }
       | undefined;
     return row ? { outcome: row.outcome, externalId: row.external_id } : null;
@@ -524,5 +525,5 @@ export class Store {
   }
 }
 
-/** How a used approval's run ended (ADR-303). */
+/** How a used approval's run ended (ADR-312). */
 export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";

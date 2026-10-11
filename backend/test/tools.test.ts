@@ -301,7 +301,7 @@ test("an approval is bound to the exact arguments, the user, and works once", as
   assert.equal(rig.provider.executed.length, 1);
   assert.deepEqual(rig.provider.executed[0]!.arguments, { content: "Renew passport", due_string: "tomorrow 9am" });
 
-  // Used once: a repeat (the phone lost the answer) gets the first answer back and runs nothing (ADR-303).
+  // Used once: a repeat (the phone lost the answer) gets the first answer back and runs nothing (ADR-312).
   const again = await run(rig, "add_todoist_task", { content: "Renew passport", due: "tomorrow 9am" }, { approvalId });
   assert.equal(again.status, 200, again.text);
   assert.equal(again.body.replayed, true);
@@ -537,7 +537,7 @@ test("contracts/online-accounts fixtures match the server's schemas", async () =
   void ErrorResponseSchema;
 });
 
-// ------------------------------------------------------------------ action status (ADR-303)
+// ------------------------------------------------------------------ action status (ADR-312)
 
 const todoistReady = async (r: Rig) => {
   await ready(r, "todoist", "add_todoist_task");
@@ -671,7 +671,7 @@ test("the server keeps what happened to a write, never its words", async () => {
   assert.ok(!JSON.stringify(rows).includes("Ola"), "no task text on the server");
 });
 
-test("an approvals table from before ADR-303 gets the new columns", async () => {
+test("an approvals table from before ADR-312 gets the new columns", async () => {
   const { mkdtempSync } = await import("node:fs");
   const { tmpdir } = await import("node:os");
   const { join } = await import("node:path");

@@ -24,7 +24,7 @@ final class OnlineAccountsContractTests: XCTestCase {
         XCTAssertTrue(accounts.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
         XCTAssertTrue(catalog.toolkits.flatMap(\.tools).allSatisfy { !$0.enabled }, "every switch starts off")
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
-        XCTAssertEqual(writes, ["add_todoist_task", "draft_email"])
+        XCTAssertEqual(writes, ["add_todoist_task", "complete_todoist_task", "draft_email", "move_todoist_task"])
         XCTAssertEqual(Set(writes), CloudToolName.writes, "the app and the server agree on which tools write")
         XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)), CloudToolName.all)
 

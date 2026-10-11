@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-302: notes and lists in the action status model. An unsure note or list change is settled
+/// ADR-311: notes and lists in the action status model. An unsure note or list change is settled
 /// from Doddy's own notes and lists; a note isn't saved twice after an unconfirmed try.
 final class NoteListActionsTests: XCTestCase {
     private var calendar: Calendar = {
@@ -85,7 +85,7 @@ final class NoteListActionsTests: XCTestCase {
         XCTAssertEqual(LocalCheck.settled(done, notes: [], lists: [], at: now + 60), done, "a confirmed entry never changes")
         let reminder = unsure(.createReminder(ReminderDraft(title: "Milk", due: nil, notes: nil)))
         XCTAssertEqual(LocalCheck.settled(reminder, notes: [saved], lists: [], at: now + 60), reminder, "Reminders are checked in Reminders, not here")
-        // An entry saved before ADR-302 has no check.
+        // An entry saved before ADR-311 has no check.
         let old = ActivityEntry(at: now, app: .memories, title: "Save a note", detail: nil, outcome: .notSure)
         XCTAssertEqual(LocalCheck.settled(old, notes: [saved], lists: [], at: now + 60), old)
     }

@@ -309,9 +309,16 @@ public struct ReminderSnapshot: Equatable, Sendable {
     public let isCompleted: Bool
     /// The repeat as read back (ADR-282); nil for none, or a rule Doddy doesn't write.
     public let repeats: CalendarRepeat?
+    /// As Reminders shows it (ADR-302).
+    public let priority: ReminderPriority
+    /// The list's identifier on this iPhone; nil when not read.
+    public let listID: String?
 
-    public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false, repeats: CalendarRepeat? = nil) {
+    public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false,
+                repeats: CalendarRepeat? = nil, priority: ReminderPriority = .none, listID: String? = nil) {
         self.repeats = repeats
+        self.priority = priority
+        self.listID = listID
         self.id = id
         self.title = title
         self.listTitle = listTitle
@@ -379,7 +386,7 @@ public struct ReminderReceipt: Equatable, Sendable {
     public let listTitle: String
     public let due: ReminderDue?
     public let repeats: CalendarRepeat?
-    /// Reminders' own identifier for it (ADR-300). Stays on this iPhone; never sent to the agent.
+    /// Reminders' own identifier for it (ADR-309). Stays on this iPhone; never sent to the agent.
     public let id: String?
 
     public init(title: String, listTitle: String, due: ReminderDue?, repeats: CalendarRepeat? = nil, id: String? = nil) {
@@ -552,7 +559,7 @@ extension VoiceToolReply {
         case .notAdded(.saveFailed(let reason)):
             return notAdded(reason)
         case .unknown:
-            // Asking again is safe: ReminderAction looks before it writes (ADR-300).
+            // Asking again is safe: ReminderAction looks before it writes (ADR-309).
             return unconfirmedLooksFirst(app: .reminders, tool: VoiceToolName.createReminder)
         case .needsClarification(let clarification):
             return reminderClarification(clarification)

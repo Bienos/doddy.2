@@ -11,6 +11,7 @@ import {
   cloudTool,
   evaluateToolkitGrant,
   type GrantVerdict,
+  type ResolvedTarget,
   TOOL_COPY,
   TOOLKIT_IDS,
   TOOLKITS,
@@ -44,7 +45,7 @@ import {
 type SectionId = ToolkitId | typeof WEB_SECTION_ID;
 
 const APPROVAL_TTL_SECONDS = 120;
-/** How far back prepare looks for the same write (ADR-303). Approvals are kept a day past expiry. */
+/** How far back prepare looks for the same write (ADR-312). Approvals are kept a day past expiry. */
 const EARLIER_WINDOW_MS = 86_400_000;
 
 export interface ToolsServiceDeps {
@@ -412,8 +413,10 @@ export class CloudToolsService {
 
   /**
    * Writes only. Shows exactly what would happen and returns a single-use approval for those
-   * arguments. If the same write ran in the last day, the card says so (ADR-303); after a try whose
-   * outcome is unknown, a write that can be looked for is looked for first.
+   * arguments. A tool with a `resolve` lookup first reads its target from the provider (a read,
+   * counted like one; never the write), shows that in the preview, and binds the approval to it too.
+   * If the same write ran in the last day, the card says so (ADR-312); after a try whose outcome is
+   * unknown, a write that can be looked for is looked for first.
    */
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
@@ -424,7 +427,17 @@ export class CloudToolsService {
     const now = this.now();
     this.limiter.reserveRequest(userId, now);
     const row = this.checkUsable(userId, tool, "write");
-    const argsDigest = argumentDigest(args);
+    let target: ResolvedTarget | null = null;
+    if (tool.resolve) {
+      this.reserveRuns(userId, tool, now, 1);
+      const composioUserId = this.store.composioUserId(userId, now);
+      try {
+        target = await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id));
+      } catch (error) {
+        throw this.failure(userId, tool, error, false);
+      }
+    }
+    const argsDigest = approvalDigest(args, target);
     const { approvalId, expiresAt } = this.store.createApproval({
       userId,
       capability: tool.name,
@@ -433,29 +446,26 @@ export class CloudToolsService {
       now,
       ttlSeconds: APPROVAL_TTL_SECONDS,
     });
-    const preview = tool.preview(args);
+    const preview = tool.preview(args, target);
     const result: PrepareResult = { mode: this.mode, tool: tool.name, preview, approvalId, expiresAt: new Date(expiresAt).toISOString() };
     const latest = this.store.latestWrite({ userId, capability: tool.name, argsDigest, since: now - EARLIER_WINDOW_MS });
     if (!latest) return result;
     const title = TOOLKITS[tool.toolkit].title;
     const at = new Date(latest.finishedAt).toISOString();
+    const withLine = (line: string) => ({ ...preview, lines: [...preview.lines, line] });
     if (latest.outcome === "succeeded") {
-      return { ...result, earlier: { status: "succeeded", at }, preview: { ...preview, lines: [...preview.lines, `Doddy already did exactly this once in the last day.`] } };
+      return { ...result, earlier: { status: "succeeded", at }, preview: withLine("Doddy already did exactly this once in the last day.") };
     }
     if (await this.foundExisting(userId, tool, args, row, now)) {
-      return { ...result, earlier: { status: "found", at }, preview: { ...preview, lines: [...preview.lines, `An earlier try went through: it is already in ${title}.`] } };
+      return { ...result, earlier: { status: "found", at }, preview: withLine(`An earlier try went through: it is already in ${title}.`) };
     }
-    return {
-      ...result,
-      earlier: { status: "outcome_unknown", at },
-      preview: { ...preview, lines: [...preview.lines, `An earlier try in the last day may have gone through. Check ${title} before doing it again.`] },
-    };
+    return { ...result, earlier: { status: "outcome_unknown", at }, preview: withLine(`An earlier try in the last day may have gone through. Check ${title} before doing it again.`) };
   }
 
   /**
    * After a try whose outcome is unknown: looks for the write with the tool's own read, only if
    * the user has that read switched on. True only when it is found; any failure or "not listed"
-   * is false, which proves nothing (ADR-303).
+   * is false, which proves nothing (ADR-312).
    */
   private async foundExisting(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, row: ConnectionRow, now: number): Promise<boolean> {
     const finder = tool.findExisting;
@@ -464,7 +474,7 @@ export class CloudToolsService {
       this.limiter.reserveToolRun(userId, now);
       const listArgs = finder.arguments(args);
       const composioUserId = this.store.composioUserId(userId, now);
-      const result = await this.withRetry(finder.tool, (signal) =>
+      const result = await this.withRetry(finder.tool.maxRetries, (signal) =>
         this.provider.execute({
           toolkit: finder.tool.toolkit,
           slug: finder.tool.composioSlug,
@@ -474,11 +484,103 @@ export class CloudToolsService {
           signal,
         }),
       );
-      const listed = finder.tool.normalize(result.raw, listArgs, { timeZone: "UTC" });
+      const listed = finder.tool.normalize(result.raw, listArgs, { timeZone: "UTC" }, null);
       return (listed.items ?? []).some((item) => finder.matches(item, args));
     } catch {
       return false;
     }
+  }
+
+  /**
+   * A repeated run of an approval that was already used (the phone lost the answer): what happened
+   * the first time answers it, and nothing runs again (ADR-312). Null when it was never used.
+   */
+  private repeatOfUsedApproval(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string): RunResult | null {
+    // A tool with a lookup bound its approval to the target as it was then, which can't be read
+    // again (a completed task is gone), so it is matched without the digest and its answer uses
+    // no words from this request.
+    const earlier = this.store.approvalOutcome({
+      approvalId, userId, capability: tool.name, accountId, argsDigest: tool.resolve ? null : argumentDigest(args),
+    });
+    if (!earlier) return null;
+    const title = TOOLKITS[tool.toolkit].title;
+    if (earlier.outcome === "succeeded" && tool.replay) {
+      const outcome = tool.replay(args, earlier.externalId);
+      const receipt = this.receipt(userId, tool.toolkit, "write", tool.name, "succeeded", `${outcome.summary} Answer from the first try; nothing ran again.`, null, null);
+      return {
+        mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated,
+        ...(outcome.externalId ? { externalId: outcome.externalId } : {}),
+        replayed: true,
+        receipt,
+      };
+    }
+    if (earlier.outcome === "failed") {
+      throw new AppError("capability_disabled", {
+        message: "This action needs a fresh confirmation.",
+        receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
+      });
+    }
+    // Unknown, or used but not finished (still running, or the server stopped mid-run).
+    throw new AppError("capability_disabled", {
+      message: "The first try with this confirmation may or may not have gone through.",
+      receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "outcome_unknown",
+        `${title} didn't confirm the first try; it may or may not have gone through. Check there before trying again.`, "earlier_outcome_unknown", null),
+    });
+  }
+
+  /**
+   * Reads a write's target (no retry beyond a read's one). Missing or already done: a refusal with
+   * a receipt, before any approval is made or used. Never runs the write itself.
+   */
+  private async lookup(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, composioUserId: string, connectionId: string): Promise<ResolvedTarget> {
+    const lookup = tool.resolve!;
+    const result = await this.withRetry(LOOKUP_RETRIES, (signal) =>
+      this.provider.execute({ toolkit: tool.toolkit, slug: lookup.slug, composioUserId, connectionId, arguments: lookup.toArguments(args), signal }),
+    );
+    const target = lookup.read(result.raw, args);
+    if (!target) {
+      throw new AppError("not_found", {
+        message: lookup.notFound,
+        receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${lookup.notFound}`, "not_found", result.providerReference),
+      });
+    }
+    return target;
+  }
+
+  /** Reserves today's tool runs for this call, with a blocked receipt when a Doddy limit says no. */
+  private reserveRuns(userId: string, tool: CloudToolDefinition, now: number, units: number): void {
+    try {
+      this.limiter.reserveToolRun(userId, now, units);
+    } catch (error) {
+      if (error instanceof AppError) {
+        const op = tool.risk === "write" ? "write" : "read";
+        throw new AppError(error.code, { ...error.options, receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: a Doddy limit was reached.", error.code, null) });
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Turns a provider failure into an AppError with a receipt. A write is "outcome_unknown" only once
+   * the write itself was sent (`writeSent`) and the error doesn't prove it never ran (DOD-08).
+   */
+  private failure(userId: string, tool: CloudToolDefinition, error: unknown, writeSent: boolean): AppError {
+    if (error instanceof AppError) return error;
+    const appError = toAppError(error);
+    const op = tool.risk === "write" ? "write" : "read";
+    const title = TOOLKITS[tool.toolkit].title;
+    if (appError.code === "connection_expired") {
+      this.store.updateConnectionStatus(userId, tool.toolkit, "expired", "revoked_or_expired", this.now());
+      this.store.disableTools(userId, toolNames(tool.toolkit), this.now());
+    }
+    const unknown = op === "write" && writeSent && !WRITE_NOT_RUN.has(appError.code);
+    const summary = unknown
+      ? `${title} didn't confirm; it may or may not have gone through. Check there before trying again.`
+      : op === "write"
+        ? `${title} wasn't reached or its answer couldn't be used. Nothing was changed.`
+        : `${title} wasn't reached or its answer couldn't be used. Nothing is shown instead.`;
+    const receipt = this.receipt(userId, tool.toolkit, op, tool.name, unknown ? "outcome_unknown" : "failed", summary, appError.code, null);
+    return new AppError(appError.code, { ...appError.options, receipt });
   }
 
   async run(userId: string, body: unknown): Promise<RunResult> {
@@ -495,11 +597,12 @@ export class CloudToolsService {
     const row = this.checkUsable(userId, tool, op);
 
     // A write's approval is checked here but only used up right before the provider call, so a
-    // limit or "busy" refusal in between doesn't cost the user their confirmation.
-    const approval = (checkOnly: boolean) =>
+    // limit or "busy" refusal in between doesn't cost the user their confirmation. For a tool with
+    // a lookup the approval is bound to the target too, so before the lookup only its presence is checked.
+    const approval = (target: ResolvedTarget | null, checkOnly: boolean) =>
       request.approvalId !== undefined &&
       this.store.consumeApproval(
-        { approvalId: request.approvalId, userId, capability: tool.name, accountId: row.connection_id, argsDigest: argumentDigest(args), now: this.now() },
+        { approvalId: request.approvalId, userId, capability: tool.name, accountId: row.connection_id, argsDigest: approvalDigest(args, target), now: this.now() },
         { checkOnly },
       );
     const unconfirmed = () =>
@@ -507,54 +610,29 @@ export class CloudToolsService {
         message: "This action needs a fresh confirmation.",
         receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
       });
-    if (tool.risk === "write" && !approval(true)) {
-      // A repeated run of an approval that was already used (the phone lost the answer): the
-      // stored outcome answers it and nothing runs again (ADR-303).
-      const earlier =
-        request.approvalId === undefined
-          ? null
-          : this.store.approvalOutcome({ approvalId: request.approvalId, userId, capability: tool.name, accountId: row.connection_id, argsDigest: argumentDigest(args) });
-      if (earlier?.outcome === "succeeded" && tool.replay) {
-        const outcome = tool.replay(args, earlier.externalId);
-        const receipt = this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", `${outcome.summary} Answer from the first try; nothing ran again.`, null, null);
-        return {
-          mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated,
-          ...(outcome.externalId ? { externalId: outcome.externalId } : {}),
-          replayed: true,
-          receipt,
-        };
-      }
-      // Unknown, or used but not finished (still running, or the server stopped mid-run).
-      if (earlier && (earlier.outcome === "outcome_unknown" || earlier.outcome === null)) {
-        const title = TOOLKITS[tool.toolkit].title;
-        throw new AppError("capability_disabled", {
-          message: "The first try with this confirmation may or may not have gone through.",
-          receipt: this.receipt(userId, tool.toolkit, op, tool.name, "outcome_unknown",
-            `${title} didn't confirm the first try; it may or may not have gone through. Check there before trying again.`, "earlier_outcome_unknown", null),
-        });
-      }
-      throw unconfirmed();
+    if (tool.risk === "write" && request.approvalId !== undefined) {
+      const repeat = this.repeatOfUsedApproval(userId, tool, args, request.approvalId, row.connection_id);
+      if (repeat) return repeat;
     }
+    if (tool.risk === "write" && (tool.resolve ? request.approvalId === undefined : !approval(null, true))) throw unconfirmed();
 
-    try {
-      this.limiter.reserveToolRun(userId, now);
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw new AppError(error.code, { ...error.options, receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: a Doddy limit was reached.", error.code, null) });
-      }
-      throw error;
-    }
+    // A lookup before the write counts as one more run, reserved together with the write.
+    this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
 
     const composioUserId = this.store.composioUserId(userId, now);
-    const title = TOOLKITS[tool.toolkit].title;
-    // Set once this run used up its approval, so its outcome is recorded against it (ADR-303).
+    let writeSent = false;
+    // Set once this run used up its approval, so its outcome is recorded against it (ADR-312).
     let used: string | null = null;
     try {
       return await this.limiter.withSlot(userId, async () => {
+        // The target is read again right before the write: if it is gone, done, or no longer what the
+        // card showed, the approval doesn't match and nothing is written.
+        const target = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
         // Used up here, once: a parallel run with the same approval loses the race and does nothing.
-        if (tool.risk === "write" && !approval(false)) throw unconfirmed();
-        if (tool.risk === "write") used = request.approvalId ?? null;
-        const result = await this.withRetry(tool, (signal) =>
+        if (tool.risk === "write" && !approval(target, false)) throw unconfirmed();
+        writeSent = tool.risk === "write";
+        if (writeSent) used = request.approvalId ?? null;
+        const result = await this.withRetry(tool.maxRetries, (signal) =>
           this.provider.execute({
             toolkit: tool.toolkit,
             slug: tool.composioSlug,
@@ -564,7 +642,7 @@ export class CloudToolsService {
             signal,
           }),
         );
-        const outcome = tool.normalize(result.raw, args, { timeZone: request.timeZone });
+        const outcome = tool.normalize(result.raw, args, { timeZone: request.timeZone }, target);
         if (row.status === "error") this.store.updateConnectionStatus(userId, tool.toolkit, "connected", null, this.now());
         const receipt = this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", outcome.summary, null, result.providerReference);
         if (used) this.store.finishApproval(used, "succeeded", outcome.externalId ?? null, this.now());
@@ -576,27 +654,14 @@ export class CloudToolsService {
         };
       });
     } catch (error) {
-      if (error instanceof AppError) throw error;
-      const appError = toAppError(error);
-      if (appError.code === "connection_expired") {
-        this.store.updateConnectionStatus(userId, tool.toolkit, "expired", "revoked_or_expired", this.now());
-        this.store.disableTools(userId, toolNames(tool.toolkit), this.now());
-      }
       // A write is "failed" only when the error proves the provider never ran it. Anything else
-      // (timeout, provider error, an answer Doddy couldn't read) may have happened: say so (DOD-08).
-      const unknown = op === "write" && !WRITE_NOT_RUN.has(appError.code);
-      if (used) this.store.finishApproval(used, unknown ? "outcome_unknown" : "failed", null, this.now());
-      const receipt = this.receipt(
-        userId,
-        tool.toolkit,
-        op,
-        tool.name,
-        unknown ? "outcome_unknown" : "failed",
-        unknown ? `${title} didn't confirm; it may or may not have gone through. Check there before trying again.` : `${title} wasn't reached or its answer couldn't be used. Nothing is shown instead.`,
-        appError.code,
-        null,
-      );
-      throw new AppError(appError.code, { ...appError.options, receipt: receipt });
+      // after it was sent (timeout, provider error, an answer Doddy couldn't read) may have
+      // happened: say so (DOD-08).
+      if (used) {
+        const code = error instanceof AppError ? error.code : toAppError(error).code;
+        this.store.finishApproval(used, WRITE_NOT_RUN.has(code) ? "failed" : "outcome_unknown", null, this.now());
+      }
+      throw this.failure(userId, tool, error, writeSent);
     }
   }
 
@@ -693,13 +758,13 @@ export class CloudToolsService {
   }
 
   /** Reads retry once on a transient failure, with a short wait. Writes never retry. */
-  private async withRetry<T>(tool: CloudToolDefinition, call: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  private async withRetry<T>(maxRetries: number, call: (signal: AbortSignal) => Promise<T>): Promise<T> {
     for (let attempt = 0; ; attempt++) {
       try {
         return await call(this.timeout());
       } catch (raw) {
         const error = raw instanceof ProviderError ? raw : new ProviderError("provider_unavailable");
-        if (!error.transient || attempt >= tool.maxRetries) throw error;
+        if (!error.transient || attempt >= maxRetries) throw error;
         const wait = error.retryAfterSeconds !== undefined ? error.retryAfterSeconds * 1000 : 250;
         if (wait > 2_000) throw error;
         await this.sleep(wait);
@@ -736,6 +801,17 @@ export class CloudToolsService {
     this.store.saveToolReceipt(userId, receipt, this.now());
     return receipt;
   }
+}
+
+/** A lookup before a write is a read: one retry on a transient failure, like the read tools. */
+const LOOKUP_RETRIES = 1;
+
+/**
+ * What an approval is bound to: the validated arguments, plus, for a tool with a lookup, the target
+ * the card showed (so a task that changed since the card needs a fresh confirmation).
+ */
+function approvalDigest(args: Record<string, unknown>, target: ResolvedTarget | null): string {
+  return target === null ? argumentDigest(args) : argumentDigest({ arguments: args, target });
 }
 
 /** Error codes that mean a write never reached the point of running at the provider. */

@@ -10,8 +10,16 @@ import type { ExecuteCall, ExecuteResult, ToolsProvider } from "./provider.js";
  * run in tests. Scenario switches let tests produce failures and over-broad grants.
  */
 export type ToolsMockScenario =
-  | "normal" | "empty" | "malformed" | "provider_error" | "rate_limited" | "expired" | "broad_scope" | "missing_scope"
-  /** A write goes through, then its answer is lost (a timeout): the case ADR-303 settles. */
+  | "normal"
+  | "empty"
+  | "malformed"
+  | "malformed_write"
+  | "provider_error"
+  | "rate_limited"
+  | "expired"
+  | "broad_scope"
+  | "missing_scope"
+  /** A write goes through, then its answer is lost (a timeout): the case ADR-312 settles. */
   | "lost_answer";
 
 export class MockToolsProvider implements ToolsProvider {
@@ -107,14 +115,16 @@ export class MockToolsProvider implements ToolsProvider {
     if (scenario === "rate_limited") throw new ProviderError("rate_limited", 1);
     if (scenario === "expired") throw new ProviderError("connection_expired");
     if (scenario === "malformed") return { raw: { successful: true, data: { messages: "not a list", files: "x", results: 5, tasks: {} } }, providerReference: null };
+    if (scenario === "malformed_write") return { raw: malformedWrite(call.slug, call.arguments), providerReference: null };
     const made = this.madeTasks.get(call.composioUserId) ?? [];
     const raw = envelope(call.slug, call.arguments, scenario === "empty", made);
     if (call.slug === "TODOIST_CREATE_TASK") {
       made.push({ id: `task_demo_${made.length + 1}`, content: String(call.arguments.content) });
       this.madeTasks.set(call.composioUserId, made);
-      if (scenario === "lost_answer") throw new ProviderError("provider_timeout");
     }
-    if (call.slug === "GMAIL_CREATE_EMAIL_DRAFT" && scenario === "lost_answer") throw new ProviderError("provider_timeout");
+    if (scenario === "lost_answer" && (call.slug === "TODOIST_CREATE_TASK" || call.slug === "GMAIL_CREATE_EMAIL_DRAFT")) {
+      throw new ProviderError("provider_timeout");
+    }
     return { raw, providerReference: `mock_log_${randomBytes(4).toString("hex")}` };
   }
 
@@ -127,20 +137,23 @@ export class MockToolsProvider implements ToolsProvider {
 
 const ok = (data: unknown) => ({ successful: true, data, error: null });
 
-function envelope(slug: string, args: Record<string, unknown>, empty: boolean, made: { id: string; content: string }[]): unknown {
+function envelope(slug: string, args: Record<string, unknown>, empty: boolean, made: { id: string; content: string }[] = []): unknown {
   switch (slug) {
-    case "GMAIL_FETCH_EMAILS":
+    case "GMAIL_FETCH_EMAILS": {
+      // Bodies (`messageText`) come only with verbose: true, as Composio documents.
+      const text = (body: string) => (args.verbose === true ? { messageText: body } : {});
       return ok({
         // Deliberately unsorted, as Composio documents.
         messages: empty
           ? []
           : [
-              { messageId: "m1", threadId: "t1", sender: "Demo Bank <noreply@demo.example>", subject: "Your statement is ready", messageTimestamp: "2026-10-08T07:00:00Z", preview: { body: "Your September statement is now available." } },
-              { messageId: "m2", threadId: "t2", sender: "Anna Demo <anna@demo.example>", subject: "Lunch on Friday?", messageTimestamp: "2026-10-09T09:30:00Z", preview: { body: "Are you free around 1pm? There's a new place near the office." } },
+              { messageId: "m1", threadId: "t1", sender: "Demo Bank <noreply@demo.example>", subject: "Your statement is ready", messageTimestamp: "2026-10-08T07:00:00Z", preview: { body: "Your September statement is now available." }, ...text("Demo: your September statement is now available in online banking.") },
+              { messageId: "m2", threadId: "t2", sender: "Anna Demo <anna@demo.example>", subject: "Lunch on Friday?", messageTimestamp: "2026-10-09T09:30:00Z", preview: { body: "Are you free around 1pm? There's a new place near the office." }, ...text("Demo: Are you free around 1pm on Friday?\r\nThere's a new place near the office: https://demo.example/menu\r\n\r\nAnna") },
             ],
         nextPageToken: "",
         resultSizeEstimate: empty ? 0 : 2,
       });
+    }
     case "GMAIL_CREATE_EMAIL_DRAFT":
       return ok({ id: "draft_demo_1", message: { id: "msg_demo_1", threadId: "t_demo" } });
     case "GOOGLEDRIVE_FIND_FILE":
@@ -175,7 +188,45 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
       });
     case "TODOIST_CREATE_TASK":
       return ok({ id: `task_demo_${made.length + 1}`, content: String(args.content), priority: 1, ...(args.due_string ? { due: { date: "2026-10-11", string: String(args.due_string), is_recurring: false } } : {}) });
+    case "TODOIST_GET_TASK2": {
+      // Any other id (or the empty scenario) answers like Todoist's 404.
+      const task = empty ? undefined : DEMO_TASKS[String(args.task_id)];
+      return task ? ok({ ...task, user_id: "demo_user", project_id: "demo_project", description: "", labels: [], is_collapsed: false }) : notFound();
+    }
+    case "TODOIST_CLOSE_TASK_V1":
+      // Composio's close answer has no body.
+      return DEMO_TASKS[String(args.task_id)] && !empty ? ok({}) : notFound();
+    case "TODOIST_UPDATE_TASK": {
+      const task = empty ? undefined : DEMO_TASKS[String(args.task_id)];
+      if (!task) return notFound();
+      return ok({ ...task, due: { date: "2026-10-12", string: String(args.due_string), lang: String(args.due_lang ?? "en"), is_recurring: false }, updated_at: "2026-10-11T08:00:00Z" });
+    }
     default:
       throw new ProviderError("provider_unavailable");
+  }
+}
+
+/** Demo Todoist tasks the lookup knows: t1 and t2 are also in the list; t3 repeats; t9 is already done. */
+const DEMO_TASKS: Record<string, Record<string, unknown>> = {
+  t1: { id: "t1", content: "Demo: renew passport", priority: 4, checked: false, is_deleted: false, due: { date: "2026-10-10", string: "today", is_recurring: false } },
+  t2: { id: "t2", content: "Demo: buy milk", priority: 1, checked: false, is_deleted: false },
+  t3: { id: "t3", content: "Demo: water the plants", priority: 1, checked: false, is_deleted: false, due: { date: "2026-10-11", string: "every day", is_recurring: true } },
+  t9: { id: "t9", content: "Demo: already done", priority: 1, checked: true, is_deleted: false },
+};
+
+const notFound = () => ({ successful: false, data: {}, error: "404 Not Found: task not found" });
+
+/** "malformed_write": reads answer normally, but a write's answer is missing what confirms it. */
+function malformedWrite(slug: string, args: Record<string, unknown>): unknown {
+  switch (slug) {
+    case "TODOIST_UPDATE_TASK":
+      // Updated, but the answer carries no due date, so the new date isn't confirmed.
+      return ok({ id: String(args.task_id), content: "Demo: renew passport" });
+    case "TODOIST_CLOSE_TASK_V1":
+    case "TODOIST_CREATE_TASK":
+    case "GMAIL_CREATE_EMAIL_DRAFT":
+      return { successful: true, data: null, error: null };
+    default:
+      return envelope(slug, args, false);
   }
 }

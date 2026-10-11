@@ -7,6 +7,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
     case web
+    /// The ECB's public rates file (ADR-300).
+    case exchangeRates
 
     public var title: String {
         switch self {
@@ -23,6 +25,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .notion: "Notion"
         case .todoist: "Todoist"
         case .web: "Web search"
+        case .exchangeRates: "Exchange rates"
         }
     }
 }
@@ -67,10 +70,10 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
-    /// The same change asked again has the same key (ADR-300, ADR-301): new reminders, events,
+    /// The same change asked again has the same key (ADR-309, ADR-310): new reminders, events,
     /// timers and alarms, whose adds look first and so can be retried safely. Nil for everything else.
     public let operationKey: String?
-    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-302).
+    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-311).
     public let check: ActivityCheck?
 
     public init(
@@ -148,7 +151,7 @@ public struct ActivityRequest: Equatable, Sendable {
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
-            // Writes carry a key (ADR-303): a hash of the tool and its arguments, never the words.
+            // Writes carry a key (ADR-312): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
             return ActivityRequest(app: request.app, title: request.title, detail: request.detail, isLookup: request.isLookup, operationKey: key)
         case .addToList(let request):
@@ -178,7 +181,14 @@ public struct ActivityRequest: Equatable, Sendable {
             if let title = draft.newTitle { parts.append("renamed “\(title)”") }
             return ActivityRequest(app: .calendar, title: "Change event", detail: "“\(draft.title)” \(parts.joined(separator: ", "))", isLookup: false)
         case .changeReminder(let draft):
-            let what = draft.markDone ? "mark done" : "due \(draft.newDue.map(ReminderText.due) ?? "")"
+            var parts: [String] = []
+            if draft.markDone { parts.append("mark done") }
+            if let due = draft.newDue { parts.append("due \(ReminderText.due(due))") }
+            // ADR-302: which details, not the note's text.
+            if draft.addNote != nil { parts.append("add a note") }
+            if let priority = draft.priority { parts.append(priority.text) }
+            if let list = draft.listName { parts.append("to the list “\(list)”") }
+            let what = parts.joined(separator: ", ")
             return ActivityRequest(app: .reminders, title: "Change reminder", detail: "“\(draft.title)” · \(what)", isLookup: false)
         case .deleteCalendarEvent(let draft):
             return ActivityRequest(app: .calendar, title: "Delete event", detail: "“\(draft.title)” \(when(draft.currentStart, hasTime: !draft.currentIsDayOnly))", isLookup: false)
@@ -195,6 +205,18 @@ public struct ActivityRequest: Equatable, Sendable {
         case .undoLast:
             // The row being undone records what happened (ActivityLog.undid), not a new row.
             return nil
+        case .parkingSpot(let action):
+            // No coordinates in the log, only what was asked (ADR-301).
+            switch action {
+            case .save: return ActivityRequest(app: .memories, title: "Save parking spot", detail: nil, isLookup: false)
+            case .find: return ActivityRequest(app: .memories, title: "Found parking spot", detail: nil, isLookup: true)
+            case .clear: return ActivityRequest(app: .memories, title: "Clear parking spot", detail: nil, isLookup: false)
+            }
+        case .addIngredients(let proposal):
+            return ActivityRequest(app: .memories, title: "Add ingredients to a list", detail: "“\(proposal.list)” · \(proposal.dish)", isLookup: false)
+        case .convertCurrency(let request):
+            // Only that the rates file was fetched; the amount stays in the conversation (ADR-300).
+            return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
@@ -208,6 +230,9 @@ public struct ActivityRequest: Equatable, Sendable {
         switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
+        case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
+        case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
+        case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)
         case CloudToolName.findDriveFile: ActivityRequest(app: .drive, title: "Looked for a file", detail: nil, isLookup: true)
         case CloudToolName.searchNotion: ActivityRequest(app: .notion, title: "Searched Notion", detail: nil, isLookup: true)
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
@@ -251,14 +276,14 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public let undo: ActivityUndo?
     /// Set after the user tapped Undo.
     public var undoState: UndoState?
-    // ADR-300. All optional, so entries saved before them still load.
+    // ADR-309. All optional, so entries saved before them still load.
     /// The same change asked again has the same key (`ActivityRequest.operationKey`).
     public let operationKey: String?
     /// What the app read back. Only ever kept on a confirmed entry.
     public private(set) var receipt: ActivityReceipt?
     /// True when the app was asked to write; false when Doddy stopped before writing. Nil when not known.
     public let attempted: Bool?
-    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-302).
+    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-311).
     public let check: ActivityCheck?
     private var statusHistory: [ActivityStatusChange]?
 
@@ -323,10 +348,10 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         return entry
     }
 
-    /// Typed status (ADR-300). Nil for look-ups.
+    /// Typed status (ADR-309). Nil for look-ups.
     public var status: ActionStatus? { outcome.status }
 
-    /// How the status moved, oldest first. Entries saved before ADR-300 show their one known status.
+    /// How the status moved, oldest first. Entries saved before ADR-309 show their one known status.
     public var history: [ActivityStatusChange] {
         if let statusHistory { return statusHistory }
         return status.map { [ActivityStatusChange(status: $0, at: at)] } ?? []
@@ -370,7 +395,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        // Found already there when Doddy looked first (ADR-300, ADR-301): nothing new was written.
+        // Found already there when Doddy looked first (ADR-309, ADR-310): nothing new was written.
         let foundFirst = ["already in Reminders", "already in Calendar", "was already set", "was already running", "from the earlier try, so Doddy did not do it"]
         if text.hasPrefix("saved:"), text.contains("was already saved from the earlier try") { return (.alreadyThere, nil) }
         if text.hasPrefix("added:"), foundFirst.contains(where: text.contains) {
@@ -381,6 +406,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
         // A delete, checked by looking again (ADR-259 on the default line).
         if text.hasPrefix("deleted:") { return (.done, nil) }
+        // Round 4 (ADR-301, ADR-303): a parking spot removed and checked; a Todoist task moved,
+        // with the due Todoist sent back.
+        if text.hasPrefix("cleared:") || text.hasPrefix("moved: Todoist task") { return (.done, nil) }
         if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
         // Lists (ADR-216), answered from the store's own result (ADR-272). Something was added,
         // ticked, removed or a list was made; or nothing was, and why.

@@ -82,6 +82,7 @@ files=(
   # Only the part outside `#if canImport(AlarmKit)`: the AlarmKit code itself needs Xcode 26.
   DoddyApp/Features/Alarms/AlarmScheduler.swift
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
+  DoddyApp/Features/Parking/ParkingStore.swift
   Shared/Widgets/WidgetSnapshotFile.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done

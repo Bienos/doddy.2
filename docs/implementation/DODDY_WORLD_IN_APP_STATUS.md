@@ -18,8 +18,9 @@ provenance, hashes and the exact cuts in `docs/design/UPLOADED_MEMORY_ASSETS.md`
    `Doddy_waving` → wave, `Doddy_approaching` → tiptoe (Back Tap setup, note-reminder sheet).
    New `WholeDoddyView(pose:height:)`: a pose cropped to the figure, cream edge in dark mode.
 4. **Scenery** (`SceneryBackdrop`): room on Home, memory library on Memories, coffee shop on the morning
-   check-in; day pictures in light mode, night in dark. 40 % opacity, fading out by the bottom, scrolls with
-   the page.
+   check-in; day pictures in light mode, night in dark. Since ADR-308 it never sits under text: on Home it
+   is behind Doddy's picture only; on Memories and the check-in it is a 110 pt strip between the heading and
+   the content. 25 % opacity, fading in at the top and out at the bottom; scrolls with the page.
 5. **Voice screen** (`VoiceDoddyView`, `VoiceScreenArt`): the island's pose for the phase (connecting
    stretch, listening, thinking kneeling, muted or no microphone shush, a card waiting reach, ended fist
    pump, failed facepalm). While speaking, the six frames of strip 020 loop at 0.18 s each in a
@@ -65,5 +66,5 @@ No new data, permissions or network use. The Lock Screen and watch still show no
 read-aloud state carries only the island style name.
 
 ## Decisions for the owner
-- Whether the scenery should be stronger or weaker than 40 % (X4).
+- ~~How strong the scenery should be~~: fainter, and never under text (owner, ADR-308).
 - Whether the talking frames should be faster or slower than 0.18 s per frame (X5).

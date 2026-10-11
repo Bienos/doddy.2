@@ -1,6 +1,6 @@
 import Foundation
 
-// Online-account writes in the action status model (ADR-303, extends ADR-300 to ADR-302). A Gmail
+// Online-account writes in the action status model (ADR-312, extends ADR-309 to ADR-311). A Gmail
 // draft or a Todoist task is made by Doddy's server, which now keeps what happened to each
 // single-use confirmation: asked again with the same confirmation, it answers with the first
 // answer and never runs it twice. So when the answer is lost on the way back (no connection, an
@@ -22,7 +22,7 @@ public enum CloudIdempotency {
 public enum CloudRun {
     /// Runs a confirmed write. If the answer is lost on the way back, asks once more with the same
     /// confirmation: the server runs a confirmation at most once and answers a repeat with what
-    /// happened the first time (ADR-303), so this never does the write twice.
+    /// happened the first time (ADR-312), so this never does the write twice.
     public static func confirmed(
         _ call: CloudToolCall, approvalId: UUID, timeZone: String, client: some OnlineAccountsClient,
         pause: @Sendable () async -> Void = { try? await Task.sleep(for: .seconds(1)) }

@@ -63,7 +63,7 @@ struct ActivityView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
-        // Unsure notes and list changes are settled from Doddy's own database (ADR-302).
+        // Unsure notes and list changes are settled from Doddy's own database (ADR-311).
         .task {
             await store.reload()
             if store.hasLoaded, store.loadError == nil { activity.settleLocal(notes: store.memories, lists: store.lists) }
@@ -109,7 +109,7 @@ struct ActivityView: View {
             if let note = entry.note(.current) {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
             }
-            // What the app itself read back (ADR-300); kept only on confirmed entries.
+            // What the app itself read back (ADR-309); kept only on confirmed entries.
             if let receipt = entry.receipt {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Read back from \(receipt.app.title) at \(receipt.readAt.formatted(date: .omitted, time: .shortened))")
