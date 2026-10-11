@@ -86,6 +86,23 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(WidgetSnapshot.shortened("  Hi \n second"), "Hi")
     }
 
+    /// ADR-331: "Hide character artwork" reaches widgets and the watch, even with content off,
+    /// and a snapshot written without it still reads (pictures shown).
+    func testHideCharacterArtTravelsAndOldSnapshotsStillRead() throws {
+        let shown = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                        showReminderText: false, isOn: true, now: now)
+        XCTAssertFalse(shown.hidesPictures)
+        XCTAssertFalse(String(decoding: try shown.encoded(), as: UTF8.self).contains("hidesDoddy"))
+        let hidden = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                         showReminderText: false, isOn: true, now: now, hidesDoddy: true)
+        XCTAssertEqual(WidgetSnapshot.decoded(try hidden.encoded())?.hidesPictures, true)
+        let off = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                      showReminderText: false, isOn: false, now: now, hidesDoddy: true)
+        XCTAssertTrue(off.hidesPictures)
+        let old = Data(#"{"version":\#(WidgetSnapshot.currentVersion),"writtenAt":0,"isOn":true,"pinned":[],"reminders":[],"lists":[]}"#.utf8)
+        XCTAssertEqual(WidgetSnapshot.decoded(old)?.hidesPictures, false)
+    }
+
     func testRoundTripAndRefusesOtherVersionsOrDamage() throws {
         let snapshot = WidgetSnapshot(writtenAt: now, isOn: true, pinned: [.init(id: UUID(), text: "Kod: 4512")], reminders: [], lists: [])
         XCTAssertEqual(WidgetSnapshot.decoded(try snapshot.encoded()), snapshot)

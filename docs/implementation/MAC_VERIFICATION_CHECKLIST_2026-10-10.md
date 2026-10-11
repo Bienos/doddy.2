@@ -292,7 +292,14 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
 | Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
 
-## 4k. Action status and retry (ADR-319 to ADR-322, `ACTION_STATUS_STATUS.md`)
+## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Settings › turn on "Hide character artwork"; look at every widget, the Lock Screen Talk to Doddy, StandBy, a conversation's island and Lock Screen card, a focus timer, shopping mode, a snoozed alarm | No Doddy anywhere: the island shows its board, the cards and widgets their symbols or text only. Turn it off: he's back after the widgets reload |
+| H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
+| H3 | Settings › Widgets: turn "Show in widgets" off; on the watch, hide notes and lists | Widgets (small and medium, full colour): Doddy turned away beside "Turned off in Doddy's Settings."; the watch: turned away above its hidden message |
+| H4 | Build everything (app, widgets, watch app, watch widgets) | Compiles. If not, the errors are new to this checklist: the four batches before were never compiled |
+## 4l. Action status and retry (ADR-319 to ADR-322, `ACTION_STATUS_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | AS1 | Ask Doddy to add an event tomorrow at 15:00, tap Add, then open Settings → What Doddy did | "Done", and "Read back from Calendar at …" with the title and times. The event is in Calendar once |
@@ -311,7 +318,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | AS14 | Same, with Gmail: create a draft, cut the connection mid-way, then ask for the same draft again | The card says an earlier try may have gone through and to check Gmail; Gmail has at most the drafts you confirmed |
 | AS15 | With "List my tasks" on: make a task's answer get lost (server timeout), then ask for the same task | Doddy says it's already in Todoist and shows no card; with "List my tasks" off it shows the card with the warning line |
 
-## 4l. Voice session recovery (ADR-330, `SESSION_RECOVERY_STATUS.md`)
+## 4m. Voice session recovery (ADR-330, `SESSION_RECOVERY_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | SR1 | Talk to Doddy; mid-sentence turn on Airplane mode | "You're offline" (or "The conversation dropped"), never "Conversation ended"; the offline card holds what Doddy last heard |
@@ -320,7 +327,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | SR4 | After SR2, tap Talk again within 15 minutes ("Remember recent conversations" on) | Doddy says the last conversation was cut off and offers to carry on; with the setting off or Private, it doesn't |
 | SR5 | Say goodbye so Doddy ends the call; then tap End in another conversation | Both show "Conversation ended", never "dropped" (checks that end_call arrives as the SDK's own end) |
 
-## 4m. Stop listening and the listening indicator (ADR-335, `LISTENING_PRIVACY_STATUS.md`)
+## 4n. Stop listening and the listening indicator (ADR-335, `LISTENING_PRIVACY_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | LS1 | Turn on "Hey Doddy"; open Settings, then the note screen | The pill "Listening for “Hey Doddy”" shows at the top over both; taps beside it still work |

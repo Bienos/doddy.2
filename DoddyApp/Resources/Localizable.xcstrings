@@ -738,6 +738,17 @@
         }
       }
     },
+    "And %lld more": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I jeszcze: %lld"
+          }
+        }
+      }
+    },
     "And how do you like your answers?": {
       "extractionState": "manual",
       "localizations": {

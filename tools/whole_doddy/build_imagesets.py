@@ -100,6 +100,7 @@ def main(pack, cuts, root, strips=None):
     if strips:
         build_313(pack, strips, app, widgets)
         build_314(pack, root, app, widgets)
+        build_324(strips, root, app, widgets)
     print("done")
 
 
@@ -155,6 +156,20 @@ def build_314(pack, root, app, widgets):
         write_json(os.path.join(folder, "Contents.json"), {"images": [
             {"filename": "art@2x.png", "idiom": "universal", "scale": "2x"},
         ], "info": INFO})
+
+
+def build_324(strips, root, app, widgets):
+    """ADR-331: Doddy turned away (frame 5 of the turn strip) for notes hidden from widgets and
+    the watch."""
+    away = Image.open(os.path.join(strips, "turn_5.png")).convert("RGBA")
+    for catalog in (app, widgets):
+        scaled_set(catalog, "WholeDoddy_turned_away", away, (200, 300))
+    folder = os.path.join(root, WATCH_APP, "WatchDoddy_turned_away.imageset")
+    os.makedirs(folder, exist_ok=True)
+    away.resize((120, 180), Image.LANCZOS).save(os.path.join(folder, "art@2x.png"), optimize=True)
+    write_json(os.path.join(folder, "Contents.json"), {"images": [
+        {"filename": "art@2x.png", "idiom": "universal", "scale": "2x"},
+    ], "info": INFO})
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ struct DoddyVoiceLiveActivity: Widget {
                 .doddyCreamLockScreen()
         } dynamicIsland: { context in
             let shown = Shown(context)
-            let scene = context.state.islandScene(isStale: context.isStale)
+            let scene = context.state.islandScene(isStale: context.isStale).respectingHiddenArt
             // After "Hey Doddy" (ADR-254) the timer counts from the conversation, not the listening.
             let startedAt = context.state.conversationStart(activityStartedAt: context.attributes.startedAt)
             // The owner's V4 boards (design/dynamic-island-v4): the style picked in Settings
@@ -105,7 +105,10 @@ private struct DoddyArt: View {
     }
 
     var body: some View {
-        IslandPoseView(pose: pose, maxSize: CGSize(width: size, height: size * 1.25), edged: false)
+        // Nothing when "Hide character artwork" is on in Doddy (ADR-331).
+        if !WidgetDoddyArt.isHidden {
+            IslandPoseView(pose: pose, maxSize: CGSize(width: size, height: size * 1.25), edged: false)
+        }
     }
 }
 
