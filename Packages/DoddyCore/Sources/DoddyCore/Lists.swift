@@ -313,7 +313,7 @@ public enum ListsPrompt {
     public static func render(_ lists: [DoddyList]) -> String {
         guard !lists.isEmpty else { return "(no lists yet)" }
         return lists.map { list in
-            "- \(list.name) (\(list.open.count) open, \(list.done.count) ticked)"
+            "- \(ToolData.clean(list.name)) (\(list.open.count) open, \(list.done.count) ticked)"
         }.joined(separator: "\n")
     }
 }
@@ -321,14 +321,20 @@ public enum ListsPrompt {
 extension VoiceToolReply {
     /// No list by that name: nothing changed; the agent asks.
     public static func listNotFound(_ name: String, lists: [DoddyList]) -> String {
-        let names = lists.map { "\"\($0.name)\"" }.joined(separator: ", ")
-        return "not found: there is no list called \"\(name)\". Nothing changed. "
-            + (lists.isEmpty ? "The user has no lists yet. " : "Their lists: \(names). ")
-            + "Ask the user which list they mean, or whether to start a new one with create_list."
+        let ask = "Ask the user which list they mean, or whether to start a new one with create_list."
+        guard !lists.isEmpty else {
+            return "not found: there is no list called \"\(name)\". Nothing changed. The user has no lists yet. \(ask)"
+        }
+        return "not found: there is no list called \"\(name)\". Nothing changed. \(ask) Their lists:\n" + names(lists)
     }
 
     public static func listAmbiguous(_ name: String, lists: [DoddyList]) -> String {
-        "not changed: \"\(name)\" matches more than one list (\(lists.map { "\"\($0.name)\"" }.joined(separator: ", "))). Ask the user which one."
+        "not changed: \"\(name)\" matches more than one list. Ask the user which one:\n" + names(lists)
+    }
+
+    /// The user's list names, as data (ToolData).
+    private static func names(_ lists: [DoddyList]) -> String {
+        ToolData.block(lists.map { "- \"\(ToolData.clean($0.name))\"" })
     }
 
     public static func listAdded(_ result: ListAddResult, list: String) -> String {
@@ -351,16 +357,17 @@ extension VoiceToolReply {
     }
 
     public static func listRead(_ list: DoddyList) -> String {
+        // The name and items are the user's words, between the data markers (review C4).
         let open = list.open
+        let name = "Name: \"\(ToolData.clean(list.name))\""
         guard !open.isEmpty else {
-            return "\"\(list.name)\": nothing left\(list.done.isEmpty ? "; the list is empty" : " (\(list.done.count) ticked)")."
+            return "One list: nothing left\(list.done.isEmpty ? "; the list is empty" : " (\(list.done.count) ticked)").\n" + ToolData.block([name])
         }
-        let shown = open.prefix(ListLimits.readAloud).map(\.text)
-        var text = "\"\(list.name)\", \(open.count) open, in order: \(shown.joined(separator: "; "))"
-        if open.count > shown.count { text += "; and \(open.count - shown.count) more (all on the user's screen)" }
-        text += "."
-        if !list.done.isEmpty { text += " Ticked: \(list.done.count)." }
-        return text + " Read the items in the user's own words; never add any."
+        let shown = open.prefix(ListLimits.readAloud).map { "- \(ToolData.clean($0.text))" }
+        var text = "One list, \(open.count) open; its name, then the open items in order:\n" + ToolData.block([name] + shown)
+        if open.count > shown.count { text += "\n…and \(open.count - shown.count) more (all on the user's screen)." }
+        if !list.done.isEmpty { text += "\nTicked: \(list.done.count)." }
+        return text + "\nRead the items in the user's own words; never add any."
     }
 
     /// `changed` were ticked or removed; the rest could not be matched.

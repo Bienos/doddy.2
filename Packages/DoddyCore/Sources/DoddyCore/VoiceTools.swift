@@ -521,10 +521,10 @@ public enum VoiceToolReply {
         } else {
             lines.append("Found \(candidates.count) \(noun) (exact text, newest wording):")
         }
-        for candidate in shown {
+        lines.append(ToolData.block(shown.map { candidate in
             let flag = mayDisagree.contains(candidate.memoryID) ? " [may disagree]" : ""
-            lines.append("- \"\(candidate.record.currentText)\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)")
-        }
+            return "- \"\(ToolData.clean(candidate.record.currentText))\" (saved \(timestamp(candidate.record.capturedAt)))\(flag)"
+        }))
         if !mayDisagree.isEmpty {
             lines.append("Notes marked [may disagree] give different numbers for the same thing. Mention each one with when it was saved and let the user decide which is current. Do not pick one.")
         }
@@ -557,12 +557,12 @@ public enum VoiceToolReply {
             return "No calendar events \(window). Say so; do not guess."
         }
         var lines = ["Found \(events.count) calendar event\(events.count == 1 ? "" : "s") \(window) (exact titles and times):"]
-        for event in events.prefix(limit) {
+        lines.append(ToolData.block(events.prefix(limit).map { event in
             let when = event.allDay
                 ? "\(localText(event.start, hasTime: false, calendar: calendar)) (all day)"
                 : "\(localText(event.start, hasTime: true, calendar: calendar))–\(localText(event.end, hasTime: true, calendar: calendar))"
-            lines.append("- \"\(event.title)\" \(when)")
-        }
+            return "- \"\(ToolData.clean(event.title))\" \(when)"
+        }))
         if events.count > limit {
             lines.append("…and \(events.count - limit) more.")
         }

@@ -134,17 +134,18 @@ public enum MorningCheckInPrompt {
         day.timeZone = timeZone
         day.locale = Locale(identifier: "en_GB")
         day.dateFormat = "EEEE d MMMM"
-        var lines = ["The user started a morning check-in for \(day.string(from: briefing.day))."]
+        // Reminder text and list names are the user's words: between the data markers (review C4).
+        var lines: [String] = []
         if briefing.reminders.isEmpty {
             lines.append("Doddy reminders today: none.")
         } else {
-            lines.append("Doddy reminders today: " + briefing.reminders.map { "\(time.string(from: $0.time)) \($0.text)" }.joined(separator: "; ") + ".")
+            lines.append("Doddy reminders today: " + briefing.reminders.map { "\(time.string(from: $0.time)) \(ToolData.clean($0.text))" }.joined(separator: "; ") + ".")
         }
         if briefing.lists.isEmpty {
             lines.append("Lists with things left: none.")
         } else {
-            lines.append("Lists with things left: " + briefing.lists.map { "\($0.name) (\($0.openCount))" }.joined(separator: "; ") + ".")
+            lines.append("Lists with things left: " + briefing.lists.map { "\(ToolData.clean($0.name)) (\($0.openCount))" }.joined(separator: "; ") + ".")
         }
-        return lines.joined(separator: " ")
+        return "The user started a morning check-in for \(day.string(from: briefing.day)).\n" + ToolData.block(lines)
     }
 }

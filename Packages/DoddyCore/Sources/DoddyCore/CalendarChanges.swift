@@ -203,8 +203,8 @@ extension VoiceToolReply {
     }
 
     public static func eventAmbiguous(_ events: [CalendarEventSummary], calendar: Calendar) -> String {
-        let times = events.prefix(4).map { "\"\($0.title)\" \(localText($0.start, hasTime: !$0.allDay, calendar: calendar))" }
-        return "not changed: more than one event matches (\(times.joined(separator: "; "))). Ask the user which one."
+        let times = events.prefix(4).map { "- \"\(ToolData.clean($0.title))\" \(localText($0.start, hasTime: !$0.allDay, calendar: calendar))" }
+        return "not changed: more than one event matches. Ask the user which one:\n" + ToolData.block(times)
     }
 
     public static let eventChangeInvalid = "failed: that change doesn't make sense (the end would be before the start, or nothing would change). Nothing changed. Ask the user what they want."
@@ -227,8 +227,10 @@ extension VoiceToolReply {
     }
 
     public static func reminderAmbiguous(_ reminders: [ReminderSnapshot]) -> String {
-        let lists = reminders.prefix(4).map { "\"\($0.title)\" in \($0.listTitle)\($0.due.map { ", due \(ReminderText.due($0))" } ?? "")" }
-        return "not changed: more than one open reminder matches (\(lists.joined(separator: "; "))). Ask the user which one."
+        let lists = reminders.prefix(4).map {
+            "- \"\(ToolData.clean($0.title))\" in \(ToolData.clean($0.listTitle))\($0.due.map { ", due \(ReminderText.due($0))" } ?? "")"
+        }
+        return "not changed: more than one open reminder matches. Ask the user which one:\n" + ToolData.block(lists)
     }
 
     public static func reminderChanged(_ title: String, due: ReminderDue?) -> String {
