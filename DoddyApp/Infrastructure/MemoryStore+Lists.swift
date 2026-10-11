@@ -106,7 +106,7 @@ extension MemoryStore {
         await listChanged(undo.listID)
     }
 
-    /// Undo from What Doddy did for a list change made by voice (ADR-275): only the items still as
+    /// Undo from What Doddy did for a list change made by voice (ADR-276): only the items still as
     /// Doddy left them (ActivityUndo.listItemsToUndo), then the list is read back. When a write
     /// throws, a fresh look decides: all still as Doddy left them means nothing was written.
     func undoFromActivity(_ undo: ActivityUndo) async -> UndoResult {

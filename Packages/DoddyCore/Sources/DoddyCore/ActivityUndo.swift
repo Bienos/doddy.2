@@ -1,6 +1,6 @@
 import Foundation
 
-// Undo in "What Doddy did" (ADR-267). For a day after Doddy added or changed an event or a
+// Undo in "What Doddy did" (ADR-268). For a day after Doddy added or changed an event or a
 // reminder, its row offers Undo. Undo only ever reverses what Doddy itself did:
 //  - an event or reminder Doddy added is removed, and only if it still looks exactly as Doddy
 //    left it (same title and time; a reminder still open and carrying Doddy's marker);
@@ -21,7 +21,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
     /// `oldDue` is the due before Doddy's change. `markedDone` is true when Doddy ticked it off
     /// (then the due was not changed).
     case changedReminder(id: String, title: String, oldDue: ReminderDue?, newDue: ReminderDue?, markedDone: Bool)
-    /// List changes by voice (ADR-275): the exact items as Doddy left them, and the list's name
+    /// List changes by voice (ADR-276): the exact items as Doddy left them, and the list's name
     /// at the time (for the sheet only; the list is found by its id).
     case listAdded(listID: UUID, list: String, items: [ListItem])
     case listTicked(listID: UUID, list: String, items: [ListItem])
@@ -216,7 +216,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
     }
 }
 
-// MARK: Lists (ADR-275)
+// MARK: Lists (ADR-276)
 
 extension ActivityUndo {
     /// The list a list undo works on.
@@ -348,7 +348,7 @@ extension ActivityLog {
     }
 }
 
-// MARK: "Undo that" by voice (ADR-270)
+// MARK: "Undo that" by voice (ADR-271)
 
 extension VoiceToolName {
     public static let undoLast = "undo_last"
@@ -359,7 +359,7 @@ extension ActivityUndo {
     /// earlier conversation: "undo that" means what was just done.
     public static func latest(in entries: [ActivityEntry], since start: Date, now: Date) -> ActivityEntry? {
         // "Undo that" is for Calendar and Reminders only; list changes have their own receipt
-        // and What Doddy did (ADR-275), and the agent is told so.
+        // and What Doddy did (ADR-276), and the agent is told so.
         entries.filter { $0.at >= start && $0.canUndo(now: now) && $0.undo?.connection != nil }.max { $0.at < $1.at }
     }
 }
@@ -395,7 +395,7 @@ extension VoiceToolReply {
     }
 }
 
-// MARK: The two Undo buttons agree (ADR-267 merge)
+// MARK: The two Undo buttons agree (ADR-268 merge)
 
 extension ActivityUndo {
     /// The same change as an on-screen Undo receipt (ADR-258 on the default line): the same event

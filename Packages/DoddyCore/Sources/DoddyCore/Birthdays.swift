@@ -1,6 +1,6 @@
 import Foundation
 
-// "Whose birthday is coming up?" (ADR-268). A read-only look at the birthdays saved in the
+// "Whose birthday is coming up?" (ADR-269). A read-only look at the birthdays saved in the
 // iPhone's Contacts, for the next few days. Nothing is written anywhere and no reminder is set;
 // the agent can offer one, which goes through the usual create_reminder card. The agent hears
 // each person's name and the day and month only: never the birth year, an age, or any other

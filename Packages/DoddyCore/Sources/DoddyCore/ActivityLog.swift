@@ -157,7 +157,7 @@ public struct ActivityRequest: Equatable, Sendable {
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
-            // unit conversions are worked out inside Doddy and use no app (ADR-269).
+            // unit conversions are worked out inside Doddy and use no app (ADR-270).
             return nil
         }
     }
@@ -206,7 +206,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public var checkedAt: Date?
     /// Set when this was one step of a plan card. Older entries have none.
     public let plan: ActivityPlanRef?
-    /// What Doddy needs to put it back (ADR-267). Only kept for changes Doddy made and checked.
+    /// What Doddy needs to put it back (ADR-268). Only kept for changes Doddy made and checked.
     public let undo: ActivityUndo?
     /// Set after the user tapped Undo.
     public var undoState: UndoState?
@@ -273,7 +273,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         // A delete, checked by looking again (ADR-259 on the default line).
         if text.hasPrefix("deleted:") { return (.done, nil) }
         if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
-        // Lists (ADR-216), answered from the store's own result (ADR-271). Something was added,
+        // Lists (ADR-216), answered from the store's own result (ADR-272). Something was added,
         // ticked, removed or a list was made; or nothing was, and why.
         if text.hasPrefix("created:") || text.hasPrefix("added to \"") || text.hasPrefix("ticked on \"") || text.hasPrefix("removed on \"") {
             return (.done, nil)

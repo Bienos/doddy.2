@@ -252,6 +252,11 @@ enum IslandSceneChecks {
         if let data = try? JSONEncoder().encode(styled) {
             expect((try? JSONDecoder().decode(State.self, from: data))?.islandStyle == .wholeDoddy, "style round trip")
         }
+        // The default (ADR-267): Whole Doddy until the user picks a style; a picked one is kept.
+        expect(IslandStyle.preferredDefault == .wholeDoddy, "default is whole doddy")
+        expect(IslandStyle.stored(nil) == .wholeDoddy && IslandStyle.stored("not-a-style") == .wholeDoddy, "nothing stored")
+        expect(IslandStyle.stored("leanIn") == .leanIn && IslandStyle.stored("orbit") == .orbit, "a picked style is kept")
+        expect(IslandStyle.allCases.first == .wholeDoddy, "listed first in Settings")
         // Pictures: each figure box inside its picture; every face pose has a head inside it.
         for p in IslandPose.allCases {
             let b = p.figure

@@ -86,8 +86,8 @@ Date: 2026-10-10. Owner: "design lists by voice", then "approved, build it" (L1�
 - **`scripts/ci.sh --core-only`:** PASS, including the imported-pack check after the schema hash update.
 - **`swiftc -parse`:** passes on every changed app file.
 
-## Fixed 2026-10-11 (ADR-271): list rows in What Doddy did
-Until ADR-271, every list change by voice was listed in Settings → What Doddy did as **"Not sure it happened"**: adding ("added to …"), ticking ("ticked on …"), removing ("removed on …") and starting a list ("created: …"). The activity log didn't know those replies. Now:
+## Fixed 2026-10-11 (ADR-272): list rows in What Doddy did
+Until ADR-272, every list change by voice was listed in Settings → What Doddy did as **"Not sure it happened"**: adding ("added to …"), ticking ("ticked on …"), removing ("removed on …") and starting a list ("created: …"). The activity log didn't know those replies. Now:
 - a change that happened is **Done**;
 - "nothing new, all already on the list" is **Already there, nothing added**;
 - a full list, a name that's taken, or nothing matched is **Didn't happen**.

@@ -1,6 +1,6 @@
 import Foundation
 
-// "What Doddy did" in the iPhone's language (ADR-274). Rows are kept as Doddy wrote them, in
+// "What Doddy did" in the iPhone's language (ADR-275). Rows are kept as Doddy wrote them, in
 // English (the activity file and old rows don't change); they are translated when shown. App names
 // and results come from fixed lists. Titles and Doddy's own fixed notes are looked up; anything
 // else — the user's own words in the detail, a reason an app or server gave — is shown exactly as
@@ -56,7 +56,7 @@ public enum ActivityText {
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
         "Draft an email": "Szkic e-maila",
-        // Written before ADR-274 fixed the article; old rows still say it.
+        // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
         "Checked email": "Sprawdzono pocztę",
         "Create an email draft": "Utwórz szkic e-maila",
@@ -72,7 +72,7 @@ public enum ActivityText {
         "Start a list": "Załóż listę",
         "Change event": "Zmień wydarzenie",
         "Change reminder": "Zmień przypomnienie",
-        // From the default line (ADR-259, ADR-260), joined in the ADR-267 merge.
+        // From the default line (ADR-259, ADR-260), joined in the ADR-268 merge.
         "Delete event": "Usuń wydarzenie",
         "Delete reminder": "Usuń przypomnienie",
         "Set alarm": "Ustaw budzik",
@@ -92,7 +92,7 @@ public enum ActivityText {
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
         }
-        // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders or the list (ADR-275).
+        // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders or the list (ADR-276).
         let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę")]
         for (place, locative, accusative) in places {
             notes["You undid this. Checked in \(place)."] = "Cofnięto. Sprawdzone \(locative)."

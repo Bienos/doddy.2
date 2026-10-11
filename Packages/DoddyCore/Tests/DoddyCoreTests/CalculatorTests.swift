@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Sums and unit conversions on the iPhone (ADR-269): arithmetic only, exact factors, and a
+/// Sums and unit conversions on the iPhone (ADR-270): arithmetic only, exact factors, and a
 /// reply the agent reads back instead of working the numbers out itself.
 final class CalculatorTests: XCTestCase {
     private func value(_ text: String) throws -> Double {

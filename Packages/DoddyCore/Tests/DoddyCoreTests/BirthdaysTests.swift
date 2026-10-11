@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// "Whose birthday is coming up?" (ADR-268): read only, from Contacts, names with day and month.
+/// "Whose birthday is coming up?" (ADR-269): read only, from Contacts, names with day and month.
 final class BirthdaysTests: XCTestCase {
     private var calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)

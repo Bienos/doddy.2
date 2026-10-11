@@ -4,7 +4,7 @@ import SwiftUI
 /// Settings → What Doddy did. Newest first, grouped by day. Each row says what was asked and
 /// what actually happened; a reminder Doddy wasn't sure about can be checked in Reminders.
 /// The steps of one plan card are shown together under one heading (ADR-208). For a day, an
-/// event or reminder Doddy added or changed can be undone, after a confirmation (ADR-267).
+/// event or reminder Doddy added or changed can be undone, after a confirmation (ADR-268).
 struct ActivityView: View {
     @Environment(MemoryStore.self) private var store
     @State private var activity = ActivityLogStore.shared
@@ -173,7 +173,7 @@ struct ActivityView: View {
             connectionOn: undo.connection.map { defaults.bool(forKey: $0.preferenceKey) } ?? true) {
             result = .notDone(reason)
         } else if undo.listID != nil {
-            // Lists are Doddy's own (ADR-275): the store reverses and reads them back.
+            // Lists are Doddy's own (ADR-276): the store reverses and reads them back.
             result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)
