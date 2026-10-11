@@ -137,6 +137,22 @@ final class SQLiteListRepositoryTests: XCTestCase {
         XCTAssertEqual(try MemoryRestore.listItems(data).map(\.text), ["milk", "eggs"])
     }
 
+    /// Review B7: an export is one snapshot. Lists deleted while exports run never leave an
+    /// item in the file whose list is missing from it.
+    func testExportIsOneSnapshotWhileListsAreDeleted() async throws {
+        let (_, lists, memories) = try make()
+        for round in 0..<30 {
+            let list = try await lists.create(name: "List \(round)", items: ["a", "b"], source: .typed)
+            async let deleted: Void = memories.delete(id: list.id)
+            async let exported = memories.export()
+            let data = try await exported
+            try await deleted
+            let file = try MemoryRestore.read(data)
+            let notes = Set(file.records.map(\.id))
+            XCTAssertTrue(try MemoryRestore.listItems(data).allSatisfy { notes.contains($0.listID) }, "round \(round)")
+        }
+    }
+
     func testReminderTextForAListShowsOpenItems() async throws {
         let (database, lists, _) = try make()
         let list = try await lists.create(name: "Shopping", items: ["milk", "eggs"], source: .voice)

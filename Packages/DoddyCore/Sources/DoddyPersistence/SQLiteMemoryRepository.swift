@@ -49,11 +49,13 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     }
 
     public func list(limit: Int?) async throws -> [MemoryRecord] {
-        try await dbQueue.read { db in
-            var sql = "SELECT * FROM memories ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC"
-            if let limit { sql += " LIMIT \(max(0, limit))" }
-            return try Row.fetchAll(db, sql: sql).map(Self.record(from:))
-        }
+        try await dbQueue.read { db in try Self.allRecords(db, limit: limit) }
+    }
+
+    private static func allRecords(_ db: Database, limit: Int? = nil) throws -> [MemoryRecord] {
+        var sql = "SELECT * FROM memories ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC"
+        if let limit { sql += " LIMIT \(max(0, limit))" }
+        return try Row.fetchAll(db, sql: sql).map(record(from:))
     }
 
     /// How many of the newest notes the word-rule scan reads when the index finds too few.
@@ -156,10 +158,11 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     }
 
     public func allCorrections() async throws -> [MemoryCorrection] {
-        try await dbQueue.read { db in
-            try Row.fetchAll(db, sql: "SELECT * FROM memory_corrections ORDER BY memory_id, number")
-                .map(Self.correction(from:))
-        }
+        try await dbQueue.read { db in try Self.allCorrections(db) }
+    }
+
+    private static func allCorrections(_ db: Database) throws -> [MemoryCorrection] {
+        try Row.fetchAll(db, sql: "SELECT * FROM memory_corrections ORDER BY memory_id, number").map(correction(from:))
     }
 
     public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
@@ -188,10 +191,12 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         }
     }
 
+    /// Notes, list items and corrections from one read, so the file is one consistent snapshot.
     public func export() async throws -> Data {
-        let items = try await dbQueue.read { db in try SQLiteListRepository.allItems(db) }
-        return try MemoryExport.json(
-            try await list(limit: nil), listItems: items, corrections: try await allCorrections(), exportedAt: now())
+        let (records, items, corrections) = try await dbQueue.read { db in
+            (try Self.allRecords(db), try SQLiteListRepository.allItems(db), try Self.allCorrections(db))
+        }
+        return try MemoryExport.json(records, listItems: items, corrections: corrections, exportedAt: now())
     }
 
     public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {
