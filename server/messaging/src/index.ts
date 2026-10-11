@@ -1,12 +1,12 @@
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
-import { createPool, migrate } from "./db.js";
+import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom } from "./providers/index.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
-await migrate(db);
+await migrateOrExit(db, log);
 const providers = providersFrom(config);
 const app = await buildApp({
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,

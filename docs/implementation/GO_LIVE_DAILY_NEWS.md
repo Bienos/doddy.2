@@ -104,6 +104,7 @@ The server creates its tables on first start (migrations run automatically).
 ## If something goes wrong
 | What you see | Likely cause |
 |---|---|
+| Deploy fails; log says `database unreachable at startup` | `DATABASE_URL` is wrong or points at a database this service can't reach (e.g. one in another Render workspace). Paste the database's **Internal Database URL**. The server gives up after 10 seconds |
 | "Updates need a Doddy messaging server" | The address is empty, not https, or has a path |
 | Test notification never arrives | Bundle ID on Render ≠ the app's, Push not enabled on the App ID, the key's Team ID ≠ the signing team, or notifications are off in iOS Settings |
 | Digest says "Only here: notifications or texts weren't on" | You chose Notification, but notifications aren't on for this iPhone (step 4.4). The digest is still in the app |

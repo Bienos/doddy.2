@@ -5,8 +5,33 @@ import pg from "pg";
 
 export type Db = pg.Pool;
 
-export function createPool(databaseUrl: string): Db {
-  return new pg.Pool({ connectionString: databaseUrl, max: 10 });
+/** How long a new connection may take before it fails. Without it an unreachable DATABASE_URL hangs
+ * startup silently until the OS gives up (about 2 minutes on Render). */
+export const CONNECT_TIMEOUT_MS = 10_000;
+
+export function createPool(databaseUrl: string, connectTimeoutMs = CONNECT_TIMEOUT_MS): Db {
+  return new pg.Pool({ connectionString: databaseUrl, max: 10, connectionTimeoutMillis: connectTimeoutMs });
+}
+
+/** First contact with the database at startup: applies migrations, or logs one line naming the
+ * cause (never the URL, which holds the password) and exits, so a bad DATABASE_URL is obvious. */
+export async function migrateOrExit(db: Db, log: (msg: string, extra?: object) => void): Promise<void> {
+  try {
+    await migrate(db);
+  } catch (err) {
+    log("database unreachable at startup: check DATABASE_URL (use the database's Internal URL)", dbErrorFields(err));
+    await db.end().catch(() => {});
+    process.exit(1);
+  }
+}
+
+/** Safe fields for logging a connection error: code and message, never the connection string. */
+export function dbErrorFields(err: unknown): { code: string; error: string } {
+  const e = err as { code?: unknown; message?: unknown };
+  return {
+    code: typeof e?.code === "string" ? e.code : "unknown",
+    error: (typeof e?.message === "string" ? e.message : String(err)).replace(/postgres(ql)?:\/\/\S+/gi, "<url>"),
+  };
 }
 
 export async function inTransaction<T>(db: Db, fn: (c: pg.PoolClient) => Promise<T>): Promise<T> {
