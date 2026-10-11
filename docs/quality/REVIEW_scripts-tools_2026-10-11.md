@@ -101,3 +101,20 @@ Every check script also ran earlier today as part of the other fixes: `ci.sh` st
   - **Gaps:** findings 1 and 2. Until they're fixed, "networking only in these files" holds for `URLSession` and `URLRequest` only.
 - **Honest results:** `ci.sh` never reports PASS for a step that didn't run (NOT RUN / SKIPPED / BLOCKED exit 2). Finding 6 is the one place where a test file could be silently left out.
 - **Claims to limit:** the guard is a text search. It shows that certain code isn't present, and can't prove what the app does at runtime.
+
+---
+
+## Fix status (2026-10-11, owner approved "fix all")
+
+| # | Status |
+|---|---|
+| 1 | fixed: `network_only` also matches session task and configuration types, `.resourceBytes`, `contentsOf: URL(string:`, `NSURLConnection` and CFNetwork streams. Each kind planted in a scratch copy fails the guard; `URLSessionTransport.shared` passes. |
+| 2 | fixed: value-only secret scan over `gateway`, `server/voice-token`, `site`, `voice-agent` and `tools` (`node_modules`, `dist` and lockfiles excluded). A planted `sk_…` key, `…_API_KEY=sk-…` and `…_PASSWORD=…` each fail. |
+| 3 | fixed: `.pyc` removed; `__pycache__/` and `*.pyc` ignored |
+| 4 | fixed: `VoiceConfig.swift` and `ActivityLogStore.swift` added (17 files type-checked). The 9 non-UI files that need networking or EventKit types are listed by name on every run. |
+| 5 | fixed: no iPhone simulator → `NOT RUN` with what to do |
+| 6 | fixed: CI runs `npm test --prefix server/voice-token` (17 pass) |
+| 7 | fixed: the trap restores the committed art. Checked with a hand edit: the check fails (exit 1) and the file is left exactly as it was. |
+| 8 | fixed: links must start with `https://`, `http://`, `mailto:`, `/` or `#`; a `javascript:` link stops the build |
+
+**Checks run:** `scripts/ci.sh --core-only`. Every step passes: the pack, the guard, both agent specs, the blog, the strings, 778 DoddyCore tests, the 17-file type-check, the island art, voice-token, backend, gateway, messaging and the site. The messaging DB tests are SKIPPED (no database) and the iOS app is NOT RUN.
