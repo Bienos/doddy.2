@@ -88,7 +88,7 @@ struct CaptureView: View {
                         Label("Only this detail is saved on this iPhone. You can edit or delete it later.", systemImage: "lock")
                             .font(.footnote).foregroundStyle(Theme.secondaryText)
                         if let errorMessage {
-                            ProblemView(message: errorMessage).accessibilityIdentifier("capture.error")
+                            ProblemView(message: errorMessage, showsDoddy: true).accessibilityIdentifier("capture.error")
                         }
                         if let duplicate {
                             DuplicateNoticeView(record: duplicate) {

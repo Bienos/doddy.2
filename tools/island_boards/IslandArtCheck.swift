@@ -14,6 +14,11 @@ struct IslandArtCheck {
             for pose in IslandPose.allCases { print(pose.assetName) }
             return
         }
+        // ...and the voice screen's talking frames (ADR-299), in the app catalog only.
+        if args.contains("--talking-assets") {
+            for frame in 1...VoiceScreenArt.talkingFrameCount { print(VoiceScreenArt.talkingAssetName(frame)) }
+            return
+        }
         let svgDir = args.firstIndex(of: "--svg").map { args[$0 + 1] }
         var failures = 0
         var drawings = 0
@@ -46,6 +51,7 @@ struct IslandArtCheck {
         }
         failures += IslandSceneChecks.run()
         failures += IslandSceneChecks.wholeDoddy()
+        failures += IslandSceneChecks.voiceScreen()
         if failures > 0 {
             print("FAIL: \(failures) problem(s) in \(drawings) drawings")
             exit(1)

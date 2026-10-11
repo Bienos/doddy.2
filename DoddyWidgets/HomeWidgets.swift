@@ -97,6 +97,7 @@ struct NextReminderWidget: Widget {
 
 struct NextReminderView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: SnapshotEntry
 
     var body: some View {
@@ -111,7 +112,14 @@ struct NextReminderView: View {
                     .widgetURL(WidgetLink.open(next.memoryID))
             default:
                 VStack(alignment: .leading, spacing: 4) {
-                    Label { when.font(.headline) } icon: { Image(systemName: "bell.fill") }
+                    HStack(alignment: .top, spacing: 4) {
+                        Label { when.font(.headline) } icon: { Image(systemName: "bell.fill") }
+                        // Reaching for it (ADR-299): the island's pose for a reminder waiting.
+                        if family == .systemSmall, renderingMode == .fullColor {
+                            Spacer(minLength: 0)
+                            WidgetPose(pose: .reachingHigh, height: 44)
+                        }
+                    }
                     Text(what).font(.subheadline).lineLimit(family == .systemSmall ? 4 : 2).privacySensitive()
                     Spacer(minLength: 0)
                 }
@@ -270,6 +278,7 @@ struct TalkToDoddyWidget: Widget {
 
 struct TalkToDoddyWidgetView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
         Button(intent: TalkToDoddyIntent()) {
@@ -277,7 +286,13 @@ struct TalkToDoddyWidgetView: View {
                 Image(systemName: "waveform").font(.title2).accessibilityLabel("Talk to Doddy")
             } else {
                 VStack(spacing: 8) {
-                    Image(systemName: "waveform").font(.largeTitle)
+                    // Doddy waving hello (ADR-299), as when "Hey Doddy" greets you. Tinted and
+                    // clear Home Screens keep the symbol: the drawing doesn't tint well.
+                    if renderingMode == .fullColor {
+                        WidgetPose(pose: .wave, height: 76)
+                    } else {
+                        Image(systemName: "waveform").font(.largeTitle)
+                    }
                     Text("Talk to Doddy").font(.headline)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -288,6 +303,21 @@ struct TalkToDoddyWidgetView: View {
 }
 
 // MARK: Shared pieces
+
+/// Doddy in a Home Screen widget (ADR-299): a Whole Doddy pose from the owner's pack, the same
+/// as the island's for the same meaning. Decorative; full-colour widgets only. In dark
+/// appearance the outline gets the island's thin cream edge.
+struct WidgetPose: View {
+    let pose: IslandPose
+    let height: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        let box = pose.figure
+        let width = height * CGFloat(box.width / box.height) / 1.5
+        IslandPoseView(pose: pose, maxSize: CGSize(width: width, height: height), edged: colorScheme == .dark)
+    }
+}
 
 enum WidgetCopy {
     /// Why a widget shows none of the user's things, or nil when it can.

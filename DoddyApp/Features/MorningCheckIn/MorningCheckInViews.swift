@@ -56,6 +56,8 @@ struct MorningCheckInView: View {
                     Button("Not now") { dismiss() }.frame(minHeight: 44)
                 }
                 .padding(24)
+                // The coffee shop behind the heading (ADR-299).
+                .background(alignment: .top) { SceneryBackdrop(place: .coffee, height: 300) }
             }
             .background(Theme.canvas).foregroundStyle(Theme.ink)
             .navigationBarTitleDisplayMode(.inline)
