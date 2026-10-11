@@ -629,3 +629,19 @@ h3 {
   font: 600 1rem var(--text); color: var(--reading-ink);
   text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; text-decoration-color: var(--orange-cue);
 }
+
+/* ---------- Analytics consent (analytics.js; only shown when GA is configured) ---------- */
+
+.consent {
+  position: fixed; z-index: 50; left: 16px; right: 16px; bottom: 16px;
+  max-width: 34rem; margin: 0 auto; padding: 18px 20px;
+  background: var(--paper); color: var(--reading-ink);
+  border: 1px solid var(--separator); border-radius: 22px; box-shadow: var(--lift);
+  font-size: 0.9375rem;
+}
+.consent[hidden] { display: none; }
+.consent p { margin: 0 0 14px; }
+.consent-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.button.quiet { background: transparent; color: var(--reading-ink); box-shadow: inset 0 0 0 1.5px var(--separator); }
+.button.quiet:hover { box-shadow: inset 0 0 0 1.5px var(--reading-ink); }
+.foot-choice { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
