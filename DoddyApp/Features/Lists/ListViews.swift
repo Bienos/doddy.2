@@ -12,14 +12,19 @@ struct ListsOverview: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if store.lists.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("No lists yet").font(.title3.weight(.medium)).accessibilityAddTraits(.isHeader)
-                    Text("Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.")
-                        .foregroundStyle(Theme.secondaryText)
+                HStack(alignment: .top, spacing: 14) {
+                    // No lists yet: he waits, cross-legged (ADR-313).
+                    WholeDoddyView(pose: .crosslegged, height: 80)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("No lists yet").font(.title3.weight(.medium)).accessibilityAddTraits(.isHeader)
+                        Text("Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
                 }
                 .accessibilityIdentifier("lists.empty")
             }
-            ForEach(store.lists) { list in
+            // A Focus can bring one list to the front (ADR-312).
+            ForEach(FocusFilterState.shared.settings.ordered(store.lists)) { list in
                 NavigationLink(value: MemoryNavigationRoute.note(list.id)) {
                     ListCard(list: list)
                 }
@@ -108,6 +113,9 @@ struct ListDetailView: View {
     @State private var confirmStopSharing = false
     @State private var cloudShare: CloudShareSheet?
     @State private var isSharing = false
+    /// The last open item was just ticked (ADR-313): Doddy jumps, once.
+    @State private var finishedNow = false
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     var body: some View {
         Group {
@@ -122,6 +130,10 @@ struct ListDetailView: View {
         }
         .background(Theme.canvas)
         .foregroundStyle(Theme.ink)
+        // Only a change seen here counts: opening a list that was already finished doesn't jump.
+        .onChange(of: store.list(id: listID)?.open.count ?? 0) { old, new in
+            finishedNow = old > 0 && new == 0 && !(store.list(id: listID)?.items.isEmpty ?? true)
+        }
     }
 
     private func content(_ list: DoddyList) -> some View {
@@ -175,9 +187,17 @@ struct ListDetailView: View {
             }
             Section {
                 if list.open.isEmpty {
-                    Text(list.items.isEmpty ? "Nothing on this list yet." : "Nothing left.")
-                        .foregroundStyle(Theme.secondaryText)
-                        .listRowBackground(Theme.canvas)
+                    HStack(spacing: 14) {
+                        // Empty: he waits, cross-legged. Just finished: a jump (ADR-313).
+                        if list.items.isEmpty {
+                            WholeDoddyView(pose: .crosslegged, height: 70)
+                        } else if finishedNow {
+                            DoddyMotionView(motion: .jump, height: 70)
+                        }
+                        Text(list.items.isEmpty ? "Nothing on this list yet." : "Nothing left.")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    .listRowBackground(Theme.canvas)
                 }
                 ForEach(list.open) { item in
                     row(item, list: list)
@@ -202,6 +222,11 @@ struct ListDetailView: View {
             Section {
                 NoteReminderSection(memoryID: list.id)
                     .listRowBackground(Theme.canvas)
+                // A shared list's place for everyone (ADR-307).
+                if sharing.isShared(list.id) != nil {
+                    SharedPlaceRow(list: list)
+                        .listRowBackground(Theme.canvas)
+                }
             }
         }
         .listStyle(.plain)
@@ -303,6 +328,22 @@ struct ListDetailView: View {
         }
     }
 
+    private func saveTemplate(_ list: DoddyList) {
+        errorMessage = nil
+        switch ListTemplateStore.save(list) {
+        case .saved(let template):
+            addNote = String(format: NSLocalizedString("Saved \u{201C}%@\u{201D} as a template with %lld items. Start a new list from it under New list, or ask Doddy.", comment: ""), template.name, template.items.count)
+        case .replaced(let template):
+            addNote = String(format: NSLocalizedString("Updated the \u{201C}%@\u{201D} template: %lld items.", comment: ""), template.name, template.items.count)
+        case .empty:
+            addNote = NSLocalizedString("This list is empty, so there's nothing to keep as a template.", comment: "")
+        case .full:
+            errorMessage = String(format: NSLocalizedString("You have %lld templates, the most Doddy keeps. Remove one under New list first.", comment: ""), ListTemplates.maxTemplates)
+        case nil:
+            errorMessage = NSLocalizedString("That couldn't be saved on this iPhone. Try again.", comment: "")
+        }
+    }
+
     private func menu(_ list: DoddyList) -> some View {
         Menu {
             Button { run { try await store.untickAll(listID: list.id) } } label: {
@@ -320,6 +361,17 @@ struct ListDetailView: View {
             ShareLink(item: list.shareText, preview: SharePreview(list.name)) {
                 Label("Share as text", systemImage: "square.and.arrow.up")
             }
+            // The same words as a picture, with Doddy (ADR-313); no Doddy in the preview either
+            // when his pictures are hidden (ADR-331).
+            if hideCharacterArt {
+                ShareLink(item: ListShareCard(list: list), preview: SharePreview(list.name)) {
+                    Label("Share as a picture", systemImage: "photo")
+                }
+            } else {
+                ShareLink(item: ListShareCard(list: list), preview: SharePreview(list.name, image: Image("WholeDoddy_wave"))) {
+                    Label("Share as a picture", systemImage: "photo")
+                }
+            }
             // Shared lists through iCloud (ADR-263), only in builds set up for it.
             if sharing.isAvailable {
                 if let link = sharing.isShared(list.id) {
@@ -331,6 +383,9 @@ struct ListDetailView: View {
                     Button { confirmSharing = true } label: { Label("Share with people…", systemImage: "person.2") }
                 }
             }
+            // List templates (ADR-334): the items as written, ticks not kept.
+            Button { saveTemplate(list) } label: { Label("Save as template", systemImage: "square.on.square") }
+                .disabled(list.items.isEmpty)
             Button { newName = list.name; renaming = true } label: { Label("Rename", systemImage: "pencil") }
             Button { run { try await store.clearTicked(listID: list.id) } } label: {
                 Label("Clear ticked (\(list.done.count))", systemImage: "checkmark")
@@ -440,6 +495,8 @@ struct NewListSheet: View {
     @State private var errorMessage: String?
     /// What came from a photo (ADR-286), said once above the items.
     @State private var photoNote: String?
+    /// Saved list templates (ADR-334).
+    @State private var templates = ListTemplateStore.current()
 
     var body: some View {
         NavigationStack {
@@ -452,6 +509,29 @@ struct NewListSheet: View {
                     TextEditor(text: $items)
                         .frame(minHeight: 120)
                         .accessibilityLabel("First items, one per line")
+                }
+                if !templates.all.isEmpty {
+                    Section("Start from a template") {
+                        ForEach(templates.all) { template in
+                            Button {
+                                if ListText.cleaned(name) == nil { name = template.name }
+                                let existing = items.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                                items = ListTemplates.items(from: template, plus: existing).joined(separator: "\n")
+                            } label: {
+                                HStack {
+                                    Text(template.name)
+                                    Spacer()
+                                    Text(String(format: NSLocalizedString("%lld items", comment: ""), template.items.count))
+                                        .foregroundStyle(Theme.secondaryText)
+                                }
+                            }
+                            .swipeActions {
+                                Button(role: .destructive) {
+                                    if ListTemplateStore.remove(template.id) { templates = ListTemplateStore.current() }
+                                } label: { Label("Remove template", systemImage: "trash") }
+                            }
+                        }
+                    }
                 }
                 Section {
                     ListPhotoPicker { proposal in

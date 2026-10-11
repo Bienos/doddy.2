@@ -11,6 +11,7 @@ import {
   cloudTool,
   evaluateToolkitGrant,
   type GrantVerdict,
+  type ResolvedTarget,
   TOOL_COPY,
   TOOLKIT_IDS,
   TOOLKITS,
@@ -408,8 +409,12 @@ export class CloudToolsService {
 
   // ---------------------------------------------------------------- prepare / run
 
-  /** Writes only. Shows exactly what would happen and returns a single-use approval for those arguments. */
-  prepare(userId: string, body: unknown): PrepareResult {
+  /**
+   * Writes only. Shows exactly what would happen and returns a single-use approval for those
+   * arguments. A tool with a `resolve` lookup first reads its target from the provider (a read,
+   * counted like one; never the write), shows that in the preview, and binds the approval to it too.
+   */
+  async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
     if (request.tool === WEB_SEARCH_TOOL) throw new AppError("invalid_request", { message: "This tool doesn't need a confirmation." });
     const tool = this.requireTool(request.tool);
@@ -418,15 +423,87 @@ export class CloudToolsService {
     const now = this.now();
     this.limiter.reserveRequest(userId, now);
     const row = this.checkUsable(userId, tool, "write");
+    let target: ResolvedTarget | null = null;
+    if (tool.resolve) {
+      this.reserveRuns(userId, tool, now, 1);
+      const composioUserId = this.store.composioUserId(userId, now);
+      try {
+        target = (await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id))).target;
+      } catch (error) {
+        throw this.failure(userId, tool, error, false);
+      }
+    }
     const { approvalId, expiresAt } = this.store.createApproval({
       userId,
       capability: tool.name,
       accountId: row.connection_id,
-      argsDigest: argumentDigest(args),
+      argsDigest: approvalDigest(args, target),
       now,
       ttlSeconds: APPROVAL_TTL_SECONDS,
     });
-    return { mode: this.mode, tool: tool.name, preview: tool.preview(args), approvalId, expiresAt: new Date(expiresAt).toISOString() };
+    return { mode: this.mode, tool: tool.name, preview: tool.preview(args, target), approvalId, expiresAt: new Date(expiresAt).toISOString() };
+  }
+
+  /**
+   * Reads a tool's target (no retry beyond a read's one). Never runs the write itself. For a write,
+   * missing or already done is a refusal with a receipt, before any approval is made or used. For
+   * a read, it is `{ missing }`: the caller says nothing matched instead of guessing.
+   */
+  private async lookup(
+    userId: string,
+    tool: CloudToolDefinition,
+    args: Record<string, unknown>,
+    composioUserId: string,
+    connectionId: string,
+  ): Promise<{ target: ResolvedTarget; missing: null } | { target: null; missing: string }> {
+    const lookup = tool.resolve!;
+    const result = await this.withRetry(LOOKUP_RETRIES, (signal) =>
+      this.provider.execute({ toolkit: tool.toolkit, slug: lookup.slug, composioUserId, connectionId, arguments: lookup.toArguments(args), signal }),
+    );
+    const found = lookup.read(result.raw, args);
+    if (found !== null && found.kind !== "missing") return { target: found, missing: null };
+    const message = found?.message ?? lookup.notFound;
+    if (tool.risk === "read") return { target: null, missing: message };
+    throw new AppError("not_found", {
+      message,
+      receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${message}`, "not_found", result.providerReference),
+    });
+  }
+
+  /** Reserves today's tool runs for this call, with a blocked receipt when a Doddy limit says no. */
+  private reserveRuns(userId: string, tool: CloudToolDefinition, now: number, units: number): void {
+    try {
+      this.limiter.reserveToolRun(userId, now, units);
+    } catch (error) {
+      if (error instanceof AppError) {
+        const op = tool.risk === "write" ? "write" : "read";
+        throw new AppError(error.code, { ...error.options, receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: a Doddy limit was reached.", error.code, null) });
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Turns a provider failure into an AppError with a receipt. A write is "outcome_unknown" only once
+   * the write itself was sent (`writeSent`) and the error doesn't prove it never ran (DOD-08).
+   */
+  private failure(userId: string, tool: CloudToolDefinition, error: unknown, writeSent: boolean): AppError {
+    if (error instanceof AppError) return error;
+    const appError = toAppError(error);
+    const op = tool.risk === "write" ? "write" : "read";
+    const title = TOOLKITS[tool.toolkit].title;
+    if (appError.code === "connection_expired") {
+      this.store.updateConnectionStatus(userId, tool.toolkit, "expired", "revoked_or_expired", this.now());
+      this.store.disableTools(userId, toolNames(tool.toolkit), this.now());
+    }
+    const unknown = op === "write" && writeSent && !WRITE_NOT_RUN.has(appError.code);
+    const summary = unknown
+      ? `${title} didn't confirm; it may or may not have gone through. Check there before trying again.`
+      : op === "write"
+        ? `${title} wasn't reached or its answer couldn't be used. Nothing was changed.`
+        : `${title} wasn't reached or its answer couldn't be used. Nothing is shown instead.`;
+    const receipt = this.receipt(userId, tool.toolkit, op, tool.name, unknown ? "outcome_unknown" : "failed", summary, appError.code, null);
+    return new AppError(appError.code, { ...appError.options, receipt });
   }
 
   async run(userId: string, body: unknown): Promise<RunResult> {
@@ -443,11 +520,12 @@ export class CloudToolsService {
     const row = this.checkUsable(userId, tool, op);
 
     // A write's approval is checked here but only used up right before the provider call, so a
-    // limit or "busy" refusal in between doesn't cost the user their confirmation.
-    const approval = (checkOnly: boolean) =>
+    // limit or "busy" refusal in between doesn't cost the user their confirmation. For a tool with
+    // a lookup the approval is bound to the target too, so before the lookup only its presence is checked.
+    const approval = (target: ResolvedTarget | null, checkOnly: boolean) =>
       request.approvalId !== undefined &&
       this.store.consumeApproval(
-        { approvalId: request.approvalId, userId, capability: tool.name, accountId: row.connection_id, argsDigest: argumentDigest(args), now: this.now() },
+        { approvalId: request.approvalId, userId, capability: tool.name, accountId: row.connection_id, argsDigest: approvalDigest(args, target), now: this.now() },
         { checkOnly },
       );
     const unconfirmed = () =>
@@ -455,34 +533,39 @@ export class CloudToolsService {
         message: "This action needs a fresh confirmation.",
         receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
       });
-    if (tool.risk === "write" && !approval(true)) throw unconfirmed();
+    if (tool.risk === "write" && (tool.resolve ? request.approvalId === undefined : !approval(null, true))) throw unconfirmed();
 
-    try {
-      this.limiter.reserveToolRun(userId, now);
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw new AppError(error.code, { ...error.options, receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: a Doddy limit was reached.", error.code, null) });
-      }
-      throw error;
-    }
+    // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
+    this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
 
     const composioUserId = this.store.composioUserId(userId, now);
-    const title = TOOLKITS[tool.toolkit].title;
+    let writeSent = false;
     try {
       return await this.limiter.withSlot(userId, async () => {
+        // The target is read again right before the write: if it is gone, done, or no longer what the
+        // card showed, the approval doesn't match and nothing is written. A read looks up what it opens.
+        const found = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
+        if (found?.missing) {
+          // Reads only (a write's miss throws): nothing matched, so the main slug isn't run.
+          const summary = tool.resolve!.missSummary ?? "Nothing matched.";
+          const receipt = this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", summary, null, null);
+          return { mode: this.mode, tool: tool.name, text: found.missing, count: 0, truncated: false, receipt };
+        }
+        const target = found?.target ?? null;
         // Used up here, once: a parallel run with the same approval loses the race and does nothing.
-        if (tool.risk === "write" && !approval(false)) throw unconfirmed();
-        const result = await this.withRetry(tool, (signal) =>
+        if (tool.risk === "write" && !approval(target, false)) throw unconfirmed();
+        writeSent = tool.risk === "write";
+        const result = await this.withRetry(tool.maxRetries, (signal) =>
           this.provider.execute({
             toolkit: tool.toolkit,
             slug: tool.composioSlug,
             composioUserId,
             connectionId: row.connection_id,
-            arguments: tool.toArguments(args),
+            arguments: tool.toArguments(args, target, { timeZone: request.timeZone }),
             signal,
           }),
         );
-        const outcome = tool.normalize(result.raw, args, { timeZone: request.timeZone });
+        const outcome = tool.normalize(result.raw, args, { timeZone: request.timeZone }, target);
         if (row.status === "error") this.store.updateConnectionStatus(userId, tool.toolkit, "connected", null, this.now());
         const receipt = this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", outcome.summary, null, result.providerReference);
         return {
@@ -492,26 +575,10 @@ export class CloudToolsService {
         };
       });
     } catch (error) {
-      if (error instanceof AppError) throw error;
-      const appError = toAppError(error);
-      if (appError.code === "connection_expired") {
-        this.store.updateConnectionStatus(userId, tool.toolkit, "expired", "revoked_or_expired", this.now());
-        this.store.disableTools(userId, toolNames(tool.toolkit), this.now());
-      }
       // A write is "failed" only when the error proves the provider never ran it. Anything else
-      // (timeout, provider error, an answer Doddy couldn't read) may have happened: say so (DOD-08).
-      const unknown = op === "write" && !WRITE_NOT_RUN.has(appError.code);
-      const receipt = this.receipt(
-        userId,
-        tool.toolkit,
-        op,
-        tool.name,
-        unknown ? "outcome_unknown" : "failed",
-        unknown ? `${title} didn't confirm; it may or may not have gone through. Check there before trying again.` : `${title} wasn't reached or its answer couldn't be used. Nothing is shown instead.`,
-        appError.code,
-        null,
-      );
-      throw new AppError(appError.code, { ...appError.options, receipt: receipt });
+      // after it was sent (timeout, provider error, an answer Doddy couldn't read) may have
+      // happened: say so (DOD-08).
+      throw this.failure(userId, tool, error, writeSent);
     }
   }
 
@@ -608,13 +675,13 @@ export class CloudToolsService {
   }
 
   /** Reads retry once on a transient failure, with a short wait. Writes never retry. */
-  private async withRetry<T>(tool: CloudToolDefinition, call: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  private async withRetry<T>(maxRetries: number, call: (signal: AbortSignal) => Promise<T>): Promise<T> {
     for (let attempt = 0; ; attempt++) {
       try {
         return await call(this.timeout());
       } catch (raw) {
         const error = raw instanceof ProviderError ? raw : new ProviderError("provider_unavailable");
-        if (!error.transient || attempt >= tool.maxRetries) throw error;
+        if (!error.transient || attempt >= maxRetries) throw error;
         const wait = error.retryAfterSeconds !== undefined ? error.retryAfterSeconds * 1000 : 250;
         if (wait > 2_000) throw error;
         await this.sleep(wait);
@@ -651,6 +718,17 @@ export class CloudToolsService {
     this.store.saveToolReceipt(userId, receipt, this.now());
     return receipt;
   }
+}
+
+/** A lookup before a write is a read: one retry on a transient failure, like the read tools. */
+const LOOKUP_RETRIES = 1;
+
+/**
+ * What an approval is bound to: the validated arguments, plus, for a tool with a lookup, the target
+ * the card showed (so a task that changed since the card needs a fresh confirmation).
+ */
+function approvalDigest(args: Record<string, unknown>, target: ResolvedTarget | null): string {
+  return target === null ? argumentDigest(args) : argumentDigest({ arguments: args, target });
 }
 
 /** Error codes that mean a write never reached the point of running at the provider. */

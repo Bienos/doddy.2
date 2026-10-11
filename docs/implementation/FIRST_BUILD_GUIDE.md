@@ -112,3 +112,65 @@ In order of risk:
 - **Photo list (ADR-286):** `PhotosPicker` with `loadTransferable(type: Data.self)`, same as photo notes. Low risk.
 - **Repeats and event details (ADR-281, ADR-282):** `EKRecurrenceRule(recurrenceWith:interval:daysOfTheWeek:…end:)` and `EKRecurrenceEnd(end:)`, read back via `recurrenceRules`. Low risk.
 - **Bulk card, offline note (ADR-280, ADR-289):** plain SwiftUI and `PendingAction` switches; the risk is a missed `switch` case in `VoiceView` or `VoiceSessionController`.
+
+### Round 4 (2026-10-11, ADR-300 to ADR-307): most likely to need a fix
+**First build: still BLOCKED.** There is no Xcode here, and Actions doesn't start jobs. In order of risk:
+- **Shared place (ADR-307):**
+  - In `ListCloud.setPlace`: CKRecord subscripts with `Double`, `Int` and `Bool` values, and `modifyRecords` with only a deletion.
+  - `SharedPlaceRow` uses `@Environment(NoteReminderStore.self)` inside `ListViews`' `List`.
+- **Ingredients card (ADR-305):** the new `PendingAction.ingredients` case with six associated values. Every `switch` in `VoiceView` and `VoiceSessionController` must still be exhaustive. Any one that Linux parsing can't check would fail here first.
+- **Parking (ADR-301):**
+  - `PlaceLocation.currentFix(within:)` returns a tuple from a `TaskGroup` of an optional tuple type.
+  - The parking card reuses `contactAction`.
+- **Reminder details (ADR-302):**
+  - `EKReminder.priority` is an `Int`.
+  - `eventStore.calendar(withIdentifier:)` and `calendars(for: .reminder)`.
+  - The `case .changeReminder(...) where draft.changesDetails` pattern comes before the general case.
+- **Weekly look-back (ADR-306):**
+  - the `weekday` in `UNCalendarNotificationTrigger` components;
+  - `Calendar.current.weekdaySymbols` in a `Picker`;
+  - `ForEach(week.doneByApp.indices, id: \.self)`.
+- **Currency (ADR-300):** `ExchangeRateClient` is an `actor` with a nonisolated `URLSession` delegate class. Same pattern as `AppHTTPTransport`, so low risk.
+
+### Round 5 (2026-10-11, ADR-310 to ADR-312, ADR-314 to ADR-318): most likely to need a fix
+**First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
+- **Share extension (ADR-311):** a new target, so XcodeGen must embed it.
+  - `ShareModel.extract(_ items: sending [NSExtensionItem])` is `nonisolated` and is called from `Task.detached`, because item providers aren't Sendable. Swift 6 region checks may still object; the fallback is to load the strings inside `viewDidLoad` with completion handlers.
+  - `NSItemProvider.loadItem(forTypeIdentifier:)` with `async` and `as? URL` / `as? String`.
+  - `Config/DoddyShare-Info.plist`'s `NSExtensionPrincipalClass` is `$(PRODUCT_MODULE_NAME).ShareViewController`.
+  - The App Group is now on by default (owner, 2026-10-11). Signing needs the team chosen for every target, and the group registered (automatic signing does it). If a simulator `xcodebuild test` without a team refuses the entitlements, run it with the four `DODDY_*_ENTITLEMENTS` set to `""`.
+- **Focus filter (ADR-312):**
+  - `SetFocusFilterIntent` with `static var description: IntentDescription?`;
+  - `@Parameter(default: false)` on a `Bool`;
+  - an optional `DoddyListEntity` parameter.
+  - `FocusFilterState` is `@MainActor`, and `perform()` awaits it.
+- **App lock (ADR-310):**
+  - `LAContext.evaluatePolicy` async;
+  - the `.overlay` in `RootView`;
+  - `@Observable` `AppLock.shared` read inside `MemoryDetailView`, `FindMemoriesView` and `MemoriesView`.
+- **Memo to-dos (ADR-318):**
+  - `MemoTodosCard` uses `Picker` with `Optional(list.id)` tags and `store.createList(name:items:source:)`;
+  - `String(format:)` with `%lld` and an `Int`.
+- **Parking widget (ADR-315):**
+  - `RootView` gains `@Environment(\.openURL)`, used in `onOpenURL` for `doddy://parking`;
+  - the widget's `Text(_, format: .dateTime.weekday(.abbreviated).hour().minute())`.
+- **Reminder rename/repeat (ADR-314):**
+  - `EKReminder.recurrenceRules` set and cleared;
+  - `EKEvent.notes` replaced, with a stale check before the save.
+
+
+### Round 6 (2026-10-11, ADR-330, ADR-332 to ADR-339): most likely to need a fix
+**First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
+- **iPad (ADR-337):**
+  - `TARGETED_DEVICE_FAMILY "1,2"` on the app, widget and share extension. Check that the Live Activities, AlarmKit and watch parts still build for iPad (they run only where iOS allows them).
+  - `UIDevice.current.userInterfaceIdiom` is read in `DeviceSupport` (`@MainActor`).
+- **Leave-by (ADR-335):**
+  - `MKDirections.calculateETA()` async with `arrivalDate`;
+  - `UNCalendarNotificationTrigger(dateMatching:)`;
+  - the new `PendingAction.leaveBy` in every `switch` (Linux parsing can't prove they are exhaustive).
+- **Spotlight (ADR-330):**
+  - `CSSearchableIndex(name:protectionClass:)` and the delete-then-index completion handlers;
+  - `onContinueUserActivity(CSSearchableItemActionType)` in `RootView`.
+- **Quick actions (ADR-339):** the async `windowScene(_:performActionFor:)` on the existing scene delegate; `connectionOptions.shortcutItem` on cold launch.
+- **Memories tags (ADR-333):** `MemoryTagRow` with `ForEach(tags, id: \.tag)` over tuples.
+- **List templates (ADR-334):** `.swipeActions` inside a `Form` section in `NewListSheet`.

@@ -151,7 +151,8 @@ final class DeviceConnections {
               CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
             return (.unconfirmed, nil)
         }
-        return (.verified, identifier)
+        // Undo removes a single event only, so a repeating one isn't offered for undo.
+        return (.verified, draft.repeats == nil ? identifier : nil)
     }
 
     /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the
@@ -203,17 +204,20 @@ final class DeviceConnections {
         }
         // A new place (ADR-281) only if the place is still what the card showed.
         if plan.newLocation != nil, (event.location ?? "") != (plan.locationBefore ?? "") { return .changedElsewhere }
+        // Notes being replaced (ADR-314) must still be the ones the card showed.
+        if plan.replaceNotes != nil, (event.notes ?? "") != (plan.notesBefore ?? "") { return .changedElsewhere }
         var notes = event.notes
         if let line = plan.removeNote {
             guard let removed = EventChange.notes(event.notes, removing: line) else { return .changedElsewhere }
             notes = removed
         }
         if let line = plan.addNote { notes = EventChange.notes(notes, adding: line) }
+        if let text = plan.replaceNotes { notes = text.isEmpty ? nil : text }
         event.title = plan.after.title
         event.startDate = plan.after.start
         event.endDate = plan.after.end
         if let place = plan.newLocation { event.location = place.isEmpty ? nil : place }
-        if plan.addNote != nil || plan.removeNote != nil { event.notes = notes }
+        if plan.addNote != nil || plan.removeNote != nil || plan.replaceNotes != nil { event.notes = notes }
         try eventStore.save(event, span: .thisEvent)
         let itemID = event.calendarItemIdentifier
         let eventID = event.eventIdentifier
@@ -222,7 +226,7 @@ final class DeviceConnections {
                 && (found.title ?? "Untitled") == plan.after.title
                 && found.startDate == plan.after.start && found.endDate == plan.after.end
                 && (plan.newLocation.map { (found.location ?? "") == $0 } ?? true)
-                && (plan.addNote == nil && plan.removeNote == nil || (found.notes ?? "") == (notes ?? ""))
+                && (plan.addNote == nil && plan.removeNote == nil && plan.replaceNotes == nil || (found.notes ?? "") == (notes ?? ""))
         }
         return readBack ? .verified : .unconfirmed
     }
@@ -314,6 +318,13 @@ final class DeviceConnections {
         return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.location
     }
 
+    /// The event's notes, read on this iPhone for the card and the stale check (ADR-314). Never
+    /// sent to the voice agent.
+    func eventNotes(_ event: CalendarEventSummary) -> String? {
+        guard access(for: .calendar) == .granted else { return nil }
+        return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.notes
+    }
+
     private func rawEvents(from start: Date, to end: Date) -> [EKEvent] {
         let predicate = eventStore.predicateForEvents(withStart: start.addingTimeInterval(-60), end: end.addingTimeInterval(60), calendars: nil)
         return eventStore.events(matching: predicate)
@@ -396,11 +407,26 @@ final class DeviceConnections {
             reminder.isCompleted = false
         case .due(let newDue):
             guard !reminder.isCompleted else { return .changedElsewhere }
-            let oldDate = before.due.flatMap { EventChange.moment($0, local: .current) }
-            reminder.dueDateComponents = newDue.map(Self.components)
-            let newDate = newDue.flatMap { EventChange.moment($0, local: .current) }
-            for alarm in reminder.alarms ?? [] where oldDate != nil && alarm.absoluteDate == oldDate {
-                if let newDate { alarm.absoluteDate = newDate } else { reminder.removeAlarm(alarm) }
+            moveDue(of: reminder, from: before.due, to: newDue)
+        case .details(let newDue, let details):
+            // ADR-302: the priority and list must also still be as the card showed them.
+            guard !reminder.isCompleted, ReminderPriority.from(eventKit: reminder.priority) == before.priority,
+                  before.listID == nil || reminder.calendar?.calendarIdentifier == before.listID else { return .changedElsewhere }
+            // ADR-314: notes being replaced must still be the ones the card showed.
+            if details.replaceNotes != nil, (reminder.notes ?? "") != (before.notes ?? "") { return .changedElsewhere }
+            if let newDue { moveDue(of: reminder, from: before.due, to: newDue) }
+            if let line = details.addNote { reminder.notes = EventChange.notes(reminder.notes, adding: line) }
+            if let text = details.replaceNotes { reminder.notes = text.isEmpty ? nil : text }
+            if let title = details.newTitle { reminder.title = title }
+            switch details.repeatChange {
+            case .set(let rule)?: reminder.recurrenceRules = [Self.rule(rule, calendar: .current)]
+            case .stop?: reminder.recurrenceRules = nil
+            case nil: break
+            }
+            if let priority = details.priority { reminder.priority = priority.eventKitValue }
+            if let list = details.toList {
+                guard let target = eventStore.calendar(withIdentifier: list.id), target.allowsContentModifications else { return .changedElsewhere }
+                reminder.calendar = target
             }
         }
         try eventStore.save(reminder, commit: true)
@@ -410,6 +436,18 @@ final class DeviceConnections {
         case .complete: return snapshot.isCompleted ? .verified : .unconfirmed
         case .reopen: return !snapshot.isCompleted ? .verified : .unconfirmed
         case .due(let newDue): return !snapshot.isCompleted && EventChange.sameDue(snapshot.due, newDue) ? .verified : .unconfirmed
+        case .details(let newDue, let details):
+            return ReminderDetails.confirms(snapshot, notes: back.notes, change: details, newDue: newDue) ? .verified : .unconfirmed
+        }
+    }
+
+    /// A new due; an alarm set for the old due moves with it, or goes when the due is cleared.
+    private func moveDue(of reminder: EKReminder, from oldDue: ReminderDue?, to newDue: ReminderDue?) {
+        let oldDate = oldDue.flatMap { EventChange.moment($0, local: .current) }
+        reminder.dueDateComponents = newDue.map(Self.components)
+        let newDate = newDue.flatMap { EventChange.moment($0, local: .current) }
+        for alarm in reminder.alarms ?? [] where oldDate != nil && alarm.absoluteDate == oldDate {
+            if let newDate { alarm.absoluteDate = newDate } else { reminder.removeAlarm(alarm) }
         }
     }
 
@@ -469,7 +507,18 @@ final class DeviceConnections {
             due: due,
             markerURL: reminder.url?.absoluteString,
             isCompleted: reminder.isCompleted,
-            repeats: readRepeat(reminder.recurrenceRules, calendar: .current))
+            repeats: readRepeat(reminder.recurrenceRules, calendar: .current),
+            priority: ReminderPriority.from(eventKit: reminder.priority),
+            listID: reminder.calendar?.calendarIdentifier,
+            notes: reminder.notes)
+    }
+
+    /// The Reminders lists Doddy may move a reminder to (ADR-302): names and identifiers only.
+    func reminderLists() -> [ReminderListRef] {
+        guard access(for: .reminders) == .granted else { return [] }
+        return eventStore.calendars(for: .reminder)
+            .filter(\.allowsContentModifications)
+            .map { ReminderListRef(id: $0.calendarIdentifier, title: $0.title) }
     }
 
     /// Incomplete reminders due by `end` (overdue included), for Home → Today. Title and due

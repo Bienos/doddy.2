@@ -313,6 +313,44 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertNil(OpenLinks.email(address: "marta @example.com", body: "Hej"))
     }
 
+    func testCameraShortcutAcceptsOnlyAnICloudShortcutLink() {
+        let id = "0123456789abcdef0123456789abcdef"
+        XCTAssertEqual(CameraShortcut.installLink(from: " https://www.icloud.com/shortcuts/\(id)\n")?.absoluteString,
+                       "https://www.icloud.com/shortcuts/\(id)")
+        XCTAssertNil(CameraShortcut.installLink(from: "http://www.icloud.com/shortcuts/\(id)"))
+        XCTAssertNil(CameraShortcut.installLink(from: "https://icloud.com.evil.example/shortcuts/\(id)"))
+        XCTAssertNil(CameraShortcut.installLink(from: "https://www.icloud.com/photos/\(id)"))
+        XCTAssertNil(CameraShortcut.installLink(from: "https://www.icloud.com/shortcuts/\(id)?x=1"))
+        XCTAssertNil(CameraShortcut.installLink(from: "https://www.icloud.com/shortcuts/not-a-shortcut-id"))
+        XCTAssertNil(CameraShortcut.installLink(from: "https://www.icloud.com/shortcuts/\(id)/more"))
+        XCTAssertNil(CameraShortcut.installLink(from: ""))
+    }
+
+    func testOnlyTheCameraShortcutGetsTheCameraHelp() {
+        XCTAssertTrue(CameraShortcut.isCamera("Doddy Camera"))
+        XCTAssertTrue(CameraShortcut.isCamera(" doddy camera\n"))
+        XCTAssertFalse(CameraShortcut.isCamera("Morning routine"))
+        XCTAssertFalse(CameraShortcut.isCamera("Doddy Camera 2"))
+        XCTAssertFalse(CameraShortcut.isCamera(""))
+    }
+
+    func testCameraShortcutMatchesTheAgentSpecAndAnySharedLinkIsValid() throws {
+        XCTAssertEqual(OpenLinks.shortcut(name: CameraShortcut.name)?.absoluteString,
+                       "shortcuts://run-shortcut?name=Doddy%20Camera")
+        if let link = CameraShortcut.installLink {
+            XCTAssertEqual(CameraShortcut.installLink(from: link.absoluteString), link)
+        }
+        // The agent is told this exact name; a rename on one side only would break "open camera".
+        let root = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("voice-agent")
+        for file in ["instructions.md", "tools.json"] {
+            let text = try String(contentsOf: root.appendingPathComponent(file), encoding: .utf8)
+            XCTAssertTrue(text.contains(CameraShortcut.name), "\(file) must name the \(CameraShortcut.name) Shortcut")
+        }
+    }
+
     func testConnectionServesItsTools() {
         XCTAssertEqual(VoiceConnection.serving("read_calendar"), .calendar)
         XCTAssertEqual(VoiceConnection.serving("create_calendar_event"), .calendar)

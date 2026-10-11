@@ -49,5 +49,26 @@ for name in $("$work/island-check" --pose-assets); do
         done
     done
 done
+for name in $("$work/island-check" --talking-assets); do
+    for file in Contents.json art@2x.png art@3x.png; do
+        if [ ! -f "DoddyApp/Resources/Assets.xcassets/$name.imageset/$file" ]; then
+            echo "FAIL: DoddyApp/Resources/Assets.xcassets/$name.imageset/$file is missing"; missing=1
+        fi
+    done
+done
+# The watch app's two poses (ADR-323), in its own catalog.
+for name in WatchDoddy_crosslegged WatchDoddy_fistpump WatchDoddy_turned_away; do
+    for file in Contents.json art@2x.png; do
+        if [ ! -f "DoddyWatch/Assets.xcassets/$name.imageset/$file" ]; then
+            echo "FAIL: DoddyWatch/Assets.xcassets/$name.imageset/$file is missing"; missing=1
+        fi
+    done
+done
+# The Lock Screen widget's face (ADR-313), widget catalog only.
+for file in Contents.json art@2x.png art@3x.png; do
+    if [ ! -f "DoddyWidgets/Assets.xcassets/WidgetDoddy_face.imageset/$file" ]; then
+        echo "FAIL: DoddyWidgets/Assets.xcassets/WidgetDoddy_face.imageset/$file is missing"; missing=1
+    fi
+done
 [ "$missing" -eq 0 ] || exit 1
 "$work/island-check" "$@"

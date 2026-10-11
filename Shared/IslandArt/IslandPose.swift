@@ -1,6 +1,7 @@
 import Foundation
 
-/// "Whole Doddy" (ADR-264): Doddy's whole body on the voice island, one pose per state. The
+/// "Whole Doddy" (ADR-264): Doddy's whole body on the voice island, one pose per state (and on
+/// the read-aloud island, the Lock Screen card and the voice screen, ADR-299). The
 /// poses are the owner's DODDY-Numbered-Video-Assets-v01 pack (01-transparent-poses), as
 /// downscaled copies in the image sets `WholeDoddy_<rawValue>` of the app and widget catalogs
 /// (docs/design/UPLOADED_MEMORY_ASSETS.md). Each picture is 2:3 with transparent edges.
@@ -10,6 +11,17 @@ enum IslandPose: String, CaseIterable, Sendable {
     /// The greeting (ADR-290): frame 4 of the pack's wave strip, cut out by
     /// tools/whole_doddy/cut_wave.py (the only pose not from 01-transparent-poses).
     case wave
+    /// Reading a note aloud (ADR-299): lying on his front with a book.
+    case bellyReading = "belly_reading"
+    /// The focus timer (ADR-313): dribbling, busy with one thing.
+    case basketballDribble = "basketball_dribble"
+    /// Breathing (ADR-313): balancing on one leg.
+    case onelegBalance = "oneleg_balance"
+    /// "Pause all connections" is on (ADR-323): crouching, lying low.
+    case sneakyCrouch = "sneaky_crouch"
+    /// Notes hidden from widgets or the watch (ADR-331): turned away, not looking. Frame 5 of
+    /// the pack's turn strip (018), cut like the other strip frames.
+    case turnedAway = "turned_away"
 
     var assetName: String { "WholeDoddy_\(rawValue)" }
 
@@ -30,6 +42,11 @@ enum IslandPose: String, CaseIterable, Sendable {
         case .fistpump: (100, 49, 346, 562)
         case .tiptoe: (26, 78, 374, 529)
         case .wave: (58, 100, 341, 548)
+        case .bellyReading: (17, 196, 384, 413)
+        case .basketballDribble: (34, 83, 375, 467)
+        case .onelegBalance: (10, 78, 389, 531)
+        case .sneakyCrouch: (77, 89, 338, 524)
+        case .turnedAway: (112, 118, 287, 564)
         }
         return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
     }
@@ -56,4 +73,136 @@ enum IslandPose: String, CaseIterable, Sendable {
         default: nil
         }
     }
+}
+
+/// What the in-app voice screen draws (ADR-299): the island's pose for the same moment, except
+/// while Doddy speaks, when the six frames of the pack's talking strip (020) play in turn.
+/// Kept here, beside the poses, so the mapping is checked on any machine with Swift.
+enum VoiceScreenArt: Hashable, Sendable {
+    case pose(IslandPose)
+    case talking
+    /// A looping strip (ADR-313): walking while connecting, running while a plan runs.
+    case motion(DoddyMotion)
+
+    /// The voice screen's phases, without the app's controller.
+    enum Phase: Sendable {
+        case connecting, listening, thinking, speaking, ended, microphoneOff, failed
+    }
+
+    /// One pose means one thing, as on the island: a failure is the facepalm, "can't hear you"
+    /// (muted or no microphone) the shush, a card waiting for your tap the reach, the end the
+    /// fist pump.
+    /// In the app Doddy can move, so getting there is a walk (the island, which can't animate,
+    /// keeps the stretch) and a running plan is a run (ADR-313).
+    static func shown(_ phase: Phase, muted: Bool, awaitingConfirmation: Bool, planRunning: Bool = false) -> VoiceScreenArt {
+        switch phase {
+        case .failed: return .pose(.facepalm)
+        case .microphoneOff: return .pose(.shush)
+        case .ended: return .pose(.fistpump)
+        default: break
+        }
+        if muted { return .pose(.shush) }
+        if awaitingConfirmation { return .pose(.reachingHigh) }
+        switch phase {
+        case .connecting: return .motion(.walk)
+        case .speaking: return .talking
+        default: break
+        }
+        // Between his lines, while the steps of a plan run.
+        if planRunning { return .motion(.run) }
+        return phase == .thinking ? .pose(.kneelingInspect) : .pose(.listening)
+    }
+
+    static let talkingFrameCount = 6
+    /// Seconds each talking frame shows.
+    static let talkingFrameDuration = 0.18
+    /// One box for all six frames (the union of their figures at 400 × 600), so he stays put.
+    static let talkingFigure = IslandRect(x: 36.0 / 400, y: 99.0 / 600, width: 332.0 / 400, height: 449.0 / 600)
+
+    /// `VoiceDoddy_talking_1` ... `_6`, cut from the strip by tools/whole_doddy/cut_frames.py.
+    static func talkingAssetName(_ frame: Int) -> String { "VoiceDoddy_talking_\(frame)" }
+
+    /// The frame (1 ... 6) shown at a moment, looping.
+    static func talkingFrame(at seconds: TimeInterval) -> Int {
+        let step = Int((max(0, seconds) / talkingFrameDuration).rounded(.down))
+        return step % talkingFrameCount + 1
+    }
+}
+
+/// Doddy moving (ADR-313): strips from the owner's pack, cut by tools/whole_doddy/cut_frames.py
+/// --shared, so every frame has the same scale and ground. Image sets `DoddyMotion_<strip>_<n>`
+/// in the app catalog. A strip either loops or plays once and stays on its last frame.
+enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
+    /// 012: eight steps, looping. The voice screen while connecting.
+    case walk
+    /// 014: six strides, looping. The voice screen while a plan runs.
+    case run
+    /// 015: crouch, jump, land, stand. Once, when the last thing on a list is ticked.
+    case jump
+    /// 018, frames 1–3: Doddy turns side-on. Once when an entry is undone in What Doddy did
+    /// (ADR-323); otherwise its last frame stands still as the "undone" mark.
+    case turn
+    /// 019: a burst, a star jump, a crouch, a wave. Once, when a note is saved.
+    case pop
+    /// 013: four breaths, standing. Once on Home, then he sits.
+    case idle
+    /// 017: he sits down on a box (ADR-323). Once on Home after the idle breaths; then he stays
+    /// on the box for that launch.
+    case sit
+
+    /// The frames the app ships, in order.
+    var frames: [Int] {
+        switch self {
+        case .walk: Array(1...8)
+        case .run: Array(1...6)
+        case .jump: Array(1...5)
+        case .turn: Array(1...3)
+        case .pop: Array(1...4)
+        case .idle: Array(1...4)
+        case .sit: Array(1...5)
+        }
+    }
+
+    var loops: Bool { self == .walk || self == .run }
+
+    /// Seconds per frame.
+    var frameDuration: Double {
+        switch self {
+        case .walk: 0.12
+        case .run: 0.09
+        case .jump, .pop: 0.12
+        case .turn: 0.16
+        case .idle: 0.3
+        case .sit: 0.22
+        }
+    }
+
+    /// Seconds a once-only strip takes before it rests on its last frame.
+    var duration: Double { Double(frames.count) * frameDuration }
+
+    func assetName(_ frame: Int) -> String { "DoddyMotion_\(rawValue)_\(frame)" }
+
+    /// One box for all of a strip's frames (their union at 400 × 600), so he doesn't jump.
+    var figure: IslandRect {
+        let box: (Double, Double, Double, Double) = switch self {
+        case .walk: (75, 123, 325, 564)
+        case .run: (38, 144, 361, 564)
+        case .jump: (40, 117, 359, 564)
+        case .turn: (103, 115, 298, 564)
+        case .pop: (34, 142, 365, 579)
+        case .idle: (97, 112, 303, 564)
+        case .sit: (37, 123, 362, 564)
+        }
+        return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
+    }
+
+    /// The frame shown `seconds` after the strip started: looping, or held on the last frame.
+    /// With Reduce Motion the app shows `stillFrame` instead.
+    func frame(at seconds: TimeInterval) -> Int {
+        let step = Int((max(0, seconds) / frameDuration).rounded(.down))
+        return loops ? frames[step % frames.count] : frames[min(step, frames.count - 1)]
+    }
+
+    /// The one frame shown with Reduce Motion: where a once-only strip ends, a loop's first.
+    var stillFrame: Int { loops ? frames[0] : frames[frames.count - 1] }
 }

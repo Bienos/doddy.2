@@ -268,6 +268,76 @@ enum IslandSceneChecks {
         return failures
     }
 
+    /// The voice screen's Doddy (ADR-299): the island's pose for the same moment, talking frames
+    /// while he speaks.
+    static func voiceScreen() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: voice screen: \(message)"); failures += 1 }
+        }
+        func art(_ phase: VoiceScreenArt.Phase, muted: Bool = false, waiting: Bool = false, plan: Bool = false) -> VoiceScreenArt {
+            VoiceScreenArt.shown(phase, muted: muted, awaitingConfirmation: waiting, planRunning: plan)
+        }
+        // In the app he walks in while connecting and runs while a plan's steps run (ADR-313).
+        expect(art(.connecting) == .motion(.walk), "connecting walks")
+        expect(art(.listening, plan: true) == .motion(.run), "a plan runs")
+        expect(art(.thinking, plan: true) == .motion(.run), "a plan runs while thinking")
+        expect(art(.speaking, plan: true) == .talking, "talking beats running")
+        expect(art(.listening, waiting: true, plan: true) == .pose(.reachingHigh), "a card waiting beats running")
+        expect(art(.connecting, plan: true) == .motion(.walk), "connecting before any plan")
+        expect(art(.listening) == .pose(.listening), "listening")
+        expect(art(.thinking) == .pose(.kneelingInspect), "thinking")
+        expect(art(.speaking) == .talking, "speaking talks")
+        expect(art(.speaking, muted: true) == .pose(.shush), "muted")
+        expect(art(.listening, waiting: true) == .pose(.reachingHigh), "a card waits for a tap")
+        expect(art(.ended, waiting: true) == .pose(.fistpump), "ended")
+        expect(art(.failed, muted: true) == .pose(.facepalm), "failed beats muted")
+        expect(art(.microphoneOff) == .pose(.shush), "no microphone")
+        // The same poses as the island for the same moments (ADR-264).
+        let pairs: [(VoiceScreenArt.Phase, State.Status)] = [(.listening, .listening), (.thinking, .thinking)]
+        for (phase, status) in pairs {
+            let island = State(status: status, isMuted: false).wholeDoddyPose(stale: false)
+            expect(art(phase) == .pose(island ?? .wave), "\(phase) matches the island")
+        }
+        // Frames loop 1...6 and every frame shows for the same time.
+        let d = VoiceScreenArt.talkingFrameDuration
+        let frames = (0..<13).map { VoiceScreenArt.talkingFrame(at: Double($0) * d + d / 2) }
+        expect(frames == [1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6, 1], "frames loop: \(frames)")
+        expect(VoiceScreenArt.talkingFrame(at: -5) == 1, "a time before zero")
+        let box = VoiceScreenArt.talkingFigure
+        expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= 1 && box.y + box.height <= 1, "talking box")
+        failures += motions()
+        return failures
+    }
+
+    /// The strips (ADR-313): loops loop, once-only strips rest on their last frame, every box fits.
+    static func motions() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: motion: \(message)"); failures += 1 }
+        }
+        let walk = DoddyMotion.walk, d = walk.frameDuration
+        expect((0..<17).map { walk.frame(at: Double($0) * d + d / 2) } == Array(1...8) + Array(1...8) + [1], "walk loops")
+        let pop = DoddyMotion.pop
+        expect(pop.frame(at: 0) == 1 && pop.frame(at: pop.duration + 5) == 4, "pop plays once and rests on frame 4")
+        expect(DoddyMotion.jump.frame(at: 100) == 5 && DoddyMotion.jump.stillFrame == 5, "jump ends standing")
+        expect(DoddyMotion.run.stillFrame == 1 && DoddyMotion.walk.stillFrame == 1, "a loop's still is its first frame")
+        expect(DoddyMotion.turn.frames == [1, 2, 3] && DoddyMotion.turn.frame(at: 9) == 3 && DoddyMotion.turn.stillFrame == 3,
+               "turn plays 1-3 once and rests turned (ADR-323)")
+        expect(DoddyMotion.sit.frame(at: 0) == 1 && DoddyMotion.sit.frame(at: 9) == 5 && DoddyMotion.sit.stillFrame == 5,
+               "sit ends seated on the box")
+        expect(DoddyMotion.sit.figure.y + DoddyMotion.sit.figure.height == DoddyMotion.idle.figure.y + DoddyMotion.idle.figure.height,
+               "sit and idle stand on the same floor")
+        expect(DoddyMotion.idle.frame(at: -1) == 1, "a time before zero")
+        expect(DoddyMotion.allCases.filter(\.loops) == [.walk, .run], "only walk and run loop")
+        for m in DoddyMotion.allCases {
+            let b = m.figure
+            expect(b.x >= 0 && b.y >= 0 && b.x + b.width <= 1 && b.y + b.height <= 1 && b.height > 0.5, "\(m) box")
+            expect(m.duration < 3, "\(m) is short")
+        }
+        return failures
+    }
+
     static func tools() -> Int {
         var failures = 0
         func expect(_ ok: Bool, _ message: String) {
@@ -299,6 +369,42 @@ enum IslandSceneChecks {
         expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).compactSign == .bars, "reading")
         let lost = read.islandScene(.init(isPaused: false), isStale: true, now: now)
         expect(!lost.live && lost.subtitleIsWarning, "read aloud lost")
+        // Whole Doddy reads lying on his front (ADR-299); other styles and older builds keep the board.
+        func readPose(_ state: DoddyToolAttributes.ContentState, stale: Bool = false) -> IslandPose? {
+            var s = state
+            s.islandStyle = .wholeDoddy
+            return read.islandScene(s, isStale: stale, now: now).pose
+        }
+        expect(readPose(.init(isPaused: false)) == .bellyReading, "whole doddy reads")
+        expect(readPose(.init(isPaused: true)) == .crosslegged, "whole doddy paused")
+        expect(readPose(.init(isPaused: false, isFinished: true)) == .fistpump, "whole doddy finished reading")
+        expect(readPose(.init(isPaused: false), stale: true) == .facepalm, "whole doddy lost")
+        expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).pose == nil, "no style, no pose")
+        var leanIn = DoddyToolAttributes.ContentState(isPaused: false)
+        leanIn.islandStyle = .leanIn
+        expect(read.islandScene(leanIn, isStale: false, now: now).pose == nil, "lean in keeps the board")
+        // Focus dribbles and breathing balances (ADR-313); paused waits, done is the fist pump.
+        let wholeFocus = { (s: DoddyToolAttributes.ContentState, stale: Bool) in
+            var s = s
+            s.islandStyle = .wholeDoddy
+            return focus.islandScene(s, isStale: stale, now: now).pose
+        }
+        expect(wholeFocus(.init(isPaused: false, endsAt: end), false) == .basketballDribble, "focus dribbles")
+        expect(wholeFocus(.init(isPaused: true, endsAt: nil, remaining: 300), false) == .crosslegged, "focus paused")
+        expect(wholeFocus(.init(isPaused: false, endsAt: end), true) == .fistpump, "focus time up")
+        var breathe = DoddyToolAttributes.ContentState(isPaused: false, endsAt: end)
+        breathe.islandStyle = .wholeDoddy
+        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .onelegBalance, "breathing balances")
+        breathe.isFinished = true
+        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .fistpump, "breathing done")
+        expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).pose == nil,
+               "focus without a style keeps its board")
+        expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).board == .tinyPromise,
+               "focus board unchanged")
+        // Content from an older build (no style) still decodes.
+        let old = Data(#"{"isPaused":false,"remaining":0,"isFinished":false}"#.utf8)
+        let decoded = try? JSONDecoder().decode(DoddyToolAttributes.ContentState.self, from: old)
+        expect(decoded != nil && decoded?.islandStyle == nil, "older content decodes")
         expect(DoddyToolAttributes.clock(3725) == "1:02:05" && DoddyToolAttributes.clock(59.2) == "1:00", "clock")
         return failures
     }

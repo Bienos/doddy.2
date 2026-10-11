@@ -64,6 +64,8 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         content.threadIdentifier = Self.threadID
         content.interruptionLevel = .active
         content.userInfo = [Self.memoryIDKey: notification.memoryID.uuidString]
+        // Doddy reaching for it (ADR-313), the pose for a reminder waiting; no extra words.
+        if let art = NotificationArt.attachment(.reachingHigh) { content.attachments = [art] }
 
         switch notification.category {
         case .once: content.categoryIdentifier = Self.categoryID
@@ -168,6 +170,13 @@ extension TimerBanners {
         }
         // A birthday (ADR-288) just opens Doddy; nothing else happens.
         if Birthdays.isBirthday(notificationID: requestID) { return }
+        // The weekly look-back (ADR-306) opens its screen.
+        if WeeklyLookBack.isLookBack(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.weeklyLookBackOpened() }
+            }
+            return
+        }
         // The evening wrap-up (ADR-261) opens its screen; nothing moves until the user taps.
         if EveningWrapUp.isWrapUp(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

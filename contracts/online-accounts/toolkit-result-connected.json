@@ -2,7 +2,7 @@
   "toolkit": {
     "id": "gmail",
     "title": "Gmail",
-    "access": "Doddy can list your recent emails (sender, subject, a short preview) and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+    "access": "Doddy can list your recent emails (sender, subject, a short preview), read one email aloud when you ask (the newest that matches), and create drafts, including a reply in an email's own conversation (to its sender), after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
     "needsAccount": true,
     "status": "connected",
     "reason": null,
@@ -12,7 +12,14 @@
       {
         "name": "check_email",
         "title": "Check my email",
-        "blurb": "Lists your newest emails: sender, subject and a short preview. Doddy doesn't open full messages.",
+        "blurb": "Lists your newest emails: sender, subject and a short preview. It doesn't open full messages.",
+        "risk": "read",
+        "enabled": false
+      },
+      {
+        "name": "read_email",
+        "title": "Read an email",
+        "blurb": "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.",
         "risk": "read",
         "enabled": false
       },
@@ -22,11 +29,18 @@
         "blurb": "Creates a draft in Gmail after you tap Create on the card. Doddy never sends it.",
         "risk": "write",
         "enabled": false
+      },
+      {
+        "name": "draft_email_reply",
+        "title": "Draft a reply",
+        "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
       }
     ]
   },
   "receipt": {
-    "operationId": "c90cb4f4-db96-420c-a888-c389039d8ee7",
+    "operationId": "919a7ff5-021a-4f4f-92f7-43de9e1d1837",
     "operation": "connect",
     "toolkit": "gmail",
     "tool": null,

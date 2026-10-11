@@ -15,6 +15,8 @@ struct ActivityView: View {
     @State private var undoing: Set<UUID> = []
     /// The entry whose Undo sheet is showing.
     @State private var confirmUndo: ActivityEntry?
+    /// Entries undone while this screen is open: Doddy turns back once for these (ADR-323).
+    @State private var justUndone: Set<UUID> = []
 
     private var days: [(day: Date, items: [ActivityItem])] {
         let calendar = Calendar.current
@@ -36,8 +38,12 @@ struct ActivityView: View {
             }
             if activity.entries.isEmpty {
                 Section {
-                    Text("Nothing yet. When Doddy looks something up or adds something for you, it shows here.")
-                        .foregroundStyle(Theme.secondaryText)
+                    HStack(spacing: 14) {
+                        // Nothing yet: he waits, cross-legged (ADR-313).
+                        WholeDoddyView(pose: .crosslegged, height: 80)
+                        Text("Nothing yet. When Doddy looks something up or adds something for you, it shows here.")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
                 }
             }
             ForEach(days, id: \.day) { group in
@@ -98,9 +104,16 @@ struct ActivityView: View {
             if let detail = entry.detail {
                 Text(detail).font(.subheadline)
             }
-            Text(entry.statusText(.current))
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(entry.undoState == nil ? color(entry.outcome) : Theme.secondaryText)
+            HStack(spacing: 6) {
+                // Undone (ADR-313): Doddy turned back. He turns once when it was undone just now
+                // (ADR-323); otherwise only the turned-back frame shows.
+                if case .undone? = entry.undoState {
+                    DoddyMotionView(motion: .turn, height: 28, playing: justUndone.contains(entry.id))
+                }
+                Text(entry.statusText(.current))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(entry.undoState == nil ? color(entry.outcome) : Theme.secondaryText)
+            }
             if let note = entry.note(.current) {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
             }
@@ -172,15 +185,22 @@ struct ActivityView: View {
             pauseAll: defaults.bool(forKey: ConnectionPause.preferenceKey),
             connectionOn: undo.connection.map { defaults.bool(forKey: $0.preferenceKey) } ?? true) {
             result = .notDone(reason)
-        } else if undo.listID != nil {
-            // Lists are Doddy's own (ADR-276): the store reverses and reads them back.
+        } else if undo.connection == nil {
+            // Lists and notes are Doddy's own (ADR-276, ADR-277): the store reverses and reads them back.
             result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)
         }
         // The entry as it is now, in case it changed while Undo ran.
         let current = activity.entries.first { $0.id == entry.id } ?? entry
-        activity.replace(ActivityLog.undid(current, result: result, at: Date()))
+        let undone = ActivityLog.undid(current, result: result, at: Date())
+        activity.replace(undone)
+        if case .undone? = undone.undoState {
+            // He turns once; a row redrawn later shows the turned frame still.
+            justUndone.insert(entry.id)
+            try? await Task.sleep(for: .seconds(DoddyMotion.turn.duration + 0.5))
+            justUndone.remove(entry.id)
+        }
     }
 
     private func color(_ outcome: ActivityOutcome) -> Color {

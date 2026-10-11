@@ -18,8 +18,9 @@ extension ActivityApp {
         case .maps: return "Mapy"
         case .shortcuts: return "Skróty"
         case .messages: return "Wiadomości i e-mail"
-        case .gmail, .drive, .notion, .todoist: return title
+        case .gmail, .drive, .notion, .todoist, .outlook: return title
         case .web: return "Wyszukiwanie w sieci"
+        case .exchangeRates: return "Kursy walut"
         }
     }
 }
@@ -46,6 +47,8 @@ public enum ActivityText {
         "Searched your notes": "Przeszukano notatki",
         "Save a note": "Zapisz notatkę",
         "Read your calendar": "Odczytano kalendarz",
+        "Looked for free time": "Szukano wolnego czasu",
+        "Remind when to leave": "Przypomnij, kiedy wyjść",
         "Add event": "Dodaj wydarzenie",
         "Add reminder": "Dodaj przypomnienie",
         "Remind about a note": "Przypomnij o notatce",
@@ -76,6 +79,23 @@ public enum ActivityText {
         "Delete event": "Usuń wydarzenie",
         "Delete reminder": "Usuń przypomnienie",
         "Set alarm": "Ustaw budzik",
+        // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
+        "Read alarms": "Odczytano budziki",
+        "Turn off alarm": "Wyłącz budzik",
+        "Delete events": "Usuń wydarzenia",
+        "Move reminders": "Przenieś przypomnienia",
+        // Round 4 (ADR-300 onwards).
+        "Converted currency": "Przeliczono walutę",
+        "Save parking spot": "Zapisz miejsce parkowania",
+        "Found parking spot": "Odczytano miejsce parkowania",
+        "Clear parking spot": "Usuń miejsce parkowania",
+        "Read an email": "Przeczytano e-mail",
+        "Complete a task": "Ukończ zadanie",
+        "Move a task": "Przesuń zadanie",
+        "Add ingredients to a list": "Dodaj składniki do listy",
+        // Round 5.
+        "Create a reply draft": "Utwórz szkic odpowiedzi",
+        "Read a Notion page": "Odczytano stronę Notion",
     ]
 
     /// Doddy's own fixed notes, in Polish. Built from the same text the app writes, so they match.
@@ -88,12 +108,13 @@ public enum ActivityText {
             "Found in Reminders when you checked.": "Znalezione w Przypomnieniach przy sprawdzaniu.",
             "Not in Reminders when you checked. You can ask Doddy again.": "Nie było w Przypomnieniach przy sprawdzaniu. Możesz poprosić Doddy’ego ponownie.",
             "The conversation ended before you answered.": "Rozmowa skończyła się przed Twoją odpowiedzią.",
+            ActivityLog.partlyNote: "Zmieniono tylko część z nich.",
         ]
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
         }
         // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders or the list (ADR-276).
-        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę")]
+        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę"), ("your notes", "w notatkach", "notatki")]
         for (place, locative, accusative) in places {
             notes["You undid this. Checked in \(place)."] = "Cofnięto. Sprawdzone \(locative)."
             notes["Not undone: it changed in \(place) since Doddy did this, so Doddy left it alone."] =

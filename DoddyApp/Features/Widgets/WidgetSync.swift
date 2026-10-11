@@ -24,29 +24,40 @@ final class WidgetSync {
         UserDefaults.standard.object(forKey: PreferenceKey.widgetsShowContent) as? Bool ?? true
     }
 
+    /// "Hide character artwork" (ADR-331): passed on so widgets and the watch hide Doddy too.
+    static var hidesDoddy: Bool {
+        UserDefaults.standard.bool(forKey: PreferenceKey.hideCharacterArt)
+    }
+
     func refresh(now: Date = .now) {
         guard let store, store.hasLoaded else { return }
+        // iPhone search (ADR-330) follows the same changes, when switched on.
+        SpotlightSync.shared.store = store
+        SpotlightSync.shared.refresh()
         // Shopping mode (ADR-257) follows the same changes, ticks from the Lock Screen included.
         ShoppingModeController.shared.refresh()
         // Shared lists (ADR-263) send a local change to iCloud.
         SharedListsController.shared.listsChanged()
+        // Private notes (ADR-310) never appear on widgets or the watch.
+        let shareable = PrivateNotesStore.current().shareable(store.memories)
         let snapshot = WidgetSnapshot.make(
-            memories: store.memories, lists: store.lists,
+            memories: shareable, lists: store.lists,
             pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
             reminders: reminders?.reminders ?? [],
             showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
-            isOn: Self.isOn, now: now)
+            isOn: Self.isOn, now: now, parking: ParkingStore.current(), hidesDoddy: Self.hidesDoddy)
         // The Apple Watch gets the same content, under its own switch (ADR-232).
         PhoneWatchLink.shared.send(WidgetSnapshot.make(
-            memories: store.memories, lists: store.lists,
+            memories: shareable, lists: store.lists,
             pinned: PinnedNotes(stored: UserDefaults.standard.string(forKey: PreferenceKey.pinnedNotes)),
             reminders: reminders?.reminders ?? [],
             showReminderText: UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications),
-            isOn: true, now: now))
+            isOn: true, now: now, hidesDoddy: Self.hidesDoddy))
         guard isAvailable else { return }
         // Same content as last time: no write, no widget reload (the time stamp alone isn't news).
         if let lastWritten, lastWritten.isOn == snapshot.isOn, lastWritten.pinned == snapshot.pinned,
-           lastWritten.reminders == snapshot.reminders, lastWritten.lists == snapshot.lists { return }
+           lastWritten.reminders == snapshot.reminders, lastWritten.lists == snapshot.lists,
+           lastWritten.parking == snapshot.parking, lastWritten.hidesDoddy == snapshot.hidesDoddy { return }
         do {
             try WidgetSnapshotFile.write(snapshot)
             lastWritten = snapshot
