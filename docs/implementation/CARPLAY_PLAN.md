@@ -41,9 +41,9 @@ The same ElevenLabs conversation as on the iPhone, with a **car profile** of too
 | Private notes (ADR-310) | Already never given to the voice agent. |
 | Translator, web search reading long results | Too much to listen to while driving. |
 
-**Owner decision needed:** is a spoken "yes" after Doddy reads the exact note back enough approval
-for a local, undoable save? We recommend yes for notes and list items only, and nothing that
-leaves the iPhone. If not, the car profile is read-only.
+**Owner decision (2026-10-11): yes.** A spoken "yes" after Doddy reads the exact note or list item
+back is enough approval for those two local, undoable saves. Nothing that leaves the iPhone, and
+nothing else that changes something, is allowed in the car.
 
 ## Work, once the entitlement is granted
 
