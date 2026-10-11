@@ -14,6 +14,24 @@ Authorization: Bearer <access code>
 → 500 {"error": "server_not_configured"} · 502/504 upstream errors
 ```
 
+### "Hey Doddy" key (ADR-328)
+
+So a tester can turn on "Hey Doddy" with one tap instead of making a Picovoice account, the app asks once
+for the owner's Picovoice AccessKey and keeps it in the iPhone's Keychain (Porcupine needs it on the phone):
+
+```
+POST /api/voice-token
+Authorization: Bearer <access code>
+Content-Type: application/json
+{"provider": "picovoice"}
+→ 200 {"accessKey": "…"}
+→ 401 {"error": "invalid_access_code"}
+→ 500 {"error": "server_not_configured"}  (no PICOVOICE_ACCESS_KEY)
+```
+
+It starts no paid conversation, so it isn't counted per hour. The key is never logged. Rotate it in the
+Picovoice Console if a phone or code is lost; phones then need "Hey Doddy" turned off and on again.
+
 ### OpenAI test voice (ADR-265)
 
 Home's test switch can run Doddy on OpenAI Realtime instead of ElevenLabs. The app then sends a body:
@@ -46,6 +64,7 @@ They never contain codes, tokens, keys, IP addresses or anything the user said.
 | `OPENAI_API_KEY` | Optional. Only for the OpenAI test voice. Put a monthly spending limit on its OpenAI project: this server has no counters |
 | `OPENAI_REALTIME_MODEL` | Optional, default `gpt-realtime`. Any Realtime model id OpenAI lists (e.g. `gpt-realtime-2.1`, `gpt-realtime-mini`) |
 | `OPENAI_REALTIME_VOICE` | Optional, default `marin` (OpenAI recommends `marin` or `cedar`) |
+| `PICOVOICE_ACCESS_KEY` | Optional. The owner's Picovoice AccessKey for one-tap "Hey Doddy" (ADR-328). Check the Picovoice plan's limits on active users and keyword-file expiry before giving it to testers |
 | `DODDY_ACCESS_CODES` | `label:code,label:code`. Codes must be ≥16 characters (shorter ones are ignored). Generate with `openssl rand -base64 24`. Remove an entry to revoke that tester |
 
 ## Deploy on Vercel (not done yet; needs the owner)

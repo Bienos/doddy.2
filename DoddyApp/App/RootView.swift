@@ -73,6 +73,11 @@ enum PreferenceKey {
     /// A voice conversation has really connected once on this iPhone (the provider said it is
     /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326).
     static let hadFirstConversation = "hadFirstConversation"
+    /// Voice conversations that really connected on this iPhone (the provider said Listening),
+    /// counted once each; only for when the Hey Doddy card may show (ADR-328).
+    static let connectedConversations = "connectedConversations"
+    /// The Home card offering "Hey Doddy" was answered (Turn on or Not now); it never shows again.
+    static let heyDoddyOfferDone = "heyDoddy.offerDone"
 }
 
 enum AppTab: Hashable {
