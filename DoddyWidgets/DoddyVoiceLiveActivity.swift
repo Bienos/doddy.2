@@ -230,12 +230,23 @@ private struct LockScreenView: View {
                 }
             }
             if shown.state.isEnded {
-                Link(destination: URL(string: "doddy://home")!) {
-                    Text("Open Doddy")
-                        .font(.callout.weight(.semibold))
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .foregroundStyle(Palette.ink)
-                        .background(Palette.secondary.opacity(0.15), in: Capsule())
+                // Open Doddy and Dismiss side by side, so the card can be cleared in one tap.
+                HStack(spacing: 10) {
+                    Link(destination: URL(string: "doddy://home")!) {
+                        Text("Open Doddy")
+                            .font(.callout.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundStyle(Palette.ink)
+                            .background(Palette.secondary.opacity(0.15), in: Capsule())
+                    }
+                    Button(intent: DismissDoddyEndedCardIntent()) {
+                        Label("Dismiss", systemImage: "xmark")
+                            .font(.callout.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundStyle(Palette.ink)
+                            .background(Palette.secondary.opacity(0.15), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
             } else {
                 Controls(shown: shown)

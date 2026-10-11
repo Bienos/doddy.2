@@ -67,6 +67,33 @@ struct EndDoddyConversationIntent: LiveActivityIntent {
     }
 }
 
+/// "Dismiss" on the "Conversation ended" card: removes it from the Lock Screen now instead of
+/// waiting out `VoiceLiveActivity.endedCardFor`. Touches only activities that already ended, so
+/// it can never cut off a live conversation or "Hey Doddy" listening.
+struct DismissDoddyEndedCardIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Dismiss Doddy's conversation card"
+    static let isDiscoverable = false
+
+    #if compiler(>=6.4)
+    /// See `EndDoddyConversationIntent.allowedExecutionTargets` (ADR-131).
+    @available(iOS 27.0, *)
+    static var allowedExecutionTargets: IntentExecutionTargets { .main }
+    #endif
+
+    init() {}
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        var dismissed = 0
+        for activity in Activity<DoddyVoiceAttributes>.activities where activity.content.state.isEnded {
+            await activity.end(nil, dismissalPolicy: .immediate)
+            dismissed += 1
+        }
+        IslandIntentLog.performed("DismissEndedCard", handled: dismissed > 0, leftoverActivitiesEnded: dismissed)
+        return .result()
+    }
+}
+
 /// "Mute" / "Unmute" in the Dynamic Island / Lock Screen. Does nothing when no conversation is
 /// running in this process; the island then shows its stale state and only End is offered.
 struct ToggleDoddyMuteIntent: LiveActivityIntent {
