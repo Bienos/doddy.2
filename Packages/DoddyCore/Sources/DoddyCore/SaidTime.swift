@@ -47,7 +47,11 @@ public enum SaidTime {
             : words.has("today", "tonight", "dzis", "dzisiaj") || words.has(phrase: "this evening")
                 || words.has(phrase: "this morning") || words.has(phrase: "this afternoon") ? (0, "which is not today")
             : nil
-        if let (expected, why) = relative, offset != expected { return differs(why) }
+        if let (expected, why) = relative {
+            // "Tonight at midnight" is the midnight that ends today: 00:00 tomorrow (review C8).
+            let endsToday = expected == 0 && words.clock?.isMidnight == true
+            if offset != (endsToday ? 1 : expected) { return differs(why) }
+        }
 
         // A date written out: "16 October", "October 16th", "16 października".
         if let date = words.dayAndMonth {
@@ -135,7 +139,7 @@ public enum SaidTime {
 
         guard let dueHour = due.hour else { return differs("which has no time") }
         var hours: [Int]
-        switch clock.meridiem ?? words.partOfDay {
+        switch clock.meridiem ?? words.partOfDay ?? clock.assumed {
         case .am: hours = [clock.hour == 12 ? 0 : clock.hour]
         case .pm: hours = [clock.hour < 12 ? clock.hour + 12 : clock.hour]
         case nil: hours = (1...11).contains(clock.hour) ? [clock.hour, clock.hour + 12] : [clock.hour]
@@ -252,6 +256,11 @@ public enum SaidTime {
         /// Known from "am"/"pm", from 24-hour form ("19:00", "07:30") or from an hour above 12.
         let meridiem: Meridiem?
         let text: String
+        /// Used only when neither `meridiem` nor a morning or evening word settles it: "o 9:30"
+        /// in Polish is the 24-hour clock. "7:30 tonight" is 19:30, and "at 5:30" asks (review C5).
+        var assumed: Meridiem? = nil
+
+        var isMidnight: Bool { hour == 0 && minute == 0 }
     }
 
     struct DayAndMonth {
@@ -350,8 +359,8 @@ public enum SaidTime {
                 guard let hour = Int(m[1]), let minute = Int(m[2]), hour <= 23, minute <= 59 else { continue }
                 // "16.10" is a date in Polish: a dot counts only with a clock word before it.
                 if m[0].contains("."), m[3].isEmpty, !text.contains("o \(m[0])"), !text.contains("at \(m[0])") { continue }
-                return Clock(hour: hour, minute: minute, meridiem: meridiem(m[3], hour: hour, twoDigit: m[1].count == 2 && hour < 10, colon: true),
-                             text: m[0].trimmingCharacters(in: .whitespaces))
+                return Clock(hour: hour, minute: minute, meridiem: meridiem(m[3], hour: hour, twoDigit: m[1].count == 2 && hour < 10),
+                             text: m[0].trimmingCharacters(in: .whitespaces), assumed: isPolish ? .am : nil)
             }
             // "7pm", "7 a.m."
             for m in matchStrings(#"\b(\d{1,2})\s*(am|pm|a\.m\.|p\.m\.)"#) {
@@ -387,14 +396,20 @@ public enum SaidTime {
             return nil
         }
 
-        private func meridiem(_ suffix: String, hour: Int, twoDigit: Bool, colon: Bool = false) -> Meridiem? {
+        private func meridiem(_ suffix: String, hour: Int, twoDigit: Bool) -> Meridiem? {
             if suffix.hasPrefix("a") { return .am }
             if suffix.hasPrefix("p") { return .pm }
-            // 24-hour form: "19:00", "07:30", "o 0". Hours and minutes ("9:30") are read as the
-            // 24-hour clock Poland uses; "at 9" alone is the case that needs a question.
+            // 24-hour form: "19:00", "07:30", "o 0". "9:30" is settled by a morning or evening
+            // word, or by Clock.assumed; "at 9" alone is the case that needs a question.
             if hour > 12 { return .pm }
-            if hour == 0 || twoDigit || (colon && hour < 12) { return .am }
+            if hour == 0 || twoDigit { return .am }
             return nil
+        }
+
+        /// Said in Polish, where hours and minutes ("o 9:30") are the 24-hour clock.
+        var isPolish: Bool {
+            let words: Set = ["o", "w", "we", "na", "za", "po", "jutro", "dzis", "dzisiaj", "pojutrze", "godz", "godzinie", "godzina", "okolo", "rano", "wieczorem"]
+            return tokens.contains(where: words.contains)
         }
 
         private func matchStrings(_ pattern: String) -> [[String]] {

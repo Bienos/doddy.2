@@ -80,7 +80,9 @@ public struct PlanStepForm: Equatable, Sendable {
     /// The edited step, checked exactly like the agent's call, or what to fix, in words for the screen.
     public func apply(to step: PlanStep, now: Date = Date(), calendar: Calendar = .current) -> PlanStepEdit {
         var args: [String: Any] = [:]
-        func wallClock(_ date: Date, time: Bool) -> String { VoiceToolReply.localText(date, hasTime: time, calendar: calendar).replacingOccurrences(of: " ", with: "T") }
+        // Written in Gregorian, as the parser reads it back, so a Buddhist or Japanese phone calendar keeps the year.
+        let gregorian = ReminderDueRules.gregorian(calendar)
+        func wallClock(_ date: Date, time: Bool) -> String { VoiceToolReply.localText(date, hasTime: time, calendar: gregorian).replacingOccurrences(of: " ", with: "T") }
         switch kind {
         case .note:
             args["text"] = text

@@ -50,7 +50,10 @@ assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
 # The ECB's public daily rates file, one fixed address (ADR-300).
 rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
-network_only='URLSession([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)'
+# Every way Foundation can reach the network: sessions and their tasks, URL byte streams,
+# loading a web address straight into Data or String, and the older connection APIs. The app's own
+# URLSessionTransport type name is not networking and stays allowed.
+network_only='URLSession(WebSocketTask|DataTask|DownloadTask|UploadTask|StreamTask|Task|Configuration)?([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)|\.resourceBytes|NSURLConnection|CFReadStream|CFHTTPMessage|contentsOf: *URL\(string:'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
 voice_only='import ElevenLabs'
@@ -193,6 +196,14 @@ if grep -RInE "$secrets" "${secret_paths[@]}" --exclude=check_forbidden_capabili
 fi
 if [ -d server/messaging ] && grep -RInE "$messaging_secrets" server/messaging render.yaml --exclude-dir=node_modules --exclude-dir=dist; then
   echo "FAIL: possible secret found in server/messaging or render.yaml." >&2; status=1
+fi
+# The other deployed services (gateway, voice token server, site functions), the voice agent spec and
+# tools: key values only, since their code legitimately names headers such as xi-api-key.
+service_dirs=()
+for extra in gateway server/voice-token site voice-agent tools; do [ -d "$extra" ] && service_dirs+=("$extra"); done
+if [ "${#service_dirs[@]}" -gt 0 ] && grep -RInE "${messaging_secrets%)}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|PASSWORD=[^[:space:]]{8,})" \
+    "${service_dirs[@]}" --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json; then
+  echo "FAIL: possible secret found in gateway, server/voice-token, site, voice-agent or tools." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$sharing_only" "${dirs[@]}" | code_only | grep -v "^$sharing_dir/"; then
   echo "FAIL: CloudKit outside $sharing_dir." >&2; status=1

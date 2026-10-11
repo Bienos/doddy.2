@@ -362,6 +362,11 @@ struct VoiceView: View {
                 Label(Self.repeatText(repeats), systemImage: "repeat")
                     .foregroundStyle(Theme.secondaryText)
             }
+            // Written to the event as its notes, so shown before Add (review H4).
+            if let notes = draft.notes, !notes.isEmpty {
+                Label(notes, systemImage: "text.alignleft")
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .reminder(_, let draft):
             Text("Add this reminder?")
                 .font(.headline)
@@ -374,6 +379,11 @@ struct VoiceView: View {
             }
             if let repeats = draft.repeats {
                 Label(Self.repeatText(repeats), systemImage: "repeat")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            // Written to the reminder as its notes, so shown before Add (review H4).
+            if let notes = draft.notes, !notes.isEmpty {
+                Label(notes, systemImage: "text.alignleft")
                     .foregroundStyle(Theme.secondaryText)
             }
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
@@ -889,6 +899,12 @@ struct VoiceView: View {
         .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.separator))
         .accessibilityElement(children: .combine)
+        // A note has one reminder: name the one this replaces before the tap (review C3).
+        if let previous = controller.noteReminderReplaces {
+            Label(NoteReminderReplacement.cardLine(previous), systemImage: "arrow.triangle.2.circlepath")
+                .font(.footnote)
+                .accessibilityIdentifier("voice.noteReminder.replaces")
+        }
         switch target {
         case .time(let date, let zone, let repeats):
             Label {
@@ -1244,6 +1260,12 @@ struct VoiceView: View {
              : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
+        if controller.translatorStartsNewConversation {
+            // Review H3: the notes, profile and lists this conversation started with stay behind.
+            Label("Start ends this conversation and starts a new one for translating, without your notes, profile or lists. This conversation isn't kept either.", systemImage: "arrow.clockwise")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
         Button("Change languages") { changingTranslator = true }
             .buttonStyle(SecondaryButtonStyle())
             .sheet(isPresented: $changingTranslator) {

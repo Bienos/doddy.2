@@ -90,6 +90,21 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("messagingServer", state).what.contains("a copy of your saved notes"))
     }
 
+    func testNewsWriterIsNamedOnlyAsTheServerReportsIt() {
+        var state = base
+        state.messagingServerSet = true
+        let unknown = row("messagingServer", state)
+        XCTAssertTrue(unknown.destination.contains("Anthropic or OpenAI"))
+        XCTAssertTrue(unknown.note?.contains("headlines to Anthropic or OpenAI") == true)
+        state.newsWriterProvider = "openai"
+        let openAI = row("messagingServer", state)
+        XCTAssertTrue(openAI.destination.contains("OpenAI"))
+        XCTAssertFalse(openAI.destination.contains("Anthropic"))
+        XCTAssertFalse(openAI.note?.contains("Anthropic") == true)
+        state.newsWriterProvider = "anthropic"
+        XCTAssertFalse(row("messagingServer", state).destination.contains("OpenAI"))
+    }
+
     func testRememberedConversationsLineFollowsTheSwitch() {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains("Conversations: none are remembered."))
         var state = base

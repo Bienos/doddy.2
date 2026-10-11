@@ -44,7 +44,7 @@ public struct SharedListItem: Codable, Hashable, Sendable, Identifiable {
 
     /// Dates are kept to the millisecond, as the database stores them, so both sides compare equal.
     static func milliseconds(_ date: Date) -> Date {
-        Date(timeIntervalSince1970: (date.timeIntervalSince1970 * 1000).rounded(.down) / 1000)
+        EpochMilliseconds.date(EpochMilliseconds.truncated(date))
     }
 
     func hasNewContent(_ other: SharedListItem) -> Bool { text != other.text || doneAt != other.doneAt }
@@ -75,7 +75,7 @@ public struct SharedListState: Codable, Equatable, Sendable {
         guard let name = try? ListText.checkedName(name) else { return nil }
         var seen: Set<UUID> = []
         let kept = items.compactMap { item -> SharedListItem? in
-            guard seen.insert(item.id).inserted, let text = ListText.cleaned(item.text), text.count <= ListLimits.itemLength else { return nil }
+            guard seen.insert(item.id).inserted, let text = ListText.cleaned(item.text), ListText.fitsItemLength(text) else { return nil }
             return SharedListItem(id: item.id, text: text, doneAt: item.doneAt, position: max(item.position, 0), addedAt: item.addedAt)
         }
         return SharedListState(name: name, items: Array(kept.prefix(ListLimits.itemsPerList)))

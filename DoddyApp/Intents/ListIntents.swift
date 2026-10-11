@@ -17,6 +17,12 @@ enum IntentStores {
         await store.reload()
         return store
     }
+
+    /// The lists read from the store first, so a Siri lookup on a cold launch doesn't see the
+    /// empty list from before the first load and answer "list not found" (review H5).
+    static func loadedLists() async -> [DoddyList] {
+        await loaded()?.lists ?? []
+    }
 }
 
 struct DoddyListEntity: AppEntity {
@@ -38,20 +44,16 @@ struct DoddyListQuery: EntityStringQuery {
 
     /// The same exact matching as voice: "shopping list" finds "Shopping"; no closest guess.
     func entities(matching string: String) async throws -> [DoddyListEntity] {
-        await MainActor.run {
-            guard let lists = IntentStores.store?.lists else { return [] }
-            switch ListMatch.list(named: string, in: lists) {
-            case .one(let list): return [DoddyListEntity(id: list.id, name: list.name)]
-            case .several(let found): return found.map { DoddyListEntity(id: $0.id, name: $0.name) }
-            case .none: return []
-            }
+        let lists = await IntentStores.loadedLists()
+        switch ListMatch.list(named: string, in: lists) {
+        case .one(let list): return [DoddyListEntity(id: list.id, name: list.name)]
+        case .several(let found): return found.map { DoddyListEntity(id: $0.id, name: $0.name) }
+        case .none: return []
         }
     }
 
     private static func lists() async -> [DoddyListEntity] {
-        await MainActor.run {
-            (IntentStores.store?.lists ?? []).map { DoddyListEntity(id: $0.id, name: $0.name) }
-        }
+        await IntentStores.loadedLists().map { DoddyListEntity(id: $0.id, name: $0.name) }
     }
 }
 

@@ -26,9 +26,13 @@ final class MemoryStore {
     private var cleanedAudioFiles = false
     /// The last list change made on screen or by voice, for its Undo (memory only).
     var listUndo: ListUndo?
+    /// True once a reload read notes, corrections and lists. A failed first read leaves it false,
+    /// so nothing takes the store for an empty one (review G1).
     private(set) var hasLoaded = false
     private(set) var loadError: String?
-    /// Bumped on every reload so searches re-run after edits and deletes.
+    /// Bumped on every successful reload so searches re-run after edits and deletes. A failed
+    /// read keeps the last good copy and doesn't bump it: the memory copy on the server and the
+    /// widgets follow this (review G1).
     private(set) var revision = 0
     /// The note deleted a moment ago, for the Undo bar (ADR-183). Memory only, never stored.
     private(set) var recentlyDeleted: DeletedNote?
@@ -52,9 +56,13 @@ final class MemoryStore {
 
     func reload() async {
         do {
-            memories = try await environment.memoryRepository.list(limit: nil).filter { $0.category != .list }
-            corrections = try await environment.memoryRepository.allCorrections()
-            lists = (try? await environment.listRepository.lists()) ?? []
+            // Read everything first, so a failed read changes nothing (review G1, G4).
+            let notes = try await environment.memoryRepository.list(limit: nil).filter { $0.category != .list }
+            let storedCorrections = try await environment.memoryRepository.allCorrections()
+            let storedLists = try await environment.listRepository.lists()
+            memories = notes
+            corrections = storedCorrections
+            lists = storedLists
             if let linked = try? await environment.photoRepository.allPhotos() {
                 photos = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
                 // Once per launch, and only after the links were read: files left behind by a
@@ -72,11 +80,11 @@ final class MemoryStore {
                 }
             }
             loadError = nil
+            hasLoaded = true
+            revision += 1
         } catch {
             loadError = UserFacingError.message(for: error)
         }
-        hasLoaded = true
-        revision += 1
         await noteReminders?.reload()
     }
 
@@ -164,14 +172,14 @@ final class MemoryStore {
     }
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
+    /// Notes, corrections and list items are one transaction: on failure nothing was added.
     func restore(
         _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = []
     ) async throws -> [MemoryRecord] {
-        let added = try await environment.memoryRepository.restore(records, corrections: corrections)
-        // Items go back only into lists that exist now; items already here are left alone.
-        if !listItems.isEmpty { _ = try await environment.listRepository.restore(listItems) }
+        // Items go back only into lists this restore adds; a list already here keeps its own items.
+        let added = try await environment.memoryRepository.restore(records, corrections: corrections, listItems: listItems)
         await reload()
-        return added
+        return added.records
     }
 
     /// No undo: deleting everything is final.

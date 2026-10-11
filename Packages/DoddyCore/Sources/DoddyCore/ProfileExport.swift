@@ -78,19 +78,15 @@ public enum ProfileExport {
         ProfileKey.allCases.compactMap { profile.fields[$0] }
     }
 
-    private static func ms(_ date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 * 1000).rounded())
-    }
-
     public static func json(_ profile: ApprovedProfile, style: StyleSnapshot, exportedAt: Date) throws -> Data {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(
             formatVersion: formatVersion,
-            exportedAtMs: ms(exportedAt),
+            exportedAtMs: EpochMilliseconds.rounded(exportedAt),
             profile: fields(profile).map {
                 Field(key: $0.key.rawValue, label: $0.key.label, value: $0.value, source: $0.source.rawValue,
-                      approvedAtMs: ms($0.approvedAt), revision: $0.revision)
+                      approvedAtMs: EpochMilliseconds.rounded($0.approvedAt), revision: $0.revision)
             },
             settings: Settings(
                 humour: style.personality.humour.rawValue,

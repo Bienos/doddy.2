@@ -50,6 +50,10 @@ final class SharedListsController {
     }
 
     private var syncAgain = false
+    /// After a failed sync, a local change doesn't start another one until then (review I2).
+    private var retryAfter: Date?
+    private var retryTask: Task<Void, Never>?
+    static let retryPause: TimeInterval = 60
     private let cloud = ListCloud.make()
 
     private init() {}
@@ -95,9 +99,16 @@ final class SharedListsController {
         let share = try await cloud.share(state, listID: list.id)
         // Read back before remembering the link.
         let zoneID = share.recordID.zoneID
-        guard try await cloud.fetch(zoneID, in: cloud.container.privateCloudDatabase)?.state == state else { throw SharingError.unconfirmed }
         let link = ListShare(listID: list.id, zoneName: zoneID.zoneName, zoneOwner: zoneID.ownerName, role: .owner, base: state, syncedAt: .now)
-        try await repository.save(link)
+        do {
+            guard try await cloud.fetch(zoneID, in: cloud.container.privateCloudDatabase)?.state == state else { throw SharingError.unconfirmed }
+            try await repository.save(link)
+        } catch {
+            // Not shared after all: nothing is left in iCloud for a link this iPhone doesn't keep
+            // (review I4).
+            _ = try? await cloud.stop(link)
+            throw error
+        }
         links[list.id] = link
         await startLiveUpdates()
         return CloudShareSheet(share: share, container: cloud.container)
@@ -117,6 +128,44 @@ final class SharedListsController {
         try await repository.remove(listID: listID)
         links[listID] = nil
         if !links.values.contains(where: { $0.role == link.role }) { await cloud.unsubscribe(link.role) }
+    }
+
+    /// Every delete of one list calls this first (review F2/I3). A shared list stops being shared
+    /// (owner: the copy in iCloud is deleted and the people invited lose it; joined: this user
+    /// leaves), so deleting it here leaves nothing in iCloud. Throws when that isn't confirmed;
+    /// then the list must not be deleted. A list that isn't shared has nothing to stop; a build
+    /// without iCloud can't reach it (`stop` does nothing there).
+    func stopSharingBeforeDeleting(_ listID: UUID) async throws {
+        guard links[listID] != nil else { return }
+        try await stop(listID)
+    }
+
+    /// Said before a shared list is deleted (review F6): what happens to the people it is shared
+    /// with, and that Undo brings the list back on this iPhone only, unshared. Nil when the list
+    /// isn't shared.
+    func deleteWarning(_ listID: UUID) -> String? {
+        guard let link = links[listID] else { return nil }
+        return link.role == .owner
+            ? NSLocalizedString("Sharing stops first: the copy in your iCloud is deleted and the people you invited lose the list. Undo brings it back on this iPhone only, not shared.", comment: "")
+            : NSLocalizedString("You leave the shared list first; the others keep it. Undo brings it back on this iPhone only, not shared.", comment: "")
+    }
+
+    /// Delete all (Settings): stops sharing every list this user shares, so no copy and no
+    /// invitees are left in iCloud (review G3/I3). Returns the lists whose stop wasn't confirmed
+    /// (all of them in a build without iCloud). While Doddy stays open, the next sync tries those
+    /// again once their lists are gone (see `sync`).
+    func stopAllOwnedShares() async -> [UUID] {
+        let owned = links.values.filter { $0.role == .owner }.map(\.listID).sorted { $0.uuidString < $1.uuidString }
+        guard cloud != nil else { return owned }
+        var failed: [UUID] = []
+        for listID in owned {
+            do {
+                try await stop(listID)
+            } catch {
+                failed.append(listID)
+            }
+        }
+        return failed
     }
 
     // MARK: Updates straight away (ADR-284)
@@ -159,16 +208,34 @@ final class SharedListsController {
         self.invite = nil
         guard let cloud, let store, let repository else { throw SharingError.notSetUp }
         guard let joined = try await cloud.accept(invite.metadata) else { throw SharingError.gone }
+        // Already joined (the link was opened again): the same list, not a second "(shared)" one
+        // (review I10).
+        if let existing = links.values.first(where: {
+            $0.zoneName == joined.zoneID.zoneName && $0.zoneOwner == joined.zoneID.ownerName
+        }), let list = store.list(id: existing.listID) {
+            return list
+        }
         let name = store.lists.contains { ListMatch.key($0.name) == ListMatch.key(joined.state.name) }
             ? String((joined.state.name + NSLocalizedString(" (shared)", comment: "")).prefix(ListLimits.nameLength))
             : joined.state.name
         let created = try await store.createList(name: name, items: [], source: .typed)
-        let local = SharedListState(name: name, items: joined.state.items)
-        let list = try await store.replaceShared(created.id, with: local)
-        let link = ListShare(
-            listID: list.id, zoneName: joined.zoneID.zoneName, zoneOwner: joined.zoneID.ownerName,
-            role: .participant, base: joined.state, syncedAt: .now)
-        try await repository.save(link)
+        let list: DoddyList
+        let link: ListShare
+        do {
+            let local = SharedListState(name: name, items: joined.state.items)
+            list = try await store.replaceShared(created.id, with: local)
+            link = ListShare(
+                listID: list.id, zoneName: joined.zoneID.zoneName, zoneOwner: joined.zoneID.ownerName,
+                role: .participant, base: joined.state, syncedAt: .now)
+            try await repository.save(link)
+        } catch {
+            // Not joined: the half-made list goes again, so a retry doesn't leave a second
+            // "(shared)" list behind (review I10). Removed without the Undo bar; it was never
+            // the user's list.
+            try? await store.environment.memoryRepository.delete(id: created.id)
+            await store.reload()
+            throw error
+        }
         links[list.id] = link
         await startLiveUpdates()
         return list
@@ -179,6 +246,7 @@ final class SharedListsController {
     /// After a local change: syncs only the shared lists that differ from their last sync.
     func listsChanged() {
         guard isAvailable, !links.isEmpty, let store else { return }
+        if let retryAfter, retryAfter > Date() { return }
         let changed = links.values.contains { link in store.list(id: link.listID).map(SharedListState.init) != link.base }
         if changed { Task { await syncAll() } }
     }
@@ -206,56 +274,92 @@ final class SharedListsController {
                 }
             }
             problem = failed ? NSLocalizedString("A shared list couldn't be updated. Doddy will try again.", comment: "") : nil
+            if failed {
+                // A failing sync must not start itself again straight away (review I2): its own
+                // writes change the lists, which asked for another sync, and that looped without a
+                // pause. Local changes wait `retryPause`, then one retry; opening Doddy, Update
+                // now and iCloud's wake-ups still sync at once.
+                syncAgain = false
+                retryAfter = Date(timeIntervalSinceNow: Self.retryPause)
+                retryTask?.cancel()
+                retryTask = Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(Self.retryPause))
+                    guard !Task.isCancelled else { return }
+                    self?.listsChanged()
+                }
+            } else {
+                retryAfter = nil
+            }
         } while syncAgain
     }
 
     private func sync(_ link: ListShare, cloud: ListCloud, store: MemoryStore) async throws {
         guard let repository else { return }
-        await store.reload()
-        guard let list = store.list(id: link.listID) else {
-            // Deleted on this iPhone: the link went with it (cascade).
-            links[link.listID] = nil
-            return
-        }
-        let database = cloud.database(link.role)
-        let zoneID = ListCloud.zoneID(link)
-        guard let zone = try await cloud.fetch(zoneID, in: database), let remote = zone.state else {
-            // Sharing stopped, or this user left or was removed: keep the list here, unshared.
-            try await repository.remove(listID: link.listID)
-            links[link.listID] = nil
-            problem = String(format: NSLocalizedString("“%@” is no longer shared. It stays on this iPhone.", comment: ""), list.name)
-            return
-        }
-        let local = SharedListState(list)
-        var result = SharedListMerge.merge(base: link.base, local: local, remote: remote)
-        if result.localChanged {
-            do {
-                _ = try await store.replaceShared(link.listID, with: result.merged)
-            } catch ListError.nameTaken {
-                // Another list here has the new name: this iPhone keeps its name, and sends it.
-                let keepName = SharedListState(name: local.name, items: result.merged.items)
-                result = SharedListMerge.Result(merged: keepName, localChanged: true, remoteChanged: true, conflicts: result.conflicts)
-                _ = try await store.replaceShared(link.listID, with: keepName)
+        // The list is read, iCloud is read, and the merge is written over the list. A change made
+        // on this iPhone while iCloud was being read would be overwritten and lost everywhere
+        // (review F1), so the list is read again just before writing; if it changed, the merge
+        // starts again from the new list. After three tries the next sync picks it up.
+        for _ in 1...3 {
+            await store.reload()
+            guard let list = store.list(id: link.listID) else {
+                // Deleted on this iPhone; the stored link went with it (cascade). If it was deleted
+                // without stopping first, or the stop failed, stop now so no copy and no invitees
+                // are left in iCloud (review I3). Only when the stored links agree the list is gone:
+                // a failed read of the lists must never delete a shared list's zone.
+                let stored = try await repository.shares()
+                guard !stored.contains(where: { $0.listID == link.listID }) else { throw SharingError.unconfirmed }
+                guard try await cloud.stop(link) else { throw SharingError.unconfirmed }
+                links[link.listID] = nil
+                if !links.values.contains(where: { $0.role == link.role }) { await cloud.unsubscribe(link.role) }
+                return
             }
+            let database = cloud.database(link.role)
+            let zoneID = ListCloud.zoneID(link)
+            guard let zone = try await cloud.fetch(zoneID, in: database), let remote = zone.state else {
+                // Sharing stopped, or this user left or was removed: keep the list here, unshared.
+                try await repository.remove(listID: link.listID)
+                links[link.listID] = nil
+                problem = String(format: NSLocalizedString("“%@” is no longer shared. It stays on this iPhone.", comment: ""), list.name)
+                return
+            }
+            let local = SharedListState(list)
+            // Read again after iCloud; nothing is written over a list that changed meanwhile.
+            await store.reload()
+            guard store.list(id: link.listID).map(SharedListState.init) == local else { continue }
+            var result = SharedListMerge.merge(base: link.base, local: local, remote: remote)
+            if result.localChanged {
+                do {
+                    _ = try await store.replaceShared(link.listID, with: result.merged)
+                } catch ListError.nameTaken {
+                    // Another list here has the new name: this iPhone keeps its name, and sends it.
+                    guard store.list(id: link.listID).map(SharedListState.init) == local else { continue }
+                    let keepName = SharedListState(name: local.name, items: result.merged.items)
+                    result = SharedListMerge.Result(merged: keepName, localChanged: true, remoteChanged: true, conflicts: result.conflicts)
+                    _ = try await store.replaceShared(link.listID, with: keepName)
+                }
+            }
+            if result.merged != remote {
+                try await cloud.push(result.merged, over: zone, zoneID: zoneID, in: database, me: me)
+            }
+            // Both sides read back before the merge is remembered as the last sync.
+            await store.reload()
+            let back = try await cloud.fetch(zoneID, in: database)
+            guard store.list(id: link.listID).map(SharedListState.init) == result.merged, back?.state == result.merged
+            else { throw SharingError.unconfirmed }
+            if let back {
+                people.merge(back.people) { _, new in new }
+                places[link.listID] = back.sharedPlace
+            }
+            if let share = try? await cloud.existingShare(link) { names.merge(ListCloud.names(in: share)) { _, new in new } }
+            let synced = ListShare(
+                listID: link.listID, zoneName: link.zoneName, zoneOwner: link.zoneOwner, role: link.role,
+                base: result.merged, syncedAt: .now)
+            try await repository.save(synced)
+            links[link.listID] = synced
+            return
         }
-        if result.merged != remote {
-            try await cloud.push(result.merged, over: zone, zoneID: zoneID, in: database, me: me)
-        }
-        // Both sides read back before the merge is remembered as the last sync.
-        await store.reload()
-        let back = try await cloud.fetch(zoneID, in: database)
-        guard store.list(id: link.listID).map(SharedListState.init) == result.merged, back?.state == result.merged
-        else { throw SharingError.unconfirmed }
-        if let back {
-            people.merge(back.people) { _, new in new }
-            places[link.listID] = back.sharedPlace
-        }
-        if let share = try? await cloud.existingShare(link) { names.merge(ListCloud.names(in: share)) { _, new in new } }
-        let synced = ListShare(
-            listID: link.listID, zoneName: link.zoneName, zoneOwner: link.zoneOwner, role: link.role,
-            base: result.merged, syncedAt: .now)
-        try await repository.save(synced)
-        links[link.listID] = synced
+        // Changed on this iPhone during every try: nothing was written, and the next sync merges it.
+        throw SharingError.unconfirmed
     }
 }
 

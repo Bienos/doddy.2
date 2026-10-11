@@ -36,6 +36,12 @@ public protocol MemoryRepository: Sendable {
     /// The same, also adding each added note's corrections when they are its whole history
     /// (ADR-252). Notes already here keep their own.
     func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord]
+    /// The same, plus the file's list items (ADR-216), in that one transaction: an item goes back
+    /// only into a list this restore adds, so a list already here keeps exactly its own items.
+    /// If anything fails, nothing is added.
+    func restore(
+        _ records: [MemoryRecord], corrections: [MemoryCorrection], listItems: [ListItem]
+    ) async throws -> (records: [MemoryRecord], listItems: [ListItem])
     /// Every correction of one note, oldest first (ADR-252). The original is the note's `rawText`.
     func corrections(of id: UUID) async throws -> [MemoryCorrection]
     /// Every stored correction, for exports.
@@ -45,6 +51,14 @@ public protocol MemoryRepository: Sendable {
 extension MemoryRepository {
     public func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord] {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
+    /// Stores without lists can restore notes only.
+    public func restore(
+        _ records: [MemoryRecord], corrections: [MemoryCorrection], listItems: [ListItem]
+    ) async throws -> (records: [MemoryRecord], listItems: [ListItem]) {
+        guard listItems.isEmpty else { throw DoddyError.capabilityUnavailable(.memoryStorage) }
+        return (try await restore(records, corrections: corrections), [])
     }
 
     public func corrections(of id: UUID) async throws -> [MemoryCorrection] {
