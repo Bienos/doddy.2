@@ -34,9 +34,9 @@ public protocol MemoryRepository: Sendable {
     /// record is read back before success, otherwise nothing is added. Returns what was added.
     func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord]
     /// The same, also adding each added note's corrections when they are its whole history
-    /// (ADR-214). Notes already here keep their own.
+    /// (ADR-236). Notes already here keep their own.
     func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord]
-    /// Every correction of one note, oldest first (ADR-214). The original is the note's `rawText`.
+    /// Every correction of one note, oldest first (ADR-236). The original is the note's `rawText`.
     func corrections(of id: UUID) async throws -> [MemoryCorrection]
     /// Every stored correction, for exports.
     func allCorrections() async throws -> [MemoryCorrection]

@@ -1,4 +1,4 @@
-# Every version of a corrected note: status (ADR-214)
+# Every version of a corrected note: status (ADR-236)
 Date: 2026-10-10. Owner instruction: "move to 2", item #2 from the research backlog: OP-003 "Memory correction and history". Earlier, a correction overwrote the current wording, so only the original and the latest wording were kept.
 
 ## What the user gets
@@ -16,7 +16,7 @@ Date: 2026-10-10. Owner instruction: "move to 2", item #2 from the research back
 - **Privacy:** "What stays on this iPhone" lists "Earlier wordings of notes you corrected, except in files you export".
 
 ## How it is stored
-- **Table:** `memory_corrections`, created by migration `v5_memory_corrections` in `DoddyDatabase.swift`.
+- **Table:** `memory_corrections`, created by migration `v9_memory_corrections` (named `v5_…` before the merge with the lists and photos line, whose `v5`–`v8` come first) in `DoddyDatabase.swift`.
   - One row per correction: note id, number from 1, text, time.
   - Primary key is (note, number). CHECKs refuse a number below 1 and blank text.
   - The note's foreign key cascades on delete, and `secure_delete` stays on.
@@ -36,7 +36,7 @@ Date: 2026-10-10. Owner instruction: "move to 2", item #2 from the research back
   - `MemoryRestore.swift`: reads corrections, `unreadableCorrection`, plan carries corrections.
   - `DeletedNote.swift`: carries corrections for undo.
   - `DataFlow.swift`.
-- **Persistence:** `DoddyDatabase.swift` (v5), `SQLiteMemoryRepository.swift`.
+- **Persistence:** `DoddyDatabase.swift` (v9), `SQLiteMemoryRepository.swift`.
 - **App:**
   - `MemoryStore.swift`: loads corrections, `history(of:)`, delete/undo/restore pass them.
   - `MemoryDetailView.swift`.
@@ -54,7 +54,7 @@ Date: 2026-10-10. Owner instruction: "move to 2", item #2 from the research back
   - Undo and export → restore bring it back.
   - Corrections with a gap are not restored as history.
   - A note without history keeps its current wording when corrected again.
-  - Upgrade from a real v4 database file.
+  - Upgrade from a real v4 database file (through v5–v8 of the lists and photos line).
   - The table refuses a correction for a missing note, number 0, or blank text.
   - The history model and its trust rule.
   - Text, Markdown and JSON exports, including reading an export made before this.

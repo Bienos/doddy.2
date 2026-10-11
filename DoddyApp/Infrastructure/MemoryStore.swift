@@ -8,9 +8,24 @@ import Observation
 @Observable
 final class MemoryStore {
     let environment: AppEnvironment
+    /// Notes only. Lists (ADR-216) are `memories` rows too, but live in `lists` with their items.
     private(set) var memories: [MemoryRecord] = []
-    /// Every stored correction (ADR-214), reloaded with the memories, for history and exports.
+    /// Every stored correction (ADR-236), reloaded with the memories, for history and exports.
     private(set) var corrections: [MemoryCorrection] = []
+    private(set) var lists: [DoddyList] = []
+    /// Items of the list deleted a moment ago, put back together with it on Undo.
+    private var recentlyDeletedItems: [ListItem] = []
+    /// Photo notes (ADR-218): which note carries which photo file.
+    private(set) var photos: [UUID: MemoryPhoto] = [:]
+    /// The photo of the note deleted a moment ago: its file is kept until Undo is no longer offered.
+    private var recentlyDeletedPhoto: MemoryPhoto?
+    private var cleanedPhotoFiles = false
+    /// Voice memos (ADR-230): which note carries which recording, kept like photos.
+    private(set) var recordings: [UUID: MemoryAudio] = [:]
+    private var recentlyDeletedAudio: MemoryAudio?
+    private var cleanedAudioFiles = false
+    /// The last list change made on screen or by voice, for its Undo (memory only).
+    var listUndo: ListUndo?
     private(set) var hasLoaded = false
     private(set) var loadError: String?
     /// Bumped on every reload so searches re-run after edits and deletes.
@@ -26,19 +41,36 @@ final class MemoryStore {
 
     var isStorageAvailable: Bool { environment.capabilities.isAvailable(.memoryStorage) }
 
-    func record(id: UUID) -> MemoryRecord? { memories.first { $0.id == id } }
+    func record(id: UUID) -> MemoryRecord? { memories.first { $0.id == id } ?? list(id: id)?.record }
 
-    /// Every wording the note has had, from what is stored (ADR-214).
+    func list(id: UUID) -> DoddyList? { lists.first { $0.id == id } }
+
+    /// Every wording the note has had, from what is stored (ADR-236).
     func history(of record: MemoryRecord) -> MemoryHistory {
         MemoryHistory(record: record, corrections: corrections.filter { $0.memoryID == record.id })
     }
 
     func reload() async {
         do {
-            let records = try await environment.memoryRepository.list(limit: nil)
-            let corrections = try await environment.memoryRepository.allCorrections()
-            memories = records
-            self.corrections = corrections
+            memories = try await environment.memoryRepository.list(limit: nil).filter { $0.category != .list }
+            corrections = try await environment.memoryRepository.allCorrections()
+            lists = (try? await environment.listRepository.lists()) ?? []
+            if let linked = try? await environment.photoRepository.allPhotos() {
+                photos = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
+                // Once per launch, and only after the links were read: files left behind by a
+                // crash or by an Undo window that passed while the app was closed.
+                if !cleanedPhotoFiles {
+                    cleanedPhotoFiles = true
+                    environment.photoFiles.deleteOrphans(keeping: Set(linked.map(\.fileName)))
+                }
+            }
+            if let linked = try? await environment.audioRepository.allAudio() {
+                recordings = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
+                if !cleanedAudioFiles {
+                    cleanedAudioFiles = true
+                    environment.audioFiles.deleteOrphans(keeping: Set(linked.map(\.fileName)))
+                }
+            }
             loadError = nil
         } catch {
             loadError = UserFacingError.message(for: error)
@@ -76,8 +108,16 @@ final class MemoryStore {
     func delete(id: UUID) async throws {
         let copy = self.record(id: id)
         let history = corrections.filter { $0.memoryID == id }
+        recentlyDeletedItems = list(id: id)?.items ?? []
+        let photo = photos[id]
+        let audio = recordings[id]
         let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
+        // Only one deleted note can be undone, so the photo of the one before it goes for good.
+        if let old = recentlyDeletedPhoto { environment.photoFiles.delete(old.fileName) }
+        recentlyDeletedPhoto = photo
+        if let old = recentlyDeletedAudio { environment.audioFiles.delete(old.fileName) }
+        recentlyDeletedAudio = audio
         if let reminderID { await environment.noteReminders?.memoryDeleted(reminderID: reminderID) }
         noteReminders?.clearReceipt(memoryID: id)
         recentlyDeleted = copy.map { DeletedNote(record: $0, corrections: history, deletedAt: .now) }
@@ -92,18 +132,44 @@ final class MemoryStore {
             return
         }
         _ = try await environment.memoryRepository.restore([deleted.record], corrections: deleted.corrections)
+        if !recentlyDeletedItems.isEmpty {
+            _ = try await environment.listRepository.restore(recentlyDeletedItems)
+            recentlyDeletedItems = []
+        }
+        if let photo = recentlyDeletedPhoto {
+            _ = try? await environment.photoRepository.attach(photo)
+            recentlyDeletedPhoto = nil
+        }
+        if let audio = recentlyDeletedAudio {
+            _ = try? await environment.audioRepository.attach(audio)
+            recentlyDeletedAudio = nil
+        }
         if recentlyDeleted == deleted { recentlyDeleted = nil }
         await reload()
     }
 
     /// The Undo bar timed out: forget the copy.
     func forgetDeleted(_ deleted: DeletedNote) {
-        if recentlyDeleted == deleted { recentlyDeleted = nil }
+        if recentlyDeleted == deleted {
+            recentlyDeleted = nil
+            if let photo = recentlyDeletedPhoto {
+                environment.photoFiles.delete(photo.fileName)
+                recentlyDeletedPhoto = nil
+            }
+            if let audio = recentlyDeletedAudio {
+                environment.audioFiles.delete(audio.fileName)
+                recentlyDeletedAudio = nil
+            }
+        }
     }
 
     /// Adds notes from an export; returns only what was committed and read back (ADR-178).
-    func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection] = []) async throws -> [MemoryRecord] {
+    func restore(
+        _ records: [MemoryRecord], corrections: [MemoryCorrection] = [], listItems: [ListItem] = []
+    ) async throws -> [MemoryRecord] {
         let added = try await environment.memoryRepository.restore(records, corrections: corrections)
+        // Items go back only into lists that exist now; items already here are left alone.
+        if !listItems.isEmpty { _ = try await environment.listRepository.restore(listItems) }
         await reload()
         return added
     }
@@ -112,6 +178,10 @@ final class MemoryStore {
     func deleteAll() async throws {
         recentlyDeleted = nil
         try await environment.memoryRepository.deleteAll()
+        environment.photoFiles.deleteOrphans(keeping: [])
+        recentlyDeletedPhoto = nil
+        environment.audioFiles.deleteOrphans(keeping: [])
+        recentlyDeletedAudio = nil
         await environment.noteReminders?.allMemoriesDeleted()
         await reload()
     }

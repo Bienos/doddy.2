@@ -6,13 +6,16 @@ public enum MemorySource: String, Codable, CaseIterable, Sendable {
     case explicitVoice = "explicit_voice"
     case sharedContent = "shared_content"
     case importedLegacyUnknown = "imported_legacy_unknown"
+    /// Brought in from a Google Keep export or a text file the user picked and reviewed
+    /// (ADR-231). Dated when the file says when the note was made, otherwise "date unknown".
+    case importedFile = "imported_file"
     case sampleFixture = "sample_fixture"
 
     /// Sources a user can create through an explicit capture action.
     public var isExplicitCapture: Bool {
         switch self {
         case .explicitText, .explicitVoice, .sharedContent: true
-        case .importedLegacyUnknown, .sampleFixture: false
+        case .importedLegacyUnknown, .importedFile, .sampleFixture: false
         }
     }
 
@@ -23,6 +26,12 @@ public enum MemorySource: String, Codable, CaseIterable, Sendable {
 /// Raw values match `schemas/memory.schema.json`.
 public enum MemoryCategory: String, Codable, CaseIterable, Sendable {
     case fact, preference, commitment, recommendation, decision, item, place, intention, other
+    /// A list (ADR-216): the text is its name; the items are in `list_items`. Never offered as a
+    /// note type, and never returned by recall.
+    case list
+
+    /// The types a note can be filed under (everything but `list`).
+    public static var noteCategories: [MemoryCategory] { allCases.filter { $0 != .list } }
 }
 
 public enum MemoryLimits {
@@ -37,7 +46,7 @@ public enum MemoryValidationError: Error, Equatable, Sendable {
     case sourceNotCapturable(MemorySource)
     case missingCaptureDate(MemorySource)
     case unexpectedCaptureDate(MemorySource)
-    /// A stored correction must be numbered from 1 (ADR-214).
+    /// A stored correction must be numbered from 1 (ADR-236).
     case invalidCorrectionNumber(Int)
 }
 
@@ -107,7 +116,7 @@ public struct MemoryRecord: Hashable, Sendable, Identifiable {
         try MemoryTextValidator.validate(current)
         switch (source, capturedAt) {
         case (.importedLegacyUnknown, .some): throw .unexpectedCaptureDate(source)
-        case (.importedLegacyUnknown, .none): break
+        case (.importedLegacyUnknown, .none), (.importedFile, _): break
         case (_, .none): throw .missingCaptureDate(source)
         case (_, .some): break
         }

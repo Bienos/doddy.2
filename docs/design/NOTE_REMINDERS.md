@@ -28,8 +28,8 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | Notification | Status | Why |
 |---|---|---|
 | **Memory reminder:** a saved note, at a chosen date/time | **Proposed v1** | The only notification with a user-requested purpose today |
-| Snooze of a delivered reminder | Proposed v1 (action on the notification) | Same reminder, new time, user-initiated |
-| Recurring reminders ("every Monday") | Deferred | Needs evidence of demand; adds rule editing and 64-request pressure |
+| Snooze of a delivered reminder | **Built (ADR-211)**: In 1 hour, Tomorrow 09:00; This evening in the app | See "Repeating reminders and snooze" below |
+| Recurring reminders ("every Monday") | **Built (ADR-211)** | See "Repeating reminders and snooze" below |
 | Location-based ("when I get home") | **Built (ADR-196)** | See "Place reminders" below |
 | Time Sensitive interruption level | Deferred, opt-in only | Breaks through Focus; must be the user's choice per reminder |
 | Voice-session Live Activity / Dynamic Island | Separate track (V3) | Not a notification; see `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` |
@@ -39,7 +39,7 @@ This keeps the product promise ("Tell Doddy before you forget; find the original
 | Unprompted resurfacing ("a year ago you saved…") | **Never without a new decision** | Doddy would be deciding what to show the user; that breaks principle 1 |
 | AI-written note-reminder text | **Never** | The body is the user's own note or fixed copy, nothing generated |
 | App icon badge counts | **Off** | Badges create pressure; overdue reminders already show on Home |
-| Voice | Uses Apple Reminders (M4) for now | The live agent's `create_reminder` already works; a note-linked voice path is an open decision |
+| Voice | **Both (ADR-198)** | `create_reminder` adds a new to-do to Apple Reminders; `remind_me_about_note` sets Doddy's own reminder on a saved note, confirmed on screen |
 
 ## Flow and screens
 
@@ -106,7 +106,37 @@ Owner instruction 2026-10-10: "build location reminders next". A note reminder f
 - **What's stored:** the place's name, latitude, longitude, radius and arrive/leave, in the same `note_reminders` row (migration `v4_note_reminder_places` rebuilds the table with CHECKs; existing time reminders are copied across). Doddy never records where the user is or goes; the one position read for "Use where I am now" becomes the place only if the user sets it.
 - **What leaves the phone:** only Apple Maps search: the typed words and, if Doddy already read a position in that sheet, roughly where the user is. Settings → Privacy and "What leaves this iPhone" say so.
 - **Limits:** 10 place reminders (iOS watches at most 20 regions per app), inside the 50 total.
-- **Not built:** a map to drag the circle (a map would load tiles from Apple; can come later), places shared between notes, "at a place between these hours", voice.
+- **Not built:** a map to drag the circle (a map would load tiles from Apple; can come later), places shared between notes, "at a place between these hours". Voice is built: ADR-198.
+
+## Repeating reminders and snooze (ADR-211)
+Owner: "yes design repeating reminders and snooze", then "approved, build it" (R1–R4 as proposed). Screens 15–21 and the rules board on the Doddy Notifications canvas. Built; status and evidence in `docs/implementation/REPEAT_SNOOZE_STATUS.md`.
+
+**Repeat (time reminders only).**
+- Choices on the sheet under the first time: **Never** (default), **Every day**, **Weekdays** (Mon–Fri), **Every week** on the first time's weekday, **Every month** on its date. Monthly is offered only for days 1–28 (see decision R1).
+- Fires at the same clock time in the zone it was set in ("20:00 Warsaw time"), like one-off reminders. Each rule is one repeating `UNCalendarNotificationTrigger`; weekdays is five (one per weekday). Every request counts toward the 50 (decision R2).
+- **Done** means *this time*: Home's Due card clears until the next occurrence (stored as `lastDoneAt`); the iOS request stays.
+- **Stop repeating** is on the note's reminder card only, after "Stop reminding you every Monday? The note stays." Never from the Lock Screen. Deleting the note deletes the rule.
+- The note's card shows "Every Monday at 20:00 · Warsaw time · next Mon 19 Oct" and the last "Done this time".
+- Lock Screen title: "Reminder · every Monday" (decision R3). The body stays the fixed private text unless "Show note text" is on.
+- Voice: `remind_me_about_note` gains `repeat` (`daily`, `weekdays`, `weekly`, `monthly`). The card shows the rule; voice can't stop a repeat.
+- Place reminders are unchanged: they already come back on every arrival.
+
+**Snooze.**
+- Lock Screen long-press on a one-off time reminder: Open note, **In 1 hour** (new), Tomorrow 09:00, Done. iOS fixes action titles when the reminder is scheduled, so "This evening" isn't offered there.
+- On a repeating reminder: Open note, In 1 hour, Done this time (decision R4: no "Tomorrow 09:00").
+- In the app (Home's Due card **Later…**): In 1 hour, This evening 18:00 (only before 17:00), Tomorrow morning, Pick a time.
+- A one-off moves to the new time ("Reminder · snoozed · first set for 13:30"). A repeating one gets one extra one-off request (`doddy.note.<id>.snooze`) and the rule carries on; reconcile must keep both.
+- Checked like setting one: the new time counts only once iOS lists it as pending. Otherwise the old reminder stays and the receipt says "Couldn't move it. Your reminder is unchanged." A failed Lock Screen snooze shows that the next time the note opens.
+- No snooze on place reminders.
+
+**Decisions (R1–R4 approved as proposed; R5 is a device check).**
+1. R1 Monthly on the 29th–31st: days 1–28 only (proposed), or "last day of the month", which needs Doddy to re-arm each month and only works if the app is opened.
+2. R2 Weekdays uses 5 of the 50 slots.
+3. R3 Lock Screen title shows the schedule ("every Monday"), not the note. Or keep plain "Reminder".
+4. R4 Daily repeats: In 1 hour only on the Lock Screen.
+5. R5 Verify on a device: a repeat set inside the clock-change hour (02:00–02:59, last Sunday of March).
+
+**Engineering notes.** Needs a migration (`repeat_rule`, `last_done_at`, snooze request id), new notification categories, reconcile for repeating and snooze requests, and tests for each rule across clock changes (Linux, with fixed calendars). The 50 limit becomes a count of iOS requests, not of reminders.
 
 ## Engineering contract (for the implementing milestone)
 

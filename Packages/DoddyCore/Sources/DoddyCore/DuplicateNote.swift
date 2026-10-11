@@ -5,7 +5,7 @@ import Foundation
 /// punctuation and spacing, so "Gate code: 4821." matches "gate code 4821". It only warns: the
 /// user can still save it.
 public enum DuplicateNote {
-    static func key(_ text: String) -> String {
+    public static func key(_ text: String) -> String {
         SearchFolding.tokens(text).joined(separator: " ")
     }
 

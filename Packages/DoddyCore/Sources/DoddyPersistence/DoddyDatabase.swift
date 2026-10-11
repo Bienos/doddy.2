@@ -127,10 +127,61 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX note_reminders_fire_at ON note_reminders(fire_at_ms);
                 """)
         }
-        // ADR-214: every correction of a note is kept (text and time), numbered from 1, and
+        // Repeating reminders and snooze (ADR-211). New columns only; existing rows stay one-offs.
+        migrator.registerMigration("v5_note_reminder_repeat") { db in
+            try db.execute(sql: """
+                ALTER TABLE note_reminders ADD COLUMN repeat_rule TEXT
+                    CHECK (repeat_rule IS NULL OR (kind = 'time' AND repeat_rule IN ('daily', 'weekdays', 'weekly', 'monthly')));
+                ALTER TABLE note_reminders ADD COLUMN last_done_at_ms INTEGER
+                    CHECK (last_done_at_ms IS NULL OR repeat_rule IS NOT NULL);
+                ALTER TABLE note_reminders ADD COLUMN snoozed_until_ms INTEGER
+                    CHECK (snoozed_until_ms IS NULL OR repeat_rule IS NOT NULL);
+                ALTER TABLE note_reminders ADD COLUMN first_set_for_ms INTEGER
+                    CHECK (first_set_for_ms IS NULL OR (kind = 'time' AND repeat_rule IS NULL));
+                """)
+        }
+        // Lists (ADR-216): a list is a `memories` row with category 'list'; its items go with it.
+        migrator.registerMigration("v6_list_items") { db in
+            try db.execute(sql: """
+                CREATE TABLE list_items (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    list_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    text TEXT NOT NULL CHECK (length(trim(text)) BETWEEN 1 AND \(ListLimits.itemLength)),
+                    source TEXT NOT NULL CHECK (source IN (\(sqlList(ListItemSource.allCases.map(\.rawValue))))),
+                    added_at_ms INTEGER NOT NULL,
+                    done_at_ms INTEGER,
+                    position INTEGER NOT NULL CHECK (position >= 0)
+                );
+                CREATE INDEX list_items_list ON list_items(list_id, position);
+                """)
+        }
+        // Photo notes (ADR-218): one photo per note, deleted with it. The file name is checked.
+        migrator.registerMigration("v7_memory_photos") { db in
+            try db.execute(sql: """
+                CREATE TABLE memory_photos (
+                    memory_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    file_name TEXT NOT NULL CHECK (length(file_name) = 40 AND file_name LIKE '%.jpg'),
+                    width INTEGER NOT NULL CHECK (width BETWEEN 1 AND \(PhotoLimits.maxPixels)),
+                    height INTEGER NOT NULL CHECK (height BETWEEN 1 AND \(PhotoLimits.maxPixels)),
+                    added_at_ms INTEGER NOT NULL
+                );
+                """)
+        }
+        // Voice memos (ADR-230): one recording per note, deleted with it. The file name is checked.
+        migrator.registerMigration("v8_memory_audio") { db in
+            try db.execute(sql: """
+                CREATE TABLE memory_audio (
+                    memory_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    file_name TEXT NOT NULL CHECK (length(file_name) = 40 AND file_name LIKE '%.m4a'),
+                    duration_ms INTEGER NOT NULL CHECK (duration_ms BETWEEN \(VoiceMemoLimits.minMilliseconds) AND \(VoiceMemoLimits.maxSeconds * 1000 + 999)),
+                    added_at_ms INTEGER NOT NULL
+                );
+                """)
+        }
+        // ADR-236: every correction of a note is kept (text and time), numbered from 1, and
         // deleted with the note. The original stays in memories.raw_text. Notes corrected before
         // this get one correction, their current wording: the in-between ones were never stored.
-        migrator.registerMigration("v5_memory_corrections") { db in
+        migrator.registerMigration("v9_memory_corrections") { db in
             try db.execute(sql: """
                 CREATE TABLE memory_corrections (
                     memory_id TEXT NOT NULL REFERENCES memories(id) ON DELETE CASCADE,

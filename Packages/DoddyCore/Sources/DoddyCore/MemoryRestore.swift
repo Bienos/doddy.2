@@ -11,7 +11,7 @@ public enum MemoryRestoreError: Error, Equatable, Sendable {
     case unreadableNote(position: Int)
     /// Two notes in the file share an id but differ, so the file can't be trusted as an export.
     case conflictingDuplicate(position: Int)
-    /// One correction (1-based position in the file's corrections) is damaged (ADR-214).
+    /// One correction (1-based position in the file's corrections) is damaged (ADR-236).
     case unreadableCorrection(position: Int)
 }
 
@@ -27,7 +27,7 @@ public struct MemoryRestorePlan: Equatable, Sendable {
     /// Sample notes are never restored.
     public let skippedSamples: Int
     public let exportedAt: Date?
-    /// The history of the notes in `toAdd`, from the file (ADR-214). A note whose corrections
+    /// The history of the notes in `toAdd`, from the file (ADR-236). A note whose corrections
     /// don't form its whole history is added without them.
     public let corrections: [MemoryCorrection]
 
@@ -43,7 +43,7 @@ public enum MemoryRestore {
         let formatVersion: Int
         let exportedAtMs: Int64?
         let memories: [Slot]
-        /// Absent in exports made before ADR-214.
+        /// Absent in exports made before ADR-236.
         let corrections: [CorrectionSlot]?
     }
 
@@ -94,6 +94,15 @@ public enum MemoryRestore {
             corrections.append(correction)
         }
         return (records, corrections, envelope.exportedAtMs.map { Date(timeIntervalSince1970: Double($0) / 1000) })
+    }
+
+    /// The list items in the file (ADR-216); empty for files without lists. A damaged item list
+    /// is refused, so no list comes back half-filled.
+    public static func listItems(_ data: Data) throws(MemoryRestoreError) -> [ListItem] {
+        struct Items: Decodable { let listItems: [ListItem]? }
+        guard data.count <= maxFileBytes else { throw .tooLarge(bytes: data.count, maximum: maxFileBytes) }
+        guard let items = try? JSONDecoder().decode(Items.self, from: data) else { throw .notADoddyExport }
+        return (items.listItems ?? []).filter { ListText.cleaned($0.text) != nil && $0.text.count <= ListLimits.itemLength }
     }
 
     public static func plan(

@@ -1,7 +1,7 @@
 import Foundation
 
 /// The user's own words for when, checked against the day and time the agent wrote out
-/// (ADR-215, research backlog OP-014). The agent turns "next Friday at 7" into a date; these
+/// (ADR-237, research backlog OP-014). The agent turns "next Friday at 7" into a date; these
 /// fixed rules decide whether that date follows from the words, and ask one question instead of
 /// guessing when the words allow two answers. No model is involved: English and Polish words only.
 ///

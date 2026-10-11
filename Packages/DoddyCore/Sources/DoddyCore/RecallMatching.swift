@@ -10,7 +10,7 @@ import Foundation
 /// - is the same number ("pięć" or "five" finds "5"; "5678" finds a note saying "pięć sześć siedem osiem"),
 /// - is its Polish/English counterpart from a small fixed list ("code" finds "kod"),
 /// - is one typo away (5+ letters), or two (8+ letters); two only when no note searched matches
-///   the word as typed: "pasport" finds "passport", "password" does not (ADR-212).
+///   the word as typed: "pasport" finds "passport", "password" does not (ADR-234).
 public enum RecallMatching {
     /// One word of the question, with every form it may match as.
     public struct Term: Equatable, Sendable {

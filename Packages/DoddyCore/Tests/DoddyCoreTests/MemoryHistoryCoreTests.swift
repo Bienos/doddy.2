@@ -1,7 +1,7 @@
 @testable import DoddyCore
 import XCTest
 
-/// ADR-214: the history model and every export carry each wording a note has had.
+/// ADR-236: the history model and every export carry each wording a note has had.
 final class MemoryHistoryCoreTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_791_630_120)
     private let id = UUID()
@@ -57,7 +57,7 @@ final class MemoryHistoryCoreTests: XCTestCase {
         let file = try MemoryRestore.read(data)
         XCTAssertEqual(file.records, [record])
         XCTAssertEqual(file.corrections, history, "only the exported notes' corrections, in order")
-        // An export from before ADR-214 has no corrections key and still reads.
+        // An export from before ADR-236 has no corrections key and still reads.
         let old = Data(#"{"formatVersion":1,"memories":[]}"#.utf8)
         XCTAssertEqual(try MemoryRestore.read(old).corrections, [])
     }

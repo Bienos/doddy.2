@@ -13,6 +13,8 @@ struct MemoriesView: View {
     @AppStorage(PreferenceKey.memorySort) private var sortRaw = MemorySort.newestFirst.rawValue
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
     @State private var pinMessage: String?
+    /// Notes or Lists (ADR-216).
+    @AppStorage(PreferenceKey.memoriesShowsLists) private var showsLists = false
 
     /// The filter in effect: the chosen type, but only while a filter is offered and a note of
     /// that type exists. When it stops applying the choice is cleared (see `onChange` below),
@@ -38,10 +40,18 @@ struct MemoriesView: View {
                         HStack { Image(systemName: "magnifyingglass"); Text("Find something you saved"); Spacer() }
                     }
                     .buttonStyle(SecondaryButtonStyle()).accessibilityIdentifier("memories.find")
+                    Picker("Show", selection: $showsLists) {
+                        Text("Notes").tag(false)
+                        Text("Lists").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("memories.notesOrLists")
                     if let problem = store.environment.storageProblem ?? store.loadError {
                         ProblemView(message: problem)
                     } else if !store.hasLoaded {
                         ProgressView("Loading notes")
+                    } else if showsLists {
+                        ListsOverview()
                     } else if store.memories.isEmpty {
                         EmptyMemoriesView { modal = .capture }
                     } else {
@@ -91,7 +101,7 @@ struct MemoriesView: View {
                 case .find(let query):
                     // A new "Find in Doddy" request resets the screen even with the same words.
                     FindMemoriesView(initialQuery: query).id(ShortcutRouter.shared.findRequest?.id)
-                case .note(let id): MemoryDetailView(memoryID: id)
+                case .note(let id): MemoryOrListView(id: id)
                 }
             }
             .onChange(of: activeCategory) { _, active in

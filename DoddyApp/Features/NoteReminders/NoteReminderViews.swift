@@ -8,37 +8,77 @@ struct NoteReminderSection: View {
 
     @Environment(NoteReminderStore.self) private var reminders
     @State private var showSheet = false
+    /// Opens the sheet on "At a time" (from a blocked place reminder's receipt).
+    @State private var sheetAtTime = false
+    @State private var confirmStop = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let receipt = reminders.receipts[memoryID] {
-                NoteReminderReceiptView(receipt: receipt) { showSheet = true }
+                NoteReminderReceiptView(receipt: receipt, retry: { open() }, atTimeInstead: {
+                    reminders.clearReceipt(memoryID: memoryID)
+                    open(atTime: true)
+                })
             }
             if let reminder = reminders.reminder(forMemory: memoryID) {
                 card(reminder)
             } else if reminders.isAvailable {
-                Button { showSheet = true } label: {
+                Button { open() } label: {
                     HStack { Text("Remind me"); Spacer(); Image(systemName: "bell") }
                 }
                 .buttonStyle(SecondaryButtonStyle())
                 .accessibilityIdentifier("detail.remind")
             }
         }
-        .sheet(isPresented: $showSheet) { NoteReminderSheet(memoryID: memoryID) }
+        .sheet(isPresented: $showSheet) { NoteReminderSheet(memoryID: memoryID, startAtTime: sheetAtTime) }
+        .confirmationDialog(stopQuestion, isPresented: $confirmStop, titleVisibility: .visible) {
+            Button("Stop", role: .destructive) { Task { await reminders.cancel(memoryID: memoryID) } }
+            Button("Keep it", role: .cancel) {}
+        } message: {
+            Text("The note stays.")
+        }
+    }
+
+    private var stopQuestion: String {
+        guard let reminder = reminders.reminder(forMemory: memoryID), let rule = reminder.repeats,
+              case .time(let anchor, let zone) = reminder.trigger else { return "Stop this reminder?" }
+        return "Stop reminding you \(ReminderFormat.cadence(rule, anchor: anchor, timeZoneID: zone))?"
+    }
+
+    private func open(atTime: Bool = false) {
+        sheetAtTime = atTime
+        showSheet = true
     }
 
     private func card(_ reminder: MemoryReminder) -> some View {
         let alerts = reminders.authorization == .allowed
         let atPlace = reminder.place != nil
+        let repeating = reminder.repeats != nil
+        let zone = reminder.timeZoneID ?? TimeZone.autoupdatingCurrent.identifier
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(systemName: atPlace ? "mappin.and.ellipse" : alerts ? "bell" : "bell.slash").accessibilityHidden(true)
+                Image(systemName: atPlace ? "mappin.and.ellipse" : repeating ? "repeat" : alerts ? "bell" : "bell.slash").accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(alerts ? "Reminder" : "Reminder · in Doddy only")
+                    Text(cardLabel(reminder, alerts: alerts))
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                     Text(ReminderFormat.summary(reminder))
                         .font(.headline)
+                    if repeating, let next = reminder.nextFire(after: .now) {
+                        Text("Next \(ReminderFormat.dateTime(next, timeZoneID: zone))")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    if let firstSetFor = reminder.firstSetFor {
+                        Text("First set for \(ReminderFormat.dateTime(firstSetFor, timeZoneID: zone))")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    if let lastDone = reminder.lastDoneAt, reminder.snoozedUntil == nil {
+                        Label("Done this time on \(ReminderFormat.dateTime(lastDone, timeZoneID: zone))", systemImage: "checkmark")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.confirmed)
+                    }
                     if let place = reminder.place {
                         Text("Within \(place.radiusMeters) m, each time, until you mark it Done.")
                             .font(.footnote)
@@ -51,11 +91,12 @@ struct NoteReminderSection: View {
             }
             .accessibilityElement(children: .combine)
             HStack(spacing: 10) {
-                Button("Change") { showSheet = true }
+                Button("Change") { open() }
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.ink))
-                Button("Cancel reminder", role: .destructive) {
-                    Task { await reminders.cancel(memoryID: memoryID) }
+                Button(repeating ? "Stop repeating" : "Cancel reminder", role: .destructive) {
+                    // Stopping a repeat asks first; one stray tap can't end it (design screen 16).
+                    if repeating { confirmStop = true } else { Task { await reminders.cancel(memoryID: memoryID) } }
                 }
                 .foregroundStyle(Theme.error)
                 .frame(maxWidth: .infinity, minHeight: 44)
@@ -67,22 +108,40 @@ struct NoteReminderSection: View {
         .padding(16)
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.separator))
     }
+
+    private func cardLabel(_ reminder: MemoryReminder, alerts: Bool) -> String {
+        let kind = reminder.repeats != nil ? "Repeating reminder" : reminder.firstSetFor != nil ? "Reminder · snoozed" : "Reminder"
+        return alerts ? kind : "\(kind) · in Doddy only"
+    }
 }
 
 /// Built only from a real outcome: verified with iOS, kept in Doddy only, or failed.
 struct NoteReminderReceiptView: View {
     let receipt: NoteReminderReceipt
     let retry: () -> Void
+    /// Offered when a place reminder is blocked by a setting: a time reminder needs no location.
+    var atTimeInstead: (() -> Void)? = nil
 
     @Environment(\.openURL) private var openURL
+
+    /// "Reminder set for …", "Reminder set: every Monday at 20:00.", or after a snooze "Moved to …".
+    static func headline(_ reminder: MemoryReminder) -> String {
+        let zone = reminder.timeZoneID ?? TimeZone.autoupdatingCurrent.identifier
+        if let snoozedUntil = reminder.snoozedUntil {
+            return "Moved to \(ReminderFormat.dateTime(snoozedUntil, timeZoneID: zone)). The repeat carries on."
+        }
+        if reminder.firstSetFor != nil { return "Moved to \(ReminderFormat.short(reminder))." }
+        if reminder.repeats != nil { return "Reminder set: \(ReminderFormat.short(reminder))." }
+        return reminder.place == nil
+            ? "Reminder set for \(ReminderFormat.short(reminder))."
+            : "Reminder set \(ReminderFormat.short(reminder))."
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             switch receipt {
             case .scheduled(let reminder):
-                Label(reminder.place == nil
-                      ? "Reminder set for \(ReminderFormat.short(reminder))."
-                      : "Reminder set \(ReminderFormat.short(reminder)).", systemImage: "checkmark")
+                Label(Self.headline(reminder), systemImage: "checkmark")
                     .font(.headline)
                     .foregroundStyle(Theme.confirmed)
                 Text(UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
@@ -107,6 +166,11 @@ struct NoteReminderReceiptView: View {
                     if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                 }
                 .frame(minHeight: 44)
+                if let atTimeInstead {
+                    Button("Remind me at a time instead", action: atTimeInstead)
+                        .frame(minHeight: 44)
+                        .accessibilityIdentifier("reminder.atTimeInstead")
+                }
             case .failed(let message):
                 Label(message, systemImage: "exclamationmark.triangle")
                     .foregroundStyle(Theme.error)
@@ -160,11 +224,34 @@ struct DueRemindersView: View {
             }
             .buttonStyle(.plain)
             HStack(spacing: 10) {
-                Button("Done") { Task { await reminders.done(reminderID: reminder.id) } }
-                    .buttonStyle(PrimaryButtonStyle())
-                Button("Tomorrow 09:00") { Task { await reminders.later(reminderID: reminder.id) } }
-                    .buttonStyle(SecondaryButtonStyle())
+                Button(reminder.repeats == nil ? "Done" : "Done this time") {
+                    Task { await reminders.done(reminderID: reminder.id) }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                Menu {
+                    ForEach(NoteReminderStore.snoozeChoices(now: .now), id: \.self) { option in
+                        Button("\(Self.title(option.choice)) · \(option.date.formatted(date: .omitted, time: .shortened))") {
+                            Task { await reminders.snooze(reminderID: reminder.id, until: option.date) }
+                        }
+                    }
+                    // Opens the note, where Change picks any time.
+                    Button("Pick a time…") { reminders.pendingOpenMemoryID = record.id }
+                } label: {
+                    Text("Later…").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("home.due.later")
             }
+        }
+    }
+}
+
+extension DueRemindersView {
+    static func title(_ choice: NoteReminderStore.SnoozeChoice) -> String {
+        switch choice {
+        case .inAnHour: "In 1 hour"
+        case .thisEvening: "This evening"
+        case .tomorrowMorning: "Tomorrow morning"
         }
     }
 }
@@ -199,7 +286,7 @@ struct NoteReminderSettingsSection: View {
                 .onChange(of: showNoteText) { Task { await reminders.noteTextSettingChanged() } }
                 .accessibilityIdentifier("settings.showNoteText")
             StatusRow(title: "Location for place reminders", value: locationText)
-            StatusRow(title: "Reminders set", value: "\(reminders.reminders.count) of \(NoteReminderLimits.maxActive)")
+            StatusRow(title: "Reminders set", value: "\(reminders.slotsUsed) of \(NoteReminderLimits.maxActive)")
             StatusRow(
                 title: "At a place",
                 value: "\(reminders.reminders.filter { $0.place != nil }.count) of \(NoteReminderLimits.maxPlaces)")

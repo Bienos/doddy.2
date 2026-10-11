@@ -1,6 +1,6 @@
 import Foundation
 
-/// One correction of a saved note, kept forever with the note (ADR-214). The original wording
+/// One correction of a saved note, kept forever with the note (ADR-236). The original wording
 /// stays in the note itself (`MemoryRecord.rawText`); each correction adds one of these, so every
 /// wording the note ever had can be shown. Deleted with the note.
 public struct MemoryCorrection: Equatable, Sendable {
@@ -60,7 +60,7 @@ public struct MemoryVersion: Equatable, Sendable {
     public let isCurrent: Bool
 }
 
-/// Every wording of a note, from what was stored (ADR-214).
+/// Every wording of a note, from what was stored (ADR-236).
 public struct MemoryHistory: Equatable, Sendable {
     public let versions: [MemoryVersion]
     /// False when corrections were made but not every in-between wording is known: the note was

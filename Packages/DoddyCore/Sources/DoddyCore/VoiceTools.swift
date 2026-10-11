@@ -43,8 +43,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
         switch toolName {
-        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent: .calendar
-        case VoiceToolName.createReminder: .reminders
+        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent: .calendar
+        case VoiceToolName.createReminder, VoiceToolName.changeReminder: .reminders
         case VoiceToolName.lookupContact: .contacts
         case VoiceToolName.setTimer: .timers
         case VoiceToolName.openMap: .maps
@@ -167,6 +167,20 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case draftMessage(MessageDraft)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
+    /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
+    case startTranslator(TranslatorProposal)
+    case stopTranslator
+    /// Lists (ADR-216). Adding, ticking and removing run on the user's spoken request with a
+    /// receipt and Undo (L1); a new list is a card (L2); reading is a lookup.
+    case addToList(ListVoiceRequest)
+    case readList(name: String)
+    case checkOff(ListVoiceRequest)
+    case removeFromList(ListVoiceRequest)
+    case createList(ListVoiceRequest)
+    /// Move or rename an event, or change or complete an Apple reminder (ADR-229): matched
+    /// exactly on the iPhone, shown on a card, written only on the user's tap, read back.
+    case changeCalendarEvent(EventChangeDraft)
+    case changeReminder(ReminderChangeDraft)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -187,6 +201,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseReminder(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.remindAboutNote:
             return parseNoteReminder(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.changeCalendarEvent:
+            return parseEventChange(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.changeReminder:
+            return parseReminderChange(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)
@@ -200,6 +218,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.startTranslator:
+            return parseStartTranslator(args, name: name)
+        case VoiceToolName.stopTranslator:
+            return .stopTranslator
+        case VoiceToolName.addToList, VoiceToolName.readList, VoiceToolName.checkOff,
+             VoiceToolName.removeFromList, VoiceToolName.createList:
+            return parseList(args, name: name)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
@@ -247,7 +272,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case .clarify(let clarification): return .needsClarification(name: name, clarification)
         }
         guard let start = startDue.date(in: calendar) else { return .invalid(name: name, reason: "missing start") }
-        // The user's own words for when, if the agent passed them (ADR-215).
+        // The user's own words for when, if the agent passed them (ADR-237).
         if let said = args.text("said_time") {
             let day = ReminderDue(year: startDue.year, month: startDue.month, day: startDue.day, timeZoneID: startDue.timeZoneID)
             let allDay = args.flag("all_day")
@@ -300,7 +325,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
             case .clarify(let clarification): return .needsClarification(name: name, clarification)
             }
         }
-        // The user's own words for when, if the agent passed them (ADR-215).
+        // The user's own words for when, if the agent passed them (ADR-237).
         if let said = args.text("said_time") {
             guard let due else {
                 // Words about a time but no due: ask rather than add a reminder without one.
@@ -347,6 +372,12 @@ struct Arguments {
     func text(_ key: String) -> String? {
         guard let value = values[key] as? String, !value.allSatisfy(\.isWhitespace) else { return nil }
         return value
+    }
+
+    /// A list of strings; a single string counts as a list of one.
+    func texts(_ key: String) -> [String]? {
+        if let list = values[key] as? [Any] { return list.compactMap { $0 as? String } }
+        return text(key).map { [$0] }
     }
 
     func flag(_ key: String) -> Bool {
@@ -412,7 +443,7 @@ public enum VoiceToolReply {
     public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
     /// `question` is the query the search ran with; it lets the reply say when the notes cover
-    /// only part of it (ADR-213). An empty question skips that check.
+    /// only part of it (ADR-235). An empty question skips that check.
     public static func search(_ outcome: RecallOutcome, question: String = "", limit: Int = 5) -> String {
         guard case .matches(let candidates) = outcome, !candidates.isEmpty else {
             return "No saved note matched. Tell the user you couldn't find it in their saved memories. Do not guess."

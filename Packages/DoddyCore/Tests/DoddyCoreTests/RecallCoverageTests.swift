@@ -1,7 +1,7 @@
 @testable import DoddyCore
 import XCTest
 
-/// ADR-213: when no found note covers the whole question, the answer says which words no note
+/// ADR-235: when no found note covers the whole question, the answer says which words no note
 /// has instead of presenting the notes as the answer.
 final class RecallCoverageTests: XCTestCase {
     private func candidate(_ text: String, _ matched: [String]) throws -> MemoryCandidate {

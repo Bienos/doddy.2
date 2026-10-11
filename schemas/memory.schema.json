@@ -37,6 +37,7 @@
         "explicit_voice",
         "shared_content",
         "imported_legacy_unknown",
+        "imported_file",
         "sample_fixture"
       ]
     },
@@ -50,7 +51,8 @@
         "item",
         "place",
         "intention",
-        "other"
+        "other",
+        "list"
       ]
     },
     "capturedAtMs": {

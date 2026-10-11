@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 
 /// Current and immutable original wording remain attached to the same stored ID, with every
-/// wording in between (ADR-214).
+/// wording in between (ADR-236).
 struct MemoryDetailView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(NoteReminderStore.self) private var noteReminders
@@ -22,6 +22,8 @@ struct MemoryDetailView: View {
                 if let record = store.record(id: memoryID) {
                     JourneyHeading(eyebrow: "Straight from your note", title: "The original\nis right here.")
                     MemoryPaperCard(record: record, textIdentifier: "detail.currentText")
+                    NotePhotoSection(memoryID: memoryID)
+                    NoteRecordingSection(memoryID: memoryID)
                     if record.userEdited {
                         let history = store.history(of: record)
                         let between = history.earlier.filter { !$0.isOriginal }
@@ -58,7 +60,7 @@ struct MemoryDetailView: View {
                         get: { record.category },
                         set: { newType in Task { await setType(newType, for: record) } })
                     ) {
-                        ForEach(MemoryCategory.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                        ForEach(MemoryCategory.noteCategories, id: \.self) { Text($0.displayName).tag($0) }
                     }
                     .pickerStyle(.menu)
                     .frame(minHeight: 44)

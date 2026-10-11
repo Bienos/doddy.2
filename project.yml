@@ -6,6 +6,7 @@ name: Doddy
 options:
   deploymentTarget:
     iOS: "17.0"
+    watchOS: "10.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
 packages:
@@ -31,6 +32,12 @@ settings:
     # free Apple ID can still build to a device (free teams can't use Push). With a paid team that
     # has Push enabled, set this to DoddyApp/Doddy.entitlements (here or on the xcodebuild line).
     DODDY_PUSH_ENTITLEMENTS: ""
+    # Widgets (ADR-219) read a snapshot from an App Group. Off by default, like push. To turn on:
+    # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements (or Config/Doddy-Push-AppGroup.entitlements
+    # with push) and DODDY_WIDGET_ENTITLEMENTS = Config/DoddyWidgets.entitlements. Without it the
+    # widgets say "Open Doddy to set up widgets" and the app writes nothing.
+    DODDY_APP_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
+    DODDY_WIDGET_ENTITLEMENTS: ""
 targets:
   Doddy:
     type: application
@@ -40,6 +47,8 @@ targets:
       - path: Shared
     dependencies:
       - target: DoddyWidgets
+      # The Apple Watch app (ADR-232), embedded in the iPhone app.
+      - target: DoddyWatch
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore
@@ -52,7 +61,7 @@ targets:
       base:
         # Development identifier only; the production identifier is an owner decision.
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER)
-        CODE_SIGN_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_APP_ENTITLEMENTS)
         PRODUCT_NAME: Doddy
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
@@ -64,25 +73,31 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only these permissions. Each is asked for only when the user turns the matching toggle on in Settings, Connections.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens only while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice is sent to ElevenLabs to run the conversation."
-        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds an event only after you tap Add. Turn this off in Settings, Connections."
-        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds a reminder only after you tap Add. Turn this off in Settings, Connections."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens only while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice is sent to ElevenLabs to run the conversation. A voice memo you record on a note stays on this iPhone."
+        # Voice memos only (ADR-230): on-device recognition is required, so the audio isn't sent.
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds or changes an event only after you tap Add or Change. Turn this off in Settings, Connections."
+        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds, changes or completes a reminder only after you tap Add, Change or Mark done. Turn this off in Settings, Connections."
         # Place reminders only (ADR-196): "While Using", never "Always"; iOS watches the place itself.
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only for reminders you set at a place: to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave. Doddy doesn't track where you go."
         INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name when you ask. The details stay on your screen. Turn this off in Settings, Connections."
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyWidgets:
-    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen)
-    # and, on iOS 18+, the "Talk to Doddy" control (Control Center, Lock Screen, Action Button).
-    # No networking, no data of its own.
+    # Widget extension: the voice conversation's Live Activity (Dynamic Island and Lock Screen),
+    # on iOS 18+ the "Talk to Doddy" and "New note" controls, and the Home and Lock Screen widgets
+    # (ADR-219), which only read the App Group snapshot the app writes. No networking, no database.
     type: app-extension
     platform: iOS
     sources:
       - path: DoddyWidgets
       - path: Shared
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
     settings:
       base:
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WIDGET_ENTITLEMENTS)
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).widgets
         PRODUCT_NAME: DoddyWidgets
         MARKETING_VERSION: "0.0.1"
@@ -93,6 +108,29 @@ targets:
         SKIP_INSTALL: YES
         # Shared/ intents check this to skip app-only code (TalkToDoddyIntent runs in the app).
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) DODDY_WIDGET_EXTENSION"
+  DoddyWatch:
+    # Apple Watch app (ADR-232): shows the snapshot the iPhone sends (pinned notes, next note
+    # reminders, lists) and asks the iPhone to tick an item or save a note. No database, no
+    # networking; WatchConnectivity only. Needs the iPhone app; not usable on its own.
+    type: application
+    platform: watchOS
+    sources:
+      - path: DoddyWatch
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
+        PRODUCT_NAME: DoddyWatch
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: $(DODDY_APP_BUNDLE_IDENTIFIER)
+        INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: NO
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
   DoddyTests:
     type: bundle.unit-test
     platform: iOS

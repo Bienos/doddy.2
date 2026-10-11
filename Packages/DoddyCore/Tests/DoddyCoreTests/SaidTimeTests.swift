@@ -1,7 +1,7 @@
 @testable import DoddyCore
 import XCTest
 
-/// ADR-215 (OP-014): the user's own words for when, against the date the agent wrote out.
+/// ADR-237 (OP-014): the user's own words for when, against the date the agent wrote out.
 /// Now is Saturday 10 October 2026, 13:02 in Warsaw: Friday is the 16th, then the 23rd.
 final class SaidTimeTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_791_630_120)

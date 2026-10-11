@@ -1,4 +1,4 @@
-# Unclear days and times: status (ADR-215)
+# Unclear days and times: status (ADR-237)
 Date: 2026-10-10. Owner instruction: "move to 3", from the research backlog OP-014 "Ambiguous date clarification". Example from the backlog: "Book this for next Friday." → "Do you mean Friday 16 October?"
 
 ## What changes for the user
@@ -40,8 +40,8 @@ The answer the user gives is sent again with the day written out, so the second 
 
 ## NOT DONE / NOT RUN
 - **Live agent synced 2026-10-10:** version `agtvrsn_1601m4m03vmqe90rh35280g5pxp7` → `agtvrsn_1601m4m2szrwfb9rhx1r2vcgmc3j`. The live agent now sends `said_time`.
-  - Only app builds that include ADR-215 act on it; older builds ignore the field.
-  - The live prompt and tools contain features from other branches that are not in this branch's spec: lists, translator, morning check-in, repeat on note reminders. They were left untouched; only the ADR-215 lines were added.
+  - Only app builds that include ADR-237 act on it; older builds ignore the field.
+  - The live prompt and tools contain features from other branches that are not in this branch's spec: lists, translator, morning check-in, repeat on note reminders. They were left untouched; only the ADR-237 lines were added.
 - **Not heard in a real conversation or tried on a device:** whether the agent passes the words faithfully, and how often the questions feel unnecessary (Mac checklist V8).
 - **Typed requests are not covered:** Ask Doddy and Shortcuts have no `said_time`.
 

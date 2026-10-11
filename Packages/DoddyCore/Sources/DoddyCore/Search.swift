@@ -17,7 +17,7 @@ public enum SearchFolding {
         "w", "z", "na", "do", "co", "to", "jak", "gdzie", "sie", "ze", "jest", "byl", "byla", "mi", "mnie",
         "kiedy", "jaki", "jaka", "jakie", "jakiego", "mam", "moj", "moja", "moje", "mojej", "mojego",
         "czy", "ten", "ta", "tego", "o", "od", "po", "dla", "ile", "sa", "juz", "jeszcze", "pamietasz",
-        // Question filler: how people ask about a note, not what the note says (ADR-213).
+        // Question filler: how people ask about a note, not what the note says (ADR-235).
         // Left in, a note never contains them, so every answer would look partial.
         "say", "said", "says", "told", "anything", "something", "put", "leave", "save", "saved",
         "remember", "find",
@@ -43,7 +43,7 @@ public enum SearchFolding {
 
     /// Distinct query terms with stopwords and single letters removed. A lone letter is almost
     /// always the "s" of "what's"/"Jake's" or an initial, and as a prefix it matches nearly every
-    /// note (ADR-212). Single digits stay: "5" can be part of a code.
+    /// note (ADR-234). Single digits stay: "5" can be part of a code.
     public static func queryTerms(_ query: String) -> [String] {
         var seen = Set<String>()
         return tokens(query).filter { token in
@@ -64,7 +64,7 @@ public struct RepositoryRecallService: RecallService {
 
     public func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
         let candidates = try await repository.query(question, limit: limit)
-            .filter { $0.record.source.isEligibleForPersonalRecall && !$0.matchedTerms.isEmpty }
+            .filter { $0.record.source.isEligibleForPersonalRecall && !$0.matchedTerms.isEmpty && $0.record.category != .list }
         return candidates.isEmpty ? .noMatch : .matches(candidates)
     }
 }
@@ -77,29 +77,37 @@ public enum MemoryExport {
         let formatVersion: Int
         let exportedAtMs: Int64
         let memories: [MemoryRecord]
-        /// Every correction of the exported notes (ADR-214). Added within format 1: older
-        /// readers ignore it, so an older Doddy restores the notes without their history.
-        let corrections: [MemoryCorrection]
+        /// Items of the `list` records (ADR-216); left out when there are none.
+        let listItems: [ListItem]?
+        /// Every correction of the exported notes (ADR-236); left out when there are none. Added
+        /// within format 1: older readers ignore it and restore the notes without their history.
+        let corrections: [MemoryCorrection]?
     }
 
-    public static func json(_ records: [MemoryRecord], corrections: [MemoryCorrection] = [], exportedAt: Date) throws -> Data {
+    public static func json(
+        _ records: [MemoryRecord], listItems: [ListItem] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+    ) throws -> Data {
         let ids = Set(records.map(\.id))
+        let history = corrections.filter { ids.contains($0.memoryID) }
+            .sorted { ($0.memoryID.uuidString, $0.number) < ($1.memoryID.uuidString, $1.number) }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(
             formatVersion: formatVersion,
             exportedAtMs: Int64((exportedAt.timeIntervalSince1970 * 1000).rounded()),
             memories: records,
-            corrections: corrections.filter { ids.contains($0.memoryID) }
-                .sorted { ($0.memoryID.uuidString, $0.number) < ($1.memoryID.uuidString, $1.number) }))
+            listItems: listItems.isEmpty ? nil : listItems,
+            corrections: history.isEmpty ? nil : history))
     }
 
-    /// Wordings between the original and the current one, oldest first (ADR-214).
+    /// Wordings between the original and the current one, oldest first (ADR-236).
     static func inBetween(_ record: MemoryRecord, _ byNote: [UUID: [MemoryCorrection]]) -> [MemoryVersion] {
         MemoryHistory(record: record, corrections: byNote[record.id] ?? []).versions.filter { !$0.isOriginal && !$0.isCurrent }
     }
 
-    public static func plainText(_ records: [MemoryRecord], corrections: [MemoryCorrection] = [], exportedAt: Date) -> String {
+    public static func plainText(
+        _ records: [MemoryRecord], lists: [DoddyList] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+    ) -> String {
         let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
         var lines = ["DODDY memories — exported \(iso.string(from: exportedAt))", "\(records.count) memories", ""]
@@ -116,6 +124,17 @@ public enum MemoryExport {
             }
             lines.append("ID: \(record.id.uuidString)")
             lines.append("")
+        }
+        if !lists.isEmpty {
+            lines.append("# Lists (\(lists.count))")
+            lines.append("")
+            for list in lists {
+                lines.append("## \(list.name)")
+                lines.append(contentsOf: list.open.map { "[ ] \($0.text)" })
+                lines.append(contentsOf: list.done.map { "[x] \($0.text)" })
+                lines.append("ID: \(list.id.uuidString)")
+                lines.append("")
+            }
         }
         return lines.joined(separator: "\n")
     }

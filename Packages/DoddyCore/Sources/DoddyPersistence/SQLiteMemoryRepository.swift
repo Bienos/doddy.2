@@ -107,7 +107,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
             .prefix(limit))
     }
 
-    /// Changes the wording and keeps it as the note's next correction (ADR-214), in one
+    /// Changes the wording and keeps it as the note's next correction (ADR-236), in one
     /// transaction: both are read back before success, or neither is kept.
     public func update(id: UUID, currentText: String) async throws -> MemoryRecord {
         let date = Self.truncatedToMilliseconds(now())
@@ -165,6 +165,8 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     public func setCategory(id: UUID, to category: MemoryCategory) async throws -> MemoryRecord {
         try await dbQueue.write { db in
             guard let existing = try Self.fetch(id, db) else { throw MemoryStoreError.notFound(id) }
+            // Lists have their own screens and items (ADR-216); the type picker never crosses over.
+            guard category != .list, existing.category != .list else { throw ListError.notANote }
             let changed = try existing.recategorized(to: category)
             try db.execute(sql: "UPDATE memories SET category = ? WHERE id = ?", arguments: [category.rawValue, id.uuidString])
             guard try Self.fetch(id, db) == changed else { throw MemoryStoreError.verificationFailed }
@@ -187,7 +189,9 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     }
 
     public func export() async throws -> Data {
-        try MemoryExport.json(try await list(limit: nil), corrections: try await allCorrections(), exportedAt: now())
+        let items = try await dbQueue.read { db in try SQLiteListRepository.allItems(db) }
+        return try MemoryExport.json(
+            try await list(limit: nil), listItems: items, corrections: try await allCorrections(), exportedAt: now())
     }
 
     public func restore(_ records: [MemoryRecord]) async throws -> [MemoryRecord] {

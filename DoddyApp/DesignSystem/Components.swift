@@ -172,6 +172,7 @@ extension MemorySource {
         case .explicitVoice: "Your voice note"
         case .sharedContent: "Shared into Doddy"
         case .importedLegacyUnknown: "Imported, date unknown"
+        case .importedFile: "Imported from a file"
         case .sampleFixture: "Sample"
         }
     }
@@ -189,6 +190,7 @@ extension MemoryCategory {
         case .place: "Place"
         case .intention: "Intention"
         case .other: "Other"
+        case .list: "List"
         }
     }
 }

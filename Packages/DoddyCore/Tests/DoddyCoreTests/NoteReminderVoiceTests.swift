@@ -84,6 +84,34 @@ final class NoteReminderVoiceTests: XCTestCase {
         XCTAssertEqual(ActivityEntry(request: request, reply: VoiceToolReply.noteNotFound(), at: now).outcome, .notDone)
     }
 
+    func testRepeatArgumentIsCheckedBeforeAnyCard() throws {
+        // Mon 12 Oct 2026, 20:00 Warsaw.
+        let monday20 = Date(timeIntervalSince1970: 1_791_828_000)
+        XCTAssertEqual(
+            parse(#"{"note":"Bins","due":"2026-10-12T20:00","repeat":"weekly"}"#),
+            .remindAboutNote(NoteReminderVoiceDraft(
+                noteText: "Bins", target: .time(monday20, timeZoneID: "Europe/Warsaw"), repeats: .weekly)))
+        XCTAssertEqual(
+            parse(#"{"note":"Bins","due":"2026-10-12T20:00","repeat":"never"}"#),
+            .remindAboutNote(NoteReminderVoiceDraft(noteText: "Bins", target: .time(monday20, timeZoneID: "Europe/Warsaw"))))
+        guard case .invalid = parse(#"{"note":"x","due":"2026-10-12T20:00","repeat":"hourly"}"#) else { return XCTFail("unknown rule") }
+        guard case .invalid = parse(#"{"note":"x","place":"home","repeat":"daily"}"#) else { return XCTFail("a place can't repeat") }
+        guard case .needsClarification(_, let clarification) = parse(#"{"note":"x","due":"2026-10-30T09:00","repeat":"monthly"}"#) else {
+            return XCTFail("monthly on the 30th goes back to the agent")
+        }
+        XCTAssertTrue(clarification.problem.contains("1 to 28"))
+
+        let reminder = MemoryReminder(
+            id: UUID(), memoryID: UUID(), trigger: .time(fireAt: monday20, timeZoneID: "Europe/Warsaw"), createdAt: now, repeats: .weekly)
+        XCTAssertEqual(
+            VoiceToolReply.noteReminderSet(reminder, note: "Bins"),
+            "added: a reminder about \"Bins\": every Monday at 20:00 (Warsaw time), first on Mon 12 Oct, 20:00, until the user stops it on the note. It is a notification on this iPhone.")
+        let request = ActivityRequest.describe(
+            .remindAboutNote(NoteReminderVoiceDraft(noteText: "Bins", target: .time(monday20, timeZoneID: "Europe/Warsaw"), repeats: .weekly)),
+            calendar: warsaw)!
+        XCTAssertEqual(request.detail, "“Bins” · every Monday at 20:00")
+    }
+
     func testPauseAllConnectionsStopsOnlyThePlaceLookup() {
         XCTAssertTrue(ConnectionPause.applies(to: parse(#"{"note":"x","place":"post office"}"#)))
         XCTAssertFalse(ConnectionPause.applies(to: parse(#"{"note":"x","due":"2026-10-11T09:00"}"#)))

@@ -1,6 +1,6 @@
 import Foundation
 
-/// How much of a question the found notes cover (ADR-213). Recall lists every note that shares
+/// How much of a question the found notes cover (ADR-235). Recall lists every note that shares
 /// a word with the question, so "netflix password" lists the wifi passwords. Those notes are
 /// real and stay listed, but when no note covers the whole question the answer says so, and
 /// names the words no note has, instead of presenting them as the answer.

@@ -3,10 +3,13 @@ import Foundation
 /// Markdown export of the saved notes, for pasting into Notes, Obsidian and similar apps (ADR-203).
 /// Every note's words go in verbatim as a block quote (one `> ` per line); nothing is escaped,
 /// trimmed or cut, so what is in the file is exactly what was saved. A note that was corrected
-/// also carries every earlier wording (ADR-214) and its original. Same data as
+/// also carries every earlier wording (ADR-236) and its original. Same data as
 /// `MemoryExport.plainText`, newest first as given.
 public enum MarkdownExport {
-    public static func markdown(_ records: [MemoryRecord], corrections: [MemoryCorrection] = [], exportedAt: Date) -> String {
+    /// `lists` (ADR-216) follow the notes as Markdown task lists: open items, then ticked ones.
+    public static func markdown(
+        _ records: [MemoryRecord], lists: [DoddyList] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+    ) -> String {
         let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
         let count = records.count == 1 ? "1 note" : "\(records.count) notes"
@@ -36,6 +39,17 @@ public enum MarkdownExport {
                 lines += quote(record.rawText)
             }
             lines.append("")
+        }
+        if !lists.isEmpty {
+            lines.append("# Lists")
+            lines.append("")
+            for list in lists {
+                lines.append("## \(list.name)")
+                lines.append("")
+                lines += list.open.map { "- [ ] \($0.text)" }
+                lines += list.done.map { "- [x] \($0.text)" }
+                lines.append("")
+            }
         }
         return lines.joined(separator: "\n")
     }

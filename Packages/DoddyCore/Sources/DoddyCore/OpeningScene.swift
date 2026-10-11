@@ -1,6 +1,6 @@
 import Foundation
 
-// The opening (ADR-210): a pen sketches Doddy in, he dribbles, crouches, hops and shoots, the
+// The opening (ADR-225): a pen sketches Doddy in, he dribbles, crouches, hops and shoots, the
 // ball arcs into the ring ("SWISH!", confetti), he pops up ready to talk, and then jumps into
 // his place on Home: the last frame puts him exactly where Home's own picture of him
 // is, so the hand-over has no jump (`OpeningHandover`). Everything in this file is a pure
