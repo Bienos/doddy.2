@@ -126,6 +126,8 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
+                    // Memory on calls: a copy upload that failed or was cut off is sent again.
+                    MemoryCopySync.shared.retryIfNeeded(store.memories)
                 }
                 if phase == .background { WidgetSync.shared.refresh() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
