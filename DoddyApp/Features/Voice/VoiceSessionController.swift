@@ -1024,7 +1024,9 @@ final class VoiceSessionController {
         let pool = tick ? list.open : list.items
         var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
         for phrase in request.items {
-            switch ListMatch.item(phrase, in: pool) {
+            // Removing takes exact matches only (review C9): "remove milk" offers "oat milk" to
+            // tap instead of deleting it. Ticking keeps partial matches.
+            switch ListMatch.item(phrase, in: pool, partial: tick) {
             case .one(let item): if !matched.contains(item) { matched.append(item) }
             case .none: notFound.append(phrase)
             case .several(let options): ambiguous.append((said: phrase, options: options))
