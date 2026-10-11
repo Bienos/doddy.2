@@ -34,7 +34,7 @@ public enum CarProfile {
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
-        case .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
+        case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
              .setTimer, .setAlarm, .cancelAlarm, .openMap, .runShortcut, .draftMessage, .startTranslator,
              .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:

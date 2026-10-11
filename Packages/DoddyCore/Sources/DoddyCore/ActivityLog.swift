@@ -90,6 +90,10 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Searched your notes", detail: "“\(query)”", isLookup: true)
         case .saveMemory(let text):
             return ActivityRequest(app: .memories, title: "Save a note", detail: "“\(text)”", isLookup: false)
+        case .leaveBy(let request):
+            return ActivityRequest(
+                app: .maps, title: "Remind when to leave",
+                detail: "“\(request.place)” · arrive by \(when(request.arriveBy, hasTime: true))", isLookup: false)
         case .findFreeTime(let request):
             let range = request.range(calendar: .current)
             return ActivityRequest(

@@ -461,6 +461,22 @@
     },
     {
       "type": "function",
+      "name": "remind_when_to_leave",
+      "description": "Propose a reminder telling the user when to leave to arrive somewhere on time. Use it when the user asks to be reminded when to leave, or when to set off for something. Give the place in the user's words (or an event's place from read_calendar) and the time they need to be there. The app reads where the iPhone is once, asks Apple Maps for the travel time, and shows the place it found, the travel time and when to leave; nothing is set until the user taps Set reminder. The result starts with 'added', 'declined', 'not added' (leaving would already be too late, or the trip is too long), 'not found' (no such place: ask for the address) or 'failed'. Before this tool runs, say only one short line, e.g. 'Confirm on screen and I'll remind you when to leave.' (Polish: 'Potwierdź na ekranie, a przypomnę ci, kiedy wyjść.'). Never say it is set unless the result starts with added; then say when to leave and that traffic can change.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "place": {"type": "string", "description": "Where the user is going, in their words or as an address, e.g. 'the dentist on Marszałkowska'."},
+          "arrive_by": {"type": "string", "description": "When they need to be there, as YYYY-MM-DDTHH:MM in their local time, later than now."},
+          "mode": {"type": "string", "enum": ["driving", "walking", "transit"], "description": "How they travel. Default driving."},
+          "buffer_minutes": {"type": "integer", "description": "Spare minutes to arrive early, 0 to 60. Default 10."}
+        },
+        "required": ["place", "arrive_by"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
+    },
+    {
+      "type": "function",
       "name": "run_shortcut",
       "description": "Propose running one of the user's Shortcuts by its exact name. The app shows a card and the user taps Run; the Shortcuts app then opens for a moment. The result starts with 'opened' (Shortcuts was asked to run it; Doddy cannot see whether it finished) or 'declined'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should run that Shortcut.' Never say the shortcut finished.",
       "parameters": {

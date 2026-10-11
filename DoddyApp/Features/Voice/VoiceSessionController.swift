@@ -73,6 +73,8 @@ final class VoiceSessionController {
         case undo(toolCallID: String, entry: ActivityEntry)
         /// "Save your parking spot here?" (ADR-301): the position read just now, and the user's note.
         case parking(toolCallID: String, spot: ParkingSpot)
+        /// "Remind me when to leave" (ADR-335): the place Maps found, the travel time and when to leave.
+        case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
 
@@ -82,7 +84,7 @@ final class VoiceSessionController {
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
-                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _),
+                 .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _):
                 id
             }
@@ -834,6 +836,13 @@ final class VoiceSessionController {
             } catch {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
+        case .leaveBy(let id, let plan):
+            // A local notification at the leave time, read back from iOS (ADR-335).
+            switch await LeaveByScheduler.schedule(plan) {
+            case .scheduled: await reply(id, VoiceToolReply.leaveBySet(plan, calendar: .current))
+            case .notAllowed: await reply(id, VoiceToolReply.leaveByNotAllowed)
+            case .failed: await reply(id, VoiceToolReply.leaveByFailed)
+            }
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-301).
             let saved = ParkingStore.save(spot)
@@ -979,6 +988,7 @@ final class VoiceSessionController {
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
+        case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
             await reply(id, VoiceToolReply.ingredientsDeclined)
@@ -1660,6 +1670,8 @@ final class VoiceSessionController {
             await reply(call.toolCallId, VoiceToolReply.conversion(request))
         case .parkingSpot(let action):
             await handleParking(action, toolCallID: call.toolCallId)
+        case .leaveBy(let request):
+            await handleLeaveBy(request, toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
@@ -2076,6 +2088,35 @@ final class VoiceSessionController {
     /// call is left without an answer.
     /// Parking (ADR-301). Location is read once, only for "save" and, if location is already
     /// allowed, for the distance on "find"; the agent hears no coordinates.
+    /// "Remind me when to leave" (ADR-335): one position, an Apple Maps search near it and the
+    /// travel time; the card shows what Maps found. Nothing is set until Set reminder.
+    private func handleLeaveBy(_ request: LeaveByRequest, toolCallID: String) async {
+        let location = PlaceLocation.shared
+        var readiness = await location.readiness()
+        if readiness == .notDetermined { readiness = await location.requestWhenInUse() }
+        guard readiness == .ready || readiness == .approximateOnly else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoLocation(readiness))
+            return
+        }
+        guard let here = await location.currentFix(within: 3_000)?.coordinate else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoLocation(nil))
+            return
+        }
+        guard let place = (try? await location.search(request.place, near: here))?.first else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoPlace(request.place))
+            return
+        }
+        guard let seconds = try? await location.travelTime(from: here, to: place.coordinate, mode: request.mode, arriveBy: request.arriveBy) else {
+            await reply(toolCallID, VoiceToolReply.leaveByNoRoute(request.mode))
+            return
+        }
+        switch LeaveBy.plan(request, placeName: place.name, placeAddress: place.address, travelSeconds: seconds, now: Date()) {
+        case .success(let plan): propose(.leaveBy(toolCallID: toolCallID, plan: plan), toolCallID: toolCallID)
+        case .failure(.tooLate(let leaveAt)): await reply(toolCallID, VoiceToolReply.leaveByTooLate(leaveAt, calendar: .current))
+        case .failure(.tooFar): await reply(toolCallID, VoiceToolReply.leaveByTooFar)
+        }
+    }
+
     private func handleParking(_ action: ParkingAction, toolCallID: String) async {
         switch action {
         case .save(let note):
@@ -2657,7 +2698,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .translator, .plan, .undo: false

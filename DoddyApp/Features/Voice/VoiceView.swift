@@ -621,6 +621,25 @@ struct VoiceView: View {
             Text("Kept only on this iPhone, and replaces any spot saved before. Doddy hears when you saved it, not where.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .leaveBy(_, let plan):
+            // ADR-335: what Apple Maps found, so a wrong place can be turned down.
+            Text("Remind you when to leave?")
+                .font(.headline)
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(plan.placeName)
+                    if !plan.placeAddress.isEmpty {
+                        Text(plan.placeAddress).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
+                }
+            } icon: { Image(systemName: "mappin.and.ellipse") }
+            Label(String(format: NSLocalizedString("Arrive by %@", comment: ""), plan.request.arriveBy.formatted(date: .abbreviated, time: .shortened)), systemImage: "flag")
+            Label(String(format: NSLocalizedString("About %lld min of travel, plus %lld min spare", comment: ""), plan.travelMinutes, plan.request.bufferMinutes), systemImage: "car")
+            Label(String(format: NSLocalizedString("Leave at %@", comment: ""), plan.leaveAt.formatted(date: .omitted, time: .shortened)), systemImage: "bell")
+                .font(.headline)
+            Text("Apple Maps worked out the travel time just now, from where your iPhone is; traffic can change. Your position isn't kept.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -834,6 +853,7 @@ struct VoiceView: View {
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         case .undo(_, let entry): (entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
         case .parking: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
+        case .leaveBy: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
         }

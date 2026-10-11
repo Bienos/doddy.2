@@ -49,7 +49,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
              VoiceToolName.moveReminders: .reminders
         case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays: .contacts
         case VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm: .timers
-        case VoiceToolName.openMap: .maps
+        case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
         default: nil
@@ -217,6 +217,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case moveReminders(dueBy: ReminderDue, to: ReminderDue)
     /// "When am I free?" (ADR-332): read-only, worked out on the iPhone.
     case findFreeTime(FreeTimeRequest)
+    /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
+    case leaveBy(LeaveByRequest)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -233,6 +235,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseRead(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.findFreeTime:
             return parseFreeTime(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.remindWhenToLeave:
+            return parseLeaveBy(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createCalendarEvent:
             return parseEvent(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createReminder:

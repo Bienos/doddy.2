@@ -309,6 +309,17 @@
         }
       }
     },
+    "About %lld min of travel, plus %lld min spare": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Około %lld min drogi, plus %lld min zapasu"
+          }
+        }
+      }
+    },
     "About this build": {
       "extractionState": "manual",
       "localizations": {
@@ -848,6 +859,17 @@
         }
       }
     },
+    "Apple Maps worked out the travel time just now, from where your iPhone is; traffic can change. Your position isn't kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple obliczyły czas dojazdu przed chwilą, z miejsca, gdzie jest Twój iPhone; ruch może się zmienić. Twoja pozycja nie jest przechowywana."
+          }
+        }
+      }
+    },
     "Apple Reminders": {
       "extractionState": "manual",
       "localizations": {
@@ -888,6 +910,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Działa od następnej rozmowy głosowej. Nastrój zmienia to, jak Doddy brzmi, a nie to, co czuje: jest SI i nie ma nastrojów."
+          }
+        }
+      }
+    },
+    "Arrive by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na miejscu do %@"
           }
         }
       }
@@ -4577,6 +4610,17 @@
         }
       }
     },
+    "Leave at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyjdź o %@"
+          }
+        }
+      }
+    },
     "Leave it": {
       "extractionState": "manual",
       "localizations": {
@@ -7785,6 +7829,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przypomnieć Ci o tej notatce?"
+          }
+        }
+      }
+    },
+    "Remind you when to leave?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnieć ci, kiedy wyjść?"
           }
         }
       }
