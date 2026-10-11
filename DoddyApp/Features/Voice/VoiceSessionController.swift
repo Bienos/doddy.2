@@ -282,6 +282,10 @@ final class VoiceSessionController {
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
+        // This start's number (review H1): a start that was ended and replaced while it waited
+        // never opens, keeps or hears a conversation.
+        startAttempt += 1
+        let attempt = startAttempt
         isOffline = false
         offlineSaved = nil
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
@@ -326,9 +330,10 @@ final class VoiceSessionController {
             return
         }
         guard await Self.microphoneAllowed() else {
-            phase = .microphoneDenied
+            if attempt == startAttempt { phase = .microphoneDenied }
             return
         }
+        guard attempt == startAttempt else { return }
         startedAt = Date()
         phase = .connecting
 
@@ -343,6 +348,8 @@ final class VoiceSessionController {
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
+        // Ended (or ended and started again) while the notes loaded.
+        guard attempt == startAttempt, phase == .connecting else { return }
         var notes = VoiceContext.savedNotes(store.memories)
         var recent = logs.isEnabled
             ? VoiceContext.recentConversations(logs.logs)
@@ -363,7 +370,7 @@ final class VoiceSessionController {
             translatorNeedsHello = true
         }
 
-        let ref = WeakRef(self)
+        let ref = AttemptRef(self, attempt: attempt)
         let variables: [String: String] = [
             "saved_notes": notes.text,
             "saved_notes_count": "\(notes.includedCount)",
@@ -438,7 +445,7 @@ final class VoiceSessionController {
             do throws(VoiceTokenError) {
                 auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
             } catch {
-                if phase == .connecting {
+                if attempt == startAttempt, phase == .connecting {
                     if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
                 }
                 return
@@ -447,14 +454,16 @@ final class VoiceSessionController {
             fail(reason)
             return
         }
-        // Closed while the token was being fetched: don't open the microphone after all.
-        guard phase == .connecting else { return }
+        // Closed (or closed and started again) while the token was being fetched: don't open the
+        // microphone after all.
+        guard attempt == startAttempt, phase == .connecting else { return }
 
         Self.allowOtherAppsAudio()
         do {
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
-            guard isLive else {
-                // Closed while connecting: end it so nothing keeps listening.
+            guard attempt == startAttempt, isLive else {
+                // Closed (or closed and started again) while connecting: end it so nothing keeps
+                // listening and its tool calls stop (review H1).
                 await started.endConversation()
                 return
             }
@@ -462,6 +471,8 @@ final class VoiceSessionController {
             watchAudioInterruptions()
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
+            // A replaced start's failure isn't the new conversation's.
+            guard attempt == startAttempt else { return }
             if Offline.isNoConnection(error) {
                 failOffline()
                 return
@@ -501,15 +512,15 @@ final class VoiceSessionController {
 
     /// Web tools of the running OpenAI conversation (empty for ElevenLabs, which runs them itself).
     private var openAIWebTools: Set<String> = []
-    /// Counts OpenAI starts, so a start that was ended and replaced while it waited for the token
-    /// server never opens a second microphone.
-    private var openAIAttempt = 0
+    /// Counts starts and ends, so a start that was ended and replaced while it waited (for the
+    /// token server or the provider) never opens a second microphone (review H1). `AttemptRef`
+    /// reads it, so it is fileprivate.
+    fileprivate var startAttempt = 0
 
     /// Same start as ElevenLabs from here on: same notes, conversations, lists and profile
     /// (`variables`), same tools and cards. Needs the token server: the OpenAI key stays there.
     private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
-        openAIAttempt += 1
-        let attempt = openAIAttempt
+        let attempt = startAttempt
         guard case .tokenServer(let endpoint, let accessCode) = mode else {
             fail("The OpenAI test voice needs Doddy's token server. Add it in Settings → Voice, or switch Home back to ElevenLabs.")
             return
@@ -534,15 +545,15 @@ final class VoiceSessionController {
         do throws(VoiceTokenError) {
             grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant()
         } catch {
-            if attempt == openAIAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
+            if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return
         }
         // Closed (or closed and started again) while the secret was being fetched: don't open
         // the microphone for this attempt.
-        guard attempt == openAIAttempt, phase == .connecting else { return }
+        guard attempt == startAttempt, phase == .connecting else { return }
 
         openAIWebTools = spec.webTools
-        let ref = WeakRef(self)
+        let ref = AttemptRef(self, attempt: attempt)
         let session = OpenAIRealtimeSession(grant: grant) { event in ref.value?.applyOpenAI(event) }
         // Set first, so End while connecting closes it and the first tool call can be answered.
         conversation = session
@@ -550,10 +561,10 @@ final class VoiceSessionController {
             try await session.start(sessionUpdate: sessionUpdate, greeting: OpenAIRealtimeWire.greeting(greetingLine))
         } catch {
             if conversation === session { conversation = nil }
-            if attempt == openAIAttempt, isLive { fail("Couldn't connect to OpenAI's voice. Check your internet connection and try again. (\(error.localizedDescription))") }
+            if attempt == startAttempt, isLive { fail("Couldn't connect to OpenAI's voice. Check your internet connection and try again. (\(error.localizedDescription))") }
             return
         }
-        guard attempt == openAIAttempt, isLive else {
+        guard attempt == startAttempt, isLive else {
             await session.endConversation()
             if conversation === session { conversation = nil }
             return
@@ -667,6 +678,9 @@ final class VoiceSessionController {
     }
 
     func stop() async {
+        // From here, a start still connecting ends itself and late events of this conversation
+        // are dropped (review H1).
+        startAttempt += 1
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
@@ -2371,6 +2385,23 @@ enum TranslatorSaveError: Error, Equatable {
 private final class WeakRef<T: AnyObject>: @unchecked Sendable {
     weak var value: T?
     init(_ value: T) { self.value = value }
+}
+
+/// Like `WeakRef`, but only while `attempt` is still the controller's latest start (review H1):
+/// events of a conversation that was ended, or replaced while it connected, never reach the next one.
+private final class AttemptRef: @unchecked Sendable {
+    private weak var controller: VoiceSessionController?
+    private let attempt: Int
+
+    init(_ controller: VoiceSessionController, attempt: Int) {
+        self.controller = controller
+        self.attempt = attempt
+    }
+
+    @MainActor var value: VoiceSessionController? {
+        guard let controller, controller.startAttempt == attempt else { return nil }
+        return controller
+    }
 }
 
 private extension VoiceSessionController.PendingAction {
