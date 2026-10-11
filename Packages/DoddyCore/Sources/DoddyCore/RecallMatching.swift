@@ -174,10 +174,6 @@ public enum RecallMatching {
 
     /// One edit (two for 8+ letters) between the query form and the note word, or the note
     /// word's beginning of the same length (so a typo plus a different ending still matches).
-    static func isTypo(_ form: String, of noteWord: String) -> Bool {
-        typoEdits(form, of: noteWord) != nil
-    }
-
     /// The fewest edits that make it a typo, or nil when it isn't one.
     static func typoEdits(_ form: String, of noteWord: String) -> Int? {
         guard noteWord.allSatisfy(\.isLetter), abs(noteWord.count - form.count) <= 4 else { return nil }

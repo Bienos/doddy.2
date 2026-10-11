@@ -561,7 +561,7 @@ export class CloudToolsService {
             slug: tool.composioSlug,
             composioUserId,
             connectionId: row.connection_id,
-            arguments: tool.toArguments(args, target),
+            arguments: tool.toArguments(args, target, { timeZone: request.timeZone }),
             signal,
           }),
         );

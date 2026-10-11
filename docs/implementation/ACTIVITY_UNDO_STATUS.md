@@ -146,3 +146,22 @@ Date: 2026-10-11. Owner: "build next things", after Claude proposed "Undo the la
 | U11 | Ask Doddy to remove "bread" from Shopping; Undo → Put back | Bread is back where it was |
 | U12 | Ask Doddy to add an item, then delete the whole list; Undo | "Not undone: it changed in the list since…"; nothing else changes |
 
+## ADR-277 (2026-10-11, owner: "build next"): notes saved by voice
+- **What it does:** a note Doddy saved by voice, from its own card or a plan-card step, now has Undo in What Doddy did for 24 hours: **Delete**, after a confirmation.
+- **When it applies:** only while the note is exactly as saved. That means:
+  - the same words;
+  - never edited or corrected;
+  - no photo, recording or reminder added.
+- **Otherwise** it is the user's now, and the row says it was left alone. If the reminder can't be checked, nothing is deleted.
+- **After the delete:** the store is read again before "Undone". The notes screen's own short Undo for a delete still appears.
+- **Code:**
+  - `ActivityUndo.savedNote` and `noteUnchanged` (DoddyCore);
+  - `MemoryStore.undoSavedNote`, which uses the existing `delete(id:)`, so the note's reminder row and files go with it as in any delete;
+  - lists and notes (no connection switch) are sent to the store, everything else to `DeviceConnections`.
+- **Tests:** 2 new `ActivityUndoTests`; a planted bug was caught.
+
+| # | Do this | Expect |
+|---|---|---|
+| U13 | Ask Doddy to save a note; What Doddy did → Undo → Delete | The note is gone; row "Notes · Undone"; the notes screen offers its short Undo |
+| U14 | Ask Doddy to save a note, add a photo to it, then Undo | "Not undone: it changed in your notes since…"; the note stays |
+

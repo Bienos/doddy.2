@@ -23,8 +23,12 @@ struct AlarmLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandPoseView(pose: .yawnStretch, maxSize: CGSize(width: 44, height: 52))
-                        .padding(.leading, 6)
+                    if WidgetDoddyArt.isHidden {
+                        Image(systemName: "alarm")
+                    } else {
+                        IslandPoseView(pose: .yawnStretch, maxSize: CGSize(width: 44, height: 52))
+                            .padding(.leading, 6)
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) { countdown(context.state).monospacedDigit() }
                 DynamicIslandExpandedRegion(.bottom) { Text("Snoozed").font(.caption) }
@@ -42,7 +46,8 @@ struct AlarmLiveActivity: Widget {
     private func countdown(_ state: AlarmPresentationState) -> some View {
         switch state.mode {
         case .countdown(let countdown):
-            Text(timerInterval: Date.now...countdown.fireDate, countsDown: true)
+            // Never a backwards range, even if this draws after the alarm was due (ADR-331).
+            Text(timerInterval: Date.now...max(Date.now, countdown.fireDate), countsDown: true)
         default:
             Image(systemName: "alarm")
         }

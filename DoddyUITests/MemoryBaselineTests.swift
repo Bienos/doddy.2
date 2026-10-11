@@ -6,8 +6,7 @@ final class MemoryBaselineTests: XCTestCase {
     @MainActor
     func testSaveRestartFindAndDeleteRealNote() {
         let app = XCUIApplication()
-        app.launchArguments = ["-memoryTestID", UUID().uuidString, "-onboardingDone", "YES",
-                               "-backTapSetupStatus", "deferred", "-voiceAgentID", "", "-openingScene", "NO", "-listenOnOpen", "NO"]
+        app.launchArguments = UITestLaunch.arguments(store: .persistent(UUID()))
         app.launch()
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 8))
         app.buttons["home.save"].tap()
@@ -48,11 +47,16 @@ final class MemoryBaselineTests: XCTestCase {
     }
 
     @MainActor
-    func testNativeIslandOfflineFixtureCanStartMuteAndEnd() {
+    func testNativeIslandOfflineFixtureCanStartMuteAndEnd() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["-inMemoryStore", "YES", "-onboardingDone", "YES", "-islandBaseline", "-openingScene", "NO", "-listenOnOpen", "NO"]
+        app.launchArguments = UITestLaunch.arguments(store: .inMemory) + ["-islandBaseline"]
         app.launch()
         XCTAssertTrue(app.buttons["island.fixture.start"].waitForExistence(timeout: 8))
+        let enabled = app.staticTexts["island.fixture.activitiesEnabled"]
+        XCTAssertTrue(enabled.waitForExistence(timeout: 5))
+        if enabled.label != "Live Activities on" {
+            throw XCTSkip("Live Activities are off on this simulator; no Dynamic Island proof claimed.")
+        }
         app.buttons["island.fixture.start"].tap()
         XCTAssertEqual(app.staticTexts["island.fixture.status"].label, "Fixture active")
         let count = app.staticTexts["island.fixture.nativeCount"]

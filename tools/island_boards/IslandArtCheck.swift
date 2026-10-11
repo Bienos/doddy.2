@@ -15,6 +15,12 @@ struct IslandArtCheck {
             return
         }
         // ...and the voice screen's talking frames (ADR-299) and the strips (ADR-313), app catalog only.
+        if args.contains("--story-assets") {
+            for story in PanelStory.allCases {
+                for panel in 1...story.panelCount { print(story.assetName(panel)) }
+            }
+            return
+        }
         if args.contains("--talking-assets") {
             for frame in 1...VoiceScreenArt.talkingFrameCount { print(VoiceScreenArt.talkingAssetName(frame)) }
             for motion in DoddyMotion.allCases {
