@@ -41,6 +41,9 @@ enum BackupCopy {
         case .weakFile?:
             return NSLocalizedString("This file isn't protected the way Doddy's backups are, so it wasn't opened. Nothing was added.", comment: "")
         case nil:
+            if error is CancellationError {
+                return NSLocalizedString("Opening the backup was stopped. Nothing was added.", comment: "")
+            }
             if let restore = error as? MemoryRestoreError { return RestoreCopy.failure(restore) }
             return UserFacingError.message(for: error)
         }
@@ -83,6 +86,8 @@ struct MakeBackupView: View {
     @State private var document: BackupDocument?
     @State private var showExporter = false
     @State private var receipt: String?
+    /// Photos or voice memos that are linked to a note but couldn't be read, so aren't in the file.
+    @State private var leftOut: String?
 
     private var fileName: String {
         let day = Date.now.formatted(.iso8601.year().month().day())
@@ -125,6 +130,7 @@ struct MakeBackupView: View {
                 switch result {
                 case .success(let url):
                     receipt = "Saved as \"\(url.lastPathComponent)\". Keep the passphrase safe; Doddy doesn't keep it."
+                        + (leftOut.map { " " + $0 } ?? "")
                 case .failure:
                     problem = NSLocalizedString("The backup wasn't saved. Nothing was changed on this iPhone.", comment: "")
                 }
@@ -140,20 +146,38 @@ struct MakeBackupView: View {
         isWorking = true
         defer { isWorking = false }
         await store.reload()
+        // A failed read would make a backup of whatever was loaded before, or of nothing.
+        if let loadError = store.loadError {
+            problem = loadError
+            return
+        }
+        // Files that can't be read are counted and named in the receipt, never skipped silently (DOD-08).
+        var unreadablePhotos = 0, unreadableRecordings = 0
         var photos: [BackupContents.Photo] = []
         if includePhotos {
             for note in store.memories {
-                guard let photo = store.photo(for: note.id), let jpeg = await store.photoData(photo) else { continue }
+                guard let photo = store.photo(for: note.id) else { continue }
+                guard let jpeg = await store.photoData(photo) else {
+                    unreadablePhotos += 1
+                    continue
+                }
                 photos.append(.init(memoryID: note.id, width: photo.width, height: photo.height, addedAt: photo.addedAt, jpeg: jpeg))
             }
         }
         var recordings: [BackupContents.Recording] = []
         if includeRecordings {
             for note in store.memories {
-                guard let audio = store.recording(for: note.id), let m4a = await store.recordingData(audio) else { continue }
+                guard let audio = store.recording(for: note.id) else { continue }
+                guard let m4a = await store.recordingData(audio) else {
+                    unreadableRecordings += 1
+                    continue
+                }
                 recordings.append(.init(memoryID: note.id, durationMilliseconds: audio.durationMilliseconds, addedAt: audio.addedAt, m4a: m4a))
             }
         }
+        leftOut = unreadablePhotos + unreadableRecordings == 0 ? nil : String(
+            format: NSLocalizedString("%lld photos and %lld voice memos couldn't be read on this iPhone, so they aren't in this backup.", comment: ""),
+            unreadablePhotos, unreadableRecordings)
         do {
             let export = try MemoryExport.json(
                 store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items),
@@ -193,6 +217,9 @@ struct RestoreBackupView: View {
     @State private var problem: String?
     @State private var receipt: String?
     @State private var choosing = true
+    /// The running decryption. A crafted file can ask for slow key stretching, so leaving the
+    /// screen cancels it instead of leaving it to run on.
+    @State private var decrypting: Task<BackupContents, any Error>?
 
     var body: some View {
         NavigationStack {
@@ -231,10 +258,21 @@ struct RestoreBackupView: View {
             }
             .navigationTitle("Restore a backup")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(isWorking) } }
+            // While a backup is being opened, nothing is written yet, so Cancel stays available
+            // and stops the decryption; while adding, it waits.
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        decrypting?.cancel()
+                        dismiss()
+                    }
+                    .disabled(isWorking && decrypting == nil)
+                }
+            }
             .fileImporter(isPresented: $choosing, allowedContentTypes: [.doddyBackup, .data]) { result in read(result) }
         }
-        .interactiveDismissDisabled(isWorking)
+        .interactiveDismissDisabled(isWorking && decrypting == nil)
+        .onDisappear { decrypting?.cancel() }
     }
 
     private func read(_ result: Result<URL, any Error>) {
@@ -255,12 +293,17 @@ struct RestoreBackupView: View {
         guard let fileData else { return }
         problem = nil
         isWorking = true
-        defer { isWorking = false }
         let words = passphrase
+        let task = Task.detached(priority: .userInitiated) { () throws -> BackupContents in
+            try EncryptedBackup.decrypt(fileData, passphrase: words)
+        }
+        decrypting = task
+        defer {
+            isWorking = false
+            decrypting = nil
+        }
         do {
-            let contents = try await Task.detached(priority: .userInitiated) { () throws -> BackupContents in
-                try EncryptedBackup.decrypt(fileData, passphrase: words)
-            }.value
+            let contents = try await task.value
             await store.reload()
             plan = try BackupRestorePlan.make(
                 contents, existing: store.memories + store.lists.map(\.record),

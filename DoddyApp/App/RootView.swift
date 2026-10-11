@@ -126,6 +126,8 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
+                    // Memory on calls: a copy upload that failed or was cut off is sent again.
+                    if store.hasLoaded && store.loadError == nil { MemoryCopySync.shared.retryIfNeeded(store.memories) }
                 }
                 if phase == .background { WidgetSync.shared.refresh() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
@@ -156,8 +158,13 @@ struct RootView: View {
                 homePath = [memoryID]
                 noteReminders.pendingOpenMemoryID = nil
             }
-            // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
-            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
+            // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone. Only
+            // after a read that worked: a failed one can leave the list empty or stale, and uploading
+            // that would wipe or roll back the server copy (DOD-06).
+            .onChange(of: store.revision) {
+                guard store.hasLoaded, store.loadError == nil else { return }
+                MemoryCopySync.shared.schedule(store.memories)
+            }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)
