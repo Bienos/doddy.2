@@ -214,6 +214,8 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | U10 | Ask Doddy to add "milk, eggs" to Shopping; tick eggs yourself; What Doddy did → Undo → Remove | Milk is gone; eggs stay; row "Notes · Undone" |
 | U11 | Ask Doddy to remove "bread" from Shopping; Undo → Put back | Bread is back where it was |
 | U12 | Ask Doddy to add an item, then delete the whole list; Undo | "Not undone: it changed in the list since…" |
+| U13 | Ask Doddy to save a note; What Doddy did → Undo → Delete | Note gone; row "Notes · Undone" |
+| U14 | Ask Doddy to save a note, add a photo to it, then Undo | "Not undone: it changed in your notes since…"; note stays |
 
 ## 16. Birthdays from Contacts (ADR-269; needs the live agent update first)
 | # | Do this | Expect |
