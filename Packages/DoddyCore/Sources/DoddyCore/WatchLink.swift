@@ -11,6 +11,8 @@ import Foundation
 public enum WatchRequest: Codable, Equatable, Sendable {
     case tick(listID: UUID, itemID: UUID, shownDone: Bool)
     case saveNote(text: String)
+    /// An item said or written on the watch, for one list (ADR-271).
+    case addToList(listID: UUID, text: String)
 
     public func encoded() throws -> Data { try JSONEncoder().encode(Envelope(version: WatchLinkVersion.current, request: self)) }
 
@@ -35,6 +37,10 @@ public enum WatchReply: Codable, Equatable, Sendable {
     case saved
     /// Nothing was saved; `reason` is shown on the watch.
     case notSaved(reason: String)
+    /// Added to the list on the iPhone and read back (ADR-271).
+    case addedToList(String)
+    /// The same item is already open on the list; nothing added.
+    case alreadyOnList(String)
     case failed
 
     public init(_ tick: WidgetTick) {
@@ -57,6 +63,8 @@ public enum WatchReply: Codable, Equatable, Sendable {
         case .notFound: "That list changed on your iPhone. Nothing was changed."
         case .saved: "Saved in Doddy on your iPhone."
         case .notSaved(let reason): reason
+        case .addedToList(let text): "Added “\(text)” on your iPhone."
+        case .alreadyOnList(let text): "“\(text)” is already on the list. Nothing added."
         case .failed: "Your iPhone couldn't do that. Nothing was changed."
         }
     }
@@ -78,6 +86,12 @@ public enum WatchNote {
             if case .tooLong(_, let maximum) = error { return "A note can be up to \(maximum) characters." }
             return "Say or type a few words first."
         }
+    }
+
+    /// A list item from the watch: the same rules as one typed on the iPhone (ADR-271).
+    public static func itemProblem(_ text: String) -> String? {
+        guard let item = ListText.cleaned(text) else { return "Say or type an item first." }
+        return item.count > ListLimits.itemLength ? "An item can be up to \(ListLimits.itemLength) characters." : nil
     }
 
     /// When the iPhone can't be reached: nothing was sent, and nothing is kept to send later.

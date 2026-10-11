@@ -73,10 +73,22 @@ struct WatchListView: View {
     let listID: UUID
     @State private var working: UUID?
     @State private var message: String?
+    /// An item to add, said (dictation) or written (ADR-271).
+    @State private var newItem = ""
+    @State private var isAdding = false
 
     var body: some View {
         List {
             if let list = link.snapshot?.list(id: listID) {
+                Section {
+                    TextField("Add an item", text: $newItem)
+                        .submitLabel(.done)
+                        .onSubmit { Task { await add() } }
+                    if !newItem.isEmpty {
+                        Button(isAdding ? "Adding…" : "Add") { Task { await add() } }
+                            .disabled(isAdding)
+                    }
+                }
                 ForEach(list.items) { item in
                     Button {
                         Task { await tick(item) }
@@ -98,6 +110,20 @@ struct WatchListView: View {
             }
         }
         .navigationTitle(link.snapshot?.list(id: listID)?.name ?? "List")
+    }
+
+    /// Checked here, added by the iPhone, said only from its reply. The item appears in the list
+    /// with the iPhone's next snapshot.
+    private func add() async {
+        if let problem = WatchNote.itemProblem(newItem) {
+            message = problem
+            return
+        }
+        isAdding = true
+        defer { isAdding = false }
+        let outcome = await link.send(.addToList(listID: listID, text: newItem))
+        message = outcome.message
+        if case .reply(.addedToList) = outcome { newItem = "" }
     }
 
     private func tick(_ item: WidgetSnapshot.Item) async {

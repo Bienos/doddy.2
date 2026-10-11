@@ -53,3 +53,12 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
 | DOD-08 verified_status_and_receipts | Watch shows "Saved"/"Ticked" only from the iPhone's read-back reply; no answer → "can't say whether it happened" | `testRepliesComeFromTheReadBackTick` | WatchConnectivity untested |
 | DOD-07 scoped_action_approval | Save only on tap after checking the words; a tick changes only the item as it was shown | `testRequestsRoundTripAndOtherVersionsAreIgnored`, `testNotesAreCheckedBeforeSending` | UI not compiled |
 | DOD-11 observable_privacy | Own switch; notification-text setting respected; no storage or network on the watch (guarded) | capability guard PASS | Snapshot sits in the system's application context on the watch |
+
+## Round 3: adding to a list from the watch (ADR-271)
+- **Add an item** at the top of a list on the watch: said with the watch's dictation or written.
+- **On the watch:** the item is checked with the same rules as a typed item (not empty, at most 200 characters).
+- **On the iPhone:** it's sent as `WatchRequest.addToList(listID:text:)` and added through the same `MemoryStore.addToList` as on the phone, which reads it back.
+- **The reply** is "Added “oat milk” on your iPhone.", "already on the list", "the list is full", or why not. The item shows on the watch with the iPhone's next snapshot.
+- **Unreachable iPhone:** nothing is queued; the watch says so, as before.
+- **Not built:** a full voice conversation on the watch. The ElevenLabs voice runs on the iPhone; the watch covers saving a dictated note, adding a dictated item and ticking.
+- **Tests:** `WatchListAddTests` (1). **NOT RUN:** never on a watch; dictation into a watchOS `TextField` is assumed, not tried.

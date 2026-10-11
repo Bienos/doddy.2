@@ -50,6 +50,21 @@ final class PhoneWatchLink: NSObject {
         case .tick(let listID, let itemID, let shownDone):
             guard Self.isOn else { return .failed }
             return WatchReply(await WidgetSync.shared.tick(listID: listID, itemID: itemID, shownDone: shownDone))
+        case .addToList(let listID, let text):
+            // Said or written on the watch and checked there (ADR-271); the same add as on the
+            // iPhone, read back by the store.
+            guard Self.isOn else { return .failed }
+            if let problem = WatchNote.itemProblem(text) { return .notSaved(reason: problem) }
+            guard let store, store.list(id: listID) != nil else { return .notFound }
+            do {
+                let result = try await store.addToList([text], listID: listID, source: .typed)
+                if let added = result.added.first { return .addedToList(added.text) }
+                if let there = result.alreadyThere.first { return .alreadyOnList(there) }
+                if !result.noRoom.isEmpty { return .notSaved(reason: "The list is full, so nothing was added.") }
+                return .failed
+            } catch {
+                return .notSaved(reason: "Not added: \(UserFacingError.listMessage(for: error))")
+            }
         case .saveNote(let text):
             if let problem = WatchNote.problem(text) { return .notSaved(reason: problem) }
             guard let store, store.isStorageAvailable else {
