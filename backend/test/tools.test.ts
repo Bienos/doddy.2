@@ -130,6 +130,19 @@ test("disconnect switches the account's tools off and blocks them at once", asyn
 
 // ------------------------------------------------------------------ grants
 
+test("a connection that wasn't granted or was canceled is removed at the provider, not left pending", async () => {
+  rig = await start();
+  for (const result of [{ kind: "mock", outcome: "deny" }, { kind: "canceled" }]) {
+    const begin = await rig.call("POST", "/v1/tools/notion/connect", { body: {} });
+    rig.provider.calls.length = 0;
+    await rig.call("POST", "/v1/tools/notion/complete", { body: { attemptId: begin.body.attemptId, nonce: begin.body.nonce, result } });
+    assert.ok(rig.provider.calls.some((c) => c.startsWith("removeConnection")), JSON.stringify(result));
+  }
+  rig.provider.calls.length = 0;
+  assert.equal((await connect(rig, "notion")).status, 200);
+  assert.ok(!rig.provider.calls.some((c) => c.startsWith("removeConnection")), "a kept connection is not removed");
+});
+
 test("a Google grant broader than Doddy needs blocks the tools and cannot be switched on", async () => {
   rig = await start();
   const done = await connect(rig, "gmail", USER_A, "broad_scope");

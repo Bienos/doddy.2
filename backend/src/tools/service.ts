@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { CompleteRequestSchema, type ConnectionReason, type ConnectResponse, EmptyRequestSchema, type ReceiptStatus } from "../contracts.js";
+import { type CompleteRequest, CompleteRequestSchema, type ConnectionReason, type ConnectResponse, EmptyRequestSchema, type ReceiptStatus } from "../contracts.js";
 import type { Limits } from "../config.js";
 import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
@@ -227,6 +227,30 @@ export class CloudToolsService {
       receipt: this.receipt(userId, id, "connect", null, status, summary, errorCode, null),
     });
 
+    // Every remote connection this completion touched that belongs to this user. Unless it ends
+    // recorded as this user's connection, each is removed at the provider (or queued for removal),
+    // so no grant stays live that Disconnect couldn't find. Never the unverified callback hint.
+    const touched: (string | null)[] = [attempt.pending_connection_id];
+    let recorded = false;
+    try {
+      return await this.completeAttempt(userId, id, title, request, attempt, composioUserId, fail, done, touched, () => { recorded = true; });
+    } finally {
+      if (!recorded) await this.discardRemote(userId, id, touched);
+    }
+  }
+
+  private async completeAttempt(
+    userId: string,
+    id: ToolkitId,
+    title: string,
+    request: CompleteRequest,
+    attempt: { pending_connection_id: string | null },
+    composioUserId: string,
+    fail: (errorCode: string, summary: string) => never,
+    done: (status: ReceiptStatus, summary: string, errorCode?: string | null) => ToolkitResult,
+    touched: (string | null)[],
+    markRecorded: () => void,
+  ): Promise<ToolkitResult> {
     const result = request.result;
     if (result.kind === "canceled") return done("canceled", "Connecting was canceled. Nothing was connected.");
     if (result.kind !== this.deps.completionMode) return fail("completion_mode_mismatch", "This completion isn't accepted by this server.");
@@ -237,6 +261,7 @@ export class CloudToolsService {
         const mocked = await this.provider.completeMock({ toolkit: id, composioUserId, approve: result.outcome === "approve" });
         if (!mocked) return done("failed", "Access wasn't granted. Nothing was connected.", "access_denied");
         connectionId = mocked.connectionId;
+        touched.push(connectionId);
       } else if (result.kind === "callback") {
         // The redirect's status and ID are hints only; the server re-reads status and ownership below.
         if (result.status !== "success") return done("failed", `${title} wasn't connected.`, "provider_reported_failure");
@@ -246,6 +271,7 @@ export class CloudToolsService {
         connectionId = result.connectedAccountId;
       } else {
         const verified = await this.provider.completeVerifiedAuth({ composioUserId, sessionUri: result.sessionUri, signal: this.timeout() });
+        touched.push(verified.connectionId); // redeemed for this user's own Composio id
         if (verified.connectionId !== attempt.pending_connection_id) {
           return fail("attempt_mismatch", "The connection didn't match this attempt. Nothing was connected.");
         }
@@ -272,6 +298,7 @@ export class CloudToolsService {
         connected_at: this.now(),
         last_checked_at: this.now(),
       });
+      markRecorded();
       // A fresh connection never inherits switches from an earlier one.
       this.store.disableTools(userId, toolNames(id), this.now());
       return verdict === "ok"
@@ -317,6 +344,21 @@ export class CloudToolsService {
             null,
           );
     return { toolkit: this.view(userId, id), receipt };
+  }
+
+  /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
+  private async discardRemote(userId: string, id: ToolkitId, ids: (string | null)[]): Promise<void> {
+    for (const connectionId of new Set(ids.filter((c): c is string => !!c))) {
+      this.store.queueCleanup(connectionId, userId, id, this.now());
+      let result: "removed" | "failed";
+      try {
+        result = await this.provider.removeConnection({ connectionId, signal: this.timeout() });
+      } catch {
+        result = "failed";
+      }
+      if (result === "removed") this.store.finishCleanup(connectionId);
+      else this.store.failCleanup(connectionId, "remote_cleanup_failed");
+    }
   }
 
   private async removeRemote(userId: string, id: ToolkitId): Promise<"removed" | "failed"> {

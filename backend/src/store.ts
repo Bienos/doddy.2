@@ -284,6 +284,16 @@ export class Store {
     });
   }
 
+  /** Queues remote removal of a connection Doddy never recorded (e.g. a completion that failed). */
+  queueCleanup(connectionId: string, userId: string, provider: string, now: number): void {
+    this.db
+      .prepare(
+        `INSERT OR REPLACE INTO cleanups (connection_id, user_id, provider, state, attempts, last_error, created_at)
+         VALUES (?, ?, ?, 'pending', 0, NULL, ?)`,
+      )
+      .run(connectionId, userId, provider, now);
+  }
+
   finishCleanup(connectionId: string): void {
     this.db.prepare("DELETE FROM cleanups WHERE connection_id = ?").run(connectionId);
   }
