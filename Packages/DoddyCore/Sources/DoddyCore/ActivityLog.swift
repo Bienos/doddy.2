@@ -70,14 +70,20 @@ public struct ActivityRequest: Equatable, Sendable {
     /// The same change asked again has the same key (ADR-291, ADR-292): new reminders, events,
     /// timers and alarms, whose adds look first and so can be retried safely. Nil for everything else.
     public let operationKey: String?
+    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-293).
+    public let check: ActivityCheck?
 
-    public init(app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil, operationKey: String? = nil) {
+    public init(
+        app: ActivityApp, title: String, detail: String?, isLookup: Bool, reminderKey: String? = nil,
+        operationKey: String? = nil, check: ActivityCheck? = nil
+    ) {
         self.app = app
         self.title = title
         self.detail = detail
         self.isLookup = isLookup
         self.reminderKey = reminderKey
         self.operationKey = operationKey ?? reminderKey
+        self.check = check
     }
 
     /// Nil for requests that never reach an app (unsupported or invalid tool calls).
@@ -87,7 +93,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .searchMemories(let query):
             return ActivityRequest(app: .memories, title: "Searched your notes", detail: "“\(query)”", isLookup: true)
         case .saveMemory(let text):
-            return ActivityRequest(app: .memories, title: "Save a note", detail: "“\(text)”", isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Save a note", detail: "“\(text)”", isLookup: false,
+                operationKey: NoteIdempotency.key(text), check: .note(key: NoteIdempotency.key(text)))
         case .readCalendar(let range):
             return ActivityRequest(
                 app: .calendar, title: "Read your calendar",
@@ -142,15 +150,26 @@ public struct ActivityRequest: Equatable, Sendable {
         case .cloudTool(let call):
             return describe(cloud: call.name)
         case .addToList(let request):
-            return ActivityRequest(app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Add to a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false,
+                operationKey: ListOpIdempotency.key("add", list: request.list, items: request.items),
+                check: .listAdd(list: request.list, items: request.items))
         case .readList(let name):
             return ActivityRequest(app: .memories, title: "Read a list", detail: "“\(name)”", isLookup: true)
         case .checkOff(let request):
-            return ActivityRequest(app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Tick on a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false,
+                operationKey: ListOpIdempotency.key("tick", list: request.list, items: request.items),
+                check: .listTick(list: request.list, items: request.items))
         case .removeFromList(let request):
-            return ActivityRequest(app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Remove from a list", detail: "“\(request.list)”: \(request.items.joined(separator: ", "))", isLookup: false,
+                operationKey: ListOpIdempotency.key("remove", list: request.list, items: request.items),
+                check: .listRemove(list: request.list, items: request.items))
         case .createList(let request):
-            return ActivityRequest(app: .memories, title: "Start a list", detail: "“\(request.list)”", isLookup: false)
+            return ActivityRequest(
+                app: .memories, title: "Start a list", detail: "“\(request.list)”", isLookup: false,
+                operationKey: ListOpIdempotency.key("create", list: request.list, items: []), check: .listCreate(name: request.list))
         case .changeCalendarEvent(let draft):
             var parts: [String] = []
             if let start = draft.newStart { parts.append("to \(when(start, hasTime: !draft.currentIsDayOnly))") }
@@ -237,13 +256,15 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public private(set) var receipt: ActivityReceipt?
     /// True when the app was asked to write; false when Doddy stopped before writing. Nil when not known.
     public let attempted: Bool?
+    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-293).
+    public let check: ActivityCheck?
     private var statusHistory: [ActivityStatusChange]?
 
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
         outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
         plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil,
-        operationKey: String? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil
+        operationKey: String? = nil, receipt: ActivityReceipt? = nil, attempted: Bool? = nil, check: ActivityCheck? = nil
     ) {
         self.id = id
         self.at = at
@@ -260,6 +281,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.operationKey = operationKey ?? reminderKey
         self.receipt = outcome.status == .confirmed ? receipt : nil
         self.attempted = attempted
+        self.check = check
     }
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
@@ -274,14 +296,14 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
             note: note, reminderKey: request.reminderKey, plan: plan, undo: undo, operationKey: request.operationKey,
-            receipt: receipt, attempted: attempted)
+            receipt: receipt, attempted: attempted, check: request.check)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
     public static func started(_ request: ActivityRequest, at: Date, plan: ActivityPlanRef? = nil) -> ActivityEntry {
         var entry = ActivityEntry(
             at: at, app: request.app, title: request.title, detail: request.detail, outcome: .inProgress,
-            reminderKey: request.reminderKey, plan: plan, operationKey: request.operationKey)
+            reminderKey: request.reminderKey, plan: plan, operationKey: request.operationKey, check: request.check)
         entry.statusHistory = [ActivityStatusChange(status: .proposed, at: at), ActivityStatusChange(status: .pending, at: at)]
         return entry
     }
@@ -348,6 +370,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
         // Found already there when Doddy looked first (ADR-291, ADR-292): nothing new was written.
         let foundFirst = ["already in Reminders", "already in Calendar", "was already set", "was already running"]
+        if text.hasPrefix("saved:"), text.contains("was already saved from the earlier try") { return (.alreadyThere, nil) }
         if text.hasPrefix("added:"), foundFirst.contains(where: text.contains) {
             return (.alreadyThere, nil)
         }

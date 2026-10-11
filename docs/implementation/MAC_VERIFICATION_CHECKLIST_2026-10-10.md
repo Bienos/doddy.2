@@ -265,3 +265,6 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | AS7 | Ask for a 10-minute "Eggs" timer twice in a row, tapping Start both times | Two timers run (asked on purpose); each row shows "Rings at …" matching the notification |
 | AS8 | Ask for a 10-minute timer and force-quit Doddy right after Start; reopen, ask again | The row says "Not sure"; the second try says the timer was already running and rings at the first time; one notification only |
 | AS9 | Check that the ring time in What Doddy did matches when the timer really rings (lock the phone, wait) | Same minute (checks that the stored ring time, not `nextTriggerDate()`, is used) |
+| AS10 | Ask Doddy to save a note, tap Save, and force-quit at once; reopen and open What Doddy did | The row briefly shows "Not sure", then "Done · Found in your notes when Doddy checked" (or "Didn't happen" if it wasn't saved); never both |
+| AS11 | Say "add milk and eggs to my shopping list"; then open What Doddy did | "Done" with "Read back from Notes": List: Shopping, Added: milk, Added: eggs. Ask again: "already on the list" lines, nothing added twice |
+| AS12 | Save the same words as a note twice on purpose (two separate requests, both tapped) | Two notes are saved (only an unsure first try stops the second) |

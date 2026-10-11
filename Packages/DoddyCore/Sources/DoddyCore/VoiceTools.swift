@@ -645,7 +645,7 @@ public enum VoiceToolReply {
         return "\(seconds) second\(seconds == 1 ? "" : "s")"
     }
 
-    private static func timestamp(_ date: Date?) -> String {
+    static func timestamp(_ date: Date?) -> String {
         guard let date else { return "date unavailable" }
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = .current

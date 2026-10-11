@@ -1,4 +1,4 @@
-# Action status model: status (ADR-291, timers and alarms ADR-292)
+# Action status model: status (ADR-291, timers and alarms ADR-292, notes and lists ADR-293)
 Date: 2026-10-11. Owner instruction: "start the action status model". This covers OP-012 (action receipts and status history) and OP-013 (recoverable failure and retry) from the research backlog.
 
 ## What was already there
@@ -114,6 +114,48 @@ Owner instruction: "extend it to timers and alarms".
   - how late AlarmKit lists a new alarm;
   - Mac checklist items AS6 to AS9.
 
+## Notes and lists (ADR-293)
+Owner instruction: "extend it to notes and lists".
+
+- **Why it differs:** notes and lists live in Doddy's own database, which is the truth about them. So Doddy settles an unsure entry itself instead of asking the user to check.
+- **What each entry keeps:** each note or list change keeps an `ActivityCheck`:
+  - a note: its key, a hash of its words by DuplicateNote's rule;
+  - a list change: the list name and items as asked.
+- **How it settles** (`LocalCheck`):
+  - a note with those words saved since the try (a minute's slack; sample notes don't count);
+  - for an add, every item on the list; for a tick, every item ticked and none still open;
+  - for a remove, none of the items left; for a new list, the list there.
+  - Found means confirmed; not found means "didn't happen".
+  - A remove from a list that is gone stays unsure.
+  - Lists are found the way a voice request finds them (`ListMatch.list(named:)`), so "the shopping list" is "Shopping".
+- **When it settles:** before any retry is decided for a note or list, and when What Doddy did opens.
+  - Only after the store has reloaded without an error. An empty store must never read as "not there".
+- **List changes without a card:** add, tick and remove are now written down "in progress" before they run, so one cut off mid-way shows and is then settled.
+- **No double note:** if a note save is still unsure at the tap, a note with the same words saved since that try counts as already saved and isn't saved again. The same words saved twice on purpose are still two notes (DuplicateNote only warns).
+- **Receipts:**
+  - a note as the database returned it;
+  - a list change as the list's own result: added, already on the list, too long, no room, ticked, removed;
+  - plan steps that save a note or add to a list get the same.
+- **Not covered:**
+  - notes and lists changed on the app's own screens (they aren't in What Doddy did);
+  - the remind-about-a-note card.
+- **Files:**
+  - `NoteListActions.swift` (new);
+  - `ActivityLog.swift` (the `check` field, keys, and "already saved" read as already there);
+  - `Lists.swift` (`nameKey` internal);
+  - `VoiceTools.swift` (`timestamp` internal);
+  - `ActivityLogStore.swift` (`settleLocal`);
+  - `ActivityView.swift`;
+  - `VoiceSessionController.swift`.
+  - Tests: `NoteListActionsTests.swift` (9).
+- **Verified (Linux, Swift 6.2.1):**
+  - `scripts/ci.sh --core-only` PASS for core-only scope, with 764 package tests. Messaging database tests SKIPPED; iOS app NOT RUN.
+  - Planted bugs, each caught and restored:
+    - any older note with the same words settling a try;
+    - a gone list counting as a done remove;
+    - the no-double-note look ignoring when the try was.
+- **NOT RUN:** on a device, and Mac checklist items AS10 to AS12.
+
 ## Constitution evidence log
 | Rule | How it applies | Enforcing code | Tests run | Gap / claim to limit |
 |---|---|---|---|---|
@@ -122,3 +164,4 @@ Owner instruction: "extend it to timers and alarms".
 | "unknown is never blindly retried" (CLAUDE.md) | An unknown add is repeated only through look-first adds that can't make a second copy | `EventAddAction`, `ReminderAction.add` | `testAnUnconfirmedEventIsFoundOnRetryNotDoubled`, ReminderAction tests | Timers, alarms, notes, lists and online accounts have no operation key yet |
 | DOD-11 observable privacy | The app's identifiers stay in the on-device activity file; the agent never hears them | `VoiceToolReply.reminder`/`event` | `testTheAgentNeverHearsTheExternalID` | — |
 | DOD-08 / "unknown never blindly retried" (timers, alarms) | An unsure timer is repeated only after a look for the running copy; an alarm always looks first and counts as set only when AlarmKit lists its id | `TimerStartAction`, `AlarmSetAction` | `TimerAlarmActionsTests` (15) | AlarmKit/notifications not run on a device |
+| DOD-08 / DOD-06 (notes, lists) | An unsure note or list change is settled only from Doddy's own database, after it has loaded; a note isn't saved twice after an unconfirmed try | `LocalCheck`, `NoteIdempotency.savedSince`, `settleLocalEntries` guard | `NoteListActionsTests` (9) | The load guard is app code, not compiled here |

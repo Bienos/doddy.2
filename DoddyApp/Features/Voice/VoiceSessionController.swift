@@ -736,16 +736,27 @@ final class VoiceSessionController {
         }
         switch action {
         case .memory(let id, let text):
-            do {
-                // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
-                let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
-                pendingMemoryCategory = .other
-                savedThisConversation += 1
-                // Only after the store returned the saved record (ADR-240).
-                flashIsland(.noteSaved)
-                await reply(id, VoiceToolReply.saved(record))
-            } catch {
-                await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            let retry = retryChecks.removeValue(forKey: id)
+            // After an unconfirmed try: the note may be saved already (ADR-293). Look, don't save twice.
+            if let since = retry?.uncheckedSince, let existing = NoteIdempotency.savedSince(since, text: text, in: store.memories) {
+                let result = WriteResult(
+                    reply: VoiceToolReply.noteAlreadySaved(existing), receipt: ActivityReceipt(note: existing, readAt: Date()), attempted: false)
+                writeResults[id] = result
+                await reply(id, result.reply)
+            } else {
+                do {
+                    // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
+                    let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
+                    pendingMemoryCategory = .other
+                    savedThisConversation += 1
+                    // Only after the store returned the saved record (ADR-240).
+                    flashIsland(.noteSaved)
+                    writeResults[id] = WriteResult(reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true)
+                    await reply(id, VoiceToolReply.saved(record))
+                } catch {
+                    writeResults[id] = WriteResult(reply: "", attempted: true)
+                    await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+                }
             }
         case .event(let id, let draft):
             let result = eventResult(addEvent(draft), draft: draft, retry: retryChecks.removeValue(forKey: id))
@@ -832,13 +843,20 @@ final class VoiceSessionController {
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
         case .createList(let id, let name, let items):
+            retryChecks[id] = nil
             do {
                 let list = try await store.createList(name: name, items: items, source: .voice)
                 listReceipt = ListReceipt(listID: list.id, title: "New list: \(list.name)", lines: list.items.map { .added($0.text) })
+                writeResults[id] = WriteResult(
+                    reply: "", receipt: ActivityReceipt(list: list.name, listID: list.id, lines: list.items.map { "Added: \($0.text)" }, readAt: Date()),
+                    attempted: true)
                 await reply(id, VoiceToolReply.listCreated(list))
             } catch ListError.nameTaken(let taken) {
+                // Refused before anything was written.
+                writeResults[id] = WriteResult(reply: "", attempted: false)
                 await reply(id, VoiceToolReply.listNameTaken(taken))
             } catch {
+                writeResults[id] = WriteResult(reply: "", attempted: true)
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
         case .plan(let id, let steps, let blocked):
@@ -982,9 +1000,14 @@ final class VoiceSessionController {
 
     /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
+        guard await mayTryAgain(toolCallID, app: .memories) else { return }
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
+        logStarted(toolCallID)
         do {
             let result = try await store.addToList(request.items, listID: list.id, source: .voice)
+            writeResults[toolCallID] = WriteResult(
+                reply: "", receipt: ActivityReceipt(list: list.name, listID: list.id, lines: Self.receiptLines(result), readAt: Date()),
+                attempted: true)
             var lines = result.added.map { ListReceipt.Line.added($0.text) }
             lines += result.alreadyThere.map { .note("\($0) · already on the list, not added again") }
             lines += result.tooLong.map { .note("too long to add: \($0.prefix(40))…") }
@@ -996,8 +1019,24 @@ final class VoiceSessionController {
             let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: list.id, list: list.name, items: result.added)
             await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name), undo: undo)
         } catch {
+            writeResults[toolCallID] = WriteResult(reply: "", attempted: true)
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
         }
+    }
+
+    /// What the list's own result says, for the receipt in What Doddy did (ADR-293).
+    private static func receiptLines(_ result: ListAddResult) -> [String] {
+        result.added.map { "Added: \($0.text)" } + result.alreadyThere.map { "Already on the list: \($0)" }
+            + result.tooLong.map { "Too long: \($0.prefix(40))" } + result.noRoom.map { "No room: \($0)" }
+    }
+
+    /// A change that runs without a card is written down "in progress" before it runs too, so a
+    /// change cut off mid-way shows as "Not sure" and is settled at the next look (ADR-293).
+    private func logStarted(_ toolCallID: String) {
+        guard let request = asked[toolCallID], started[toolCallID] == nil else { return }
+        let entry = ActivityEntry.started(request, at: Date())
+        activity.append(entry)
+        started[toolCallID] = entry
     }
 
     private func readList(_ name: String, toolCallID: String) async {
@@ -1008,6 +1047,7 @@ final class VoiceSessionController {
 
     /// Ticks or removes only clear matches; items that match several are offered to tap.
     private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
+        guard await mayTryAgain(toolCallID, app: .memories) else { return }
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
         let pool = tick ? list.open : list.items
         var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
@@ -1018,6 +1058,7 @@ final class VoiceSessionController {
             case .several(let options): ambiguous.append((said: phrase, options: options))
             }
         }
+        if !matched.isEmpty { logStarted(toolCallID) }
         do {
             var changed: [ListItem] = []
             if !matched.isEmpty {
@@ -1036,8 +1077,14 @@ final class VoiceSessionController {
             let undo: ActivityUndo? = changed.isEmpty ? nil
                 : tick ? .listTicked(listID: list.id, list: list.name, items: changed)
                 : .listRemoved(listID: list.id, list: list.name, items: changed)
+            writeResults[toolCallID] = WriteResult(
+                reply: "",
+                receipt: ActivityReceipt(
+                    list: list.name, listID: list.id, lines: changed.map { "\(tick ? "Ticked" : "Removed"): \($0.text)" }, readAt: Date()),
+                attempted: !matched.isEmpty)
             await reply(toolCallID, VoiceToolReply.listChanged(verb: verb, changed: changed, list: list.name, notFound: notFound, ambiguous: ambiguous), undo: undo)
         } catch {
+            writeResults[toolCallID] = WriteResult(reply: "", attempted: true)
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
         }
     }
@@ -1547,6 +1594,7 @@ final class VoiceSessionController {
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
+            guard await mayTryAgain(call.toolCallId, app: .memories) else { return }
             proposedNoteTexts.append(text)
             pendingMemoryCategory = .other
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
@@ -1696,6 +1744,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.listFailed(UserFacingError.listMessage(for: ListError.tooManyLists(maximum: ListLimits.lists))))
                 return
             }
+            guard await mayTryAgain(call.toolCallId, app: .memories) else { return }
             propose(.createList(toolCallID: call.toolCallId, name: request.list, items: request.items), toolCallID: call.toolCallId)
         case .stopTranslator:
             guard translator != nil else {
@@ -1824,6 +1873,35 @@ final class VoiceSessionController {
             return reminderResult(await addReminder(draft), draft: draft, retry: retry)
         case .setTimer(let draft):
             return await timerResult(draft, retry: retry)
+        case .saveMemory(let text):
+            if let since = retry.uncheckedSince, let existing = NoteIdempotency.savedSince(since, text: text, in: store.memories) {
+                return WriteResult(
+                    reply: VoiceToolReply.noteAlreadySaved(existing), receipt: ActivityReceipt(note: existing, readAt: Date()), attempted: false)
+            }
+            do {
+                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+                savedThisConversation += 1
+                return WriteResult(reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true)
+            } catch {
+                return WriteResult(reply: VoiceToolReply.failed(UserFacingError.message(for: error)), attempted: true)
+            }
+        case .addToList(let request):
+            // Matched now, exactly as a single add_to_list would be; nothing changes on no match.
+            await store.reload()
+            switch ListMatch.list(named: request.list, in: store.lists) {
+            case .none: return WriteResult(reply: VoiceToolReply.listNotFound(request.list, lists: store.lists), attempted: false)
+            case .several(let lists): return WriteResult(reply: VoiceToolReply.listAmbiguous(request.list, lists: lists), attempted: false)
+            case .one(let list):
+                do {
+                    let result = try await store.addToList(request.items, listID: list.id, source: .voice)
+                    return WriteResult(
+                        reply: VoiceToolReply.listAdded(result, list: list.name),
+                        receipt: ActivityReceipt(list: list.name, listID: list.id, lines: Self.receiptLines(result), readAt: Date()),
+                        attempted: true)
+                } catch {
+                    return WriteResult(reply: VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), attempted: true)
+                }
+            }
         default:
             return WriteResult(reply: await runOtherPlanStep(step, approval: approval))
         }
@@ -1832,30 +1910,8 @@ final class VoiceSessionController {
     /// Run by runPlanStep, which already checked Pause all and the switches again at the tap.
     private func runOtherPlanStep(_ step: PlanStep, approval: PlanCloudApproval?) async -> String {
         switch step.request {
-        case .saveMemory(let text):
-            do {
-                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
-                savedThisConversation += 1
-                return VoiceToolReply.saved(record)
-            } catch {
-                return VoiceToolReply.failed(UserFacingError.message(for: error))
-            }
         case .cloudTool(let call):
             return await runPlanCloud(call, approval: approval)
-        case .addToList(let request):
-            // Matched now, exactly as a single add_to_list would be; nothing changes on no match.
-            await store.reload()
-            switch ListMatch.list(named: request.list, in: store.lists) {
-            case .none: return VoiceToolReply.listNotFound(request.list, lists: store.lists)
-            case .several(let lists): return VoiceToolReply.listAmbiguous(request.list, lists: lists)
-            case .one(let list):
-                do {
-                    let result = try await store.addToList(request.items, listID: list.id, source: .voice)
-                    return VoiceToolReply.listAdded(result, list: list.name)
-                } catch {
-                    return VoiceToolReply.listFailed(UserFacingError.listMessage(for: error))
-                }
-            }
         default:
             // PlanProposal only makes the kinds above.
             return VoiceToolReply.notAdded("This step can't run in a plan.")
@@ -2049,6 +2105,7 @@ final class VoiceSessionController {
     /// Stops before the card when this change was already tried too often without a confirmed
     /// result; otherwise remembers whether an earlier try is open, so the reply can say Doddy checked.
     private func mayTryAgain(_ toolCallID: String, app: ActivityApp) async -> Bool {
+        if app == .memories { await settleLocalEntries() }
         let decision = ActionRetry.decide(for: asked[toolCallID], in: activity.entries, now: Date())
         if case .stop(let count) = decision {
             await reply(toolCallID, VoiceToolReply.retryStopped(count: count, app: app))
@@ -2056,6 +2113,14 @@ final class VoiceSessionController {
         }
         retryChecks[toolCallID] = decision
         return true
+    }
+
+    /// Unsure note and list entries are settled from Doddy's own database before any retry is
+    /// decided (ADR-293), and only once it has loaded.
+    private func settleLocalEntries() async {
+        await store.reload()
+        guard store.hasLoaded, store.loadError == nil else { return }
+        activity.settleLocal(notes: store.memories, lists: store.lists)
     }
 
     private func eventResult(_ outcome: EventAddOutcome?, draft: CalendarEventDraft, retry: ActionRetryDecision?) -> WriteResult {

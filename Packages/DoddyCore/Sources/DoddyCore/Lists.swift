@@ -186,7 +186,7 @@ public enum ListMatch {
         return words.joined(separator: " ")
     }
 
-    private static func nameKey(_ text: String) -> String {
+    static func nameKey(_ text: String) -> String {
         var words = key(text).split(separator: " ").map(String.init)
         if words.count > 1, let last = words.last, listWords.contains(last) { words.removeLast() }
         if words.count > 1, let first = words.first, listWords.contains(first) { words.removeFirst() }

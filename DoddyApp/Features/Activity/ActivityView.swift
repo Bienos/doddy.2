@@ -63,6 +63,11 @@ struct ActivityView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
+        // Unsure notes and list changes are settled from Doddy's own database (ADR-293).
+        .task {
+            await store.reload()
+            if store.hasLoaded, store.loadError == nil { activity.settleLocal(notes: store.memories, lists: store.lists) }
+        }
         .navigationTitle("What Doddy did")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Clear this list?", isPresented: $confirmClear, titleVisibility: .visible) {
