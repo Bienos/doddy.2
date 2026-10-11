@@ -115,6 +115,7 @@ struct ListDetailView: View {
     @State private var isSharing = false
     /// The last open item was just ticked (ADR-313): Doddy jumps, once.
     @State private var finishedNow = false
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     var body: some View {
         Group {
@@ -360,9 +361,16 @@ struct ListDetailView: View {
             ShareLink(item: list.shareText, preview: SharePreview(list.name)) {
                 Label("Share as text", systemImage: "square.and.arrow.up")
             }
-            // The same words as a picture, with Doddy (ADR-313).
-            ShareLink(item: ListShareCard(list: list), preview: SharePreview(list.name, image: Image("WholeDoddy_wave"))) {
-                Label("Share as a picture", systemImage: "photo")
+            // The same words as a picture, with Doddy (ADR-313); no Doddy in the preview either
+            // when his pictures are hidden (ADR-331).
+            if hideCharacterArt {
+                ShareLink(item: ListShareCard(list: list), preview: SharePreview(list.name)) {
+                    Label("Share as a picture", systemImage: "photo")
+                }
+            } else {
+                ShareLink(item: ListShareCard(list: list), preview: SharePreview(list.name, image: Image("WholeDoddy_wave"))) {
+                    Label("Share as a picture", systemImage: "photo")
+                }
             }
             // Shared lists through iCloud (ADR-263), only in builds set up for it.
             if sharing.isAvailable {

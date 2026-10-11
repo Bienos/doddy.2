@@ -55,7 +55,7 @@ for name in $("$work/island-check" --talking-assets); do
     done
 done
 # The watch app's two poses (ADR-323), in its own catalog.
-for name in WatchDoddy_crosslegged WatchDoddy_fistpump; do
+for name in WatchDoddy_crosslegged WatchDoddy_fistpump WatchDoddy_turned_away; do
     for file in Contents.json art@2x.png; do
         if [ ! -f "DoddyWatch/Assets.xcassets/$name.imageset/$file" ]; then
             echo "FAIL: DoddyWatch/Assets.xcassets/$name.imageset/$file is missing"; missing=1

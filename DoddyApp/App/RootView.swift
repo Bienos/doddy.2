@@ -92,6 +92,8 @@ struct RootView: View {
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
     @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.showNoteTextInNotifications) private var showNoteText = false
+    /// "Hide character artwork" is passed on to widgets and the watch (ADR-331).
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -161,6 +163,7 @@ struct RootView: View {
             .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
             .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
             .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
+            .onChange(of: hideArt) { WidgetSync.shared.refresh() }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }

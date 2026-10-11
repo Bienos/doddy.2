@@ -291,3 +291,11 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Z5 | Settings: turn Pause all connections on and off | The crouching Doddy beside the footer only while paused |
 | Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
 | Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
+
+## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Settings › turn on "Hide character artwork"; look at every widget, the Lock Screen Talk to Doddy, StandBy, a conversation's island and Lock Screen card, a focus timer, shopping mode, a snoozed alarm | No Doddy anywhere: the island shows its board, the cards and widgets their symbols or text only. Turn it off: he's back after the widgets reload |
+| H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
+| H3 | Settings › Widgets: turn "Show in widgets" off; on the watch, hide notes and lists | Widgets (small and medium, full colour): Doddy turned away beside "Turned off in Doddy's Settings."; the watch: turned away above its hidden message |
+| H4 | Build everything (app, widgets, watch app, watch widgets) | Compiles. If not, the errors are new to this checklist: the four batches before were never compiled |

@@ -139,6 +139,8 @@ struct ProblemView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+        // One element, as when this was only a Label, so identifiers and VoiceOver land on it.
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -18,6 +18,8 @@ struct HomeView: View {
     @State private var breathing = false
     /// He has sat down on his box after the breaths (ADR-323).
     @State private var seated = HomeIdle.sat
+    /// The sit plays only right after the breaths; a redraw meanwhile doesn't cut it short (ADR-331).
+    @State private var sitPlays = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
@@ -39,8 +41,10 @@ struct HomeView: View {
         HomeIdle.played = true
         breathing = true
         try? await Task.sleep(for: .seconds(DoddyMotion.idle.duration + 0.2))
+        sitPlays = true
         seated = true
         breathing = false
+        HomeIdle.sat = true
     }
 
     var body: some View {
@@ -74,10 +78,9 @@ struct HomeView: View {
                         } else if seated, ready == nil {
                             // Then he sits down on his box (ADR-323) and stays there this launch.
                             // Same scale and floor as the breaths (both strips' boxes end at 564/600).
-                            DoddyMotionView(motion: .sit, height: 166, playing: !HomeIdle.sat)
+                            DoddyMotionView(motion: .sit, height: 166, playing: sitPlays)
                                 .padding(.bottom, 31)
                                 .frame(height: 210, alignment: .bottom)
-                                .onAppear { HomeIdle.sat = true }
                         } else {
                             UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
                         }

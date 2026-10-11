@@ -16,8 +16,12 @@ struct WatchRootView: View {
                     if snapshot.isOn {
                         content(snapshot)
                     } else {
-                        Text("Notes and lists are hidden. Turn on “Show notes and lists on Apple Watch” in Doddy's Settings on your iPhone.")
-                            .font(.footnote)
+                        VStack(spacing: 6) {
+                            // Hidden from the watch: Doddy turned away, not looking (ADR-331).
+                            WatchDoddyPicture(name: "WatchDoddy_turned_away", height: 64)
+                            Text("Notes and lists are hidden. Turn on “Show notes and lists on Apple Watch” in Doddy's Settings on your iPhone.")
+                                .font(.footnote)
+                        }
                     }
                 } else {
                     VStack(spacing: 6) {
@@ -188,13 +192,21 @@ struct WatchNoteEntry: View {
 
 /// Doddy in the watch app (ADR-323): a pose from the owner's pack (`WatchDoddy_*` in the watch
 /// app's catalog), with a thin cream edge so his black outline reads on the watch's black.
-/// Decorative.
+/// Decorative. Left out when "Hide character artwork" is on in Doddy on the iPhone (ADR-331);
+/// before the iPhone has sent anything that isn't known yet, so he shows.
 struct WatchDoddyPicture: View {
     let name: String
     let height: CGFloat
+    @Environment(WatchLink.self) private var link
     private let cream = Color(red: 245 / 255, green: 239 / 255, blue: 226 / 255)
 
     var body: some View {
+        if link.snapshot?.hidesPictures != true {
+            picture
+        }
+    }
+
+    private var picture: some View {
         Image(name)
             .resizable()
             .scaledToFit()
