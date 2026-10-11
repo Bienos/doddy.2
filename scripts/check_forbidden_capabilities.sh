@@ -3,7 +3,8 @@
 #  - the app's own networking lives in four files: the voice token client (one POST of the access
 #    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
-#    ADR-148); the ElevenLabs SDK does the voice connection,
+#    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
+#    (ADR-265), whose WebSocket lives in one file in Features/Voice,
 #  - the system authentication browser is used only by Connected Apps,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
@@ -40,6 +41,7 @@ anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import A
 sharing_dir=DoddyApp/Features/Sharing
 sharing_only='import CloudKit|CKContainer|CKDatabase|UICloudSharingController'
 token_client=DoddyApp/Features/Voice/VoiceTokenClient.swift
+openai_voice=DoddyApp/Features/Voice/OpenAIRealtimeSession.swift
 network_file=DoddyApp/Infrastructure/URLSessionTransport.swift
 assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
@@ -86,8 +88,8 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport and $token_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client and $openai_voice." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
@@ -178,5 +180,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport and the messaging transport, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport and the OpenAI test voice, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts and While Using location; backend has no write tools beyond the reviewed Gmail draft and Todoist task, and no proxy execution."
 exit "$status"
