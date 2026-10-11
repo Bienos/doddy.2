@@ -98,6 +98,8 @@ final class NewsModel {
                 ? "It's below. Nothing was sent: notifications or texts aren't on for this iPhone."
                 : "It's below\(result.aiWritten ? "" : " (headlines only)")."
             case "empty": NSLocalizedString("Nothing new for your topics right now.", comment: "")
+            // The request may have reached the server, but no answer came back (DOD-08).
+            case "unknown": NSLocalizedString("Couldn't confirm whether your news was built. It may still arrive, and Doddy won't send it again on its own. Wait a few minutes before trying again.", comment: "")
             default: "Couldn't build your news right now. Try again later."
             }
             self.digests = (try? await client.newsDigests()) ?? self.digests
