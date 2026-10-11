@@ -354,6 +354,11 @@ struct VoiceView: View {
                 Label(Self.repeatText(repeats), systemImage: "repeat")
                     .foregroundStyle(Theme.secondaryText)
             }
+            // Written to the event as its notes, so shown before Add (review H4).
+            if let notes = draft.notes, !notes.isEmpty {
+                Label(notes, systemImage: "text.alignleft")
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .reminder(_, let draft):
             Text("Add this reminder?")
                 .font(.headline)
@@ -366,6 +371,11 @@ struct VoiceView: View {
             }
             if let repeats = draft.repeats {
                 Label(Self.repeatText(repeats), systemImage: "repeat")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            // Written to the reminder as its notes, so shown before Add (review H4).
+            if let notes = draft.notes, !notes.isEmpty {
+                Label(notes, systemImage: "text.alignleft")
                     .foregroundStyle(Theme.secondaryText)
             }
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
