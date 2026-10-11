@@ -1,4 +1,4 @@
-# Recall benchmark: status (ADR-233)
+# Recall benchmark: status (ADR-249)
 Date: 2026-10-10. Owner instruction: "start with #1", the first item picked from the DODDY AI agent research backlog: OP-016 (search quality benchmark harness) together with the measurement part of OP-008 (Polish search evaluation).
 
 ## What this adds
@@ -27,7 +27,7 @@ Word endings, typos, missing diacritics and spoken numbers all pass. Weak points
 3. **No answer means no match only when no word matches at all.** One shared word ("number", "password", "car") is enough to show notes. That is honest (they are real notes), but the screen never says "nothing saved answers this".
 4. **Different words for the same thing** ("heating check" for the boiler service) are not found. That is expected for word rules.
 
-## Fix for weak points 1 and 2 (ADR-234, same day)
+## Fix for weak points 1 and 2 (ADR-250, same day)
 Owner: "fix causes 1 and 2".
 - **What changed:**
   - Single letters in a question are no longer searched.
@@ -49,7 +49,7 @@ Owner: "fix causes 1 and 2".
   - A unit test caught the second version: "password" reached "passport" through its stem.
   - The rules were tuned on this same AI-written test set, so the improvement is measured on the test set only.
 
-## Weak point 3: partial answers are now said plainly (ADR-235, same day)
+## Weak point 3: partial answers are now said plainly (ADR-251, same day)
 Owner: "cause 3 should define it better and give better answer not ignore".
 - **Definition:** `RecallCoverage` decides when the listed notes cover only part of a question. Translations and number forms count as one idea.
 - **Find screen:** shows "N PARTIAL MATCHES" and "No saved note mentions “netflix”. The notes below match only “password”."
@@ -77,11 +77,11 @@ Owner: "cause 3 should define it better and give better answer not ignore".
 - **Labels are not human-reviewed.** Claude wrote the notes, questions and labels. The research asks for human-labelled accuracy, so a native Polish speaker should review `recall_golden_v1.json`.
 - The questions were written after reading the matching rules, so they favour what the rules handle. The 98% "found" figure is an upper bound, not user accuracy. Real wording from a pilot or interviews is the next input.
 - No semantic or on-device model comparison: OP-027 is not built, so there is nothing to compare against yet.
-- ADR-233 changed no app code. ADR-234 changes search in DoddyCore, which the app calls as it is. The iOS build and a device check of Find are NOT RUN (no Xcode).
+- ADR-249 changed no app code. ADR-250 changes search in DoddyCore, which the app calls as it is. The iOS build and a device check of Find are NOT RUN (no Xcode).
 
 ## Constitution evidence log
 | Rule | How it applies | Enforcing code | Tests run | Gap / claim to limit |
 |---|---|---|---|---|
 | DOD-02 honesty over agreeableness | The report states that the labels are AI-written and the numbers are not user accuracy | Report header text in `RecallBenchmarkTests.swift` | Report generated | Do not quote the 98% as "Doddy finds 98% of notes" |
-| DOD-06 user-controlled relevant memory | Measures whether recall returns the right stored note, and only stored notes (every returned id maps to a saved note) | `RepositoryRecallService`, `SQLiteMemoryRepository.query` (unchanged) | `testRecallBenchmarkHasNoRegressions` | After ADR-234, 5 of 10 unanswerable questions still list notes that share one word (7 before); see weak point 3 |
+| DOD-06 user-controlled relevant memory | Measures whether recall returns the right stored note, and only stored notes (every returned id maps to a saved note) | `RepositoryRecallService`, `SQLiteMemoryRepository.query` (unchanged) | `testRecallBenchmarkHasNoRegressions` | After ADR-250, 5 of 10 unanswerable questions still list notes that share one word (7 before); see weak point 3 |
 | DOD-09 correction and recovery | A regression in recall now fails CI instead of going unnoticed | Baseline gate | Planted regression caught | Gate covers only this test set |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Recall benchmark (OP-016 / OP-008, ADR-233). Runs RecallBenchmarkTests against the real SQLite
+# Recall benchmark (OP-016 / OP-008, ADR-249). Runs RecallBenchmarkTests against the real SQLite
 # store and writes docs/quality/RECALL_BENCHMARK.md.
 #
 #   scripts/recall_benchmark.sh                     check against the baseline, write the report

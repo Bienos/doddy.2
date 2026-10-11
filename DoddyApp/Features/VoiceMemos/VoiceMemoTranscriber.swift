@@ -44,7 +44,10 @@ enum VoiceMemoTranscriber {
         let once = Once<Outcome>()
         return await withCheckedContinuation { continuation in
             once.set(continuation)
-            recognizer.recognitionTask(with: request) { result, error in
+            // The recognizer and its task are kept until the answer comes, so iOS can't free them
+            // mid-way; a recording that never finishes is given up after a while, not waited on.
+            once.keep(recognizer)
+            once.keep(recognizer.recognitionTask(with: request) { result, error in
                 if let result, result.isFinal {
                     let text = VoiceMemoText.transcript(result.bestTranscription.formattedString)
                     once.resume(text.text.isEmpty ? .noSpeech : .text(text))
@@ -52,9 +55,16 @@ enum VoiceMemoTranscriber {
                     // "No speech detected" comes back as an error too (code 1110).
                     once.resume((error as NSError).code == 1110 ? .noSpeech : .failed)
                 }
+            })
+            Task {
+                try? await Task.sleep(for: .seconds(Self.timeoutSeconds))
+                once.resume(.failed)
             }
         }
     }
+
+    /// Five minutes of audio is written out well within this on current iPhones.
+    static let timeoutSeconds = 120
 
     private static func authorize() async -> Bool {
         switch SFSpeechRecognizer.authorizationStatus() {
@@ -72,6 +82,12 @@ enum VoiceMemoTranscriber {
 private final class Once<Value: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<Value, Never>?
+    private var kept: [AnyObject] = []
+
+    func keep(_ object: AnyObject) {
+        lock.lock(); defer { lock.unlock() }
+        if continuation != nil { kept.append(object) }
+    }
 
     func set(_ continuation: CheckedContinuation<Value, Never>) {
         lock.lock(); defer { lock.unlock() }
@@ -82,7 +98,10 @@ private final class Once<Value: Sendable>: @unchecked Sendable {
         lock.lock()
         let continuation = self.continuation
         self.continuation = nil
+        let finished = kept
+        kept = []
         lock.unlock()
+        (finished.first { $0 is SFSpeechRecognitionTask } as? SFSpeechRecognitionTask)?.cancel()
         continuation?.resume(returning: value)
     }
 }

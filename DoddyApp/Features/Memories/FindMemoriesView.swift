@@ -160,7 +160,7 @@ private struct RecallResultsView: View {
             switch outcome {
             case .some(.matches(let candidates)):
                 // When no note covers the whole question, say which words no note has instead of
-                // presenting these as the answer (ADR-235). The notes stay listed.
+                // presenting these as the answer (ADR-251). The notes stay listed.
                 let coverage = RecallCoverage(question: query, candidates: candidates)
                 let kind = coverage.isPartial ? "PARTIAL" : "POSSIBLE"
                 Text(candidates.count == 1 ? "ONE \(kind) MATCH" : "\(candidates.count) \(kind) MATCHES")

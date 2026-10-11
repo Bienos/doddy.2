@@ -105,7 +105,7 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         XCTAssertEqual(none, .noMatch)
     }
 
-    /// ADR-234: the "s" of "what's", short prefixes and typos between two real words no longer
+    /// ADR-250: the "s" of "what's", short prefixes and typos between two real words no longer
     /// bring up unrelated notes; real typos and short words with endings still find theirs.
     func testUnrelatedNotesStayOutOfTheResults() async throws {
         let repo = try SQLiteMemoryRepository.inMemory()

@@ -178,7 +178,7 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
-        // ADR-236: every correction of a note is kept (text and time), numbered from 1, and
+        // ADR-252: every correction of a note is kept (text and time), numbered from 1, and
         // deleted with the note. The original stays in memories.raw_text. Notes corrected before
         // this get one correction, their current wording: the in-between ones were never stored.
         migrator.registerMigration("v9_memory_corrections") { db in

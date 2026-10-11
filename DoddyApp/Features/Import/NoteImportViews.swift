@@ -25,7 +25,8 @@ struct NoteImportView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var choosing = false
-    @State private var files: [(name: String, data: Data?)] = []
+    /// `data` is nil when the file couldn't be read; `tooLarge` files aren't read at all.
+    @State private var files: [(name: String, data: Data?, tooLarge: Bool)] = []
     @State private var splitParagraphs = false
     @State private var candidates: [NoteImport.Candidate] = []
     @State private var ticked: Set<UUID> = []
@@ -128,7 +129,7 @@ struct NoteImportView: View {
     private func read(_ result: Result<[URL], any Error>) {
         problem = nil
         guard case .success(let urls) = result else {
-            problem = "Those files couldn't be opened."
+            problem = NSLocalizedString("Those files couldn't be opened.", comment: "")
             return
         }
         guard urls.count <= NoteImport.maxFiles else {
@@ -140,14 +141,18 @@ struct NoteImportView: View {
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
             let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
             // A file too large isn't read at all; it is listed with the reason.
-            let data = size > NoteImport.maxFileBytes ? Data(count: NoteImport.maxFileBytes + 1) : try? Data(contentsOf: url)
-            return (url.lastPathComponent, data)
+            let tooLarge = size > NoteImport.maxFileBytes
+            return (url.lastPathComponent, tooLarge ? nil : try? Data(contentsOf: url), tooLarge)
         }
         rebuild()
     }
 
     private func rebuild() {
         let read = files.flatMap { file -> [NoteImport.Candidate] in
+            if file.tooLarge {
+                return [NoteImport.Candidate(fileName: file.name, origin: NoteImport.isKeepFile(file.name) ? .googleKeep : .textFile,
+                                             content: nil, createdAt: nil, problem: .fileTooLarge)]
+            }
             guard let data = file.data else {
                 return [NoteImport.Candidate(fileName: file.name, origin: .textFile, content: nil, createdAt: nil, problem: .unreadable)]
             }
@@ -184,17 +189,17 @@ struct NoteImportView: View {
 
     static func reason(_ problem: NoteImport.Problem?) -> String {
         switch problem {
-        case .unreadable, .none: "This file couldn't be read."
-        case .notAKeepNote: "This isn't a Google Keep note."
-        case .notText: "This file isn't plain text Doddy can read."
-        case .fileTooLarge: "This file is too large."
-        case .empty: "There are no words in it."
-        case .inTrash: "It was in Keep's trash."
+        case .unreadable, .none: NSLocalizedString("This file couldn't be read.", comment: "")
+        case .notAKeepNote: NSLocalizedString("This isn't a Google Keep note.", comment: "")
+        case .notText: NSLocalizedString("This file isn't plain text Doddy can read.", comment: "")
+        case .fileTooLarge: NSLocalizedString("This file is too large.", comment: "")
+        case .empty: NSLocalizedString("There are no words in it.", comment: "")
+        case .inTrash: NSLocalizedString("It was in Keep's trash.", comment: "")
         case .tooLong(let length): "It's \(length) characters; a note can be up to \(MemoryLimits.maxTextLength). Nothing is cut."
         case .listNameTooLong: "The list's name is longer than \(ListLimits.nameLength) characters."
         case .tooManyItems: "The list has more than \(ListLimits.itemsPerList) items, or an item longer than \(ListLimits.itemLength) characters."
         case .listNameTaken(let name): "You already have a list called “\(name)”."
-        case .alreadySaved: "Already in Doddy."
+        case .alreadySaved: NSLocalizedString("Already in Doddy.", comment: "")
         }
     }
 }

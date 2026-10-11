@@ -18,7 +18,7 @@ public enum SiriReadback {
 
     /// What Siri says for one search. `savedText` phrases when a note was saved ("on 3 October").
     /// `question` is what was searched for: when no note covers all of it, Siri says which words no
-    /// note has before reading the closest one, never reads it as the answer (ADR-235).
+    /// note has before reading the closest one, never reads it as the answer (ADR-251).
     public static func reply(_ outcome: RecallOutcome, question: String, savedText: (Date?) -> String) -> String {
         guard case .matches(let words) = outcome, !words.isEmpty else { return RecallCopy.noMatch }
 

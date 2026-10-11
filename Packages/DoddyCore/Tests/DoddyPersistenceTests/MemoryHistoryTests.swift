@@ -4,7 +4,7 @@ import Foundation
 import GRDB
 import XCTest
 
-/// ADR-236 (OP-003): every correction of a note is kept, against real SQLite.
+/// ADR-252 (OP-003): every correction of a note is kept, against real SQLite.
 final class MemoryHistoryTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_791_630_120)
 

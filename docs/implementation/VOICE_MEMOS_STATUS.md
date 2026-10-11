@@ -17,13 +17,13 @@ Date: 2026-10-10. Owner: "9 ok" (voice memos approved, on-device recognition req
   3. Then it is linked to the note (`memory_audio`, read back). If the link fails, the file is deleted.
   4. If the recording can't be kept, the receipt says "The note was saved, but its recording couldn't be kept on this iPhone".
   The temporary file is deleted after saving, on "Don't keep this recording", and on Discard.
-- **On the note.** Play/pause with position and length, and "Kept only on this iPhone, never sent anywhere. Not in exports or backup files." **Remove recording** asks for confirmation; the words stay. A missing file is said plainly.
+- **On the note.** Play/pause with position and length, and "Kept only on this iPhone, never sent anywhere. Not in exports; in a backup file only if you include it." **Remove recording** asks for confirmation; the words stay. A missing file is said plainly.
 - **Delete and Undo.** As with photos:
   - deleting the note deletes the link (cascade);
   - the file is kept while Undo is offered, and put back on Undo;
   - Delete all removes every recording;
   - files with no note are cleaned once per launch, after the links were read.
-- **Never sent.** Recordings never go to ElevenLabs, the Doddy server, Apple's speech servers or anyone. They are not in exports or the encrypted backup file (backup contents unchanged, ADR-224). Like the database, they are included in iPhone backups.
+- **Never sent.** Recordings never go to ElevenLabs, the Doddy server, Apple's speech servers or anyone. They are not in exports. They go in the encrypted backup file only when "Include voice memos" is on (ADR-234, on by default, like photos). Like the database, they are included in iPhone backups.
 
 ## Files
 - **Core:**
@@ -66,7 +66,7 @@ Date: 2026-10-10. Owner: "9 ok" (voice memos approved, on-device recognition req
 - Data Protection on the recordings, and whether they are in an iPhone backup, are not checked on a device.
 
 ## Decisions for the owner
-- Voice memos aren't in the encrypted backup file, following "backup contents unchanged". Say if they should be added (as an option, like photos).
+- Owner, 2026-10-11 ("Yes add them"): voice memos go in the encrypted backup file as an option, like photos (ADR-234).
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests | Gaps |

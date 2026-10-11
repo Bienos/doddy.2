@@ -6,7 +6,8 @@ import Foundation
 // and nothing is sent) and offered in the editor, where the user checks them before saving. The
 // saved note's words are what they accepted, so search, Doddy and export work on them like any
 // note. The recording stays on this iPhone, is never sent to ElevenLabs or a server, is not in
-// exports or backup files, and is deleted with its note.
+// exports, goes in the encrypted backup file only if the user includes it (ADR-234), and is
+// deleted with its note.
 
 public enum VoiceMemoLimits {
     /// Longest recording, in seconds. Recording stops by itself here.

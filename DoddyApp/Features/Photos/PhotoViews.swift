@@ -56,10 +56,10 @@ struct CapturePhotoPicker: View {
             text = RecognizedText.adding(result.text.text, to: text)
             UIAccessibility.post(notification: .announcement, argument: PickedPhotoView.notice(for: result))
         } catch PhotoTextReader.ReadError.tooLarge {
-            problem = "That photo is too large to add. Nothing was added."
+            problem = NSLocalizedString("That photo is too large to add. Nothing was added.", comment: "")
             self.item = nil
         } catch {
-            problem = "That photo couldn't be read, so nothing was added. Try another one."
+            problem = NSLocalizedString("That photo couldn't be read, so nothing was added. Try another one.", comment: "")
             self.item = nil
         }
     }
@@ -72,10 +72,10 @@ struct PickedPhotoView: View {
 
     static func notice(for prepared: PhotoTextReader.Prepared) -> String {
         if prepared.text.text.isEmpty {
-            return "No text was found in this photo. Add a few words so you can find the note later."
+            return NSLocalizedString("No text was found in this photo. Add a few words so you can find the note later.", comment: "")
         }
-        let check = "The photo's text was added below. Reading photos makes mistakes, so check it before saving."
-        return prepared.text.wasCut ? check + " It was long, so only the first part was added." : check
+        let check = NSLocalizedString("The photo's text was added below. Reading photos makes mistakes, so check it before saving.", comment: "")
+        return prepared.text.wasCut ? check + " " + NSLocalizedString("It was long, so only the first part was added.", comment: "") : check
     }
 
     var body: some View {

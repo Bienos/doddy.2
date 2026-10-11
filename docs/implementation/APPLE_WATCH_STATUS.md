@@ -45,7 +45,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
 - The watch app has no icon yet (it is needed for the App Store) and no Polish catalog of its own.
 
 ## Decisions for the owner
-- On by default, like widgets. Say if the watch should start off instead.
+- On by default, like widgets. The owner left this as built (2026-10-11, ADR-234).
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests | Gaps |

@@ -125,7 +125,7 @@ final class DeviceConnections {
         let predicate = eventStore.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
         return eventStore.events(matching: predicate)
             .sorted { $0.startDate < $1.startDate }
-            .map(Self.summary)
+            .map { Self.summary($0) }
     }
 
     /// Repeating events share one identifier, so the start time is added: one id per occurrence.

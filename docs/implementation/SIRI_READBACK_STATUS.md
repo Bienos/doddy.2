@@ -17,7 +17,7 @@ turn its result into words:
 - **One note:** its words in quotes and when it was saved ("today", "yesterday", "on 3 October", "on 31 December 2025").
 - **Several:** the two closest matches and "There are N more. Open Doddy to see them."
 - **Different numbers for the same thing:** both read, then "Check which one is current". Never picks one.
-- **Only part of the question matches (ADR-235):** "No saved note mentions “netflix”. The closest one only matches part of what you asked. Saved …": the missing words first, then the closest note, never read as the answer.
+- **Only part of the question matches (ADR-251):** "No saved note mentions “netflix”. The closest one only matches part of what you asked. Saved …": the missing words first, then the closest note, never read as the answer.
 - **Nothing:** "I couldn't find that in your saved memories." Never a guess.
 - **Long notes:** line breaks become pauses; cut at a word after 280 characters with "open Doddy for the rest".
 - Switched off, storage problem, search error and an empty request each have one plain sentence.

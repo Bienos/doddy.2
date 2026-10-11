@@ -49,7 +49,7 @@ final class WidgetSync {
             problem = nil
             WidgetCenter.shared.reloadAllTimelines()
         } catch {
-            problem = "Widgets couldn't be updated, so they may show older notes or lists. Open the widget's note in Doddy to see what is saved."
+            problem = NSLocalizedString("Widgets couldn't be updated, so they may show older notes or lists. Open the widget's note in Doddy to see what is saved.", comment: "")
         }
     }
 

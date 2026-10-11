@@ -17,7 +17,7 @@ public enum SearchFolding {
         "w", "z", "na", "do", "co", "to", "jak", "gdzie", "sie", "ze", "jest", "byl", "byla", "mi", "mnie",
         "kiedy", "jaki", "jaka", "jakie", "jakiego", "mam", "moj", "moja", "moje", "mojej", "mojego",
         "czy", "ten", "ta", "tego", "o", "od", "po", "dla", "ile", "sa", "juz", "jeszcze", "pamietasz",
-        // Question filler: how people ask about a note, not what the note says (ADR-235).
+        // Question filler: how people ask about a note, not what the note says (ADR-251).
         // Left in, a note never contains them, so every answer would look partial.
         "say", "said", "says", "told", "anything", "something", "put", "leave", "save", "saved",
         "remember", "find",
@@ -43,7 +43,7 @@ public enum SearchFolding {
 
     /// Distinct query terms with stopwords and single letters removed. A lone letter is almost
     /// always the "s" of "what's"/"Jake's" or an initial, and as a prefix it matches nearly every
-    /// note (ADR-234). Single digits stay: "5" can be part of a code.
+    /// note (ADR-250). Single digits stay: "5" can be part of a code.
     public static func queryTerms(_ query: String) -> [String] {
         var seen = Set<String>()
         return tokens(query).filter { token in
@@ -79,7 +79,7 @@ public enum MemoryExport {
         let memories: [MemoryRecord]
         /// Items of the `list` records (ADR-216); left out when there are none.
         let listItems: [ListItem]?
-        /// Every correction of the exported notes (ADR-236); left out when there are none. Added
+        /// Every correction of the exported notes (ADR-252); left out when there are none. Added
         /// within format 1: older readers ignore it and restore the notes without their history.
         let corrections: [MemoryCorrection]?
     }
@@ -100,7 +100,7 @@ public enum MemoryExport {
             corrections: history.isEmpty ? nil : history))
     }
 
-    /// Wordings between the original and the current one, oldest first (ADR-236).
+    /// Wordings between the original and the current one, oldest first (ADR-252).
     static func inBetween(_ record: MemoryRecord, _ byNote: [UUID: [MemoryCorrection]]) -> [MemoryVersion] {
         MemoryHistory(record: record, corrections: byNote[record.id] ?? []).versions.filter { !$0.isOriginal && !$0.isCurrent }
     }

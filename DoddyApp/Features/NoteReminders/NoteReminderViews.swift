@@ -41,7 +41,7 @@ struct NoteReminderSection: View {
 
     private var stopQuestion: String {
         guard let reminder = reminders.reminder(forMemory: memoryID), let rule = reminder.repeats,
-              case .time(let anchor, let zone) = reminder.trigger else { return "Stop this reminder?" }
+              case .time(let anchor, let zone) = reminder.trigger else { return NSLocalizedString("Stop this reminder?", comment: "") }
         return "Stop reminding you \(ReminderFormat.cadence(rule, anchor: anchor, timeZoneID: zone))?"
     }
 
@@ -249,9 +249,9 @@ struct DueRemindersView: View {
 extension DueRemindersView {
     static func title(_ choice: NoteReminderStore.SnoozeChoice) -> String {
         switch choice {
-        case .inAnHour: "In 1 hour"
-        case .thisEvening: "This evening"
-        case .tomorrowMorning: "Tomorrow morning"
+        case .inAnHour: NSLocalizedString("In 1 hour", comment: "")
+        case .thisEvening: NSLocalizedString("This evening", comment: "")
+        case .tomorrowMorning: NSLocalizedString("Tomorrow morning", comment: "")
         }
     }
 }
@@ -310,19 +310,19 @@ struct NoteReminderSettingsSection: View {
 
     private var locationText: String {
         switch reminders.locationReadiness {
-        case .ready: "While Using, precise"
-        case .approximateOnly: "Precise Location off"
+        case .ready: NSLocalizedString("While Using, precise", comment: "")
+        case .approximateOnly: NSLocalizedString("Precise Location off", comment: "")
         case .denied: "Off"
-        case .notDetermined: "Not asked yet"
-        case .unavailable: "Location Services off"
+        case .notDetermined: NSLocalizedString("Not asked yet", comment: "")
+        case .unavailable: NSLocalizedString("Location Services off", comment: "")
         }
     }
 
     private var statusText: String {
         switch reminders.authorization {
-        case .allowed: "Allowed"
+        case .allowed: NSLocalizedString("Allowed", comment: "")
         case .denied: "Off"
-        case .notDetermined: "Not asked yet"
+        case .notDetermined: NSLocalizedString("Not asked yet", comment: "")
         }
     }
 }

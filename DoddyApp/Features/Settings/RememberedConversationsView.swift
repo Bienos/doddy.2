@@ -168,5 +168,5 @@ private struct ConversationLogDetailView: View {
 }
 
 private enum ConversationLogDeleteCopy {
-    static let message = "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs keeps its own record as described in Settings › Privacy."
+    static let message = NSLocalizedString("It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs keeps its own record as described in Settings › Privacy.", comment: "")
 }

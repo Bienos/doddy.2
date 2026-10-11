@@ -173,11 +173,11 @@ struct CaptureView: View {
         // The note is saved either way; a photo that can't be kept is said plainly, never hidden.
         if let photo {
             do { try await store.attachPhoto(jpeg: photo.jpeg, width: photo.width, height: photo.height, to: record.id) }
-            catch { photoProblem = "The note was saved, but its photo couldn't be kept on this iPhone. The note's words are all there." }
+            catch { photoProblem = NSLocalizedString("The note was saved, but its photo couldn't be kept on this iPhone. The note's words are all there.", comment: "") }
         }
         if let memo {
             do { try await store.attachRecording(from: memo.recording.url, durationMilliseconds: memo.recording.durationMilliseconds, to: record.id) }
-            catch { memoProblem = "The note was saved, but its recording couldn't be kept on this iPhone. The note's words are all there." }
+            catch { memoProblem = NSLocalizedString("The note was saved, but its recording couldn't be kept on this iPhone. The note's words are all there.", comment: "") }
             memo.discardFile()
             self.memo = nil
         }

@@ -11,7 +11,7 @@ public enum MemoryRestoreError: Error, Equatable, Sendable {
     case unreadableNote(position: Int)
     /// Two notes in the file share an id but differ, so the file can't be trusted as an export.
     case conflictingDuplicate(position: Int)
-    /// One correction (1-based position in the file's corrections) is damaged (ADR-236).
+    /// One correction (1-based position in the file's corrections) is damaged (ADR-252).
     case unreadableCorrection(position: Int)
 }
 
@@ -27,7 +27,7 @@ public struct MemoryRestorePlan: Equatable, Sendable {
     /// Sample notes are never restored.
     public let skippedSamples: Int
     public let exportedAt: Date?
-    /// The history of the notes in `toAdd`, from the file (ADR-236). A note whose corrections
+    /// The history of the notes in `toAdd`, from the file (ADR-252). A note whose corrections
     /// don't form its whole history is added without them.
     public let corrections: [MemoryCorrection]
 
@@ -43,7 +43,7 @@ public enum MemoryRestore {
         let formatVersion: Int
         let exportedAtMs: Int64?
         let memories: [Slot]
-        /// Absent in exports made before ADR-236.
+        /// Absent in exports made before ADR-252.
         let corrections: [CorrectionSlot]?
     }
 

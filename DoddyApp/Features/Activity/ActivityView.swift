@@ -146,8 +146,8 @@ struct ActivityView: View {
 
     private static func dayTitle(_ day: Date) -> String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(day) { return "Today" }
-        if calendar.isDateInYesterday(day) { return "Yesterday" }
+        if calendar.isDateInToday(day) { return NSLocalizedString("Today", comment: "") }
+        if calendar.isDateInYesterday(day) { return NSLocalizedString("Yesterday", comment: "") }
         return day.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
 }

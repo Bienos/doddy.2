@@ -32,7 +32,8 @@ final class EncryptedBackupTests: XCTestCase {
                 .init(memoryID: list.id, fireAt: now.addingTimeInterval(-60), timeZoneID: "UTC", repeats: nil),
             ],
             profile: ["name": "Ola", "unknownKey": "x"],
-            photos: [.init(memoryID: note.id, width: 10, height: 8, addedAt: now, jpeg: Data([0xFF, 0xD8, 1, 2, 0xFF, 0xD9]))])
+            photos: [.init(memoryID: note.id, width: 10, height: 8, addedAt: now, jpeg: Data([0xFF, 0xD8, 1, 2, 0xFF, 0xD9]))],
+            recordings: [.init(memoryID: note.id, durationMilliseconds: 4_200, addedAt: now, m4a: Data([0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70]))])
         return (contents, note, list)
     }
 
@@ -90,6 +91,7 @@ final class EncryptedBackupTests: XCTestCase {
         XCTAssertEqual(Set(fresh.notes.toAdd.map(\.id)), [note.id, list.id])
         XCTAssertEqual(fresh.listItems.map(\.text), ["oat milk"])
         XCTAssertEqual(fresh.photos.count, 1)
+        XCTAssertEqual(fresh.recordings.map(\.durationMilliseconds), [4_200])
         XCTAssertEqual(fresh.reminders.count, 2, "the passed one-off is left out; the weekly one comes back")
         let weekly = try XCTUnwrap(fresh.reminders.first { $0.repeatRule == .weekly })
         XCTAssertEqual(weekly.nextFire(after: now), now.addingTimeInterval(7 * 24 * 3600 - 3600))
@@ -100,11 +102,12 @@ final class EncryptedBackupTests: XCTestCase {
         XCTAssertEqual(here.notes.toAdd.map(\.id), [list.id])
         XCTAssertEqual(here.notes.alreadyHere, 1)
         XCTAssertTrue(here.photos.isEmpty)
+        XCTAssertTrue(here.recordings.isEmpty)
         XCTAssertTrue(here.reminders.isEmpty)
         XCTAssertNil(here.profile)
     }
 
-    /// ADR-236: a corrected note's earlier wordings travel in the backup and come back with it.
+    /// ADR-252: a corrected note's earlier wordings travel in the backup and come back with it.
     func testCorrectionsComeBackWithTheirNote() throws {
         let note = try MemoryRecord(
             id: UUID(), rawText: "Size 43", currentText: "Size 42.5", source: .explicitText, capturedAt: now,
@@ -122,6 +125,16 @@ final class EncryptedBackupTests: XCTestCase {
         // Already on this iPhone: its own history stays, nothing from the file is added.
         let here = try BackupRestorePlan.make(opened, existing: [note], profileIsEmpty: false, now: now)
         XCTAssertEqual(here.notes.corrections, [])
+    }
+
+    func testBackupsMadeBeforeVoiceMemosStillOpen() throws {
+        let (contents, _, _) = try contents()
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(contents)) as? [String: Any])
+        XCTAssertNotNil(json["recordings"])
+        json["recordings"] = nil
+        let older = try JSONDecoder().decode(BackupContents.self, from: JSONSerialization.data(withJSONObject: json))
+        XCTAssertEqual(older.recordings, [])
+        XCTAssertEqual(older.photos, contents.photos)
     }
 
     func testOnlyTimeRemindersAreBackedUp() throws {

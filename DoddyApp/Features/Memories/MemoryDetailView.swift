@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 
 /// Current and immutable original wording remain attached to the same stored ID, with every
-/// wording in between (ADR-236).
+/// wording in between (ADR-252).
 struct MemoryDetailView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(NoteReminderStore.self) private var noteReminders

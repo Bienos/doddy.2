@@ -204,7 +204,7 @@ struct HomeView: View {
     /// Uses only the approved name; without one, the neutral line.
     private var greeting: String {
         if let name = profiles.profile.value(.name) { return "Hi, \(name)." }
-        return "A little less to carry."
+        return NSLocalizedString("A little less to carry.", comment: "")
     }
 
     /// What the user approved in the introduction, shown back plainly. Nothing is invented

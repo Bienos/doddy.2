@@ -197,30 +197,30 @@ final class NoteReminderStore {
     static func message(for error: any Error) -> String {
         switch error as? NoteReminderError {
         case .timeInPast:
-            return "That time has already passed. Pick a time at least a minute from now."
+            return NSLocalizedString("That time has already passed. Pick a time at least a minute from now.", comment: "")
         case .invalidRepeat:
-            return "Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set."
+            return NSLocalizedString("Monthly reminders can be on days 1 to 28, so every month has the day. Nothing was set.", comment: "")
         case .limitReached(let maximum):
             return "Doddy can keep \(maximum) reminders on this iPhone, and weekdays counts as 5. Finish or cancel one to add another."
         case .memoryNotFound:
-            return "That memory no longer exists, so no reminder was set."
+            return NSLocalizedString("That memory no longer exists, so no reminder was set.", comment: "")
         case .invalidPlace:
-            return "That place can't be used. Pick it again or try another one. Nothing was set."
+            return NSLocalizedString("That place can't be used. Pick it again or try another one. Nothing was set.", comment: "")
         case .placeLimitReached(let maximum):
             return "You have \(maximum) place reminders, the most iOS lets Doddy watch. Finish or cancel one to add another."
         case .placeNeedsNotifications:
-            return "Notifications are off for Doddy, so it can't remind you at a place. Nothing was set. Turn them on in Settings."
+            return NSLocalizedString("Notifications are off for Doddy, so it can't remind you at a place. Nothing was set. Turn them on in Settings.", comment: "")
         case .placeNeedsLocation(let readiness):
             switch readiness {
             case .approximateOnly:
-                return "Precise Location is off for Doddy, so iOS can't tell when you get there. Nothing was set. Turn on Precise Location in Settings."
+                return NSLocalizedString("Precise Location is off for Doddy, so iOS can't tell when you get there. Nothing was set. Turn on Precise Location in Settings.", comment: "")
             case .unavailable:
-                return "Location Services are off on this iPhone. Nothing was set. Turn them on in Settings, Privacy & Security."
+                return NSLocalizedString("Location Services are off on this iPhone. Nothing was set. Turn them on in Settings, Privacy & Security.", comment: "")
             case .notDetermined, .denied, .ready:
-                return "Doddy needs your location while you use the app to remind you at a place. Nothing was set. Allow it in Settings."
+                return NSLocalizedString("Doddy needs your location while you use the app to remind you at a place. Nothing was set. Allow it in Settings.", comment: "")
             }
         case .notScheduled, .none:
-            return "Couldn't set the reminder. Nothing was scheduled, and your note is unchanged."
+            return NSLocalizedString("Couldn't set the reminder. Nothing was scheduled, and your note is unchanged.", comment: "")
         }
     }
 }

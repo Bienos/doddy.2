@@ -156,10 +156,10 @@ struct PersonalityView: View {
 
     static func summary(_ settings: PersonalitySettings) -> String {
         switch settings {
-        case .doddyDefault: "Default"
-        case .focused: "Focused"
-        case .playful: "Playful"
-        default: "Custom"
+        case .doddyDefault: NSLocalizedString("Default", comment: "")
+        case .focused: NSLocalizedString("Focused", comment: "")
+        case .playful: NSLocalizedString("Playful", comment: "")
+        default: NSLocalizedString("Custom", comment: "")
         }
     }
 
@@ -176,66 +176,66 @@ struct PersonalityView: View {
 
     static func detail(_ value: VoiceChoice) -> String {
         switch value {
-        case .doddy: "The voice Doddy was given"
-        case .josh: "Warm, smooth and steady"
-        case .wiktor: "Warm and engaging"
-        case .river: "Relaxed and neutral"
-        case .jessica: "Bright and warm"
-        case .will: "Laid-back and easy-going"
+        case .doddy: NSLocalizedString("The voice Doddy was given", comment: "")
+        case .josh: NSLocalizedString("Warm, smooth and steady", comment: "")
+        case .wiktor: NSLocalizedString("Warm and engaging", comment: "")
+        case .river: NSLocalizedString("Relaxed and neutral", comment: "")
+        case .jessica: NSLocalizedString("Bright and warm", comment: "")
+        case .will: NSLocalizedString("Laid-back and easy-going", comment: "")
         }
     }
 
     /// "Automatic", "English", or the language's own name with English after it: "Deutsch (German)".
     static func label(_ value: ConversationLanguage) -> String {
-        guard let native = value.nativeName, let english = value.englishName else { return "Automatic" }
+        guard let native = value.nativeName, let english = value.englishName else { return NSLocalizedString("Automatic", comment: "") }
         return native == english ? native : "\(native) (\(english))"
     }
 
     static func label(_ value: SpeakingSpeed) -> String {
         switch value {
-        case .slower: "Slower"
-        case .normal: "Normal"
-        case .faster: "Faster"
+        case .slower: NSLocalizedString("Slower", comment: "")
+        case .normal: NSLocalizedString("Normal", comment: "")
+        case .faster: NSLocalizedString("Faster", comment: "")
         }
     }
 
     static func label(_ value: Expressiveness) -> String {
         switch value {
-        case .steady: "Steady"
-        case .natural: "Natural"
-        case .expressive: "Expressive"
+        case .steady: NSLocalizedString("Steady", comment: "")
+        case .natural: NSLocalizedString("Natural", comment: "")
+        case .expressive: NSLocalizedString("Expressive", comment: "")
         }
     }
 
     static func label(_ value: HumourLevel) -> String {
         switch value {
         case .off: "Off"
-        case .subtle: "Subtle"
-        case .playful: "Playful"
+        case .subtle: NSLocalizedString("Subtle", comment: "")
+        case .playful: NSLocalizedString("Playful", comment: "")
         }
     }
 
     static func label(_ value: ReplyLength) -> String {
         switch value {
-        case .brief: "Brief"
-        case .balanced: "Balanced"
-        case .detailed: "Detailed"
+        case .brief: NSLocalizedString("Brief", comment: "")
+        case .balanced: NSLocalizedString("Balanced", comment: "")
+        case .detailed: NSLocalizedString("Detailed", comment: "")
         }
     }
 
     static func label(_ value: Formality) -> String {
         switch value {
-        case .casual: "Casual"
-        case .neutral: "Neutral"
-        case .formal: "Formal"
+        case .casual: NSLocalizedString("Casual", comment: "")
+        case .neutral: NSLocalizedString("Neutral", comment: "")
+        case .formal: NSLocalizedString("Formal", comment: "")
         }
     }
 
     static func label(_ value: Mood) -> String {
         switch value {
-        case .calm: "Calm"
-        case .grounded: "Grounded"
-        case .lively: "Lively"
+        case .calm: NSLocalizedString("Calm", comment: "")
+        case .grounded: NSLocalizedString("Grounded", comment: "")
+        case .lively: NSLocalizedString("Lively", comment: "")
         }
     }
 }

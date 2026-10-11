@@ -204,22 +204,22 @@ struct ConnectedAppsView: View {
     private var statusText: String {
         let demo = model.isDemo ? " (demo)" : ""
         switch model.cardState {
-        case .notConfigured: return "Not set up"
-        case .loading: return "Checking…"
-        case .disconnected: return "Not connected"
-        case .connecting, .awaitingDemoApproval: return "Connecting…"
+        case .notConfigured: return NSLocalizedString("Not set up", comment: "")
+        case .loading: return NSLocalizedString("Checking…", comment: "")
+        case .disconnected: return NSLocalizedString("Not connected", comment: "")
+        case .connecting, .awaitingDemoApproval: return NSLocalizedString("Connecting…", comment: "")
         case .connected: return "Connected\(demo)"
-        case .permissionInsufficient: return "Needs attention"
-        case .expired: return "Expired"
-        case .error: return "Couldn't check"
-        case .disconnecting: return "Disconnecting…"
+        case .permissionInsufficient: return NSLocalizedString("Needs attention", comment: "")
+        case .expired: return NSLocalizedString("Expired", comment: "")
+        case .error: return NSLocalizedString("Couldn't check", comment: "")
+        case .disconnecting: return NSLocalizedString("Disconnecting…", comment: "")
         }
     }
 
     private var progressText: String {
         switch model.cardState {
-        case .connecting: "Connecting…"
-        case .disconnecting: "Disconnecting…"
+        case .connecting: NSLocalizedString("Connecting…", comment: "")
+        case .disconnecting: NSLocalizedString("Disconnecting…", comment: "")
         default: "Checking…"
         }
     }
@@ -291,7 +291,7 @@ struct ConnectedAppsView: View {
 
     static func timeText(_ event: CalendarEventItem, zone: TimeZone) -> String {
         guard !event.allDay, let start = ConnectedAppsDates.instant(event.start), let end = ConnectedAppsDates.instant(event.end) else {
-            return "All day"
+            return NSLocalizedString("All day", comment: "")
         }
         let style = Date.FormatStyle(date: .omitted, time: .shortened, timeZone: zone)
         return "\(start.formatted(style))–\(end.formatted(style))"
@@ -315,8 +315,8 @@ private enum PlannedApp: CaseIterable {
 
     var name: String {
         switch self {
-        case .appleCalendar: "Apple Calendar"
-        case .appleReminders: "Apple Reminders"
+        case .appleCalendar: NSLocalizedString("Apple Calendar", comment: "")
+        case .appleReminders: NSLocalizedString("Apple Reminders", comment: "")
         }
     }
 }
@@ -336,11 +336,11 @@ private struct ReceiptRow: View {
 
     static func statusText(_ status: ReceiptStatus) -> String {
         switch status {
-        case .succeeded: "Done"
-        case .failed: "Failed"
-        case .canceled: "Canceled"
-        case .blocked: "Blocked"
-        case .outcomeUnknown: "Not confirmed"
+        case .succeeded: NSLocalizedString("Done", comment: "")
+        case .failed: NSLocalizedString("Failed", comment: "")
+        case .canceled: NSLocalizedString("Canceled", comment: "")
+        case .blocked: NSLocalizedString("Blocked", comment: "")
+        case .outcomeUnknown: NSLocalizedString("Not confirmed", comment: "")
         }
     }
 }

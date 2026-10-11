@@ -1,0 +1,259 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Add to ${list} in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do listy ${list} w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add to a list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do listy w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add to my ${list} list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do mojej listy ${list} w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Ask ${applicationName} what I saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj aplikację ${applicationName}, co mam zapisane"
+          }
+        }
+      }
+    },
+    "Check my notes in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź moje notatki w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Find in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Hey ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hej ${applicationName}"
+          }
+        }
+      }
+    },
+    "Keep this in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowaj to w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Look it up in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "New note in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa notatka w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Open ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz ${applicationName}"
+          }
+        }
+      }
+    },
+    "Read ${list} in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytaj listę ${list} w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Read a list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytaj listę w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Read my note from ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytaj moją notatkę z aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Save a note in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz notatkę w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Save to ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Search ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Talk to ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Porozmawiaj w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Tick off an item in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhacz pozycję w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Tick something on ${list} in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odhacz coś na liście ${list} w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "What did I save in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co mam zapisane w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "What's on my ${list} list in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co jest na liście ${list} w aplikacji ${applicationName}"
+          }
+        }
+      }
+    },
+    "Write a note in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz notatkę w aplikacji ${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

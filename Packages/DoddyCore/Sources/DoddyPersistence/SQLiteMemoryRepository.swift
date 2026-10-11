@@ -107,7 +107,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
             .prefix(limit))
     }
 
-    /// Changes the wording and keeps it as the note's next correction (ADR-236), in one
+    /// Changes the wording and keeps it as the note's next correction (ADR-252), in one
     /// transaction: both are read back before success, or neither is kept.
     public func update(id: UUID, currentText: String) async throws -> MemoryRecord {
         let date = Self.truncatedToMilliseconds(now())

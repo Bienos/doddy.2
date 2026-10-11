@@ -114,7 +114,7 @@ struct StatusPill: View {
         switch state {
         case .off: "Off"
         case .on: "On"
-        case .blocked: "Blocked"
+        case .blocked: NSLocalizedString("Blocked", comment: "")
         }
     }
 

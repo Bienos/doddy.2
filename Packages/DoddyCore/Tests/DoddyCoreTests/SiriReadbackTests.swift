@@ -51,7 +51,7 @@ final class SiriReadbackTests: XCTestCase {
         XCTAssertEqual(spoken, "Two of your notes give different numbers. One, saved on 3 October: “Gate code 4821”. The other, saved today: “Gate code 5555”. Check which one is current.")
     }
 
-    /// ADR-235 at the merge: a note that matches only part of the question is never read as the answer.
+    /// ADR-251 at the merge: a note that matches only part of the question is never read as the answer.
     func testAPartialMatchSaysWhatIsMissingFirst() throws {
         let wifi = try note("Wifi password at mum's: Sunflower-2291", day(2026, 10, 3), terms: ["password"])
         let spoken = say([wifi], question: "netflix password")

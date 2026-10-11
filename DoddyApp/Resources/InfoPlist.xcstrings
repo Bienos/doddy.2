@@ -1,0 +1,108 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSCalendarsFullAccessUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy reads your events for the days you ask about, and adds or changes an event only after you tap Add or Change. Turn this off in Settings, Connections."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy czyta Twoje wydarzenia z dni, o które pytasz, a dodaje lub zmienia wydarzenie tylko po stuknięciu Dodaj lub Zmień. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+          }
+        }
+      }
+    },
+    "NSContactsUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy looks up a contact by name when you ask. The details stay on your screen. Turn this off in Settings, Connections."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy wyszukuje kontakt po imieniu, gdy o to poprosisz. Szczegóły zostają na Twoim ekranie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+          }
+        }
+      }
+    },
+    "NSLocationWhenInUseUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy uses your location only for reminders you set at a place: to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave. Doddy doesn't track where you go."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy używa Twojej lokalizacji tylko do przypomnień ustawionych w danym miejscu: żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł Ci przypomnieć, gdy tam dotrzesz albo stamtąd wyjdziesz. Doddy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "NSMicrophoneUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy listens only while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice is sent to ElevenLabs to run the conversation. A voice memo you record on a note stays on this iPhone."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy słucha tylko wtedy, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos jest wysyłany do ElevenLabs, żeby prowadzić rozmowę. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
+          }
+        }
+      }
+    },
+    "NSRemindersFullAccessUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy adds, changes or completes a reminder only after you tap Add, Change or Mark done. Turn this off in Settings, Connections."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dodaje, zmienia lub kończy przypomnienie tylko po stuknięciu Dodaj, Zmień lub Oznacz jako zrobione. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+          }
+        }
+      }
+    },
+    "NSSpeechRecognitionUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Nagranie i jego słowa nie są nigdzie wysyłane."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

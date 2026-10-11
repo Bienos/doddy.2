@@ -38,7 +38,7 @@ struct WatchRootView: View {
         let upcoming = snapshot.reminders(after: .now)
         if !upcoming.isEmpty {
             Section("Next") {
-                ForEach(upcoming, id: \.memoryID) { reminder in
+                ForEach(Array(upcoming.enumerated()), id: \.offset) { _, reminder in
                     VStack(alignment: .leading) {
                         Text(reminder.text ?? "A note reminder").font(.footnote)
                         Text(reminder.fireAt, style: .relative).font(.caption2).foregroundStyle(.secondary)

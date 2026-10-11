@@ -274,9 +274,9 @@ struct NoteReminderSheet: View {
 extension ReminderQuickPick {
     var title: String {
         switch self {
-        case .thisEvening: "This evening"
-        case .tomorrowMorning: "Tomorrow morning"
-        case .mondayMorning: "Monday morning"
+        case .thisEvening: NSLocalizedString("This evening", comment: "")
+        case .tomorrowMorning: NSLocalizedString("Tomorrow morning", comment: "")
+        case .mondayMorning: NSLocalizedString("Monday morning", comment: "")
         }
     }
 }

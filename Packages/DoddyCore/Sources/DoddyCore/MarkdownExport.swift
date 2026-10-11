@@ -3,7 +3,7 @@ import Foundation
 /// Markdown export of the saved notes, for pasting into Notes, Obsidian and similar apps (ADR-203).
 /// Every note's words go in verbatim as a block quote (one `> ` per line); nothing is escaped,
 /// trimmed or cut, so what is in the file is exactly what was saved. A note that was corrected
-/// also carries every earlier wording (ADR-236) and its original. Same data as
+/// also carries every earlier wording (ADR-252) and its original. Same data as
 /// `MemoryExport.plainText`, newest first as given.
 public enum MarkdownExport {
     /// `lists` (ADR-216) follow the notes as Markdown task lists: open items, then ticked ones.

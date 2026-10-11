@@ -272,7 +272,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case .clarify(let clarification): return .needsClarification(name: name, clarification)
         }
         guard let start = startDue.date(in: calendar) else { return .invalid(name: name, reason: "missing start") }
-        // The user's own words for when, if the agent passed them (ADR-237).
+        // The user's own words for when, if the agent passed them (ADR-253).
         if let said = args.text("said_time") {
             let day = ReminderDue(year: startDue.year, month: startDue.month, day: startDue.day, timeZoneID: startDue.timeZoneID)
             let allDay = args.flag("all_day")
@@ -325,7 +325,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
             case .clarify(let clarification): return .needsClarification(name: name, clarification)
             }
         }
-        // The user's own words for when, if the agent passed them (ADR-237).
+        // The user's own words for when, if the agent passed them (ADR-253).
         if let said = args.text("said_time") {
             guard let due else {
                 // Words about a time but no due: ask rather than add a reminder without one.
@@ -443,7 +443,7 @@ public enum VoiceToolReply {
     public static let declinedMessage = "declined: the user chose not to open the draft. Nothing was sent."
 
     /// `question` is the query the search ran with; it lets the reply say when the notes cover
-    /// only part of it (ADR-235). An empty question skips that check.
+    /// only part of it (ADR-251). An empty question skips that check.
     public static func search(_ outcome: RecallOutcome, question: String = "", limit: Int = 5) -> String {
         guard case .matches(let candidates) = outcome, !candidates.isEmpty else {
             return "No saved note matched. Tell the user you couldn't find it in their saved memories. Do not guess."

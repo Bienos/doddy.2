@@ -1,4 +1,4 @@
-# Every version of a corrected note: status (ADR-236)
+# Every version of a corrected note: status (ADR-252)
 Date: 2026-10-10. Owner instruction: "move to 2", item #2 from the research backlog: OP-003 "Memory correction and history". Earlier, a correction overwrote the current wording, so only the original and the latest wording were kept.
 
 ## What the user gets

@@ -75,13 +75,13 @@ public struct ReminderClarification: Equatable, Sendable {
         case timeSkipped
         /// The clocks pass this time twice that day (daylight saving ends).
         case timeRepeated
-        /// The user's words for the time and the date sent don't agree (ADR-237).
+        /// The user's words for the time and the date sent don't agree (ADR-253).
         case saidDifferently
-        /// The words allow two days ("next Friday", "this weekend") (ADR-237).
+        /// The words allow two days ("next Friday", "this weekend") (ADR-253).
         case ambiguousDay
-        /// The words allow two times ("at 7") (ADR-237).
+        /// The words allow two times ("at 7") (ADR-253).
         case ambiguousTime
-        /// A time was sent that the user never said (ADR-237).
+        /// A time was sent that the user never said (ADR-253).
         case noTimeSaid
     }
 
