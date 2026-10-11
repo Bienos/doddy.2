@@ -23,7 +23,7 @@ public struct DataFlowState: Equatable, Sendable {
     public var memoryCopyOn: Bool
     /// The morning check-in is on (ADR-220).
     public var morningCheckInOn: Bool
-    /// Lists shared through iCloud, by this user or with them (ADR-258).
+    /// Lists shared through iCloud, by this user or with them (ADR-263).
     public var sharedLists: Int
 
     public init(

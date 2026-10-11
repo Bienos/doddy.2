@@ -1,6 +1,6 @@
 import Foundation
 
-// Shopping mode (ADR-252). One list on the Lock Screen and in the Dynamic Island while the user
+// Shopping mode (ADR-257). One list on the Lock Screen and in the Dynamic Island while the user
 // shops, as a Live Activity, so items can be ticked without opening Doddy. Ticks go through the
 // same checked path as a widget tick (`ToggleListItemIntent`, ADR-219), and the activity is
 // redrawn from the read-back list. The user starts it from the list, after a reminder that its

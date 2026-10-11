@@ -1,4 +1,4 @@
-# Undo for changes and imports: status (ADR-253)
+# Undo for changes and imports: status (ADR-258)
 Date: 2026-10-11. Owner: "do all of them" (item 4).
 
 ## What ships

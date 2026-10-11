@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Partial Info.plist for the DoddyWatchWidgets extension (ADR-257): watch face complications and
+  Partial Info.plist for the DoddyWatchWidgets extension (ADR-262): watch face complications and
   the Smart Stack. They only read the snapshot the watch app saves in the watch's App Group folder.
 -->
 <plist version="1.0">

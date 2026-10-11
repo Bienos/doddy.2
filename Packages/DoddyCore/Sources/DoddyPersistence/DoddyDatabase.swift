@@ -178,7 +178,7 @@ public final class DoddyDatabase: Sendable {
                 );
                 """)
         }
-        // Shared lists (ADR-258): which local list is linked to which iCloud zone, and what both
+        // Shared lists (ADR-263): which local list is linked to which iCloud zone, and what both
         // sides had at the last sync (JSON). Deleted with the list.
         migrator.registerMigration("v9_list_shares") { db in
             try db.execute(sql: """

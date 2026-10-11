@@ -53,7 +53,7 @@ final class WatchLink: NSObject {
     fileprivate func received(_ context: [String: Any]) {
         guard let data = context[WatchLinkVersion.snapshotKey] as? Data, let decoded = WidgetSnapshot.decoded(data) else { return }
         snapshot = decoded
-        // The complications (ADR-257) read the same snapshot from the watch's App Group folder.
+        // The complications (ADR-262) read the same snapshot from the watch's App Group folder.
         // "Show in widgets" off arrives as an empty snapshot, so nothing of the user's stays there.
         // Without the App Group the write fails and the complications say to open Doddy.
         if (try? WidgetSnapshotFile.write(decoded)) != nil {

@@ -27,9 +27,9 @@ struct DoddyApp: App {
         // The Apple Watch app asks through the same store (ADR-232).
         PhoneWatchLink.shared.store = store
         PhoneWatchLink.shared.activate()
-        // Shopping mode (ADR-252) runs on the Lock Screen across relaunches.
+        // Shopping mode (ADR-257) runs on the Lock Screen across relaunches.
         ShoppingModeController.shared.store = store
-        // Shared lists (ADR-258) sync through the same store.
+        // Shared lists (ADR-263) sync through the same store.
         SharedListsController.shared.store = store
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)

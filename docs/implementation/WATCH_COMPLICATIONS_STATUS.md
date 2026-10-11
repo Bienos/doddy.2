@@ -1,4 +1,4 @@
-# Watch complications and Smart Stack: status (ADR-257)
+# Watch complications and Smart Stack: status (ADR-262)
 Date: 2026-10-11. Owner: "do all of them" (item 8).
 
 ## What ships

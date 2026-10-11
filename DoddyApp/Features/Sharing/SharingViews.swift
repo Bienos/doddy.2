@@ -3,7 +3,7 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// Gets the share link when Doddy is opened from one (ADR-258). Nothing is joined until the user
+/// Gets the share link when Doddy is opened from one (ADR-263). Nothing is joined until the user
 /// taps Join on the invite sheet.
 @MainActor
 final class ShareAcceptSceneDelegate: NSObject, UIWindowSceneDelegate {

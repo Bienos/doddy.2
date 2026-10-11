@@ -35,7 +35,7 @@ final class VoiceSessionController {
         case event(toolCallID: String, draft: CalendarEventDraft)
         case reminder(toolCallID: String, draft: ReminderDraft)
         case timer(toolCallID: String, draft: TimerDraft)
-        /// "Set this alarm?" (ADR-255), iOS 26 and later.
+        /// "Set this alarm?" (ADR-260), iOS 26 and later.
         case alarm(toolCallID: String, draft: AlarmDraft)
         case map(toolCallID: String, place: String)
         case shortcut(toolCallID: String, name: String)
@@ -56,9 +56,9 @@ final class VoiceSessionController {
         case changeEvent(toolCallID: String, plan: EventChangePlan)
         /// "Change this reminder?" or "Mark this reminder done?" (ADR-229).
         case changeReminder(toolCallID: String, reminder: ReminderSnapshot, draft: ReminderChangeDraft)
-        /// "Delete this event?" (ADR-254): one occurrence, exactly as Calendar has it.
+        /// "Delete this event?" (ADR-259): one occurrence, exactly as Calendar has it.
         case deleteEvent(toolCallID: String, event: CalendarEventSummary)
-        /// "Delete this reminder?" (ADR-254): one open reminder, exactly as Reminders has it.
+        /// "Delete this reminder?" (ADR-259): one open reminder, exactly as Reminders has it.
         case deleteReminder(toolCallID: String, reminder: ReminderSnapshot)
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
@@ -160,7 +160,7 @@ final class VoiceSessionController {
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
-    /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-253).
+    /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
@@ -1483,7 +1483,7 @@ final class VoiceSessionController {
         await store.reload()
         let record: MemoryRecord
         if draft.isList {
-            // A list (ADR-251), matched exactly like the list tools; otherwise the agent asks.
+            // A list (ADR-256), matched exactly like the list tools; otherwise the agent asks.
             guard let list = await resolveList(draft.noteText, toolCallID: toolCallID) else { return }
             record = list.record
         } else {
@@ -1517,7 +1517,7 @@ final class VoiceSessionController {
         }
     }
 
-    /// The note-reminder card is about a list (ADR-251), read from the store by its id.
+    /// The note-reminder card is about a list (ADR-256), read from the store by its id.
     var isListReminder: Bool {
         guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return false }
         return store.list(id: memoryID) != nil
@@ -1644,7 +1644,7 @@ final class VoiceSessionController {
         }
     }
 
-    // MARK: Deleting events and reminders (ADR-254)
+    // MARK: Deleting events and reminders (ADR-259)
 
     /// Exactly one event with the title and start the agent read; otherwise the agent asks.
     private func proposeEventDelete(_ draft: EventChangeDraft, toolCallID: String) async {
@@ -1712,7 +1712,7 @@ final class VoiceSessionController {
         }
     }
 
-    /// Undo on the change receipt (ADR-253): the same checked change, backwards. The item must
+    /// Undo on the change receipt (ADR-258): the same checked change, backwards. The item must
     /// still look exactly as Doddy left it; the result is read back and Doddy is told.
     func undoLastChange(now: Date = .now) async {
         guard var receipt = changeReceipt, receipt.state == .available else { return }
@@ -1916,7 +1916,7 @@ private extension VoiceSessionController.PendingAction {
     }
 }
 
-/// A change Doddy made in Calendar or Reminders this conversation, shown with Undo (ADR-253).
+/// A change Doddy made in Calendar or Reminders this conversation, shown with Undo (ADR-258).
 struct ChangeReceipt: Equatable, Identifiable {
     enum Kind: Equatable {
         case event(EventChangePlan)

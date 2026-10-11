@@ -823,7 +823,7 @@ struct VoiceView: View {
 
     /// What a list change by voice did (ADR-216), with Undo and, when "milk" matched two items,
     /// the items to tap. Read back from the store before it is shown.
-    /// A change in Calendar or Reminders, checked, with Undo (ADR-253).
+    /// A change in Calendar or Reminders, checked, with Undo (ADR-258).
     private func changeReceiptCard(_ receipt: ChangeReceipt, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {

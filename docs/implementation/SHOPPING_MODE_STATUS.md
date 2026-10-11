@@ -1,4 +1,4 @@
-# Shopping mode status (ADR-252)
+# Shopping mode status (ADR-257)
 Date: 2026-10-11. Owner: "do all of them" (item 2).
 
 ## What ships

@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Links between local lists and their iCloud zones (ADR-258), in the same SQLite file. A link
+/// Links between local lists and their iCloud zones (ADR-263), in the same SQLite file. A link
 /// goes when its list is deleted (foreign key, cascade). Every save is read back.
 public final class SQLiteListShareRepository: ListShareRepository {
     private let dbQueue: DatabaseQueue

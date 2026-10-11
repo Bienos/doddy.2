@@ -1,6 +1,6 @@
 import Foundation
 
-// Alarms by voice (ADR-255). "Wake me at seven" becomes a real alarm, the kind that rings through
+// Alarms by voice (ADR-260). "Wake me at seven" becomes a real alarm, the kind that rings through
 // Silent mode and Focus, set with Apple's AlarmKit on iOS 26 and later. Only the phone app uses
 // AlarmKit (DoddyApp/Features/Alarms); this file is the plain-Swift part the Linux tests cover:
 // the tool's arguments, the rules, and what the agent is told. Like every other write, the alarm

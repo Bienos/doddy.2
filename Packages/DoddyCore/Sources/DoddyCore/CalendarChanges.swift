@@ -10,7 +10,7 @@ import Foundation
 extension VoiceToolName {
     public static let changeCalendarEvent = "change_calendar_event"
     public static let changeReminder = "change_reminder"
-    /// Deleting (ADR-254): one event occurrence, or one open reminder, after a card.
+    /// Deleting (ADR-259): one event occurrence, or one open reminder, after a card.
     public static let deleteCalendarEvent = "delete_calendar_event"
     public static let deleteReminder = "delete_reminder"
 }
@@ -58,7 +58,7 @@ public struct EventChangePlan: Equatable, Sendable {
     }
 }
 
-/// What a reminder change does on the iPhone (ADR-229, ADR-253).
+/// What a reminder change does on the iPhone (ADR-229, ADR-258).
 public enum ReminderChange: Equatable, Sendable {
     /// A new due, or nil to clear it (only Undo clears a due).
     case due(ReminderDue?)
@@ -149,7 +149,7 @@ public enum EventChange {
         "\(itemID)@\(Int(start.timeIntervalSince1970))"
     }
 
-    /// Undo (ADR-253): the change backwards. Its "before" is the event as Doddy left it, with the
+    /// Undo (ADR-258): the change backwards. Its "before" is the event as Doddy left it, with the
     /// occurrence id it has at its new start, so the usual check (it must still look exactly so)
     /// refuses an undo after anyone else changed it.
     public static func reversed(_ plan: EventChangePlan) -> EventChangePlan {
@@ -274,7 +274,7 @@ extension VoiceToolRequest {
             newStart: newStart, newEnd: newEnd, newTitle: newTitle))
     }
 
-    /// title + start (as read_calendar returned them): the occurrence to delete (ADR-254).
+    /// title + start (as read_calendar returned them): the occurrence to delete (ADR-259).
     static func parseEventDelete(_ args: Arguments, name: String, calendar: Calendar) -> VoiceToolRequest {
         guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
         guard let startText = args.text("start") else { return .invalid(name: name, reason: "missing start (the event's current start, as read_calendar gave it)") }

@@ -1,6 +1,6 @@
 import Foundation
 
-// Watch complications and the Smart Stack (ADR-257). The watch app already receives the iPhone's
+// Watch complications and the Smart Stack (ADR-262). The watch app already receives the iPhone's
 // widget snapshot (ADR-232); it now also writes it to the watch's own App Group folder, and a
 // watch widget extension draws it on the watch face and in the Smart Stack. A watch face is seen
 // by anyone nearby and stays on with Always On, so a complication shows only times, counts and

@@ -19,8 +19,8 @@
 #    database or networking of its own (ADR-232),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
-#  - AlarmKit only inside DoddyApp/Features/Alarms (ADR-255),
-#  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-258),
+#  - AlarmKit only inside DoddyApp/Features/Alarms (ADR-260),
+#  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
 #    reminders, contacts and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics

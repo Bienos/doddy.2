@@ -3,7 +3,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Starts, updates and ends shopping mode's Live Activity (ADR-252). One list at a time. It is
+/// Starts, updates and ends shopping mode's Live Activity (ADR-257). One list at a time. It is
 /// redrawn from the store after every change (including ticks from the Lock Screen), ends from
 /// the list, when every item is ticked, when the list is deleted, or by itself after
 /// `ShoppingMode.staleAfter`.

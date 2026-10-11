@@ -1,4 +1,4 @@
-# List reminders at a place, by voice: status (ADR-251)
+# List reminders at a place, by voice: status (ADR-256)
 Date: 2026-10-11. Owner: "do all of them" (item 3: "remind me of the shopping list when I'm at Lidl").
 
 ## What was already there

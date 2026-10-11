@@ -26,9 +26,9 @@ final class WidgetSync {
 
     func refresh(now: Date = .now) {
         guard let store, store.hasLoaded else { return }
-        // Shopping mode (ADR-252) follows the same changes, ticks from the Lock Screen included.
+        // Shopping mode (ADR-257) follows the same changes, ticks from the Lock Screen included.
         ShoppingModeController.shared.refresh()
-        // Shared lists (ADR-258) send a local change to iCloud.
+        // Shared lists (ADR-263) send a local change to iCloud.
         SharedListsController.shared.listsChanged()
         let snapshot = WidgetSnapshot.make(
             memories: store.memories, lists: store.lists,

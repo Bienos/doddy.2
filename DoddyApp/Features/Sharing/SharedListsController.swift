@@ -3,7 +3,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Shared lists (ADR-258) on the main actor. Shares a list, syncs shared lists, joins one from a
+/// Shared lists (ADR-263) on the main actor. Shares a list, syncs shared lists, joins one from a
 /// link, and stops sharing or leaves. Every sync is: read iCloud, merge with this iPhone and the
 /// last sync (`SharedListMerge`), write what changed on each side, read both back, and only then
 /// remember the result as the new "last sync". If anything fails, nothing is remembered and the

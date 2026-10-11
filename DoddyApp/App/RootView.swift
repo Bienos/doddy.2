@@ -111,7 +111,7 @@ struct RootView: View {
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await noteReminders.refreshOnForeground() } }
-                // Shared lists (ADR-258): changes others made arrive when Doddy comes to the front.
+                // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                 if phase == .active { Task { await SharedListsController.shared.syncAll() } }
                 // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
                 switch phase {
@@ -191,14 +191,14 @@ struct RootView: View {
         }
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
-        // A shared list's link (ADR-258): nothing is joined until Join.
+        // A shared list's link (ADR-263): nothing is joined until Join.
         .sheet(item: Binding(get: { SharedListsController.shared.invite }, set: { if $0 == nil { SharedListsController.shared.declineInvite() } })) { invite in
             SharedListInviteView(invite: invite) { list in
                 selectedTab = .home
                 homePath = [list.id]
             }
         }
-        // The evening wrap-up (ADR-256), from its notification or Settings.
+        // The evening wrap-up (ADR-261), from its notification or Settings.
         .sheet(isPresented: $router.isWrapUpPresented, onDismiss: { router.showWaitingDraft() }) {
             EveningWrapUpView(openSettings: { selectedTab = .settings })
         }

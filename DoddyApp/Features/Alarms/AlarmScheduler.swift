@@ -5,7 +5,7 @@ import AlarmKit
 import SwiftUI
 #endif
 
-// Alarms (ADR-255). AlarmKit is used only in this folder (scripts/check_forbidden_capabilities.sh),
+// Alarms (ADR-260). AlarmKit is used only in this folder (scripts/check_forbidden_capabilities.sh),
 // and only on iOS 26 and later; built with an older SDK, or run on an older iOS, alarms report
 // `needsNewerIOS` and the agent offers a timer or a reminder instead. An alarm is set only after
 // the user taps Set alarm, and "set" means AlarmKit lists it afterwards.

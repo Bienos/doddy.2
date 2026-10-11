@@ -77,13 +77,13 @@ Small Swift 6 stand-ins of the risky patterns type-check on Linux. Fixed after t
 - `Features/Import/NoteImportViews.swift`: `fileImporter(allowsMultipleSelection:)` and the tuple-array `@State`.
 - The generated catalogs (`InfoPlist.xcstrings`, `AppShortcuts.xcstrings`, and the widget and watch `Localizable.xcstrings`): whether Xcode and XcodeGen pick them up as written.
 
-### Next round (2026-10-11, ADR-250 to ADR-258): most likely to need a fix
+### Next round (2026-10-11, ADR-255 to ADR-263): most likely to need a fix
 Nothing from this round has been compiled with Xcode either. In order of risk:
-- `Features/Sharing/*` (ADR-258):
+- `Features/Sharing/*` (ADR-263):
   - Swift 6 Sendable checks on `CKRecord` and `CKShare.Metadata` reaching the main-actor controller;
   - the result tuple of `recordZoneChanges(inZoneWith:since:)`;
   - `UICloudSharingController` inside a SwiftUI sheet;
   - `ShareAcceptSceneDelegate` set from `AppDelegate.application(_:configurationForConnecting:options:)` in a SwiftUI app.
-- `Features/Alarms/AlarmScheduler.swift` (ADR-255): every AlarmKit call. It needs Xcode 26 to compile at all; on Xcode 16 only the `#if canImport(AlarmKit)` fallback builds.
-- `DoddyWatchWidgets` (ADR-257): XcodeGen embedding a watchOS app extension in the single-target watch app, and `.widgetLabel` on the corner complication.
-- `Features/EveningWrapUp/EveningWrapUpViews.swift` (ADR-256) and the delete card (ADR-254): ordinary SwiftUI and EventKit (`remove(_:span:)`, `remove(_:commit:)`), lower risk.
+- `Features/Alarms/AlarmScheduler.swift` (ADR-260): every AlarmKit call. It needs Xcode 26 to compile at all; on Xcode 16 only the `#if canImport(AlarmKit)` fallback builds.
+- `DoddyWatchWidgets` (ADR-262): XcodeGen embedding a watchOS app extension in the single-target watch app, and `.widgetLabel` on the corner complication.
+- `Features/EveningWrapUp/EveningWrapUpViews.swift` (ADR-261) and the delete card (ADR-259): ordinary SwiftUI and EventKit (`remove(_:span:)`, `remove(_:commit:)`), lower risk.

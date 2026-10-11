@@ -3,7 +3,7 @@ import DoddyPersistence
 import Foundation
 import XCTest
 
-/// Shared lists on real SQLite (ADR-258): replacing a list with the merged state, and the link.
+/// Shared lists on real SQLite (ADR-263): replacing a list with the merged state, and the link.
 final class SQLiteListShareTests: XCTestCase {
     private let clock = Date(timeIntervalSince1970: 1_800_000_000)
 

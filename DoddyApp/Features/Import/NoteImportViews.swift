@@ -32,7 +32,7 @@ struct NoteImportView: View {
     @State private var ticked: Set<UUID> = []
     @State private var isImporting = false
     @State private var receipt: String?
-    /// What this import added, for "Undo this import" (ADR-253).
+    /// What this import added, for "Undo this import" (ADR-258).
     @State private var importedIDs: [UUID] = []
     @State private var confirmUndo = false
     @State private var undoReceipt: String?

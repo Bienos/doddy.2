@@ -234,7 +234,7 @@ final class DeviceConnections {
         return components
     }
 
-    /// Changes the due of, completes, or (Undo, ADR-253) reopens exactly the reminder the card
+    /// Changes the due of, completes, or (Undo, ADR-258) reopens exactly the reminder the card
     /// showed (ADR-229). It must still look as it did (title, due, open or done), or nothing is
     /// written. An alarm set for the old due moves with it, or goes when the due is cleared. Then
     /// it's read back from Reminders.
@@ -271,7 +271,7 @@ final class DeviceConnections {
         }
     }
 
-    /// Deletes exactly the occurrence the card showed (ADR-254). It must still look as it did,
+    /// Deletes exactly the occurrence the card showed (ADR-259). It must still look as it did,
     /// or nothing is deleted. A repeating event loses only this occurrence. Then Calendar is read
     /// again: verified only when that occurrence is gone.
     func deleteEvent(_ event: CalendarEventSummary) throws -> ChangeOutcome {
@@ -285,7 +285,7 @@ final class DeviceConnections {
         return stillThere ? .unconfirmed : .verified
     }
 
-    /// Deletes exactly the open reminder the card showed (ADR-254), if it still looks as it did.
+    /// Deletes exactly the open reminder the card showed (ADR-259), if it still looks as it did.
     /// Verified only when Reminders no longer has it.
     func deleteReminder(_ before: ReminderSnapshot) throws -> ChangeOutcome {
         guard access(for: .reminders) == .granted else { throw ReminderStoreError.notAllowed }

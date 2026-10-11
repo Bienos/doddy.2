@@ -1,18 +1,18 @@
-# Round report: "do all of them" (2026-10-11, ADR-250 to ADR-258)
+# Round report: "do all of them" (2026-10-11, ADR-255 to ADR-263)
 Branch `claude/hopeful-fermat-1a63x0`. Owner's list of nine; item 1 was left to the other session at the owner's request.
 
 ## Shipped (written and checked on Linux; nothing compiled with Xcode)
 | # | Feature | ADR | Status doc |
 |---|---|---|---|
-| 1 | Join `claude/sleepy-gates-f9najr`: left to `claude/peaceful-hopper-v3gx75`; the owner's choices are recorded for it | 250 | DECISIONS.md |
-| 2 | List reminders at a place or time, by voice | 251 | `LIST_REMINDERS_STATUS.md` |
-| 3 | Shopping mode (Live Activity for a list) | 252 | `SHOPPING_MODE_STATUS.md` |
-| 4 | Undo for voice changes and imports | 253 | `UNDO_STATUS.md` |
-| 5 | Delete events and reminders by voice | 254 | `DELETE_STATUS.md` |
-| 6 | Alarms (AlarmKit, iOS 26) | 255 | `ALARMS_STATUS.md` |
-| 7 | Evening wrap-up | 256 | `EVENING_WRAPUP_STATUS.md` |
-| 8 | Watch complications and Smart Stack | 257 | `WATCH_COMPLICATIONS_STATUS.md` |
-| 9 | Shared lists through iCloud (opt-in) | 258 | `SHARED_LISTS_STATUS.md` |
+| 1 | Join `claude/sleepy-gates-f9najr`: left to `claude/peaceful-hopper-v3gx75`; the owner's choices are recorded for it | 255 | DECISIONS.md |
+| 2 | List reminders at a place or time, by voice | 256 | `LIST_REMINDERS_STATUS.md` |
+| 3 | Shopping mode (Live Activity for a list) | 257 | `SHOPPING_MODE_STATUS.md` |
+| 4 | Undo for voice changes and imports | 258 | `UNDO_STATUS.md` |
+| 5 | Delete events and reminders by voice | 259 | `DELETE_STATUS.md` |
+| 6 | Alarms (AlarmKit, iOS 26) | 260 | `ALARMS_STATUS.md` |
+| 7 | Evening wrap-up | 261 | `EVENING_WRAPUP_STATUS.md` |
+| 8 | Watch complications and Smart Stack | 262 | `WATCH_COMPLICATIONS_STATUS.md` |
+| 9 | Shared lists through iCloud (opt-in) | 263 | `SHARED_LISTS_STATUS.md` |
 
 ## Tests actually run
 - `scripts/ci.sh --core-only` on Linux, Swift 6.2.1, before each commit. Final run: **RESULT: PASS for core-only scope; iOS app NOT verified**:
@@ -50,13 +50,13 @@ Branch `claude/hopeful-fermat-1a63x0`. Owner's list of nine; item 1 was left to 
 3. Fix GitHub Actions billing, or do a Mac build (`FIRST_BUILD_GUIDE.md`). Everything above waits on a first compile.
 
 ## Next recommended step
-The first real Xcode build (Way A or B in `FIRST_BUILD_GUIDE.md`), then the device checks. After that, the join of `claude/peaceful-hopper-v3gx75`, following ADR-250. Its vectors migration goes after `v9_list_shares`.
+The first real Xcode build (Way A or B in `FIRST_BUILD_GUIDE.md`), then the device checks. After that, the join of `claude/peaceful-hopper-v3gx75`, following ADR-255. Its vectors migration goes after `v9_list_shares`.
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests run | Gaps | Claims to limit |
 |---|---|---|---|---|
 | DOD-07 scoped_action_approval | Delete, alarm, wrap-up and share cards; nothing preselected; stale checks at the tap | `CalendarChangeTests`, `AlarmTests`, `EveningWrapUpTests` | UI not compiled | Don't say "users can now…" before a build |
 | DOD-08 verified_status_and_receipts | Read-back for delete, alarm, move, snapshot write, share and sync; "unknown" is never success | `SQLiteListShareTests`, `SharedListMergeTests` | No device or iCloud run | "Checked" means checked in code, not observed on a device |
-| DOD-09 correction_and_recovery | Undo (ADR-253); Settings › Alarms; Leave/Stop sharing; failed syncs retry from the same base | as above | — | — |
+| DOD-09 correction_and_recovery | Undo (ADR-258); Settings › Alarms; Leave/Stop sharing; failed syncs retry from the same base | as above | — | — |
 | DOD-10 nonmanipulative_companionship | Wrap-up and complications: opt-in, no streaks, relevance only from the user's own times | `WatchComplicationTests`, `EveningWrapUpTests` | — | — |
 | DOD-11 observable_privacy | Guard: AlarmKit only in Alarms, CloudKit only in Sharing; data-flow iCloud row | guard script, `SharedListDataFlowTests` | — | Never "privacy guaranteed" |

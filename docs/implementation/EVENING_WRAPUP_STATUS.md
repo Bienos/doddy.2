@@ -1,4 +1,4 @@
-# Evening wrap-up: status (ADR-256)
+# Evening wrap-up: status (ADR-261)
 Date: 2026-10-11. Owner: "do all of them" (item 7).
 
 ## What ships

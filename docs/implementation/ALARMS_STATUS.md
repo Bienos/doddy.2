@@ -1,4 +1,4 @@
-# Alarms by voice: status (ADR-255)
+# Alarms by voice: status (ADR-260)
 Date: 2026-10-11. Owner: "do all of them" (item 6).
 
 ## What ships
@@ -15,7 +15,7 @@ Date: 2026-10-11. Owner: "do all of them" (item 6).
   4. AlarmKit's list is read: "added … Checked." only when the new id is there; otherwise "unknown".
 - **Settings › Alarms:** Doddy's alarms that AlarmKit still lists, each with **Turn off**, which is checked by reading the list again. Alarms that already rang once drop out.
 - **What is kept:** the alarm's time text and label, in this iPhone's settings (UserDefaults), only to name it in that list. Nothing leaves the phone except what the voice conversation already carries (the time and label the agent proposed).
-- **Connections:** alarms belong to **Timers** (one switch for both; Pause all covers it). The Connections card says so. The Calendar and Reminders cards, and their permission prompts, now also say Doddy can change or delete one item after a tap (ADR-229, ADR-254).
+- **Connections:** alarms belong to **Timers** (one switch for both; Pause all covers it). The Connections card says so. The Calendar and Reminders cards, and their permission prompts, now also say Doddy can change or delete one item after a tap (ADR-229, ADR-259).
 
 ## Files
 - **Core:** `Alarms.swift` (`AlarmDraft`, `AlarmRepeat`, `AlarmSupport`, `parseAlarm`, replies), `VoiceTools.swift`, `ActivityLog.swift`, `ConnectionPause.swift`.

@@ -18,7 +18,7 @@ final class ShortcutRouter {
     var isCheckInPresented = false
     /// The weekly tidy-up screen (ADR-228), from its notification or Settings.
     var isTidyUpPresented = false
-    /// The evening wrap-up screen (ADR-256), from its notification or Settings.
+    /// The evening wrap-up screen (ADR-261), from its notification or Settings.
     var isWrapUpPresented = false
     /// "Talk it through": the conversation that opens next starts with this briefing.
     private var checkInBriefing: MorningBriefing?

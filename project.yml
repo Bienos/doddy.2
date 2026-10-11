@@ -38,11 +38,11 @@ settings:
     # widgets say "Open Doddy to set up widgets" and the app writes nothing.
     DODDY_APP_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
     DODDY_WIDGET_ENTITLEMENTS: ""
-    # Watch complications (ADR-257) read the snapshot from the watch's App Group, also off by
+    # Watch complications (ADR-262) read the snapshot from the watch's App Group, also off by
     # default. To turn on: DODDY_WATCH_ENTITLEMENTS = Config/DoddyWatch.entitlements (it is used by
     # the watch app and its widget extension).
     DODDY_WATCH_ENTITLEMENTS: ""
-    # Shared lists through iCloud (ADR-258), off by default (needs a paid team with iCloud). To
+    # Shared lists through iCloud (ADR-263), off by default (needs a paid team with iCloud). To
     # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
     # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or
     # Config/Doddy-Push-AppGroup-iCloud.entitlements with push). Create the container in the
@@ -128,7 +128,7 @@ targets:
       - path: DoddyWatch
       - path: Shared/Widgets/WidgetSnapshotFile.swift
     dependencies:
-      # Watch face complications and the Smart Stack (ADR-257), embedded in the watch app.
+      # Watch face complications and the Smart Stack (ADR-262), embedded in the watch app.
       - target: DoddyWatchWidgets
       - package: DoddyCore
         product: DoddyCore
@@ -149,7 +149,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
   DoddyWatchWidgets:
-    # Watch face complications and the Smart Stack (ADR-257). Reads only the snapshot the watch
+    # Watch face complications and the Smart Stack (ADR-262). Reads only the snapshot the watch
     # app saves in the watch's App Group; shows times, counts and list names, never note words.
     type: app-extension
     platform: watchOS

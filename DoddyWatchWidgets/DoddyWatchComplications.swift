@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import WidgetKit
 
-// Watch face complications and the Smart Stack (ADR-257). They read only the snapshot the watch
+// Watch face complications and the Smart Stack (ADR-262). They read only the snapshot the watch
 // app saved in the watch's App Group folder (from what the iPhone sent, ADR-232), and show only
 // times, counts and list names: a watch face is seen by anyone nearby. A tap opens Doddy.
 

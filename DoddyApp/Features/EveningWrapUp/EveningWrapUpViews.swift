@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import UserNotifications
 
-/// Puts the evening wrap-up's daily notification in iOS and reads it back (ADR-256). The
+/// Puts the evening wrap-up's daily notification in iOS and reads it back (ADR-261). The
 /// notification says only "Good evening · Anything to move to tomorrow?".
 enum EveningWrapUpScheduler {
     enum Outcome: Equatable { case scheduled, off, needsPermission, failed }

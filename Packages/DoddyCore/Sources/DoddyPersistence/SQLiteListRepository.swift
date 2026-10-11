@@ -241,7 +241,7 @@ public final class SQLiteListRepository: ListRepository {
     }
 }
 
-// MARK: Shared lists (ADR-258)
+// MARK: Shared lists (ADR-263)
 
 extension SQLiteListRepository {
     public func replaceShared(listID: UUID, with state: SharedListState) async throws -> DoddyList {

@@ -4,7 +4,7 @@ import DoddyCore
 import SwiftUI
 import WidgetKit
 
-/// Shopping mode on the Lock Screen and in the Dynamic Island (ADR-252). Each item is a button
+/// Shopping mode on the Lock Screen and in the Dynamic Island (ADR-257). Each item is a button
 /// that runs `ToggleListItemIntent` in the Doddy app (after the iPhone is unlocked): the app ticks
 /// it through the store, reads it back and redraws this from the list as it now is. A stale or
 /// tapped-twice item changes nothing (the intent checks the item still looks as shown).

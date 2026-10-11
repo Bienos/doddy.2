@@ -32,7 +32,7 @@ final class NoteReminderVoiceTests: XCTestCase {
             .remindAboutNote(NoteReminderVoiceDraft(noteText: "Parcel code 5678", target: .place(query: "post office", onArrival: true))))
     }
 
-    /// ADR-251: a list is named instead of a note; never both.
+    /// ADR-256: a list is named instead of a note; never both.
     func testAListCanBeNamedInsteadOfANote() {
         XCTAssertEqual(
             parse(#"{"list":"Shopping","place":"Lidl Puławska"}"#),

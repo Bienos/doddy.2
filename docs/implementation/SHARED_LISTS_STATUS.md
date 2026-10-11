@@ -1,4 +1,4 @@
-# Shared lists through iCloud: status (ADR-258)
+# Shared lists through iCloud: status (ADR-263)
 Date: 2026-10-11. Owner: "do all of them" (item 9), "iCloud sharing (Recommended)".
 
 ## Turning it on (owner decision; off by default)

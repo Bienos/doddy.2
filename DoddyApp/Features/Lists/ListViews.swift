@@ -223,7 +223,7 @@ struct ListDetailView: View {
             Button("Delete list", role: .destructive) {
                 Task {
                     do {
-                        // A shared list stops being shared first (ADR-258), so nothing is left in iCloud.
+                        // A shared list stops being shared first (ADR-263), so nothing is left in iCloud.
                         if sharing.isShared(list.id) != nil { try await sharing.stop(list.id) }
                         try await store.delete(id: list.id)
                         dismiss()
@@ -301,7 +301,7 @@ struct ListDetailView: View {
             }
             .disabled(list.done.isEmpty)
             Button { showReminder = true } label: { Label("Remind me", systemImage: "bell") }
-            // Shopping mode (ADR-252): this list on the Lock Screen and in the Dynamic Island.
+            // Shopping mode (ADR-257): this list on the Lock Screen and in the Dynamic Island.
             if shopping.isOn(for: list.id) {
                 Button { shopping.end() } label: { Label("End shopping mode", systemImage: "cart.badge.minus") }
             } else {
@@ -311,7 +311,7 @@ struct ListDetailView: View {
             ShareLink(item: list.shareText, preview: SharePreview(list.name)) {
                 Label("Share as text", systemImage: "square.and.arrow.up")
             }
-            // Shared lists through iCloud (ADR-258), only in builds set up for it.
+            // Shared lists through iCloud (ADR-263), only in builds set up for it.
             if sharing.isAvailable {
                 if let link = sharing.isShared(list.id) {
                     Button { Task { await openPeople(list) } } label: { Label("People", systemImage: "person.2") }

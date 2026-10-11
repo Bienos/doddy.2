@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Watch complications and the Smart Stack (ADR-257): only times, counts and list names.
+/// Watch complications and the Smart Stack (ADR-262): only times, counts and list names.
 final class WatchComplicationTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 

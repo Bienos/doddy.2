@@ -37,7 +37,7 @@ struct AppEnvironment: Sendable {
     let storageProblem: String?
     /// Lists (ADR-216), in the same SQLite file as the notes.
     var listRepository: any ListRepository = UnavailableListRepository()
-    /// Which lists are shared through iCloud (ADR-258), and their last sync.
+    /// Which lists are shared through iCloud (ADR-263), and their last sync.
     var listShareRepository: any ListShareRepository = UnavailableListShareRepository()
     /// Which note carries which photo (ADR-218), and the folder of photo files next to the database.
     var photoRepository: any PhotoRepository = UnavailablePhotoRepository()

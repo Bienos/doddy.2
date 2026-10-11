@@ -75,7 +75,7 @@ extension MemoryStore {
         await listChanged(listID)
     }
 
-    /// A shared list after a sync (ADR-258): exactly the merged name and items, read back.
+    /// A shared list after a sync (ADR-263): exactly the merged name and items, read back.
     @discardableResult
     func replaceShared(_ listID: UUID, with state: SharedListState) async throws -> DoddyList {
         let list = try await environment.listRepository.replaceShared(listID: listID, with: state)
@@ -230,7 +230,7 @@ extension MemoryStore {
     }
 }
 
-/// Undo of an import (ADR-253): exactly the notes and lists that import added are removed, and
+/// Undo of an import (ADR-258): exactly the notes and lists that import added are removed, and
 /// the store is reloaded to check they're gone.
 extension MemoryStore {
     @discardableResult

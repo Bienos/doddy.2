@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings › Alarms (ADR-255): the alarms Doddy set that are still on, each with Turn off.
+/// Settings › Alarms (ADR-260): the alarms Doddy set that are still on, each with Turn off.
 struct AlarmsView: View {
     @State private var alarms: [DoddyAlarm] = []
     @State private var problem: String?

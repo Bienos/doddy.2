@@ -3,7 +3,7 @@ import Foundation
 // Voice note reminders (ADR-198): the agent proposes "remind me about this note" at a time or at a
 // place; the app finds the note, shows a card, and sets nothing until the user taps Set reminder.
 // The agent never names a memory by id: it quotes the note's text from search_memories or
-// save_memory, and the app matches that quote against the user's saved notes. A list (ADR-251)
+// save_memory, and the app matches that quote against the user's saved notes. A list (ADR-256)
 // is named instead, exactly as under "The user's lists"; the app matches it like the list tools.
 
 /// When a voice note reminder should fire, as the agent asked for it.
@@ -18,7 +18,7 @@ public enum NoteReminderVoiceTarget: Equatable, Sendable {
 public struct NoteReminderVoiceDraft: Equatable, Sendable {
     /// The note's text as the agent quoted it, or the list's name when `isList`.
     public let noteText: String
-    /// The reminder is about a list, named by `noteText` (ADR-251).
+    /// The reminder is about a list, named by `noteText` (ADR-256).
     public let isList: Bool
     public let target: NoteReminderVoiceTarget
     /// A time reminder that repeats (ADR-211): the weekday, day and clock time come from the time.

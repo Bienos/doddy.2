@@ -2,7 +2,7 @@ import CloudKit
 import DoddyCore
 import Foundation
 
-// Shared lists (ADR-258): the only code that talks to CloudKit (scripts/check_forbidden_capabilities.sh).
+// Shared lists (ADR-263): the only code that talks to CloudKit (scripts/check_forbidden_capabilities.sh).
 // One zone per shared list. In it: one "DoddyList" record ("list": the name) and one
 // "DoddyListItem" record per item (record name = the item's id). The zone is shared as a whole
 // (`CKShare(recordZoneID:)`). The owner's zone is in their private database; people who joined

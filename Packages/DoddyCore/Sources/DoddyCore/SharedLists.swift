@@ -1,6 +1,6 @@
 import Foundation
 
-// Shared lists through iCloud (ADR-258). Off unless the build is set up for iCloud and the user
+// Shared lists through iCloud (ADR-263). Off unless the build is set up for iCloud and the user
 // shares a list. Sharing a list copies its name and items to a zone in the user's own iCloud
 // (Apple's CloudKit) and invites people with Apple's share sheet; they join from the link, and
 // everyone's changes meet in that zone. This file is the plain-Swift part: what is synced, the

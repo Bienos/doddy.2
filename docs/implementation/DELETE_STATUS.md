@@ -1,4 +1,4 @@
-# Delete events and reminders by voice: status (ADR-254)
+# Delete events and reminders by voice: status (ADR-259)
 Date: 2026-10-11. Owner: "do all of them" (item 5).
 
 ## What ships

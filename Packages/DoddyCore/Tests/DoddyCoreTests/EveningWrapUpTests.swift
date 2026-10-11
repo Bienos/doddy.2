@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Evening wrap-up (ADR-256): what is offered, and where "tomorrow" lands.
+/// Evening wrap-up (ADR-261): what is offered, and where "tomorrow" lands.
 final class EveningWrapUpTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

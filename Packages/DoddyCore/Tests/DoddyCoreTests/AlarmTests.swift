@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Alarms by voice (ADR-255): the arguments, the rules and what the agent is told.
+/// Alarms by voice (ADR-260): the arguments, the rules and what the agent is told.
 final class AlarmTests: XCTestCase {
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)

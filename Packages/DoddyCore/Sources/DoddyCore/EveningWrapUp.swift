@@ -1,6 +1,6 @@
 import Foundation
 
-// Evening wrap-up (ADR-256). Off by default. Once a day, at a time the user picks, a notification
+// Evening wrap-up (ADR-261). Off by default. Once a day, at a time the user picks, a notification
 // asks "Anything to move to tomorrow?" and says nothing personal. Its screen lists the open
 // reminders in the iPhone's Reminders app that are due today or earlier (read on this iPhone,
 // only with Reminders on in Connections). None is ticked to start with; the user ticks the ones

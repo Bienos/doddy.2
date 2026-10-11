@@ -92,7 +92,7 @@ final class CalendarChangeTests: XCTestCase {
         XCTAssertFalse(EventChange.duePassed(ReminderDue(year: 2026, month: 10, day: 9, timeZoneID: nil), now: now, local: calendar), "a day without a time never counts as passed")
     }
 
-    /// ADR-253: undo is the same checked change backwards, with the moved occurrence's id.
+    /// ADR-258: undo is the same checked change backwards, with the moved occurrence's id.
     func testUndoIsTheChangeBackwards() throws {
         let event = CalendarEventSummary(id: "abc@\(Int(at(10, 9, 30).timeIntervalSince1970))", title: "Dentist", start: at(10, 9, 30), end: at(10, 10, 30), allDay: false)
         let move = EventChangeDraft(title: "Dentist", currentStart: at(10, 9, 30), currentIsDayOnly: false, newStart: at(12, 15), newEnd: nil, newTitle: "Dentist (Nowak)")
@@ -103,7 +103,7 @@ final class CalendarChangeTests: XCTestCase {
         XCTAssertEqual(undo.after, event, "back exactly as it was")
     }
 
-    /// ADR-254: deleting names the thing exactly; it is paused and logged like other app changes.
+    /// ADR-259: deleting names the thing exactly; it is paused and logged like other app changes.
     func testDeletingIsParsedPausedAndLogged() {
         guard case .deleteCalendarEvent(let draft) = parse(VoiceToolName.deleteCalendarEvent, #"{"title":"Dentist","start":"2026-10-10T09:30"}"#) else {
             return XCTFail()

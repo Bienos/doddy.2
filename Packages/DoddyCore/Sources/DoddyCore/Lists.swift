@@ -130,7 +130,7 @@ public protocol ListRepository: Sendable {
     func restore(_ items: [ListItem]) async throws -> [ListItem]
     /// Every item of every list, for export.
     func allItems() async throws -> [ListItem]
-    /// A shared list after a sync (ADR-258): its name and items become exactly `state`, in one
+    /// A shared list after a sync (ADR-263): its name and items become exactly `state`, in one
     /// transaction, read back. Throws `ListError.nameTaken` if another list has that name.
     func replaceShared(listID: UUID, with state: SharedListState) async throws -> DoddyList
 }

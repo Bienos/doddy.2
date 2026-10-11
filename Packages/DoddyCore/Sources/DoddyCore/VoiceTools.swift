@@ -163,7 +163,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
     case setTimer(TimerDraft)
-    /// A real alarm (ADR-255), on iOS 26 and later.
+    /// A real alarm (ADR-260), on iOS 26 and later.
     case setAlarm(AlarmDraft)
     case openMap(place: String)
     case runShortcut(name: String)
@@ -184,9 +184,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// exactly on the iPhone, shown on a card, written only on the user's tap, read back.
     case changeCalendarEvent(EventChangeDraft)
     case changeReminder(ReminderChangeDraft)
-    /// Delete one event occurrence (ADR-254), named as read_calendar returned it.
+    /// Delete one event occurrence (ADR-259), named as read_calendar returned it.
     case deleteCalendarEvent(EventChangeDraft)
-    /// Delete one open reminder (ADR-254), by its exact title.
+    /// Delete one open reminder (ADR-259), by its exact title.
     case deleteReminder(title: String)
     case unsupported(name: String)
     case invalid(name: String, reason: String)

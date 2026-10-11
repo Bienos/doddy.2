@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Shared lists (ADR-258): the three-way merge of this iPhone, iCloud and the last sync.
+/// Shared lists (ADR-263): the three-way merge of this iPhone, iCloud and the last sync.
 final class SharedListMergeTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
     private let milk = UUID(), eggs = UUID(), bread = UUID(), tea = UUID()
@@ -73,7 +73,7 @@ final class SharedListMergeTests: XCTestCase {
     }
 }
 
-/// What leaves this iPhone (ADR-258): the iCloud row is on only while a list is shared.
+/// What leaves this iPhone (ADR-263): the iCloud row is on only while a list is shared.
 final class SharedListDataFlowTests: XCTestCase {
     func testTheICloudRowFollowsSharedLists() {
         func row(_ shared: Int) -> DataFlowRow? {

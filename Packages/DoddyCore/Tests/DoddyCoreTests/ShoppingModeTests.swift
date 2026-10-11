@@ -1,7 +1,7 @@
 import DoddyCore
 import XCTest
 
-/// Shopping mode (ADR-252): what the Lock Screen shows.
+/// Shopping mode (ADR-257): what the Lock Screen shows.
 final class ShoppingModeTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)
 
