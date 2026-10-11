@@ -381,6 +381,34 @@ export class Store {
     });
   }
 
+  /**
+   * Retention (review 2026-10-11): drops attempts and approvals a day after they expire, usage
+   * periods no limit reads any more, and receipts older than 90 days or beyond the newest 200 per
+   * user (per table). Returns how many rows went, per table.
+   */
+  prune(now: number): Record<string, number> {
+    const DAY = 86_400_000;
+    const dayCutoff = `day:${new Date(now - 62 * DAY).toISOString().slice(0, 10)}`;
+    const monthCutoff = `month:${new Date(now - 400 * DAY).toISOString().slice(0, 7)}`;
+    return this.transaction(() => {
+      const run = (sql: string, ...params: (string | number)[]) => Number(this.db.prepare(sql).run(...params).changes);
+      const receipts = (table: "receipts" | "tool_receipts") =>
+        run(`DELETE FROM ${table} WHERE created_at < ?`, now - 90 * DAY) +
+        run(`DELETE FROM ${table} WHERE rowid IN (
+               SELECT rowid FROM (SELECT rowid, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, rowid DESC) AS rn FROM ${table})
+               WHERE rn > 200)`);
+      return {
+        attempts: run("DELETE FROM attempts WHERE expires_at < ?", now - DAY),
+        approvals: run("DELETE FROM approvals WHERE expires_at < ?", now - DAY),
+        usage:
+          run("DELETE FROM usage WHERE period LIKE 'day:%' AND period < ?", dayCutoff) +
+          run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < ?", monthCutoff),
+        receipts: receipts("receipts"),
+        toolReceipts: receipts("tool_receipts"),
+      };
+    });
+  }
+
   usage(counter: string, period: string): number {
     const row = this.db.prepare("SELECT count FROM usage WHERE counter = ? AND period = ?").get(counter, period) as
       | { count: number }
