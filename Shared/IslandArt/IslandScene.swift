@@ -1,7 +1,7 @@
 import Foundation
 
 /// The looks the voice island can take (ADR-239): the owner's V4 boards that have a voice
-/// conversation state, and Whole Doddy (ADR-255), his whole body from the owner's pose pack.
+/// conversation state, and Whole Doddy (ADR-264), his whole body from the owner's pose pack.
 /// Chosen in Settings → Voice → Dynamic Island style; Lean In by default.
 enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
     case leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou, wholeDoddy
@@ -118,7 +118,7 @@ struct IslandScene: Equatable, Sendable {
     var minimalSignCentred = false
     /// Words on the expanded drawing, in black on its cream shapes.
     var artLabels: [IslandArtLabel] = []
-    /// Whole Doddy (ADR-255): drawn instead of the board's art when set.
+    /// Whole Doddy (ADR-264): drawn instead of the board's art when set.
     var pose: IslandPose?
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
@@ -141,7 +141,7 @@ extension DoddyVoiceAttributes.ContentState {
         return scene
     }
 
-    /// Whole Doddy's pose for this state (ADR-255). One pose means one thing everywhere. Nil
+    /// Whole Doddy's pose for this state (ADR-264). One pose means one thing everywhere. Nil
     /// keeps the moment's own board: translating stays on Language Bridge.
     func wholeDoddyPose(stale: Bool) -> IslandPose? {
         if stale { return .facepalm }

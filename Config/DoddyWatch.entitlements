@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Watch app and its complications (ADR-262): the snapshot in the watch's App Group. Nothing else. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
+	</array>
+</dict>
+</plist>

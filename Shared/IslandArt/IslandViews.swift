@@ -427,7 +427,7 @@ struct IslandMinimalView: View {
     }
 }
 
-/// Whole Doddy (ADR-255): the pose standing on the bottom of `maxSize`, as large as fits. The
+/// Whole Doddy (ADR-264): the pose standing on the bottom of `maxSize`, as large as fits. The
 /// owner's drawings have black outlines, so on the black island they get a 1 pt cream edge;
 /// the pictures themselves are unchanged.
 struct IslandPoseView: View {

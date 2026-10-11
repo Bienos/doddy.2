@@ -197,7 +197,7 @@ enum IslandSceneChecks {
         return failures
     }
 
-    /// Whole Doddy (ADR-255): one pose per state, the same rules for every conversation.
+    /// Whole Doddy (ADR-264): one pose per state, the same rules for every conversation.
     static func wholeDoddy() -> Int {
         var failures = 0
         func expect(_ ok: Bool, _ message: String) {

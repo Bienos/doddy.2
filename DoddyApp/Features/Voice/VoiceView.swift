@@ -177,6 +177,11 @@ struct VoiceView: View {
                                 .id("listReceipt")
                         }
 
+                        if let receipt = controller.changeReceipt {
+                            changeReceiptCard(receipt, controller: controller)
+                                .id("changeReceipt")
+                        }
+
                         if let status = controller.noteReminderStatus {
                             noteReminderStatusCard(status, controller: controller)
                                 .id("noteReminderStatus")
@@ -347,6 +352,29 @@ struct VoiceView: View {
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .alarm(_, let draft):
+            Text("Set this alarm?")
+                .font(.headline)
+            Text(draft.clock)
+                .font(.title2.monospacedDigit())
+            Group {
+                if let repeats = draft.repeats {
+                    switch repeats {
+                    case .everyDay: Text("Every day")
+                    case .weekdays: Text("Monday to Friday")
+                    case .weekends: Text("Saturday and Sunday")
+                    }
+                } else if let date = draft.first.date {
+                    Text(date.formatted(date: .complete, time: .omitted))
+                }
+            }
+            .foregroundStyle(Theme.secondaryText)
+            if let label = draft.label {
+                Text("“\(label)”")
+            }
+            Text("It rings even in Silent mode or a Focus. Turn it off in Settings, Alarms.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .timer(_, let draft):
             Text("Start this timer?")
                 .font(.headline)
@@ -400,6 +428,26 @@ struct VoiceView: View {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
             }
+        case .deleteEvent(_, let event):
+            Text("Delete this event?")
+                .font(.headline)
+            Text(event.title)
+                .font(.body)
+            Text(eventWhen(event))
+                .foregroundStyle(Theme.secondaryText)
+            Text("If it repeats, only this time is deleted. This can't be undone from Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .deleteReminder(_, let reminder):
+            Text("Delete this reminder?")
+                .font(.headline)
+            Text(reminder.title)
+                .font(.body)
+            Text("In \(reminder.listTitle) · \(ReminderText.due(reminder.due))")
+                .foregroundStyle(Theme.secondaryText)
+            Text("This can't be undone from Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -581,6 +629,7 @@ struct VoiceView: View {
         case .memory: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
         case .event, .reminder: (NSLocalizedString("Add", comment: ""), NSLocalizedString("Don't add", comment: ""))
         case .timer: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Don't start", comment: ""))
+        case .alarm: (NSLocalizedString("Set alarm", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
@@ -589,6 +638,7 @@ struct VoiceView: View {
         case .translator: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
+        case .deleteEvent, .deleteReminder: (NSLocalizedString("Delete", comment: ""), NSLocalizedString("Don't delete", comment: ""))
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         }
@@ -601,12 +651,19 @@ struct VoiceView: View {
     private func noteReminderContent(
         noteText: String, savedAt: Date?, target: VoiceSessionController.NoteReminderCardTarget, controller: VoiceSessionController
     ) -> some View {
-        Text("Remind you about this note?")
-            .font(.headline)
+        let isList = controller.isListReminder
+        Group {
+            if isList { Text("Remind you about this list?") } else { Text("Remind you about this note?") }
+        }
+        .font(.headline)
         VStack(alignment: .leading, spacing: 4) {
             Text(noteText)
                 .font(.body)
-            if let savedAt {
+            if isList {
+                Text("Your list in Doddy. The notification doesn't name it or its items.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            } else if let savedAt {
                 Text("Your note, saved \(savedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).hour().minute()))")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
@@ -858,6 +915,37 @@ struct VoiceView: View {
 
     /// What a list change by voice did (ADR-216), with Undo and, when "milk" matched two items,
     /// the items to tap. Read back from the store before it is shown.
+    /// A change in Calendar or Reminders, checked, with Undo (ADR-258).
+    private func changeReceiptCard(_ receipt: ChangeReceipt, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
+                Label(receipt.message, systemImage: "checkmark.circle").foregroundStyle(Theme.confirmed)
+                Spacer()
+                Button { controller.dismissChangeReceipt() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            switch receipt.state {
+            case .available:
+                Button { Task { await controller.undoLastChange() } } label: {
+                    Label("Undo", systemImage: "arrow.uturn.backward").frame(minHeight: 44)
+                }
+                .accessibilityIdentifier("voice.undoChange")
+            case .working:
+                ProgressView("Putting it back…")
+            case .undone:
+                Label("Put back as it was. Checked.", systemImage: "arrow.uturn.backward.circle")
+                    .foregroundStyle(Theme.confirmed)
+            case .failed(let message):
+                Label(message, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
     private func listReceiptCard(_ receipt: ListReceipt, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {

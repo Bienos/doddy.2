@@ -204,7 +204,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 |---|---|---|---|
 | Build | | | |
 
-## 4f. Whole Doddy island style (ADR-255, `WHOLE_DODDY_ISLAND_STATUS.md`)
+## 4f. Whole Doddy island style (ADR-264, `WHOLE_DODDY_ISLAND_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
 | W1 | Build; open Settings → Voice → Dynamic Island style | A "Whole Doddy" row with a preview: Doddy's whole body on black with a thin cream edge, no panel. Switch the preview between Listening, Speaking, Thinking and Muted: hand at ear, open hands, kneeling, shush |

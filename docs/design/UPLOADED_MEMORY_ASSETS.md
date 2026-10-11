@@ -32,7 +32,7 @@ The existing development app icon is not replaced or represented as final brandi
 crop, recolour or other edit. Live Activity images must stay small; the app keeps the
 byte-identical originals. Regenerate from the originals if the ZIP files change.
 
-## Whole Doddy island poses (ADR-255, 11 October 2026)
+## Whole Doddy island poses (ADR-264, 11 October 2026)
 
 Owner: "only use assets from these folders" (the Google Drive folder `DODDY-Numbered-Video-Assets-v01`)
 and "deploy it" for the Whole Doddy island design. Source: that folder's

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the watch app (merged with the generated keys). The App Group name lets it
+  save the snapshot for its complications (ADR-262); it only works when signed with the App Group.
+-->
+<plist version="1.0">
+<dict>
+	<key>DoddyAppGroup</key>
+	<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
+</dict>
+</plist>

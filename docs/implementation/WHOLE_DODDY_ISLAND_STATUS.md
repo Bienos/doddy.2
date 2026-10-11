@@ -1,4 +1,4 @@
-# Whole Doddy island style (ADR-255)
+# Whole Doddy island style (ADR-264)
 Date: 2026-10-11. Owner: "suggest more tailored designs … with his whole body", "only use assets from these
 folders", "make them transparent not white colour on black", "deploy it". The design canvas the owner reviewed
 is a private Artifact in the owner's account.

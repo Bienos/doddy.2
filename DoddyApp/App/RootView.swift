@@ -124,6 +124,8 @@ struct RootView: View {
                     Task { await noteReminders.refreshOnForeground() }
                     FocusController.shared.refresh()
                     BreathingController.shared.refresh()
+                    // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
+                    Task { await SharedListsController.shared.syncAll() }
                 }
                 if phase == .background { WidgetSync.shared.refresh() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
@@ -222,6 +224,17 @@ struct RootView: View {
         }
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
+        // A shared list's link (ADR-263): nothing is joined until Join.
+        .sheet(item: Binding(get: { SharedListsController.shared.invite }, set: { if $0 == nil { SharedListsController.shared.declineInvite() } })) { invite in
+            SharedListInviteView(invite: invite) { list in
+                selectedTab = .home
+                homePath = [list.id]
+            }
+        }
+        // The evening wrap-up (ADR-261), from its notification or Settings.
+        .sheet(isPresented: $router.isWrapUpPresented, onDismiss: { router.showWaitingDraft() }) {
+            EveningWrapUpView(openSettings: { selectedTab = .settings })
+        }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })

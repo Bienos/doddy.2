@@ -35,6 +35,8 @@ final class VoiceSessionController {
         case event(toolCallID: String, draft: CalendarEventDraft)
         case reminder(toolCallID: String, draft: ReminderDraft)
         case timer(toolCallID: String, draft: TimerDraft)
+        /// "Set this alarm?" (ADR-260), iOS 26 and later.
+        case alarm(toolCallID: String, draft: AlarmDraft)
         case map(toolCallID: String, place: String)
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
@@ -54,15 +56,19 @@ final class VoiceSessionController {
         case changeEvent(toolCallID: String, plan: EventChangePlan)
         /// "Change this reminder?" or "Mark this reminder done?" (ADR-229).
         case changeReminder(toolCallID: String, reminder: ReminderSnapshot, draft: ReminderChangeDraft)
+        /// "Delete this event?" (ADR-259): one occurrence, exactly as Calendar has it.
+        case deleteEvent(toolCallID: String, event: CalendarEventSummary)
+        /// "Delete this reminder?" (ADR-259): one open reminder, exactly as Reminders has it.
+        case deleteReminder(toolCallID: String, reminder: ReminderSnapshot)
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
 
         var toolCallID: String {
             switch self {
-            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _),
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
-                 .changeEvent(let id, _), .changeReminder(let id, _, _):
+                 .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _):
                 id
             }
         }
@@ -166,6 +172,8 @@ final class VoiceSessionController {
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
+    /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
+    private(set) var changeReceipt: ChangeReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession? {
@@ -277,6 +285,7 @@ final class VoiceSessionController {
         checkInNeedsBriefing = checkIn != nil
         translator = nil
         listReceipt = nil
+        changeReceipt = nil
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -579,6 +588,8 @@ final class VoiceSessionController {
             await reply(id, VoiceToolReply.reminder(outcome))
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
+        case .alarm(let id, let draft):
+            await reply(id, await setAlarm(draft))
         case .map(let id, let place):
             guard let url = OpenLinks.map(place: place) else {
                 await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
@@ -618,6 +629,10 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan))
         case .changeReminder(let id, let reminder, let draft):
             await reply(id, changeReminder(reminder, draft))
+        case .deleteEvent(let id, let event):
+            await reply(id, deleteEvent(event))
+        case .deleteReminder(let id, let reminder):
+            await reply(id, deleteReminder(reminder))
         case .translator(let id, let setup):
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
@@ -728,6 +743,7 @@ final class VoiceSessionController {
         case .event(let id, _): await reply(id, VoiceToolReply.declinedEvent)
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
         case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
+        case .alarm(let id, _): await reply(id, VoiceToolReply.declinedAlarm)
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
@@ -736,6 +752,7 @@ final class VoiceSessionController {
         case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
+        case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -1323,6 +1340,10 @@ final class VoiceSessionController {
             await proposeEventChange(draft, toolCallID: call.toolCallId)
         case .changeReminder(let draft):
             await proposeReminderChange(draft, toolCallID: call.toolCallId)
+        case .deleteCalendarEvent(let draft):
+            await proposeEventDelete(draft, toolCallID: call.toolCallId)
+        case .deleteReminder(let title):
+            await proposeReminderDelete(title, toolCallID: call.toolCallId)
         case .remindAboutNote(let draft):
             await proposeNoteReminder(draft, toolCallID: call.toolCallId)
         case .needsClarification(let name, let clarification):
@@ -1346,6 +1367,13 @@ final class VoiceSessionController {
                 return
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .setAlarm(let draft):
+            // Said now, before a card that could only fail: an older iOS, or alarms refused.
+            switch AlarmScheduler.support() {
+            case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
+            case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
+            case .available: propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+            }
         case .openMap(let place):
             propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
         case .runShortcut(let name):
@@ -1642,9 +1670,17 @@ final class VoiceSessionController {
             return
         }
         await store.reload()
-        guard let record = NoteQuoteMatch.find(draft.noteText, in: store.memories) else {
-            await reply(toolCallID, VoiceToolReply.noteNotFound())
-            return
+        let record: MemoryRecord
+        if draft.isList {
+            // A list (ADR-256), matched exactly like the list tools; otherwise the agent asks.
+            guard let list = await resolveList(draft.noteText, toolCallID: toolCallID) else { return }
+            record = list.record
+        } else {
+            guard let note = NoteQuoteMatch.find(draft.noteText, in: store.memories) else {
+                await reply(toolCallID, VoiceToolReply.noteNotFound())
+                return
+            }
+            record = note
         }
         switch draft.target {
         case .time(let date, let zone):
@@ -1668,6 +1704,12 @@ final class VoiceSessionController {
                                   savedAt: record.capturedAt, target: .place(results: Array(results.prefix(5)), onArrival: onArrival)),
                     toolCallID: toolCallID)
         }
+    }
+
+    /// The note-reminder card is about a list (ADR-256), read from the store by its id.
+    var isListReminder: Bool {
+        guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return false }
+        return store.list(id: memoryID) != nil
     }
 
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
@@ -1755,7 +1797,9 @@ final class VoiceSessionController {
         if EventChange.startPassed(plan, now: Date(), calendar: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
             switch try devices.changeEvent(plan) {
-            case .verified: return VoiceToolReply.eventChanged(plan.after, calendar: .current)
+            case .verified:
+                changeReceipt = ChangeReceipt(kind: .event(plan), message: ChangeReceipt.message(for: plan))
+                return VoiceToolReply.eventChanged(plan.after, calendar: .current)
             case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
             }
@@ -1771,8 +1815,13 @@ final class VoiceSessionController {
         }
         if EventChange.duePassed(draft.newDue, now: Date(), local: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
-            switch try devices.changeReminder(reminder, newDue: draft.newDue, markDone: draft.markDone) {
+            switch try devices.changeReminder(reminder, draft.markDone ? .complete : .due(draft.newDue)) {
             case .verified:
+                if let after = devices.reminderSnapshot(id: reminder.id) {
+                    changeReceipt = ChangeReceipt(
+                        kind: .reminder(before: reminder, after: after),
+                        message: ChangeReceipt.message(reminder: after, completed: draft.markDone))
+                }
                 return draft.markDone
                     ? VoiceToolReply.reminderCompleted(reminder.title)
                     : VoiceToolReply.reminderChanged(reminder.title, due: draft.newDue)
@@ -1783,6 +1832,115 @@ final class VoiceSessionController {
             return VoiceToolReply.failed(UserFacingError.message(for: error))
         }
     }
+
+    // MARK: Deleting events and reminders (ADR-259)
+
+    /// Exactly one event with the title and start the agent read; otherwise the agent asks.
+    private func proposeEventDelete(_ draft: EventChangeDraft, toolCallID: String) async {
+        guard devices.access(for: .calendar) == .granted else {
+            await notConnected(toolCallID, .calendar)
+            return
+        }
+        let events = devices.events(in: EventChange.searchRange(draft, calendar: .current))
+        switch EventChange.match(draft, in: events, calendar: .current) {
+        case .none: await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
+        case .several(let found): await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .one(let event): propose(.deleteEvent(toolCallID: toolCallID, event: event), toolCallID: toolCallID)
+        }
+    }
+
+    /// Exactly one open reminder with that title; otherwise the agent asks.
+    private func proposeReminderDelete(_ title: String, toolCallID: String) async {
+        guard devices.access(for: .reminders) == .granted else {
+            await notConnected(toolCallID, .reminders)
+            return
+        }
+        do {
+            let open = try await devices.incompleteReminders()
+            switch EventChange.matchReminder(title, in: open) {
+            case .none: await reply(toolCallID, VoiceToolReply.reminderNotFound(title))
+            case .several(let found): await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .one(let reminder): propose(.deleteReminder(toolCallID: toolCallID, reminder: reminder), toolCallID: toolCallID)
+            }
+        } catch {
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+        }
+    }
+
+    /// Checked again at the tap: permission, and that the event still looks as shown. "Deleted"
+    /// only when Calendar no longer has it.
+    private func deleteEvent(_ event: CalendarEventSummary) -> String {
+        guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
+            connectionNeeded = .calendar
+            return VoiceToolReply.failed("Calendar isn't connected. Nothing was deleted.")
+        }
+        do {
+            switch try devices.deleteEvent(event) {
+            case .verified: return VoiceToolReply.eventDeleted(event, calendar: .current)
+            case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
+    private func deleteReminder(_ reminder: ReminderSnapshot) -> String {
+        guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
+            connectionNeeded = .reminders
+            return VoiceToolReply.failed("Reminders isn't connected. Nothing was deleted.")
+        }
+        do {
+            switch try devices.deleteReminder(reminder) {
+            case .verified: return VoiceToolReply.reminderDeleted(reminder.title)
+            case .changedElsewhere: return VoiceToolReply.reminderChangedElsewhere
+            case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.failed(UserFacingError.message(for: error))
+        }
+    }
+
+    /// Undo on the change receipt (ADR-258): the same checked change, backwards. The item must
+    /// still look exactly as Doddy left it; the result is read back and Doddy is told.
+    func undoLastChange(now: Date = .now) async {
+        guard var receipt = changeReceipt, receipt.state == .available else { return }
+        guard now.timeIntervalSince(receipt.madeAt) <= ChangeReceipt.undoFor else {
+            receipt.state = .failed(NSLocalizedString("It's too late to undo here. Change it in Calendar or Reminders.", comment: ""))
+            changeReceipt = receipt
+            return
+        }
+        receipt.state = .working
+        changeReceipt = receipt
+        let outcome: DeviceConnections.ChangeOutcome
+        do {
+            switch receipt.kind {
+            case .event(let plan):
+                outcome = try devices.changeEvent(EventChange.reversed(plan))
+            case .reminder(let before, let after):
+                let change: ReminderChange = after.isCompleted != before.isCompleted
+                    ? (after.isCompleted ? .reopen : .complete) : .due(before.due)
+                outcome = try devices.changeReminder(after, change)
+            }
+        } catch {
+            receipt.state = .failed(UserFacingError.message(for: error))
+            changeReceipt = receipt
+            return
+        }
+        switch outcome {
+        case .verified:
+            receipt.state = .undone
+            await sendToAgent("The user tapped Undo on screen: \(receipt.agentUndoText) It was checked. Don't change it again unless they ask.")
+        case .changedElsewhere:
+            receipt.state = .failed(NSLocalizedString("It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.", comment: ""))
+        case .unconfirmed:
+            receipt.state = .failed(NSLocalizedString("It may not have gone back. Check it in Calendar or Reminders.", comment: ""))
+            await sendToAgent("The user tapped Undo, but the app couldn't confirm it. Don't say it was undone.")
+        }
+        changeReceipt = receipt
+    }
+
+    func dismissChangeReceipt() { changeReceipt = nil }
 
     /// Look first, write once, read back (DoddyCore `ReminderAction`). Permission is checked again
     /// at the tap, since the user may have changed it while the card waited.
@@ -1807,6 +1965,27 @@ final class VoiceSessionController {
                 return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
             case .unconfirmed:
                 return VoiceToolReply.addUnconfirmed
+            }
+        } catch {
+            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        }
+    }
+
+    /// Checked again at the tap: the switch, and that the time hasn't passed while the card waited.
+    private func setAlarm(_ draft: AlarmDraft) async -> String {
+        guard isOn(.timers) else {
+            connectionNeeded = .timers
+            return VoiceToolReply.failed("Timers and alarms are switched off. Nothing was set.")
+        }
+        if draft.repeats == nil, let late = ReminderDueRules.passed(draft.first, now: Date()) {
+            return VoiceToolReply.clarification(late, tool: VoiceToolName.setAlarm)
+        }
+        do {
+            switch try await AlarmScheduler.schedule(draft) {
+            case .verified: return VoiceToolReply.alarmSet(draft)
+            case .unconfirmed: return VoiceToolReply.alarmUnconfirmed
+            case .needsNewerIOS: return VoiceToolReply.alarmNeedsNewerIOS
+            case .notAllowed: return VoiceToolReply.alarmNotAllowed
             }
         } catch {
             return VoiceToolReply.notAdded(UserFacingError.message(for: error))
@@ -1918,9 +2097,53 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder: true
+        case .memory, .event, .reminder, .timer, .alarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
+             .deleteEvent, .deleteReminder: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole.
         case .map, .shortcut, .message, .translator, .plan: false
+        }
+    }
+}
+
+/// A change Doddy made in Calendar or Reminders this conversation, shown with Undo (ADR-258).
+struct ChangeReceipt: Equatable, Identifiable {
+    enum Kind: Equatable {
+        case event(EventChangePlan)
+        /// The reminder before the change and as it was read back after it.
+        case reminder(before: ReminderSnapshot, after: ReminderSnapshot)
+    }
+    enum UndoState: Equatable {
+        case available, working, undone
+        case failed(String)
+    }
+
+    /// Undo is offered this long after the change.
+    static let undoFor: TimeInterval = 10 * 60
+
+    let id = UUID()
+    let kind: Kind
+    let message: String
+    let madeAt = Date()
+    var state: UndoState = .available
+
+    static func message(for plan: EventChangePlan) -> String {
+        let when = plan.after.allDay
+            ? plan.after.start.formatted(date: .abbreviated, time: .omitted)
+            : plan.after.start.formatted(date: .abbreviated, time: .shortened)
+        return String(format: NSLocalizedString("Changed “%@”: now %@.", comment: ""), plan.after.title, when)
+    }
+
+    static func message(reminder: ReminderSnapshot, completed: Bool) -> String {
+        completed
+            ? String(format: NSLocalizedString("Marked “%@” done in Reminders.", comment: ""), reminder.title)
+            : String(format: NSLocalizedString("“%@” is now due %@.", comment: ""), reminder.title, ReminderText.due(reminder.due))
+    }
+
+    /// For the agent, in English.
+    var agentUndoText: String {
+        switch kind {
+        case .event(let plan): "the event \"\(plan.before.title)\" is back as it was before Doddy changed it."
+        case .reminder(let before, _): "the reminder \"\(before.title)\" is back as it was before Doddy changed it."
         }
     }
 }

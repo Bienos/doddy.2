@@ -45,6 +45,16 @@ settings:
     # widgets say "Open Doddy to set up widgets" and the app writes nothing.
     DODDY_APP_ENTITLEMENTS: $(DODDY_PUSH_ENTITLEMENTS)
     DODDY_WIDGET_ENTITLEMENTS: ""
+    # Watch complications (ADR-262) read the snapshot from the watch's App Group, also off by
+    # default. To turn on: DODDY_WATCH_ENTITLEMENTS = Config/DoddyWatch.entitlements (it is used by
+    # the watch app and its widget extension).
+    DODDY_WATCH_ENTITLEMENTS: ""
+    # Shared lists through iCloud (ADR-263), off by default (needs a paid team with iCloud). To
+    # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
+    # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or
+    # Config/Doddy-Push-AppGroup-iCloud.entitlements with push). Create the container in the
+    # developer account first. Empty: Doddy never touches CloudKit and offers no sharing.
+    DODDY_CLOUD_CONTAINER: ""
 targets:
   Doddy:
     type: application
@@ -85,8 +95,8 @@ targets:
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it. A voice memo you record on a note stays on this iPhone."
         # Voice memos only (ADR-230): on-device recognition is required, so the audio isn't sent.
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
-        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds or changes an event only after you tap Add or Change. Turn this off in Settings, Connections."
-        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds, changes or completes a reminder only after you tap Add, Change or Mark done. Turn this off in Settings, Connections."
+        INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."
+        INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
         # Place reminders only (ADR-196): "While Using", never "Always"; iOS watches the place itself.
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only for reminders you set at a place: to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave. Doddy doesn't track where you go."
         INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name when you ask. The details stay on your screen. Turn this off in Settings, Connections."
@@ -125,12 +135,17 @@ targets:
     platform: watchOS
     sources:
       - path: DoddyWatch
+      - path: Shared/Widgets/WidgetSnapshotFile.swift
     dependencies:
+      # Watch face complications and the Smart Stack (ADR-262), embedded in the watch app.
+      - target: DoddyWatchWidgets
       - package: DoddyCore
         product: DoddyCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
+        INFOPLIST_FILE: Config/DoddyWatch-Info.plist
         PRODUCT_NAME: DoddyWatch
         MARKETING_VERSION: "0.0.1"
         CURRENT_PROJECT_VERSION: "1"
@@ -140,6 +155,29 @@ targets:
         INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp: NO
         # A single-target watchOS app (watchOS 7+), not a WatchKit extension.
         INFOPLIST_KEY_WKApplication: YES
+        TARGETED_DEVICE_FAMILY: "4"
+        SKIP_INSTALL: YES
+  DoddyWatchWidgets:
+    # Watch face complications and the Smart Stack (ADR-262). Reads only the snapshot the watch
+    # app saves in the watch's App Group; shows times, counts and list names, never note words.
+    type: app-extension
+    platform: watchOS
+    sources:
+      - path: DoddyWatchWidgets
+      - path: Shared/Widgets/WidgetSnapshotFile.swift
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+    settings:
+      base:
+        CODE_SIGN_ENTITLEMENTS: $(DODDY_WATCH_ENTITLEMENTS)
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).watchkitapp.widgets
+        PRODUCT_NAME: DoddyWatchWidgets
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Config/DoddyWatchWidgets-Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
   DoddyTests:

@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Settings → Voice → Dynamic Island style (ADR-239): the owner's V4 boards that have a voice
-/// conversation state, and Whole Doddy (ADR-255). Each row shows the island drawn by the same views the widget uses, for a
+/// conversation state, and Whole Doddy (ADR-264). Each row shows the island drawn by the same views the widget uses, for a
 /// state picked at the top. It is a preview: nothing here is a running conversation, and the
 /// real island also depends on the phone (size, other apps' activities, text size).
 struct IslandStyleView: View {

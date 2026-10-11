@@ -36,7 +36,7 @@ swiftc -swift-version 6 -parse-as-library -I "$work" -o "$work/island-check" \
     Shared/ToolActivity/DoddyToolAttributes.swift \
     tools/island_boards/IslandSceneChecks.swift \
     tools/island_boards/IslandArtCheck.swift
-# Whole Doddy (ADR-255): every pose has its picture in the app and the widget catalogs.
+# Whole Doddy (ADR-264): every pose has its picture in the app and the widget catalogs.
 missing=0
 for name in $("$work/island-check" --pose-assets); do
     for catalog in DoddyApp/Resources/Assets.xcassets DoddyWidgets/Assets.xcassets; do

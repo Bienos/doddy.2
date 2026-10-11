@@ -48,7 +48,7 @@ scripts/ci.sh                  # everything, including xcodebuild test on the fi
 3. **Never** mark a status doc "built" or "tested" from this guide alone. Only from an actual `RESULT: PASS`, or a run of the specific test.
 
 ## Compile review of this round's Swift (no compiler available)
-The new UI files were reviewed by reading them against the iOS 17 / watchOS 10 SDK APIs and the DoddyCore signatures. Every file passes `swiftc -parse`. The non-UI files are type-checked by `scripts/typecheck_app_logic.sh` (13 files). What the review found and fixed is in "Review fixes" below. It reduces the risk of a failed first build; it does not remove it.
+The new UI files were reviewed by reading them against the iOS 17 / watchOS 10 SDK APIs and the DoddyCore signatures. Every file passes `swiftc -parse`. The non-UI files are type-checked by `scripts/typecheck_app_logic.sh` (14 files; only the non-AlarmKit part of `AlarmScheduler.swift`). What the review found and fixed is in "Review fixes" below. It reduces the risk of a failed first build; it does not remove it.
 
 ### Review fixes (2026-10-11)
 Two read-throughs found no certain compile errors. They checked:
@@ -76,3 +76,14 @@ Small Swift 6 stand-ins of the risky patterns type-check on Linux. Fixed after t
 - `Intents/ListIntents.swift`: the `AppEntity` / `EntityStringQuery` requirements and the `\(\.$list)` phrases.
 - `Features/Import/NoteImportViews.swift`: `fileImporter(allowsMultipleSelection:)` and the tuple-array `@State`.
 - The generated catalogs (`InfoPlist.xcstrings`, `AppShortcuts.xcstrings`, and the widget and watch `Localizable.xcstrings`): whether Xcode and XcodeGen pick them up as written.
+
+### Next round (2026-10-11, ADR-255 to ADR-263): most likely to need a fix
+Nothing from this round has been compiled with Xcode either. In order of risk:
+- `Features/Sharing/*` (ADR-263):
+  - Swift 6 Sendable checks on `CKRecord` and `CKShare.Metadata` reaching the main-actor controller;
+  - the result tuple of `recordZoneChanges(inZoneWith:since:)`;
+  - `UICloudSharingController` inside a SwiftUI sheet;
+  - `ShareAcceptSceneDelegate` set from `AppDelegate.application(_:configurationForConnecting:options:)` in a SwiftUI app.
+- `Features/Alarms/AlarmScheduler.swift` (ADR-260): every AlarmKit call. It needs Xcode 26 to compile at all; on Xcode 16 only the `#if canImport(AlarmKit)` fallback builds.
+- `DoddyWatchWidgets` (ADR-262): XcodeGen embedding a watchOS app extension in the single-target watch app, and `.widgetLabel` on the corner complication.
+- `Features/EveningWrapUp/EveningWrapUpViews.swift` (ADR-261) and the delete card (ADR-259): ordinary SwiftUI and EventKit (`remove(_:span:)`, `remove(_:commit:)`), lower risk.

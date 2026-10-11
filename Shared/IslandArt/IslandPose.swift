@@ -1,6 +1,6 @@
 import Foundation
 
-/// "Whole Doddy" (ADR-255): Doddy's whole body on the voice island, one pose per state. The
+/// "Whole Doddy" (ADR-264): Doddy's whole body on the voice island, one pose per state. The
 /// poses are the owner's DODDY-Numbered-Video-Assets-v01 pack (01-transparent-poses), as
 /// downscaled copies in the image sets `WholeDoddy_<rawValue>` of the app and widget catalogs
 /// (docs/design/UPLOADED_MEMORY_ASSETS.md). Each picture is 2:3 with transparent edges.
