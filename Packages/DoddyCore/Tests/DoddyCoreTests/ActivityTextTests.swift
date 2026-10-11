@@ -34,6 +34,12 @@ final class ActivityTextTests: XCTestCase {
             .listAlarms, .cancelAlarm(clock: "07:00", label: "Gym"), .deleteCalendarEvents(range),
             .moveReminders(dueBy: ReminderDue(year: 2026, month: 10, day: 11, hour: nil, minute: nil, timeZoneID: nil),
                            to: ReminderDue(year: 2026, month: 10, day: 12, hour: nil, minute: nil, timeZoneID: nil)),
+            // Kinds added on the default branch while this test was on a branch (rounds 4 and 6).
+            .convertCurrency(CurrencyConversionRequest(amount: 20, from: "EUR", to: "PLN")),
+            .parkingSpot(.save(note: nil)), .parkingSpot(.find), .parkingSpot(.clear),
+            .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
+            .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
+            .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
@@ -46,7 +52,8 @@ final class ActivityTextTests: XCTestCase {
         case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
              .draftMessage, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
-             .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
+             .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid:
             false
@@ -57,7 +64,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 27)
+        XCTAssertEqual(kinds.count, 32)
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
@@ -70,7 +77,7 @@ final class ActivityTextTests: XCTestCase {
             let polish = ActivityText.title(row.title, .polish)
             XCTAssertNotEqual(polish, row.title, "no Polish title for \(row.title)")
             XCTAssertEqual(ActivityText.title(row.title, .english), row.title)
-            if ![ActivityApp.gmail, .drive, .notion, .todoist].contains(row.app) {
+            if ![ActivityApp.gmail, .drive, .notion, .todoist, .outlook].contains(row.app) {
                 XCTAssertNotEqual(row.app.title(.polish), row.app.title, "no Polish name for \(row.app)")
             }
         }

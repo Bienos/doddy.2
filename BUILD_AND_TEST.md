@@ -113,12 +113,15 @@ manager — `backend/.env.example` lists names with empty values. No signing tea
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
 `com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
 
-**Widgets (ADR-219)** need an App Group shared by the app and the widget extension, named
-`group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default). It is off by default, like push. To turn it on,
-register the group for your team and set `DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements` (or
-`Config/Doddy-Push-AppGroup.entitlements` if you also use push) and `DODDY_WIDGET_ENTITLEMENTS = Config/DoddyWidgets.entitlements`,
-in `project.yml` or on the `xcodebuild` line. Without it the widgets only say "Open Doddy to set up widgets".
-Whether a free personal team can sign App Groups is not verified here.
+**App Group (on since 2026-10-11, owner has a paid Apple Developer account).** The widgets (ADR-219), the
+watch complications (ADR-262), "Save to Doddy" in the Share Sheet (ADR-311) and the parking widget (ADR-315)
+share a folder, the App Group `group.<bundle identifier>` (`group.com.bienos.doddy2.dev` by default).
+`project.yml` signs the app, the widget extension, the share extension and the watch targets with it. Choose
+your team in Xcode for each target; automatic signing adds the App Groups capability and registers the group.
+If you also use push, set `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements`. To build without it
+(a free Apple ID, whose support for App Groups isn't verified here), set `DODDY_APP_ENTITLEMENTS`,
+`DODDY_WIDGET_ENTITLEMENTS`, `DODDY_SHARE_ENTITLEMENTS` and `DODDY_WATCH_ENTITLEMENTS` to `""`: the widgets then
+say "Open Doddy to set up widgets" and the share extension says sharing isn't set up.
 
 ## Connected Apps — Google Calendar, read-only (2026-10-09)
 

@@ -306,9 +306,20 @@ public struct ReminderSnapshot: Equatable, Sendable {
     public let isCompleted: Bool
     /// The repeat as read back (ADR-282); nil for none, or a rule Doddy doesn't write.
     public let repeats: CalendarRepeat?
+    /// As Reminders shows it (ADR-302).
+    public let priority: ReminderPriority
+    /// The list's identifier on this iPhone; nil when not read.
+    public let listID: String?
+    /// The notes, read on this iPhone for the card and the stale check of a replace (ADR-314).
+    /// Never sent to the voice agent.
+    public let notes: String?
 
-    public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false, repeats: CalendarRepeat? = nil) {
+    public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false,
+                repeats: CalendarRepeat? = nil, priority: ReminderPriority = .none, listID: String? = nil, notes: String? = nil) {
+        self.notes = notes
         self.repeats = repeats
+        self.priority = priority
+        self.listID = listID
         self.id = id
         self.title = title
         self.listTitle = listTitle

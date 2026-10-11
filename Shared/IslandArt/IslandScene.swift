@@ -310,6 +310,27 @@ extension DoddyToolAttributes {
     /// updated it; a focus or breathing activity is given its end time as its stale date, so
     /// stale there means the time is up.
     func islandScene(_ state: ContentState, isStale: Bool, now: Date = Date()) -> IslandScene {
+        var shown = boardScene(state, isStale: isStale, now: now)
+        if state.islandStyle == .wholeDoddy { shown.pose = wholeDoddyPose(state, isStale: isStale) }
+        return shown
+    }
+
+    /// Whole Doddy's pose for a tool (ADR-299, ADR-313): dribbling while focusing, balancing on
+    /// one leg while breathing, reading lying on his front. Done, waiting and lost are the same
+    /// poses as in a conversation (fist pump, cross-legged, facepalm).
+    func wholeDoddyPose(_ state: ContentState, isStale: Bool) -> IslandPose {
+        if isStale && kind == .readAloud { return .facepalm }
+        if state.isFinished || isStale { return .fistpump }
+        if state.isPaused { return .crosslegged }
+        switch kind {
+        case .focus: return .basketballDribble
+        case .breathing: return .onelegBalance
+        case .readAloud: return .bellyReading
+        }
+    }
+
+    /// The owner's V4 board for a tool, before any Whole Doddy pose.
+    private func boardScene(_ state: ContentState, isStale: Bool, now: Date) -> IslandScene {
         let over = state.isFinished || (isStale && kind != .readAloud)
         let lost = isStale && kind == .readAloud
         let running = !over && !lost && !state.isPaused
@@ -346,21 +367,22 @@ extension DoddyToolAttributes {
             return scene(.calmTide, 0, label: "BREATHE", time: .countdown(end), title: "Breathing",
                          subtitle: "Open Doddy to follow along", compact: .countdown(end), minimal: .none)
         case .readAloud:
+            var shown: IslandScene
             if lost {
-                return scene(.storySpool, 1, label: "READ ALOUD", time: .text(""), title: "Stopped",
-                             subtitle: "Open Doddy to read it again", warning: true,
-                             compact: .symbol("exclamationmark.triangle.fill", .warning), minimal: .none)
+                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text(""), title: "Stopped",
+                              subtitle: "Open Doddy to read it again", warning: true,
+                              compact: .symbol("exclamationmark.triangle.fill", .warning), minimal: .none)
+            } else if over {
+                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text("Done"), title: "Finished reading",
+                              subtitle: "Your note", compact: .check, minimal: .none)
+            } else if state.isPaused {
+                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text("Paused"), title: "Paused",
+                              subtitle: "Pick up where you left off", compact: .symbol("pause.fill", .secondary), minimal: .none)
+            } else {
+                shown = scene(.storySpool, 0, label: "READ ALOUD", time: .text("Note"), title: "Reading aloud",
+                              subtitle: "Your note", compact: .bars, minimal: .bars)
             }
-            if over {
-                return scene(.storySpool, 1, label: "READ ALOUD", time: .text("Done"), title: "Finished reading",
-                             subtitle: "Your note", compact: .check, minimal: .none)
-            }
-            if state.isPaused {
-                return scene(.storySpool, 1, label: "READ ALOUD", time: .text("Paused"), title: "Paused",
-                             subtitle: "Pick up where you left off", compact: .symbol("pause.fill", .secondary), minimal: .none)
-            }
-            return scene(.storySpool, 0, label: "READ ALOUD", time: .text("Note"), title: "Reading aloud",
-                         subtitle: "Your note", compact: .bars, minimal: .bars)
+            return shown
         }
     }
 

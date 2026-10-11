@@ -17,7 +17,7 @@ final class DataFlowTests: XCTestCase {
         XCTAssertFalse(row("askDoddy", base).isActive)
         XCTAssertTrue(row("elevenlabs", base).isActive)
         // Place search (ADR-196) is user-started, so always listed; places themselves stay here.
-        XCTAssertEqual(row("placeSearch", base).destination, "Apple Maps (place search)")
+        XCTAssertEqual(row("placeSearch", base).destination, "Apple Maps (place search and travel time)")
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Places you set for reminders") })
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains("Earlier wordings of notes you corrected, except in files you export."))
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Notes suggested after a conversation:") }, "save suggestions are on-device")

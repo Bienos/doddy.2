@@ -10,6 +10,8 @@ struct ComplicationEntry: TimelineEntry {
     let date: Date
     let content: ComplicationContent
     let relevance: TimelineEntryRelevance?
+    /// "Hide character artwork" is on in Doddy on the iPhone (ADR-331): no face.
+    var hidesDoddy = false
 }
 
 struct ComplicationProvider: TimelineProvider {
@@ -36,7 +38,8 @@ struct ComplicationProvider: TimelineProvider {
         let score = content.relevance(at: date)
         return ComplicationEntry(
             date: date, content: content,
-            relevance: score > 0 ? TimelineEntryRelevance(score: Float(score), duration: ComplicationContent.soonWindow) : nil)
+            relevance: score > 0 ? TimelineEntryRelevance(score: Float(score), duration: ComplicationContent.soonWindow) : nil,
+            hidesDoddy: WidgetSnapshotFile.read()?.hidesPictures == true)
     }
 }
 
@@ -55,6 +58,7 @@ struct DoddyComplication: Widget {
 
 struct ComplicationView: View {
     @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
     let entry: ComplicationEntry
 
     private var content: ComplicationContent { entry.content }
@@ -81,6 +85,8 @@ struct ComplicationView: View {
                     Image(systemName: "checklist")
                     Text("\(content.openItems)").font(.headline)
                 }
+            } else if !entry.hidesDoddy, WatchDoddyFace.shows(in: renderingMode) {
+                WatchDoddyFace(size: 34)
             } else {
                 Image(systemName: "bubble.left")
             }
@@ -117,7 +123,10 @@ struct ComplicationView: View {
 
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Doddy").font(.headline).widgetAccentable()
+            HStack(spacing: 4) {
+                if !entry.hidesDoddy, WatchDoddyFace.shows(in: renderingMode) { WatchDoddyFace(size: 18) }
+                Text("Doddy").font(.headline).widgetAccentable()
+            }
             switch content.state {
             case .notReady:
                 Text("Open Doddy on your iPhone.").font(.caption)
@@ -142,6 +151,37 @@ struct ComplicationView: View {
     }
 }
 
+/// Doddy's face (ADR-299): a crop of the listening pose from the owner's pack
+/// (`WatchDoddy_face`, made by tools/whole_doddy/build_imagesets.py). Drawn only where it keeps
+/// its colours: full-colour faces, and tinted faces from watchOS 11 (full-colour rendering).
+/// On monochrome faces, and tinted ones before watchOS 11, the symbol or name stays alone.
+struct WatchDoddyFace: View {
+    let size: CGFloat
+
+    static func shows(in mode: WidgetRenderingMode) -> Bool {
+        if mode == .fullColor { return true }
+        if mode == .accented {
+            if #available(watchOS 11.0, *) { return true }
+        }
+        return false
+    }
+
+    var body: some View {
+        face
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .clipShape(Circle())
+            .accessibilityHidden(true)
+    }
+
+    private var face: Image {
+        let image = Image("WatchDoddy_face")
+        if #available(watchOS 11.0, *) { return image.widgetAccentedRenderingMode(.fullColor) }
+        return image
+    }
+}
+
 extension ComplicationContent {
     /// Made-up content for the watch face gallery only; never the user's.
     static let previewContent = ComplicationContent.make(
@@ -157,4 +197,17 @@ struct DoddyWatchWidgetsBundle: WidgetBundle {
     var body: some Widget {
         DoddyComplication()
     }
+}
+
+// Xcode canvas previews (ADR-336): Doddy's face on the complications. Made-up content only.
+#Preview("Circular", as: .accessoryCircular) {
+    DoddyComplication()
+} timeline: {
+    ComplicationEntry(date: .now, content: .previewContent, relevance: nil)
+}
+
+#Preview("Rectangular", as: .accessoryRectangular) {
+    DoddyComplication()
+} timeline: {
+    ComplicationEntry(date: .now, content: .previewContent, relevance: nil)
 }

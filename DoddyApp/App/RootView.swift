@@ -1,3 +1,4 @@
+import CoreSpotlight
 import DoddyCore
 import SwiftUI
 
@@ -82,6 +83,8 @@ struct RootView: View {
     @State private var homePath: [UUID] = []
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
@@ -89,6 +92,8 @@ struct RootView: View {
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
     @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.showNoteTextInNotifications) private var showNoteText = false
+    /// "Hide character artwork" is passed on to widgets and the watch (ADR-331).
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -114,10 +119,13 @@ struct RootView: View {
                 #endif
             }
             .preferredColorScheme(colorScheme)
+            // The Face ID lock (ADR-310) covers everything until iOS says yes.
+            .overlay { if AppLock.shared.isLocked { AppLockView() } }
             .task {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
                 if scenePhase == .active { heyDoddyAppBecameActive() }
+                pickUpSharedItem()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
@@ -126,8 +134,14 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
+                    pickUpSharedItem()
                 }
-                if phase == .background { WidgetSync.shared.refresh() }
+                if phase == .background {
+                    WidgetSync.shared.refresh()
+                    AppLock.shared.wentToBackground()
+                    QuickActions.install()
+                }
+                if phase == .active { AppLock.shared.cameBack() }
                 // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
                 switch phase {
                 case .active: heyDoddyAppBecameActive()
@@ -149,6 +163,7 @@ struct RootView: View {
             .onChange(of: pinnedRaw) { WidgetSync.shared.refresh() }
             .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
             .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
+            .onChange(of: hideArt) { WidgetSync.shared.refresh() }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -157,7 +172,8 @@ struct RootView: View {
                 noteReminders.pendingOpenMemoryID = nil
             }
             // Keeps the opt-in server copy (memory on calls) equal to what is on this iPhone.
-            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(store.memories) }
+            // Private notes (ADR-310) are never in the server copy for calls.
+            .onChange(of: store.revision) { MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories)) }
             .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)
@@ -171,6 +187,13 @@ struct RootView: View {
 
     /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
     /// started while Doddy was in the background, if it is running or left notes to look at.
+    /// Text or a link shared from another app with "Save to Doddy" (ADR-311): opens the capture
+    /// screen with it, as the shortcut does. Nothing is saved until Save there.
+    private func pickUpSharedItem() {
+        guard let item = ShareInboxFile.take() else { return }
+        ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
+    }
+
     private func heyDoddyAppBecameActive() {
         let listener = WakeWordListener.shared
         if listener.hasConversationToShow {
@@ -235,6 +258,8 @@ struct RootView: View {
         .sheet(isPresented: $router.isWrapUpPresented, onDismiss: { router.showWaitingDraft() }) {
             EveningWrapUpView(openSettings: { selectedTab = .settings })
         }
+        // The weekly look-back (ADR-306), from its notification or Settings.
+        .sheet(isPresented: $router.isLookBackPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyLookBackView() }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })
@@ -259,6 +284,12 @@ struct RootView: View {
             // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
             WakeWordListener.shared.refresh()
         }
+        // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
+        .onContinueUserActivity(CSSearchableItemActionType) { activity in
+            guard let memoryID = SpotlightSync.memoryID(from: activity) else { return }
+            selectedTab = .home
+            homePath = [memoryID]
+        }
         .onOpenURL { url in
             // doddy://home | memories | settings — navigation only; unknown links are ignored.
             // doddy://open/<id> from a widget opens that note or list on Home (ADR-219).
@@ -272,6 +303,9 @@ struct RootView: View {
             case .home: selectedTab = .home
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
+            // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
+            case .parking:
+                if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
             }
         }
     }
@@ -290,6 +324,10 @@ struct RootView: View {
                     .tag(AppTab.settings)
             }
             .toolbar(.hidden, for: .tabBar)
+            // iPad (ADR-337): one readable column in the middle of a wide screen.
+            .frame(maxWidth: horizontalSizeClass == .regular ? 760 : .infinity)
+            .frame(maxWidth: .infinity)
+            .background(Theme.canvas)
             if let deleted = store.recentlyDeleted {
                 UndoDeleteBar(deleted: deleted)
             }

@@ -1,0 +1,127 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj"
+          }
+        }
+      }
+    },
+    "Doddy opens this on the capture screen next time you open the app. Nothing is saved until you tap Save there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy otworzy to na ekranie zapisu, gdy następnym razem otworzysz aplikację. Nic nie zostanie zapisane, dopóki nie stukniesz tam Zapisz."
+          }
+        }
+      }
+    },
+    "Done": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe"
+          }
+        }
+      }
+    },
+    "Open Doddy to check it and tap Save. It isn't saved yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, sprawdź to i stuknij Zapisz. To jeszcze nie jest zapisane."
+          }
+        }
+      }
+    },
+    "Ready in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe w Doddym"
+          }
+        }
+      }
+    },
+    "Save to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz w Doddym"
+          }
+        }
+      }
+    },
+    "Send to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij do Doddy’ego"
+          }
+        }
+      }
+    },
+    "Sharing to Doddy isn't set up in this version of the app. Nothing was saved. You can use the Save to Doddy shortcut instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnianie do Doddy’ego nie jest skonfigurowane w tej wersji aplikacji. Nic nie zostało zapisane. Możesz zamiast tego użyć skrótu Zapisz w Doddym."
+          }
+        }
+      }
+    },
+    "That couldn't be handed to Doddy. Nothing was saved. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przekazać tego Doddy’emu. Nic nie zostało zapisane. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "There's no text or web link here that Doddy can keep. Nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma tu tekstu ani linku, który Doddy mógłby zachować. Nic nie zostało zapisane."
+          }
+        }
+      }
+    },
+    "This replaces something you shared earlier that isn't saved yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To zastąpi wcześniej udostępnioną treść, która nie jest jeszcze zapisana."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

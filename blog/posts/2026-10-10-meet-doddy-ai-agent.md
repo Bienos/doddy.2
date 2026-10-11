@@ -11,7 +11,7 @@ banner_tint: orange
 summary: "Doddy is an AI companion for your iPhone with a big goal. One day it should help with anything you need, and it will always ask before it acts. Here's what it does today, what it can't do yet, how we keep it safe, and answers to the questions people ask most."
 keywords: "AI companion, AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI safety, human in the loop"
 tldr:
-  - Doddy is an AI companion for your iPhone, a hand-drawn mate you can talk to in English or Polish.
+  - Doddy is an AI companion for your iPhone, a hand-drawn mate you can talk to, in English, Polish and more.
   - The big goal is a companion that can help with anything, and we're getting there one skill at a time.
   - Today it remembers what you tell it in your own words and finds it again. It can also help with your calendar, reminders, timers, maps and message drafts.
   - It always asks first. Every action is a card you tap, and it never sends, buys or deletes anything on its own.
@@ -157,9 +157,12 @@ These are built and still being tested on a phone.
 
 ## What Doddy can't do (on purpose, or not yet)
 
-Doddy only hears you while a conversation is open, so there's no always-on microphone. It
-doesn't save anything by itself either, which means it can't quietly build a profile of you from
-your chats.
+Doddy normally only hears you while a conversation is open. The one exception is the "Hey Doddy"
+wake word, and that's off unless you switch it on. While it waits for those two words, your iPhone
+shows the orange microphone dot, Doddy's island says it's listening, and Stop listening is right
+there. What the microphone hears while waiting is handled on your iPhone and isn't kept or sent
+anywhere. (This mode is built and still being tested on our phone.) Doddy doesn't save anything by
+itself either, which means it can't quietly build a profile of you from your chats.
 
 It never sends, buys or deletes things in your other apps. It writes the draft and you decide what
 happens next. It also can't read your screen, your email or your other apps.
@@ -255,7 +258,10 @@ keep you chatting.
 
 ### Does Doddy listen all the time?
 
-No. It only hears you while a conversation is open, and there's no always-on microphone.
+No. Normally it only hears you while a conversation is open. If you switch on the optional "Hey
+Doddy" wake word, it listens for those two words, your iPhone shows that it's listening, and you can
+stop it any time. That listening happens on your iPhone and nothing is kept or sent. This mode is
+built and still being tested.
 
 ### Where are my notes stored?
 
@@ -281,7 +287,8 @@ wording is kept. And since every action needs your tap, you can catch a mistake 
 
 ### Which languages does Doddy speak?
 
-English and Polish, and it switches when you do.
+Doddy is set up for English plus 36 other European languages, Polish included, and it switches
+when you do. So far we've only tried English and Polish in real conversations.
 
 ### Is there an Android version?
 

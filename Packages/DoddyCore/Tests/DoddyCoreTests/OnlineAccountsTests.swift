@@ -18,13 +18,13 @@ final class OnlineAccountsContractTests: XCTestCase {
     func testEveryFixtureDecodes() throws {
         let catalog = try decode(ToolsCatalog.self, "catalog-disconnected")
         XCTAssertEqual(catalog.mode, .mock)
-        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist", "websearch"])
+        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "websearch"])
         let accounts = catalog.toolkits.filter(\.hasAccount)
-        XCTAssertEqual(accounts.count, 4)
+        XCTAssertEqual(accounts.count, 5)
         XCTAssertTrue(accounts.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
         XCTAssertTrue(catalog.toolkits.flatMap(\.tools).allSatisfy { !$0.enabled }, "every switch starts off")
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
-        XCTAssertEqual(writes, ["add_todoist_task", "draft_email"])
+        XCTAssertEqual(writes, ["add_todoist_task", "complete_todoist_task", "draft_email", "draft_email_reply", "draft_outlook_email", "move_todoist_task"])
         XCTAssertEqual(Set(writes), CloudToolName.writes, "the app and the server agree on which tools write")
         XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)), CloudToolName.all)
 
@@ -209,6 +209,12 @@ final class CloudToolVoiceTests: XCTestCase {
         // A read that didn't arrive changed nothing.
         XCTAssertTrue(VoiceToolReply.cloudFailed(.transport("URLError"), tool: "check_email").hasPrefix("failed:"))
         XCTAssertTrue(VoiceToolReply.cloudFailed(.notConfigured, tool: "check_email").contains("aren't set up"))
+
+        // A reply draft with nothing to reply to was refused before any card (round 5).
+        let noEmail = VoiceToolReply.cloudFailed(.server(code: "not_found", message: "x", retryAfterSeconds: nil, receipt: nil), tool: "draft_email_reply")
+        XCTAssertTrue(noEmail.hasPrefix("not found:") && noEmail.contains("No draft was created"))
+        XCTAssertEqual(ActivityRequest.describe(cloud: "draft_email_reply")?.isLookup, false)
+        XCTAssertEqual(ActivityRequest.describe(cloud: "read_notion_page")?.title, "Read a Notion page")
 
         XCTAssertEqual(
             VoiceToolReply.cloudDeclined("add_todoist_task"),

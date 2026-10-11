@@ -62,12 +62,45 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertFalse(json.contains("Wi-Fi"))
     }
 
+    func testParkingGivesTimeAndWordsNeverThePosition() throws {
+        let spot = ParkingSpot(latitude: 52.229_676, longitude: 21.012_229, accuracyMeters: 8, savedAt: now, note: "level 2, row C")
+        let snapshot = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                           showReminderText: true, isOn: true, now: now, parking: spot)
+        XCTAssertEqual(snapshot.parking, WidgetSnapshot.Parked(savedAt: now, note: "level 2, row C"))
+        let json = String(decoding: try snapshot.encoded(), as: UTF8.self)
+        XCTAssertFalse(json.contains("52.2") || json.contains("21.01"), "the position stays in the app")
+        XCTAssertEqual(WidgetSnapshot.decoded(try snapshot.encoded()), snapshot)
+        // Switched off: no parking either.
+        XCTAssertNil(WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                         showReminderText: true, isOn: false, now: now, parking: spot).parking)
+        // A snapshot written before parking existed still reads.
+        let old = #"{"isOn":true,"lists":[],"pinned":[],"reminders":[],"version":1,"writtenAt":1800000000000}"#
+        XCTAssertNil(try XCTUnwrap(WidgetSnapshot.decoded(Data(old.utf8))).parking)
+    }
+
     func testShortenedCutsOnAWord() {
         let long = Array(repeating: "word", count: 60).joined(separator: " ")
         let short = WidgetSnapshot.shortened(long)
         XCTAssertLessThanOrEqual(short.count, WidgetSnapshot.maxTextLength)
         XCTAssertTrue(short.hasSuffix("word…"))
         XCTAssertEqual(WidgetSnapshot.shortened("  Hi \n second"), "Hi")
+    }
+
+    /// ADR-331: "Hide character artwork" reaches widgets and the watch, even with content off,
+    /// and a snapshot written without it still reads (pictures shown).
+    func testHideCharacterArtTravelsAndOldSnapshotsStillRead() throws {
+        let shown = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                        showReminderText: false, isOn: true, now: now)
+        XCTAssertFalse(shown.hidesPictures)
+        XCTAssertFalse(String(decoding: try shown.encoded(), as: UTF8.self).contains("hidesDoddy"))
+        let hidden = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                         showReminderText: false, isOn: true, now: now, hidesDoddy: true)
+        XCTAssertEqual(WidgetSnapshot.decoded(try hidden.encoded())?.hidesPictures, true)
+        let off = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                      showReminderText: false, isOn: false, now: now, hidesDoddy: true)
+        XCTAssertTrue(off.hidesPictures)
+        let old = Data(#"{"version":\#(WidgetSnapshot.currentVersion),"writtenAt":0,"isOn":true,"pinned":[],"reminders":[],"lists":[]}"#.utf8)
+        XCTAssertEqual(WidgetSnapshot.decoded(old)?.hidesPictures, false)
     }
 
     func testRoundTripAndRefusesOtherVersionsOrDamage() throws {

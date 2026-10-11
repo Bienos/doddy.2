@@ -12,7 +12,7 @@ import WidgetKit
 /// it in the background), iOS marks it stale and this view says so instead of "Listening".
 ///
 /// The Lock Screen card is cream in light and dark mode (ADR-266, `doddyCreamLockScreen`), with
-/// the approved pose art (`DoddyArt`).
+/// Doddy in the island's Whole Doddy pose (`DoddyArt`, ADR-299).
 /// The Dynamic Island is always black and follows the owner's V4 boards (`Shared/IslandArt`).
 /// No words from the conversation appear here: the Lock Screen is visible to anyone.
 struct DoddyVoiceLiveActivity: Widget {
@@ -22,7 +22,7 @@ struct DoddyVoiceLiveActivity: Widget {
                 .doddyCreamLockScreen()
         } dynamicIsland: { context in
             let shown = Shown(context)
-            let scene = context.state.islandScene(isStale: context.isStale)
+            let scene = context.state.islandScene(isStale: context.isStale).respectingHiddenArt
             // After "Hey Doddy" (ADR-254) the timer counts from the conversation, not the listening.
             let startedAt = context.state.conversationStart(activityStartedAt: context.attributes.startedAt)
             // The owner's V4 boards (design/dynamic-island-v4): the style picked in Settings
@@ -87,36 +87,28 @@ private enum Palette {
     static let accentText = Color("AccentText")
     static let confirmed = Color("Confirmed")
     static let error = Color("Error")
-    /// Same paper as `UploadedCharacterView`'s dark-mode backing.
-    static let paperBacking = Color(red: 245 / 255, green: 239 / 255, blue: 226 / 255)
 }
 
-/// Doddy himself, from the owner's approved numbered pack (`UploadedDoddy_*`, byte-identical to
-/// the ZIP; see docs/design/UPLOADED_MEMORY_ASSETS.md): listening while the conversation runs;
-/// once it has ended, the fist-pump "kept" pose if a note was saved, else sitting.
-/// Lock Screen only. The card is cream (ADR-266), so the drawing needs no backing; the paper
-/// backing below stays for a dark colour scheme, should a card ever draw in one again.
+/// Doddy himself, in the same Whole Doddy pose as the island (ADR-299, ADR-264): one pose
+/// means one thing everywhere, whichever island style is picked. Poses are the owner's numbered
+/// pack (`WholeDoddy_*`; see docs/design/UPLOADED_MEMORY_ASSETS.md). Once the conversation has
+/// ended he does the fist pump only if a note was saved; otherwise he sits and waits.
+/// Lock Screen only. The card is cream (ADR-266), so the drawing needs no backing or edge.
 private struct DoddyArt: View {
     let shown: Shown
     let size: CGFloat
-    @Environment(\.colorScheme) private var colorScheme
 
-    private var assetName: String {
-        // Waiting for "Hey Doddy" is not a conversation: Doddy sits until he is called.
-        if shown.state.isWakeMode { return "UploadedDoddy_Sitting" }
-        guard shown.state.isEnded else { return "UploadedDoddy_Listening" }
-        return shown.state.savedCount > 0 ? "UploadedDoddy_Kept" : "UploadedDoddy_Sitting"
+    private var pose: IslandPose {
+        if shown.state.isEnded { return shown.state.savedCount > 0 ? .fistpump : .crosslegged }
+        // Translating keeps its board on the island (no pose); here he listens.
+        return shown.state.wholeDoddyPose(stale: shown.isStale) ?? .listening
     }
 
     var body: some View {
-        let backed = colorScheme == .dark
-        Image(decorative: assetName)
-            .resizable()
-            .scaledToFit()
-            .padding(backed ? size * 0.08 : 0)
-            .frame(width: size, height: size)
-            .background(backed ? Palette.paperBacking : .clear, in: RoundedRectangle(cornerRadius: size * 0.28))
-            .accessibilityHidden(true)
+        // Nothing when "Hide character artwork" is on in Doddy (ADR-331).
+        if !WidgetDoddyArt.isHidden {
+            IslandPoseView(pose: pose, maxSize: CGSize(width: size, height: size * 1.25), edged: false)
+        }
     }
 }
 

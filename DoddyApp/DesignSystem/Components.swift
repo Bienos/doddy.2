@@ -11,8 +11,13 @@ struct CandidateCharacterView: View {
 
     var body: some View {
         if !hideCharacterArt {
-            UploadedCharacterView(assetName: assetName == "Doddy_listening" ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting",
-                                  height: size)
+            switch assetName {
+            // Whole Doddy poses (ADR-299): hello is the wave, "on the way" is the tiptoe.
+            case "Doddy_waving": WholeDoddyView(pose: .wave, height: size)
+            case "Doddy_approaching": WholeDoddyView(pose: .tiptoe, height: size)
+            case "Doddy_listening": UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: size)
+            default: UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: size)
+            }
         }
     }
 }
@@ -121,13 +126,21 @@ struct MemoryRow: View {
 
 struct ProblemView: View {
     let message: String
+    /// Doddy's facepalm beside the message (ADR-299), for a whole screen that failed (a save,
+    /// loading notes). Small inline problems leave it off.
+    var showsDoddy = false
 
     var body: some View {
-        Label(message, systemImage: "exclamationmark.triangle")
-            .foregroundStyle(Theme.error)
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+        HStack(alignment: .center, spacing: 12) {
+            if showsDoddy { WholeDoddyView(pose: .facepalm, height: 64) }
+            Label(message, systemImage: "exclamationmark.triangle")
+                .foregroundStyle(Theme.error)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+        // One element, as when this was only a Label, so identifiers and VoiceOver land on it.
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -193,4 +206,10 @@ extension MemoryCategory {
         case .list: NSLocalizedString("List", comment: "")
         }
     }
+}
+
+/// What this device can do that the iPhone-only parts of Doddy need (ADR-337).
+enum DeviceSupport {
+    /// Accessibility › Touch › Back Tap is an iPhone setting; iPad has none.
+    @MainActor static var hasBackTap: Bool { UIDevice.current.userInterfaceIdiom == .phone }
 }

@@ -88,7 +88,7 @@ struct CaptureView: View {
                         Label("Only this detail is saved on this iPhone. You can edit or delete it later.", systemImage: "lock")
                             .font(.footnote).foregroundStyle(Theme.secondaryText)
                         if let errorMessage {
-                            ProblemView(message: errorMessage).accessibilityIdentifier("capture.error")
+                            ProblemView(message: errorMessage, showsDoddy: true).accessibilityIdentifier("capture.error")
                         }
                         if let duplicate {
                             DuplicateNoticeView(record: duplicate) {
@@ -216,11 +216,33 @@ private struct SaveReceiptView: View {
     let onAnother: () -> Void
 
     @Environment(NoteReminderStore.self) private var noteReminders
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @State private var showReminder = false
+    /// The pop has played (ADR-313); then the "kept" fist pump stays.
+    @State private var popped = false
 
     var body: some View {
         VStack(spacing: 20) {
-            UploadedCharacterView(assetName: "UploadedDoddy_Kept", height: 170)
+            // Shown only once the save is confirmed, so the pop never celebrates a failed save.
+            if !hideCharacterArt {
+                Group {
+                    if popped || reduceMotion {
+                        UploadedCharacterView(assetName: "UploadedDoddy_Kept", height: 170)
+                    } else {
+                        DoddyMotionView(motion: .pop, height: 145)
+                            .padding(.bottom, 10)
+                            .frame(height: 170, alignment: .bottom)
+                    }
+                }
+                .transition(.opacity)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: popped)
+                .task {
+                    guard !reduceMotion, !popped else { return }
+                    try? await Task.sleep(for: .seconds(DoddyMotion.pop.duration + 0.3))
+                    if !Task.isCancelled { popped = true }
+                }
+            }
             Text("Got it.").font(.largeTitle.weight(.medium)).accessibilityAddTraits(.isHeader)
             Label("Saved on this iPhone", systemImage: "checkmark.circle")
                 .font(.subheadline).foregroundStyle(Theme.confirmed).accessibilityIdentifier("capture.saved")

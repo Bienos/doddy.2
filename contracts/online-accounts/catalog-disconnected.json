@@ -4,7 +4,7 @@
     {
       "id": "gmail",
       "title": "Gmail",
-      "access": "Doddy can list your recent emails (sender, subject, a short preview) and create drafts after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+      "access": "Doddy can list your recent emails (sender, subject, a short preview), read one email aloud when you ask (the newest that matches), and create drafts, including a reply in an email's own conversation (to its sender), after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -14,7 +14,14 @@
         {
           "name": "check_email",
           "title": "Check my email",
-          "blurb": "Lists your newest emails: sender, subject and a short preview. Doddy doesn't open full messages.",
+          "blurb": "Lists your newest emails: sender, subject and a short preview. It doesn't open full messages.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "read_email",
+          "title": "Read an email",
+          "blurb": "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.",
           "risk": "read",
           "enabled": false
         },
@@ -22,6 +29,13 @@
           "name": "draft_email",
           "title": "Draft an email",
           "blurb": "Creates a draft in Gmail after you tap Create on the card. Doddy never sends it.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "draft_email_reply",
+          "title": "Draft a reply",
+          "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
           "risk": "write",
           "enabled": false
         }
@@ -49,7 +63,7 @@
     {
       "id": "notion",
       "title": "Notion",
-      "access": "Doddy can search the titles of pages you shared with it. It doesn't read page content and can't change anything.",
+      "access": "Doddy can search the titles of pages you shared with it, and read one page aloud when you ask (the best match among them). It can't change, create or delete anything.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -62,13 +76,20 @@
           "blurb": "Finds page titles shared with Doddy. It doesn't read the pages.",
           "risk": "read",
           "enabled": false
+        },
+        {
+          "name": "read_notion_page",
+          "title": "Read a Notion page",
+          "blurb": "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
         }
       ]
     },
     {
       "id": "todoist",
       "title": "Todoist",
-      "access": "Doddy can list your open tasks and add a task after you tap Add. It can't complete, change or delete tasks.",
+      "access": "Doddy can list your open tasks, add a task after you tap Add, and mark a task done or change its due date after you tap to confirm. It can't delete tasks or change their text.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -87,6 +108,60 @@
           "title": "Add a task",
           "blurb": "Adds a Todoist task after you tap Add on the card.",
           "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "complete_todoist_task",
+          "title": "Complete a task",
+          "blurb": "Marks a Todoist task done after you tap Complete. The card shows the task as Todoist has it.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "move_todoist_task",
+          "title": "Change a task's date",
+          "blurb": "Changes a Todoist task's due date after you tap Move. It can't change the task's text.",
+          "risk": "write",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "id": "outlook",
+      "title": "Outlook",
+      "access": "Doddy can list your recent Outlook emails (sender, subject, a short preview), read one email aloud when you ask, read your Outlook calendar for the days you ask about, and create drafts after you tap Create. Doddy never sends, deletes or moves email, and never changes your calendar.",
+      "needsAccount": true,
+      "status": "disconnected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "check_outlook_email",
+          "title": "Check my Outlook email",
+          "blurb": "Lists your newest Outlook emails: sender, subject and a short preview. It doesn't open full messages. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "read_outlook_email",
+          "title": "Read an Outlook email",
+          "blurb": "Reads one Outlook email aloud when you ask, the newest that matches. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "draft_outlook_email",
+          "title": "Draft an Outlook email",
+          "blurb": "Creates a draft in Outlook after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "read_outlook_calendar",
+          "title": "Read my Outlook calendar",
+          "blurb": "Reads your Outlook calendar for the days you ask about: title, time and place. It can't change events. Off until you switch it on.",
+          "risk": "read",
           "enabled": false
         }
       ]
