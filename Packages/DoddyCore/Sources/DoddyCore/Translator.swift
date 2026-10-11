@@ -803,7 +803,7 @@ public struct TranslatorSummary: Equatable, Sendable {
     /// The note "Save the facts as a note" proposes; nil when nothing exact was said.
     public func factsNote(calendar: Calendar) -> String? {
         guard !facts.isEmpty else { return nil }
-        let day = calendar.dateComponents([.year, .month, .day], from: endedAt)
+        let day = ReminderDueRules.gregorian(calendar).dateComponents([.year, .month, .day], from: endedAt)
         let when = String(format: "%04d-%02d-%02d", day.year ?? 0, day.month ?? 0, day.day ?? 0)
         return "From a translated conversation (\(setup.pairText), \(when)): " + facts.joined(separator: "; ")
     }

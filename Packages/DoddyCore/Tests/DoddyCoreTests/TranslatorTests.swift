@@ -187,6 +187,10 @@ final class TranslatorTests: XCTestCase {
         var utc = Calendar(identifier: .gregorian)
         utc.timeZone = TimeZone(identifier: "UTC")!
         XCTAssertEqual(summary.factsNote(calendar: utc), "From a translated conversation (Polski ⇄ Español, 2027-01-15): 15:30")
+        // A Buddhist phone calendar still gets the Gregorian date, not 2570.
+        var buddhist = Calendar(identifier: .buddhist)
+        buddhist.timeZone = utc.timeZone
+        XCTAssertEqual(summary.factsNote(calendar: buddhist), summary.factsNote(calendar: utc))
     }
 
     private var repoRoot: URL {
