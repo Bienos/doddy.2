@@ -281,11 +281,14 @@ public struct ReminderWrite: Equatable, Sendable {
     public let notes: String?
     public let due: ReminderDue?
     public let key: String
+    /// Reminders' own repeat (ADR-266).
+    public let repeats: CalendarRepeat?
 
     public init(_ draft: ReminderDraft) {
         title = draft.title
         notes = draft.notes
         due = draft.due
+        repeats = draft.repeats
         key = ReminderIdempotency.key(title: draft.title, due: draft.due)
     }
 
@@ -301,8 +304,11 @@ public struct ReminderSnapshot: Equatable, Sendable {
     public let due: ReminderDue?
     public let markerURL: String?
     public let isCompleted: Bool
+    /// The repeat as read back (ADR-266); nil for none, or a rule Doddy doesn't write.
+    public let repeats: CalendarRepeat?
 
-    public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false) {
+    public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false, repeats: CalendarRepeat? = nil) {
+        self.repeats = repeats
         self.id = id
         self.title = title
         self.listTitle = listTitle
@@ -346,7 +352,8 @@ public enum ReminderMatching {
     /// both have one), and no other Doddy marker. A missing marker is allowed: whether iOS keeps
     /// the URL on a reminder is checked on device, not assumed.
     public static func confirms(_ back: ReminderSnapshot, _ write: ReminderWrite) -> Bool {
-        guard !back.isCompleted, back.title == write.title, sameDue(back.due, write.due) else { return false }
+        guard !back.isCompleted, back.title == write.title, sameDue(back.due, write.due),
+              CalendarRepeat.same(back.repeats, write.repeats) else { return false }
         if let marker = back.markerURL, marker != write.markerURL { return false }
         if let a = back.due?.timeZoneID, let b = write.due?.timeZoneID, a != b { return false }
         return true
@@ -368,15 +375,17 @@ public struct ReminderReceipt: Equatable, Sendable {
     public let title: String
     public let listTitle: String
     public let due: ReminderDue?
+    public let repeats: CalendarRepeat?
 
-    public init(title: String, listTitle: String, due: ReminderDue?) {
+    public init(title: String, listTitle: String, due: ReminderDue?, repeats: CalendarRepeat? = nil) {
         self.title = title
         self.listTitle = listTitle
         self.due = due
+        self.repeats = repeats
     }
 
     public init(_ snapshot: ReminderSnapshot) {
-        self.init(title: snapshot.title, listTitle: snapshot.listTitle, due: snapshot.due)
+        self.init(title: snapshot.title, listTitle: snapshot.listTitle, due: snapshot.due, repeats: snapshot.repeats)
     }
 }
 
@@ -527,7 +536,7 @@ extension VoiceToolReply {
     public static func reminder(_ outcome: ReminderOutcome) -> String {
         switch outcome {
         case .added(let receipt):
-            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due))."
+            return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due)).\(receipt.repeats.map { " Repeats \($0.text)." } ?? "")"
         case .alreadyThere(let receipt):
             return "added: reminder \"\(receipt.title)\" \(dueClause(receipt.due)) was already in Reminders, so Doddy did not add it a second time."
         case .notAdded(.notAllowed):

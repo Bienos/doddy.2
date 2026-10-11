@@ -24,6 +24,8 @@ public struct PlanStepForm: Equatable, Sendable {
     public var minutes: Int
     public var seconds: Int
     public var label: String
+    /// Kept from the agent's step (ADR-266); not edited on the form.
+    public var repeats: CalendarRepeat?
 
     public init(_ step: PlanStep, now: Date = Date(), calendar: Calendar = .current) {
         let hour = calendar.date(byAdding: .hour, value: 1, to: now) ?? now
@@ -36,6 +38,7 @@ public struct PlanStepForm: Equatable, Sendable {
             form = PlanStepForm(kind: .reminder, start: hour, end: hour)
             form.text = draft.title
             form.notes = draft.notes ?? ""
+            form.repeats = draft.repeats
             if let due = draft.due, let date = due.date(in: calendar) {
                 form.hasDate = true
                 form.hasTime = due.hasTime
@@ -47,6 +50,7 @@ public struct PlanStepForm: Equatable, Sendable {
             form.notes = draft.notes ?? ""
             form.location = draft.location ?? ""
             form.hasTime = !draft.allDay
+            form.repeats = draft.repeats
         case .setTimer(let draft):
             form = PlanStepForm(kind: .timer, start: hour, end: hour)
             form.minutes = draft.seconds / 60
@@ -70,6 +74,7 @@ public struct PlanStepForm: Equatable, Sendable {
         minutes = 0
         seconds = 0
         label = ""
+        repeats = nil
     }
 
     /// The edited step, checked exactly like the agent's call, or what to fix, in words for the screen.
@@ -98,6 +103,10 @@ public struct PlanStepForm: Equatable, Sendable {
             args["minutes"] = Double(minutes)
             args["seconds"] = Double(seconds)
             if !label.isEmpty { args["label"] = label }
+        }
+        if let repeats, kind == .event || kind == .reminder {
+            args["repeat"] = repeats.frequency.rawValue
+            if let until = repeats.until { args["repeat_until"] = until.localText }
         }
         let data = (try? JSONSerialization.data(withJSONObject: args)) ?? Data("{}".utf8)
         let request = VoiceToolRequest.parse(name: step.toolName, parametersJSON: data, now: now, calendar: calendar)

@@ -79,6 +79,8 @@ public struct CalendarEventDraft: Equatable, Sendable {
     public let allDay: Bool
     public let location: String?
     public let notes: String?
+    /// Calendar's own repeat (ADR-266); nil for a one-off event.
+    public var repeats: CalendarRepeat? = nil
 
     /// Nil while the event is still ahead (an all-day event counts until its day ends). Checked
     /// when the card is shown and again when the user taps Add, as for reminders (ADR-128).
@@ -100,8 +102,11 @@ public struct ReminderDraft: Equatable, Sendable {
     public let title: String
     public let due: ReminderDue?
     public let notes: String?
+    /// Reminders' own repeat (ADR-266); needs a due.
+    public let repeats: CalendarRepeat?
 
-    public init(title: String, due: ReminderDue?, notes: String?) {
+    public init(title: String, due: ReminderDue?, notes: String?, repeats: CalendarRepeat? = nil) {
+        self.repeats = repeats
         self.title = title
         self.due = due
         self.notes = notes
@@ -294,12 +299,18 @@ public enum VoiceToolRequest: Equatable, Sendable {
                 return .needsClarification(name: name, question)
             }
         }
+        let repeats: CalendarRepeat?
+        switch parseRepeat(args, name: name, first: startDue, calendar: calendar) {
+        case .success(let rule): repeats = rule
+        case .failure(.invalid(let reason)): return .invalid(name: name, reason: reason)
+        case .failure(.clarify(let clarification)): return .needsClarification(name: name, clarification)
+        }
         if args.flag("all_day") {
             let dayStart = calendar.startOfDay(for: start)
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
             return proposeEvent(CalendarEventDraft(
                 title: title, start: dayStart, end: dayEnd, allDay: true,
-                location: args.text("location"), notes: args.text("notes")), name: name, now: now, calendar: calendar)
+                location: args.text("location"), notes: args.text("notes"), repeats: repeats), name: name, now: now, calendar: calendar)
         }
         guard startDue.hasTime else { return .invalid(name: name, reason: "start needs a time unless all_day is true") }
         let end: Date
@@ -318,7 +329,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         }
         return proposeEvent(CalendarEventDraft(
             title: title, start: start, end: end, allDay: false,
-            location: args.text("location"), notes: args.text("notes")), name: name, now: now, calendar: calendar)
+            location: args.text("location"), notes: args.text("notes"), repeats: repeats), name: name, now: now, calendar: calendar)
     }
 
     private static func proposeEvent(_ draft: CalendarEventDraft, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
@@ -352,7 +363,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
                 return .needsClarification(name: name, question)
             }
         }
-        return .createReminder(ReminderDraft(title: title, due: due, notes: args.text("notes")))
+        let repeats: CalendarRepeat?
+        switch parseRepeat(args, name: name, first: due, calendar: calendar) {
+        case .success(let rule): repeats = rule
+        case .failure(.invalid(let reason)): return .invalid(name: name, reason: reason)
+        case .failure(.clarify(let clarification)): return .needsClarification(name: name, clarification)
+        }
+        return .createReminder(ReminderDraft(title: title, due: due, notes: args.text("notes"), repeats: repeats))
     }
 
     private static func parseTimer(_ args: Arguments, name: String) -> VoiceToolRequest {
@@ -526,10 +543,11 @@ public enum VoiceToolReply {
     }
 
     public static func eventAdded(_ draft: CalendarEventDraft, calendar: Calendar) -> String {
+        let repeats = draft.repeats.map { " Repeats \($0.text)." } ?? ""
         if draft.allDay {
-            return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day)."
+            return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day).\(repeats)"
         }
-        return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar))."
+        return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar)).\(repeats)"
     }
 
     /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`.

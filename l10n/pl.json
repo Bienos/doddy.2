@@ -988,5 +988,12 @@
  "Shared by %@ through iCloud.": "Udostępnione przez: %@, przez iCloud.",
  "Sign in to iCloud in iOS Settings to keep shared lists up to date.": "Zaloguj się do iCloud w Ustawieniach iOS, aby udostępnione listy były aktualne.",
  "Shared list": "Udostępniona lista",
- "Your iCloud storage is full.": "Twój iCloud jest pełny."
+ "Your iCloud storage is full.": "Twój iCloud jest pełny.",
+ "Repeats every day": "Powtarza się codziennie",
+ "Repeats every weekday (Monday to Friday)": "Powtarza się w dni powszednie (od poniedziałku do piątku)",
+ "Repeats every week": "Powtarza się co tydzień",
+ "Repeats every two weeks": "Powtarza się co dwa tygodnie",
+ "Repeats every month": "Powtarza się co miesiąc",
+ "Repeats every year": "Powtarza się co rok",
+ "until %@": "do %@"
 }

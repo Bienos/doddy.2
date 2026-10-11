@@ -6821,6 +6821,72 @@
         }
       }
     },
+    "Repeats every day": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtarza się codziennie"
+          }
+        }
+      }
+    },
+    "Repeats every month": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtarza się co miesiąc"
+          }
+        }
+      }
+    },
+    "Repeats every two weeks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtarza się co dwa tygodnie"
+          }
+        }
+      }
+    },
+    "Repeats every week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtarza się co tydzień"
+          }
+        }
+      }
+    },
+    "Repeats every weekday (Monday to Friday)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtarza się w dni powszednie (od poniedziałku do piątku)"
+          }
+        }
+      }
+    },
+    "Repeats every year": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtarza się co rok"
+          }
+        }
+      }
+    },
     "Reply length": {
       "extractionState": "manual",
       "localizations": {
@@ -10865,6 +10931,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "until %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "do %@"
           }
         }
       }

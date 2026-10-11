@@ -90,11 +90,13 @@ public struct ActivityRequest: Equatable, Sendable {
                 detail: "\(when(range.start, hasTime: false)) to \(when(range.end, hasTime: false))", isLookup: true)
         case .createCalendarEvent(let draft):
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
-            return ActivityRequest(app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)", isLookup: false)
+            let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            return ActivityRequest(app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false)
         case .createReminder(let draft):
             let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
+            let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
             return ActivityRequest(
-                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)", isLookup: false,
+                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)\(repeats)", isLookup: false,
                 reminderKey: ReminderWrite(draft).key)
         case .remindAboutNote(let draft):
             let target: String

@@ -339,6 +339,10 @@ struct VoiceView: View {
                 Text(location)
                     .foregroundStyle(Theme.secondaryText)
             }
+            if let repeats = draft.repeats {
+                Label(Self.repeatText(repeats), systemImage: "repeat")
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .reminder(_, let draft):
             Text("Add this reminder?")
                 .font(.headline)
@@ -347,6 +351,10 @@ struct VoiceView: View {
             if draft.due != nil {
                 // Day, time and time zone exactly as they will be written (M4).
                 Text(ReminderText.due(draft.due))
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if let repeats = draft.repeats {
+                Label(Self.repeatText(repeats), systemImage: "repeat")
                     .foregroundStyle(Theme.secondaryText)
             }
             Text("Doddy checks your open reminders on this iPhone first, so it isn't added twice.")
@@ -1041,6 +1049,20 @@ struct VoiceView: View {
                 .foregroundStyle(Theme.secondaryText)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    /// "Repeats every week until Thu 31 Dec 2026" (ADR-266), in the iPhone's language.
+    static func repeatText(_ repeats: CalendarRepeat) -> String {
+        let base = switch repeats.frequency {
+        case .daily: NSLocalizedString("Repeats every day", comment: "")
+        case .weekdays: NSLocalizedString("Repeats every weekday (Monday to Friday)", comment: "")
+        case .weekly: NSLocalizedString("Repeats every week", comment: "")
+        case .everyTwoWeeks: NSLocalizedString("Repeats every two weeks", comment: "")
+        case .monthly: NSLocalizedString("Repeats every month", comment: "")
+        case .yearly: NSLocalizedString("Repeats every year", comment: "")
+        }
+        guard let until = repeats.until else { return base }
+        return base + " " + String(format: NSLocalizedString("until %@", comment: ""), ReminderText.due(until))
     }
 
     private func eventWhen(_ event: CalendarEventSummary) -> String {

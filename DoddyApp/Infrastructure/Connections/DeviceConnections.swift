@@ -143,11 +143,52 @@ final class DeviceConnections {
         event.isAllDay = draft.allDay
         event.location = draft.location
         event.notes = draft.notes
-        try eventStore.save(event, span: .thisEvent)
-        guard let identifier = event.eventIdentifier, eventStore.event(withIdentifier: identifier) != nil else {
+        // A repeat (ADR-266) is saved with the event and must read back the same.
+        if let repeats = draft.repeats { event.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
+        try eventStore.save(event, span: draft.repeats == nil ? .thisEvent : .futureEvents)
+        guard let identifier = event.eventIdentifier, let back = eventStore.event(withIdentifier: identifier),
+              CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
             return .unconfirmed
         }
         return .verified
+    }
+
+    /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-266). The end is the
+    /// end of the last day, in this iPhone's time zone.
+    nonisolated private static func rule(_ repeats: CalendarRepeat, calendar: Calendar) -> EKRecurrenceRule {
+        let frequency: EKRecurrenceFrequency = switch repeats.unit {
+        case .daily: .daily
+        case .weekly: .weekly
+        case .monthly: .monthly
+        case .yearly: .yearly
+        }
+        let days = repeats.weekdays?.compactMap { EKWeekday(rawValue: $0) }.map { EKRecurrenceDayOfWeek($0) }
+        let end = repeats.until
+            .flatMap { calendar.date(from: DateComponents(year: $0.year, month: $0.month, day: $0.day, hour: 23, minute: 59)) }
+            .map { EKRecurrenceEnd(end: $0) }
+        return EKRecurrenceRule(
+            recurrenceWith: frequency, interval: repeats.interval, daysOfTheWeek: days, daysOfTheMonth: nil,
+            monthsOfTheYear: nil, weeksOfTheYear: nil, daysOfTheYear: nil, setPositions: nil, end: end)
+    }
+
+    /// The one repeat rule an event or reminder has, as a `CalendarRepeat`; nil for none, several,
+    /// or a rule Doddy doesn't write.
+    nonisolated private static func readRepeat(_ rules: [EKRecurrenceRule]?, calendar: Calendar) -> CalendarRepeat? {
+        guard let rules, rules.count == 1, let rule = rules.first else { return nil }
+        let unit: CalendarRepeat.Unit
+        switch rule.frequency {
+        case .daily: unit = .daily
+        case .weekly: unit = .weekly
+        case .monthly: unit = .monthly
+        case .yearly: unit = .yearly
+        @unknown default: return nil
+        }
+        let until = rule.recurrenceEnd?.endDate.map { date -> ReminderDue in
+            let parts = calendar.dateComponents([.year, .month, .day], from: date)
+            return ReminderDue(year: parts.year ?? 0, month: parts.month ?? 0, day: parts.day ?? 0, timeZoneID: calendar.timeZone.identifier)
+        }
+        return CalendarRepeat.from(
+            unit: unit, interval: rule.interval, weekdays: rule.daysOfTheWeek?.map(\.dayOfTheWeek.rawValue), until: until)
     }
 
     /// Moves or renames exactly the occurrence the card showed (ADR-229). It's found again by its
@@ -223,6 +264,7 @@ final class DeviceConnections {
         if let due = write.due {
             reminder.dueDateComponents = Self.components(due)
         }
+        if let repeats = write.repeats { reminder.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
         try eventStore.save(reminder, commit: true)
         return reminder.calendarItemIdentifier
     }
@@ -326,7 +368,8 @@ final class DeviceConnections {
             listTitle: reminder.calendar?.title ?? "Reminders",
             due: due,
             markerURL: reminder.url?.absoluteString,
-            isCompleted: reminder.isCompleted)
+            isCompleted: reminder.isCompleted,
+            repeats: readRepeat(reminder.recurrenceRules, calendar: .current))
     }
 
     /// Incomplete reminders due by `end` (overdue included), for Home → Today. Title and due
