@@ -44,8 +44,12 @@ struct TidyUpView: View {
     @State private var lastDone: String?
     private let sharing = SharedListsController.shared
 
+    /// Notes with a photo or a voice memo are never offered as copies (review D2): deleting one
+    /// would delete a different photo or recording.
     private var tidy: TidyUp.Suggestions {
-        TidyUp.suggestions(memories: store.memories, lists: store.lists, reminders: noteReminders.reminders, now: .now)
+        TidyUp.suggestions(
+            memories: store.memories, lists: store.lists, reminders: noteReminders.reminders, now: .now,
+            withAttachments: Set(store.photos.keys).union(store.recordings.keys))
     }
 
     var body: some View {
