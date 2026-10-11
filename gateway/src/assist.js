@@ -128,7 +128,7 @@ async function assist(request, deps) {
   Object.assign(counts, { costMicros: spent });
   if (result.kind === 'refused') return fail('refused', counts, { requestId: req.requestId });
   if (result.kind === 'error') {
-    return fail(result.code, { ...counts, providerStatus: result.providerStatus }, { requestId: req.requestId, retryAfterSeconds: result.retryAfterSeconds });
+    return fail(result.code, { ...counts, providerStatus: result.providerStatus, cause: result.cause }, { requestId: req.requestId, retryAfterSeconds: result.retryAfterSeconds });
   }
 
   // 6. Check the model output. Anything unexpected is an error, never a guess.
@@ -163,7 +163,8 @@ async function assist(request, deps) {
  * @param {import('./openai.js').ProviderResult} result @param {number} estimate @param {import('./budget.js').Prices} prices
  */
 function actualCost(result, estimate, prices) {
-  if (result.kind !== 'error' && Number.isInteger(result.inputTokens) && Number.isInteger(result.outputTokens)) {
+  // Reported usage wins whenever there is any (an incomplete answer is billed too).
+  if (Number.isInteger(result.inputTokens) && Number.isInteger(result.outputTokens)) {
     return costMicros({ inputTokens: /** @type {number} */ (result.inputTokens), outputTokens: /** @type {number} */ (result.outputTokens) }, prices);
   }
   if (result.kind === 'error' && (result.providerStatus ?? 0) >= 400 && (result.providerStatus ?? 0) < 500) return 0;

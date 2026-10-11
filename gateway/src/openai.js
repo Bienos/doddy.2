@@ -10,8 +10,13 @@ export const MAX_OUTPUT_TOKENS = 800;
 /**
  * @typedef {{kind: 'ok', text: string, inputTokens?: number, outputTokens?: number}
  *   | {kind: 'refused', inputTokens?: number, outputTokens?: number}
- *   | {kind: 'error', code: 'rateLimited'|'providerUnavailable'|'timeout', providerStatus?: number, retryAfterSeconds?: number}} ProviderResult
+ *   | {kind: 'error', code: 'rateLimited'|'providerUnavailable'|'timeout', providerStatus?: number, retryAfterSeconds?: number,
+ *      cause?: string, inputTokens?: number, outputTokens?: number}} ProviderResult
+ * `inputTokens`/`outputTokens` on an error are set only when the provider reported usage (a billed call).
  */
+
+/** Reasoning models count their reasoning against max_output_tokens; keep it short so the answer fits. */
+export const isReasoningModel = (/** @type {string} */ model) => /^(gpt-5|o\d)/.test(model);
 
 /**
  * @param {{fetch: typeof fetch, apiKey: string, model: string, timeoutMs: number, deadlineMs: number}} cfg
@@ -27,6 +32,7 @@ export async function callProvider(cfg, call) {
     store: false,
     max_output_tokens: MAX_OUTPUT_TOKENS,
     text: { format: { type: 'json_schema', name: 'doddy_answer', strict: true, schema: call.schema } },
+    ...(isReasoningModel(cfg.model) ? { reasoning: { effort: 'low' } } : {}),
   };
 
   /** @type {ProviderResult} */
@@ -70,7 +76,12 @@ async function once(cfg, body) {
     if (!res.ok) return { kind: 'error', code: 'providerUnavailable', providerStatus: res.status };
 
     const data = await res.json();
-    if (data?.status === 'incomplete' || data?.status === 'failed') return { kind: 'error', code: 'providerUnavailable', providerStatus: 200 };
+    if (data?.status === 'incomplete' || data?.status === 'failed') {
+      // Billed: keep the reported usage. Ran out of output allowance (often reasoning) gets its own cause.
+      const cause = data?.incomplete_details?.reason === 'max_output_tokens' ? 'outputLimit' : undefined;
+      return { kind: 'error', code: 'providerUnavailable', providerStatus: 200, cause,
+        inputTokens: data?.usage?.input_tokens, outputTokens: data?.usage?.output_tokens };
+    }
     const items = Array.isArray(data?.output) ? data.output : [];
     for (const item of items) {
       if (item?.type !== 'message' || !Array.isArray(item.content)) continue;

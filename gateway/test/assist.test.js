@@ -112,6 +112,27 @@ test('malformed or empty model output is a provider error, never a made-up answe
   }
 });
 
+test('reasoning models get a low reasoning effort; other models are sent no reasoning field', async () => {
+  for (const [model, expected] of [['gpt-5-mini', { effort: 'low' }], ['o4-mini', { effort: 'low' }], ['gpt-4.1-mini', undefined]]) {
+    const provider = fakeProvider(providerOk({ answer: 'ok', sources: [] }));
+    const { deps } = makeDeps({ fetch: provider, env: { ...ENV, OPENAI_MODEL: model } });
+    await run(assistRequest(body()), deps);
+    assert.deepEqual(provider.calls[0].body.reasoning, expected, model);
+  }
+});
+
+test('an answer cut off by the output allowance is an error with its own cause, billed at reported usage', async () => {
+  const cut = Response.json({ status: 'incomplete', incomplete_details: { reason: 'max_output_tokens' }, output: [], usage: { input_tokens: 300, output_tokens: 800 } });
+  const { deps, logs } = makeDeps({ fetch: fakeProvider(cut) });
+  const { res, json } = await run(assistRequest(body()), deps);
+  assert.equal(res.status, 503);
+  assert.equal(json.error.code, 'providerUnavailable');
+  const line = JSON.parse(logs.at(-1));
+  assert.equal(line.cause, 'outputLimit');
+  // Placeholder prices: 10 and 40 USD per 1M tokens -> 300*10 + 800*40 micro-dollars.
+  assert.equal(line.costMicros, 300 * 10 + 800 * 40);
+});
+
 test('A-15: refusal, provider 429, 5xx (one retry), timeout and bad key map to the error taxonomy', async () => {
   const refusal = Response.json({ status: 'completed', output: [{ type: 'message', content: [{ type: 'refusal', refusal: 'no' }] }] });
   let r = await run(assistRequest(body()), makeDeps({ fetch: fakeProvider(refusal) }).deps);
