@@ -1530,6 +1530,17 @@
         }
       }
     },
+    "Change it in Settings › Hey Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienisz to w Ustawieniach › Hey Doddy."
+          }
+        }
+      }
+    },
     "Change languages": {
       "extractionState": "manual",
       "localizations": {
@@ -9384,6 +9395,17 @@
         }
       }
     },
+    "Say “Hey Doddy” and I'll answer. I listen for it on this iPhone, with iOS's orange microphone dot showing, until you stop me. It uses some battery.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „Hey Doddy”, a odpowiem. Nasłuchuję tego na tym iPhonie, z pomarańczową kropką mikrofonu iOS, dopóki mnie nie zatrzymasz. Zużywa to trochę baterii."
+          }
+        }
+      }
+    },
     "Says what is left on one of your Doddy lists.": {
       "extractionState": "manual",
       "localizations": {
@@ -10711,6 +10733,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Porozmawiaj z Doddym"
+          }
+        }
+      }
+    },
+    "Talk without tapping": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmawiaj bez stukania"
           }
         }
       }
@@ -12574,6 +12607,17 @@
         }
       }
     },
+    "Turning on…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączam…"
+          }
+        }
+      }
+    },
     "Twilio sends a one-time code to check the number is yours. Texts with updates only start after you turn them on.": {
       "extractionState": "manual",
       "localizations": {
@@ -12845,6 +12889,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Używaj w rozmowach głosowych"
+          }
+        }
+      }
+    },
+    "Use my own Picovoice key and file": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj własnego klucza i pliku Picovoice"
           }
         }
       }

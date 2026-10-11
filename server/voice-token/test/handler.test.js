@@ -213,3 +213,41 @@ test("openai: upstream limits, failures and bad replies map like ElevenLabs'", a
     assert.deepEqual(body, { error });
   }
 });
+
+// "Hey Doddy" for everyone (ADR-328): the owner's Picovoice AccessKey for a valid tester.
+const picovoiceEnv = { ...env, PICOVOICE_ACCESS_KEY: " owner-picovoice-key== " };
+function picovoiceRequest(code = CODE) {
+  return new Request("https://example.test/api/voice-token", {
+    method: "POST",
+    headers: { authorization: `Bearer ${code}`, "content-type": "application/json" },
+    body: JSON.stringify({ provider: "picovoice" }),
+  });
+}
+
+test("picovoice: a valid tester gets the trimmed key, nothing upstream is called, and the key is never logged", async () => {
+  const { response, body, logs, calls } = await run(picovoiceRequest(), { environment: picovoiceEnv });
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { accessKey: "owner-picovoice-key==" });
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.equal(calls.length, 0);
+  assert.ok(!JSON.stringify(logs).includes("owner-picovoice-key"));
+  assert.ok(!JSON.stringify(logs).includes(CODE));
+});
+
+test("picovoice: a wrong code is refused, and without the key the server says it isn't configured", async () => {
+  const wrong = await run(picovoiceRequest("wrong-code-but-long-enough"), { environment: picovoiceEnv });
+  assert.equal(wrong.response.status, 401);
+  assert.ok(!("accessKey" in wrong.body));
+  const missing = await run(picovoiceRequest(), { environment: env });
+  assert.equal(missing.response.status, 500);
+  assert.deepEqual(missing.body, { error: "server_not_configured" });
+});
+
+test("picovoice: asking for the key doesn't use up the tester's conversations for the hour", async () => {
+  const limiter = createTesterLimiter();
+  const oneAnHour = { ...picovoiceEnv, DODDY_TOKENS_PER_HOUR: "1" };
+  for (let i = 0; i < 3; i++) {
+    assert.equal((await run(picovoiceRequest(), { environment: oneAnHour, deps: { limiter } })).response.status, 200);
+  }
+  assert.equal((await run(request(), { environment: oneAnHour, deps: { limiter } })).response.status, 200);
+});

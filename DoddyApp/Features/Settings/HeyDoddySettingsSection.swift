@@ -17,6 +17,10 @@ struct HeyDoddySettingsSection: View {
     @State private var problem: String?
     @State private var choosingFile = false
     @State private var isWorking = false
+    /// One tap is enough (ADR-328): the keyword file is in the app and the key is here or comes
+    /// from the token server. Then the Picovoice fields are only for someone using their own.
+    @State private var oneTap = WakeOneTapSetup.isReady
+    @State private var showOwnSetup = false
 
     private var greeting: String {
         WakeGreeting.line(name: WakeGreeting.name(nickname: nickname, profileName: profiles.profile.value(.name)))
@@ -42,8 +46,16 @@ struct HeyDoddySettingsSection: View {
                     .font(.footnote)
                     .accessibilityIdentifier("settings.heyDoddy.focusPaused")
             }
-            if isOn || hasKey || hasFile {
+            if let keyProblem = listener.keyProblem {
+                Label(keyProblem, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.error)
+                    .accessibilityIdentifier("settings.heyDoddy.keyProblem")
+            }
+            if hasKey || hasFile || (isOn && !oneTap) {
                 setup
+            } else if oneTap {
+                DisclosureGroup("Use my own Picovoice key and file", isExpanded: $showOwnSetup) { setup }
+                    .accessibilityIdentifier("settings.heyDoddy.ownSetup")
             }
             if let problem {
                 Label(problem, systemImage: "exclamationmark.triangle")
@@ -96,9 +108,11 @@ struct HeyDoddySettingsSection: View {
 
     private var explanation: String {
         "When you say \u{201C}Hey Doddy\u{201D}, a conversation starts and the Dynamic Island says \u{201C}\(greeting)\u{201D} (the name comes from Doddy's personality, then About you). "
-            + "To set it up, make a free Picovoice account, copy your AccessKey, and train the wake phrase \u{201C}Hey Doddy\u{201D} for iOS in English; download the .ppn file to this iPhone and choose it here. "
+            + (oneTap
+                ? "Turn it on and allow the microphone; that's all. The first time, Doddy gets the wake word key from its token server with your access code and keeps it on this iPhone. "
+                : "To set it up, make a free Picovoice account, copy your AccessKey, and train the wake phrase \u{201C}Hey Doddy\u{201D} for iOS in English; download the .ppn file to this iPhone and choose it here. ")
             + "The microphone can only start while Doddy is open. It then keeps listening when you leave the app, with iOS's orange microphone dot and the island showing, until you tap Stop listening on the island, turn this off, Low Power Mode comes on, a call or another app takes the microphone, or iOS closes Doddy. After a restart, open Doddy again. "
-            + "It listens on this iPhone; what it hears isn't kept or sent. Picovoice gets your AccessKey to check it. Only after the wake word does sound go to ElevenLabs, as when you tap Talk. "
+            + "It listens on this iPhone; what it hears isn't kept or sent. Picovoice gets the AccessKey to check it. Only after the wake word does sound go to ElevenLabs, as when you tap Talk. "
             + "It uses battery, and it can wake up by mistake (TV, similar words): a conversation that hears nothing from you ends after \(Int(WakeGate.silentWakeTimeout)) seconds, and after \(WakeGate.maxWakeUpsPerHour) wake-ups in an hour it rests until the hour has passed. Each conversation counts toward the ElevenLabs minutes."
     }
 
