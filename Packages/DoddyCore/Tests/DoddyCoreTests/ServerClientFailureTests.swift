@@ -105,6 +105,18 @@ final class ServerClientFailureTests: XCTestCase {
         }
     }
 
+    func testParallelFirstUsesCreateOneAccount() async throws {
+        let transport = SlowAccountTransport()
+        let store = FixedCredentials()
+        let client = DoddyServerClient(transport: transport, credentials: store)
+        async let first = client.phoneStatus()
+        async let second = client.phoneStatus()
+        _ = try await (first, second)
+        let created = await transport.accountsCreated
+        XCTAssertEqual(created, 1)
+        XCTAssertEqual(try store.load(), "tok1")
+    }
+
     func testOnlyErrorsBeforeTheRequestLeftCountAsNotSent() {
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.notConnectedToInternet)))
         XCTAssertTrue(ServerTransportFailure.certainlyNotSent(URLError(.cannotConnectToHost)))
@@ -125,6 +137,21 @@ actor StepTransport: ServerTransport {
         sent.append(request)
         guard !steps.isEmpty else { throw URLError(.notConnectedToInternet) }
         return try steps.removeFirst().get()
+    }
+}
+
+/// Takes a while to create an account, so a second first use arrives while the first is waiting.
+private actor SlowAccountTransport: ServerTransport {
+    private(set) var accountsCreated = 0
+
+    func send(_ request: ServerRequest) async throws -> ServerResponse {
+        guard request.path == "/v1/accounts" else {
+            return ServerResponse(status: 200, body: Data(#"{"phone":null,"smsEnabled":false,"optedOut":false}"#.utf8))
+        }
+        accountsCreated += 1
+        let token = "tok\(accountsCreated)"
+        try await Task.sleep(for: .milliseconds(200))
+        return ServerResponse(status: 201, body: Data(#"{"accountId":"a","deviceToken":"\#(token)"}"#.utf8))
     }
 }
 

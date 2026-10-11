@@ -192,6 +192,8 @@ public actor DoddyServerClient {
     private let credentials: any ServerCredentialStore
     /// Idempotency keys of updates not yet accepted by the server, by text and channels.
     private var pendingUpdateKeys: [UpdateBody: String] = [:]
+    /// The account being created right now, if any (see `ensureAccount`).
+    private var accountCreation: Task<String, any Error>?
 
     public init(transport: any ServerTransport, credentials: any ServerCredentialStore) {
         self.transport = transport
@@ -201,9 +203,19 @@ public actor DoddyServerClient {
     public func hasAccount() -> Bool { (try? credentials.load()) != nil }
 
     /// Creates the anonymous account on first use (no email, no name) and keeps its token.
+    /// Callers that arrive while it is being created wait for that one account: the actor is
+    /// reentrant across the request, and a second POST would leave an orphaned account.
     @discardableResult
     public func ensureAccount() async throws -> String {
         if let token = try credentials.load() { return token }
+        if let accountCreation { return try await accountCreation.value }
+        let creation = Task { try await self.createAccount() }
+        accountCreation = creation
+        defer { accountCreation = nil }
+        return try await creation.value
+    }
+
+    private func createAccount() async throws -> String {
         let response = try await send(.post, "/v1/accounts", body: nil, token: nil)
         guard response.status == 201,
               let created = try? JSONDecoder().decode(CreatedAccount.self, from: response.body)
