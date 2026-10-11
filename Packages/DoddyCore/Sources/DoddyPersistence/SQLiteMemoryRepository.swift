@@ -202,37 +202,52 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     /// (`MemoryHistory.consistent`); otherwise the note is added without them. Notes already
     /// here keep their own history.
     public func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord] {
-        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
-        return try await dbQueue.write { db in
-            var added: [MemoryRecord] = []
-            for record in records where record.source != .sampleFixture {
-                try db.execute(
-                    sql: """
-                        INSERT INTO memories (id, raw_text, current_text, category, source, captured_at_ms,
-                                              updated_at_ms, user_edited, search_text, schema_version)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ON CONFLICT(id) DO NOTHING
-                        """,
-                    arguments: [
-                        record.id.uuidString, record.rawText, record.currentText, record.category.rawValue,
-                        record.source.rawValue, record.capturedAt.map(Self.exportedMilliseconds),
-                        record.updatedAt.map(Self.exportedMilliseconds), record.userEdited,
-                        SearchFolding.fold(record.currentText), MemoryRecord.schemaVersion,
-                    ])
-                guard db.changesCount > 0 else { continue }
-                // Throwing here rolls the whole transaction back: nothing from the file is kept.
-                guard try Self.fetch(record.id, db) == record else { throw MemoryStoreError.verificationFailed }
-                let history = byNote[record.id] ?? []
-                if MemoryHistory.consistent(record, history) {
-                    for correction in history { try Self.insert(correction, db) }
-                    guard try Self.corrections(record.id, db) == history.sorted(by: { $0.number < $1.number }) else {
-                        throw MemoryStoreError.verificationFailed
-                    }
-                }
-                added.append(record)
-            }
-            return added
+        try await dbQueue.write { db in try Self.restore(records, corrections: corrections, db) }
+    }
+
+    /// Notes, their corrections and the items of the lists among them in one transaction, so a
+    /// failure anywhere keeps nothing from the file. Items of a list already here are not added.
+    public func restore(
+        _ records: [MemoryRecord], corrections: [MemoryCorrection], listItems: [ListItem]
+    ) async throws -> (records: [MemoryRecord], listItems: [ListItem]) {
+        try await dbQueue.write { db in
+            let added = try Self.restore(records, corrections: corrections, db)
+            let newLists = Set(added.filter { $0.category == .list }.map(\.id))
+            let items = try SQLiteListRepository.restore(listItems.filter { newLists.contains($0.listID) }, db)
+            return (added, items)
         }
+    }
+
+    private static func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection], _ db: Database) throws -> [MemoryRecord] {
+        let byNote = Dictionary(grouping: corrections, by: \.memoryID)
+        var added: [MemoryRecord] = []
+        for record in records where record.source != .sampleFixture {
+            try db.execute(
+                sql: """
+                    INSERT INTO memories (id, raw_text, current_text, category, source, captured_at_ms,
+                                          updated_at_ms, user_edited, search_text, schema_version)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(id) DO NOTHING
+                    """,
+                arguments: [
+                    record.id.uuidString, record.rawText, record.currentText, record.category.rawValue,
+                    record.source.rawValue, record.capturedAt.map(Self.exportedMilliseconds),
+                    record.updatedAt.map(Self.exportedMilliseconds), record.userEdited,
+                    SearchFolding.fold(record.currentText), MemoryRecord.schemaVersion,
+                ])
+            guard db.changesCount > 0 else { continue }
+            // Throwing here rolls the whole transaction back: nothing from the file is kept.
+            guard try Self.fetch(record.id, db) == record else { throw MemoryStoreError.verificationFailed }
+            let history = byNote[record.id] ?? []
+            if MemoryHistory.consistent(record, history) {
+                for correction in history { try Self.insert(correction, db) }
+                guard try Self.corrections(record.id, db) == history.sorted(by: { $0.number < $1.number }) else {
+                    throw MemoryStoreError.verificationFailed
+                }
+            }
+            added.append(record)
+        }
+        return added
     }
 
     // MARK: Helpers
