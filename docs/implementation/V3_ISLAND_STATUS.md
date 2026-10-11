@@ -59,3 +59,63 @@ Linux only: capability guard passes (now also scans `DoddyWidgets/`, `Shared/`, 
 | `swiftc -parse` on every file in `DoddyApp/`, `DoddyWidgets/`, `Shared/`, `DoddyTests/`, `DoddyUITests/` | PASS, 27 files (syntax only; ActivityKit/WidgetKit/SwiftUI cannot be type-checked on Linux) |
 | `Config/*.plist` | parse as valid plists |
 | iOS app build, widget extension build, unit + UI tests | **NOT RUN** (no Xcode here) — items 1–10 above are the owner's device checklist |
+
+## Go live (2026-10-10, owner: "go live with dynamic island")
+
+**Where it stands.** The island is not behind a flag, a setting or the offline fixture: every real
+conversation drives it (`VoiceSessionController.syncIsland`, from `phase`, `pendingAction` and
+`isMuted`). There is nothing left to switch on in code. What stops it from being called live is
+evidence: the current line has never been compiled with Xcode, and the one Mac run on an earlier
+revision (`NATIVE_BASELINE_REPORT.md`, iOS 27 simulator) rendered the island but left the system
+**Unmute** button red; the fix for that (ADR-131: `allowedExecutionTargets = .main` on iOS 27+) has not
+been compiled or run since.
+
+**Done in this session (Linux, no Xcode).**
+- The two island intents now log which process performed them and whether a conversation handler was
+  there (`IslandIntentLog`, `Shared/VoiceActivity/VoiceActivityIntents.swift`; Console subsystem
+  `com.bienos.doddy2`, category `island`). This is the step ADR-131 named for a red re-run: it tells
+  "iOS routed the tap to the widget extension" apart from "the handler was never registered" and
+  "nothing ran". Only the bundle identifier and a yes/no are logged, never conversation content.
+- Hosted macOS CI (ADR-123) is recorded as never having started a step: all 58 runs, the Ubuntu job
+  included, fail in seconds with no runner and no logs (`BUILD_AND_TEST.md`). Fixing that is an
+  account setting (billing or Actions policy), not a workflow change.
+- PR #9 ("V3: Dynamic Island Live Activity…", branch `claude/admiring-bohr-0xn7fa`) is an earlier,
+  superseded cut of this feature: different types (`DoddyShared`, `VoiceActivityBridge`), ADR numbers
+  038–041 that now belong to other decisions, and a stricter rule (conversation ends when the Live
+  Activity is not showing) that ADR-054 replaced. Merging it would conflict and regress; it should be
+  closed, not merged.
+
+**Owner steps to go live, in order.**
+1. Make the Mac build run: either get a hosted run to start (see `BUILD_AND_TEST.md`, "Hosted macOS
+   CI") or build locally: `git pull`, `make project`, set **Team** on `Doddy` and `DoddyWidgets`.
+2. Run `DoddyTests/IslandBaselineTests` (4 tests) and
+   `DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd` on an
+   iPhone simulator with a Dynamic Island. Green = ADR-131 holds. Red = read the `island` Console
+   line: "`…widgets`" means the pin did not route and the fallback is a Darwin-notification relay from
+   the extension to the app (separate ticket, not built); "handler: no" in the app process means the
+   handler path, not routing.
+3. Device checks 1–14 above on an iPhone 14 Pro or later, with the owner's ElevenLabs agent (paid
+   minutes): especially 3 (2+ minutes in another app), 8–9 (stale and heartbeat) and 13 (ended card).
+4. Only then change the ADR-053/055/106/131 rows from "unbuilt" to built, with the date, Xcode and
+   device, and record the results in `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`.
+
+**Still not "live" after that:** no TestFlight or App Store build, the dev agent is public (ADR-034),
+no legal review, and the background-audio behaviour on a real iPhone (research §3's ~50 s reports)
+is unknown until step 3.
+
+### Verified on Linux — 2026-10-10 (this session)
+| Step | Result |
+|---|---|
+| Environment | Ubuntu 24.04 x86_64, Swift 6.1.2 toolchain (downloaded for this run; not part of the repo), Node 22.22 |
+| `scripts/ci.sh --core-only` | PASS: pack integrity, capability guard, voice and phone agent specs, blog pages, Swift package tests (371 tests, 0 failures), app logic type-check (8 files), voice token server 63, backend, gateway, messaging server 13 (database tests SKIPPED: no `TEST_DATABASE_URL`) |
+| `scripts/check_forbidden_capabilities.sh` after the intent change | PASS (`import os` and the log line are allowed; no new permission, no networking) |
+| `swiftc -parse -swift-version 6` on every file in `DoddyApp/`, `DoddyWidgets/`, `Shared/`, `DoddyTests/`, `DoddyUITests/` | PASS, 85 files (syntax only) |
+| iOS app build, widget extension build, unit + UI tests, device checks | **NOT RUN** (no Xcode here; hosted CI never starts) |
+
+### Constitution evidence log (docs/trust/config/doddy_rules.yaml)
+| Rule | What enforces it here | Tests run (Linux) | Gaps / claims to limit |
+|---|---|---|---|
+| DOD-08 verified_status_and_receipts | The island shows only states from SDK events; a stale date (90 s) and heartbeat (40 s) make it say "Lost Doddy" instead of "Listening" when the app is gone (ADR-055); "Conversation ended" carries the saved count from actual Save taps | None runnable on Linux (`IslandBaselineTests` need a simulator) | Not compiled; device behaviour unknown |
+| DOD-07 scoped_action_approval | Mute and End are the only island actions; both run the conversation's own handlers; nothing is saved or sent from the island; "Confirm in Doddy" sends the user to the on-screen card | — | — |
+| DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
+| Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
