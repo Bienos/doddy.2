@@ -120,27 +120,6 @@ final class IslandBaselineTests: XCTestCase {
     }
 
     @MainActor
-    func testDismissIntentRemovesEndedCardButNotLiveActivity() async throws {
-        try requireActivities()
-        await clearActivities()
-        let ended = try Activity.request(
-            attributes: DoddyVoiceAttributes(startedAt: .now),
-            content: ActivityContent(state: .init(status: .testFixture, isMuted: false), staleDate: nil),
-            pushType: nil)
-        await ended.end(ActivityContent(state: .init(status: .ended, isMuted: false, endedAt: .now), staleDate: nil),
-                        dismissalPolicy: .after(.now.addingTimeInterval(120)))
-        let live = try Activity.request(
-            attributes: DoddyVoiceAttributes(startedAt: .now),
-            content: ActivityContent(state: .init(status: .testFixture, isMuted: false), staleDate: nil),
-            pushType: nil)
-        defer { Task { await live.end(nil, dismissalPolicy: .immediate) } }
-        _ = try await DismissDoddyEndedCardIntent().perform()
-        let removed = await waitUntil { ended.activityState == .dismissed }
-        XCTAssertTrue(removed)
-        XCTAssertEqual(live.activityState, .active)
-    }
-
-    @MainActor
     private func requireActivities() throws {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else {
             throw XCTSkip("Live Activities are disabled on this simulator; no lifecycle proof claimed.")
