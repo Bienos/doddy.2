@@ -79,6 +79,8 @@ struct MemoryDetailView: View {
                     }
                     .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("detail.pin")
+                    // On-device speech of this note's words; the island shows no text (ADR-243).
+                    ReadAloudButton(record: record)
                     Button { copy(record) } label: {
                         HStack { Text(copied ? "Copied" : "Copy text"); Spacer(); Image(systemName: copied ? "checkmark" : "doc.on.doc") }
                     }.buttonStyle(SecondaryButtonStyle())
