@@ -178,6 +178,15 @@ final class TranslatorTests: XCTestCase {
         XCTAssertNil(CarefulTopics.topic(in: "¿Me lleva a la plaza?"))
     }
 
+    func testCarefulTopicsSkipEverydayLookalikes() {
+        XCTAssertNil(CarefulTopics.topic(in: "I speak Polish."))
+        XCTAssertNil(CarefulTopics.topic(in: "What is your refund policy?"))
+        XCTAssertNil(CarefulTopics.topic(in: "Another pillow, please."))
+        XCTAssertEqual(CarefulTopics.topic(in: "Take two pills."), .health)
+        XCTAssertEqual(CarefulTopics.topic(in: "Ring polisen nu."), .law)
+        XCTAssertEqual(CarefulTopics.topic(in: "Zavolejte policie."), .law)
+    }
+
     func testSessionKeepsTurnsCarefulModeAndTheFiveMinuteSummary() throws {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         var session = TranslatorSession(setup: faceToFace(), startedAt: start)

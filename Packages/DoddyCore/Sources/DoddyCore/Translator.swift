@@ -663,9 +663,14 @@ public enum CarefulTopics {
         ],
     ]
 
+    /// Everyday words a stem would wrongly catch ("polis", "polic", "policie", "pill").
+    static let notTopics: Set<String> = [
+        "polish", "polished", "polishing", "policy", "policies", "pillow", "pillows",
+    ]
+
     /// The first topic heard in the text, health first.
     public static func topic(in text: String) -> Topic? {
-        let words = text.lowercased().split { !$0.isLetter }.map(String.init)
+        let words = text.lowercased().split { !$0.isLetter }.map(String.init).filter { !notTopics.contains($0) }
         for topic in [Topic.health, .law, .money] {
             let list = stems[topic] ?? []
             if words.contains(where: { word in list.contains { stem in
