@@ -46,7 +46,7 @@ extension VoiceToolReply {
                 if receipt?.errorCode == "confirmation_required" {
                     return "failed: the confirmation expired before it was used. Nothing was done. Offer to try again."
                 }
-                // A repeat of a confirmation whose first run may have gone through (ADR-312).
+                // A repeat of a confirmation whose first run may have gone through (ADR-322).
                 if receipt?.errorCode == "earlier_outcome_unknown" || receipt?.status == .outcomeUnknown { return maybeDone }
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
             case "not_connected", "connection_expired", "permission_insufficient":
@@ -62,6 +62,9 @@ extension VoiceToolReply {
             case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask:
                 // Refused before any card (ADR-303): Todoist doesn't have that open task.
                 return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
+            case "not_found" where tool == CloudToolName.draftEmailReply:
+                // Refused before any card: no email matched, or its sender has no usable address.
+                return "not found: no email matched that search, or the newest match has no sender address Doddy can reply to. No draft was created. Ask the user which email they meant."
             case "malformed_provider_result":
                 return isWrite ? maybeDone : "failed: \(account) sent an answer Doddy couldn't read, so there is nothing to report."
             default:

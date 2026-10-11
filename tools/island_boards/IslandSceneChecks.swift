@@ -275,10 +275,16 @@ enum IslandSceneChecks {
         func expect(_ ok: Bool, _ message: String) {
             if !ok { print("FAIL: voice screen: \(message)"); failures += 1 }
         }
-        func art(_ phase: VoiceScreenArt.Phase, muted: Bool = false, waiting: Bool = false) -> VoiceScreenArt {
-            VoiceScreenArt.shown(phase, muted: muted, awaitingConfirmation: waiting)
+        func art(_ phase: VoiceScreenArt.Phase, muted: Bool = false, waiting: Bool = false, plan: Bool = false) -> VoiceScreenArt {
+            VoiceScreenArt.shown(phase, muted: muted, awaitingConfirmation: waiting, planRunning: plan)
         }
-        expect(art(.connecting) == .pose(.yawnStretch), "connecting")
+        // In the app he walks in while connecting and runs while a plan's steps run (ADR-313).
+        expect(art(.connecting) == .motion(.walk), "connecting walks")
+        expect(art(.listening, plan: true) == .motion(.run), "a plan runs")
+        expect(art(.thinking, plan: true) == .motion(.run), "a plan runs while thinking")
+        expect(art(.speaking, plan: true) == .talking, "talking beats running")
+        expect(art(.listening, waiting: true, plan: true) == .pose(.reachingHigh), "a card waiting beats running")
+        expect(art(.connecting, plan: true) == .motion(.walk), "connecting before any plan")
         expect(art(.listening) == .pose(.listening), "listening")
         expect(art(.thinking) == .pose(.kneelingInspect), "thinking")
         expect(art(.speaking) == .talking, "speaking talks")
@@ -288,8 +294,7 @@ enum IslandSceneChecks {
         expect(art(.failed, muted: true) == .pose(.facepalm), "failed beats muted")
         expect(art(.microphoneOff) == .pose(.shush), "no microphone")
         // The same poses as the island for the same moments (ADR-264).
-        let pairs: [(VoiceScreenArt.Phase, State.Status)] = [(.connecting, .connecting), (.listening, .listening),
-                                                              (.thinking, .thinking)]
+        let pairs: [(VoiceScreenArt.Phase, State.Status)] = [(.listening, .listening), (.thinking, .thinking)]
         for (phase, status) in pairs {
             let island = State(status: status, isMuted: false).wholeDoddyPose(stale: false)
             expect(art(phase) == .pose(island ?? .wave), "\(phase) matches the island")
@@ -301,6 +306,30 @@ enum IslandSceneChecks {
         expect(VoiceScreenArt.talkingFrame(at: -5) == 1, "a time before zero")
         let box = VoiceScreenArt.talkingFigure
         expect(box.x >= 0 && box.y >= 0 && box.x + box.width <= 1 && box.y + box.height <= 1, "talking box")
+        failures += motions()
+        return failures
+    }
+
+    /// The strips (ADR-313): loops loop, once-only strips rest on their last frame, every box fits.
+    static func motions() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: motion: \(message)"); failures += 1 }
+        }
+        let walk = DoddyMotion.walk, d = walk.frameDuration
+        expect((0..<17).map { walk.frame(at: Double($0) * d + d / 2) } == Array(1...8) + Array(1...8) + [1], "walk loops")
+        let pop = DoddyMotion.pop
+        expect(pop.frame(at: 0) == 1 && pop.frame(at: pop.duration + 5) == 4, "pop plays once and rests on frame 4")
+        expect(DoddyMotion.jump.frame(at: 100) == 5 && DoddyMotion.jump.stillFrame == 5, "jump ends standing")
+        expect(DoddyMotion.run.stillFrame == 1 && DoddyMotion.walk.stillFrame == 1, "a loop's still is its first frame")
+        expect(DoddyMotion.turn.frames == [3] && DoddyMotion.turn.frame(at: 9) == 3, "turn is frame 3 only")
+        expect(DoddyMotion.idle.frame(at: -1) == 1, "a time before zero")
+        expect(DoddyMotion.allCases.filter(\.loops) == [.walk, .run], "only walk and run loop")
+        for m in DoddyMotion.allCases {
+            let b = m.figure
+            expect(b.x >= 0 && b.y >= 0 && b.x + b.width <= 1 && b.y + b.height <= 1 && b.height > 0.5, "\(m) box")
+            expect(m.duration < 3, "\(m) is short")
+        }
         return failures
     }
 
@@ -349,8 +378,24 @@ enum IslandSceneChecks {
         var leanIn = DoddyToolAttributes.ContentState(isPaused: false)
         leanIn.islandStyle = .leanIn
         expect(read.islandScene(leanIn, isStale: false, now: now).pose == nil, "lean in keeps the board")
-        expect(focus.islandScene(.init(isPaused: false, endsAt: end, islandStyle: .wholeDoddy), isStale: false, now: now).pose == nil,
-               "focus keeps its board")
+        // Focus dribbles and breathing balances (ADR-313); paused waits, done is the fist pump.
+        let wholeFocus = { (s: DoddyToolAttributes.ContentState, stale: Bool) in
+            var s = s
+            s.islandStyle = .wholeDoddy
+            return focus.islandScene(s, isStale: stale, now: now).pose
+        }
+        expect(wholeFocus(.init(isPaused: false, endsAt: end), false) == .basketballDribble, "focus dribbles")
+        expect(wholeFocus(.init(isPaused: true, endsAt: nil, remaining: 300), false) == .crosslegged, "focus paused")
+        expect(wholeFocus(.init(isPaused: false, endsAt: end), true) == .fistpump, "focus time up")
+        var breathe = DoddyToolAttributes.ContentState(isPaused: false, endsAt: end)
+        breathe.islandStyle = .wholeDoddy
+        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .onelegBalance, "breathing balances")
+        breathe.isFinished = true
+        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .fistpump, "breathing done")
+        expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).pose == nil,
+               "focus without a style keeps its board")
+        expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).board == .tinyPromise,
+               "focus board unchanged")
         // Content from an older build (no style) still decodes.
         let old = Data(#"{"isPaused":false,"remaining":0,"isFinished":false}"#.utf8)
         let decoded = try? JSONDecoder().decode(DoddyToolAttributes.ContentState.self, from: old)

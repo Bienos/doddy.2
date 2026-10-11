@@ -70,10 +70,10 @@ public struct ActivityRequest: Equatable, Sendable {
     public let isLookup: Bool
     /// Set for reminders, so "Check" can look for exactly this reminder later.
     public let reminderKey: String?
-    /// The same change asked again has the same key (ADR-309, ADR-310): new reminders, events,
+    /// The same change asked again has the same key (ADR-319, ADR-320): new reminders, events,
     /// timers and alarms, whose adds look first and so can be retried safely. Nil for everything else.
     public let operationKey: String?
-    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-311).
+    /// For notes and lists: what Doddy looks for in its own database to settle an unsure entry (ADR-321).
     public let check: ActivityCheck?
 
     public init(
@@ -151,7 +151,7 @@ public struct ActivityRequest: Equatable, Sendable {
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
-            // Writes carry a key (ADR-312): a hash of the tool and its arguments, never the words.
+            // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
             return ActivityRequest(app: request.app, title: request.title, detail: request.detail, isLookup: request.isLookup, operationKey: key)
         case .addToList(let request):
@@ -188,6 +188,14 @@ public struct ActivityRequest: Equatable, Sendable {
             if draft.addNote != nil { parts.append("add a note") }
             if let priority = draft.priority { parts.append(priority.text) }
             if let list = draft.listName { parts.append("to the list “\(list)”") }
+            // ADR-314: the new title is the user's own words; notes text is not kept.
+            if let title = draft.newTitle { parts.append("rename to “\(title)”") }
+            if let text = draft.replaceNotes { parts.append(text.isEmpty ? "clear notes" : "replace notes") }
+            switch draft.repeatChange {
+            case .set(let rule)?: parts.append("repeat \(rule.text)")
+            case .stop?: parts.append("stop repeating")
+            case nil: break
+            }
             let what = parts.joined(separator: ", ")
             return ActivityRequest(app: .reminders, title: "Change reminder", detail: "“\(draft.title)” · \(what)", isLookup: false)
         case .deleteCalendarEvent(let draft):
@@ -231,6 +239,8 @@ public struct ActivityRequest: Equatable, Sendable {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
         case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
+        case CloudToolName.draftEmailReply: ActivityRequest(app: .gmail, title: "Create a reply draft", detail: nil, isLookup: false)
+        case CloudToolName.readNotionPage: ActivityRequest(app: .notion, title: "Read a Notion page", detail: nil, isLookup: true)
         case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
         case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)
         case CloudToolName.findDriveFile: ActivityRequest(app: .drive, title: "Looked for a file", detail: nil, isLookup: true)
@@ -276,14 +286,14 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public let undo: ActivityUndo?
     /// Set after the user tapped Undo.
     public var undoState: UndoState?
-    // ADR-309. All optional, so entries saved before them still load.
+    // ADR-319. All optional, so entries saved before them still load.
     /// The same change asked again has the same key (`ActivityRequest.operationKey`).
     public let operationKey: String?
     /// What the app read back. Only ever kept on a confirmed entry.
     public private(set) var receipt: ActivityReceipt?
     /// True when the app was asked to write; false when Doddy stopped before writing. Nil when not known.
     public let attempted: Bool?
-    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-311).
+    /// For notes and lists: what Doddy looks for to settle it if unsure (ADR-321).
     public let check: ActivityCheck?
     private var statusHistory: [ActivityStatusChange]?
 
@@ -348,10 +358,10 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         return entry
     }
 
-    /// Typed status (ADR-309). Nil for look-ups.
+    /// Typed status (ADR-319). Nil for look-ups.
     public var status: ActionStatus? { outcome.status }
 
-    /// How the status moved, oldest first. Entries saved before ADR-309 show their one known status.
+    /// How the status moved, oldest first. Entries saved before ADR-319 show their one known status.
     public var history: [ActivityStatusChange] {
         if let statusHistory { return statusHistory }
         return status.map { [ActivityStatusChange(status: $0, at: at)] } ?? []
@@ -395,7 +405,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
-        // Found already there when Doddy looked first (ADR-309, ADR-310): nothing new was written.
+        // Found already there when Doddy looked first (ADR-319, ADR-320): nothing new was written.
         let foundFirst = ["already in Reminders", "already in Calendar", "was already set", "was already running", "from the earlier try, so Doddy did not do it"]
         if text.hasPrefix("saved:"), text.contains("was already saved from the earlier try") { return (.alreadyThere, nil) }
         if text.hasPrefix("added:"), foundFirst.contains(where: text.contains) {

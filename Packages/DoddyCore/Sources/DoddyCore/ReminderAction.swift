@@ -313,9 +313,13 @@ public struct ReminderSnapshot: Equatable, Sendable {
     public let priority: ReminderPriority
     /// The list's identifier on this iPhone; nil when not read.
     public let listID: String?
+    /// The notes, read on this iPhone for the card and the stale check of a replace (ADR-314).
+    /// Never sent to the voice agent.
+    public let notes: String?
 
     public init(id: String, title: String, listTitle: String, due: ReminderDue?, markerURL: String?, isCompleted: Bool = false,
-                repeats: CalendarRepeat? = nil, priority: ReminderPriority = .none, listID: String? = nil) {
+                repeats: CalendarRepeat? = nil, priority: ReminderPriority = .none, listID: String? = nil, notes: String? = nil) {
+        self.notes = notes
         self.repeats = repeats
         self.priority = priority
         self.listID = listID
@@ -386,7 +390,7 @@ public struct ReminderReceipt: Equatable, Sendable {
     public let listTitle: String
     public let due: ReminderDue?
     public let repeats: CalendarRepeat?
-    /// Reminders' own identifier for it (ADR-309). Stays on this iPhone; never sent to the agent.
+    /// Reminders' own identifier for it (ADR-319). Stays on this iPhone; never sent to the agent.
     public let id: String?
 
     public init(title: String, listTitle: String, due: ReminderDue?, repeats: CalendarRepeat? = nil, id: String? = nil) {
@@ -559,7 +563,7 @@ extension VoiceToolReply {
         case .notAdded(.saveFailed(let reason)):
             return notAdded(reason)
         case .unknown:
-            // Asking again is safe: ReminderAction looks before it writes (ADR-309).
+            // Asking again is safe: ReminderAction looks before it writes (ADR-319).
             return unconfirmedLooksFirst(app: .reminders, tool: VoiceToolName.createReminder)
         case .needsClarification(let clarification):
             return reminderClarification(clarification)

@@ -68,7 +68,7 @@ grants acceptable → (writes) approval → limits → provider call → normali
 write first calls `/v1/tools/prepare`, which returns the preview and a single-use approval for exactly those arguments;
 the app shows the card; the tap sends `/v1/tools/run` with that approval.
 
-**What happened to each approval (ADR-312).** An approval still runs at most once. Its outcome is recorded on it:
+**What happened to each approval (ADR-322).** An approval still runs at most once. Its outcome is recorded on it:
 succeeded with the provider's id (Gmail draft id, Todoist task id), may-or-may-not (`outcome_unknown`), or failed.
 The email or task text is not stored; only the argument digest, as before.
 - A repeated `/run` with an approval that already **succeeded** gets the first answer again (`replayed: true`, the

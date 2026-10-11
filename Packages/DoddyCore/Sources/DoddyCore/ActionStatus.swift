@@ -1,6 +1,6 @@
 import Foundation
 
-// Action status model (OP-012 / OP-013, ADR-309). Every change Doddy makes in another app has:
+// Action status model (OP-012 / OP-013, ADR-319). Every change Doddy makes in another app has:
 //  - a typed status, where only `confirmed` counts as success, and only from the app's own read-back;
 //  - a receipt: what the app read back, and its own identifier for it;
 //  - a history of how the status moved (approved → running → not sure → checked: found);

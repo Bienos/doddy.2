@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-310: timers and alarms in the action status model. A timer or alarm Doddy couldn't
+/// ADR-320: timers and alarms in the action status model. A timer or alarm Doddy couldn't
 /// confirm is checked before it is tried again; "set" only when the iPhone lists it.
 /// Notifications and AlarmKit themselves are only exercised on a device.
 final class TimerAlarmActionsTests: XCTestCase {
@@ -43,7 +43,7 @@ final class TimerAlarmActionsTests: XCTestCase {
         let key = TimerIdempotency.key(eggs)
         let identifier = TimerIdempotency.identifier(key: key, id: UUID())
         XCTAssertEqual(TimerIdempotency.key(fromIdentifier: identifier), key)
-        XCTAssertNil(TimerIdempotency.key(fromIdentifier: "doddy.timer.\(UUID().uuidString)"), "timers set before ADR-310")
+        XCTAssertNil(TimerIdempotency.key(fromIdentifier: "doddy.timer.\(UUID().uuidString)"), "timers set before ADR-320")
         XCTAssertNil(TimerIdempotency.key(fromIdentifier: "other.\(key).x"))
     }
 

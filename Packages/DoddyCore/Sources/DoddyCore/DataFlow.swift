@@ -101,7 +101,7 @@ public enum DataFlow {
                     ? "Only while a conversation is open, and not while Home's test switch says OpenAI."
                     : "Only while a conversation is open.",
                 isActive: true,
-                note: "ElevenLabs keeps a recording and transcript of each conversation."),
+                note: "ElevenLabs keeps a recording and transcript of each conversation. Notes you mark Private are never sent."),
             DataFlowRow(
                 id: "openaiVoice", destination: "OpenAI (test voice)",
                 what: sentence(voice),
@@ -150,7 +150,7 @@ public enum DataFlow {
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Notion, Todoist via Composio)",
-                what: "What you ask for: a date, a search word, or the text of a draft or task you confirm. Never your saved notes.",
+                what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
                 when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet

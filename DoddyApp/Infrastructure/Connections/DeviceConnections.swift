@@ -135,7 +135,7 @@ final class DeviceConnections {
 
     /// Saves one event in the default calendar and returns it as read back with its identifier
     /// (which Undo uses, ADR-268), or nil when the read-back doesn't show it (or its repeat).
-    /// `EventAddAction` looks first and compares (CalendarEventWriter, ADR-309).
+    /// `EventAddAction` looks first and compares (CalendarEventWriter, ADR-319).
     func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
@@ -205,17 +205,20 @@ final class DeviceConnections {
         }
         // A new place (ADR-281) only if the place is still what the card showed.
         if plan.newLocation != nil, (event.location ?? "") != (plan.locationBefore ?? "") { return .changedElsewhere }
+        // Notes being replaced (ADR-314) must still be the ones the card showed.
+        if plan.replaceNotes != nil, (event.notes ?? "") != (plan.notesBefore ?? "") { return .changedElsewhere }
         var notes = event.notes
         if let line = plan.removeNote {
             guard let removed = EventChange.notes(event.notes, removing: line) else { return .changedElsewhere }
             notes = removed
         }
         if let line = plan.addNote { notes = EventChange.notes(notes, adding: line) }
+        if let text = plan.replaceNotes { notes = text.isEmpty ? nil : text }
         event.title = plan.after.title
         event.startDate = plan.after.start
         event.endDate = plan.after.end
         if let place = plan.newLocation { event.location = place.isEmpty ? nil : place }
-        if plan.addNote != nil || plan.removeNote != nil { event.notes = notes }
+        if plan.addNote != nil || plan.removeNote != nil || plan.replaceNotes != nil { event.notes = notes }
         try eventStore.save(event, span: .thisEvent)
         let itemID = event.calendarItemIdentifier
         let eventID = event.eventIdentifier
@@ -224,7 +227,7 @@ final class DeviceConnections {
                 && (found.title ?? "Untitled") == plan.after.title
                 && found.startDate == plan.after.start && found.endDate == plan.after.end
                 && (plan.newLocation.map { (found.location ?? "") == $0 } ?? true)
-                && (plan.addNote == nil && plan.removeNote == nil || (found.notes ?? "") == (notes ?? ""))
+                && (plan.addNote == nil && plan.removeNote == nil && plan.replaceNotes == nil || (found.notes ?? "") == (notes ?? ""))
         }
         return readBack ? .verified : .unconfirmed
     }
@@ -316,6 +319,13 @@ final class DeviceConnections {
         return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.location
     }
 
+    /// The event's notes, read on this iPhone for the card and the stale check (ADR-314). Never
+    /// sent to the voice agent.
+    func eventNotes(_ event: CalendarEventSummary) -> String? {
+        guard access(for: .calendar) == .granted else { return nil }
+        return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.notes
+    }
+
     private func rawEvents(from start: Date, to end: Date) -> [EKEvent] {
         let predicate = eventStore.predicateForEvents(withStart: start.addingTimeInterval(-60), end: end.addingTimeInterval(60), calendars: nil)
         return eventStore.events(matching: predicate)
@@ -403,8 +413,17 @@ final class DeviceConnections {
             // ADR-302: the priority and list must also still be as the card showed them.
             guard !reminder.isCompleted, ReminderPriority.from(eventKit: reminder.priority) == before.priority,
                   before.listID == nil || reminder.calendar?.calendarIdentifier == before.listID else { return .changedElsewhere }
+            // ADR-314: notes being replaced must still be the ones the card showed.
+            if details.replaceNotes != nil, (reminder.notes ?? "") != (before.notes ?? "") { return .changedElsewhere }
             if let newDue { moveDue(of: reminder, from: before.due, to: newDue) }
             if let line = details.addNote { reminder.notes = EventChange.notes(reminder.notes, adding: line) }
+            if let text = details.replaceNotes { reminder.notes = text.isEmpty ? nil : text }
+            if let title = details.newTitle { reminder.title = title }
+            switch details.repeatChange {
+            case .set(let rule)?: reminder.recurrenceRules = [Self.rule(rule, calendar: .current)]
+            case .stop?: reminder.recurrenceRules = nil
+            case nil: break
+            }
             if let priority = details.priority { reminder.priority = priority.eventKitValue }
             if let list = details.toList {
                 guard let target = eventStore.calendar(withIdentifier: list.id), target.allowsContentModifications else { return .changedElsewhere }
@@ -491,7 +510,8 @@ final class DeviceConnections {
             isCompleted: reminder.isCompleted,
             repeats: readRepeat(reminder.recurrenceRules, calendar: .current),
             priority: ReminderPriority.from(eventKit: reminder.priority),
-            listID: reminder.calendar?.calendarIdentifier)
+            listID: reminder.calendar?.calendarIdentifier,
+            notes: reminder.notes)
     }
 
     /// The Reminders lists Doddy may move a reminder to (ADR-302): names and identifiers only.
@@ -556,7 +576,7 @@ final class DeviceConnections {
     // MARK: Timers
 
     /// Schedules a local notification for the timer and reads it back from iOS to confirm.
-    /// Doddy's timers still waiting to ring (TimerWriter, ADR-310). The ring time is the one
+    /// Doddy's timers still waiting to ring (TimerWriter, ADR-320). The ring time is the one
     /// written into the notification when it was set, not recomputed from its trigger.
     func pendingTimers() async -> [PendingTimer] {
         await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in

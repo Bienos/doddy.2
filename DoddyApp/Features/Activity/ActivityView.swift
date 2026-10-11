@@ -36,8 +36,12 @@ struct ActivityView: View {
             }
             if activity.entries.isEmpty {
                 Section {
-                    Text("Nothing yet. When Doddy looks something up or adds something for you, it shows here.")
-                        .foregroundStyle(Theme.secondaryText)
+                    HStack(spacing: 14) {
+                        // Nothing yet: he waits, cross-legged (ADR-313).
+                        WholeDoddyView(pose: .crosslegged, height: 80)
+                        Text("Nothing yet. When Doddy looks something up or adds something for you, it shows here.")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
                 }
             }
             ForEach(days, id: \.day) { group in
@@ -63,7 +67,7 @@ struct ActivityView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
-        // Unsure notes and list changes are settled from Doddy's own database (ADR-311).
+        // Unsure notes and list changes are settled from Doddy's own database (ADR-321).
         .task {
             await store.reload()
             if store.hasLoaded, store.loadError == nil { activity.settleLocal(notes: store.memories, lists: store.lists) }
@@ -103,13 +107,17 @@ struct ActivityView: View {
             if let detail = entry.detail {
                 Text(detail).font(.subheadline)
             }
-            Text(entry.statusText(.current))
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(entry.undoState == nil ? color(entry.outcome) : Theme.secondaryText)
+            HStack(spacing: 6) {
+                // Undone (ADR-313): Doddy turned back, frame 3 of the pack's turn strip.
+                if case .undone? = entry.undoState { DoddyMotionView(motion: .turn, height: 28) }
+                Text(entry.statusText(.current))
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(entry.undoState == nil ? color(entry.outcome) : Theme.secondaryText)
+            }
             if let note = entry.note(.current) {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
             }
-            // What the app itself read back (ADR-309); kept only on confirmed entries.
+            // What the app itself read back (ADR-319); kept only on confirmed entries.
             if let receipt = entry.receipt {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Read back from \(receipt.app.title) at \(receipt.readAt.formatted(date: .omitted, time: .shortened))")

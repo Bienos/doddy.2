@@ -14,9 +14,12 @@ struct IslandArtCheck {
             for pose in IslandPose.allCases { print(pose.assetName) }
             return
         }
-        // ...and the voice screen's talking frames (ADR-299), in the app catalog only.
+        // ...and the voice screen's talking frames (ADR-299) and the strips (ADR-313), app catalog only.
         if args.contains("--talking-assets") {
             for frame in 1...VoiceScreenArt.talkingFrameCount { print(VoiceScreenArt.talkingAssetName(frame)) }
+            for motion in DoddyMotion.allCases {
+                for frame in motion.frames { print(motion.assetName(frame)) }
+            }
             return
         }
         let svgDir = args.firstIndex(of: "--svg").map { args[$0 + 1] }

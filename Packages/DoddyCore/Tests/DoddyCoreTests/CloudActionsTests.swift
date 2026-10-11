@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// ADR-312: online-account writes in the action status model. The server side (one run per
+/// ADR-322: online-account writes in the action status model. The server side (one run per
 /// confirmation, repeats answered from the first run, the look for a Todoist task) is tested in
 /// backend/test/tools.test.ts; this covers the phone: the contract, the one safe repeat, the log.
 final class CloudActionsTests: XCTestCase {
@@ -29,7 +29,7 @@ final class CloudActionsTests: XCTestCase {
         XCTAssertEqual(again.earlier?.status, .succeeded)
         XCTAssertEqual(again.preview.lines.last, "Doddy already did exactly this once in the last day.")
         XCTAssertNil(try fixture(PrepareResult.self, "prepare-result-draft").earlier)
-        // Answers from a server before ADR-312 have neither field.
+        // Answers from a server before ADR-322 have neither field.
         XCTAssertNil(try fixture(RunResult.self, "run-result-email").externalId)
     }
 

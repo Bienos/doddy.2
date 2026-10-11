@@ -76,7 +76,8 @@ struct MemoriesView: View {
                             // Pinned notes first (ADR-187), then the chosen order.
                             ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: MemoryFilter.apply(active, to: store.memories)))) { record in
                                 let isPinned = pins.isPinned(record.id)
-                                MemoryLinkCard(record: record, isPinned: isPinned)
+                                let hides = PrivateNotesStore.current().contains(record.id) && !AppLock.shared.privateUnlocked
+                                MemoryLinkCard(record: record, isPinned: isPinned, hidesText: hides)
                                     .contextMenu {
                                         // The same actions as on the note's screen, without opening it (ADR-188).
                                         Button {
@@ -85,11 +86,14 @@ struct MemoriesView: View {
                                         } label: {
                                             Label(isPinned ? "Unpin from the top" : "Pin to the top", systemImage: isPinned ? "pin.slash" : "pin")
                                         }
-                                        Button { UIPasteboard.general.string = record.currentText } label: {
-                                            Label("Copy text", systemImage: "doc.on.doc")
-                                        }
-                                        ShareLink(item: record.currentText) {
-                                            Label("Share text", systemImage: "square.and.arrow.up")
+                                        // A private note's words only after Face ID (ADR-310).
+                                        if !hides {
+                                            Button { UIPasteboard.general.string = record.currentText } label: {
+                                                Label("Copy text", systemImage: "doc.on.doc")
+                                            }
+                                            ShareLink(item: record.currentText) {
+                                                Label("Share text", systemImage: "square.and.arrow.up")
+                                            }
                                         }
                                     }
                             }

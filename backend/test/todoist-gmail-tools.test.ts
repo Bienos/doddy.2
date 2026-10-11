@@ -174,7 +174,7 @@ test("move: the approval is bound to the task, the new date and the user, and wo
   assert.deepEqual(writes.map((w) => w.arguments), [{ task_id: "t1", due_string: "tomorrow 9am" }], "exactly the approved arguments, once");
 
   // Used once: a repeat (the phone lost the answer) gets the first answer back and runs nothing
-  // (ADR-312). It says only what is known without the task as it was: no title, no date.
+  // (ADR-322). It says only what is known without the task as it was: no title, no date.
   const lookups = () => rig.provider.executed.filter((e) => e.slug === "TODOIST_GET_TASK2").length;
   const lookupsBefore = lookups();
   const again = await run(rig, "move_todoist_task", args, { approvalId });
@@ -330,13 +330,13 @@ test("read_email says so when the text is missing, and never invents one", () =>
 
 const malformed = (e: unknown) => e instanceof ProviderError && e.code === "malformed_provider_result";
 const unavailable = (e: unknown) => e instanceof ProviderError && e.code === "provider_unavailable";
-const target = { title: "Pay rent", due: "today", recurring: false };
+const target = { kind: "task" as const, title: "Pay rent", due: "today", recurring: false };
 
 test("Todoist lookup: 404 is 'not found', other failures are errors, done or deleted tasks are 'not found'", () => {
   const read = COMPLETE_TODOIST_TASK.resolve!.read;
   const task = (extra: Record<string, unknown> = {}) => ({ successful: true, error: null, data: { id: "t1", content: "Pay rent", checked: false, is_deleted: false, ...extra } });
-  assert.deepEqual(read(task({ due: { string: "every month", date: "2026-11-01", is_recurring: true } }), { task_id: "t1" }), { title: "Pay rent", due: "every month", recurring: true });
-  assert.deepEqual(read(task(), { task_id: "t1" }), { title: "Pay rent", due: null, recurring: false });
+  assert.deepEqual(read(task({ due: { string: "every month", date: "2026-11-01", is_recurring: true } }), { task_id: "t1" }), { kind: "task", title: "Pay rent", due: "every month", recurring: true });
+  assert.deepEqual(read(task(), { task_id: "t1" }), { kind: "task", title: "Pay rent", due: null, recurring: false });
   assert.equal(read({ successful: false, data: {}, error: "404 Not Found" }, { task_id: "t1" }), null);
   assert.equal(read({ successful: false, data: {}, error: "Task not found" }, { task_id: "t1" }), null);
   assert.equal(read(task({ checked: true }), { task_id: "t1" }), null);

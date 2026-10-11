@@ -45,7 +45,7 @@ import {
 type SectionId = ToolkitId | typeof WEB_SECTION_ID;
 
 const APPROVAL_TTL_SECONDS = 120;
-/** How far back prepare looks for the same write (ADR-312). Approvals are kept a day past expiry. */
+/** How far back prepare looks for the same write (ADR-322). Approvals are kept a day past expiry. */
 const EARLIER_WINDOW_MS = 86_400_000;
 
 export interface ToolsServiceDeps {
@@ -415,7 +415,7 @@ export class CloudToolsService {
    * Writes only. Shows exactly what would happen and returns a single-use approval for those
    * arguments. A tool with a `resolve` lookup first reads its target from the provider (a read,
    * counted like one; never the write), shows that in the preview, and binds the approval to it too.
-   * If the same write ran in the last day, the card says so (ADR-312); after a try whose outcome is
+   * If the same write ran in the last day, the card says so (ADR-322); after a try whose outcome is
    * unknown, a write that can be looked for is looked for first.
    */
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
@@ -432,7 +432,7 @@ export class CloudToolsService {
       this.reserveRuns(userId, tool, now, 1);
       const composioUserId = this.store.composioUserId(userId, now);
       try {
-        target = await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id));
+        target = (await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id))).target;
       } catch (error) {
         throw this.failure(userId, tool, error, false);
       }
@@ -465,7 +465,7 @@ export class CloudToolsService {
   /**
    * After a try whose outcome is unknown: looks for the write with the tool's own read, only if
    * the user has that read switched on. True only when it is found; any failure or "not listed"
-   * is false, which proves nothing (ADR-312).
+   * is false, which proves nothing (ADR-322).
    */
   private async foundExisting(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, row: ConnectionRow, now: number): Promise<boolean> {
     const finder = tool.findExisting;
@@ -493,7 +493,7 @@ export class CloudToolsService {
 
   /**
    * A repeated run of an approval that was already used (the phone lost the answer): what happened
-   * the first time answers it, and nothing runs again (ADR-312). Null when it was never used.
+   * the first time answers it, and nothing runs again (ADR-322). Null when it was never used.
    */
   private repeatOfUsedApproval(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string): RunResult | null {
     // A tool with a lookup bound its approval to the target as it was then, which can't be read
@@ -529,22 +529,29 @@ export class CloudToolsService {
   }
 
   /**
-   * Reads a write's target (no retry beyond a read's one). Missing or already done: a refusal with
-   * a receipt, before any approval is made or used. Never runs the write itself.
+   * Reads a tool's target (no retry beyond a read's one). Never runs the write itself. For a write,
+   * missing or already done is a refusal with a receipt, before any approval is made or used. For
+   * a read, it is `{ missing }`: the caller says nothing matched instead of guessing.
    */
-  private async lookup(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, composioUserId: string, connectionId: string): Promise<ResolvedTarget> {
+  private async lookup(
+    userId: string,
+    tool: CloudToolDefinition,
+    args: Record<string, unknown>,
+    composioUserId: string,
+    connectionId: string,
+  ): Promise<{ target: ResolvedTarget; missing: null } | { target: null; missing: string }> {
     const lookup = tool.resolve!;
     const result = await this.withRetry(LOOKUP_RETRIES, (signal) =>
       this.provider.execute({ toolkit: tool.toolkit, slug: lookup.slug, composioUserId, connectionId, arguments: lookup.toArguments(args), signal }),
     );
-    const target = lookup.read(result.raw, args);
-    if (!target) {
-      throw new AppError("not_found", {
-        message: lookup.notFound,
-        receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${lookup.notFound}`, "not_found", result.providerReference),
-      });
-    }
-    return target;
+    const found = lookup.read(result.raw, args);
+    if (found !== null && found.kind !== "missing") return { target: found, missing: null };
+    const message = found?.message ?? lookup.notFound;
+    if (tool.risk === "read") return { target: null, missing: message };
+    throw new AppError("not_found", {
+      message,
+      receipt: this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", `Not done: ${message}`, "not_found", result.providerReference),
+    });
   }
 
   /** Reserves today's tool runs for this call, with a blocked receipt when a Doddy limit says no. */
@@ -616,18 +623,25 @@ export class CloudToolsService {
     }
     if (tool.risk === "write" && (tool.resolve ? request.approvalId === undefined : !approval(null, true))) throw unconfirmed();
 
-    // A lookup before the write counts as one more run, reserved together with the write.
+    // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
     this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
 
     const composioUserId = this.store.composioUserId(userId, now);
     let writeSent = false;
-    // Set once this run used up its approval, so its outcome is recorded against it (ADR-312).
+    // Set once this run used up its approval, so its outcome is recorded against it (ADR-322).
     let used: string | null = null;
     try {
       return await this.limiter.withSlot(userId, async () => {
         // The target is read again right before the write: if it is gone, done, or no longer what the
-        // card showed, the approval doesn't match and nothing is written.
-        const target = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
+        // card showed, the approval doesn't match and nothing is written. A read looks up what it opens.
+        const found = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
+        if (found?.missing) {
+          // Reads only (a write's miss throws): nothing matched, so the main slug isn't run.
+          const summary = tool.resolve!.missSummary ?? "Nothing matched.";
+          const receipt = this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", summary, null, null);
+          return { mode: this.mode, tool: tool.name, text: found.missing, count: 0, truncated: false, receipt };
+        }
+        const target = found?.target ?? null;
         // Used up here, once: a parallel run with the same approval loses the race and does nothing.
         if (tool.risk === "write" && !approval(target, false)) throw unconfirmed();
         writeSent = tool.risk === "write";
@@ -638,7 +652,7 @@ export class CloudToolsService {
             slug: tool.composioSlug,
             composioUserId,
             connectionId: row.connection_id,
-            arguments: tool.toArguments(args),
+            arguments: tool.toArguments(args, target),
             signal,
           }),
         );

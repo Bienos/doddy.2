@@ -1,4 +1,4 @@
-# Action status model: status (ADR-309, timers and alarms ADR-310, notes and lists ADR-311, online accounts ADR-312)
+# Action status model: status (ADR-319, timers and alarms ADR-320, notes and lists ADR-321, online accounts ADR-322)
 Date: 2026-10-11. Owner instruction: "start the action status model". This covers OP-012 (action receipts and status history) and OP-013 (recoverable failure and retry) from the research backlog.
 
 ## What was already there
@@ -69,7 +69,7 @@ Date: 2026-10-11. Owner instruction: "start the action status model". This cover
 - English/Polish on a device. The new screen strings are not in the Polish catalog yet; they show in English.
 - Mac checklist items AS1 to AS5.
 
-## Timers and alarms (ADR-310)
+## Timers and alarms (ADR-320)
 Owner instruction: "extend it to timers and alarms".
 
 - **Keys:**
@@ -114,7 +114,7 @@ Owner instruction: "extend it to timers and alarms".
   - how late AlarmKit lists a new alarm;
   - Mac checklist items AS6 to AS9.
 
-## Notes and lists (ADR-311)
+## Notes and lists (ADR-321)
 Owner instruction: "extend it to notes and lists".
 
 - **Why it differs:** notes and lists live in Doddy's own database, which is the truth about them. So Doddy settles an unsure entry itself instead of asking the user to check.
@@ -156,7 +156,7 @@ Owner instruction: "extend it to notes and lists".
     - the no-double-note look ignoring when the try was.
 - **NOT RUN:** on a device, and Mac checklist items AS10 to AS12.
 
-## Online accounts (ADR-312)
+## Online accounts (ADR-322)
 Owner instruction: "extend it to online accounts". Gmail drafts and Todoist tasks are made by Doddy's server (`backend/`), so most of this is on the server.
 
 ### What was wrong before

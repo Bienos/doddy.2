@@ -88,11 +88,11 @@ public struct PrepareResult: Codable, Equatable, Sendable {
     public let preview: ToolPreview
     public let approvalId: UUID
     public let expiresAt: String
-    /// The same write ran in the last day (ADR-312); nil otherwise and from older servers.
+    /// The same write ran in the last day (ADR-322); nil otherwise and from older servers.
     public let earlier: EarlierWrite?
 }
 
-/// What the server knows about an earlier run of the same write (ADR-312).
+/// What the server knows about an earlier run of the same write (ADR-322).
 public struct EarlierWrite: Codable, Equatable, Sendable {
     public enum Status: String, Codable, Sendable {
         case succeeded
@@ -113,7 +113,7 @@ public struct RunResult: Codable, Equatable, Sendable {
     public let text: String
     public let count: Int
     public let truncated: Bool
-    /// Writes: the provider's id for the draft or task (ADR-312). Stays on the phone.
+    /// Writes: the provider's id for the draft or task (ADR-322). Stays on the phone.
     public let externalId: String?
     /// True when the server answered a repeated run of an approval that already succeeded:
     /// nothing ran again.
@@ -152,13 +152,18 @@ public enum CloudToolName {
     public static let moveTodoistTask = "move_todoist_task"
     /// One whole email, the newest that matches, when the user asks (ADR-304). Off until switched on.
     public static let readEmail = "read_email"
+    /// A reply draft in the newest matching email's conversation (round 5). Never sent.
+    public static let draftEmailReply = "draft_email_reply"
+    /// One Notion page's text, the best match among pages shared with Doddy (round 5). Off until switched on.
+    public static let readNotionPage = "read_notion_page"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"
 
-    public static let all: Set<String> = [checkEmail, draftEmail, readEmail, findDriveFile, searchNotion, listTodoistTasks, addTodoistTask,
-                                          completeTodoistTask, moveTodoistTask, webSearch]
+    public static let all: Set<String> = [checkEmail, draftEmail, readEmail, draftEmailReply, findDriveFile, searchNotion,
+                                          readNotionPage, listTodoistTasks, addTodoistTask, completeTodoistTask,
+                                          moveTodoistTask, webSearch]
     /// These change something in the user's account and wait for a tap on the card.
-    public static let writes: Set<String> = [draftEmail, addTodoistTask, completeTodoistTask, moveTodoistTask]
+    public static let writes: Set<String> = [draftEmail, draftEmailReply, addTodoistTask, completeTodoistTask, moveTodoistTask]
 
     public static func isWrite(_ name: String) -> Bool { writes.contains(name) }
 
@@ -174,6 +179,8 @@ public enum CloudToolName {
         case completeTodoistTask: "Complete a task"
         case moveTodoistTask: "Move a task"
         case readEmail: "Read an email"
+        case draftEmailReply: "Draft a reply"
+        case readNotionPage: "Read a Notion page"
         case webSearch: "Search the web"
         default: name
         }
@@ -181,9 +188,9 @@ public enum CloudToolName {
 
     public static func account(_ name: String) -> String {
         switch name {
-        case checkEmail, draftEmail, readEmail: "Gmail"
+        case checkEmail, draftEmail, readEmail, draftEmailReply: "Gmail"
         case findDriveFile: "Google Drive"
-        case searchNotion: "Notion"
+        case searchNotion, readNotionPage: "Notion"
         case webSearch: "Web search"
         default: "Todoist"
         }

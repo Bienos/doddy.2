@@ -85,7 +85,7 @@ export const PrepareResultSchema = z
     approvalId: z.string().uuid(),
     expiresAt: z.string(),
     /**
-     * ADR-312: the same write (same arguments) already ran in the last day. `succeeded`: it went
+     * ADR-322: the same write (same arguments) already ran in the last day. `succeeded`: it went
      * through. `outcome_unknown`: it may have. `found`: it may have, and a look found it there.
      */
     earlier: z.object({ status: z.enum(["succeeded", "outcome_unknown", "found"]), at: z.string() }).strict().optional(),
@@ -122,7 +122,7 @@ export const RunResultSchema = z
     truncated: z.boolean(),
     /** check_email and list_todoist_tasks only: the same items as `text`, without previews. */
     items: z.array(ResultItemSchema).optional(),
-    /** Writes: the provider's id for the draft or task (ADR-312). */
+    /** Writes: the provider's id for the draft or task (ADR-322). */
     externalId: z.string().optional(),
     /** True when this answers a repeated run of an approval that already succeeded: nothing ran again. */
     replayed: z.boolean().optional(),

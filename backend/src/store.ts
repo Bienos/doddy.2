@@ -134,7 +134,7 @@ export class Store {
       );
       CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
     `);
-    // ADR-312: what happened when an approval was used. Outcome and the provider's id only, never
+    // ADR-322: what happened when an approval was used. Outcome and the provider's id only, never
     // the email or task text. Added to databases made before it.
     const columns = new Set((this.db.prepare("PRAGMA table_info(approvals)").all() as { name: string }[]).map((c) => c.name));
     for (const [name, type] of [["outcome", "TEXT"], ["external_id", "TEXT"], ["finished_at", "INTEGER"]] as const) {
@@ -484,7 +484,7 @@ export class Store {
     });
   }
 
-  /** Records what happened after a used approval ran (ADR-312). Only the first record counts. */
+  /** Records what happened after a used approval ran (ADR-322). Only the first record counts. */
   finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number): void {
     this.db
       .prepare("UPDATE approvals SET outcome = ?, external_id = ?, finished_at = ? WHERE approval_id = ? AND consumed_at IS NOT NULL AND outcome IS NULL")
@@ -525,5 +525,5 @@ export class Store {
   }
 }
 
-/** How a used approval's run ended (ADR-312). */
+/** How a used approval's run ended (ADR-322). */
 export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";

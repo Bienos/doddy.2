@@ -31,7 +31,7 @@ final class ActivityLogStore {
         save()
     }
 
-    /// Settles unsure note and list entries from Doddy's own notes and lists (ADR-311). Call only
+    /// Settles unsure note and list entries from Doddy's own notes and lists (ADR-321). Call only
     /// once the store has loaded: empty lists here would read as "not there".
     func settleLocal(notes: [MemoryRecord], lists: [DoddyList]) {
         let settled = LocalCheck.settledAll(entries, notes: notes, lists: lists, at: Date())

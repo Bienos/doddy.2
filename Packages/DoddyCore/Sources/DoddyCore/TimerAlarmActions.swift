@@ -1,6 +1,6 @@
 import Foundation
 
-// Timers and alarms in the action status model (ADR-310, extends ADR-309). Like reminders and
+// Timers and alarms in the action status model (ADR-320, extends ADR-319). Like reminders and
 // events, a timer or alarm Doddy couldn't confirm is checked before it is tried again, so asking
 // again never sets a second one; "set" still comes only from the iPhone listing it afterwards.
 //  - Alarms are for a time of day, so the same alarm twice is never wanted: Doddy always looks
@@ -24,7 +24,7 @@ public enum TimerIdempotency {
     /// The notification's identifier carries the key, so a later look can tell which timer it is.
     public static func identifier(key: String, id: UUID) -> String { "\(prefix)\(key).\(id.uuidString)" }
 
-    /// The key in a Doddy timer identifier; nil for timers set before ADR-310 and anything else.
+    /// The key in a Doddy timer identifier; nil for timers set before ADR-320 and anything else.
     public static func key(fromIdentifier identifier: String) -> String? {
         guard identifier.hasPrefix(prefix) else { return nil }
         let rest = identifier.dropFirst(prefix.count)
@@ -109,7 +109,7 @@ public enum AlarmIdempotency {
     }
 
     /// The alarm Doddy already has that is this one: the same key, or for an alarm set before
-    /// ADR-310 (no key), the same time, day and label as remembered.
+    /// ADR-320 (no key), the same time, day and label as remembered.
     public static func existing(for draft: AlarmDraft, in alarms: [AlarmEntry]) -> AlarmEntry? {
         let key = key(draft)
         if let keyed = alarms.first(where: { $0.key == key }) { return keyed }
