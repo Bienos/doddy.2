@@ -13,6 +13,9 @@ final class CallsModel {
     private(set) var unreadableNotes: [UnreadableCallNote] = []
     /// Why the notes from calls couldn't be loaded, or nil. A failed load is never shown as "no notes".
     private(set) var notesProblem: String?
+    /// Notes already saved as memories whose removal from the inbox failed. Tapping Save again
+    /// only retries the removal, so the memory isn't saved twice (DOD-06).
+    private(set) var savedNoteIDs: Set<UUID> = []
     private(set) var recent: [CallRecord] = []
     private(set) var isWorking = false
     private(set) var message: String?
@@ -98,11 +101,15 @@ final class CallsModel {
     func keep(_ note: CallNote, into store: MemoryStore) async {
         guard let client else { return }
         await run {
-            _ = try await store.save(
-                text: note.text, category: .other, source: .explicitVoice, capturedAt: note.createdDate ?? Date())
+            if !self.savedNoteIDs.contains(note.id) {
+                _ = try await store.save(
+                    text: note.text, category: .other, source: .explicitVoice, capturedAt: note.createdDate ?? Date())
+                self.savedNoteIDs.insert(note.id)
+            }
             do {
                 try await client.deleteCallNote(note.id)
                 self.notes.removeAll { $0.id == note.id }
+                self.savedNoteIDs.remove(note.id)
             } catch {
                 self.message = NSLocalizedString("Saved to your memories, but it couldn't be removed from this list. Tap Discard to remove it.", comment: "")
             }
@@ -116,6 +123,7 @@ final class CallsModel {
             try await client.deleteCallNote(id)
             self.notes.removeAll { $0.id == id }
             self.unreadableNotes.removeAll { $0.id == id }
+            self.savedNoteIDs.remove(id)
         }
     }
 

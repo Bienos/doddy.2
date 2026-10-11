@@ -65,8 +65,10 @@ struct CallsSettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         HStack {
-                            Button("Save to memories") { Task { await model.keep(note, into: store) } }
-                                .buttonStyle(.borderless)
+                            Button(model.savedNoteIDs.contains(note.id) ? "Saved. Remove from this list" : "Save to memories") {
+                                Task { await model.keep(note, into: store) }
+                            }
+                            .buttonStyle(.borderless)
                             Spacer()
                             Button("Discard", role: .destructive) { Task { await model.discard(note.id) } }
                                 .buttonStyle(.borderless)
