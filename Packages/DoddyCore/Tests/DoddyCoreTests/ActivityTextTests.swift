@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// "What Doddy did" in Polish (ADR-262): every row Doddy can write has a Polish title, Doddy's own
+/// "What Doddy did" in Polish (ADR-271): every row Doddy can write has a Polish title, Doddy's own
 /// notes are translated, and anything else is shown exactly as kept.
 final class ActivityTextTests: XCTestCase {
     private var calendar: Calendar = {
@@ -28,6 +28,9 @@ final class ActivityTextTests: XCTestCase {
             .addToList(list), .readList(name: "Shopping"), .checkOff(list), .removeFromList(list), .createList(list),
             .changeCalendarEvent(EventChangeDraft(title: "Dentist", currentStart: now, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: "Doctor")),
             .changeReminder(ReminderChangeDraft(title: "Buy milk", newDue: nil, markDone: true)),
+            .deleteCalendarEvent(EventChangeDraft(title: "Dentist", currentStart: now, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: nil)),
+            .deleteReminder(title: "Buy milk"),
+            .setAlarm(AlarmDraft(first: ReminderDue(year: 2026, month: 10, day: 12, hour: 7, minute: 0, timeZoneID: "Europe/Warsaw"), repeats: .weekdays, label: nil)),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests

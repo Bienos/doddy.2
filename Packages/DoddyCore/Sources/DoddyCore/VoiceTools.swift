@@ -43,10 +43,11 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
         switch toolName {
-        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent: .calendar
-        case VoiceToolName.createReminder, VoiceToolName.changeReminder: .reminders
+        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent,
+             VoiceToolName.deleteCalendarEvent: .calendar
+        case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder: .reminders
         case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays: .contacts
-        case VoiceToolName.setTimer: .timers
+        case VoiceToolName.setTimer, VoiceToolName.setAlarm: .timers
         case VoiceToolName.openMap: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
@@ -161,14 +162,16 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case needsClarification(name: String, ReminderClarification)
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
-    /// Birthdays saved in Contacts in the next `days` days, read only (ADR-256).
+    /// Birthdays saved in Contacts in the next `days` days, read only (ADR-265).
     case upcomingBirthdays(days: Int)
-    /// Arithmetic and unit conversion, worked out on the iPhone (ADR-257).
+    /// Arithmetic and unit conversion, worked out on the iPhone (ADR-266).
     case calculate(expression: String)
     case convertUnits(UnitConversionRequest)
-    /// "Undo that": the newest undoable change from this conversation, after a card (ADR-258).
+    /// "Undo that": the newest undoable change from this conversation, after a card (ADR-267).
     case undoLast
     case setTimer(TimerDraft)
+    /// A real alarm (ADR-260), on iOS 26 and later.
+    case setAlarm(AlarmDraft)
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
@@ -188,6 +191,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// exactly on the iPhone, shown on a card, written only on the user's tap, read back.
     case changeCalendarEvent(EventChangeDraft)
     case changeReminder(ReminderChangeDraft)
+    /// Delete one event occurrence (ADR-259), named as read_calendar returned it.
+    case deleteCalendarEvent(EventChangeDraft)
+    /// Delete one open reminder (ADR-259), by its exact title.
+    case deleteReminder(title: String)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -210,6 +217,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseNoteReminder(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.changeCalendarEvent:
             return parseEventChange(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.deleteCalendarEvent:
+            return parseEventDelete(args, name: name, calendar: calendar)
+        case VoiceToolName.deleteReminder:
+            guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
+            return .deleteReminder(title: title)
         case VoiceToolName.changeReminder:
             return parseReminderChange(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.lookupContact:
@@ -225,6 +237,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .undoLast
         case VoiceToolName.setTimer:
             return parseTimer(args, name: name)
+        case VoiceToolName.setAlarm:
+            return parseAlarm(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)

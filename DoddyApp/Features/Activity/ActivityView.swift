@@ -4,7 +4,7 @@ import SwiftUI
 /// Settings → What Doddy did. Newest first, grouped by day. Each row says what was asked and
 /// what actually happened; a reminder Doddy wasn't sure about can be checked in Reminders.
 /// The steps of one plan card are shown together under one heading (ADR-208). For a day, an
-/// event or reminder Doddy added or changed can be undone, after a confirmation (ADR-255).
+/// event or reminder Doddy added or changed can be undone, after a confirmation (ADR-264).
 struct ActivityView: View {
     @State private var activity = ActivityLogStore.shared
     @State private var devices = DeviceConnections()

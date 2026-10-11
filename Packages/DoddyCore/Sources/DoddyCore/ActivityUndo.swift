@@ -1,6 +1,6 @@
 import Foundation
 
-// Undo in "What Doddy did" (ADR-255). For a day after Doddy added or changed an event or a
+// Undo in "What Doddy did" (ADR-264). For a day after Doddy added or changed an event or a
 // reminder, its row offers Undo. Undo only ever reverses what Doddy itself did:
 //  - an event or reminder Doddy added is removed, and only if it still looks exactly as Doddy
 //    left it (same title and time; a reminder still open and carrying Doddy's marker);
@@ -133,13 +133,8 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
     /// The plan that moves an event back. The event is found by its current occurrence (Doddy's
     /// "after"), which must still look exactly like that; it then becomes Doddy's "before".
     public static func reversed(_ plan: EventChangePlan) -> EventChangePlan {
-        let item = plan.before.id.flatMap(CalendarEventSummary.itemID(fromOccurrence:))
-        let now = CalendarEventSummary(
-            id: item.map { CalendarEventSummary.occurrenceID(itemID: $0, start: plan.after.start) },
-            title: plan.after.title, start: plan.after.start, end: plan.after.end, allDay: plan.after.allDay)
-        let back = CalendarEventSummary(
-            id: plan.before.id, title: plan.before.title, start: plan.before.start, end: plan.before.end, allDay: plan.before.allDay)
-        return EventChangePlan(before: now, after: back)
+        // The same backwards change as Undo on the voice screen (ADR-258 on the default line).
+        EventChange.reversed(plan)
     }
 
     /// An event Doddy added still looks exactly as Doddy left it (title, times, all-day).
@@ -258,7 +253,7 @@ extension ActivityLog {
     }
 }
 
-// MARK: "Undo that" by voice (ADR-258)
+// MARK: "Undo that" by voice (ADR-267)
 
 extension VoiceToolName {
     public static let undoLast = "undo_last"
@@ -297,6 +292,31 @@ extension VoiceToolReply {
         case .notSure:
             return "unknown: Doddy couldn't confirm the undo. Ask the user to check \(place) before trying again."
         }
+    }
+}
+
+// MARK: The two Undo buttons agree (ADR-264 merge)
+
+extension ActivityUndo {
+    /// The same change as an on-screen Undo receipt (ADR-258 on the default line): the same event
+    /// plan, or the same reminder.
+    public func isSameChange(event plan: EventChangePlan?, reminderID: String?) -> Bool {
+        switch self {
+        case .changedEvent(let mine): return plan == mine
+        case .changedReminder(let id, _, _, _, _): return reminderID == id
+        case .addedEvent, .addedReminder: return false
+        }
+    }
+}
+
+extension ActivityLog {
+    /// After Undo on the voice screen put a change back: the newest row still offering Undo for
+    /// that same change, marked undone, so What Doddy did never offers to undo it again.
+    public static func undoneOnScreen(_ entries: [ActivityEntry], event plan: EventChangePlan?, reminderID: String?, now: Date) -> ActivityEntry? {
+        let row = entries
+            .filter { $0.canUndo(now: now) && $0.undo?.isSameChange(event: plan, reminderID: reminderID) == true }
+            .max { $0.at < $1.at }
+        return row.map { undid($0, result: .undone, at: now) }
     }
 }
 

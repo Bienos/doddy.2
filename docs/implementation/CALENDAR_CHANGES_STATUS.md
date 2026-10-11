@@ -66,6 +66,6 @@ Date: 2026-10-10. Owner: "do all of them" (item 5).
 |---|---|---|---|
 | DOD-07 scoped_action_approval | A card with exactly what changes; the write runs only on the tap; checked again at the tap that the item still looks as shown | `testMatchesExactlyOneEventAndNeverGuesses`, `testTheCardCanGoStaleAndReadBackComparesWallClock` | UI not compiled |
 | DOD-08 verified_status_and_receipts | "changed"/"completed" only after the read-back; otherwise "unknown" | `testRemindersMatchOpenOnesOnly` (reply prefix) | EventKit read-back is untested on a device |
-| DOD-09 correction_and_recovery | No deletes; the old time is on the card; the user can change it back the same way | — | One-tap Undo added in ADR-255 (`UNDO_STATUS.md`) |
+| DOD-09 correction_and_recovery | No deletes; the old time is on the card; the user can change it back the same way | — | Undo on the voice screen (ADR-258, `UNDO_STATUS.md`) and in What Doddy did (ADR-264, `ACTIVITY_UNDO_STATUS.md`) |
 | DOD-08 (agent) | Prompt rule: say "changed"/"completed" only from the result | live prompt read back | Not tried in a conversation |
 | DOD-02 honesty_over_agreeableness | No match or several matches: nothing is guessed, the agent asks | `testMatchesExactlyOneEventAndNeverGuesses` | — |

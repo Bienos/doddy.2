@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Every result the app sends the agent lands on an honest row in "What Doddy did" (ADR-259):
+/// Every result the app sends the agent lands on an honest row in "What Doddy did" (ADR-268):
 /// a change that happened is "Done", one that didn't is "Didn't happen", and only a result
 /// Doddy really can't confirm is "Not sure". Built from the app's own reply builders, so a new
 /// wording that the log doesn't know fails here instead of showing "Not sure" for real work.
@@ -55,12 +55,17 @@ final class ActivityOutcomeCoverageTests: XCTestCase {
             VoiceToolReply.eventChanged(summary, calendar: calendar),
             VoiceToolReply.reminderChanged("Buy milk", due: nil),
             VoiceToolReply.reminderCompleted("Buy milk"),
+            // The default line's deletes and alarms (ADR-259, ADR-260).
+            VoiceToolReply.eventDeleted(summary, calendar: calendar),
+            VoiceToolReply.reminderDeleted("Buy milk"),
+            VoiceToolReply.alarmSet(AlarmDraft(first: ReminderDue(year: 2026, month: 10, day: 12, hour: 7, minute: 0, timeZoneID: "Europe/Warsaw"), repeats: nil, label: "Gym")),
         ]
         for reply in done {
             XCTAssertEqual(outcome(reply), .done, reply)
         }
         // Only what really can't be confirmed is "Not sure".
-        for reply in [VoiceToolReply.addUnconfirmed, VoiceToolReply.reminder(.unknown), VoiceToolReply.eventChangeUnconfirmed] {
+        for reply in [VoiceToolReply.addUnconfirmed, VoiceToolReply.reminder(.unknown), VoiceToolReply.eventChangeUnconfirmed,
+                      VoiceToolReply.deleteUnconfirmed, VoiceToolReply.alarmUnconfirmed] {
             XCTAssertEqual(outcome(reply), .notSure, reply)
         }
     }

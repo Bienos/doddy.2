@@ -1,0 +1,160 @@
+import DoddyCore
+import SwiftUI
+import WidgetKit
+
+// Watch face complications and the Smart Stack (ADR-262). They read only the snapshot the watch
+// app saved in the watch's App Group folder (from what the iPhone sent, ADR-232), and show only
+// times, counts and list names: a watch face is seen by anyone nearby. A tap opens Doddy.
+
+struct ComplicationEntry: TimelineEntry {
+    let date: Date
+    let content: ComplicationContent
+    let relevance: TimelineEntryRelevance?
+}
+
+struct ComplicationProvider: TimelineProvider {
+    func placeholder(in context: Context) -> ComplicationEntry { entry(.previewContent, at: .now) }
+
+    func getSnapshot(in context: Context, completion: @escaping (ComplicationEntry) -> Void) {
+        completion(context.isPreview ? entry(.previewContent, at: .now) : entry(read(at: .now), at: .now))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<ComplicationEntry>) -> Void) {
+        let snapshot = WidgetSnapshotFile.read()
+        let now = Date()
+        let entries = ComplicationContent.timelineDates(snapshot, from: now).map { date in
+            entry(ComplicationContent.make(snapshot, at: date), at: date)
+        }
+        completion(Timeline(entries: entries, policy: .after(now.addingTimeInterval(6 * 3600))))
+    }
+
+    private func read(at date: Date) -> ComplicationContent {
+        ComplicationContent.make(WidgetSnapshotFile.read(), at: date)
+    }
+
+    private func entry(_ content: ComplicationContent, at date: Date) -> ComplicationEntry {
+        let score = content.relevance(at: date)
+        return ComplicationEntry(
+            date: date, content: content,
+            relevance: score > 0 ? TimelineEntryRelevance(score: Float(score), duration: ComplicationContent.soonWindow) : nil)
+    }
+}
+
+struct DoddyComplication: Widget {
+    static let kind = "com.bienos.doddy2.watch.complication"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: Self.kind, provider: ComplicationProvider()) { entry in
+            ComplicationView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+        }
+        .configurationDisplayName("Doddy")
+        .description("Your next Doddy reminder time and what's left on your lists. No note words are shown.")
+        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryInline, .accessoryRectangular])
+    }
+}
+
+struct ComplicationView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: ComplicationEntry
+
+    private var content: ComplicationContent { entry.content }
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular: circular
+        case .accessoryCorner: corner
+        case .accessoryInline: inline
+        default: rectangular
+        }
+    }
+
+    private var circular: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            if content.state == .ready, let next = content.nextReminder {
+                VStack(spacing: 0) {
+                    Image(systemName: "bell")
+                    Text(next, format: .dateTime.hour().minute()).font(.system(size: 11)).minimumScaleFactor(0.6)
+                }
+            } else if content.state == .ready, content.openItems > 0 {
+                VStack(spacing: 0) {
+                    Image(systemName: "checklist")
+                    Text("\(content.openItems)").font(.headline)
+                }
+            } else {
+                Image(systemName: "bubble.left")
+            }
+        }
+        .widgetAccentable()
+    }
+
+    private var corner: some View {
+        Image(systemName: content.nextReminder == nil ? "checklist" : "bell")
+            .font(.title3)
+            .widgetLabel {
+                if let next = content.nextReminder {
+                    Text(next, format: .dateTime.hour().minute())
+                } else if content.openItems > 0 {
+                    Text(String(format: NSLocalizedString("%lld left", comment: ""), content.openItems))
+                } else {
+                    Text("Doddy")
+                }
+            }
+    }
+
+    @ViewBuilder
+    private var inline: some View {
+        if let next = content.nextReminder {
+            Label {
+                Text(String(format: NSLocalizedString("Doddy reminder %@", comment: ""), next.formatted(date: .omitted, time: .shortened)))
+            } icon: { Image(systemName: "bell") }
+        } else if let list = content.topList {
+            Label("\(list.name) · \(list.openCount)", systemImage: "checklist")
+        } else {
+            Label("Doddy", systemImage: "bubble.left")
+        }
+    }
+
+    private var rectangular: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("Doddy").font(.headline).widgetAccentable()
+            switch content.state {
+            case .notReady:
+                Text("Open Doddy on your iPhone.").font(.caption)
+            case .off:
+                Text("Turned off in Doddy's Settings.").font(.caption)
+            case .ready:
+                if let next = content.nextReminder {
+                    Label {
+                        Text(String(format: NSLocalizedString("Reminder at %@", comment: ""), next.formatted(date: .omitted, time: .shortened)))
+                    } icon: { Image(systemName: "bell") }
+                    .font(.caption)
+                }
+                if let list = content.topList {
+                    Label("\(list.name) · \(list.openCount)", systemImage: "checklist").font(.caption)
+                }
+                if content.nextReminder == nil, content.topList == nil {
+                    Text("Nothing coming up.").font(.caption)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+extension ComplicationContent {
+    /// Made-up content for the watch face gallery only; never the user's.
+    static let previewContent = ComplicationContent.make(
+        WidgetSnapshot(
+            writtenAt: .now, isOn: true, pinned: [],
+            reminders: [.init(memoryID: UUID(), fireAt: .now.addingTimeInterval(3600), timeZoneID: TimeZone.current.identifier, text: nil)],
+            lists: [.init(id: UUID(), name: "Shopping", openCount: 4, doneCount: 1, items: [])]),
+        at: .now)
+}
+
+@main
+struct DoddyWatchWidgetsBundle: WidgetBundle {
+    var body: some Widget {
+        DoddyComplication()
+    }
+}

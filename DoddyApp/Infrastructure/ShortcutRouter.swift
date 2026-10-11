@@ -18,6 +18,8 @@ final class ShortcutRouter {
     var isCheckInPresented = false
     /// The weekly tidy-up screen (ADR-228), from its notification or Settings.
     var isTidyUpPresented = false
+    /// The evening wrap-up screen (ADR-261), from its notification or Settings.
+    var isWrapUpPresented = false
     /// "Talk it through": the conversation that opens next starts with this briefing.
     private var checkInBriefing: MorningBriefing?
     /// Bound to the guided Back Tap setup sheet in `RootView`.
@@ -60,7 +62,7 @@ final class ShortcutRouter {
     /// Opens the conversation unless one is already open or something else is on screen; it
     /// never starts a second conversation and never pushes a sheet aside.
     func startListeningOnOpen() {
-        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isOnboardingShown, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isOnboardingShown, drafts.shown == nil else { return }
         isVoicePresented = true
     }
 
@@ -83,16 +85,23 @@ final class ShortcutRouter {
     /// The check-in notification was tapped: show the check-in screen, unless a conversation or
     /// a shared draft is already up (the user is busy; the notification stays in history).
     func morningCheckInOpened() {
-        guard !isVoicePresented, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isWrapUpPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isCheckInPresented = true
     }
 
     /// The tidy-up notification was tapped, or Settings asked for it.
     func tidyUpOpened() {
-        guard !isVoicePresented, !isCheckInPresented, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isWrapUpPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isTidyUpPresented = true
+    }
+
+    /// The wrap-up notification was tapped, or Settings asked for it.
+    func eveningWrapUpOpened() {
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isWrapUpPresented = true
     }
 
     /// "Talk it through" on the check-in screen. The sheet closes first; the conversation opens

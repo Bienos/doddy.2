@@ -36,7 +36,8 @@ struct DataFlowView: View {
             memoryCopyOn: memoryCopyOn,
             morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
             siriReadsNotes: siriReadsNotes,
-            heyDoddyOn: heyDoddyOn)
+            heyDoddyOn: heyDoddyOn,
+            sharedLists: SharedListsController.shared.links.count)
     }
 
     var body: some View {

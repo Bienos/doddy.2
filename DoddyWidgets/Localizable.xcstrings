@@ -23,6 +23,28 @@
         }
       }
     },
+    "All ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone"
+          }
+        }
+      }
+    },
+    "All ticked. Shopping mode ends by itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko odhaczone. Tryb zakupów zakończy się sam."
+          }
+        }
+      }
+    },
     "Breathing": {
       "extractionState": "manual",
       "localizations": {
@@ -287,6 +309,17 @@
         }
       }
     },
+    "Open Doddy to see the list as it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
+          }
+        }
+      }
+    },
     "Opens Doddy and starts a voice conversation. Doddy listens only while the conversation is open.": {
       "extractionState": "manual",
       "localizations": {
@@ -404,6 +437,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zapisać tę notatkę?"
+          }
+        }
+      }
+    },
+    "Shopping mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb zakupów"
           }
         }
       }

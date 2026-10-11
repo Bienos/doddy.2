@@ -27,6 +27,10 @@ struct DoddyApp: App {
         // The Apple Watch app asks through the same store (ADR-232).
         PhoneWatchLink.shared.store = store
         PhoneWatchLink.shared.activate()
+        // Shopping mode (ADR-257) runs on the Lock Screen across relaunches.
+        ShoppingModeController.shared.store = store
+        // Shared lists (ADR-263) sync through the same store.
+        SharedListsController.shared.store = store
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
         let profiles = ProfileStore(environment: environment)
@@ -52,9 +56,15 @@ struct DoddyApp: App {
                 // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
                 .task { await UpdatesModel().syncPushTokenIfOn() }
                 .task { await SystemNoteNotifications.registerCategory() }
+                .task { ShoppingModeController.shared.reattach() }
+                .task {
+                    await SharedListsController.shared.load()
+                    await SharedListsController.shared.syncAll()
+                }
                 // Keeps the morning check-in's words in the iPhone's current language (ADR-220).
                 .task { if MorningCheckInSettings.stored().isOn { _ = await MorningCheckInScheduler.apply(.stored()) } }
                 .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
+                .task { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }
         }
     }
 }

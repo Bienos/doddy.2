@@ -10,6 +10,9 @@ import Foundation
 extension VoiceToolName {
     public static let changeCalendarEvent = "change_calendar_event"
     public static let changeReminder = "change_reminder"
+    /// Deleting (ADR-259): one event occurrence, or one open reminder, after a card.
+    public static let deleteCalendarEvent = "delete_calendar_event"
+    public static let deleteReminder = "delete_reminder"
 }
 
 public struct EventChangeDraft: Equatable, Sendable {
@@ -53,6 +56,15 @@ public struct EventChangePlan: Codable, Equatable, Sendable {
         self.before = before
         self.after = after
     }
+}
+
+/// What a reminder change does on the iPhone (ADR-229, ADR-258).
+public enum ReminderChange: Equatable, Sendable {
+    /// A new due, or nil to clear it (only Undo clears a due).
+    case due(ReminderDue?)
+    case complete
+    /// Undo of a completion: the reminder is open again.
+    case reopen
 }
 
 public enum EventChange {
@@ -132,6 +144,26 @@ public enum EventChange {
         return date <= now
     }
 
+    /// An occurrence's id is its calendar item id and its start, so it changes when it moves.
+    public static func occurrenceID(itemID: String, start: Date) -> String {
+        // One format for the whole app (ADR-264 merge): CalendarEventSummary builds it.
+        CalendarEventSummary.occurrenceID(itemID: itemID, start: start)
+    }
+
+    /// Undo (ADR-258): the change backwards. Its "before" is the event as Doddy left it, with the
+    /// occurrence id it has at its new start, so the usual check (it must still look exactly so)
+    /// refuses an undo after anyone else changed it.
+    public static func reversed(_ plan: EventChangePlan) -> EventChangePlan {
+        let itemID = plan.before.id.map { CalendarEventSummary.itemID(fromOccurrence: $0) ?? $0 }
+        let now = CalendarEventSummary(
+            id: itemID.map { occurrenceID(itemID: $0, start: plan.after.start) }, title: plan.after.title,
+            start: plan.after.start, end: plan.after.end, allDay: plan.after.allDay)
+        let back = CalendarEventSummary(
+            id: itemID.map { occurrenceID(itemID: $0, start: plan.before.start) }, title: plan.before.title,
+            start: plan.before.start, end: plan.before.end, allDay: plan.before.allDay)
+        return EventChangePlan(before: now, after: back)
+    }
+
     /// Exactly one open reminder with this title.
     public static func matchReminder(_ title: String, in reminders: [ReminderSnapshot]) -> ListMatchResult<ReminderSnapshot> {
         let wanted = SearchFolding.tokens(title).joined(separator: " ")
@@ -192,6 +224,17 @@ extension VoiceToolReply {
     }
 
     public static let reminderChangedElsewhere = "failed: the reminder changed, was completed or disappeared in Reminders since the card was shown. Nothing was changed by Doddy. Ask the user to check Reminders."
+    public static let undoUnconfirmed = "unknown: Calendar or Reminders didn't confirm putting it back. Ask the user to check."
+    public static func eventDeleted(_ event: CalendarEventSummary, calendar: Calendar) -> String {
+        "deleted: \"\(event.title)\" (\(localText(event.start, hasTime: !event.allDay, calendar: calendar))) is gone from Calendar. Checked."
+    }
+
+    public static func reminderDeleted(_ title: String) -> String {
+        "deleted: the reminder \"\(title)\" is gone from Reminders. Checked."
+    }
+
+    public static let deleteDeclined = "declined: the user chose not to delete it. Nothing changed."
+    public static let deleteUnconfirmed = "unknown: Calendar or Reminders didn't confirm it's gone. Ask the user to check before trying again."
     public static let reminderChangeUnconfirmed = "unknown: Reminders didn't confirm the change. Ask the user to check Reminders before trying again."
 }
 
@@ -230,6 +273,17 @@ extension VoiceToolRequest {
         return .changeCalendarEvent(EventChangeDraft(
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime,
             newStart: newStart, newEnd: newEnd, newTitle: newTitle))
+    }
+
+    /// title + start (as read_calendar returned them): the occurrence to delete (ADR-259).
+    static func parseEventDelete(_ args: Arguments, name: String, calendar: Calendar) -> VoiceToolRequest {
+        guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
+        guard let startText = args.text("start") else { return .invalid(name: name, reason: "missing start (the event's current start, as read_calendar gave it)") }
+        guard case .due(let current) = ReminderDueRules.wallClock(startText, calendar: calendar), let currentStart = current.date(in: calendar) else {
+            return .invalid(name: name, reason: "start is not a date")
+        }
+        return .deleteCalendarEvent(EventChangeDraft(
+            title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime, newStart: nil, newEnd: nil, newTitle: nil))
     }
 
     /// title (exact), and new_due or done: true. Never both.

@@ -37,6 +37,8 @@ struct AppEnvironment: Sendable {
     let storageProblem: String?
     /// Lists (ADR-216), in the same SQLite file as the notes.
     var listRepository: any ListRepository = UnavailableListRepository()
+    /// Which lists are shared through iCloud (ADR-263), and their last sync.
+    var listShareRepository: any ListShareRepository = UnavailableListShareRepository()
     /// Which note carries which photo (ADR-218), and the folder of photo files next to the database.
     var photoRepository: any PhotoRepository = UnavailablePhotoRepository()
     var photoFiles: PhotoFiles = .unavailable
@@ -85,6 +87,7 @@ struct AppEnvironment: Sendable {
                 privacy: .v1Voice,
                 storageProblem: nil,
                 listRepository: SQLiteListRepository(database: database),
+                listShareRepository: SQLiteListShareRepository(database: database),
                 photoRepository: SQLitePhotoRepository(database: database),
                 photoFiles: databaseFile.map(PhotoFiles.beside(database:)) ?? .temporary(),
                 audioRepository: SQLiteAudioRepository(database: database),

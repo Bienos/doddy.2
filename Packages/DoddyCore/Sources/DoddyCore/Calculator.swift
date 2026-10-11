@@ -1,6 +1,6 @@
 import Foundation
 
-// Sums and unit conversions on the iPhone (ADR-257). Language models get arithmetic wrong, so the
+// Sums and unit conversions on the iPhone (ADR-266). Language models get arithmetic wrong, so the
 // agent passes the sum or the conversion and reads back the app's answer instead of working it
 // out. Everything runs here: no network, no account, no permission, nothing stored or logged.
 // Only + − × ÷, powers, brackets and percent; no names, variables or functions, so nothing in an
