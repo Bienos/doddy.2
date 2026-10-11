@@ -46,8 +46,26 @@ Date: 2026-10-11. Source: the owner's deck "Doddy-Watch-iPad-Mac-Review" (Google
   - **Concurrency:** Swift 6 strict concurrency on the `@MainActor @Observable` model that calls the repository.
 - The menu bar icon is the SF Symbol `square.and.pencil`, a placeholder. The owner picks the final icon. Any Doddy art comes from the owner's pack (CLAUDE.md "Character art"), drawn as a template image for the menu bar.
 
+## Menu bar icon and desktop widget (ADR-438, ADR-439, 2026-10-11)
+- **Menu bar icon:** Doddy's face from the owner's pack, a byte-identical copy of the widgets' crop, drawn in colour at 18 pt. The pencil symbol shows only if the image can't load.
+- **Desktop widget (`DoddyMacWidgets`, small):**
+  - It shows Doddy's face, the number of notes saved on that Mac, "Saved on this Mac" and the time it was counted. Never a note's words.
+  - The app writes the count to the App Group folder whenever it refreshes (window opened, after a save). It reads the file back, and only then reloads the widget.
+  - The widget reads that file only: no database, no network. The guard enforces this, and a planted `import DoddyPersistence` made it fail as intended.
+  - A click opens Doddy (system behaviour). A menu bar app can't open its own window from a widget.
+- **Signing:**
+  - The App Group (`<team prefix><app id>.mac`) is on by default, like the iPhone's, so a team must be chosen in Xcode.
+  - For "Sign to Run Locally", set `DODDY_MAC_ENTITLEMENTS` and `DODDY_MAC_WIDGET_ENTITLEMENTS` to the sandbox-only files. The widget then says to open Doddy from the menu bar.
+- **Verified (Linux):**
+  - `MacNoteCountTests` (4): read back, an unwritable folder isn't reported as written, only a count and a time are stored, other versions and garbage are ignored;
+  - 871 tests in all;
+  - XcodeGen embeds `DoddyMacWidgets.appex` in the Mac app and compiles `MacGroupFolder.swift` into both.
+- **NOT RUN:**
+  - whether `$(TeamIdentifierPrefix)` is filled in in the Info.plist (if not, the group name starts with "." and the widget shows no count);
+  - the widget on a real desktop;
+  - the menu bar face at 18 pt in light and dark menu bars.
+
 ## Not built from the deck (later, each a separate decision)
-- Slide 10, a desktop widget showing the count of saved notes.
 - Slide 11, a bigger Mac window.
 - Slide 12, a floating NSPanel.
 - Voice on the Mac.

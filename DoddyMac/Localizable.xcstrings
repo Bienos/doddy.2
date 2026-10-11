@@ -12,6 +12,17 @@
         }
       }
     },
+    "Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        }
+      }
+    },
     "New note": {
       "extractionState": "manual",
       "localizations": {

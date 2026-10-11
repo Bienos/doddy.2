@@ -2,6 +2,7 @@ import DoddyCore
 import DoddyPersistence
 import Foundation
 import Observation
+import WidgetKit
 
 /// The Mac menu bar's notes (ADR-435): Doddy's own database on this Mac, in the app's sandbox
 /// container (Application Support), opened with the same SQLite store as the iPhone's. Nothing
@@ -43,14 +44,26 @@ final class MacCaptureModel {
         return outcome
     }
 
-    /// The last few notes on this Mac, so an unconfirmed save can be checked before trying again.
+    /// The last few notes on this Mac, so an unconfirmed save can be checked before trying again,
+    /// and the desktop widget's count (ADR-439).
     func refresh() async {
         guard let repository else { return }
         do {
-            recent = try await repository.list(limit: 5)
+            let all = try await repository.list(limit: nil)
+            recent = Array(all.prefix(5))
             recentProblem = nil
+            shareCount(all.count)
         } catch {
             recentProblem = "Recent notes can't be read right now."
+        }
+    }
+
+    /// Written to the App Group folder and read back; only then is the widget asked to reload.
+    /// The widget gets a number and a time, never a note's words. No App Group, nothing written.
+    private func shareCount(_ count: Int) {
+        guard let folder = MacGroupFolder.url else { return }
+        if MacNoteCountFile.write(MacNoteCount(count: count, countedAt: .now), in: folder) {
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 }

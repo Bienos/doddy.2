@@ -218,4 +218,23 @@ enum DeviceSupport {
     /// The sidebar replaces the tab bar on a wide screen (ADR-430), but not on an iPhone: a large
     /// iPhone in landscape is regular width too, and keeps the tab bar.
     @MainActor static var hasSidebar: Bool { UIDevice.current.userInterfaceIdiom != .phone }
+    /// Only an iPhone places a phone call itself. iPad shows Doddy's number without a call link (ADR-437).
+    @MainActor static var hasPhoneCalls: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+}
+
+/// One readable column on a wide screen (ADR-337, ADR-437): content at most 760 pt wide and
+/// centred, while what comes after it (a background) still fills the screen. Compact width
+/// (every iPhone in portrait, iPad Slide Over) is unchanged.
+struct ReadableColumn: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: sizeClass == .regular ? 760 : .infinity)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+extension View {
+    func readableColumn() -> some View { modifier(ReadableColumn()) }
 }

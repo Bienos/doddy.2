@@ -145,3 +145,8 @@ The alarm, shopping and notification pictures use image sets already listed (`Wh
 app; 120×180 @2x) are frame 5 of `018_doddy_turn_v01.png` (SHA-256 above, ADR-313), cut by
 `cut_frames.py --shared --rows-max-y 605` like the other turn frames and downscaled with Lanczos.
 Nothing redrawn.
+
+## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
+| Image set | Pack source | SHA-256 of the source | Made how |
+|---|---|---|---|
+| `MenuBarDoddy` (Mac app) and `MacDoddy_face` (Mac desktop widget) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | byte-identical copies of `WidgetDoddy_face` `art@2x.png` (120×120, SHA-256 `cdb24f36e3069738…`); nothing redrawn or generated |

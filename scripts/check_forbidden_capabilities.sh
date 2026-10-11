@@ -37,7 +37,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyShare DoddyWatch DoddyWatchWidgets DoddyMac Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyShare DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
@@ -133,6 +133,10 @@ fi
 # microphone or speech, nothing sent to the iPhone (ADR-435).
 if grep -RInE --include='*.swift' 'URLSession|import Network|import AVFoundation|import AVFAudio|AVAudio|import Speech|WCSession|import CloudKit' DoddyMac; then
   echo "FAIL: the Mac menu bar app may only save typed notes on that Mac (ADR-435)." >&2; status=1
+fi
+# Its desktop widget reads only the note count: no database, no network (ADR-439).
+if grep -RInE --include='*.swift' 'import GRDB|DoddyPersistence|URLSession|import Network|AVAudio|import Speech' DoddyMacWidgets; then
+  echo "FAIL: the Mac desktop widget may only read the note count (ADR-439)." >&2; status=1
 fi
 if [ -d "$memos_dir" ]; then
   for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$memos_dir"); do

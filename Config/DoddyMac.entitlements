@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- The Mac menu bar prototype (ADR-435) without the App Group: sandboxed, and nothing else. No network, no microphone, no files outside its own container. The desktop widget then shows no count. -->
 <plist version="1.0">
-<!-- The Mac menu bar prototype (ADR-435): sandboxed, and nothing else. No network, no
-     microphone, no files outside its own container. -->
 <dict>
 	<key>com.apple.security.app-sandbox</key>
 	<true/>

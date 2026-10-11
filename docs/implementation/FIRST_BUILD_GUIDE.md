@@ -189,3 +189,14 @@ In order of risk:
   - in `WatchRootView`, `.navigationDestination(isPresented:)` on the `List` and `.onOpenURL` on the `NavigationStack`.
 - **Mac menu bar (ADR-435):** build with `xcodebuild -project Doddy.xcodeproj -scheme DoddyMac -destination 'platform=macOS' build`.
   - Likely fixes: the `DoddyPersistence` package product on a macOS target (GRDB builds for macOS); `MenuBarExtra(... systemImage:)` with `.menuBarExtraStyle(.window)`; `@FocusState` set in `.task`; signing with no team (choose "Sign to Run Locally").
+- **iPad fixes (ADR-436, ADR-437):**
+  - the explicit `UIApplicationSceneManifest` in `Config/Doddy-Info.plist` with generation off (check the app still launches and the share-accept scene delegate still gets links);
+  - `confirmationDialog`s now on rows inside `Form` sections and on the list's toolbar `Menu` (SettingsView's body may need splitting if the type-checker times out);
+  - `readableColumn()` in `Components.swift`;
+  - the strings catalogs now carry `variations.device` entries (`ipad`/`other`) for English and Polish: check Xcode accepts them.
+- **Mac icon and widget (ADR-438, ADR-439):**
+  - `MenuBarExtra { } label: { }` with `Image(nsImage:)`;
+  - the `DoddyMacWidgets` target and its embedding;
+  - `$(TeamIdentifierPrefix)` in `Config/DoddyMac-Info.plist`, `Config/DoddyMacWidgets-Info.plist` and the App Group entitlements;
+  - `WidgetCenter` in the Mac app;
+  - `containerBackground(.background, for: .widget)` on macOS.

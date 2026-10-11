@@ -40,15 +40,17 @@ Date: 2026-10-11. Owner: "forget iphone and continue" (after `prompts/APPLE_PLAT
   - the opening on an iPad in either orientation.
 - No screenshots in `VISUAL_REVIEW/ipad/` yet: they need a simulator.
 
-## Open items from the iPad code audit (not changed in this round)
-Found by reading. Each needs a simulator to confirm.
-- **More than one Doddy window.** The generated scene manifest probably allows several windows on iPad. Every window binds the same `ShortcutRouter.shared.isVoicePresented`, so two voice screens could open at once. To decide on a simulator: allow several windows, or turn them off.
-- **Confirmation dialogs become popovers** on iPad. They are attached to the whole form or list, not the button (`SettingsView.swift`, `ListViews.swift`, `MemoryDetailView.swift`), so the arrow may point at the middle of the screen.
-- **Share and iCloud sharing.** `ShareLink` inside a context menu and a toolbar menu, and `UICloudSharingController` in a `.sheet`, may anchor oddly or show blank.
-- **Full-screen covers have no width cap.** The voice screen and Ask stretch across a 13-inch iPad; onboarding is capped at 600 pt.
-- **Words that assume an iPhone.** "this iPhone", Back Tap and Action Button copy, and the Dynamic Island in the Focus, Hey Doddy and voice texts.
-- **"Call Doddy" (`tel:`)** is not hidden on iPad. iPadOS may offer to call through a nearby iPhone.
-- **Home's background picture** is sized by width and may look soft on a wide iPad.
+## Open items from the iPad code audit
+Fixed on 2026-10-11 after the owner chose "iPad fixes". All of these are NOT RUN.
+- **More than one Doddy window:** one window only (ADR-436).
+- **Confirmation dialogs as popovers:** each now hangs off the button or menu that opens it (ADR-437).
+- **Full-screen covers with no width cap:** the voice screen and Ask keep a readable column (ADR-437).
+- **"Call Doddy" (`tel:`):** hidden on iPad; the number stays (ADR-437).
+- **Words that assume an iPhone:** the 78 strings that say "this iPhone" read "this iPad" on iPad, in English and Polish (ADR-437). Back Tap and Action Button copy is on screens iPad already hides. The Dynamic Island texts in Focus, Hey Doddy and voice remain.
+
+Still open, needing a simulator:
+- `ShareLink` inside a context menu and a toolbar menu, and `UICloudSharingController` in a `.sheet`, may anchor oddly or show blank.
+- Home's background picture is sized by width and may look soft on a wide iPad.
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests | Gaps |

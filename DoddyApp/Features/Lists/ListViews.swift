@@ -238,49 +238,14 @@ struct ListDetailView: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .primaryAction) { menu(list) }
+            ToolbarItem(placement: .primaryAction) { menuWithDialogs(list) }
         }
         .alert("Rename list", isPresented: $renaming) {
             TextField("Name", text: $newName)
             Button("Rename") { run { try await store.renameList(list.id, to: newName) } }
             Button("Cancel", role: .cancel) {}
         }
-        .confirmationDialog("Delete “\(list.name)”?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete list", role: .destructive) {
-                Task {
-                    do {
-                        // A shared list stops being shared first (ADR-263, review I3), so nothing
-                        // is left in iCloud.
-                        try await sharing.stopSharingBeforeDeleting(list.id)
-                        try await store.delete(id: list.id)
-                        dismiss()
-                    } catch {
-                        errorMessage = SharingError.message(for: error)
-                    }
-                }
-            }
-        } message: {
-            Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
-                + Text(verbatim: sharing.deleteWarning(list.id).map { " " + $0 } ?? "")
-        }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
-        .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
-            Button("Share") { Task { await startSharing(list) } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.")
-        }
-        .confirmationDialog(sharing.isShared(list.id)?.role == .participant ? "Leave this shared list?" : "Stop sharing this list?",
-                            isPresented: $confirmStopSharing, titleVisibility: .visible) {
-            Button(sharing.isShared(list.id)?.role == .participant ? "Leave" : "Stop sharing", role: .destructive) {
-                run { try await sharing.stop(list.id) }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(sharing.isShared(list.id)?.role == .participant
-                 ? "The list stays on this iPhone as your own. You won't see others' changes any more."
-                 : "The copy in your iCloud is deleted and the people you invited lose the list. It stays on this iPhone.")
-        }
         .sheet(item: $cloudShare) { sheet in
             CloudSharingView(sheet: sheet, listName: list.name, onStopped: {
                 // Apple's "Stop Sharing" removes only the share, so the copy in iCloud and the
@@ -289,12 +254,6 @@ struct ListDetailView: View {
             }, onFailed: { error in
                 errorMessage = SharingError.message(for: error)
             })
-        }
-        .confirmationDialog("Show this list on your Lock Screen?", isPresented: $confirmShopping, titleVisibility: .visible) {
-            Button("Start shopping mode") { shopping.start(list) }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.")
         }
     }
 
@@ -349,6 +308,53 @@ struct ListDetailView: View {
         case nil:
             errorMessage = NSLocalizedString("That couldn't be saved on this iPhone. Try again.", comment: "")
         }
+    }
+
+    /// The menu with the dialogs its items open, attached to the menu itself so that on iPad,
+    /// where a confirmation dialog is a popover, it points at the button that opened it (ADR-437).
+    private func menuWithDialogs(_ list: DoddyList) -> some View {
+        menu(list)
+            .confirmationDialog("Delete “\(list.name)”?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("Delete list", role: .destructive) {
+                    Task {
+                        do {
+                            // A shared list stops being shared first (ADR-263, review I3), so nothing
+                            // is left in iCloud.
+                            try await sharing.stopSharingBeforeDeleting(list.id)
+                            try await store.delete(id: list.id)
+                            dismiss()
+                        } catch {
+                            errorMessage = SharingError.message(for: error)
+                        }
+                    }
+                }
+            } message: {
+                Text("The list and its \(list.items.count) item\(list.items.count == 1 ? "" : "s") are removed from this iPhone. You can undo for a few seconds afterwards.")
+                    + Text(verbatim: sharing.deleteWarning(list.id).map { " " + $0 } ?? "")
+            }
+            .confirmationDialog("Share “\(list.name)” through iCloud?", isPresented: $confirmSharing, titleVisibility: .visible) {
+                Button("Share") { Task { await startSharing(list) } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.")
+            }
+            .confirmationDialog(sharing.isShared(list.id)?.role == .participant ? "Leave this shared list?" : "Stop sharing this list?",
+                                isPresented: $confirmStopSharing, titleVisibility: .visible) {
+                Button(sharing.isShared(list.id)?.role == .participant ? "Leave" : "Stop sharing", role: .destructive) {
+                    run { try await sharing.stop(list.id) }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(sharing.isShared(list.id)?.role == .participant
+                     ? "The list stays on this iPhone as your own. You won't see others' changes any more."
+                     : "The copy in your iCloud is deleted and the people you invited lose the list. It stays on this iPhone.")
+            }
+            .confirmationDialog("Show this list on your Lock Screen?", isPresented: $confirmShopping, titleVisibility: .visible) {
+                Button("Start shopping mode") { shopping.start(list) }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Its items show on the Lock Screen and in the Dynamic Island until every item is ticked or you end it, so anyone who sees your iPhone can read them. Ticking there ticks here.")
+            }
     }
 
     private func menu(_ list: DoddyList) -> some View {
