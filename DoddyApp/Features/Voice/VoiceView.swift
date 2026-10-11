@@ -1090,6 +1090,12 @@ struct VoiceView: View {
              : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
+        if controller.translatorStartsNewConversation {
+            // Review H3: the notes, profile and lists this conversation started with stay behind.
+            Label("Start ends this conversation and starts a new one for translating, without your notes, profile or lists. This conversation isn't kept either.", systemImage: "arrow.clockwise")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
         Button("Change languages") { changingTranslator = true }
             .buttonStyle(SecondaryButtonStyle())
             .sheet(isPresented: $changingTranslator) {

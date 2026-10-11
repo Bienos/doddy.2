@@ -203,6 +203,11 @@ final class VoiceSessionController {
     private(set) var readAloudProblem: String?
     /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
     private var checkInNeedsBriefing = false
+    /// How this conversation was started, and whether it started with the saved notes, profile and
+    /// lists in the agent's context (not from Home's Translate). Translating then starts a fresh
+    /// conversation, because that context can't be taken back out (review H3).
+    private var startedMode: VoiceConnectionMode?
+    private var sharedOwnerContext = false
 
     private let store: MemoryStore
     private let logs: ConversationLogStore
@@ -356,6 +361,8 @@ final class VoiceSessionController {
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
         var listsText = ListsPrompt.render(store.lists)
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
+        startedMode = mode
+        sharedOwnerContext = preset == nil
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
         if let preset {
@@ -820,6 +827,16 @@ final class VoiceSessionController {
             bulkUnticked = []
             await reply(id, runBulk(ticked, verb: verb, skipped: skipped))
         case .translator(let id, let setup):
+            // This conversation's agent already has the saved notes, profile and lists (review H3):
+            // translating goes on in a new conversation that gets none of them, as from Home's
+            // Translate. Private like a translator conversation, so nothing of this one is kept.
+            if translatorStartsNewConversation, let mode = startedMode {
+                isPrivate = true
+                await reply(id, "stopped: translator mode starts in a new conversation that has none of the user's notes, profile or lists. This conversation ends now; say nothing more.")
+                await stop()
+                await start(mode, profile: .empty, translator: setup)
+                return
+            }
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
         case .createList(let id, let name, let items):
@@ -1087,6 +1104,11 @@ final class VoiceSessionController {
         guard case .translator(let id, _) = pendingAction,
               let setup = TranslatorSetup(kind: kind, owner: owner, other: other) else { return }
         pendingAction = .translator(toolCallID: id, setup: setup)
+    }
+
+    /// Start on the "Start translating?" card ends this conversation and starts a fresh one (review H3).
+    var translatorStartsNewConversation: Bool {
+        sharedOwnerContext && startedMode != nil
     }
 
     private func beginTranslator(_ setup: TranslatorSetup) {
