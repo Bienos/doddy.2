@@ -1083,6 +1083,12 @@ final class VoiceSessionController {
             receipt.title = "Undone: \(undo.message.prefix(1).lowercased() + undo.message.dropFirst())"
             receipt.problem = nil
             listReceipt = receipt
+        } catch let error as ListUndoError {
+            // The undo ran but didn't take everything back (review C10): say exactly what it
+            // did, and don't offer it again, since running it twice could repeat what came back.
+            receipt.undo = nil
+            receipt.problem = error.message
+            listReceipt = receipt
         } catch {
             receipt.problem = "Couldn't undo. " + UserFacingError.listMessage(for: error)
             listReceipt = receipt
