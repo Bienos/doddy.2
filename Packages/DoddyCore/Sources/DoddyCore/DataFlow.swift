@@ -29,6 +29,9 @@ public struct DataFlowState: Equatable, Sendable {
     public var heyDoddyOn: Bool
     /// Lists shared through iCloud, by this user or with them (ADR-263).
     public var sharedLists: Int
+    /// Who writes the daily news on the messaging server, as it reported it
+    /// (`NewsSettings.Available.writerProvider`: "anthropic" or "openai"). Nil until it is known.
+    public var newsWriterProvider: String?
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -36,8 +39,10 @@ public struct DataFlowState: Equatable, Sendable {
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
-        siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0
+        siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0,
+        newsWriterProvider: String? = nil
     ) {
+        self.newsWriterProvider = newsWriterProvider
         self.morningCheckInOn = morningCheckInOn
         self.sharedLists = sharedLists
         self.rememberConversations = rememberConversations
@@ -84,6 +89,13 @@ public enum DataFlow {
         messaging.append("your phone number, only if you confirm it with a code for texts or calls")
         messaging.append("the news topics and feeds you pick, if you turn on daily news")
         if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
+
+        // The server can use either provider (ADR-197); name one only when the server said which.
+        let writer = switch state.newsWriterProvider {
+        case "anthropic": "Anthropic"
+        case "openai": "OpenAI"
+        default: "Anthropic or OpenAI, as the server is set up"
+        }
 
         var ask = "Typed questions"
         if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
@@ -134,12 +146,12 @@ public enum DataFlow {
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
             DataFlowRow(
-                id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, Anthropic, GNews)",
+                id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
                 when: "When you turn on notifications, texts, phone calls or daily news, and while they are on.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
-                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to Anthropic, and your own keywords to GNews."
+                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews."
                     : "No messaging server is set, so nothing goes there."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
