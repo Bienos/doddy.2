@@ -1681,10 +1681,20 @@ final class VoiceSessionController {
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .listAlarms:
-            // Read on the phone (ADR-283): times and labels Doddy set, nothing else.
-            await reply(call.toolCallId, VoiceToolReply.alarms(AlarmScheduler.current()))
+            // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
+            // list is said as such, never as "none" (voice-agent review 2).
+            guard let alarms = AlarmScheduler.currentIfReadable() else {
+                await reply(call.toolCallId, VoiceToolReply.alarmsUnreadable)
+                return
+            }
+            await reply(call.toolCallId, VoiceToolReply.alarms(alarms))
         case .cancelAlarm(let clock, let label):
-            switch AlarmMatch.match(clock: clock, label: label, in: AlarmScheduler.current()) {
+            // Unreadable is not "not found": the alarm may still ring.
+            guard let alarms = AlarmScheduler.currentIfReadable() else {
+                await reply(call.toolCallId, VoiceToolReply.alarmsUnreadable)
+                return
+            }
+            switch AlarmMatch.match(clock: clock, label: label, in: alarms) {
             case .none: await reply(call.toolCallId, VoiceToolReply.alarmNotFound(clock))
             case .several(let found): await reply(call.toolCallId, VoiceToolReply.alarmAmbiguous(found))
             case .one(let alarm): propose(.cancelAlarm(toolCallID: call.toolCallId, alarm: alarm), toolCallID: call.toolCallId)
