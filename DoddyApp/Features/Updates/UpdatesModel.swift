@@ -138,7 +138,8 @@ final class UpdatesModel {
             let text = channel == .push
                 ? "Test from Doddy: notifications are working."
                 : "Test from Doddy: texts are working."
-            let queued = try await client.sendUpdate(text, channels: [channel], idempotencyKey: UUID().uuidString)
+            // One key per text and channel until the server accepts it, so a retry is not a second message.
+            let queued = try await client.sendUpdate(text, channels: [channel])
             guard let id = queued.first?.id else { return }
             for _ in 0..<10 {
                 let status = try await client.updateStatus(id)
