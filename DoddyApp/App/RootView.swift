@@ -62,6 +62,8 @@ enum PreferenceKey {
     static let memoryCopyOn = "memoryCopyOn"
     /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
+    /// Siri may read saved notes aloud (ADR-248). On unless turned off; the phone must be unlocked.
+    static let siriReadsNotes = "siriReadsNotes"
 }
 
 enum AppTab: Hashable {

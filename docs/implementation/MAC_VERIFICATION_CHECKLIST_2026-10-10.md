@@ -76,6 +76,11 @@ EventKit, and `PlaceLocation`, which the check replaces with a stub) has still n
 | S4 | "Find in Doddy" with the app **closed**, then open | Memories → Find with the words filled in and the results showing (ADR-181). Run it again with the app open |
 | S5 | Start Save to Doddy while a voice conversation is open | The note appears after the conversation closes |
 | S6 | Run Save to Doddy during first-use onboarding or while the Back Tap setup sheet is open | It waits and appears afterwards. A later Save to Doddy still works (it must not stay blocked) |
+| S7 | Save "Gate code 4821". With Doddy closed and the iPhone unlocked: "Hey Siri, ask Doddy what I saved" → "gate code" | Siri asks "What are you looking for?", then says "You saved this today: Gate code 4821." Doddy does not open. Also try "What did I save in Doddy" and the Shortcuts app tile "Ask what I saved" (ADR-248, `SIRI_READBACK_STATUS.md`) |
+| S8 | Same, with the iPhone **locked** | Siri asks you to unlock first and says nothing about the note until you do |
+| S9 | Save "Gate code 5555" too and ask again; then ask for something you never saved; then a long note | Both codes read with "Check which one is current"; "I couldn't find that in your saved memories."; a long note is cut with "open Doddy for the rest" |
+| S10 | Settings → Back Tap and Siri → turn off "Siri can read my notes aloud", ask again | "Reading notes aloud is turned off in Doddy's settings…" and no note. What leaves this iPhone shows the Siri row off |
+| S11 | Time the answer the first time after a restart | Siri answers before giving up (word search only). If it times out, record it in the result log |
 
 ## 4b. The opening and listening on open (ADR-225)
 | # | Do this | Expect |

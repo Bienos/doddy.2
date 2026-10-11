@@ -23,13 +23,16 @@ public struct DataFlowState: Equatable, Sendable {
     public var memoryCopyOn: Bool
     /// The morning check-in is on (ADR-220).
     public var morningCheckInOn: Bool
+    /// Siri may read saved notes aloud (ADR-248).
+    public var siriReadsNotes: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
         connectionsOn: Set<VoiceConnection>, pauseAll: Bool, doddyServerSet: Bool,
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
-        morningCheckInOn: Bool = false
+        morningCheckInOn: Bool = false,
+        siriReadsNotes: Bool = false
     ) {
         self.morningCheckInOn = morningCheckInOn
         self.rememberConversations = rememberConversations
@@ -43,6 +46,7 @@ public struct DataFlowState: Equatable, Sendable {
         self.messagingServerSet = messagingServerSet
         self.pushOn = pushOn
         self.memoryCopyOn = memoryCopyOn
+        self.siriReadsNotes = siriReadsNotes
     }
 }
 
@@ -124,6 +128,14 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to Anthropic, and your own keywords to GNews."
                     : "No messaging server is set, so nothing goes there."),
+            DataFlowRow(
+                id: "siri", destination: "Apple (Siri)",
+                what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
+                when: "Only when you say \"Ask Doddy what I saved\" with your iPhone unlocked.",
+                isActive: state.siriReadsNotes,
+                note: state.siriReadsNotes
+                    ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
+                    : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
             DataFlowRow(
                 id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
