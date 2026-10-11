@@ -811,7 +811,10 @@ final class VoiceSessionController {
                     savedThisConversation += 1
                     // Only after the store returned the saved record (ADR-240).
                     flashIsland(.noteSaved)
-                    writeResults[id] = WriteResult(reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true)
+                    // What Doddy did can delete it again for a day, if it's left untouched (ADR-277).
+                    writeResults[id] = WriteResult(
+                        reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true,
+                        undo: .savedNote(id: record.id, text: record.currentText))
                     await reply(id, VoiceToolReply.saved(record))
                 } catch {
                     writeResults[id] = WriteResult(reply: "", attempted: true)
@@ -2106,7 +2109,9 @@ final class VoiceSessionController {
             do {
                 let record = try await store.save(text: text, category: .other, source: .explicitVoice)
                 savedThisConversation += 1
-                return WriteResult(reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true)
+                return WriteResult(
+                    reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true,
+                    undo: .savedNote(id: record.id, text: record.currentText))
             } catch {
                 return WriteResult(reply: VoiceToolReply.failed(UserFacingError.message(for: error)), attempted: true)
             }
@@ -2438,8 +2443,9 @@ final class VoiceSessionController {
         switch outcome {
         case .added(let event, let eventID):
             result.receipt = ActivityReceipt(event: event, calendar: .current, readAt: Date())
-            // Undo only with Calendar's own identifier for the event Doddy wrote.
-            result.undo = eventID.map { .addedEvent(eventID: $0, event: event) }
+            // Undo only with Calendar's own identifier for the event Doddy wrote. Undo removes a
+            // single event only, so a repeating one isn't offered for undo.
+            result.undo = draft.repeats == nil ? eventID.map { .addedEvent(eventID: $0, event: event) } : nil
             if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .calendar) }
         case .alreadyThere(let event):
             result.receipt = ActivityReceipt(event: event, calendar: .current, readAt: Date())
@@ -2478,7 +2484,7 @@ final class VoiceSessionController {
             connectionOn: undo.connection.map(isOn) ?? true) {
             if let connection = undo.connection, !isOn(connection) { connectionNeeded = connection }
             result = .notDone(reason)
-        } else if undo.listID != nil {
+        } else if undo.connection == nil {
             result = await store.undoFromActivity(undo)
         } else {
             result = await devices.undo(undo)

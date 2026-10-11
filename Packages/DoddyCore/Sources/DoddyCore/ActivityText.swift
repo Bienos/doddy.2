@@ -79,6 +79,11 @@ public enum ActivityText {
         "Delete event": "Usuń wydarzenie",
         "Delete reminder": "Usuń przypomnienie",
         "Set alarm": "Ustaw budzik",
+        // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
+        "Read alarms": "Odczytano budziki",
+        "Turn off alarm": "Wyłącz budzik",
+        "Delete events": "Usuń wydarzenia",
+        "Move reminders": "Przenieś przypomnienia",
         // Round 4 (ADR-300 onwards).
         "Converted currency": "Przeliczono walutę",
         "Save parking spot": "Zapisz miejsce parkowania",
@@ -110,12 +115,13 @@ public enum ActivityText {
             "Found in your lists when Doddy checked.": "Znalezione na listach przy sprawdzaniu.",
             "Not in your lists when Doddy checked, so it didn't happen. You can ask again.":
                 "Nie było na listach przy sprawdzaniu, więc to się nie stało. Możesz poprosić ponownie.",
+            ActivityLog.partlyNote: "Zmieniono tylko część z nich.",
         ]
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
         }
         // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders or the list (ADR-276).
-        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę")]
+        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę"), ("your notes", "w notatkach", "notatki")]
         for (place, locative, accusative) in places {
             notes["You undid this. Checked in \(place)."] = "Cofnięto. Sprawdzone \(locative)."
             notes["Not undone: it changed in \(place) since Doddy did this, so Doddy left it alone."] =
