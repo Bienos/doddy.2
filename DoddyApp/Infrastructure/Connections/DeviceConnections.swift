@@ -130,10 +130,11 @@ final class DeviceConnections {
 
     /// Repeating events share one identifier, so the start time is added: one id per occurrence.
     private static func occurrenceID(_ event: EKEvent) -> String {
-        "\(event.calendarItemIdentifier)@\(Int(event.startDate.timeIntervalSince1970))"
+        CalendarEventSummary.occurrenceID(itemID: event.calendarItemIdentifier, start: event.startDate)
     }
 
-    func addEvent(_ draft: CalendarEventDraft) throws -> AddOutcome {
+    /// The event's identifier comes back with a verified add, so Undo can find exactly this event (ADR-255).
+    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: AddOutcome, eventID: String?) {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
         event.calendar = calendar
@@ -145,9 +146,9 @@ final class DeviceConnections {
         event.notes = draft.notes
         try eventStore.save(event, span: .thisEvent)
         guard let identifier = event.eventIdentifier, eventStore.event(withIdentifier: identifier) != nil else {
-            return .unconfirmed
+            return (.unconfirmed, nil)
         }
-        return .verified
+        return (.verified, identifier)
     }
 
     /// Moves or renames exactly the occurrence the card showed (ADR-229). It's found again by its
@@ -171,6 +172,87 @@ final class DeviceConnections {
                 && found.startDate == plan.after.start && found.endDate == plan.after.end
         }
         return readBack ? .verified : .unconfirmed
+    }
+
+    // MARK: Undo (ADR-255)
+
+    /// Puts back exactly what Doddy did, only if it still looks exactly as Doddy left it. Nothing
+    /// else is ever removed or changed. "Undone" only after a read-back agrees. When a write
+    /// throws, a fresh look decides: still as Doddy left it means nothing was written.
+    func undo(_ undo: ActivityUndo) async -> UndoResult {
+        switch undo {
+        case .addedEvent(let eventID, let added):
+            guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
+            guard let event = eventStore.event(withIdentifier: eventID), !event.hasRecurrenceRules,
+                  ActivityUndo.unchanged(Self.summary(event), since: added) else { return .leftAlone }
+            do {
+                try eventStore.remove(event, span: .thisEvent, commit: true)
+            } catch {
+                eventStore.reset()
+                return eventStore.event(withIdentifier: eventID) == nil ? .notSure : .notDone(UserFacingError.message(for: error))
+            }
+            return eventStore.event(withIdentifier: eventID) == nil ? .undone : .notSure
+
+        case .changedEvent(let plan):
+            guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
+            do {
+                // The same guarded write as a change by voice: found by its current occurrence,
+                // which must look exactly as Doddy left it, then read back.
+                switch try changeEvent(ActivityUndo.reversed(plan)) {
+                case .verified: return .undone
+                case .changedElsewhere: return .leftAlone
+                case .unconfirmed: return .notSure
+                }
+            } catch {
+                return .notSure
+            }
+
+        case .addedReminder(let key, let title, let due):
+            guard access(for: .reminders) == .granted else { return .notDone("Reminders isn't connected.") }
+            guard let open = try? await incompleteReminders() else { return .notDone("Doddy couldn't read Reminders.") }
+            guard let mine = ActivityUndo.addedReminder(key: key, in: open),
+                  ActivityUndo.unchanged(mine, key: key, title: title, due: due),
+                  let reminder = eventStore.calendarItem(withIdentifier: mine.id) as? EKReminder else { return .leftAlone }
+            do {
+                try eventStore.remove(reminder, commit: true)
+            } catch {
+                eventStore.reset()
+                return eventStore.calendarItem(withIdentifier: mine.id) == nil ? .notSure : .notDone(UserFacingError.message(for: error))
+            }
+            return eventStore.calendarItem(withIdentifier: mine.id) == nil ? .undone : .notSure
+
+        case .changedReminder(let id, let title, let oldDue, let newDue, let markedDone):
+            guard access(for: .reminders) == .granted else { return .notDone("Reminders isn't connected.") }
+            guard let reminder = eventStore.calendarItem(withIdentifier: id) as? EKReminder,
+                  ActivityUndo.unchangedSinceChange(Self.snapshot(reminder), title: title, newDue: newDue, oldDue: oldDue, markedDone: markedDone)
+            else { return .leftAlone }
+            if markedDone {
+                reminder.isCompleted = false
+            } else {
+                reminder.dueDateComponents = oldDue.map(Self.components)
+                // An alarm Doddy moved with the due moves back with it.
+                if let newDue, let from = EventChange.moment(newDue, local: .current),
+                   let oldDue, let to = EventChange.moment(oldDue, local: .current) {
+                    for alarm in reminder.alarms ?? [] where alarm.absoluteDate == from {
+                        alarm.absoluteDate = to
+                    }
+                }
+            }
+            do {
+                try eventStore.save(reminder, commit: true)
+            } catch {
+                eventStore.reset()
+                guard let fresh = eventStore.calendarItem(withIdentifier: id) as? EKReminder else { return .notSure }
+                return ActivityUndo.unchangedSinceChange(Self.snapshot(fresh), title: title, newDue: newDue, oldDue: oldDue, markedDone: markedDone)
+                    ? .notDone(UserFacingError.message(for: error)) : .notSure
+            }
+            guard let back = eventStore.calendarItem(withIdentifier: id) as? EKReminder else { return .notSure }
+            let snapshot = Self.snapshot(back)
+            let restored = markedDone
+                ? !snapshot.isCompleted
+                : !snapshot.isCompleted && EventChange.sameDue(snapshot.due, oldDue)
+            return restored ? .undone : .notSure
+        }
     }
 
     private func rawEvents(from start: Date, to end: Date) -> [EKEvent] {

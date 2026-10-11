@@ -127,7 +127,7 @@ public struct MessageDraft: Equatable, Sendable {
 }
 
 /// What the agent is allowed to hear about an event: title and time only.
-public struct CalendarEventSummary: Equatable, Sendable {
+public struct CalendarEventSummary: Codable, Equatable, Sendable {
     /// This occurrence of the event on this iPhone (event identifier + start), for nudges.
     /// Never sent to the voice agent.
     public let id: String?

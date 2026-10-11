@@ -199,6 +199,16 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 |---|---|---|
 | PL1 | iPhone language Polish; go through Home, New note, Memories, Lists, Settings | Polish everywhere listed in `POLISH_SCREENS_STATUS.md`; note clipped buttons and any English left on a main screen |
 
+## 15. Undo in What Doddy did (ADR-255)
+| # | Do this | Expect |
+|---|---|---|
+| U1 | Ask Doddy to add an event; Settings → What Doddy did → Undo → Remove | The event is gone from Calendar; the row says "Calendar · Undone" |
+| U2 | Ask Doddy to add a reminder; rename it in Reminders; Undo | "Not undone: it changed in Reminders since Doddy did this…"; the reminder stays |
+| U3 | Have your own reminder "Buy milk", ask Doddy to add "Buy milk" (already there) | No Undo on that row |
+| U4 | Ask Doddy to move an event; Undo → Put back | Old time and name back; row "Undone" |
+| U5 | Ask Doddy to mark a reminder done; Undo → Mark not done | Open again in Reminders |
+| U6 | Turn on Pause all; Undo | "Not undone: Connections are paused in Settings. Nothing changed."; Undo still offered |
+
 ## Result log
 | Item | Xcode / iOS / device | Result | Notes |
 |---|---|---|---|

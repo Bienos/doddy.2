@@ -570,13 +570,17 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .event(let id, let draft):
-            await reply(id, addEvent(draft))
+            let (text, undo) = addEvent(draft)
+            await reply(id, text, undo: undo)
         case .reminder(let id, let draft):
             // The card is already gone (pendingAction is nil), so a second tap does nothing.
             reminderStatus = .adding(draft)
             let outcome = await addReminder(draft)
             reminderStatus = .done(draft, outcome)
-            await reply(id, VoiceToolReply.reminder(outcome))
+            // Undo removes only a reminder Doddy wrote, found by its marker (ADR-255).
+            var undo: ActivityUndo?
+            if case .added = outcome { undo = .addedReminder(key: ReminderWrite(draft).key, title: draft.title, due: draft.due) }
+            await reply(id, VoiceToolReply.reminder(outcome), undo: undo)
         case .timer(let id, let draft):
             await reply(id, await startTimer(draft))
         case .map(let id, let place):
@@ -615,9 +619,13 @@ final class VoiceSessionController {
             let receipt = await setNoteReminder(confirmed)
             await reply(id, Self.noteReminderReply(receipt, note: noteText))
         case .changeEvent(let id, let plan):
-            await reply(id, changeEvent(plan))
+            // Kept only if the reply says the change was checked (ActivityEntry).
+            await reply(id, changeEvent(plan), undo: .changedEvent(plan))
         case .changeReminder(let id, let reminder, let draft):
-            await reply(id, changeReminder(reminder, draft))
+            let undo = ActivityUndo.changedReminder(
+                id: reminder.id, title: reminder.title, oldDue: reminder.due,
+                newDue: draft.markDone ? nil : draft.newDue, markedDone: draft.markDone)
+            await reply(id, changeReminder(reminder, draft), undo: undo)
         case .translator(let id, let setup):
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
@@ -1512,7 +1520,8 @@ final class VoiceSessionController {
                 return VoiceToolReply.failed(UserFacingError.message(for: error))
             }
         case .createCalendarEvent(let draft):
-            return addEvent(draft)
+            // Plan steps don't offer Undo yet (ADR-255): the reply only.
+            return addEvent(draft).0
         case .createReminder(let draft):
             return VoiceToolReply.reminder(await addReminder(draft))
         case .setTimer(let draft):
@@ -1680,21 +1689,25 @@ final class VoiceSessionController {
         pendingAction = action
     }
 
-    private func addEvent(_ draft: CalendarEventDraft) -> String {
+    /// The reply, and what Undo needs when the event was added and read back (ADR-255).
+    private func addEvent(_ draft: CalendarEventDraft) -> (String, ActivityUndo?) {
         guard devices.access(for: .calendar) == .granted else {
-            return VoiceToolReply.notAdded("Calendar isn't connected.")
+            return (VoiceToolReply.notAdded("Calendar isn't connected."), nil)
         }
         // The start may have passed while the card waited (ADR-128): ask again, add nothing.
         if let late = draft.passed(now: Date(), calendar: .current) {
-            return VoiceToolReply.clarification(late, tool: VoiceToolName.createCalendarEvent)
+            return (VoiceToolReply.clarification(late, tool: VoiceToolName.createCalendarEvent), nil)
         }
         do {
-            switch try devices.addEvent(draft) {
-            case .verified: return VoiceToolReply.eventAdded(draft, calendar: .current)
-            case .unconfirmed: return VoiceToolReply.addUnconfirmed
+            let added = try devices.addEvent(draft)
+            switch added.outcome {
+            case .verified:
+                let event = CalendarEventSummary(title: draft.title, start: draft.start, end: draft.end, allDay: draft.allDay)
+                return (VoiceToolReply.eventAdded(draft, calendar: .current), added.eventID.map { .addedEvent(eventID: $0, event: event) })
+            case .unconfirmed: return (VoiceToolReply.addUnconfirmed, nil)
             }
         } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+            return (VoiceToolReply.notAdded(UserFacingError.message(for: error)), nil)
         }
     }
 
@@ -1832,12 +1845,14 @@ final class VoiceSessionController {
         UserDefaults.standard.bool(forKey: connection.preferenceKey)
     }
 
-    private func reply(_ toolCallID: String, _ text: String, isError: Bool = false) async {
+    /// `undo` is what "What Doddy did" needs to put the change back; the entry keeps it only when
+    /// `text` says the change was made and checked (ADR-255).
+    private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
         if let request = asked.removeValue(forKey: toolCallID) {
             if let entry = started.removeValue(forKey: toolCallID) {
-                activity.replace(ActivityEntry(id: entry.id, request: request, reply: text, at: entry.at))
+                activity.replace(ActivityEntry(id: entry.id, request: request, reply: text, at: entry.at, undo: undo))
             } else {
-                activity.append(ActivityEntry(request: request, reply: text, at: Date()))
+                activity.append(ActivityEntry(request: request, reply: text, at: Date(), undo: undo))
             }
         }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)

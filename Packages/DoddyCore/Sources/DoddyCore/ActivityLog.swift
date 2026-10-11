@@ -193,11 +193,15 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public var checkedAt: Date?
     /// Set when this was one step of a plan card. Older entries have none.
     public let plan: ActivityPlanRef?
+    /// What Doddy needs to put it back (ADR-255). Only kept for changes Doddy made and checked.
+    public let undo: ActivityUndo?
+    /// Set after the user tapped Undo.
+    public var undoState: UndoState?
 
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
         outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
-        plan: ActivityPlanRef? = nil
+        plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil
     ) {
         self.id = id
         self.at = at
@@ -209,15 +213,18 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
         self.plan = plan
+        self.undo = outcome == .done ? undo : nil
+        self.undoState = undoState
     }
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
     /// app's own verified result (VoiceToolReply), so the log can never claim more than the agent heard.
-    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil) {
+    /// `undo` is kept only when that reply says the change was made and checked.
+    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
-            note: note, reminderKey: request.reminderKey, plan: plan)
+            note: note, reminderKey: request.reminderKey, plan: plan, undo: undo)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
@@ -248,6 +255,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
         if text.hasPrefix("added:"), text.contains("already in Reminders") { return (.alreadyThere, nil) }
         if text.hasPrefix("added:") || text.hasPrefix("saved:") || text.hasPrefix("drafted:") { return (.done, nil) }
+        // A change to an event or reminder, checked by reading it back (ADR-229).
+        if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
+        if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)

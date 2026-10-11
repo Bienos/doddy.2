@@ -45,9 +45,14 @@ public struct ReminderChangeDraft: Equatable, Sendable {
 }
 
 /// What the card shows and what is written: the event as it is now and as it will be.
-public struct EventChangePlan: Equatable, Sendable {
+public struct EventChangePlan: Codable, Equatable, Sendable {
     public let before: CalendarEventSummary
     public let after: CalendarEventSummary
+
+    public init(before: CalendarEventSummary, after: CalendarEventSummary) {
+        self.before = before
+        self.after = after
+    }
 }
 
 public enum EventChange {
