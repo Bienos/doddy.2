@@ -47,6 +47,7 @@ public enum ActivityText {
         "Searched your notes": "Przeszukano notatki",
         "Save a note": "Zapisz notatkę",
         "Read your calendar": "Odczytano kalendarz",
+        "Looked for free time": "Szukano wolnego czasu",
         "Add event": "Dodaj wydarzenie",
         "Add reminder": "Dodaj przypomnienie",
         "Remind about a note": "Przypomnij o notatce",

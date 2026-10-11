@@ -5,7 +5,7 @@
     {
       "type": "function",
       "name": "search_memories",
-      "description": "Search the notes the user has explicitly saved in Doddy on their iPhone. Use it whenever the user asks about something they may have saved (where they put something, what someone recommended, a code, a decision). The search is word-based and notes may have been saved in Polish or English, so pass the key words in BOTH languages, e.g. 'kod code paczkomat parcel locker' or 'klucze keys'. Numbers as digits. If nothing matched, try once more with a broader or different word before giving up. The app returns the exact saved notes with their saved date, or says nothing matched. Only answer from what this tool returns; if nothing matched, say you couldn't find it in their saved memories and never guess.",
+      "description": "Search the notes the user has explicitly saved in Doddy on their iPhone. Use it whenever the user asks about something they may have saved (where they put something, what someone recommended, a code, a decision). The search is word-based and notes may have been saved in Polish or English, so pass the key words in BOTH languages, e.g. 'kod code paczkomat parcel locker' or 'klucze keys'. Numbers as digits. If nothing matched, try once more with a broader or different word before giving up. To list the notes with one of the user's tags (a word they wrote with #), pass exactly that tag as the query, e.g. '#car'. The app returns the exact saved notes with their saved date, or says nothing matched. Only answer from what this tool returns; if nothing matched, say you couldn't find it in their saved memories and never guess.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -42,6 +42,23 @@
         "required": []
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20, "elevenlabs_tool_id": "tool_5601m4f2xwxpew38wf9fwynymfr6"}
+    },
+    {
+      "type": "function",
+      "name": "find_free_time",
+      "description": "Find when the user is free: the gaps between timed events in their iPhone calendars, worked out on the phone. Use it when the user asks when they're free, have time, or could fit something in. Give the first day and, for several days, the last day (at most 7). All-day events don't block time but are named. Only say the gaps the result gives, in natural speech; never invent free time. It books nothing: to add an event afterwards, use create_calendar_event.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "from": {"type": "string", "description": "The first day as YYYY-MM-DD in the user's local time."},
+          "to": {"type": "string", "description": "The last day as YYYY-MM-DD, only for several days; at most 7 days after from."},
+          "min_minutes": {"type": "integer", "description": "Shortest useful gap in minutes, e.g. 60 for 'an hour'. Default 30."},
+          "earliest": {"type": "string", "description": "Start of the part of the day to look at, as HH:MM, e.g. 13:00 for 'in the afternoon'. Default 08:00."},
+          "latest": {"type": "string", "description": "End of the part of the day to look at, as HH:MM. Default 20:00."}
+        },
+        "required": ["from"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 20}
     },
     {
       "type": "function",
@@ -739,7 +756,8 @@
         "type": "object",
         "properties": {
           "name": {"type": "string", "description": "The new list's name, at most 60 characters, e.g. 'Packing for Kraków'."},
-          "items": {"type": "array", "items": {"type": "string", "description": "One item in the user's own words, numbers as digits, e.g. '2 packs of bananas'."}, "description": "The first items, if the user said any."}
+          "items": {"type": "array", "items": {"type": "string", "description": "One item in the user's own words, numbers as digits, e.g. '2 packs of bananas'."}, "description": "The first items, if the user said any."},
+          "template": {"type": "string", "description": "Only when the user asks to start a list from one of their list templates (listed under the user's lists): the template's name, e.g. 'Packing'. Its items are added first."}
         },
         "required": ["name"]
       },

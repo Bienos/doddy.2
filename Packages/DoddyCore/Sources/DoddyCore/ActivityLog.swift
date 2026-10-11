@@ -87,6 +87,11 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Searched your notes", detail: "“\(query)”", isLookup: true)
         case .saveMemory(let text):
             return ActivityRequest(app: .memories, title: "Save a note", detail: "“\(text)”", isLookup: false)
+        case .findFreeTime(let request):
+            let range = request.range(calendar: .current)
+            return ActivityRequest(
+                app: .calendar, title: "Looked for free time",
+                detail: "\(when(range.start, hasTime: false)) to \(when(range.end, hasTime: false))", isLookup: true)
         case .readCalendar(let range):
             return ActivityRequest(
                 app: .calendar, title: "Read your calendar",

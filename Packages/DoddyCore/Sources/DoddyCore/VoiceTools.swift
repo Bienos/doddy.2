@@ -43,7 +43,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     /// The connection that serves a client tool. Memory tools are not listed: they are always on.
     public static func serving(_ toolName: String) -> VoiceConnection? {
         switch toolName {
-        case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent,
+        case VoiceToolName.readCalendar, VoiceToolName.findFreeTime, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent,
              VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents: .calendar
         case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
              VoiceToolName.moveReminders: .reminders
@@ -215,6 +215,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case deleteCalendarEvents(VoiceTimeRange)
     /// Open reminders due by a day, moved to another day at their own times.
     case moveReminders(dueBy: ReminderDue, to: ReminderDue)
+    /// "When am I free?" (ADR-332): read-only, worked out on the iPhone.
+    case findFreeTime(FreeTimeRequest)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -229,6 +231,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .saveMemory(text: text)
         case VoiceToolName.readCalendar:
             return parseRead(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.findFreeTime:
+            return parseFreeTime(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createCalendarEvent:
             return parseEvent(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.createReminder:

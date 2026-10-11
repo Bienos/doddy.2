@@ -1599,6 +1599,15 @@ final class VoiceSessionController {
             }
             let events = devices.events(in: range)
             await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
+        case .findFreeTime(let request):
+            // Read-only (ADR-332): gaps worked out here from the iPhone's calendars.
+            guard devices.access(for: .calendar) == .granted else {
+                await notConnected(call.toolCallId, .calendar)
+                return
+            }
+            let events = devices.events(in: request.range(calendar: .current))
+            let days = FreeTime.days(request, events: events, now: Date(), calendar: .current)
+            await reply(call.toolCallId, VoiceToolReply.freeTime(days, request: request, calendar: .current))
         case .createCalendarEvent(let draft):
             propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .createReminder(let draft):
