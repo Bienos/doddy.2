@@ -205,3 +205,4 @@ In order of risk:
   - `Window(..., id:)` next to `MenuBarExtra`, and `openWindow(id:)`;
   - `HSplitView`, and `TextEditor` with `.scrollContentBackground(.hidden)`;
   - `NSApplication.shared.activate()`, which is macOS 14+.
+- **Share extension (ADR-311), Swift 6:** `ShareViewController` no longer sends the main-actor `[NSExtensionItem]` to `Task.detached` or a `sending` parameter, which strict concurrency rejects. The items stay on the main actor, and each attachment is read with `NSItemProvider.loadItem(forTypeIdentifier:options:completionHandler:)` inside `withCheckedContinuation`; only a `String` comes back. Behaviour is unchanged: the first web link (never a file's address), else the plain text.
