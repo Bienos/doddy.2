@@ -219,7 +219,7 @@ test('request hygiene: wrong method, content type, oversized and malformed bodie
   res = await handleAssist(assistRequest(JSON.stringify(body()), { headers: { 'content-type': 'text/plain' } }), deps);
   assert.equal(res.status, 400);
 
-  res = await handleAssist(assistRequest('{"a":"' + 'x'.repeat(70_000) + '"}'), deps);
+  res = await handleAssist(assistRequest('{"a":"' + 'x'.repeat(140_000) + '"}'), deps);
   assert.equal(res.status, 413);
 
   res = await handleAssist(assistRequest('{not json'), deps);
@@ -287,6 +287,20 @@ test('no retry when the budget has no room for a second attempt', async () => {
   assert.equal(res.status, 503, 'the 5xx is returned instead of retrying past the cap');
   assert.equal(provider.calls.length, 1);
   assert.equal(spend.total('all', NOW_MS), one, 'the failed attempt keeps its estimate booked');
+});
+
+test('a request at every character limit with four-byte characters is accepted', async () => {
+  const e = (n) => '😀'.repeat(n);
+  const max = body();
+  max.userText = e(2_000);
+  max.turns = Array.from({ length: 6 }, (_, i) => ({ role: i % 2 ? 'assistant' : 'user', text: e(2_000) }));
+  max.memories = Array.from({ length: 8 }, (_, i) => ({
+    id: `00000000-0000-4000-8000-00000000000${i}`, text: e(1_500), source: 'explicit_text' }));
+  const raw = JSON.stringify(max);
+  assert.ok(Buffer.byteLength(raw) > 64 * 1024, 'bigger than the old 64 KiB limit');
+  const { deps } = makeDeps({ env: { ...ENV, DAILY_BUDGET_USD: '100', DAILY_BUDGET_PER_INSTALL_USD: '100', DAILY_BUDGET_PER_INVITE_USD: '100' } });
+  const { res } = await run(assistRequest(raw), deps);
+  assert.equal(res.status, 200);
 });
 
 test('review: an unexpected internal error becomes a content-free 503, not a platform 500', async () => {
