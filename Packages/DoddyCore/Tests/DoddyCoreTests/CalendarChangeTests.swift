@@ -178,7 +178,9 @@ final class EventDetailsTests: XCTestCase {
         XCTAssertEqual(plan?.newLocation, "Marszałkowska 10")
         XCTAssertEqual(plan?.addNote, "Bring the X-ray")
         let reply = VoiceToolReply.eventChanged(plan!, calendar: calendar)
-        XCTAssertTrue(reply.contains("Its place is now \"Marszałkowska 10\""))
+        XCTAssertTrue(reply.hasPrefix("changed: the event is now "))
+        XCTAssertTrue(reply.contains(" Its place changed. A line was added to its notes. Checked in Calendar.\n"), reply)
+        XCTAssertTrue(reply.hasSuffix("<<<DATA\nTitle: \"Dentist\"\nNew place: \"Marszałkowska 10\"\nAdded to its notes: \"Bring the X-ray\"\nDATA>>>"), reply)
         XCTAssertFalse(reply.contains("Old clinic"), "the old place is never sent to the agent")
         // The same place again is no change.
         let same = EventChangeDraft(title: "Dentist", currentStart: dentist.start, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: nil, newLocation: "Old clinic")

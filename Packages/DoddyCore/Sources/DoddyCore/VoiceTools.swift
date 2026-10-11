@@ -589,12 +589,23 @@ public enum VoiceToolReply {
         return lines.joined(separator: "\n")
     }
 
+    /// The note follows as data (ToolData).
     public static func saved(_ record: MemoryRecord) -> String {
-        "saved: \"\(record.currentText)\" (saved \(timestamp(record.capturedAt)))."
+        "saved: one note (saved \(timestamp(record.capturedAt))). Its exact text:\n"
+            + ToolData.block(["\"\(ToolData.clean(record.currentText))\""])
     }
 
     public static func failed(_ reason: String) -> String {
         "failed: \(reason) Nothing was saved."
+    }
+
+    /// What a failed write left alone, so a failed change or delete doesn't say "saved" (review finding 8).
+    public enum FailedWrite: String, Sendable {
+        case saved, changed, deleted
+    }
+
+    public static func failed(_ reason: String, nothing: FailedWrite) -> String {
+        "failed: \(reason) Nothing was \(nothing.rawValue)."
     }
 
     public static func unsupported(_ name: String) -> String {

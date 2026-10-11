@@ -424,8 +424,10 @@ extension VoiceToolReply {
         return text
     }
 
+    /// The list's name and its items follow as data (ToolData).
     public static func listCreated(_ list: DoddyList) -> String {
-        "created: the list \"\(list.name)\" with \(list.items.count) item\(list.items.count == 1 ? "" : "s")\(list.items.isEmpty ? "" : ": " + list.items.map(\.text).joined(separator: ", "))."
+        "created: a list with \(itemCount(list.items.count)). Its name\(list.items.isEmpty ? "" : ", then the items"):\n"
+            + ToolData.block(["Name: \"\(ToolData.clean(list.name))\""] + list.items.map { "- \(ToolData.clean($0.text))" })
     }
 
     public static let declinedList = "declined: the user chose not to start this list. Nothing was made."
