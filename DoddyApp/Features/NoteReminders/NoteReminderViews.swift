@@ -1,6 +1,7 @@
 import DoddyCore
 import SwiftUI
 import UIKit
+import UserNotifications
 
 /// Memory detail: "Remind me", or the reminder that is set with Change / Cancel, plus the receipt.
 struct NoteReminderSection: View {
@@ -262,6 +263,19 @@ private struct DueItem: Identifiable {
     var id: UUID { reminder.id }
 }
 
+/// Note-reminder notifications iOS already delivered (Lock Screen, Notification Centre).
+enum DeliveredNoteReminders {
+    /// Removes them, so none keeps showing a note's text once "Show note text" is off (review
+    /// F4). Only Doddy's note reminders (`MemoryReminder.notificationPrefix`); the reminders
+    /// themselves stay, and one that is due waits at the top of Home.
+    static func removeAll() async {
+        let center = UNUserNotificationCenter.current()
+        let ids = await center.deliveredNotifications().map(\.request.identifier)
+            .filter { $0.hasPrefix(MemoryReminder.notificationPrefix) }
+        if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
+    }
+}
+
 /// Settings → Notifications. Status comes from iOS; nothing here claims an alert iOS won't show.
 struct NoteReminderSettingsSection: View {
     @Environment(NoteReminderStore.self) private var reminders
@@ -283,7 +297,14 @@ struct NoteReminderSettingsSection: View {
                 EmptyView()
             }
             Toggle("Show note text in notifications", isOn: $showNoteText)
-                .onChange(of: showNoteText) { Task { await reminders.noteTextSettingChanged() } }
+                .onChange(of: showNoteText) { _, shown in
+                    Task {
+                        await reminders.noteTextSettingChanged()
+                        // Rewriting waiting notifications doesn't reach ones already delivered,
+                        // which keep the words they arrived with (review F4).
+                        if !shown { await DeliveredNoteReminders.removeAll() }
+                    }
+                }
                 .accessibilityIdentifier("settings.showNoteText")
             StatusRow(title: "Location for place reminders", value: locationText)
             StatusRow(title: "Reminders set", value: "\(reminders.slotsUsed) of \(NoteReminderLimits.maxActive)")
