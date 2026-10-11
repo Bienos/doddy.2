@@ -124,7 +124,7 @@ public enum DataFlow {
                 note: "Doddy has no copy of the passphrase or the file. Without the passphrase nobody can open it."),
             DataFlowRow(
                 id: "iCloudSharing", destination: "Your iCloud (Apple) and the people you share lists with",
-                what: "The name and items of each list you share or joined, and every change to them.",
+                what: "The name and items of each list you share or joined, and every change to them; a reminder's place only if you tap Share this place.",
                 when: "While a list is shared.", isActive: state.sharedLists > 0,
                 note: state.sharedLists > 0
                     ? "Only the lists you chose. Stop sharing deletes the copy in your iCloud; Leave takes you off someone else's list."

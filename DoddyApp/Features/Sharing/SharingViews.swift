@@ -144,3 +144,70 @@ struct SharedListStatusRow: View {
         .accessibilityIdentifier("list.shared")
     }
 }
+
+/// Under a shared list's reminder (ADR-298): share this iPhone's place with everyone on the list,
+/// or, when someone else shared one, be reminded there too. Nothing is shared or set until a tap.
+struct SharedPlaceRow: View {
+    let list: DoddyList
+    @Environment(NoteReminderStore.self) private var reminders
+    private let sharing = SharedListsController.shared
+    @State private var isWorking = false
+    @State private var message: String?
+
+    private var mine: ReminderPlace? {
+        reminders.reminder(forMemory: list.id)?.place
+    }
+
+    var body: some View {
+        let offer = sharing.placeOffer(for: list.id, mine: mine)
+        VStack(alignment: .leading, spacing: 8) {
+            switch offer {
+            case .nothing:
+                EmptyView()
+            case .canShare(let place):
+                Button("Share this place with everyone on the list") { run { try await sharing.setSharedPlace(place, for: list.id) } }
+                    .disabled(isWorking)
+                    .accessibilityIdentifier("list.sharePlace")
+                Text("They see the place you picked (“\(place.name)”) and can choose to be reminded there too. Not where you are.")
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+            case .remindMeToo(let shared, let by):
+                Group {
+                    if let by {
+                        Text(String(format: NSLocalizedString("%@ shared a reminder at “%@”.", comment: ""), by, shared.place.name))
+                    } else {
+                        Text(String(format: NSLocalizedString("Someone on the list shared a reminder at “%@”.", comment: ""), shared.place.name))
+                    }
+                }
+                .font(.subheadline)
+                Button("Remind me there too") {
+                    run { await reminders.set(memoryID: list.id, place: shared.place) }
+                }
+                .disabled(isWorking)
+                .accessibilityIdentifier("list.remindMeToo")
+                if mine != nil {
+                    Text("This replaces your own reminder for this list.").font(.footnote).foregroundStyle(Theme.secondaryText)
+                }
+            case .shared(let shared, let byMe):
+                Text(String(format: NSLocalizedString("Everyone on the list can be reminded at “%@”.", comment: ""), shared.place.name))
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                if byMe {
+                    Button("Stop sharing this place") { run { try await sharing.setSharedPlace(nil, for: list.id) } }
+                        .disabled(isWorking)
+                        .accessibilityIdentifier("list.stopSharingPlace")
+                }
+            }
+            if let message {
+                Text(message).font(.footnote).foregroundStyle(Theme.error)
+            }
+        }
+    }
+
+    private func run(_ work: @escaping () async throws -> Void) {
+        isWorking = true
+        message = nil
+        Task {
+            do { try await work() } catch { message = SharingError.message(for: error) }
+            isWorking = false
+        }
+    }
+}

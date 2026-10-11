@@ -14,6 +14,10 @@ struct ListCloud {
     static let listType = "DoddyList"
     static let itemType = "DoddyListItem"
     static let listRecordName = "list"
+    /// A place someone shared for the list's reminder (ADR-298): one record, apart from the list
+    /// and items, so syncing items never touches it.
+    static let placeType = "DoddyListPlace"
+    static let placeRecordName = "place"
 
     let container: CKContainer
 
@@ -48,6 +52,16 @@ struct ListCloud {
     struct Zone {
         let list: CKRecord?
         let items: [CKRecord]
+        var place: CKRecord? = nil
+
+        /// The shared place, only when every field is there and makes sense (ADR-298).
+        var sharedPlace: SharedListPlace? {
+            guard let place else { return nil }
+            return SharedListPlace.validated(
+                name: place["name"] as? String, latitude: (place["latitude"] as? NSNumber)?.doubleValue,
+                longitude: (place["longitude"] as? NSNumber)?.doubleValue, radiusMeters: (place["radius"] as? NSNumber)?.intValue,
+                onArrival: (place["onArrival"] as? NSNumber)?.boolValue, sharedBy: place["sharedBy"] as? String)
+        }
 
         var state: SharedListState? {
             guard let list, let name = list["name"] as? String else { return nil }
@@ -114,7 +128,8 @@ struct ListCloud {
         }
         return Zone(
             list: records.first { $0.recordType == Self.listType && $0.recordID.recordName == Self.listRecordName },
-            items: records.filter { $0.recordType == Self.itemType })
+            items: records.filter { $0.recordType == Self.itemType },
+            place: records.first { $0.recordType == Self.placeType && $0.recordID.recordName == Self.placeRecordName })
     }
 
     // MARK: Writing
@@ -151,6 +166,27 @@ struct ListCloud {
             saving: saving, deleting: deleting, savePolicy: .ifServerRecordUnchanged, atomically: true)
         for outcome in result.saveResults.values { _ = try outcome.get() }
         for outcome in result.deleteResults.values { try outcome.get() }
+    }
+
+    /// Shares `place` with everyone on the list, or stops sharing it (nil). The record must still
+    /// be as fetched; then the zone is read again and must show exactly that (ADR-298).
+    func setPlace(_ place: SharedListPlace?, over zone: Zone, zoneID: CKRecordZone.ID, in database: CKDatabase) async throws -> Bool {
+        if let place {
+            let record = zone.place ?? CKRecord(recordType: Self.placeType, recordID: CKRecord.ID(recordName: Self.placeRecordName, zoneID: zoneID))
+            record["name"] = place.place.name
+            record["latitude"] = place.place.latitude
+            record["longitude"] = place.place.longitude
+            record["radius"] = place.place.radiusMeters
+            record["onArrival"] = place.place.onArrival
+            record["sharedBy"] = place.sharedBy
+            let result = try await database.modifyRecords(saving: [record], deleting: [], savePolicy: .ifServerRecordUnchanged, atomically: true)
+            for outcome in result.saveResults.values { _ = try outcome.get() }
+        } else if let existing = zone.place {
+            let result = try await database.modifyRecords(saving: [], deleting: [existing.recordID], savePolicy: .ifServerRecordUnchanged, atomically: true)
+            for outcome in result.deleteResults.values { try outcome.get() }
+        }
+        let back = try await fetch(zoneID, in: database)
+        return back?.sharedPlace == place
     }
 
     /// Sets the record's fields from `item`; true when anything changed.

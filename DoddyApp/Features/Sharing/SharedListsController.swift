@@ -38,6 +38,8 @@ final class SharedListsController {
     /// Who added or ticked items on shared lists, and the people's names (ADR-285). Memory only,
     /// refreshed at each sync; never sent to Doddy's voice.
     private var people: [UUID: SharedItemPeople] = [:]
+    /// The place someone shared for each shared list (ADR-298), as read at the last sync.
+    private(set) var places: [UUID: SharedListPlace] = [:]
     private var names: [String: String] = [:]
     private var me: String?
 
@@ -56,6 +58,24 @@ final class SharedListsController {
     var isAvailable: Bool { cloud != nil }
 
     func isShared(_ listID: UUID) -> ListShare? { links[listID] }
+
+    /// What the list screen offers about the list's shared place (ADR-298).
+    func placeOffer(for listID: UUID, mine: ReminderPlace?) -> SharedPlaceOffer {
+        SharedPlaceOffer.make(isShared: links[listID] != nil, shared: places[listID], mine: mine, me: me, names: names)
+    }
+
+    /// Shares this iPhone's place reminder for the list with everyone on it, or stops (nil).
+    /// Done only when iCloud reads back exactly that.
+    func setSharedPlace(_ place: ReminderPlace?, for listID: UUID) async throws {
+        guard let cloud, let link = links[listID] else { throw SharingError.notSetUp }
+        let database = cloud.database(link.role)
+        let zoneID = ListCloud.zoneID(link)
+        if me == nil { me = await cloud.myRecordName() }
+        guard let zone = try await cloud.fetch(zoneID, in: database) else { throw SharingError.gone }
+        let shared = place.map { SharedListPlace(place: $0, sharedBy: me) }
+        guard try await cloud.setPlace(shared, over: zone, zoneID: zoneID, in: database) else { throw SharingError.unconfirmed }
+        places[listID] = shared
+    }
 
     private var repository: (any ListShareRepository)? { store?.environment.listShareRepository }
 
@@ -226,7 +246,10 @@ final class SharedListsController {
         let back = try await cloud.fetch(zoneID, in: database)
         guard store.list(id: link.listID).map(SharedListState.init) == result.merged, back?.state == result.merged
         else { throw SharingError.unconfirmed }
-        if let back { people.merge(back.people) { _, new in new } }
+        if let back {
+            people.merge(back.people) { _, new in new }
+            places[link.listID] = back.sharedPlace
+        }
         if let share = try? await cloud.existingShare(link) { names.merge(ListCloud.names(in: share)) { _, new in new } }
         let synced = ListShare(
             listID: link.listID, zoneName: link.zoneName, zoneOwner: link.zoneOwner, role: link.role,
