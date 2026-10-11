@@ -299,3 +299,10 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
 | H3 | Settings › Widgets: turn "Show in widgets" off; on the watch, hide notes and lists | Widgets (small and medium, full colour): Doddy turned away beside "Turned off in Doddy's Settings."; the watch: turned away above its hidden message |
 | H4 | Build everything (app, widgets, watch app, watch widgets) | Compiles. If not, the errors are new to this checklist: the four batches before were never compiled |
+
+## 4l. Previews, watch icon and Doddy UI tests (ADR-336)
+| # | Do this | Expect |
+|---|---|---|
+| P1 | Open `DoddyApp/DesignSystem/DoddyArtPreviews.swift`, `DoddyWidgets/DoddyWidgetPreviews.swift` and the end of `DoddyWatchWidgets/DoddyWatchComplications.swift` in Xcode's canvas | Every pose, strip, scenery strip, the storybook, share card, Siri snippet, widgets, Live Activities and complications draw; use this before tapping through the app |
+| P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
+| P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |
