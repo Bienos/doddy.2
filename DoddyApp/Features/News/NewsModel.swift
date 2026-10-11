@@ -35,13 +35,18 @@ final class NewsModel {
 
     var isServerConfigured: Bool { client != nil }
 
+    /// Loads the saved settings into the draft the first time only. Coming back to this screen
+    /// (for example from Notifications and texts) keeps unsaved edits; after Save the draft is
+    /// replaced with what the server saved (DOD-08).
     func refresh() async {
         guard let client else { return }
         await run {
-            let settings = try await client.newsSettings()
-            self.apply(settings)
-            self.catalog = try await client.newsCatalog(language: settings.language)
-            self.digests = (try? await client.newsDigests()) ?? []
+            if self.loaded == nil {
+                self.apply(try await client.newsSettings())
+            }
+            // The saved language, as before: the draft's topics were picked from that catalog.
+            self.catalog = try await client.newsCatalog(language: self.loaded?.language ?? self.language)
+            self.digests = (try? await client.newsDigests()) ?? self.digests
         }
     }
 
