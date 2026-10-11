@@ -90,9 +90,13 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     public let lists: [List]
     /// Absent in snapshots written before ADR-315; those still read, with no parking.
     public let parking: Parked?
+    /// "Hide character artwork" is on in the app (ADR-331): widgets, Live Activities and the watch
+    /// leave Doddy's pictures out too. Written only when true, so snapshots from before (and with
+    /// it off) are unchanged and still read.
+    public let hidesDoddy: Bool?
 
     public init(version: Int = currentVersion, writtenAt: Date, isOn: Bool, pinned: [Note], reminders: [Reminder], lists: [List],
-                parking: Parked? = nil) {
+                parking: Parked? = nil, hidesDoddy: Bool = false) {
         self.version = version
         self.writtenAt = writtenAt
         self.isOn = isOn
@@ -100,19 +104,23 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         self.reminders = reminders
         self.lists = lists
         self.parking = parking
+        self.hidesDoddy = hidesDoddy ? true : nil
     }
 
-    public static func off(at date: Date) -> WidgetSnapshot {
-        WidgetSnapshot(writtenAt: date, isOn: false, pinned: [], reminders: [], lists: [])
+    /// Whether Doddy's pictures are to be left out (ADR-331).
+    public var hidesPictures: Bool { hidesDoddy == true }
+
+    public static func off(at date: Date, hidesDoddy: Bool = false) -> WidgetSnapshot {
+        WidgetSnapshot(writtenAt: date, isOn: false, pinned: [], reminders: [], lists: [], hidesDoddy: hidesDoddy)
     }
 
     /// Builds the snapshot from what the app has loaded. Pinned notes in pin order, skipping
     /// ones that no longer exist; the next time reminders after `now`; lists newest first.
     public static func make(
         memories: [MemoryRecord], lists: [DoddyList], pinned: PinnedNotes, reminders: [MemoryReminder],
-        showReminderText: Bool, isOn: Bool, now: Date, parking: ParkingSpot? = nil
+        showReminderText: Bool, isOn: Bool, now: Date, parking: ParkingSpot? = nil, hidesDoddy: Bool = false
     ) -> WidgetSnapshot {
-        guard isOn else { return .off(at: now) }
+        guard isOn else { return .off(at: now, hidesDoddy: hidesDoddy) }
         let byID = Dictionary(memories.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let notes = pinned.ids.compactMap { id in byID[id].map { Note(id: id, text: shortened($0.currentText)) } }
         let upcoming = reminders.compactMap { reminder -> Reminder? in
@@ -131,7 +139,7 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         return WidgetSnapshot(
             writtenAt: now, isOn: true, pinned: Array(notes.prefix(maxPinned)),
             reminders: Array(upcoming.prefix(maxReminders)), lists: Array(shownLists),
-            parking: parking.map { Parked(savedAt: $0.savedAt, note: $0.note.map(shortened)) })
+            parking: parking.map { Parked(savedAt: $0.savedAt, note: $0.note.map(shortened)) }, hidesDoddy: hidesDoddy)
     }
 
     /// The first line, cut on a word boundary with "…" when longer than `maxTextLength`.

@@ -70,3 +70,15 @@ only when the user shares it.
 Not built (need the owner's decision): weather (umbrella pose; a weather source and location) and
 app icon choices (brand). Known gap: widgets, Live Activities and the watch don't read Hide Doddy's
 pictures. Checklist 4j, Z1–Z7. Not compiled for iOS or watchOS.
+
+## ADR-331: hiding pictures everywhere, turned away, and the code review
+- "Hide character artwork" now reaches widgets, Live Activities and the watch through the shared
+  snapshot (`hidesDoddy`). The island falls back to its V4 board; cards and widgets keep their
+  symbols and words.
+- Doddy turned away on "Turned off in Doddy's Settings." (small and medium widgets) and on the
+  watch's hidden-notes screen.
+- A static review of ADR-299/308/313/323 found no definite compile error in the app. Fixed: the
+  watch app catalog's missing AppIcon (build setting), the widget bundle's eleven entries (nested
+  bundle), a possible alarm countdown crash, the voice pose fade, Home's sit cut short, the turn
+  replaying, `ProblemView` accessibility, the share preview with pictures hidden, and one
+  untranslated line. Not a substitute for a build: checklist 4k, H4.

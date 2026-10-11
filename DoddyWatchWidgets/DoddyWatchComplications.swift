@@ -10,6 +10,8 @@ struct ComplicationEntry: TimelineEntry {
     let date: Date
     let content: ComplicationContent
     let relevance: TimelineEntryRelevance?
+    /// "Hide character artwork" is on in Doddy on the iPhone (ADR-331): no face.
+    var hidesDoddy = false
 }
 
 struct ComplicationProvider: TimelineProvider {
@@ -36,7 +38,8 @@ struct ComplicationProvider: TimelineProvider {
         let score = content.relevance(at: date)
         return ComplicationEntry(
             date: date, content: content,
-            relevance: score > 0 ? TimelineEntryRelevance(score: Float(score), duration: ComplicationContent.soonWindow) : nil)
+            relevance: score > 0 ? TimelineEntryRelevance(score: Float(score), duration: ComplicationContent.soonWindow) : nil,
+            hidesDoddy: WidgetSnapshotFile.read()?.hidesPictures == true)
     }
 }
 
@@ -82,7 +85,7 @@ struct ComplicationView: View {
                     Image(systemName: "checklist")
                     Text("\(content.openItems)").font(.headline)
                 }
-            } else if WatchDoddyFace.shows(in: renderingMode) {
+            } else if !entry.hidesDoddy, WatchDoddyFace.shows(in: renderingMode) {
                 WatchDoddyFace(size: 34)
             } else {
                 Image(systemName: "bubble.left")
@@ -121,7 +124,7 @@ struct ComplicationView: View {
     private var rectangular: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
-                if WatchDoddyFace.shows(in: renderingMode) { WatchDoddyFace(size: 18) }
+                if !entry.hidesDoddy, WatchDoddyFace.shows(in: renderingMode) { WatchDoddyFace(size: 18) }
                 Text("Doddy").font(.headline).widgetAccentable()
             }
             switch content.state {

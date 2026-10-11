@@ -17,8 +17,13 @@ struct ShoppingLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandPoseView(pose: .tiptoe, maxSize: CGSize(width: 44, height: 40))
-                        .padding(.leading, 6)
+                    if WidgetDoddyArt.isHidden {
+                        Image(systemName: "cart").font(.title3).foregroundStyle(.white).padding(.leading, 6)
+                            .accessibilityHidden(true)
+                    } else {
+                        IslandPoseView(pose: .tiptoe, maxSize: CGSize(width: 44, height: 40))
+                            .padding(.leading, 6)
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     Text(context.state.listName).font(.headline).foregroundStyle(.white).lineLimit(1)
