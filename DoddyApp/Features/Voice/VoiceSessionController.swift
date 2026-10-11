@@ -39,6 +39,8 @@ final class VoiceSessionController {
         case timer(toolCallID: String, draft: TimerDraft)
         /// "Set this alarm?" (ADR-260), iOS 26 and later.
         case alarm(toolCallID: String, draft: AlarmDraft)
+        /// "Turn off this alarm?" (ADR-283), one of Doddy's alarms.
+        case cancelAlarm(toolCallID: String, alarm: AlarmEntry)
         case map(toolCallID: String, place: String)
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
@@ -62,6 +64,9 @@ final class VoiceSessionController {
         case deleteEvent(toolCallID: String, event: CalendarEventSummary)
         /// "Delete this reminder?" (ADR-259): one open reminder, exactly as Reminders has it.
         case deleteReminder(toolCallID: String, reminder: ReminderSnapshot)
+        /// Several changes on one card (ADR-280). `verb` is "deleted" or "moved"; `skipped` are
+        /// reminders left out because their time doesn't exist on the new day.
+        case bulk(toolCallID: String, items: [BulkItem], verb: String, skipped: [String])
         /// Several changes on one card (ADR-204). `blocked` steps are shown but can't be ticked.
         case plan(toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock])
         /// "Undo that" (ADR-271): the newest undoable change from this conversation, from What Doddy did.
@@ -69,11 +74,11 @@ final class VoiceSessionController {
 
         var toolCallID: String {
             switch self {
-            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _),
+            case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _), .cancelAlarm(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
-                 .undo(let id, _):
+                 .undo(let id, _), .bulk(let id, _, _, _):
                 id
             }
         }
@@ -280,6 +285,8 @@ final class VoiceSessionController {
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
     ) async {
         guard !isLive else { return }
+        isOffline = false
+        offlineSaved = nil
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
         ReadAloudController.shared.stop()
         startedByWakeWord = wakeGreeting != nil
@@ -410,7 +417,10 @@ final class VoiceSessionController {
             Task { @MainActor in await ref.value?.handle(call) }
         }
         config.onError = { error in
-            Task { @MainActor in ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
+            let offline = Offline.isNoConnection(error)
+            Task { @MainActor in
+                if offline { ref.value?.failOffline() } else { ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
+            }
         }
 
         config.onAgentReady = {
@@ -431,7 +441,9 @@ final class VoiceSessionController {
             do throws(VoiceTokenError) {
                 auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
             } catch {
-                if phase == .connecting { fail(VoiceTokenServer.message(for: error)) }
+                if phase == .connecting {
+                    if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
+                }
                 return
             }
         case .notSetUp(let reason):
@@ -453,6 +465,10 @@ final class VoiceSessionController {
             watchAudioInterruptions()
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
+            if Offline.isNoConnection(error) {
+                failOffline()
+                return
+            }
             // An agent that doesn't allow the voice overrides refuses the conversation.
             let voiceHint = config.ttsOverrides == nil && config.agentOverrides == nil
                 ? ""
@@ -740,6 +756,13 @@ final class VoiceSessionController {
             await reply(id, await startTimer(draft))
         case .alarm(let id, let draft):
             await reply(id, await setAlarm(draft))
+        case .cancelAlarm(let id, let alarm):
+            guard isOn(.timers) else {
+                connectionNeeded = .timers
+                await reply(id, VoiceToolReply.failed("Timers and alarms are switched off. Nothing changed."))
+                return
+            }
+            await reply(id, AlarmScheduler.cancel(alarm.id) ? VoiceToolReply.alarmCancelled(alarm) : VoiceToolReply.alarmCancelUnconfirmed)
         case .map(let id, let place):
             guard let url = OpenLinks.map(place: place) else {
                 await reply(id, VoiceToolReply.notOpened("That place can't be opened in Maps."))
@@ -789,6 +812,10 @@ final class VoiceSessionController {
             await reply(id, deleteEvent(event))
         case .deleteReminder(let id, let reminder):
             await reply(id, deleteReminder(reminder))
+        case .bulk(let id, let items, let verb, let skipped):
+            let ticked = items.filter { !bulkUnticked.contains($0.id) }
+            bulkUnticked = []
+            await reply(id, runBulk(ticked, verb: verb, skipped: skipped))
         case .translator(let id, let setup):
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
@@ -900,6 +927,7 @@ final class VoiceSessionController {
         case .reminder(let id, _): await reply(id, VoiceToolReply.declinedReminder)
         case .timer(let id, _): await reply(id, VoiceToolReply.declinedTimer)
         case .alarm(let id, _): await reply(id, VoiceToolReply.declinedAlarm)
+        case .cancelAlarm(let id, _): await reply(id, VoiceToolReply.alarmCancelDeclined)
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
@@ -910,6 +938,9 @@ final class VoiceSessionController {
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
+        case .bulk(let id, _, _, _):
+            bulkUnticked = []
+            await reply(id, VoiceToolReply.bulkDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
             let planID = UUID()
@@ -1381,6 +1412,32 @@ final class VoiceSessionController {
         lines[index].text = corrected
     }
 
+    // MARK: Offline (ADR-289)
+
+    /// The conversation couldn't start or stopped because there's no internet.
+    private(set) var isOffline = false
+    /// The note saved while offline, as read back; shown on the offline card.
+    private(set) var offlineSaved: String?
+
+    private func failOffline() {
+        isOffline = true
+        fail(NSLocalizedString("You're offline. Doddy's voice needs the internet.", comment: ""))
+    }
+
+    /// Saves a note written or dictated while offline, on this iPhone, read back by the store.
+    /// Returns what went wrong, or nil.
+    func saveOfflineNote(_ text: String) async -> String? {
+        do {
+            try MemoryTextValidator.validate(text)
+            let record = try await store.save(text: text, category: .other, source: .explicitText)
+            guard store.record(id: record.id) != nil else { return NSLocalizedString("The note couldn't be confirmed. Check your notes.", comment: "") }
+            offlineSaved = record.currentText
+            return nil
+        } catch {
+            return UserFacingError.message(for: error)
+        }
+    }
+
     private func fail(_ message: String) {
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
@@ -1505,6 +1562,10 @@ final class VoiceSessionController {
             await proposeEventDelete(draft, toolCallID: call.toolCallId)
         case .deleteReminder(let title):
             await proposeReminderDelete(title, toolCallID: call.toolCallId)
+        case .deleteCalendarEvents(let range):
+            await proposeBulkEventDelete(range, toolCallID: call.toolCallId)
+        case .moveReminders(let dueBy, let to):
+            await proposeBulkReminderMove(dueBy: dueBy, to: to, toolCallID: call.toolCallId)
         case .remindAboutNote(let draft):
             await proposeNoteReminder(draft, toolCallID: call.toolCallId)
         case .needsClarification(let name, let clarification):
@@ -1541,7 +1602,7 @@ final class VoiceSessionController {
                 return
             }
             do {
-                let found = Birthdays.upcoming(try devices.birthdays(), now: Date(), days: days, calendar: .current)
+                let found = UpcomingBirthdays.upcoming(try devices.contactBirthdays(), now: Date(), days: days, calendar: .current)
                 await reply(call.toolCallId, VoiceToolReply.birthdays(found, days: days, calendar: .current))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
@@ -1552,6 +1613,15 @@ final class VoiceSessionController {
                 return
             }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .listAlarms:
+            // Read on the phone (ADR-283): times and labels Doddy set, nothing else.
+            await reply(call.toolCallId, VoiceToolReply.alarms(AlarmScheduler.current()))
+        case .cancelAlarm(let clock, let label):
+            switch AlarmMatch.match(clock: clock, label: label, in: AlarmScheduler.current()) {
+            case .none: await reply(call.toolCallId, VoiceToolReply.alarmNotFound(clock))
+            case .several(let found): await reply(call.toolCallId, VoiceToolReply.alarmAmbiguous(found))
+            case .one(let alarm): propose(.cancelAlarm(toolCallID: call.toolCallId, alarm: alarm), toolCallID: call.toolCallId)
+            }
         case .setAlarm(let draft):
             // Said now, before a card that could only fail: an older iOS, or alarms refused.
             switch AlarmScheduler.support() {
@@ -1994,7 +2064,8 @@ final class VoiceSessionController {
         case .several(let found):
             await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
         case .one(let event):
-            guard let plan = EventChange.plan(draft, for: event, calendar: .current) else {
+            let place = draft.newLocation == nil ? nil : devices.eventLocation(event)
+            guard let plan = EventChange.plan(draft, for: event, locationBefore: place, calendar: .current) else {
                 await reply(toolCallID, VoiceToolReply.eventChangeInvalid)
                 return
             }
@@ -2038,7 +2109,7 @@ final class VoiceSessionController {
             switch try devices.changeEvent(plan) {
             case .verified:
                 changeReceipt = ChangeReceipt(kind: .event(plan), message: ChangeReceipt.message(for: plan))
-                return VoiceToolReply.eventChanged(plan.after, calendar: .current)
+                return VoiceToolReply.eventChanged(plan, calendar: .current)
             case .changedElsewhere: return VoiceToolReply.eventChangedElsewhere
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
             }
@@ -2070,6 +2141,71 @@ final class VoiceSessionController {
         } catch {
             return VoiceToolReply.failed(UserFacingError.message(for: error))
         }
+    }
+
+    // MARK: Several changes on one card (ADR-280)
+
+    /// Items the user unticked on the several-changes card. Everything starts ticked.
+    private(set) var bulkUnticked: Set<String> = []
+
+    func toggleBulkItem(_ id: String) {
+        if bulkUnticked.contains(id) { bulkUnticked.remove(id) } else { bulkUnticked.insert(id) }
+    }
+
+    private func proposeBulkEventDelete(_ range: VoiceTimeRange, toolCallID: String) async {
+        guard devices.access(for: .calendar) == .granted else {
+            await notConnected(toolCallID, .calendar)
+            return
+        }
+        let events = BulkChange.eventsToDelete(devices.events(in: range), in: range)
+        await proposeBulk(events.map(BulkItem.deleteEvent), verb: "deleted", skipped: [], toolCallID: toolCallID)
+    }
+
+    private func proposeBulkReminderMove(dueBy: ReminderDue, to: ReminderDue, toolCallID: String) async {
+        guard devices.access(for: .reminders) == .granted else {
+            await notConnected(toolCallID, .reminders)
+            return
+        }
+        do {
+            let open = try await devices.incompleteReminders()
+            let (moves, skipped) = BulkChange.remindersToMove(open, dueBy: dueBy, to: to, local: .current)
+            await proposeBulk(moves, verb: "moved", skipped: skipped, toolCallID: toolCallID)
+        } catch {
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+        }
+    }
+
+    private func proposeBulk(_ items: [BulkItem], verb: String, skipped: [String], toolCallID: String) async {
+        guard !items.isEmpty else { return await reply(toolCallID, VoiceToolReply.bulkNothing) }
+        guard items.count <= BulkChange.maxItems else { return await reply(toolCallID, VoiceToolReply.bulkTooMany(items.count)) }
+        bulkUnticked = []
+        propose(.bulk(toolCallID: toolCallID, items: items, verb: verb, skipped: skipped), toolCallID: toolCallID)
+    }
+
+    /// Each ticked item on its own: checked unchanged, changed, read back (ADR-280).
+    private func runBulk(_ items: [BulkItem], verb: String, skipped: [String]) -> String {
+        guard isOn(.calendar) || isOn(.reminders) else {
+            return VoiceToolReply.failed("Calendar and Reminders aren't connected. Nothing changed.")
+        }
+        guard !items.isEmpty else { return VoiceToolReply.bulkDeclined }
+        var results: [(BulkItem, BulkResult)] = []
+        for item in items {
+            let outcome: DeviceConnections.ChangeOutcome?
+            switch item {
+            case .deleteEvent(let event):
+                outcome = isOn(.calendar) ? try? devices.deleteEvent(event) : nil
+            case .moveReminder(let reminder, let due):
+                outcome = isOn(.reminders) && !EventChange.duePassed(due, now: Date(), local: .current)
+                    ? try? devices.changeReminder(reminder, .due(due)) : nil
+            }
+            switch outcome {
+            case .verified: results.append((item, .done))
+            case .changedElsewhere: results.append((item, .changedElsewhere))
+            case .unconfirmed: results.append((item, .unconfirmed))
+            case nil: results.append((item, .failed))
+            }
+        }
+        return VoiceToolReply.bulkResult(results, verb: verb, skipped: skipped)
     }
 
     // MARK: Deleting events and reminders (ADR-259)
@@ -2346,8 +2482,8 @@ private extension VoiceSessionController.PendingAction {
     /// Saves, adds or starts something. Opening Maps, Shortcuts or a draft only hands over to another app.
     var changesSomething: Bool {
         switch self {
-        case .memory, .event, .reminder, .timer, .alarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder: true
+        case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
+             .deleteEvent, .deleteReminder, .bulk: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .translator, .plan, .undo: false

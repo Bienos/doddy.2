@@ -80,6 +80,44 @@ test("wrong provider/auth config on the returned connection is refused", async (
   assert.equal(done.body.error.receipt.errorCode, "verification_failed");
 });
 
+test("a completion that fails after the grant became active removes it at the provider", async () => {
+  const fake = new FakeComposio();
+  h = await harness({ provider: liveProvider(fake) });
+  const s = await start(h, fake);
+  fake.activate(s.pending);
+  fake.accounts.get(s.pending)!.toolkit = "gmail"; // verification will fail
+  const done = await complete(h, s, { kind: "callback", status: "success", connectedAccountId: s.pending });
+  assert.equal(done.body.error.receipt.errorCode, "verification_failed");
+  assert.ok(!fake.accounts.has(s.pending), "the active grant Doddy didn't keep is gone at the provider");
+  assert.equal((await h.call("GET", CAL)).body.remoteCleanup, "none");
+});
+
+test("if that removal fails it stays queued, is shown, and is retried before the next connect", async () => {
+  const fake = new FakeComposio();
+  h = await harness({ provider: liveProvider(fake) });
+  const s = await start(h, fake);
+  fake.activate(s.pending);
+  fake.accounts.get(s.pending)!.toolkit = "gmail";
+  fake.deleteFails = true;
+  await complete(h, s, { kind: "callback", status: "success", connectedAccountId: s.pending });
+  assert.ok(fake.accounts.has(s.pending));
+  assert.equal((await h.call("GET", CAL)).body.remoteCleanup, "failed");
+  fake.deleteFails = false;
+  assert.equal((await h.call("POST", `${CAL}/connect`, { body: {} })).status, 200);
+  assert.ok(!fake.accounts.has(s.pending), "retried before a new link was made");
+});
+
+test("a successful completion is kept, not removed", async () => {
+  const fake = new FakeComposio();
+  h = await harness({ provider: liveProvider(fake) });
+  const s = await start(h, fake);
+  fake.activate(s.pending);
+  const done = await complete(h, s, { kind: "callback", status: "success", connectedAccountId: s.pending });
+  assert.equal(done.status, 200);
+  assert.ok(fake.accounts.has(s.pending));
+  assert.ok(!fake.calls.includes("delete"));
+});
+
 test("nonce: missing, tampered, expired and replayed completions are rejected", async () => {
   const fake = new FakeComposio();
   h = await harness({ provider: liveProvider(fake) });

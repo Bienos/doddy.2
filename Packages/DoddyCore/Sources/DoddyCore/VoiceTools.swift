@@ -44,10 +44,11 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     public static func serving(_ toolName: String) -> VoiceConnection? {
         switch toolName {
         case VoiceToolName.readCalendar, VoiceToolName.createCalendarEvent, VoiceToolName.changeCalendarEvent,
-             VoiceToolName.deleteCalendarEvent: .calendar
-        case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder: .reminders
+             VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents: .calendar
+        case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
+             VoiceToolName.moveReminders: .reminders
         case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays: .contacts
-        case VoiceToolName.setTimer, VoiceToolName.setAlarm: .timers
+        case VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm: .timers
         case VoiceToolName.openMap: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
@@ -79,6 +80,8 @@ public struct CalendarEventDraft: Equatable, Sendable {
     public let allDay: Bool
     public let location: String?
     public let notes: String?
+    /// Calendar's own repeat (ADR-282); nil for a one-off event.
+    public var repeats: CalendarRepeat? = nil
 
     /// Nil while the event is still ahead (an all-day event counts until its day ends). Checked
     /// when the card is shown and again when the user taps Add, as for reminders (ADR-128).
@@ -100,8 +103,11 @@ public struct ReminderDraft: Equatable, Sendable {
     public let title: String
     public let due: ReminderDue?
     public let notes: String?
+    /// Reminders' own repeat (ADR-282); needs a due.
+    public let repeats: CalendarRepeat?
 
-    public init(title: String, due: ReminderDue?, notes: String?) {
+    public init(title: String, due: ReminderDue?, notes: String?, repeats: CalendarRepeat? = nil) {
+        self.repeats = repeats
         self.title = title
         self.due = due
         self.notes = notes
@@ -172,6 +178,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case setTimer(TimerDraft)
     /// A real alarm (ADR-260), on iOS 26 and later.
     case setAlarm(AlarmDraft)
+    /// Doddy's alarms, read on the phone (ADR-283). No card: nothing changes.
+    case listAlarms
+    /// Turn one of Doddy's alarms off, after a card.
+    case cancelAlarm(clock: String, label: String?)
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
@@ -195,6 +205,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case deleteCalendarEvent(EventChangeDraft)
     /// Delete one open reminder (ADR-259), by its exact title.
     case deleteReminder(title: String)
+    /// Several changes on one card (ADR-280): events starting in the range, deleted.
+    case deleteCalendarEvents(VoiceTimeRange)
+    /// Open reminders due by a day, moved to another day at their own times.
+    case moveReminders(dueBy: ReminderDue, to: ReminderDue)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -219,6 +233,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseEventChange(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.deleteCalendarEvent:
             return parseEventDelete(args, name: name, calendar: calendar)
+        case VoiceToolName.deleteCalendarEvents:
+            return parseDeleteEvents(args, name: name, calendar: calendar)
+        case VoiceToolName.moveReminders:
+            return parseMoveReminders(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.deleteReminder:
             guard let title = args.text("title") else { return .invalid(name: name, reason: "missing title") }
             return .deleteReminder(title: title)
@@ -239,6 +257,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseTimer(args, name: name)
         case VoiceToolName.setAlarm:
             return parseAlarm(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.listAlarms:
+            return .listAlarms
+        case VoiceToolName.cancelAlarm:
+            return parseCancelAlarm(args, name: name)
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)
@@ -309,12 +331,18 @@ public enum VoiceToolRequest: Equatable, Sendable {
                 return .needsClarification(name: name, question)
             }
         }
+        let repeats: CalendarRepeat?
+        switch parseRepeat(args, name: name, first: startDue, calendar: calendar) {
+        case .success(let rule): repeats = rule
+        case .failure(.invalid(let reason)): return .invalid(name: name, reason: reason)
+        case .failure(.clarify(let clarification)): return .needsClarification(name: name, clarification)
+        }
         if args.flag("all_day") {
             let dayStart = calendar.startOfDay(for: start)
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
             return proposeEvent(CalendarEventDraft(
                 title: title, start: dayStart, end: dayEnd, allDay: true,
-                location: args.text("location"), notes: args.text("notes")), name: name, now: now, calendar: calendar)
+                location: args.text("location"), notes: args.text("notes"), repeats: repeats), name: name, now: now, calendar: calendar)
         }
         guard startDue.hasTime else { return .invalid(name: name, reason: "start needs a time unless all_day is true") }
         let end: Date
@@ -333,7 +361,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
         }
         return proposeEvent(CalendarEventDraft(
             title: title, start: start, end: end, allDay: false,
-            location: args.text("location"), notes: args.text("notes")), name: name, now: now, calendar: calendar)
+            location: args.text("location"), notes: args.text("notes"), repeats: repeats), name: name, now: now, calendar: calendar)
     }
 
     private static func proposeEvent(_ draft: CalendarEventDraft, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
@@ -367,7 +395,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
                 return .needsClarification(name: name, question)
             }
         }
-        return .createReminder(ReminderDraft(title: title, due: due, notes: args.text("notes")))
+        let repeats: CalendarRepeat?
+        switch parseRepeat(args, name: name, first: due, calendar: calendar) {
+        case .success(let rule): repeats = rule
+        case .failure(.invalid(let reason)): return .invalid(name: name, reason: reason)
+        case .failure(.clarify(let clarification)): return .needsClarification(name: name, clarification)
+        }
+        return .createReminder(ReminderDraft(title: title, due: due, notes: args.text("notes"), repeats: repeats))
     }
 
     private static func parseTimer(_ args: Arguments, name: String) -> VoiceToolRequest {
@@ -546,10 +580,11 @@ public enum VoiceToolReply {
     }
 
     public static func eventAdded(_ draft: CalendarEventDraft, calendar: Calendar) -> String {
+        let repeats = draft.repeats.map { " Repeats \($0.text)." } ?? ""
         if draft.allDay {
-            return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day)."
+            return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: false, calendar: calendar)) (all day).\(repeats)"
         }
-        return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar))."
+        return "added: \"\(draft.title)\" on \(localText(draft.start, hasTime: true, calendar: calendar)) to \(localText(draft.end, hasTime: true, calendar: calendar)).\(repeats)"
     }
 
     /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`.

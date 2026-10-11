@@ -16,6 +16,7 @@ import { inviteTag } from './token.js';
  * @property {{url: string, token: string} | null} sharedStore   null = per-instance memory limits (dev only)
  * @property {number} dailyBudgetMicros       everyone, per UTC day
  * @property {number} installBudgetMicros     one install (device id), per UTC day
+ * @property {number} inviteBudgetMicros      every install on one invite code, per UTC day
  * @property {import('./budget.js').Prices} prices
  */
 
@@ -26,14 +27,16 @@ export const DEFAULT_INSTALL_BUDGET_USD = 0.25;
 
 /**
  * Shared rate-limit/budget store (ADR-124). Upstash names first, Vercel KV names as a fallback.
- * Half a configuration is an error, never a silent fallback to per-instance memory.
+ * Half a configuration is an error, never a silent fallback to per-instance memory. A Vercel
+ * production deployment always requires the store: per-instance budgets there would multiply the
+ * daily cap by the number of warm instances (review 2026-10-11, finding 1).
  * @param {Record<string, string | undefined>} env
  * @returns {{store: {url: string, token: string} | null, problems: string[], required: boolean}}
  */
 export function sharedStoreEnv(env) {
   const url = (env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL || '').trim();
   const token = (env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN || '').trim();
-  const required = (env.REQUIRE_SHARED_LIMITS ?? '').trim() === '1';
+  const required = (env.REQUIRE_SHARED_LIMITS ?? '').trim() === '1' || (env.VERCEL_ENV ?? '').trim() === 'production';
   const problems = [];
   if (url && !/^https:\/\/[^\s/]+/.test(url)) problems.push('UPSTASH_REDIS_REST_URL');
   if (url && !token) problems.push('UPSTASH_REDIS_REST_TOKEN');
@@ -52,10 +55,14 @@ const positive = (value, fallback) => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
-/** @param {string | undefined} value @param {number} fallback */
+/**
+ * Positive whole number from env, or the fallback when unset. Set but invalid (e.g. "2O0") is an
+ * error, like `positive`, so a typo can't silently leave the default limit in force.
+ * @param {string | undefined} value @param {number} fallback @returns {number | null}
+ */
 const int = (value, fallback) => {
-  const n = Number.parseInt(value ?? '', 10);
-  return Number.isInteger(n) && n > 0 ? n : fallback;
+  if (value === undefined || value.trim() === '') return fallback;
+  return /^[1-9][0-9]*$/.test(value.trim()) ? Number(value.trim()) : null;
 };
 
 /**
@@ -77,13 +84,24 @@ export function loadConfig(env) {
   missing.push(...shared.problems);
   const dailyUsd = positive(env.DAILY_BUDGET_USD, DEFAULT_DAILY_BUDGET_USD);
   const installUsd = positive(env.DAILY_BUDGET_PER_INSTALL_USD, DEFAULT_INSTALL_BUDGET_USD);
+  // Device ids are chosen by the client, so one invite could otherwise spend the whole day's budget.
+  const inviteUsd = positive(env.DAILY_BUDGET_PER_INVITE_USD, (dailyUsd ?? DEFAULT_DAILY_BUDGET_USD) / 2);
   const inputPrice = positive(env.OPENAI_PRICE_INPUT_PER_MTOK_USD, DEFAULT_PRICES.inputPerMTok);
   const outputPrice = positive(env.OPENAI_PRICE_OUTPUT_PER_MTOK_USD, DEFAULT_PRICES.outputPerMTok);
   if (dailyUsd === null) missing.push('DAILY_BUDGET_USD');
   if (installUsd === null) missing.push('DAILY_BUDGET_PER_INSTALL_USD');
+  if (inviteUsd === null) missing.push('DAILY_BUDGET_PER_INVITE_USD');
   if (inputPrice === null) missing.push('OPENAI_PRICE_INPUT_PER_MTOK_USD');
   if (outputPrice === null) missing.push('OPENAI_PRICE_OUTPUT_PER_MTOK_USD');
-  if (missing.length > 0 || dailyUsd === null || installUsd === null || inputPrice === null || outputPrice === null) {
+  /** @type {Record<string, number | null>} */
+  const ints = {
+    GATEWAY_RATE_PER_MINUTE: int(env.GATEWAY_RATE_PER_MINUTE, 10),
+    GATEWAY_RATE_PER_DAY: int(env.GATEWAY_RATE_PER_DAY, 200),
+    GATEWAY_GLOBAL_PER_DAY: int(env.GATEWAY_GLOBAL_PER_DAY, 2000),
+    GATEWAY_INVITE_PER_DAY: int(env.GATEWAY_INVITE_PER_DAY, 600),
+  };
+  for (const [name, value] of Object.entries(ints)) if (value === null) missing.push(name);
+  if (missing.length > 0 || dailyUsd === null || installUsd === null || inviteUsd === null || inputPrice === null || outputPrice === null) {
     return { ok: false, missing };
   }
   return {
@@ -93,10 +111,10 @@ export function loadConfig(env) {
       model,
       tokenSecret,
       inviteTags: new Set(invites.map((code) => inviteTag(code, tokenSecret))),
-      perMinute: int(env.GATEWAY_RATE_PER_MINUTE, 10),
-      perDay: int(env.GATEWAY_RATE_PER_DAY, 200),
-      globalPerDay: int(env.GATEWAY_GLOBAL_PER_DAY, 2000),
-      invitePerDay: int(env.GATEWAY_INVITE_PER_DAY, 600),
+      perMinute: /** @type {number} */ (ints.GATEWAY_RATE_PER_MINUTE),
+      perDay: /** @type {number} */ (ints.GATEWAY_RATE_PER_DAY),
+      globalPerDay: /** @type {number} */ (ints.GATEWAY_GLOBAL_PER_DAY),
+      invitePerDay: /** @type {number} */ (ints.GATEWAY_INVITE_PER_DAY),
       tokenTtlSeconds: 24 * 3600,
       providerTimeoutMs: 20_000,
       // Whole-request budget; vercel.json maxDuration is 30 s.
@@ -104,6 +122,7 @@ export function loadConfig(env) {
       sharedStore: shared.store,
       dailyBudgetMicros: Math.round(dailyUsd * 1_000_000),
       installBudgetMicros: Math.round(installUsd * 1_000_000),
+      inviteBudgetMicros: Math.round(inviteUsd * 1_000_000),
       prices: { inputPerMTok: inputPrice, outputPerMTok: outputPrice },
     },
   };

@@ -158,3 +158,53 @@ struct NotePhotoSection: View {
         }
     }
 }
+
+/// New list › "Read a list from a photo" (ADR-286). Apple's picker runs outside Doddy (no photo
+/// library permission); the text is read on this iPhone and goes into the New list screen for the
+/// user to check and edit. The photo itself isn't kept.
+struct ListPhotoPicker: View {
+    let onRead: (PhotoList.Proposal) -> Void
+    @State private var item: PhotosPickerItem?
+    @State private var isReading = false
+    @State private var problem: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            PhotosPicker(selection: $item, matching: .images, photoLibrary: .shared()) {
+                HStack {
+                    if isReading { Text("Reading the photo…") } else { Text("Read a list from a photo") }
+                    Spacer()
+                    Image(systemName: "text.viewfinder")
+                }
+            }
+            .disabled(isReading)
+            .accessibilityIdentifier("newList.fromPhoto")
+            Text("A handwritten or printed list. Doddy reads it on this iPhone; the photo isn't kept or sent anywhere.")
+                .font(.caption).foregroundStyle(Theme.secondaryText)
+            if let problem { ProblemView(message: problem) }
+        }
+        .onChange(of: item) {
+            guard let item else { return }
+            Task { await read(item) }
+        }
+    }
+
+    private func read(_ picked: PhotosPickerItem) async {
+        isReading = true
+        problem = nil
+        defer { isReading = false; item = nil }
+        do {
+            guard let data = try await picked.loadTransferable(type: Data.self) else { throw PhotoTextReader.ReadError.unreadable }
+            let proposal = PhotoList.proposal(from: try await PhotoTextReader.prepare(data).text.text)
+            guard !proposal.items.isEmpty else {
+                problem = NSLocalizedString("No list lines were found in that photo. Nothing was added.", comment: "")
+                return
+            }
+            onRead(proposal)
+        } catch PhotoTextReader.ReadError.tooLarge {
+            problem = NSLocalizedString("That photo is too large to read. Nothing was added.", comment: "")
+        } catch {
+            problem = NSLocalizedString("That photo couldn't be read, so nothing was added. Try another one.", comment: "")
+        }
+    }
+}

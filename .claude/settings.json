@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./reference/**)",
+      "Read(./VISUAL_REVIEW/**)",
+      "Read(./site/**)",
+      "Read(./blog/**)",
+      "Read(./assets/**)",
+      "Read(./design/**/*.png)",
+      "Read(./design/**/*.jpg)",
+      "Read(./design/**/*.mp4)",
+      "Read(./design/**/*.pdf)",
+      "Read(./**/package-lock.json)",
+      "Read(./**/Package.resolved)",
+      "Read(./**/node_modules/**)",
+      "Read(./**/.build/**)"
+    ]
+  }
+}

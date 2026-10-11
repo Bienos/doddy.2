@@ -2,7 +2,9 @@
 // can ride along (egress minimisation, acceptance A-16).
 
 export const LIMITS = Object.freeze({
-  bodyBytes: 64 * 1024,
+  // Above the worst case the scalar limits allow (26,000 four-byte scalars ≈ 104 KB plus JSON), so a
+  // request within every field limit is never refused as too large.
+  bodyBytes: 128 * 1024,
   userText: 2_000,
   turns: 6,
   turnText: 2_000,

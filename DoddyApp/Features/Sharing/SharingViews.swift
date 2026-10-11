@@ -124,7 +124,9 @@ struct SharedListStatusRow: View {
         VStack(alignment: .leading, spacing: 6) {
             Label(link.role == .owner ? "Shared through your iCloud" : "Shared with you through iCloud", systemImage: "person.2")
                 .font(.footnote.weight(.semibold))
-            Text(String(format: NSLocalizedString("Last updated %@. Changes from others show when Doddy is open.", comment: ""),
+            Text(String(format: sharing.liveUpdates
+                        ? NSLocalizedString("Last updated %@. Changes from others arrive straight away.", comment: "")
+                        : NSLocalizedString("Last updated %@. Changes from others show when Doddy is open.", comment: ""),
                         link.syncedAt.formatted(date: .abbreviated, time: .shortened)))
                 .font(.caption).foregroundStyle(Theme.secondaryText)
             if let problem = sharing.problem {

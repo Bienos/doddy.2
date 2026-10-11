@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { sha256 } from "../crypto.js";
 import { fold } from "../memorySearch.js";
 import type { NewsItem } from "./feeds.js";
 
@@ -30,7 +30,7 @@ export function normalizeUrl(raw: string): string {
 }
 
 export function urlHash(raw: string): Buffer {
-  return createHash("sha256").update(normalizeUrl(raw)).digest();
+  return sha256(normalizeUrl(raw));
 }
 
 function matches(text: string, keyword: string): boolean {

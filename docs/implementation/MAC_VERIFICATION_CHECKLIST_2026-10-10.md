@@ -243,7 +243,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | W2 | Choose Whole Doddy, talk to Doddy, go to the Home Screen and long-press the island | The expanded island shows the pose for each state as it changes (connecting = stretch). The pose is sharp, not blurry, and the cream edge is even |
 | W3 | Look at compact and minimal (open another app with its own activity for minimal) | A round face crop: the listening face while live, shush when muted. Not cut off, not blurry |
 | W4 | Ask Doddy to save a note, tap Save; ask for a reminder and Add | Reaching high while it waits; a fist pump only after Saved / Reminders confirmed it |
-| W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, arms out with the greeting, leaning while paused |
+| W5 | With Hey Doddy on: wait, say "Hey Doddy", end the call | Cross-legged while waiting, waving with the greeting (no paper edge around the wave), leaning while paused |
 | W6 | Start the translator from Home with Whole Doddy chosen | Language Bridge as before, no pose |
 
 ## 4g. Cream Lock Screen cards (ADR-266)

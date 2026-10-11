@@ -131,3 +131,54 @@ final class CalendarChangeTests: XCTestCase {
         XCTAssertEqual(ActivityRequest.describe(.changeReminder(draft), calendar: calendar)?.title, "Change reminder")
     }
 }
+
+/// Event details by voice (ADR-281): a new place, a line added to the notes.
+final class EventDetailsTests: XCTestCase {
+    private var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Warsaw")!
+        return calendar
+    }
+    private var now: Date { calendar.date(from: DateComponents(year: 2026, month: 10, day: 9, hour: 8))! }
+    private var dentist: CalendarEventSummary {
+        let start = calendar.date(from: DateComponents(year: 2026, month: 10, day: 10, hour: 9, minute: 30))!
+        return CalendarEventSummary(id: "abc@1", title: "Dentist", start: start, end: start.addingTimeInterval(3600), allDay: false)
+    }
+
+    func testAPlaceOrANoteAloneIsAChange() {
+        guard case .changeCalendarEvent(let draft) = VoiceToolRequest.parse(name: VoiceToolName.changeCalendarEvent,
+            parametersJSON: Data(#"{"title":"Dentist","start":"2026-10-10T09:30","new_location":"Marszałkowska 10","add_note":"Bring the X-ray"}"#.utf8),
+            now: now, calendar: calendar) else { return XCTFail() }
+        let plan = EventChange.plan(draft, for: dentist, locationBefore: "Old clinic", calendar: calendar)
+        XCTAssertEqual(plan?.after, dentist, "the time and title stay")
+        XCTAssertEqual(plan?.newLocation, "Marszałkowska 10")
+        XCTAssertEqual(plan?.addNote, "Bring the X-ray")
+        let reply = VoiceToolReply.eventChanged(plan!, calendar: calendar)
+        XCTAssertTrue(reply.contains("Its place is now \"Marszałkowska 10\""))
+        XCTAssertFalse(reply.contains("Old clinic"), "the old place is never sent to the agent")
+        // The same place again is no change.
+        let same = EventChangeDraft(title: "Dentist", currentStart: dentist.start, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: nil, newLocation: "Old clinic")
+        XCTAssertNil(EventChange.plan(same, for: dentist, locationBefore: "Old clinic", calendar: calendar))
+    }
+
+    func testNotesAreOnlyAddedToAndUndoTakesTheLineOffAgain() {
+        XCTAssertEqual(EventChange.notes(nil, adding: "Bring the X-ray"), "Bring the X-ray")
+        XCTAssertEqual(EventChange.notes("Floor 2", adding: "Bring the X-ray"), "Floor 2\nBring the X-ray")
+        XCTAssertEqual(EventChange.notes("Floor 2\nBring the X-ray", removing: "Bring the X-ray"), .some("Floor 2"))
+        XCTAssertEqual(EventChange.notes("Bring the X-ray", removing: "Bring the X-ray"), .some(nil))
+        XCTAssertNil(EventChange.notes("Floor 2\nBring the X-ray\nedited", removing: "Bring the X-ray"), "changed since: Undo leaves it")
+        let plan = EventChangePlan(before: dentist, after: dentist, locationBefore: "Old clinic", newLocation: "New clinic", addNote: "Bring the X-ray")
+        let back = EventChange.reversed(plan)
+        XCTAssertEqual(back.newLocation, "Old clinic")
+        XCTAssertEqual(back.locationBefore, "New clinic")
+        XCTAssertEqual(back.removeNote, "Bring the X-ray")
+        XCTAssertNil(back.addNote)
+    }
+
+    func testTooLongDetailsAreRefused() {
+        let long = String(repeating: "x", count: 501)
+        guard case .invalid = VoiceToolRequest.parse(name: VoiceToolName.changeCalendarEvent,
+            parametersJSON: Data(#"{"title":"Dentist","start":"2026-10-10T09:30","add_note":"\#(long)"}"#.utf8),
+            now: now, calendar: calendar) else { return XCTFail() }
+    }
+}

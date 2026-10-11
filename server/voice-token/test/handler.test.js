@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { handleTokenRequest, parseAccessCodes } from "../src/handler.js";
+import { createTesterLimiter, handleTokenRequest, ignoredShortCodes, parseAccessCodes } from "../src/handler.js";
 
 const CODE = "a-long-tester-code-0001";
 const env = {
@@ -16,7 +16,7 @@ function request(method = "POST", code = CODE) {
   });
 }
 
-async function run(req, { upstream, environment = env } = {}) {
+async function run(req, { upstream, environment = env, deps = {} } = {}) {
   const logs = [];
   const calls = [];
   const fetch = async (url, init) => {
@@ -24,7 +24,7 @@ async function run(req, { upstream, environment = env } = {}) {
     if (upstream instanceof Error) throw upstream;
     return upstream ?? Response.json({ token: "jwt-token" });
   };
-  const response = await handleTokenRequest(req, environment, { fetch, log: (entry) => logs.push(entry) });
+  const response = await handleTokenRequest(req, environment, { fetch, log: (entry) => logs.push(entry), ...deps });
   return { response, body: await response.json(), logs, calls };
 }
 
@@ -49,8 +49,10 @@ test("wrong, missing and too-short codes are refused before ElevenLabs is called
   }
 });
 
-test("only POST", async () => {
-  assert.equal((await run(request("GET"))).response.status, 405);
+test("only POST, and the refusal says so", async () => {
+  const { response } = await run(request("GET"));
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get("allow"), "POST");
 });
 
 test("missing configuration fails closed", async () => {
@@ -80,6 +82,41 @@ test("access code list parsing", () => {
     { label: "a", code: "0123456789abcdef" },
     { label: "unlabelled", code: "0123456789abcdefX" },
   ]);
+});
+
+test("one tester can't use up the shared voice limits: tokens per tester per hour", async () => {
+  const OTHER = "another-tester-code-02";
+  const environment = { ...env, DODDY_ACCESS_CODES: `owner:${CODE},other:${OTHER}`, DODDY_TOKENS_PER_HOUR: "2" };
+  const limiter = createTesterLimiter();
+  let ms = Date.parse("2026-10-11T10:15:00Z");
+  const deps = { limiter, now: () => ms };
+  assert.equal((await run(request(), { environment, deps })).response.status, 200);
+  assert.equal((await run(request(), { environment, deps })).response.status, 200);
+  const third = await run(request(), { environment, deps });
+  assert.equal(third.response.status, 429);
+  assert.deepEqual(third.body, { error: "rate_limited" });
+  assert.equal(third.response.headers.get("retry-after"), String(45 * 60));
+  assert.equal(third.calls.length, 0, "ElevenLabs is not called");
+  assert.equal((await run(request("POST", OTHER), { environment, deps })).response.status, 200, "other testers unaffected");
+  ms += 45 * 60_000;
+  assert.equal((await run(request(), { environment, deps })).response.status, 200, "a new hour starts fresh");
+});
+
+test("an invalid per-hour setting fails closed", async () => {
+  const { response, calls } = await run(request(), { environment: { ...env, DODDY_TOKENS_PER_HOUR: "lots" } });
+  assert.equal(response.status, 500);
+  assert.equal(calls.length, 0);
+});
+
+test("ignored short codes are logged once, by label only", async () => {
+  const environment = { ...env, DODDY_ACCESS_CODES: `owner:${CODE},anna:tooshort,bob:alsoshort` };
+  const first = await run(request(), { environment });
+  const second = await run(request(), { environment });
+  const config = first.logs.filter((l) => l.event === "voice_token_config");
+  assert.deepEqual(config, [{ event: "voice_token_config", ignoredShortCodes: ["anna", "bob"] }]);
+  assert.ok(!JSON.stringify(first.logs).includes("tooshort"));
+  assert.equal(second.logs.filter((l) => l.event === "voice_token_config").length, 0);
+  assert.deepEqual(ignoredShortCodes(`a:${CODE},b:x`), ["b"]);
 });
 
 // OpenAI Realtime test voice (ADR-265).

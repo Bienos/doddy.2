@@ -90,11 +90,13 @@ public struct ActivityRequest: Equatable, Sendable {
                 detail: "\(when(range.start, hasTime: false)) to \(when(range.end, hasTime: false))", isLookup: true)
         case .createCalendarEvent(let draft):
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
-            return ActivityRequest(app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)", isLookup: false)
+            let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            return ActivityRequest(app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false)
         case .createReminder(let draft):
             let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
+            let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
             return ActivityRequest(
-                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)", isLookup: false,
+                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)\(repeats)", isLookup: false,
                 reminderKey: ReminderWrite(draft).key)
         case .remindAboutNote(let draft):
             let target: String
@@ -149,6 +151,14 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .reminders, title: "Change reminder", detail: "“\(draft.title)” · \(what)", isLookup: false)
         case .deleteCalendarEvent(let draft):
             return ActivityRequest(app: .calendar, title: "Delete event", detail: "“\(draft.title)” \(when(draft.currentStart, hasTime: !draft.currentIsDayOnly))", isLookup: false)
+        case .listAlarms:
+            return ActivityRequest(app: .timers, title: "Read alarms", detail: "Doddy's alarms", isLookup: true)
+        case .cancelAlarm(let clock, let label):
+            return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+        case .deleteCalendarEvents(let range):
+            return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
+        case .moveReminders(let dueBy, let to):
+            return ActivityRequest(app: .reminders, title: "Move reminders", detail: "due by \(ReminderText.due(dueBy)) → \(ReminderText.due(to))", isLookup: false)
         case .deleteReminder(let title):
             return ActivityRequest(app: .reminders, title: "Delete reminder", detail: "“\(title)”", isLookup: false)
         case .undoLast:

@@ -46,11 +46,13 @@
     {
       "type": "function",
       "name": "create_calendar_event",
-      "description": "Propose adding one event to the user's iPhone calendar. Use it only when the user clearly asks to add or put something in their calendar. Turn relative dates such as 'Thursday' or 'tomorrow at 3' into a date using the current date and time you were given. If the day or time is unclear (for example 'at 5' could be morning or evening), ask one short question first instead of guessing. The app shows the event on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
+      "description": "If the user wants it again and again (every day, weekdays, every week, every two weeks, every month or every year), give repeat, and repeat_until if they said until when. Propose adding one event to the user's iPhone calendar. Use it only when the user clearly asks to add or put something in their calendar. Turn relative dates such as 'Thursday' or 'tomorrow at 3' into a date using the current date and time you were given. If the day or time is unclear (for example 'at 5' could be morning or evening), ask one short question first instead of guessing. The app shows the event on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
       "parameters": {
         "type": "object",
         "properties": {
-          "title": {"type": "string", "description": "Short event title in the user's words and language, e.g. 'Dentist' or 'Obiad z Martą'."},
+          "repeat": {"type": "string", "enum": ["daily", "weekdays", "weekly", "every_two_weeks", "monthly", "yearly"], "description": "Only if the user asked for it again and again: daily, weekdays (Monday to Friday), weekly or every_two_weeks (on the first date's weekday), monthly (on its day of the month) or yearly. Leave out for a one-off."},
+          "repeat_until": {"type": "string", "description": "Only with repeat, only if the user gave an end: the last day as YYYY-MM-DD."},
+                    "title": {"type": "string", "description": "Short event title in the user's words and language, e.g. 'Dentist' or 'Obiad z Martą'."},
           "start": {"type": "string", "description": "Start in the user's local time as YYYY-MM-DDTHH:MM, e.g. 2026-10-12T15:00, or YYYY-MM-DD for an all-day event. Always write the full day, and no time zone or offset. It must be later than now (an all-day event: today or later)."},
           "end": {"type": "string", "description": "End in the user's local time as YYYY-MM-DDTHH:MM, with no time zone or offset. Leave out for a one-hour event."},
           "all_day": {"type": "boolean", "description": "True for an all-day event. Leave out otherwise."},
@@ -65,11 +67,13 @@
     {
       "type": "function",
       "name": "create_reminder",
-      "description": "Propose adding one reminder to the user's iPhone Reminders app. Use it only when the user clearly asks to be reminded or to add a reminder or to-do. Turn relative dates into a date using the current date and time you were given; if the time is unclear, ask one short question first. The app shows the reminder on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added. If the result says it was already in Reminders, say it is already there; never call this tool again for the same reminder. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
+      "description": "If the user wants it again and again (every day, weekdays, every week, every two weeks, every month or every year), give repeat, and repeat_until if they said until when. Propose adding one reminder to the user's iPhone Reminders app. Use it only when the user clearly asks to be reminded or to add a reminder or to-do. Turn relative dates into a date using the current date and time you were given; if the time is unclear, ask one short question first. The app shows the reminder on screen and the user must tap Add; the result starts with 'added', 'declined', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should add this.' (Polish: 'Potwierdź na ekranie, jeśli mam to dodać.'). Never say it was added unless the result starts with added. If the result says it was already in Reminders, say it is already there; never call this tool again for the same reminder. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
       "parameters": {
         "type": "object",
         "properties": {
-          "title": {"type": "string", "description": "The reminder in the user's words and language, e.g. 'Call Marta' or 'Zapłacić czynsz'."},
+          "repeat": {"type": "string", "enum": ["daily", "weekdays", "weekly", "every_two_weeks", "monthly", "yearly"], "description": "Only if the user asked for it again and again: daily, weekdays (Monday to Friday), weekly or every_two_weeks (on the first date's weekday), monthly (on its day of the month) or yearly. Leave out for a one-off."},
+          "repeat_until": {"type": "string", "description": "Only with repeat, only if the user gave an end: the last day as YYYY-MM-DD."},
+                    "title": {"type": "string", "description": "The reminder in the user's words and language, e.g. 'Call Marta' or 'Zapłacić czynsz'."},
           "due": {"type": "string", "description": "When it is due, in the user's local time as YYYY-MM-DDTHH:MM, or YYYY-MM-DD for a day without a time. Always write the full day, never a time alone, and no time zone or offset. It must be later than now. Leave out if the user gave no time."},
           "notes": {"type": "string", "description": "Extra details, only if the user gave some."},
           "said_time": {"type": "string", "description": "The user's own words for when, exactly as they said them and in their language, with every day and time word they used, e.g. 'next Friday at 7', 'jutro rano', 'w sobotę o 19'. Never reword or fix them. The app checks the date against these words and may answer 'failed: not added yet' with one question to ask. Leave out if the user gave no time."}
@@ -81,7 +85,7 @@
     {
       "type": "function",
       "name": "change_calendar_event",
-      "description": "Propose moving or renaming one event already in the user's iPhone Calendar. Use it only when the user clearly asks to move, reschedule or rename an event. First call read_calendar for that day and pass the event's exact title and start as it returned them. Turn relative dates into a date using the current date and time you were given; if the new time is unclear, ask one short question first. A repeating event changes only this occurrence. It never deletes an event; use delete_calendar_event for that. The app shows the event as it is now and after the change, and the user must tap Change; the result starts with 'changed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed unless the result starts with changed. If the result says more than one event matches, ask the user which one.",
+      "description": "It can also give the event a new place (new_location) or add a line to its notes (add_note); notes are only ever added to. Propose moving or renaming one event already in the user's iPhone Calendar. Use it only when the user clearly asks to move, reschedule or rename an event. First call read_calendar for that day and pass the event's exact title and start as it returned them. Turn relative dates into a date using the current date and time you were given; if the new time is unclear, ask one short question first. A repeating event changes only this occurrence. It never deletes an event; use delete_calendar_event for that. The app shows the event as it is now and after the change, and the user must tap Change; the result starts with 'changed', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should change this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zmienić.'). Never say it was changed unless the result starts with changed. If the result says more than one event matches, ask the user which one.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -89,6 +93,8 @@
           "start": {"type": "string", "description": "The event's current start exactly as read_calendar returned it, as YYYY-MM-DDTHH:MM in local time, or YYYY-MM-DD for an all-day event."},
           "new_start": {"type": "string", "description": "The new start in the user's local time as YYYY-MM-DDTHH:MM (YYYY-MM-DD for an all-day event). Always the full day, no time zone or offset, later than now. The event keeps its length. Leave out if the time doesn't change."},
           "new_end": {"type": "string", "description": "A new end as YYYY-MM-DDTHH:MM, only if the user asked for a different end or length."},
+          "new_location": {"type": "string", "description": "A new place for the event, in the user's words, only if they asked to change where it is."},
+          "add_note": {"type": "string", "description": "A line to add at the end of the event's notes, in the user's words, only if they asked to add a note. Never repeat the existing notes."},
           "new_title": {"type": "string", "description": "A new title in the user's words, only if the user asked to rename it."}
         },
         "required": ["title", "start"]
@@ -147,6 +153,34 @@
         "required": []
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6501m4n80qyqee09pksxpdztmy18"}
+    },
+    {
+      "type": "function",
+      "name": "delete_calendar_events",
+      "description": "Propose deleting every event that starts in a time range on the user's iPhone Calendar, on one card. Use it only when the user clearly asks to clear or cancel everything in a time (e.g. 'clear my Thursday afternoon'); for one event use delete_calendar_event. Give from and to in local time; a day alone as to means the whole day; at most 31 days. The card lists each event, all ticked; the user can untick any and taps Delete. A repeating event loses only the time in the range. Doddy can't undo it. The result starts with 'deleted' (all ticked ones gone, each checked), 'partly deleted' (it names the ones that weren't), 'declined', 'not changed' (nothing in that range, or too many), 'unknown' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen which ones I should delete.' (Polish: 'Potwierdź na ekranie, które mam usunąć.'). Never say they were deleted unless the result says so, and name the ones it says weren't.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "from": {"type": "string", "description": "Start of the range, YYYY-MM-DDTHH:MM or YYYY-MM-DD, local time."},
+          "to": {"type": "string", "description": "End of the range, YYYY-MM-DDTHH:MM, or YYYY-MM-DD for the whole of that day."}
+        },
+        "required": ["from", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120}
+    },
+    {
+      "type": "function",
+      "name": "move_reminders",
+      "description": "Propose moving the user's open Apple reminders that are due on a day or earlier to another day, each keeping its time, on one card. Use it only when the user asks to move several reminders at once (e.g. 'move today's reminders to tomorrow'); for one reminder use change_reminder. The card lists each reminder, all ticked; the user can untick any and taps Move. The result starts with 'moved', 'partly moved' (it names the ones that weren't), 'declined', 'not changed', 'unknown' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen which ones I should move.' (Polish: 'Potwierdź na ekranie, które mam przenieść.'). Never say they were moved unless the result says so.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "due_by": {"type": "string", "description": "Reminders due on this day or earlier move, YYYY-MM-DD (usually today)."},
+          "to": {"type": "string", "description": "The day they move to, YYYY-MM-DD, today or later."}
+        },
+        "required": ["due_by", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 120}
     },
     {
       "type": "function",
@@ -317,6 +351,31 @@
         "required": ["time"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2701m4mf3jrre9ts0cksqvg7e2s5"}
+    },
+    {
+      "type": "function",
+      "name": "list_alarms",
+      "description": "Read the alarms Doddy set on this iPhone: their times and labels. Use it when the user asks what alarms they have, or before turning one off if you aren't sure of its time. Alarms from the Clock app aren't visible to Doddy; say so if it matters. Only mention alarms the result lists.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 15}
+    },
+    {
+      "type": "function",
+      "name": "cancel_alarm",
+      "description": "Propose turning off one of the alarms Doddy set, by its time (and label if there are two at that time). Use it only when the user asks to turn off, cancel or delete an alarm. A repeating alarm stops for every day. The app shows the alarm and the user must tap Turn off; the result starts with 'turned off', 'declined', 'not found', 'not changed', 'unknown' or 'failed'. Doddy can't change the Clock app's alarms. Before this tool runs, say only one short line, for example 'Confirm on screen if I should turn it off.' (Polish: 'Potwierdź na ekranie, jeśli mam go wyłączyć.'). Never say it's off unless the result starts with turned off.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "time": {"type": "string", "description": "The alarm's time as HH:MM, 24-hour, e.g. 07:00."},
+          "label": {"type": "string", "description": "The alarm's label, only if two alarms share the time."}
+        },
+        "required": ["time"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90}
     },
     {
       "type": "function",

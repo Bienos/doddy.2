@@ -144,11 +144,52 @@ final class DeviceConnections {
         event.isAllDay = draft.allDay
         event.location = draft.location
         event.notes = draft.notes
-        try eventStore.save(event, span: .thisEvent)
-        guard let identifier = event.eventIdentifier, eventStore.event(withIdentifier: identifier) != nil else {
+        // A repeat (ADR-282) is saved with the event and must read back the same.
+        if let repeats = draft.repeats { event.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
+        try eventStore.save(event, span: draft.repeats == nil ? .thisEvent : .futureEvents)
+        guard let identifier = event.eventIdentifier, let back = eventStore.event(withIdentifier: identifier),
+              CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
             return (.unconfirmed, nil)
         }
         return (.verified, identifier)
+    }
+
+    /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the
+    /// end of the last day, in this iPhone's time zone.
+    nonisolated private static func rule(_ repeats: CalendarRepeat, calendar: Calendar) -> EKRecurrenceRule {
+        let frequency: EKRecurrenceFrequency = switch repeats.unit {
+        case .daily: .daily
+        case .weekly: .weekly
+        case .monthly: .monthly
+        case .yearly: .yearly
+        }
+        let days = repeats.weekdays?.compactMap { EKWeekday(rawValue: $0) }.map { EKRecurrenceDayOfWeek($0) }
+        let end = repeats.until
+            .flatMap { calendar.date(from: DateComponents(year: $0.year, month: $0.month, day: $0.day, hour: 23, minute: 59)) }
+            .map { EKRecurrenceEnd(end: $0) }
+        return EKRecurrenceRule(
+            recurrenceWith: frequency, interval: repeats.interval, daysOfTheWeek: days, daysOfTheMonth: nil,
+            monthsOfTheYear: nil, weeksOfTheYear: nil, daysOfTheYear: nil, setPositions: nil, end: end)
+    }
+
+    /// The one repeat rule an event or reminder has, as a `CalendarRepeat`; nil for none, several,
+    /// or a rule Doddy doesn't write.
+    nonisolated private static func readRepeat(_ rules: [EKRecurrenceRule]?, calendar: Calendar) -> CalendarRepeat? {
+        guard let rules, rules.count == 1, let rule = rules.first else { return nil }
+        let unit: CalendarRepeat.Unit
+        switch rule.frequency {
+        case .daily: unit = .daily
+        case .weekly: unit = .weekly
+        case .monthly: unit = .monthly
+        case .yearly: unit = .yearly
+        @unknown default: return nil
+        }
+        let until = rule.recurrenceEnd?.endDate.map { date -> ReminderDue in
+            let parts = calendar.dateComponents([.year, .month, .day], from: date)
+            return ReminderDue(year: parts.year ?? 0, month: parts.month ?? 0, day: parts.day ?? 0, timeZoneID: calendar.timeZone.identifier)
+        }
+        return CalendarRepeat.from(
+            unit: unit, interval: rule.interval, weekdays: rule.daysOfTheWeek?.map(\.dayOfTheWeek.rawValue), until: until)
     }
 
     /// Moves or renames exactly the occurrence the card showed (ADR-229). It's found again by its
@@ -160,9 +201,19 @@ final class DeviceConnections {
               Self.summary(event) == plan.before else {
             return .changedElsewhere
         }
+        // A new place (ADR-281) only if the place is still what the card showed.
+        if plan.newLocation != nil, (event.location ?? "") != (plan.locationBefore ?? "") { return .changedElsewhere }
+        var notes = event.notes
+        if let line = plan.removeNote {
+            guard let removed = EventChange.notes(event.notes, removing: line) else { return .changedElsewhere }
+            notes = removed
+        }
+        if let line = plan.addNote { notes = EventChange.notes(notes, adding: line) }
         event.title = plan.after.title
         event.startDate = plan.after.start
         event.endDate = plan.after.end
+        if let place = plan.newLocation { event.location = place.isEmpty ? nil : place }
+        if plan.addNote != nil || plan.removeNote != nil { event.notes = notes }
         try eventStore.save(event, span: .thisEvent)
         let itemID = event.calendarItemIdentifier
         let eventID = event.eventIdentifier
@@ -170,6 +221,8 @@ final class DeviceConnections {
             (found.calendarItemIdentifier == itemID || (eventID != nil && found.eventIdentifier == eventID))
                 && (found.title ?? "Untitled") == plan.after.title
                 && found.startDate == plan.after.start && found.endDate == plan.after.end
+                && (plan.newLocation.map { (found.location ?? "") == $0 } ?? true)
+                && (plan.addNote == nil && plan.removeNote == nil || (found.notes ?? "") == (notes ?? ""))
         }
         return readBack ? .verified : .unconfirmed
     }
@@ -255,6 +308,12 @@ final class DeviceConnections {
         }
     }
 
+    /// The place an occurrence has now, for the change card only (ADR-281). Never sent to the agent.
+    func eventLocation(_ event: CalendarEventSummary) -> String? {
+        guard access(for: .calendar) == .granted else { return nil }
+        return rawEvents(from: event.start, to: event.end).first { Self.occurrenceID($0) == event.id }?.location
+    }
+
     private func rawEvents(from start: Date, to end: Date) -> [EKEvent] {
         let predicate = eventStore.predicateForEvents(withStart: start.addingTimeInterval(-60), end: end.addingTimeInterval(60), calendars: nil)
         return eventStore.events(matching: predicate)
@@ -305,6 +364,7 @@ final class DeviceConnections {
         if let due = write.due {
             reminder.dueDateComponents = Self.components(due)
         }
+        if let repeats = write.repeats { reminder.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
         try eventStore.save(reminder, commit: true)
         return reminder.calendarItemIdentifier
     }
@@ -408,7 +468,8 @@ final class DeviceConnections {
             listTitle: reminder.calendar?.title ?? "Reminders",
             due: due,
             markerURL: reminder.url?.absoluteString,
-            isCompleted: reminder.isCompleted)
+            isCompleted: reminder.isCompleted,
+            repeats: readRepeat(reminder.recurrenceRules, calendar: .current))
     }
 
     /// Incomplete reminders due by `end` (overdue included), for Home → Today. Title and due
@@ -497,9 +558,10 @@ final class DeviceConnections {
         }
     }
 
-    /// Name and birthday of every contact that has one (ADR-269). Nothing else is read.
+    /// Name and birthday of every contact that has one, for "whose birthday is coming up"
+    /// (ADR-269). Nothing else is read.
     /// Only the day and month reach the agent (`VoiceToolReply.birthdays`); the year stays here.
-    func birthdays() throws -> [ContactBirthday] {
+    func contactBirthdays() throws -> [ContactBirthday] {
         let keys: [CNKeyDescriptor] = [
             CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
             CNContactBirthdayKey as CNKeyDescriptor,
@@ -512,6 +574,26 @@ final class DeviceConnections {
             found.append(ContactBirthday(
                 name: CNContactFormatter.string(from: contact, style: .fullName) ?? "Unnamed contact",
                 month: month, day: day, year: birthday.year))
+        }
+        return found
+    }
+
+    /// Contacts with a birthday (ADR-288): name and day only, read on this iPhone. Nil without
+    /// Contacts permission. Nothing else about the contact is read.
+    func birthdays() -> [BirthdayContact]? {
+        guard access(for: .contacts) == .granted else { return nil }
+        let keys: [CNKeyDescriptor] = [CNContactFormatter.descriptorForRequiredKeys(for: .fullName), CNContactBirthdayKey as CNKeyDescriptor]
+        var found: [BirthdayContact] = []
+        do {
+            try contactStore.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
+                guard let birthday = contact.birthday, let month = birthday.month, let day = birthday.day else { return }
+                found.append(BirthdayContact(
+                    id: contact.identifier,
+                    name: CNContactFormatter.string(from: contact, style: .fullName) ?? "Unnamed contact",
+                    month: month, day: day))
+            }
+        } catch {
+            return nil
         }
         return found
     }

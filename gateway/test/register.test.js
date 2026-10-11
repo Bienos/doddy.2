@@ -54,6 +54,25 @@ test('review: IPv6 clients in one /64 share a registration bucket', async () => 
   assert.equal(last.status, 429);
 });
 
+test('IPv4 clients seen as IPv4-mapped IPv6 keep their own buckets', async () => {
+  const { deps } = makeDeps();
+  for (let i = 0; i < 20; i++) {
+    await handleRegister(req({ inviteCode: 'WRONG-CODE-0000001', deviceId: DEVICE }, { 'x-real-ip': '::ffff:198.51.100.7' }), deps);
+  }
+  const other = await handleRegister(req({ inviteCode: INVITE, deviceId: DEVICE }, { 'x-real-ip': '::ffff:203.0.113.9' }), deps);
+  assert.equal(other.status, 200, 'a different IPv4 client is not blocked by the first one');
+  const same = await handleRegister(req({ inviteCode: INVITE, deviceId: DEVICE }, { 'x-real-ip': '198.51.100.7' }), deps);
+  assert.equal(same.status, 429, 'mapped and plain forms of one address share a bucket');
+});
+
+test('a request without client address headers is logged as such', async () => {
+  const { deps, logs } = makeDeps();
+  assert.equal((await handleRegister(req({ inviteCode: INVITE, deviceId: DEVICE }), deps)).status, 200);
+  assert.equal(JSON.parse(logs.at(-1)).cause, 'noClientAddress');
+  await handleRegister(req({ inviteCode: INVITE, deviceId: DEVICE }, { 'x-real-ip': '198.51.100.8' }), deps);
+  assert.equal(JSON.parse(logs.at(-1)).cause, undefined);
+});
+
 test('review: short invite codes in config fail closed', async () => {
   const { deps } = makeDeps({ env: { ...ENV, GATEWAY_INVITE_CODES: 'short' } });
   const res = await handleRegister(req({ inviteCode: 'short', deviceId: DEVICE }), deps);

@@ -49,7 +49,7 @@ final class BirthdaysTests: XCTestCase {
             ContactBirthday(name: "Past", month: 12, day: 27),
             ContactBirthday(name: "Later", month: 1, day: 10),
         ]
-        let found = Birthdays.upcoming(people, now: date(2026, 12, 28, 23), days: 7, calendar: calendar)
+        let found = UpcomingBirthdays.upcoming(people, now: date(2026, 12, 28, 23), days: 7, calendar: calendar)
         XCTAssertEqual(found.map(\.name), ["Anna", "Bartek", "Tomek", "Ola"])
         XCTAssertEqual(found.map(\.daysAway), [0, 0, 2, 5])
         XCTAssertEqual(found[3].date, calendar.startOfDay(for: date(2027, 1, 2)))
@@ -59,11 +59,11 @@ final class BirthdaysTests: XCTestCase {
 
     func testTodayOnlyAndTheLongestLook() {
         let people = [ContactBirthday(name: "Anna", month: 10, day: 11), ContactBirthday(name: "Ola", month: 10, day: 12)]
-        XCTAssertEqual(Birthdays.upcoming(people, now: date(2026, 10, 11), days: 1, calendar: calendar).map(\.name), ["Anna"])
+        XCTAssertEqual(UpcomingBirthdays.upcoming(people, now: date(2026, 10, 11), days: 1, calendar: calendar).map(\.name), ["Anna"])
         // Asking for more than 60 days still looks 60 days ahead at most.
         let far = [ContactBirthday(name: "Far", month: 12, day: 15)]
-        XCTAssertEqual(Birthdays.upcoming(far, now: date(2026, 10, 11), days: 500, calendar: calendar).count, 0)
-        XCTAssertEqual(Birthdays.upcoming(far, now: date(2026, 10, 11), days: 66, calendar: calendar).count, 0)
+        XCTAssertEqual(UpcomingBirthdays.upcoming(far, now: date(2026, 10, 11), days: 500, calendar: calendar).count, 0)
+        XCTAssertEqual(UpcomingBirthdays.upcoming(far, now: date(2026, 10, 11), days: 66, calendar: calendar).count, 0)
     }
 
     func testLeapDayBirthdaysFallOnThe28thInOtherYearsAndImpossibleDatesAreSkipped() {
@@ -73,12 +73,12 @@ final class BirthdaysTests: XCTestCase {
             ContactBirthday(name: "Wrong year", month: 2, day: 29, year: 2001),
             ContactBirthday(name: "Bad month", month: 13, day: 1),
         ]
-        let plain = Birthdays.upcoming(people, now: date(2027, 2, 27), days: 7, calendar: calendar)
+        let plain = UpcomingBirthdays.upcoming(people, now: date(2027, 2, 27), days: 7, calendar: calendar)
         XCTAssertEqual(plain.map(\.name), ["Leap"])
         XCTAssertEqual(plain[0].date, calendar.startOfDay(for: date(2027, 2, 28)))
         XCTAssertTrue(plain[0].movedFromLeapDay)
 
-        let leapYear = Birthdays.upcoming(people, now: date(2028, 2, 27), days: 7, calendar: calendar)
+        let leapYear = UpcomingBirthdays.upcoming(people, now: date(2028, 2, 27), days: 7, calendar: calendar)
         XCTAssertEqual(leapYear[0].date, calendar.startOfDay(for: date(2028, 2, 29)))
         XCTAssertFalse(leapYear[0].movedFromLeapDay)
     }
@@ -89,7 +89,7 @@ final class BirthdaysTests: XCTestCase {
             ContactBirthday(name: "Ola", month: 10, day: 12, year: 1990),
             ContactBirthday(name: "Tomek", month: 10, day: 14),
         ]
-        let found = Birthdays.upcoming(people, now: date(2026, 10, 11), days: 7, calendar: calendar)
+        let found = UpcomingBirthdays.upcoming(people, now: date(2026, 10, 11), days: 7, calendar: calendar)
         let reply = VoiceToolReply.birthdays(found, days: 7, calendar: calendar)
         XCTAssertEqual(reply, "birthdays: from the user's Contacts in the next 7 days (today included): \"Anna Nowak\" today; \"Ola\" tomorrow; \"Tomek\" Wed 14 Oct. Ages and years are not shared with you; don't guess them.")
         XCTAssertFalse(reply.contains("1985"))
@@ -103,7 +103,7 @@ final class BirthdaysTests: XCTestCase {
 
     func testALongListIsCutAndCounted() {
         let people = (1...20).map { ContactBirthday(name: String(format: "P%02d", $0), month: 10, day: 12) }
-        let found = Birthdays.upcoming(people, now: date(2026, 10, 11), days: 7, calendar: calendar)
+        let found = UpcomingBirthdays.upcoming(people, now: date(2026, 10, 11), days: 7, calendar: calendar)
         let reply = VoiceToolReply.birthdays(found, days: 7, calendar: calendar)
         XCTAssertTrue(reply.contains("\"P15\" tomorrow; and 5 more."))
         XCTAssertFalse(reply.contains("P16"))

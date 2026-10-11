@@ -1,8 +1,8 @@
 import { Composio } from "@composio/core";
 import type { ToolkitSettings } from "../config.js";
 import { ProviderError } from "../errors.js";
-import { extractScopes, mapProviderError } from "../providers/composio.js";
-import type { ProviderConnection, ProviderConnectionStatus } from "../providers/types.js";
+import { extractScopes, guard, mapStatus, removeComposioConnection } from "../providers/composioShared.js";
+import type { ProviderConnection } from "../providers/types.js";
 import { type ToolkitId, TOOLKIT_IDS, TOOLKITS } from "./catalog.js";
 import type { ExecuteCall, ExecuteResult, ToolsProvider } from "./provider.js";
 
@@ -113,47 +113,13 @@ export class ComposioToolsProvider implements ToolsProvider {
         },
         { signal: call.signal },
       ),
+      { execute: true },
     );
     return { raw: { successful: response.successful, error: response.error, data: response.data }, providerReference: response.logId ?? null };
   }
 
   async removeConnection(input: { connectionId: string; signal: AbortSignal }) {
-    try {
-      await this.client.connectedAccounts.revoke(input.connectionId, { signal: input.signal });
-    } catch {
-      // Not revokable or already gone: still delete the Composio connection below.
-    }
-    try {
-      await this.client.connectedAccounts.delete(input.connectionId, { signal: input.signal });
-      return "removed" as const;
-    } catch (error) {
-      return error instanceof Error && error.name === "ComposioConnectedAccountNotFoundError" ? ("removed" as const) : ("failed" as const);
-    }
+    return removeComposioConnection(this.client, input.connectionId, input.signal);
   }
-}
 
-function mapStatus(status: string, isDisabled: boolean): ProviderConnectionStatus {
-  if (isDisabled) return "disabled";
-  switch (status) {
-    case "ACTIVE":
-      return "active";
-    case "INITIALIZING":
-    case "INITIATED":
-      return "pending";
-    case "EXPIRED":
-      return "expired";
-    case "REVOKED":
-    case "INACTIVE":
-      return "revoked";
-    default:
-      return "failed";
-  }
-}
-
-async function guard<T>(fn: () => Promise<T>): Promise<T> {
-  try {
-    return await fn();
-  } catch (error) {
-    throw mapProviderError(error);
-  }
 }

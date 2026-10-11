@@ -9,6 +9,7 @@ POST /api/voice-token
 Authorization: Bearer <access code>
 → 200 {"token": "…"}            (Cache-Control: no-store)
 → 401 {"error": "invalid_access_code"}
+→ 429 {"error": "rate_limited"}  (this tester's tokens for this hour are used up; Retry-After)
 → 503 {"error": "voice_busy"}   (ElevenLabs concurrency/daily limit reached)
 → 500 {"error": "server_not_configured"} · 502/504 upstream errors
 ```
@@ -32,6 +33,7 @@ model and the voice. Doddy's prompt, notes and tools go from the phone straight 
 sees them. A request with no body is the ElevenLabs request, unchanged. Either provider works without the other's keys.
 
 Logs are one JSON line per request: status, error, tester label, upstream status and duration.
+If any configured code is too short to use, one `voice_token_config` line per instance names those testers (labels only).
 They never contain codes, tokens, keys, IP addresses or anything the user said.
 
 ## Environment variables (set in the host, never committed)
@@ -40,6 +42,7 @@ They never contain codes, tokens, keys, IP addresses or anything the user said.
 |---|---|
 | `ELEVENLABS_API_KEY` | ElevenLabs API key; restrict it to Conversational AI if the dashboard allows |
 | `ELEVENLABS_AGENT_ID` | the Doddy agent (`agent_0501m4et27vyeawrwqfdxxfszfa6` for the dev prototype) |
+| `DODDY_TOKENS_PER_HOUR` | optional, default `30`: tokens one tester may get per clock hour. Counted per server instance, so it's a brake against one tester using up the shared agent limits, not a hard cap. A value that isn't a positive whole number refuses to serve |
 | `OPENAI_API_KEY` | Optional. Only for the OpenAI test voice. Put a monthly spending limit on its OpenAI project: this server has no counters |
 | `OPENAI_REALTIME_MODEL` | Optional, default `gpt-realtime`. Any Realtime model id OpenAI lists (e.g. `gpt-realtime-2.1`, `gpt-realtime-mini`) |
 | `OPENAI_REALTIME_VOICE` | Optional, default `marin` (OpenAI recommends `marin` or `cedar`) |
@@ -53,7 +56,7 @@ They never contain codes, tokens, keys, IP addresses or anything the user said.
 4. In the app: Settings → Voice → Token server = that URL; Access code = your code → Save.
 5. Check that Settings → Voice → Connection says "Private (token server)" and a conversation starts.
 6. Only then, in ElevenLabs, turn on **authentication** for the agent. After that the public agent ID stops working.
-   Also set the agent's **concurrency and daily call limits**; they are the spending cap (this server has no counters of its own).
+   Also set the agent's **concurrency and daily call limits**; they are the spending cap (this server only has the per-tester brake above, per instance).
 
 `src/handler.js` uses only web-standard `Request`/`Response`/`fetch`, so Supabase Edge Functions or Cloudflare
 Workers need only a short entry file in place of `api/voice-token.js`.
@@ -61,5 +64,5 @@ Workers need only a short entry file in place of `api/voice-token.js`.
 ## Test
 
 ```sh
-npm test      # Node 20+, no dependencies
+npm test      # Node 22+, no dependencies
 ```

@@ -39,7 +39,7 @@ function isoDate(value: unknown): string | null {
   return Number.isNaN(t) ? null : new Date(t).toISOString();
 }
 
-function httpUrl(value: string): string | null {
+export function httpUrl(value: string): string | null {
   try {
     const u = new URL(value.trim());
     return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : null;
