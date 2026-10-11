@@ -438,6 +438,8 @@ struct NewListSheet: View {
     @State private var name = ""
     @State private var items = ""
     @State private var errorMessage: String?
+    /// What came from a photo (ADR-270), said once above the items.
+    @State private var photoNote: String?
 
     var body: some View {
         NavigationStack {
@@ -450,6 +452,19 @@ struct NewListSheet: View {
                     TextEditor(text: $items)
                         .frame(minHeight: 120)
                         .accessibilityLabel("First items, one per line")
+                }
+                Section {
+                    ListPhotoPicker { proposal in
+                        if ListText.cleaned(name) == nil, let suggested = proposal.name { name = suggested }
+                        let existing = items.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                        items = (existing + proposal.items).joined(separator: "\n")
+                        photoNote = proposal.leftOut == 0
+                            ? String(format: NSLocalizedString("Read %lld lines from the photo. Check them before Create.", comment: ""), proposal.items.count)
+                            : String(format: NSLocalizedString("Read %lld lines from the photo; %lld were too long or past the limit. Check them before Create.", comment: ""), proposal.items.count, proposal.leftOut)
+                    }
+                    if let photoNote {
+                        Text(photoNote).font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
                 }
                 if let errorMessage {
                     Section { ProblemView(message: errorMessage) }

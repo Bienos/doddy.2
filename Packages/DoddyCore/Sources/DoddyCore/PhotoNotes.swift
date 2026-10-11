@@ -116,3 +116,50 @@ public enum RecognizedText {
         return (max(1, Int((Double(width) * scale).rounded())), max(1, Int((Double(height) * scale).rounded())))
     }
 }
+
+// MARK: A list from a photo (ADR-270)
+
+/// A photo of a handwritten or printed list, read on this iPhone, turned into a name and items for
+/// the New list screen. The user sees and edits every line before Create; nothing is saved by
+/// reading. Bullets, numbers and checkboxes at the start of a line are dropped; the words stay as
+/// read, never "corrected".
+public enum PhotoList {
+    public struct Proposal: Equatable, Sendable {
+        /// A first line ending in ":" ("Shopping:") becomes the suggested name.
+        public let name: String?
+        public let items: [String]
+        /// Lines over the item length or past the list size, left out (counted on screen).
+        public let leftOut: Int
+    }
+
+    public static func proposal(from text: String) -> Proposal {
+        var lines = text.split(whereSeparator: \.isNewline).map { stripped(String($0)) }.filter { !$0.isEmpty }
+        var name: String?
+        if let first = lines.first, first.hasSuffix(":"), first.count > 1 {
+            name = ListText.cleaned(String(first.dropLast()))
+            lines.removeFirst()
+        }
+        var items: [String] = [], leftOut = 0
+        for line in lines {
+            guard let item = ListText.cleaned(line), item.count <= ListLimits.itemLength else { leftOut += 1; continue }
+            if ListMatch.isDuplicate(item, of: items) { continue }
+            guard items.count < ListLimits.itemsPerList else { leftOut += 1; continue }
+            items.append(item)
+        }
+        return Proposal(name: name, items: items, leftOut: leftOut)
+    }
+
+    /// "- milk", "• milk", "* milk", "1. milk", "2) milk", "[ ] milk", "☐ milk", "✓ milk" → "milk".
+    static func stripped(_ line: String) -> String {
+        var text = line.trimmingCharacters(in: .whitespaces)
+        let marks = ["- ", "– ", "— ", "• ", "* ", "· ", "[ ] ", "[x] ", "[X] ", "☐ ", "☑ ", "✓ ", "✔ ", "□ ", "o "]
+        for mark in marks where text.hasPrefix(mark) {
+            text = String(text.dropFirst(mark.count))
+            break
+        }
+        if let range = text.range(of: #"^\d{1,3}[.)]\s+"#, options: .regularExpression) {
+            text.removeSubrange(range)
+        }
+        return text.trimmingCharacters(in: .whitespaces)
+    }
+}

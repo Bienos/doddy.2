@@ -1013,5 +1013,11 @@
  "Last updated %@. Changes from others arrive straight away.": "Ostatnia aktualizacja: %@. Zmiany innych pojawiają się od razu.",
  "Added by %@": "Dodane przez: %@",
  "Ticked by %@": "Odhaczone przez: %@",
- "someone else": "ktoś inny"
+ "someone else": "ktoś inny",
+ "Read a list from a photo": "Odczytaj listę ze zdjęcia",
+ "A handwritten or printed list. Doddy reads it on this iPhone; the photo isn't kept or sent anywhere.": "Lista odręczna lub wydrukowana. Doddy odczytuje ją na tym iPhonie; zdjęcie nie jest zachowywane ani nigdzie wysyłane.",
+ "No list lines were found in that photo. Nothing was added.": "Na tym zdjęciu nie znaleziono pozycji listy. Nic nie zostało dodane.",
+ "That photo is too large to read. Nothing was added.": "To zdjęcie jest zbyt duże, by je odczytać. Nic nie zostało dodane.",
+ "Read %lld lines from the photo. Check them before Create.": "Odczytano ze zdjęcia pozycje: %lld. Sprawdź je przed utworzeniem listy.",
+ "Read %lld lines from the photo; %lld were too long or past the limit. Check them before Create.": "Odczytano ze zdjęcia pozycje: %lld; pominięto: %lld (za długie lub ponad limit). Sprawdź je przed utworzeniem listy."
 }
