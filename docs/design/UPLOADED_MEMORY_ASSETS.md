@@ -95,3 +95,30 @@ downscaled.
 The 038 panels are a storyboard for a video transition; the app shows them as still pictures with
 cross-fades (no page-curl animation is drawn). The other transitions (037, 039–041) and the world's
 foreground layers (024, 027, 030, 033, 035) are not used.
+
+## Doddy moving, and outside the app (ADR-313, 11 October 2026)
+
+Owner: "do all" (the lists proposed after ADR-308). Same Drive folder; originals not stored here.
+`tools/whole_doddy/build_imagesets.py <pack> <cuts> <repo> <strips>` rebuilds these sets (the ADR-299
+sets come out byte-identical). The strips are cut with `cut_frames.py --shared`: the paper below
+the ground line (or the printed numbers) is painted paper first, only paper touching each frame's
+edges is removed, and every frame of a strip goes on one canvas size with one ground, so nothing
+jumps between frames. Nothing is redrawn or recoloured.
+
+| Image set(s) | Pack file | SHA-256 of the original | What was done |
+| --- | --- | --- | --- |
+| `WholeDoddy_basketball_dribble` (app, widgets) | 01-transparent-poses/doddy_basketball_dribble_v02.png | 2e1d8f08f7c239a6fa68d77ba2f4d9163078f87fe051b86b34cdf3051ae13624 | Lanczos to 200×300 and 300×450 |
+| `WholeDoddy_oneleg_balance` (app, widgets) | 01-transparent-poses/doddy_oneleg_balance_v02.png | 8aa54d224682cee586e06db0afc81304364f08dc48263675c5cd3d50154e58cc | as above (back after ADR-290 removed it as the greeting) |
+| `DoddyMotion_walk_1` … `_8` | 012_doddy_walk_v01.png | dc5f4bfc2caaef3b2665bfa6c0f4bd66a47dbf858f68ac3be4c32454964802f8 | `cut_frames.py --shared --rows-max-y 567`; Lanczos to 200×300 / 300×450 |
+| `DoddyMotion_run_1` … `_6` | 014_doddy_run_v01.png | 9b6b9dddcaada8b85156a75869c8d9fbb61f9aeff4c62501629cc30b0e137813 | `--shared --rows-max-y 568` |
+| `DoddyMotion_jump_1` … `_5` | 015_doddy_jump_v01.png | 4904739cd7352b767d05c9edfc0a44966e6e632f198672922c5905ba0488df0b | `--shared --rows-max-y 596 --min-fraction 0.3` |
+| `DoddyMotion_turn_3` | 018_doddy_turn_v01.png | abbcaf3b2f9be352bdf9b3e4accffd1b2121486ab83cd544342198be2018bed3 | `--shared --rows-max-y 605`; frame 3 only |
+| `DoddyMotion_pop_1` … `_4` | 019_doddy_pop_v01.png | 2581da049ae7c3cf01ec2c1e814ae55543d3bc0b73779260e8ce32250265ee48 | `--shared --rows-max-y 640 --min-fraction 0` (the dot of frame 1 is too small to be a frame; frames 2–5 are used) |
+| `DoddyMotion_idle_1` … `_4` | 013_doddy_idle_v01.png | 50877e133ccb35b542a14acdbe307c63ea6c2dadc5317d6ec3abee8acf606441 | `--shared --rows-max-y 760` |
+| `Scenery_court` (day / night) | 025_world_court_day_v01.png / 026_world_court_night_v01.png | a9822a0398b7d9d3e76e28d781bc2533a2e919031fad9d0bbcb58db9274fca80 / 50409221750bea584d5c24fa305c5db961a97b9d81b9ed1617487d24c6fd539e | Lanczos to 780 px wide; JPEG |
+| `Scenery_rooftop` (one picture) | 034_world_rooftop_night_v01.png | 59f377c8db058966f8e66889104876ad9600b22e4bc891c20b71b3aff072175e | as above; the pack has no day rooftop |
+| `WidgetDoddy_face` (widgets) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | the watch face's 470×470 crop, Lanczos to 120×120 and 180×180 |
+
+The notification picture, the list share card and Siri's panel use image sets already listed above
+(`WholeDoddy_reaching_high`, `_wave`, and the poses). Not used: the foreground layers (024, 027,
+030, 033, 035), which sit below the part of each picture the strips show.

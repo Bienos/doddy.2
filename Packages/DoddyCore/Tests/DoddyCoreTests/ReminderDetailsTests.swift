@@ -84,3 +84,103 @@ final class ReminderDetailsTests: XCTestCase {
         XCTAssertFalse(request?.detail?.contains("4417") ?? true, "the note's text isn't logged")
     }
 }
+
+/// Rename, repeat and replace notes (ADR-314).
+final class ReminderRenameRepeatTests: XCTestCase {
+    private var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Warsaw")!
+        return calendar
+    }
+
+    private let now = ISO8601DateFormatter().date(from: "2026-10-11T08:00:00Z")!
+
+    private func parse(_ json: String) -> VoiceToolRequest {
+        VoiceToolRequest.parse(name: "change_reminder", parametersJSON: Data(json.utf8), now: now, calendar: calendar)
+    }
+
+    func testRenameRepeatAndNotes() {
+        guard case .changeReminder(let draft) = parse(#"{"title": "Gym", "new_title": "Gym with Tom", "repeat": "weekly", "replace_notes": "bring the towel"}"#) else {
+            return XCTFail("a rename with a repeat and new notes is one change")
+        }
+        XCTAssertEqual(draft.newTitle, "Gym with Tom")
+        XCTAssertEqual(draft.repeatChange, .set(CalendarRepeat(frequency: .weekly)))
+        XCTAssertEqual(draft.replaceNotes, "bring the towel")
+        XCTAssertTrue(draft.changesDetails)
+
+        guard case .changeReminder(let stop) = parse(#"{"title": "Gym", "repeat": "none", "clear_notes": true}"#) else { return XCTFail() }
+        XCTAssertEqual(stop.repeatChange, .stop)
+        XCTAssertEqual(stop.replaceNotes, "")
+    }
+
+    func testConflictingAsksAreRefused() {
+        if case .invalid = parse(#"{"title": "Gym", "add_note": "x", "replace_notes": "y"}"#) {} else { XCTFail("add or replace, not both") }
+        if case .invalid = parse(#"{"title": "Gym", "clear_notes": true, "replace_notes": "y"}"#) {} else { XCTFail("clear or replace, not both") }
+        if case .invalid = parse(#"{"title": "Gym", "repeat": "fortnightly"}"#) {} else { XCTFail("unknown repeat") }
+        if case .invalid = parse(#"{"title": "Gym", "repeat": "none", "repeat_until": "2026-12-31"}"#) {} else { XCTFail("until with none") }
+        if case .invalid = parse(#"{"title": "Gym", "new_title": "   "}"#) {} else { XCTFail("empty title") }
+    }
+
+    func testReadBackAndNothingNew() {
+        let weekly = CalendarRepeat(frequency: .weekly)
+        let change = ReminderDetailsChange(newTitle: "Gym with Tom", repeatChange: .set(weekly), replaceNotes: "towel")
+        let back = ReminderSnapshot(id: "1", title: "Gym with Tom", listTitle: "Home", due: nil, markerURL: nil, repeats: weekly, notes: "towel")
+        XCTAssertTrue(ReminderDetails.confirms(back, notes: "towel", change: change, newDue: nil))
+        XCTAssertFalse(ReminderDetails.confirms(back, notes: "old notes", change: change, newDue: nil))
+        let notRenamed = ReminderSnapshot(id: "1", title: "Gym", listTitle: "Home", due: nil, markerURL: nil, repeats: weekly, notes: "towel")
+        XCTAssertFalse(ReminderDetails.confirms(notRenamed, notes: "towel", change: change, newDue: nil))
+        let stillRepeats = ReminderSnapshot(id: "1", title: "Gym", listTitle: "Home", due: nil, markerURL: nil, repeats: weekly)
+        XCTAssertFalse(ReminderDetails.confirms(stillRepeats, notes: nil, change: ReminderDetailsChange(repeatChange: .stop), newDue: nil))
+        XCTAssertTrue(ReminderDetails.changesNothing(stillRepeats, change: ReminderDetailsChange(repeatChange: .set(weekly)), newDue: nil))
+        XCTAssertFalse(ReminderDetails.changesNothing(stillRepeats, change: ReminderDetailsChange(repeatChange: .stop), newDue: nil))
+    }
+
+    func testReplyAndLogNeverCarryTheNotes() {
+        let change = ReminderDetailsChange(newTitle: "Gym with Tom", repeatChange: .stop, replaceNotes: "PIN 4417")
+        let reply = VoiceToolReply.reminderDetailsChanged("Gym", change: change, due: nil)
+        XCTAssertTrue(reply.hasPrefix("changed: reminder \"Gym\": renamed to \"Gym with Tom\", notes replaced, no longer repeats"), reply)
+        XCTAssertFalse(reply.contains("4417"))
+        let draft = ReminderChangeDraft(title: "Gym", newDue: nil, markDone: false, newTitle: "Gym with Tom", repeatChange: .stop, replaceNotes: "PIN 4417")
+        let row = ActivityRequest.describe(.changeReminder(draft), calendar: calendar)
+        XCTAssertFalse(row?.detail?.contains("4417") ?? true)
+    }
+}
+
+/// An event's notes replaced or cleared (ADR-314), with Undo that puts them back.
+final class EventReplaceNotesTests: XCTestCase {
+    private var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Warsaw")!
+        return calendar
+    }
+
+    func testReplacePlanAndUndo() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let event = CalendarEventSummary(id: "e1@1800000000", title: "Dentist", start: start, end: start.addingTimeInterval(3600), allDay: false)
+        let draft = EventChangeDraft(title: "Dentist", currentStart: start, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: nil,
+                                     replaceNotes: "Bring the X-ray")
+        let plan = try XCTUnwrap(EventChange.plan(draft, for: event, notesBefore: "Old notes", calendar: calendar))
+        XCTAssertEqual(plan.replaceNotes, "Bring the X-ray")
+        XCTAssertEqual(plan.notesBefore, "Old notes")
+        XCTAssertTrue(plan.changesDetails)
+        let undo = EventChange.reversed(plan)
+        XCTAssertEqual(undo.replaceNotes, "Old notes", "Undo puts the old notes back")
+        XCTAssertEqual(undo.notesBefore, "Bring the X-ray", "only if they still are what Doddy wrote")
+
+        let same = EventChangeDraft(title: "Dentist", currentStart: start, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: nil,
+                                    replaceNotes: "Old notes")
+        XCTAssertNil(EventChange.plan(same, for: event, notesBefore: "Old notes", calendar: calendar), "the same notes are no change")
+    }
+
+    func testToolCall() {
+        let json = #"{"title": "Dentist", "start": "2027-01-15T10:00", "clear_notes": true}"#
+        guard case .changeCalendarEvent(let draft) = VoiceToolRequest.parse(name: "change_calendar_event", parametersJSON: Data(json.utf8), calendar: calendar) else {
+            return XCTFail("clearing the notes is a change")
+        }
+        XCTAssertEqual(draft.replaceNotes, "")
+        let both = #"{"title": "Dentist", "start": "2027-01-15T10:00", "add_note": "a", "replace_notes": "b"}"#
+        if case .invalid = VoiceToolRequest.parse(name: "change_calendar_event", parametersJSON: Data(both.utf8), calendar: calendar) {} else {
+            XCTFail("add or replace, not both")
+        }
+    }
+}

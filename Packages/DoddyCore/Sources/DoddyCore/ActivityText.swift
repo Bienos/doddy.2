@@ -86,6 +86,9 @@ public enum ActivityText {
         "Complete a task": "Ukończ zadanie",
         "Move a task": "Przesuń zadanie",
         "Add ingredients to a list": "Dodaj składniki do listy",
+        // Round 5.
+        "Create a reply draft": "Utwórz szkic odpowiedzi",
+        "Read a Notion page": "Odczytano stronę Notion",
     ]
 
     /// Doddy's own fixed notes, in Polish. Built from the same text the app writes, so they match.

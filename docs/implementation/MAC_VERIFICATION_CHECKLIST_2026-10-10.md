@@ -265,7 +265,23 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | X7 | On the watch, add the Doddy complication (circular with nothing coming up, and rectangular) on a full-colour face and a tinted face | Doddy's round face in colour on full-colour faces, and on tinted faces on watchOS 11+; monochrome faces show the symbol or name only |
 | X8 | Fresh install: go through the opening, then the welcome; go to the first question and back; turn on Reduce Motion and reopen | Four panels cross-fade once and stop on Doddy waving; going back doesn't replay; Reduce Motion shows only the wave panel. The opening (ADR-225) is unchanged |
 
-## 4j. First-use fixes (ADR-311)
+## 4i. Doddy moving, and outside the app (ADR-313, `DODDY_MOVES_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| Y1 | Whole Doddy style. Start a focus timer, pause, resume, let it finish; then a breathing session | Island: dribbling, cross-legged when paused, fist pump at the end; breathing: balancing on one leg. Lean In: the boards as before |
+| Y2 | Open Focus: before starting, while running, paused, finished, stopped early | Court strip at the top: no Doddy before starting, dribbling, cross-legged, fist pump, none after a stop. No text over the court |
+| Y3 | Open the weekly look-back in light and dark mode | Rooftop strip under the heading with Doddy cross-legged; text clean |
+| Y4 | Talk to Doddy and watch the screen while it connects; ask for a plan with several steps and confirm it | Doddy walks while connecting, runs while the steps run, talks when he speaks. Reduce Motion: still frames. Island unchanged (stretch while connecting) |
+| Y5 | Save a note from Capture; then make a save fail | Receipt: the pop plays once, then the fist pump stays. A failed save shows no pop |
+| Y6 | Tick the last item on a list; reopen the list; tick on another device for a shared list | The jump plays once when ticked here; reopening shows "Nothing left." without it. An empty list shows Doddy cross-legged |
+| Y7 | Undo an event in What Doddy did; clear the list | The undone row shows the small turned-back Doddy; empty: Doddy cross-legged |
+| Y8 | Cold-launch with the opening off (Reduce Motion off), then with it on | Opening off: Doddy stands, breathes four times, sits; once per launch. Opening on: no breaths, the hand-over unchanged |
+| Y9 | Add Talk to Doddy to the Lock Screen (circular); add "Doddy, resting" and charge the iPhone on its side at night | Lock Screen: Doddy's face, reads in the Lock Screen tint. StandBy: the stretch pose and the next reminder's time only, red at night |
+| Y10 | Set a note reminder a minute ahead; turn on Hide Doddy's pictures and set another | First notification shows the reaching pose as its picture, same words as before; the second has no picture |
+| Y11 | A list's menu → Share as a picture → Messages and Save Image | A cream card with the list name, open items (15 at most, then "and N more") and Doddy waving. Hide Doddy's pictures: no Doddy |
+| Y12 | Ask Siri "Ask Doddy what I saved" for a saved word, a missing word, and with readback off | Siri's panel shows Doddy listening, shrugging, shushing; the spoken answer is unchanged |
+
+## 4k. First-use fixes (ADR-320)
 | # | Do this | Expect |
 |---|---|---|
 | O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |

@@ -131,3 +131,29 @@ In order of risk:
   - `Calendar.current.weekdaySymbols` in a `Picker`;
   - `ForEach(week.doneByApp.indices, id: \.self)`.
 - **Currency (ADR-300):** `ExchangeRateClient` is an `actor` with a nonisolated `URLSession` delegate class. Same pattern as `AppHTTPTransport`, so low risk.
+
+### Round 5 (2026-10-11, ADR-310 to ADR-312, ADR-314 to ADR-318): most likely to need a fix
+**First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
+- **Share extension (ADR-311):** a new target, so XcodeGen must embed it.
+  - `ShareModel.extract(_ items: sending [NSExtensionItem])` is `nonisolated` and is called from `Task.detached`, because item providers aren't Sendable. Swift 6 region checks may still object; the fallback is to load the strings inside `viewDidLoad` with completion handlers.
+  - `NSItemProvider.loadItem(forTypeIdentifier:)` with `async` and `as? URL` / `as? String`.
+  - `Config/DoddyShare-Info.plist`'s `NSExtensionPrincipalClass` is `$(PRODUCT_MODULE_NAME).ShareViewController`.
+  - With the App Group on, also set `DODDY_SHARE_ENTITLEMENTS`.
+- **Focus filter (ADR-312):**
+  - `SetFocusFilterIntent` with `static var description: IntentDescription?`;
+  - `@Parameter(default: false)` on a `Bool`;
+  - an optional `DoddyListEntity` parameter.
+  - `FocusFilterState` is `@MainActor`, and `perform()` awaits it.
+- **App lock (ADR-310):**
+  - `LAContext.evaluatePolicy` async;
+  - the `.overlay` in `RootView`;
+  - `@Observable` `AppLock.shared` read inside `MemoryDetailView`, `FindMemoriesView` and `MemoriesView`.
+- **Memo to-dos (ADR-318):**
+  - `MemoTodosCard` uses `Picker` with `Optional(list.id)` tags and `store.createList(name:items:source:)`;
+  - `String(format:)` with `%lld` and an `Int`.
+- **Parking widget (ADR-315):**
+  - `RootView` gains `@Environment(\.openURL)`, used in `onOpenURL` for `doddy://parking`;
+  - the widget's `Text(_, format: .dateTime.weekday(.abbreviated).hour().minute())`.
+- **Reminder rename/repeat (ADR-314):**
+  - `EKReminder.recurrenceRules` set and cleared;
+  - `EKEvent.notes` replaced, with a stale check before the save.

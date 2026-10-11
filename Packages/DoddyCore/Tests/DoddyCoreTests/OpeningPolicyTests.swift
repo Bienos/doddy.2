@@ -31,7 +31,7 @@ final class OpeningPolicyTests: XCTestCase {
         XCTAssertEqual(OpeningPolicy.decide(conditions(sceneOn: false, microphoneAllowed: false), trigger: .coldLaunch), .nothing)
     }
 
-    /// ADR-311: a microphone never asked about counts as not allowed, so iOS's question comes after
+    /// ADR-320: a microphone never asked about counts as not allowed, so iOS's question comes after
     /// the user's own tap on Talk to Doddy, never the moment the app opens.
     func testNoConversationStartsByItselfBeforeTheMicrophoneIsAllowed() {
         let notYetAsked = conditions(microphoneAllowed: false)
