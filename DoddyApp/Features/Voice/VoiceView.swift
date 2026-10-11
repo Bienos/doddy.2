@@ -1311,8 +1311,9 @@ struct VoiceView: View {
         case .microphoneDenied: .microphoneOff
         case .failed: .failed
         }
+        let planRunning = controller.planStatus.map { $0.isRunning && !$0.steps.isEmpty } ?? false
         return .shown(phase, muted: controller.isMuted && controller.isLive,
-                      awaitingConfirmation: controller.pendingAction != nil)
+                      awaitingConfirmation: controller.pendingAction != nil, planRunning: planRunning)
     }
 
         private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {

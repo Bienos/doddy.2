@@ -3620,6 +3620,17 @@
         }
       }
     },
+    "From Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od Doddy’ego"
+          }
+        }
+      }
+    },
     "From Google Keep: in Google Takeout, export Keep. In the Files app, tap the .zip to unpack it, open the Keep folder and pick the .json files. You can also pick .txt and .md files.": {
       "extractionState": "manual",
       "localizations": {
@@ -5805,6 +5816,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na Twoich listach nic nie zostało."
+          }
+        }
+      }
+    },
+    "Nothing left.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie zostało."
           }
         }
       }
@@ -8654,6 +8676,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnij"
+          }
+        }
+      }
+    },
+    "Share as a picture": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij jako obrazek"
           }
         }
       }
