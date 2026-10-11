@@ -3,7 +3,8 @@ import Foundation
 // Voice note reminders (ADR-198): the agent proposes "remind me about this note" at a time or at a
 // place; the app finds the note, shows a card, and sets nothing until the user taps Set reminder.
 // The agent never names a memory by id: it quotes the note's text from search_memories or
-// save_memory, and the app matches that quote against the user's saved notes.
+// save_memory, and the app matches that quote against the user's saved notes. A list (ADR-256)
+// is named instead, exactly as under "The user's lists"; the app matches it like the list tools.
 
 /// When a voice note reminder should fire, as the agent asked for it.
 public enum NoteReminderVoiceTarget: Equatable, Sendable {
@@ -15,14 +16,17 @@ public enum NoteReminderVoiceTarget: Equatable, Sendable {
 }
 
 public struct NoteReminderVoiceDraft: Equatable, Sendable {
-    /// The note's text as the agent quoted it.
+    /// The note's text as the agent quoted it, or the list's name when `isList`.
     public let noteText: String
+    /// The reminder is about a list, named by `noteText` (ADR-256).
+    public let isList: Bool
     public let target: NoteReminderVoiceTarget
     /// A time reminder that repeats (ADR-211): the weekday, day and clock time come from the time.
     public let repeats: ReminderRepeat?
 
-    public init(noteText: String, target: NoteReminderVoiceTarget, repeats: ReminderRepeat? = nil) {
+    public init(noteText: String, target: NoteReminderVoiceTarget, repeats: ReminderRepeat? = nil, isList: Bool = false) {
         self.noteText = noteText
+        self.isList = isList
         self.target = target
         self.repeats = repeats
     }
@@ -30,9 +34,11 @@ public struct NoteReminderVoiceDraft: Equatable, Sendable {
 
 extension VoiceToolRequest {
     static func parseNoteReminder(_ args: Arguments, name: String, now: Date, calendar: Calendar) -> VoiceToolRequest {
-        guard let note = args.text("note")?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty else {
-            return .invalid(name: name, reason: "missing note")
-        }
+        let noteArg = args.text("note")?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyText
+        let listArg = args.text("list")?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyText
+        guard noteArg == nil || listArg == nil else { return .invalid(name: name, reason: "give note or list, not both") }
+        guard let note = noteArg ?? listArg else { return .invalid(name: name, reason: "missing note or list") }
+        let isList = listArg != nil
         var repeats: ReminderRepeat?
         if let raw = args.text("repeat")?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(), !raw.isEmpty, raw != "never" {
             guard let rule = ReminderRepeat(rawValue: raw) else {
@@ -67,13 +73,13 @@ extension VoiceToolRequest {
                         question: "which day of the month, from 1 to 28"))
                 }
                 return .remindAboutNote(NoteReminderVoiceDraft(
-                    noteText: note, target: .time(date, timeZoneID: zone), repeats: repeats))
+                    noteText: note, target: .time(date, timeZoneID: zone), repeats: repeats, isList: isList))
             }
         case (nil, let placeText?):
             let query = placeText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !query.isEmpty else { return .invalid(name: name, reason: "missing place") }
             return .remindAboutNote(NoteReminderVoiceDraft(
-                noteText: note, target: .place(query: query, onArrival: !args.flag("when_leaving"))))
+                noteText: note, target: .place(query: query, onArrival: !args.flag("when_leaving")), isList: isList))
         }
     }
 }
@@ -136,4 +142,8 @@ extension VoiceToolReply {
             "\(ReminderFormat.place(place).lowercased()) (within \(place.radiusMeters) m, each time until the user marks it Done)"
         }
     }
+}
+
+extension String {
+    fileprivate var nonEmptyText: String? { isEmpty ? nil : self }
 }

@@ -75,6 +75,14 @@ extension MemoryStore {
         await listChanged(listID)
     }
 
+    /// A shared list after a sync (ADR-263): exactly the merged name and items, read back.
+    @discardableResult
+    func replaceShared(_ listID: UUID, with state: SharedListState) async throws -> DoddyList {
+        let list = try await environment.listRepository.replaceShared(listID: listID, with: state)
+        await listChanged(listID)
+        return list
+    }
+
     func renameList(_ listID: UUID, to name: String) async throws {
         _ = try await environment.listRepository.rename(listID: listID, to: name)
         await listChanged(listID)
@@ -219,5 +227,21 @@ extension MemoryStore {
         if !toTick.isEmpty { _ = try await environment.listRepository.setDone(toTick.map(\.id), done: true) }
         await reload()
         return list(id: created.id) ?? created
+    }
+}
+
+/// Undo of an import (ADR-258): exactly the notes and lists that import added are removed, and
+/// the store is reloaded to check they're gone.
+extension MemoryStore {
+    @discardableResult
+    func removeImported(_ ids: [UUID]) async throws -> Int {
+        var removed = 0
+        for id in ids where record(id: id) != nil {
+            try await environment.memoryRepository.delete(id: id)
+            removed += 1
+        }
+        await reload()
+        guard ids.allSatisfy({ record(id: $0) == nil }) else { throw MemoryStoreError.verificationFailed }
+        return removed
     }
 }

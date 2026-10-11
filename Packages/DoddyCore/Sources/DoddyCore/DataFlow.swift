@@ -27,6 +27,8 @@ public struct DataFlowState: Equatable, Sendable {
     public var siriReadsNotes: Bool
     /// "Hey Doddy" listening is switched on (ADR-254).
     public var heyDoddyOn: Bool
+    /// Lists shared through iCloud, by this user or with them (ADR-263).
+    public var sharedLists: Int
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -34,9 +36,10 @@ public struct DataFlowState: Equatable, Sendable {
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
-        siriReadsNotes: Bool = false, heyDoddyOn: Bool = false
+        siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0
     ) {
         self.morningCheckInOn = morningCheckInOn
+        self.sharedLists = sharedLists
         self.rememberConversations = rememberConversations
         self.shareProfileWithVoice = shareProfileWithVoice
         self.tokenServerSet = tokenServerSet
@@ -101,6 +104,13 @@ public enum DataFlow {
                 what: "Your notes, lists, photos, voice memos, time reminders and About you answers, locked with your passphrase.",
                 when: "Only when you make a backup file and choose where to save it.", isActive: true,
                 note: "Doddy has no copy of the passphrase or the file. Without the passphrase nobody can open it."),
+            DataFlowRow(
+                id: "iCloudSharing", destination: "Your iCloud (Apple) and the people you share lists with",
+                what: "The name and items of each list you share or joined, and every change to them.",
+                when: "While a list is shared.", isActive: state.sharedLists > 0,
+                note: state.sharedLists > 0
+                    ? "Only the lists you chose. Stop sharing deletes the copy in your iCloud; Leave takes you off someone else's list."
+                    : "No list is shared, so nothing goes there."),
             DataFlowRow(
                 id: "lookups", destination: "Open-Meteo and Wikipedia",
                 what: "A place name and its coordinates; search words.",

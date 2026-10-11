@@ -21,12 +21,23 @@
 	<!-- Widgets' shared folder (ADR-219); only works when the build is signed with the App Group. -->
 	<key>DoddyAppGroup</key>
 	<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
+	<!-- Shared lists (ADR-263): the iCloud container, empty unless the build sets
+	     DODDY_CLOUD_CONTAINER with the iCloud entitlement; empty means sharing isn't offered.
+	     CKSharingSupported lets iOS open Doddy from a shared list's link. -->
+	<key>DoddyCloudContainer</key>
+	<string>$(DODDY_CLOUD_CONTAINER)</string>
+	<key>CKSharingSupported</key>
+	<true/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<!-- Alarms (ADR-260): AlarmKit, iOS 26 and later only. Kept here rather than as an
+	     INFOPLIST_KEY_ build setting, which older Xcode versions don't know. -->
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

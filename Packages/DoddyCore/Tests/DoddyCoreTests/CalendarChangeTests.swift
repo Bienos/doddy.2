@@ -92,6 +92,32 @@ final class CalendarChangeTests: XCTestCase {
         XCTAssertFalse(EventChange.duePassed(ReminderDue(year: 2026, month: 10, day: 9, timeZoneID: nil), now: now, local: calendar), "a day without a time never counts as passed")
     }
 
+    /// ADR-258: undo is the same checked change backwards, with the moved occurrence's id.
+    func testUndoIsTheChangeBackwards() throws {
+        let event = CalendarEventSummary(id: "abc@\(Int(at(10, 9, 30).timeIntervalSince1970))", title: "Dentist", start: at(10, 9, 30), end: at(10, 10, 30), allDay: false)
+        let move = EventChangeDraft(title: "Dentist", currentStart: at(10, 9, 30), currentIsDayOnly: false, newStart: at(12, 15), newEnd: nil, newTitle: "Dentist (Nowak)")
+        let plan = try XCTUnwrap(EventChange.plan(move, for: event, calendar: calendar))
+        let undo = EventChange.reversed(plan)
+        XCTAssertEqual(undo.before.id, "abc@\(Int(at(12, 15).timeIntervalSince1970))")
+        XCTAssertEqual(undo.before.title, "Dentist (Nowak)")
+        XCTAssertEqual(undo.after, event, "back exactly as it was")
+    }
+
+    /// ADR-259: deleting names the thing exactly; it is paused and logged like other app changes.
+    func testDeletingIsParsedPausedAndLogged() {
+        guard case .deleteCalendarEvent(let draft) = parse(VoiceToolName.deleteCalendarEvent, #"{"title":"Dentist","start":"2026-10-10T09:30"}"#) else {
+            return XCTFail()
+        }
+        XCTAssertEqual(draft.currentStart, at(10, 9, 30))
+        guard case .invalid = parse(VoiceToolName.deleteCalendarEvent, #"{"title":"Dentist"}"#) else { return XCTFail("the start is needed") }
+        XCTAssertEqual(parse(VoiceToolName.deleteReminder, #"{"title":"Call mum"}"#), .deleteReminder(title: "Call mum"))
+        XCTAssertEqual(VoiceConnection.serving(VoiceToolName.deleteCalendarEvent), .calendar)
+        XCTAssertEqual(VoiceConnection.serving(VoiceToolName.deleteReminder), .reminders)
+        XCTAssertTrue(ConnectionPause.applies(to: .deleteReminder(title: "x")))
+        XCTAssertEqual(ActivityRequest.describe(.deleteReminder(title: "Call mum"), calendar: calendar)?.title, "Delete reminder")
+        XCTAssertTrue(VoiceToolReply.reminderDeleted("Call mum").hasPrefix("deleted:"))
+    }
+
     func testRemindersMatchOpenOnesOnly() {
         let open = ReminderSnapshot(id: "1", title: "Call mum", listTitle: "Home", due: nil, markerURL: nil)
         let done = ReminderSnapshot(id: "2", title: "call mum", listTitle: "Home", due: nil, markerURL: nil, isCompleted: true)
