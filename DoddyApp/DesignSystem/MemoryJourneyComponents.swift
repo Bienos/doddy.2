@@ -81,39 +81,50 @@ struct WholeDoddyView: View {
     }
 }
 
-/// A place from Doddy's world behind the top of a screen (ADR-299): his room on Home, the
-/// memory library on Memories, the coffee shop for the morning check-in. The owner's pack
-/// (021-036 "world"), day pictures in light appearance and night pictures in dark. Faint and
-/// fading into the canvas, so text over it keeps its contrast; it scrolls with the screen.
-/// Decoration only: hidden from VoiceOver, and with "Hide Doddy's pictures".
+/// A place from Doddy's world (ADR-299): his room behind Doddy on Home, a strip of the memory
+/// library on Memories and of the coffee shop on the morning check-in. The owner's pack (021-036
+/// "world"), day pictures in light appearance and night pictures in dark. It never sits under
+/// text (ADR-308): placed only where there is none, faint (25 %), and fading in and out at its
+/// top and bottom edges into the page. It scrolls with the screen. Decoration only: hidden from
+/// VoiceOver, and with "Hide Doddy's pictures" (then it takes no space).
 struct SceneryBackdrop: View {
     enum Place: String {
         case home, memory, coffee
     }
 
+    /// The pack's world pictures are 941 × 1672.
+    static let aspect: CGFloat = 941.0 / 1672.0
+    static let opacity = 0.25
+
     let place: Place
-    var height: CGFloat = 380
+    var height: CGFloat = 120
+    /// Which part of the picture is shown: its centre, as a fraction of the picture's height.
+    var focus: CGFloat = 0.25
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
 
     var body: some View {
         if !hideCharacterArt {
-            Color.clear
-                .frame(height: height)
-                .frame(maxWidth: .infinity)
-                .overlay(alignment: .top) {
-                    Image(decorative: "Scenery_\(place.rawValue)")
-                        .resizable()
-                        .scaledToFill()
-                }
-                .clipped()
-                .opacity(0.4)
-                .mask {
-                    LinearGradient(stops: [.init(color: .black, location: 0), .init(color: .black, location: 0.5),
-                                           .init(color: .clear, location: 1)],
-                                   startPoint: .top, endPoint: .bottom)
-                }
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let pictureHeight = width / Self.aspect
+                // Centre on `focus`, without showing past the picture's top or bottom.
+                let y = min(0, max(height - pictureHeight, height / 2 - focus * pictureHeight))
+                Image(decorative: "Scenery_\(place.rawValue)")
+                    .resizable()
+                    .frame(width: width, height: pictureHeight)
+                    .offset(y: y)
+            }
+            .frame(height: height)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .opacity(Self.opacity)
+            .mask {
+                LinearGradient(stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.3),
+                                       .init(color: .black, location: 0.7), .init(color: .clear, location: 1)],
+                               startPoint: .top, endPoint: .bottom)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
     }
 }
