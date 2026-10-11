@@ -1,8 +1,8 @@
 import DoddyCore
 import SwiftUI
 
-/// Quick start (ADR-310): once, after the introduction. The three notifications start ticked and
-/// the profile switch doesn't; nothing changes until "Turn these on", and every result shown
+/// Quick start (ADR-310): once, after the introduction. The notifications start ticked (the evening
+/// wrap-up only with Reminders connected) and the profile switch doesn't; nothing changes until "Turn these on", and every result shown
 /// afterwards is what iOS or the store read back.
 struct QuickStartView: View {
     /// There are saved "About you" answers, so using them in voice conversations can be offered.
@@ -21,7 +21,9 @@ struct QuickStartView: View {
         let isProblem: Bool
     }
 
-    @State private var choices = QuickStartChoices.suggested
+    @State private var choices = QuickStartChoices.suggested(
+        remindersConnected: UserDefaults.standard.bool(forKey: VoiceConnection.reminders.preferenceKey)
+            && DeviceConnections().access(for: .reminders) == .granted)
     /// Read once when the screen opens; anything already on isn't offered again.
     @State private var current = QuickStart.Current(
         morningCheckIn: MorningCheckInSettings.stored().isOn,

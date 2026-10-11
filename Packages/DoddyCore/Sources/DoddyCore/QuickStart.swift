@@ -3,9 +3,10 @@ import Foundation
 // Quick start (ADR-310). The last first-use screen, shown once after the introduction: the
 // opt-in settings that make Doddy easier to live with, each one tap away instead of buried in
 // Settings. Nothing changes until the user taps the button. An unticked item is left exactly as
-// it is (never turned off), and so is one already on (its own time is kept). The three
-// notifications are pre-ticked: they stay on this iPhone, never show a note, and iOS itself asks
-// before any of them can ring. Using the "About you"
+// it is (never turned off), and so is one already on (its own time is kept). The notifications are
+// pre-ticked: they stay on this iPhone, never show a note, and iOS itself asks before any of them
+// can ring. The evening wrap-up only when Reminders is connected: without it, its screen has
+// nothing to show. Using the "About you"
 // answers in voice conversations sends them to ElevenLabs, so it is never pre-ticked and is only
 // offered when there are saved answers to send.
 
@@ -22,9 +23,11 @@ public struct QuickStartChoices: Equatable, Sendable {
         self.useProfileInVoice = useProfileInVoice
     }
 
-    /// What the screen starts with ticked.
-    public static let suggested = QuickStartChoices(
-        morningCheckIn: true, eveningWrapUp: true, weeklyTidyUp: true, useProfileInVoice: false)
+    /// What the screen starts with ticked. `remindersConnected`: Reminders is on in Connections and
+    /// iOS allows it, the same test the wrap-up screen makes.
+    public static func suggested(remindersConnected: Bool) -> QuickStartChoices {
+        QuickStartChoices(morningCheckIn: true, eveningWrapUp: remindersConnected, weeklyTidyUp: true, useProfileInVoice: false)
+    }
 
     public var anyNotification: Bool { morningCheckIn || eveningWrapUp || weeklyTidyUp }
 }

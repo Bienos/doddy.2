@@ -268,7 +268,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 ## 4i. Quick start (ADR-310, `QUICK_START_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
-| Q1 | Fresh install; skip the introduction | Quick start with three ticked rows (08:00 weekdays, 21:00, Sunday 18:00 in the iPhone's clock style), no profile row. **Not now** goes to Home; Settings shows all three still off |
+| Q1 | Fresh install; skip the introduction | Quick start with three rows (08:00 weekdays, 21:00, Sunday 18:00 in the iPhone's clock style): morning and tidy-up ticked, the wrap-up **not** ticked (Reminders is off on a fresh install); no profile row. **Not now** goes to Home; Settings shows all three still off |
 | Q2 | Fresh install; skip; tap **Turn these on**; allow notifications | iOS asks once. "Morning check-in set." and the other two; Settings shows them on at those times; the pending notifications exist (relaunch and check Settings' receipts) |
 | Q3 | Fresh install; skip; **Turn these on**; don't allow | Three "Notifications are off for Doddy…" lines, nothing claimed as set |
 | Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |

@@ -36,6 +36,7 @@ final class LaunchSmokeTests: XCTestCase {
         // Quick start (ADR-310): the notifications are offered; with nothing saved, the profile isn't.
         XCTAssertTrue(app.buttons["quickStart.notNow"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.switches["quickStart.morning"].exists)
+        XCTAssertEqual(app.switches["quickStart.evening"].value as? String, "0", "Reminders is off on a fresh install")
         XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
         app.buttons["quickStart.notNow"].tap()
 

@@ -4,13 +4,20 @@ import XCTest
 /// Quick start (ADR-310): what is pre-ticked, the owner's times, and what is never changed.
 final class QuickStartTests: XCTestCase {
     func testNotificationsArePreTickedButSharingTheProfileIsNot() {
-        let suggested = QuickStartChoices.suggested
+        let suggested = QuickStartChoices.suggested(remindersConnected: true)
         XCTAssertTrue(suggested.morningCheckIn && suggested.eveningWrapUp && suggested.weeklyTidyUp)
         XCTAssertFalse(suggested.useProfileInVoice, "sending answers to ElevenLabs needs its own tick")
     }
 
+    func testEveningWrapUpIsPreTickedOnlyWithRemindersConnected() {
+        let suggested = QuickStartChoices.suggested(remindersConnected: false)
+        XCTAssertFalse(suggested.eveningWrapUp, "its screen would only ask for Reminders")
+        XCTAssertTrue(suggested.morningCheckIn && suggested.weeklyTidyUp)
+        XCTAssertNil(QuickStart.plan(suggested, profileSaved: false).evening)
+    }
+
     func testSuggestedPlanUsesTheOwnersTimes() {
-        let plan = QuickStart.plan(.suggested, profileSaved: true)
+        let plan = QuickStart.plan(.suggested(remindersConnected: true), profileSaved: true)
         XCTAssertEqual(plan.morning, MorningCheckInSettings(isOn: true, hour: 8, minute: 0, weekdaysOnly: true))
         XCTAssertEqual(plan.evening, EveningWrapUpSettings(isOn: true, hour: 21, minute: 0))
         XCTAssertEqual(plan.tidyUp, TidyUpSettings(isOn: true, weekday: 1, hour: 18, minute: 0), "1 = Sunday")
@@ -35,12 +42,12 @@ final class QuickStartTests: XCTestCase {
 
     func testWhatIsAlreadyOnKeepsItsOwnTime() {
         let current = QuickStart.Current(morningCheckIn: true, eveningWrapUp: false, weeklyTidyUp: true, useProfileInVoice: true)
-        let plan = QuickStart.plan(.suggested, profileSaved: true, current: current)
+        let plan = QuickStart.plan(.suggested(remindersConnected: true), profileSaved: true, current: current)
         XCTAssertNil(plan.morning, "a 07:30 set in Settings is not replaced by 08:00")
         XCTAssertNil(plan.tidyUp)
         XCTAssertEqual(plan.evening, QuickStart.evening)
         let allOn = QuickStart.Current(morningCheckIn: true, eveningWrapUp: true, weeklyTidyUp: true, useProfileInVoice: true)
-        XCTAssertTrue(QuickStart.plan(.suggested, profileSaved: true, current: allOn).isEmpty)
+        XCTAssertTrue(QuickStart.plan(.suggested(remindersConnected: true), profileSaved: true, current: allOn).isEmpty)
     }
 
     func testNothingTickedIsAnEmptyPlan() {

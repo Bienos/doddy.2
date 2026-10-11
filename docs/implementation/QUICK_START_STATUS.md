@@ -13,7 +13,7 @@ says yes.
   | Item | Suggested | Pre-ticked | Why |
   |---|---|---|---|
   | Morning check-in | 08:00, weekdays only | yes | local notification, shows no note; iOS asks first |
-  | Evening wrap-up | 21:00 every day | yes | same; its screen needs Reminders on in Connections |
+  | Evening wrap-up | 21:00 every day | only with Reminders connected | same; without Reminders its screen has nothing to show (owner, 2026-10-11) |
   | Weekly tidy-up | Sunday 18:00 | yes | same; nothing is deleted unless tapped |
   | Use "About you" answers in voice conversations | — | **no** | sends the answers to ElevenLabs; only offered when answers are saved |
 - **Rules** (`Packages/DoddyCore/Sources/DoddyCore/QuickStart.swift`, `QuickStart.plan`):
@@ -30,7 +30,8 @@ says yes.
 - **Polish:** 18 new lines in `l10n/pl.json`; catalog rebuilt.
 
 ## Tests
-- `Packages/DoddyCore/Tests/DoddyCoreTests/QuickStartTests.swift` covers what is pre-ticked, the
+- `Packages/DoddyCore/Tests/DoddyCoreTests/QuickStartTests.swift` (8) covers what is pre-ticked (the
+  wrap-up only with Reminders connected), the
   owner's times, that unticked and already-on items are left alone, that the profile is shared only
   when ticked and saved, and that the stored settings read back unchanged.
 - `DoddyUITests/LaunchSmokeTests.swift`: the first-use tests now pass through the Quick start. With
@@ -48,8 +49,8 @@ says yes.
   been reviewed by the owner.
 
 ## Decisions for the owner
-- The evening wrap-up is pre-ticked although Reminders is off in Connections on a fresh install, so its
-  screen will ask for Reminders the first evening. The alternative is to pre-tick it only when Reminders
-  is already on.
+- ~~Evening wrap-up pre-ticked without Reminders~~: decided 2026-10-11, pre-ticked only when Reminders
+  is on in Connections and iOS allows it (same check as the wrap-up screen). Still offered, unticked,
+  otherwise.
 - Should the screen also offer "Hey Doddy" or Back Tap? Not included: Hey Doddy keeps the microphone
   listening, and Back Tap can only be set up in iOS Settings.
