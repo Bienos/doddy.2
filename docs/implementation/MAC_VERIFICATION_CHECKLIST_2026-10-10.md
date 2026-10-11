@@ -358,6 +358,9 @@ Needs first: the new "First conversation" section on the live agent, with placeh
 |---|---|---|
 | F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
 | F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
+## 4r. "Ask me about it" (ADR-403)
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
 ## 4m. The whole wave and the storyboards (ADR-380)
 | W1 | Delete the app, install, launch on a morning (before noon) with the opening off; open Home | He waves once (five frames, ending on the open hand), then sits on his box. Relaunch the same morning: breaths, not a wave. Next morning: a wave again |
 | W2 | Open the morning check-in | A small Doddy waves once at the bottom of the coffee-shop strip, over the strip only, not over any text |
