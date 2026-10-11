@@ -2195,7 +2195,7 @@ final class VoiceSessionController {
                 propose(.changeReminder(toolCallID: toolCallID, reminder: reminder, draft: draft), toolCallID: toolCallID)
             }
         } catch {
-            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed), isError: true)
         }
     }
 
@@ -2203,7 +2203,7 @@ final class VoiceSessionController {
     private func changeEvent(_ plan: EventChangePlan) -> String {
         guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
             connectionNeeded = .calendar
-            return VoiceToolReply.failed("Calendar isn't connected. Nothing changed.")
+            return VoiceToolReply.failed("Calendar isn't connected.", nothing: .changed)
         }
         if EventChange.startPassed(plan, now: Date(), calendar: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
@@ -2215,14 +2215,14 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.eventChangeUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed)
         }
     }
 
     private func changeReminder(_ reminder: ReminderSnapshot, _ draft: ReminderChangeDraft) -> String {
         guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
             connectionNeeded = .reminders
-            return VoiceToolReply.failed("Reminders isn't connected. Nothing changed.")
+            return VoiceToolReply.failed("Reminders isn't connected.", nothing: .changed)
         }
         if EventChange.duePassed(draft.newDue, now: Date(), local: .current) { return VoiceToolReply.eventChangeTimePassed }
         do {
@@ -2240,7 +2240,7 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.reminderChangeUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed)
         }
     }
 
@@ -2272,7 +2272,7 @@ final class VoiceSessionController {
             let (moves, skipped) = BulkChange.remindersToMove(open, dueBy: dueBy, to: to, local: .current)
             await proposeBulk(moves, verb: "moved", skipped: skipped, toolCallID: toolCallID)
         } catch {
-            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .changed), isError: true)
         }
     }
 
@@ -2286,7 +2286,7 @@ final class VoiceSessionController {
     /// Each ticked item on its own: checked unchanged, changed, read back (ADR-280).
     private func runBulk(_ items: [BulkItem], verb: String, skipped: [String]) -> String {
         guard isOn(.calendar) || isOn(.reminders) else {
-            return VoiceToolReply.failed("Calendar and Reminders aren't connected. Nothing changed.")
+            return VoiceToolReply.failed("Calendar and Reminders aren't connected.", nothing: .changed)
         }
         guard !items.isEmpty else { return VoiceToolReply.bulkDeclined }
         var results: [(BulkItem, BulkResult)] = []
@@ -2339,7 +2339,7 @@ final class VoiceSessionController {
             case .one(let reminder): propose(.deleteReminder(toolCallID: toolCallID, reminder: reminder), toolCallID: toolCallID)
             }
         } catch {
-            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            await reply(toolCallID, VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .deleted), isError: true)
         }
     }
 
@@ -2348,7 +2348,7 @@ final class VoiceSessionController {
     private func deleteEvent(_ event: CalendarEventSummary) -> String {
         guard isOn(.calendar), devices.access(for: .calendar) == .granted else {
             connectionNeeded = .calendar
-            return VoiceToolReply.failed("Calendar isn't connected. Nothing was deleted.")
+            return VoiceToolReply.failed("Calendar isn't connected.", nothing: .deleted)
         }
         do {
             switch try devices.deleteEvent(event) {
@@ -2357,14 +2357,14 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .deleted)
         }
     }
 
     private func deleteReminder(_ reminder: ReminderSnapshot) -> String {
         guard isOn(.reminders), devices.access(for: .reminders) == .granted else {
             connectionNeeded = .reminders
-            return VoiceToolReply.failed("Reminders isn't connected. Nothing was deleted.")
+            return VoiceToolReply.failed("Reminders isn't connected.", nothing: .deleted)
         }
         do {
             switch try devices.deleteReminder(reminder) {
@@ -2373,7 +2373,7 @@ final class VoiceSessionController {
             case .unconfirmed: return VoiceToolReply.deleteUnconfirmed
             }
         } catch {
-            return VoiceToolReply.failed(UserFacingError.message(for: error))
+            return VoiceToolReply.failed(UserFacingError.message(for: error), nothing: .deleted)
         }
     }
 
