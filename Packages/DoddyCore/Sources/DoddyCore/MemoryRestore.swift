@@ -95,7 +95,7 @@ public enum MemoryRestore {
             guard let correction = slot.correction else { throw .unreadableCorrection(position: index + 1) }
             corrections.append(correction)
         }
-        return (records, corrections, envelope.exportedAtMs.map { Date(timeIntervalSince1970: Double($0) / 1000) })
+        return (records, corrections, envelope.exportedAtMs.map(EpochMilliseconds.date))
     }
 
     /// The list items in the file (ADR-216); empty for files without lists. A damaged item list

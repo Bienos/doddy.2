@@ -217,15 +217,9 @@ public final class DoddyDatabase: Sendable {
         values.map { "'\($0)'" }.joined(separator: ", ")
     }
 
-    static func milliseconds(_ date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 * 1000).rounded(.down))
-    }
+    static func milliseconds(_ date: Date) -> Int64 { EpochMilliseconds.truncated(date) }
 
-    static func truncatedToMilliseconds(_ date: Date) -> Date {
-        Date(timeIntervalSince1970: Double(milliseconds(date)) / 1000)
-    }
+    static func truncatedToMilliseconds(_ date: Date) -> Date { EpochMilliseconds.date(milliseconds(date)) }
 
-    static func date(milliseconds: Int64) -> Date {
-        Date(timeIntervalSince1970: Double(milliseconds) / 1000)
-    }
+    static func date(milliseconds: Int64) -> Date { EpochMilliseconds.date(milliseconds) }
 }

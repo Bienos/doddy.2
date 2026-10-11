@@ -44,7 +44,7 @@ public struct SharedListItem: Codable, Hashable, Sendable, Identifiable {
 
     /// Dates are kept to the millisecond, as the database stores them, so both sides compare equal.
     static func milliseconds(_ date: Date) -> Date {
-        Date(timeIntervalSince1970: (date.timeIntervalSince1970 * 1000).rounded(.down) / 1000)
+        EpochMilliseconds.date(EpochMilliseconds.truncated(date))
     }
 
     func hasNewContent(_ other: SharedListItem) -> Bool { text != other.text || doneAt != other.doneAt }

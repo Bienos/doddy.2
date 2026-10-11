@@ -242,8 +242,8 @@ public final class SQLiteMemoryRepository: MemoryRepository {
                     """,
                 arguments: [
                     record.id.uuidString, record.rawText, record.currentText, record.category.rawValue,
-                    record.source.rawValue, record.capturedAt.map(Self.exportedMilliseconds),
-                    record.updatedAt.map(Self.exportedMilliseconds), record.userEdited,
+                    record.source.rawValue, record.capturedAt.map(EpochMilliseconds.rounded),
+                    record.updatedAt.map(EpochMilliseconds.rounded), record.userEdited,
                     SearchFolding.fold(record.currentText), MemoryRecord.schemaVersion,
                 ])
             guard db.changesCount > 0 else { continue }
@@ -279,7 +279,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try db.execute(
             sql: "INSERT INTO memory_corrections (memory_id, number, text, corrected_at_ms) VALUES (?, ?, ?, ?)",
             arguments: [correction.memoryID.uuidString, correction.number, correction.text,
-                        exportedMilliseconds(correction.correctedAt)])
+                        EpochMilliseconds.rounded(correction.correctedAt)])
     }
 
     private static func correction(from row: Row) throws -> MemoryCorrection {
@@ -306,7 +306,7 @@ public final class SQLiteMemoryRepository: MemoryRepository {
               let category = MemoryCategory(rawValue: row["category"])
         else { throw MemoryStoreError.corruptRecord(idString) }
         func date(_ column: String) -> Date? {
-            (row[column] as Int64?).map { Date(timeIntervalSince1970: Double($0) / 1000) }
+            (row[column] as Int64?).map(EpochMilliseconds.date)
         }
         do {
             return try MemoryRecord(
@@ -321,10 +321,4 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     private static func milliseconds(_ date: Date) -> Int64 { DoddyDatabase.milliseconds(date) }
 
     private static func truncatedToMilliseconds(_ date: Date) -> Date { DoddyDatabase.truncatedToMilliseconds(date) }
-
-    /// Restored dates were read from whole milliseconds, which `MemoryExport` wrote by rounding;
-    /// rounding again is the exact inverse.
-    private static func exportedMilliseconds(_ date: Date) -> Int64 {
-        Int64((date.timeIntervalSince1970 * 1000).rounded())
-    }
 }

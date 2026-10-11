@@ -37,12 +37,12 @@ public struct BackupContents: Codable, Equatable, Sendable {
 
         public init(memoryID: UUID, fireAt: Date, timeZoneID: String, repeats: ReminderRepeat?) {
             self.memoryID = memoryID
-            self.fireAtMs = Int64((fireAt.timeIntervalSince1970 * 1000).rounded())
+            self.fireAtMs = EpochMilliseconds.rounded(fireAt)
             self.timeZoneID = timeZoneID
             self.repeats = repeats?.rawValue
         }
 
-        public var fireAt: Date { Date(timeIntervalSince1970: Double(fireAtMs) / 1000) }
+        public var fireAt: Date { EpochMilliseconds.date(fireAtMs) }
         public var repeatRule: ReminderRepeat? { repeats.flatMap(ReminderRepeat.init(rawValue:)) }
 
         /// When to set it on restore: its own time if still ahead; for a repeating one whose time
@@ -65,7 +65,7 @@ public struct BackupContents: Codable, Equatable, Sendable {
             self.memoryID = memoryID
             self.width = width
             self.height = height
-            self.addedAtMs = Int64((addedAt.timeIntervalSince1970 * 1000).rounded())
+            self.addedAtMs = EpochMilliseconds.rounded(addedAt)
             self.jpeg = jpeg
         }
     }
@@ -80,7 +80,7 @@ public struct BackupContents: Codable, Equatable, Sendable {
         public init(memoryID: UUID, durationMilliseconds: Int, addedAt: Date, m4a: Data) {
             self.memoryID = memoryID
             self.durationMilliseconds = durationMilliseconds
-            self.addedAtMs = Int64((addedAt.timeIntervalSince1970 * 1000).rounded())
+            self.addedAtMs = EpochMilliseconds.rounded(addedAt)
             self.m4a = m4a
         }
     }
@@ -102,7 +102,7 @@ public struct BackupContents: Codable, Equatable, Sendable {
         recordings: [Recording] = []
     ) {
         self.formatVersion = Self.currentVersion
-        self.createdAtMs = Int64((createdAt.timeIntervalSince1970 * 1000).rounded())
+        self.createdAtMs = EpochMilliseconds.rounded(createdAt)
         self.memoriesExport = memoriesExport
         self.reminders = reminders
         self.profile = profile
