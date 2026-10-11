@@ -19,7 +19,7 @@ is a private Artifact in the owner's account.
 | Muted | Finger to his lips |
 | Lost (stale) | Hand on his head |
 | Hey Doddy waiting / paused | Cross-legged / leaning on his box |
-| Hey Doddy greeting | Arms out |
+| Hey Doddy greeting | A wave (ADR-290, cut from the pack's wave strip) |
 | "Save this note?", a reminder waiting or being added | Reaching high |
 | Saved, reminder set, ended | Fist pump (only after the store or Reminders confirmed it) |
 | A plan waiting or running | Tiptoe |
@@ -54,5 +54,4 @@ island size, the cream edge, the face crops, and memory use in the widget extens
 
 ## Decisions for the owner
 - ~~Whether Whole Doddy should become the default style~~: yes (owner, 2026-10-11, ADR-267).
-- A cut-out wave from the pack (`016_doddy_wave_v01.png` is a strip on paper) would suit the greeting better than
-  "arms out".
+- ~~A cut-out wave for the greeting~~: done (owner: "use the wave pose for the greeting", ADR-290).
