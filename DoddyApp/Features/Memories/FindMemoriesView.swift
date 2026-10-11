@@ -45,7 +45,7 @@ struct FindMemoriesView: View {
                     if !listHits.isEmpty {
                         ListHitsView(hits: listHits)
                     }
-                    RecallResultsView(outcome: outcome, query: query)
+                    RecallResultsView(outcome: outcome, query: query, foundElsewhere: !listHits.isEmpty || !meaningHits.isEmpty)
                     if !meaningHits.isEmpty {
                         MeaningHitsView(hits: meaningHits)
                     }
@@ -152,6 +152,8 @@ private struct ListHitsView: View {
 private struct RecallResultsView: View {
     let outcome: RecallOutcome?
     let query: String
+    /// Lists or notes close in meaning are shown with these results (review F10).
+    var foundElsewhere = false
     /// Narrows the matches to one note type (ADR-199). Ignored once no match has that type.
     @State private var category: MemoryCategory?
 
@@ -215,6 +217,10 @@ private struct RecallResultsView: View {
                 }
                 Label("Always linked to your original note.", systemImage: "book.closed")
                     .font(.caption).foregroundStyle(Theme.secondaryText)
+            case .some(.noMatch) where foundElsewhere:
+                // Not "I haven't found that" next to lists or notes that were found (review F10).
+                Text("No note has those words.").font(.subheadline).foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("memories.noMatch")
             case .some(.noMatch):
                 UploadedCharacterView(assetName: "UploadedDoddy_Inspect", height: 170).frame(maxWidth: .infinity)
                 JourneyHeading(eyebrow: "No match in your saved notes", title: "I haven't\nfound that.",
