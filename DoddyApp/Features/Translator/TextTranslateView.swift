@@ -10,8 +10,11 @@ struct TextTranslateScreen: View {
         if #available(iOS 18.0, *) {
             TextTranslateView()
         } else {
-            ContentUnavailableView("Needs iOS 18", systemImage: "translate",
-                                   description: Text("Translating text on the iPhone without internet needs iOS 18 or later."))
+            ContentUnavailableView {
+                Label("Needs iOS 18", systemImage: "translate")
+            } description: {
+                Text("Translating text on the iPhone without internet needs iOS 18 or later.")
+            }
         }
     }
 }
