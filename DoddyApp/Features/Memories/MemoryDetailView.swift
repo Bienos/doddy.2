@@ -150,6 +150,13 @@ struct MemoryDetailView: View {
     private func delete() async {
         defer { isDeleting = false }
         do {
+            // A shared list stops being shared first, so nothing is left in iCloud (review I3).
+            try await SharedListsController.shared.stopSharingBeforeDeleting(memoryID)
+        } catch {
+            errorMessage = SharingError.message(for: error)
+            return
+        }
+        do {
             try await store.delete(id: memoryID)
             dismiss()
         } catch {

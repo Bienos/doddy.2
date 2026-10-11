@@ -103,6 +103,34 @@ final class SharedListsController {
         if !links.values.contains(where: { $0.role == link.role }) { await cloud.unsubscribe(link.role) }
     }
 
+    /// Every delete of one list calls this first (review F2/I3). A shared list stops being shared
+    /// (owner: the copy in iCloud is deleted and the people invited lose it; joined: this user
+    /// leaves), so deleting it here leaves nothing in iCloud. Throws when that isn't confirmed;
+    /// then the list must not be deleted. A list that isn't shared has nothing to stop; a build
+    /// without iCloud can't reach it (`stop` does nothing there).
+    func stopSharingBeforeDeleting(_ listID: UUID) async throws {
+        guard links[listID] != nil else { return }
+        try await stop(listID)
+    }
+
+    /// Delete all (Settings): stops sharing every list this user shares, so no copy and no
+    /// invitees are left in iCloud (review G3/I3). Returns the lists whose stop wasn't confirmed
+    /// (all of them in a build without iCloud). While Doddy stays open, the next sync tries those
+    /// again once their lists are gone (see `sync`).
+    func stopAllOwnedShares() async -> [UUID] {
+        let owned = links.values.filter { $0.role == .owner }.map(\.listID).sorted { $0.uuidString < $1.uuidString }
+        guard cloud != nil else { return owned }
+        var failed: [UUID] = []
+        for listID in owned {
+            do {
+                try await stop(listID)
+            } catch {
+                failed.append(listID)
+            }
+        }
+        return failed
+    }
+
     // MARK: Updates straight away (ADR-284)
 
     /// While any list is shared: register for silent notifications (no permission prompt; the
@@ -219,8 +247,15 @@ final class SharedListsController {
         for _ in 1...3 {
             await store.reload()
             guard let list = store.list(id: link.listID) else {
-                // Deleted on this iPhone: the link went with it (cascade).
+                // Deleted on this iPhone; the stored link went with it (cascade). If it was deleted
+                // without stopping first, or the stop failed, stop now so no copy and no invitees
+                // are left in iCloud (review I3). Only when the stored links agree the list is gone:
+                // a failed read of the lists must never delete a shared list's zone.
+                let stored = try await repository.shares()
+                guard !stored.contains(where: { $0.listID == link.listID }) else { throw SharingError.unconfirmed }
+                guard try await cloud.stop(link) else { throw SharingError.unconfirmed }
                 links[link.listID] = nil
+                if !links.values.contains(where: { $0.role == link.role }) { await cloud.unsubscribe(link.role) }
                 return
             }
             let database = cloud.database(link.role)

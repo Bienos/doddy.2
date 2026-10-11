@@ -223,12 +223,13 @@ struct ListDetailView: View {
             Button("Delete list", role: .destructive) {
                 Task {
                     do {
-                        // A shared list stops being shared first (ADR-263), so nothing is left in iCloud.
-                        if sharing.isShared(list.id) != nil { try await sharing.stop(list.id) }
+                        // A shared list stops being shared first (ADR-263, review I3), so nothing
+                        // is left in iCloud.
+                        try await sharing.stopSharingBeforeDeleting(list.id)
                         try await store.delete(id: list.id)
                         dismiss()
                     } catch {
-                        errorMessage = UserFacingError.listMessage(for: error)
+                        errorMessage = SharingError.message(for: error)
                     }
                 }
             }

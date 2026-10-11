@@ -223,8 +223,13 @@ struct ListCloud {
     func stop(_ link: ListShare) async throws -> Bool {
         let zoneID = Self.zoneID(link)
         let database = database(link.role)
-        let result = try await database.modifyRecordZones(saving: [], deleting: [zoneID])
-        for outcome in result.deleteResults.values { try outcome.get() }
+        do {
+            let result = try await database.modifyRecordZones(saving: [], deleting: [zoneID])
+            for outcome in result.deleteResults.values { try outcome.get() }
+        } catch let error as CKError where [.zoneNotFound, .userDeletedZone].contains(error.code) {
+            // Already gone (stopped elsewhere, or a retry after a stop whose answer was lost):
+            // the read below confirms it.
+        }
         return try await fetch(zoneID, in: database) == nil
     }
 
