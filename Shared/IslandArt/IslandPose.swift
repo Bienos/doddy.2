@@ -6,7 +6,10 @@ import Foundation
 /// (docs/design/UPLOADED_MEMORY_ASSETS.md). Each picture is 2:3 with transparent edges.
 enum IslandPose: String, CaseIterable, Sendable {
     case yawnStretch = "yawn_stretch", listening, kneelingInspect = "kneeling_inspect", shrug, shush, facepalm
-    case crosslegged, onelegBalance = "oneleg_balance", leaning, reachingHigh = "reaching_high", fistpump, tiptoe
+    case crosslegged, leaning, reachingHigh = "reaching_high", fistpump, tiptoe
+    /// The greeting (ADR-268): frame 4 of the pack's wave strip, cut out by
+    /// tools/whole_doddy/cut_wave.py (the only pose not from 01-transparent-poses).
+    case wave
 
     var assetName: String { "WholeDoddy_\(rawValue)" }
 
@@ -22,11 +25,11 @@ enum IslandPose: String, CaseIterable, Sendable {
         case .shush: (92, 33, 317, 584)
         case .facepalm: (118, 64, 320, 533)
         case .crosslegged: (88, 90, 315, 512)
-        case .onelegBalance: (10, 78, 389, 531)
         case .leaning: (36, 73, 355, 529)
         case .reachingHigh: (68, 30, 365, 569)
         case .fistpump: (100, 49, 346, 562)
         case .tiptoe: (26, 78, 374, 529)
+        case .wave: (58, 100, 341, 548)
         }
         return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
     }

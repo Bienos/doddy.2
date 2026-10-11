@@ -597,3 +597,9 @@ Numbering: written as ADR-235 on `claude/blissful-einstein-5msya4`; renumbered t
 |---|---|---|
 | 267 | **Whole Doddy is the default Dynamic Island style** (owner: "make whole doddy the default style"; changes ADR-264's "Lean In stays the default"). `IslandStyle.preferredDefault = .wholeDoddy`, read through `IslandStyle.stored(_:)` by the voice conversation, Hey Doddy and Settings, which lists it first. A style the user already picked in Settings is stored and kept. The activity content's own decoding fallback stays Lean In: it only covers content from builds that had no other style. | Linux: `scripts/check_island_art.sh` PASS with checks for the default, a kept choice, an unknown stored value and the Settings order. **iOS build NOT RUN**; Mac checklist W1. |
 
+## The greeting waves (2026-10-11)
+
+| ADR | Decision | Status |
+|---|---|---|
+| 268 | **Whole Doddy greets with a wave** (owner: "use the wave pose for the greeting"; changes ADR-264's "arms out"). The pack's only wave is a strip on paper (`016_doddy_wave_v01.png`), so `tools/whole_doddy/cut_wave.py` cuts out frame 4 by removing only the paper connected to the frame's edges: nothing is redrawn or recoloured, and the cream face and shoes stay. New `IslandPose.wave` and `WholeDoddy_wave` image sets; the greeting (connecting or listening with a greeting) shows it until the user first speaks. The arms-out pose and its image sets are removed. Provenance in `docs/design/UPLOADED_MEMORY_ASSETS.md`. | Linux: island checks PASS (greeting waves while connecting and listening). **iOS build NOT RUN**; Mac checklist W5. |
+

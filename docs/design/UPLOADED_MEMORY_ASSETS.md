@@ -55,8 +55,20 @@ originals if the pack changes. The originals are not stored in the repository.
 | WholeDoddy_shush | doddy_shush_v02.png | 69fa189d4e81c86b3387ee4172709a16af2c4b8aca00dd86e28382f20e57140f |
 | WholeDoddy_facepalm | doddy_facepalm_v02.png | 606616ac149aa95a183336dbd51ebd58fded9bdbca451b4c0750df9d0892c771 |
 | WholeDoddy_crosslegged | doddy_crosslegged_v02.png | f9496932f6944096c626301c00cc49070ea4fc71cbbf6516d27807c12ca58db6 |
-| WholeDoddy_oneleg_balance | doddy_oneleg_balance_v02.png | 8aa54d224682cee586e06db0afc81304364f08dc48263675c5cd3d50154e58cc |
 | WholeDoddy_leaning | doddy_leaning_v02.png | 15ff3a4e193931e1978719f03b2ef640f610af8d38c2a405ef600cca187dbcd4 |
 | WholeDoddy_reaching_high | doddy_reaching_high_v02.png | ae36fc8d428907d7953c1505314b3d805f22e89157e46b6d05dc49fd57e8a031 |
 | WholeDoddy_fistpump | doddy_fistpump_v02.png | c7a1fd158652d6420c67ce51d2e60e6b4808392fc131c108c7e348acf80a0561 |
 | WholeDoddy_tiptoe | doddy_tiptoe_v02.png | 3dbb2824f699f0845c4f683daebd3bdee535763a2a321fa84400749647382f56 |
+
+### The greeting wave (ADR-268)
+
+`WholeDoddy_wave` is the one Whole Doddy picture that is not a straight downscale. The pack's only
+wave is `016_doddy_wave_v01.png` (in the folder's root and in `DODDY-Numbered-Video-Assets-v01.zip`;
+SHA-256 `817a2b87f220eb74c2006de13ec87b87b4114e358099d8ba69e5b15c2cdc98cd`), five frames on paper.
+`tools/whole_doddy/cut_wave.py` takes frame 4 (open hand with the orange marks) and removes only
+the paper connected to the frame's edges; Doddy's face and shoes, inside his outline, keep their
+cream. Nothing is redrawn or recoloured; the light fringe next to removed paper fades out. The cut-out
+(488 × 733, SHA-256 `20b648fd3de622db8b3ba102f45e3c1d05ce5fce699b388e7c9038fd9bbe5976`) is then
+Lanczos-downscaled to 200 × 300 and 300 × 450 like the others. `WholeDoddy_oneleg_balance`, the
+greeting before this, was removed.
+
