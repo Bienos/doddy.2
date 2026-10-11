@@ -1167,7 +1167,11 @@ final class VoiceSessionController {
             translatorSummary = nil
             return false
         }
-        UIPasteboard.general.string = summary.transcript
+        // This iPhone only (no Universal Clipboard), and gone from the clipboard when the five
+        // minutes end, like the text itself (review H10).
+        UIPasteboard.general.setItems(
+            [["public.utf8-plain-text": summary.transcript]],
+            options: [.localOnly: true, .expirationDate: summary.expiresAt])
         return true
     }
 
