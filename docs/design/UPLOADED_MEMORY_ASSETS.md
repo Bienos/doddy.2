@@ -145,3 +145,20 @@ The alarm, shopping and notification pictures use image sets already listed (`Wh
 app; 120×180 @2x) are frame 5 of `018_doddy_turn_v01.png` (SHA-256 above, ADR-313), cut by
 `cut_frames.py --shared --rows-max-y 605` like the other turn frames and downscaled with Lanczos.
 Nothing redrawn.
+
+## The whole wave and four storyboards (ADR-380, 11 October 2026)
+
+Owner: "do all". Same pack. `build_imagesets.py` (with the strips folder; see its docstring for the cut
+commands) rebuilds these. Storyboard panels are cropped inside their borders only (the printed panel
+number is cropped away); nothing is redrawn, recoloured or generated.
+
+| Image set(s) | Pack file | SHA-256 of the original | What was done |
+| --- | --- | --- | --- |
+| `DoddyMotion_wave_1` … `_5` | 016_doddy_wave_v01.png | 817a2b87f220eb74c2006de13ec87b87b4114e358099d8ba69e5b15c2cdc98cd | `cut_frames.py --shared --rows-max-y 620` (above the frame numbers); Lanczos to 200×300 / 300×450 |
+| `Story_phone_1` … `_4` | 037_trans_phone_v01.png | 66c2f0848383e18fd537530f78aa1ad146307dd4c462c0126934777e238149f0 | `cut_storyboards.py --trim-top 0.09`; resized to 420 wide, JPEG |
+| `Story_door_1` … `_4` | 039_trans_door_v01.png | 357d5844abbb908ecf82255fe3e5474a5508b8ac7b9805efc545919aefcc8705 | `cut_storyboards.py --trim-top 0.09`; as above |
+| `Story_ink_1` … `_4` | 040_trans_ink_v01.png | 4db68b4f02005ebcc76e330d9e740592b842fe14a982c553dceb27fb32782999 | `cut_storyboards.py` (numbers sit outside the panels); as above |
+| `Story_keys_1` … `_6` | 041_rw_keys_storyboard_v01.png | 846b0999e562902dda957686b9459b4ca698226dced27c65515750d9ba32be50 | `cut_storyboards.py --trim-top 0.13 --trim-left 0.13 --sides tlltll` (panel numbers sit inside the corner; panels 2, 3, 5 and 6 are trimmed at the left so Doddy's head isn't cut); as above |
+
+Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
+(ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.

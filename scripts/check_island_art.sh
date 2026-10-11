@@ -56,6 +56,14 @@ for name in $("$work/island-check" --talking-assets); do
         fi
     done
 done
+# The storyboards' panels (ADR-299, ADR-380): one day picture each, app catalog only.
+for name in $("$work/island-check" --story-assets); do
+    for file in Contents.json day.jpg; do
+        if [ ! -f "DoddyApp/Resources/Assets.xcassets/$name.imageset/$file" ]; then
+            echo "FAIL: DoddyApp/Resources/Assets.xcassets/$name.imageset/$file is missing"; missing=1
+        fi
+    done
+done
 # The watch app's two poses (ADR-323), in its own catalog.
 for name in WatchDoddy_crosslegged WatchDoddy_fistpump WatchDoddy_turned_away; do
     for file in Contents.json art@2x.png; do

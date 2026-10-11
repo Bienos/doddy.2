@@ -716,6 +716,17 @@
         }
       }
     },
+    "An example: lost keys": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przykład: zgubione klucze"
+          }
+        }
+      }
+    },
     "Analytics and telemetry": {
       "extractionState": "manual",
       "localizations": {
@@ -2564,6 +2575,17 @@
         }
       }
     },
+    "Doddy can only find what you told it. It can't see your home or track your things.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy znajdzie tylko to, co mu powiedziałeś. Nie widzi Twojego domu i nie śledzi Twoich rzeczy."
+          }
+        }
+      }
+    },
     "Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.": {
       "extractionState": "manual",
       "localizations": {
@@ -2714,6 +2736,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy korzysta tylko z Twoich notatek: bez kalendarza, przypomnień, kontaktów, innych aplikacji i kont online."
+          }
+        }
+      }
+    },
+    "Doddy looks through what you told it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przegląda to, co mu powiedziałeś."
           }
         }
       }
@@ -3814,6 +3847,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Znalezione prostymi regułami na tym iPhonie, więc je sprawdź. Dodanie ich nie zapisuje notatki; robi to Zapisz."
+          }
+        }
+      }
+    },
+    "Found, from your own note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znalezione dzięki Twojej notatce."
           }
         }
       }
@@ -10506,6 +10550,17 @@
         }
       }
     },
+    "The keys aren't on the hook.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kluczy nie ma na wieszaku."
+          }
+        }
+      }
+    },
     "The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -10843,6 +10898,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie ma w nim żadnych słów."
+          }
+        }
+      }
+    },
+    "There they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O, są."
           }
         }
       }
@@ -12651,6 +12717,17 @@
         }
       }
     },
+    "You ask Doddy where they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytasz Doddy’ego, gdzie są."
+          }
+        }
+      }
+    },
     "You asked: “I'm at Mom's for lunch on Saturday. Remind me to bring the spare key, remember where it is, and start a pasta timer.”": {
       "extractionState": "manual",
       "localizations": {
@@ -12757,6 +12834,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłączyłeś powiadomienia Doddy’ego w Ustawieniach iOS. Włącz je tam, aby dostawać aktualności."
+          }
+        }
+      }
+    },
+    "You'd saved “keys under the sofa cushion”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisałeś „klucze pod poduszką na sofie”."
           }
         }
       }

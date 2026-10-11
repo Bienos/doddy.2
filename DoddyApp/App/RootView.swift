@@ -94,6 +94,8 @@ struct RootView: View {
     @AppStorage(PreferenceKey.showNoteTextInNotifications) private var showNoteText = false
     /// "Hide character artwork" is passed on to widgets and the watch (ADR-331).
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
+    /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
+    @State private var lockCovered = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -120,7 +122,17 @@ struct RootView: View {
             }
             .preferredColorScheme(colorScheme)
             // The Face ID lock (ADR-310) covers everything until iOS says yes.
-            .overlay { if AppLock.shared.isLocked { AppLockView() } }
+            // After a real unlock the cover stays up a moment while Doddy's door opens (ADR-380).
+            .overlay { if AppLock.shared.isLocked || lockCovered { AppLockView(skip: { lockCovered = false }) } }
+            .onAppear { lockCovered = AppLock.shared.isLocked }
+            .onChange(of: AppLock.shared.isLocked) { _, locked in
+                guard !locked else { lockCovered = true; return }
+                guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; return }
+                Task {
+                    try? await Task.sleep(for: .seconds(AppLockView.doorTime))
+                    withAnimation(.easeOut(duration: 0.25)) { lockCovered = false }
+                }
+            }
             .task {
                 await store.reload()
                 await noteReminders.refreshOnForeground()
