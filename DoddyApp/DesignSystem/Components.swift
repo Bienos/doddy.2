@@ -205,3 +205,9 @@ extension MemoryCategory {
         }
     }
 }
+
+/// What this device can do that the iPhone-only parts of Doddy need (ADR-337).
+enum DeviceSupport {
+    /// Accessibility › Touch › Back Tap is an iPhone setting; iPad has none.
+    @MainActor static var hasBackTap: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+}

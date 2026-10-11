@@ -404,13 +404,16 @@ struct SettingsView: View {
                 // ADR-254: "Hey Doddy" wake word, off unless turned on.
                 HeyDoddySettingsSection()
 
-                Section("Back Tap and Siri") {
-                    StatusRow(title: "Double Back Tap", value: backTapStatus)
-                        .accessibilityIdentifier("settings.backTap.status")
-                    Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
-                        router.isSetupPresented = true
+                Section {
+                    // Back Tap exists only on iPhone (ADR-337).
+                    if DeviceSupport.hasBackTap {
+                        StatusRow(title: "Double Back Tap", value: backTapStatus)
+                            .accessibilityIdentifier("settings.backTap.status")
+                        Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
+                            router.isSetupPresented = true
+                        }
+                        .accessibilityIdentifier("settings.backTap")
                     }
-                    .accessibilityIdentifier("settings.backTap")
                     Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -420,6 +423,8 @@ struct SettingsView: View {
                     Text("Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
+                } header: {
+                    if DeviceSupport.hasBackTap { Text("Back Tap and Siri") } else { Text("Siri") }
                 }
 
                 Section {

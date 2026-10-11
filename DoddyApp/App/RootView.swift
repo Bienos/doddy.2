@@ -84,6 +84,7 @@ struct RootView: View {
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
     @Bindable private var router = ShortcutRouter.shared
@@ -320,6 +321,10 @@ struct RootView: View {
                     .tag(AppTab.settings)
             }
             .toolbar(.hidden, for: .tabBar)
+            // iPad (ADR-337): one readable column in the middle of a wide screen.
+            .frame(maxWidth: horizontalSizeClass == .regular ? 760 : .infinity)
+            .frame(maxWidth: .infinity)
+            .background(Theme.canvas)
             if let deleted = store.recentlyDeleted {
                 UndoDeleteBar(deleted: deleted)
             }
