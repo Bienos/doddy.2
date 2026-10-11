@@ -41,6 +41,8 @@ if command -v swift >/dev/null 2>&1; then
     # A real compile of the app files that need no Apple UI framework (ADR-200). On a Mac the
     # full xcodebuild below compiles everything, so this step is Linux-only.
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
+    # The Mac menu-bar app's memory model (ADR-450), same idea; its SwiftUI files need a Mac.
+    run_step "Mac app logic type-check (MacModel)" scripts/typecheck_mac_logic.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
@@ -111,6 +113,8 @@ else
     run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
     run_step "xcodebuild test (unit + UI)" xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "$dest"
   fi
+  # The Mac menu-bar app (ADR-450). Compile check only: unsigned, so it is built but not run.
+  run_step "xcodebuild build (macOS menu-bar app)" xcodebuild build -project Doddy.xcodeproj -scheme DoddyMac -destination "platform=macOS" CODE_SIGNING_ALLOWED=NO
 fi
 
 echo; echo "================ SUMMARY"

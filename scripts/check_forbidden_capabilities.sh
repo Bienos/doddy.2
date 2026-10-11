@@ -37,7 +37,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyShare DoddyWatch DoddyWatchWidgets Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyShare DoddyWatch DoddyWatchWidgets DoddyMac Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
@@ -214,5 +214,20 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+# The Mac menu-bar app (ADR-450) is scanned with every rule above (it is in $dirs, and none of the
+# allowed exceptions name it), so it has no networking, audio, speech, calendar or location code.
+# Its entitlements stay at the App Sandbox alone, and it asks for no permissions.
+mac_entitlements=Config/DoddyMac.entitlements
+if [ -f "$mac_entitlements" ]; then
+  if grep -nE 'network\.(client|server)|device\.(audio-input|camera|usb|bluetooth)|application-groups|files\.(user-selected|downloads|bookmarks)|personal-information|temporary-exception' "$mac_entitlements"; then
+    echo "FAIL: $mac_entitlements may only hold the App Sandbox (ADR-450)." >&2; status=1
+  fi
+  if ! grep -q 'com.apple.security.app-sandbox' "$mac_entitlements"; then
+    echo "FAIL: $mac_entitlements must turn the App Sandbox on (ADR-450)." >&2; status=1
+  fi
+fi
+if [ -d DoddyMac ] && grep -RInE 'NS[A-Za-z]+UsageDescription' DoddyMac; then
+  echo "FAIL: the Mac menu-bar app asks for no permissions (ADR-450)." >&2; status=1
+fi
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); the Mac menu-bar app is sandbox-only with no permissions; backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

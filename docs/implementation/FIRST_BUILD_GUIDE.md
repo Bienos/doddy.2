@@ -28,7 +28,7 @@ Needs macOS 14+ and Xcode 16+ (iOS 17 and watchOS 10 SDKs). The iOS Simulator is
 
 ```sh
 git clone https://github.com/Bienos/doddy.2 && cd doddy.2
-git checkout claude/hopeful-fermat-1a63x0
+git checkout claude/loving-dirac-uuxoux   # the default branch; for the Mac menu-bar app, the branch that carries it (see below)
 brew install xcodegen node python
 xcodebuild -version            # record this
 make project                   # xcodegen generate --spec project.yml -> Doddy.xcodeproj
@@ -41,6 +41,19 @@ scripts/ci.sh                  # everything, including xcodebuild test on the fi
   - Widgets with content and the watch's companion pairing need the bundle ids to line up: `<app>`, `<app>.widgets`, `<app>.watchkitapp`.
   - The App Group is opt-in (see the comment at the top of `project.yml`).
   - Push is opt-in too.
+
+## The Mac menu-bar app (ADR-450, `MAC_MENUBAR_STATUS.md`)
+A second, optional target, `DoddyMac`: an icon in the macOS menu bar with the rows from the reference mockup. Needs macOS 14+ and Xcode 16+. It is on the branch that adds it (`claude/trusting-lamport-dw5asw` until it is merged), not on the default branch yet. After `make project`:
+```sh
+xcodebuild build -project Doddy.xcodeproj -scheme DoddyMac -destination "platform=macOS" CODE_SIGNING_ALLOWED=NO
+```
+`scripts/ci.sh` runs the same build as its last Xcode step. That is a compile check. To run it, open the project in Xcode, choose the **DoddyMac** scheme, pick your team under Signing & Capabilities, and Run; the icon appears in the menu bar and there is no Dock icon. Checks to tick: `MAC_VERIFICATION_CHECKLIST_2026-10-10.md`, section 18.
+
+Files most likely to need a fix on the first compile (SwiftUI and AppKit; nothing in them has been compiled, only parsed):
+- `DoddyMac/DoddyFace.swift`: `ImageRenderer(content:)`, `renderer.nsImage` and the menu-bar label built from `Image(nsImage:)`.
+- `DoddyMac/MenuBarContent.swift`: `NSApp.activate()` (macOS 14), `.onChange(of:)` with the zero-parameter closure, `TextField(..., axis: .vertical)` with `.lineLimit(2...5)`, `Task { await save() }` capturing `@State`.
+- `DoddyMac/DoddyMacApp.swift`: `MenuBarExtra` with `.menuBarExtraStyle(.window)` and a label that is a function call, `Window(_:id:)`, `.windowResizability(.contentSize)`.
+- `DoddyMac/MacTheme.swift`: `NSColor(name:dynamicProvider:)` with the `appearance.bestMatch` check.
 
 ## What to do with the result
 1. **It builds:** tick §1 of `docs/implementation/MAC_VERIFICATION_CHECKLIST_2026-10-10.md`. Record the Xcode version and simulator, then go on to its device sections.

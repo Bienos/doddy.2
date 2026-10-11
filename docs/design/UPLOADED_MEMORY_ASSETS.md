@@ -162,3 +162,18 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
+
+## The Mac menu-bar app (ADR-450, 11 October 2026)
+
+Owner: "nav bar app from reference to build similar". `DoddyMac/Assets.xcassets/WholeDoddy_listening.imageset`
+is a byte-identical copy of `DoddyApp/Resources/Assets.xcassets/WholeDoddy_listening.imageset` (the 200 x 300 and
+300 x 450 downscales of `doddy_listening_v02.png`, original SHA-256 in the table above). No new art was
+added. The menu-bar icon (18 pt) and the menu header (40 pt) show a circle cut from it in code, with the
+head position the Dynamic Island uses (`IslandPose.head` for `.listening`). The drawings in the owner's
+macOS reference mockup were not used. Hashes of the copied files:
+
+| File | SHA-256 |
+| --- | --- |
+| `art@2x.png` | 17a662c3ee6d075c5a1f04c54177b77ec1f9557b8a41288718c35d4bf077e4f1 |
+| `art@3x.png` | 69ac3b1ab13beb758d9f196cfebc71cbdcfb640b3b3b69cff0e7fa6e1221a482 |
+

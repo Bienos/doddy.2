@@ -7,6 +7,7 @@ options:
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
+    macOS: "14.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
 packages:
@@ -226,6 +227,36 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
         TARGETED_DEVICE_FAMILY: "4"
         SKIP_INSTALL: YES
+  # The Mac menu-bar app (ADR-450): an icon in the menu bar, a small menu, a notes window and a
+  # settings window. Its own local SQLite memory; no microphone, no network, no sync with the
+  # iPhone. Build on a Mac: xcodebuild build -project Doddy.xcodeproj -scheme DoddyMac
+  # -destination "platform=macOS" CODE_SIGNING_ALLOWED=NO (compile check; pick a team to run it).
+  DoddyMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: DoddyMac
+    dependencies:
+      - package: DoddyCore
+        product: DoddyCore
+      - package: DoddyCore
+        product: DoddyPersistence
+      - package: DoddyCore
+        product: DoddyDesignTokens
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(DODDY_APP_BUNDLE_IDENTIFIER).mac
+        PRODUCT_NAME: Doddy Mac
+        MARKETING_VERSION: "0.0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_ENTITLEMENTS: Config/DoddyMac.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Doddy
+        # Menu-bar app: no Dock icon, no main menu bar of its own.
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        # No app icon yet: the iPhone's development icon is not reused (docs/implementation/MAC_MENUBAR_STATUS.md).
   DoddyTests:
     type: bundle.unit-test
     platform: iOS
@@ -261,3 +292,7 @@ schemes:
       targets:
         - DoddyTests
         - DoddyUITests
+  DoddyMac:
+    build:
+      targets:
+        DoddyMac: all
