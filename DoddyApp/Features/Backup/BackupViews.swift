@@ -41,6 +41,9 @@ enum BackupCopy {
         case .weakFile?:
             return NSLocalizedString("This file isn't protected the way Doddy's backups are, so it wasn't opened. Nothing was added.", comment: "")
         case nil:
+            if error is CancellationError {
+                return NSLocalizedString("Opening the backup was stopped. Nothing was added.", comment: "")
+            }
             if let restore = error as? MemoryRestoreError { return RestoreCopy.failure(restore) }
             return UserFacingError.message(for: error)
         }
@@ -214,6 +217,9 @@ struct RestoreBackupView: View {
     @State private var problem: String?
     @State private var receipt: String?
     @State private var choosing = true
+    /// The running decryption. A crafted file can ask for slow key stretching, so leaving the
+    /// screen cancels it instead of leaving it to run on.
+    @State private var decrypting: Task<BackupContents, any Error>?
 
     var body: some View {
         NavigationStack {
@@ -252,10 +258,21 @@ struct RestoreBackupView: View {
             }
             .navigationTitle("Restore a backup")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(isWorking) } }
+            // While a backup is being opened, nothing is written yet, so Cancel stays available
+            // and stops the decryption; while adding, it waits.
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        decrypting?.cancel()
+                        dismiss()
+                    }
+                    .disabled(isWorking && decrypting == nil)
+                }
+            }
             .fileImporter(isPresented: $choosing, allowedContentTypes: [.doddyBackup, .data]) { result in read(result) }
         }
-        .interactiveDismissDisabled(isWorking)
+        .interactiveDismissDisabled(isWorking && decrypting == nil)
+        .onDisappear { decrypting?.cancel() }
     }
 
     private func read(_ result: Result<URL, any Error>) {
@@ -276,12 +293,17 @@ struct RestoreBackupView: View {
         guard let fileData else { return }
         problem = nil
         isWorking = true
-        defer { isWorking = false }
         let words = passphrase
+        let task = Task.detached(priority: .userInitiated) { () throws -> BackupContents in
+            try EncryptedBackup.decrypt(fileData, passphrase: words)
+        }
+        decrypting = task
+        defer {
+            isWorking = false
+            decrypting = nil
+        }
         do {
-            let contents = try await Task.detached(priority: .userInitiated) { () throws -> BackupContents in
-                try EncryptedBackup.decrypt(fileData, passphrase: words)
-            }.value
+            let contents = try await task.value
             await store.reload()
             plan = try BackupRestorePlan.make(
                 contents, existing: store.memories + store.lists.map(\.record),
