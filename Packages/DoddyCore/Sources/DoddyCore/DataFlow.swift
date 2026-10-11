@@ -135,6 +135,11 @@ public enum DataFlow {
                 when: "Only when you ask about the weather or a fact.", isActive: true,
                 note: "ElevenLabs makes these requests for Doddy; this app doesn't contact them."),
             DataFlowRow(
+                id: "exchangeRates", destination: "European Central Bank (exchange rates)",
+                what: "Nothing about you: the app downloads the ECB's public daily rates file.",
+                when: "When you ask Doddy to convert money, at most every six hours.", isActive: !state.pauseAll,
+                note: state.pauseAll ? "Connections are paused, so the rates aren't fetched." : "The amount and currencies stay on this iPhone; the conversion is worked out here."),
+            DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search)",
                 what: "The words you type to find a place, and roughly where you are if Doddy already knows.",
                 when: "Only when you search for a place for a reminder.", isActive: true,

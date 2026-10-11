@@ -7,6 +7,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
     case gmail, drive, notion, todoist
     case web
+    /// The ECB's public rates file (ADR-291).
+    case exchangeRates
 
     public var title: String {
         switch self {
@@ -23,6 +25,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .notion: "Notion"
         case .todoist: "Todoist"
         case .web: "Web search"
+        case .exchangeRates: "Exchange rates"
         }
     }
 }
@@ -147,7 +150,14 @@ public struct ActivityRequest: Equatable, Sendable {
             if let title = draft.newTitle { parts.append("renamed “\(title)”") }
             return ActivityRequest(app: .calendar, title: "Change event", detail: "“\(draft.title)” \(parts.joined(separator: ", "))", isLookup: false)
         case .changeReminder(let draft):
-            let what = draft.markDone ? "mark done" : "due \(draft.newDue.map(ReminderText.due) ?? "")"
+            var parts: [String] = []
+            if draft.markDone { parts.append("mark done") }
+            if let due = draft.newDue { parts.append("due \(ReminderText.due(due))") }
+            // ADR-293: which details, not the note's text.
+            if draft.addNote != nil { parts.append("add a note") }
+            if let priority = draft.priority { parts.append(priority.text) }
+            if let list = draft.listName { parts.append("to the list “\(list)”") }
+            let what = parts.joined(separator: ", ")
             return ActivityRequest(app: .reminders, title: "Change reminder", detail: "“\(draft.title)” · \(what)", isLookup: false)
         case .deleteCalendarEvent(let draft):
             return ActivityRequest(app: .calendar, title: "Delete event", detail: "“\(draft.title)” \(when(draft.currentStart, hasTime: !draft.currentIsDayOnly))", isLookup: false)
@@ -164,6 +174,16 @@ public struct ActivityRequest: Equatable, Sendable {
         case .undoLast:
             // The row being undone records what happened (ActivityLog.undid), not a new row.
             return nil
+        case .parkingSpot(let action):
+            // No coordinates in the log, only what was asked (ADR-292).
+            switch action {
+            case .save: return ActivityRequest(app: .memories, title: "Save parking spot", detail: nil, isLookup: false)
+            case .find: return ActivityRequest(app: .memories, title: "Found parking spot", detail: nil, isLookup: true)
+            case .clear: return ActivityRequest(app: .memories, title: "Clear parking spot", detail: nil, isLookup: false)
+            }
+        case .convertCurrency(let request):
+            // Only that the rates file was fetched; the amount stays in the conversation (ADR-291).
+            return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and

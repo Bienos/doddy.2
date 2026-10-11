@@ -219,6 +219,11 @@ struct VoiceView: View {
                                 .id("contactCard")
                         }
 
+                        if let spot = controller.parkingCard {
+                            parkingCard(spot, controller: controller)
+                                .id("parkingCard")
+                        }
+
                         Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
@@ -238,6 +243,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.noteReminderStatus) { _, status in
                     if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
+                }
+                .onChange(of: controller.parkingCard) { _, spot in
+                    if spot != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("parkingCard", anchor: .bottom) } }
                 }
                 .onChange(of: controller.contactCard) { _, card in
                     if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("contactCard", anchor: .bottom) } }
@@ -467,9 +475,24 @@ struct VoiceView: View {
                 .font(.body)
             Text("In \(reminder.listTitle)")
                 .foregroundStyle(Theme.secondaryText)
-            if !draft.markDone {
+            if !draft.markDone, draft.newDue != nil || !draft.changesDetails {
                 changeRow(after: false, title: nil, when: ReminderText.due(reminder.due))
                 changeRow(after: true, title: nil, when: ReminderText.due(draft.newDue))
+            }
+            // ADR-293: each detail as it is now and as it will be.
+            if let line = draft.addNote {
+                Label("Add to the notes: “\(line)”", systemImage: "note.text")
+            }
+            if let priority = draft.priority {
+                Label("Priority: \(Self.priorityText(reminder.priority)) → \(Self.priorityText(priority))", systemImage: "exclamationmark.circle")
+            }
+            if let list = draft.toList {
+                Label("Move to the list “\(list.title)”", systemImage: "list.bullet")
+            }
+            if draft.changesDetails {
+                Text("Notes are only added to. Undo isn't available for a note, priority or list change.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
             }
         case .deleteEvent(_, let event):
             Text("Delete this event?")
@@ -532,6 +555,17 @@ struct VoiceView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
+        case .parking(_, let spot):
+            // ADR-292: where the iPhone is now, kept only on Save, on this iPhone.
+            Text("Save your parking spot here?")
+                .font(.headline)
+            Text("Where your iPhone is now, to within about \(Int(spot.accuracyMeters.rounded())) m.")
+            if let note = spot.note {
+                Text("“\(note)”")
+            }
+            Text("Kept only on this iPhone, and replaces any spot saved before. Doddy hears when you saved it, not where.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .translator(_, let setup):
             translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
@@ -703,6 +737,15 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.saveSuggestions")
     }
 
+    static func priorityText(_ priority: ReminderPriority) -> String {
+        switch priority {
+        case .none: NSLocalizedString("None", comment: "Reminder priority")
+        case .low: NSLocalizedString("Low", comment: "Reminder priority")
+        case .medium: NSLocalizedString("Medium", comment: "Reminder priority")
+        case .high: NSLocalizedString("High", comment: "Reminder priority")
+        }
+    }
+
     private func isEmptyPlan(_ pending: VoiceSessionController.PendingAction, controller: VoiceSessionController) -> Bool {
         if case .plan = pending { return controller.planTicked.isEmpty }
         // Several changes (ADR-280): nothing ticked, nothing to confirm.
@@ -733,6 +776,7 @@ struct VoiceView: View {
         case .changeReminder(_, _, let draft): (draft.markDone ? NSLocalizedString("Mark done", comment: "") : NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .plan(_, let steps, _): (PlanProposal.confirmTitle(steps.filter { controller.planTicked.contains($0.number) }), NSLocalizedString("Not now", comment: ""))
         case .undo(_, let entry): (entry.undo?.buttonTitle(.current) ?? NSLocalizedString("Undo", comment: ""), NSLocalizedString("Keep it", comment: ""))
+        case .parking: (NSLocalizedString("Save", comment: ""), NSLocalizedString("Don't save", comment: ""))
         }
     }
 
@@ -992,6 +1036,28 @@ struct VoiceView: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// "Where did I park?" (ADR-292): when it was saved and the note; Maps opens only on a tap.
+    private func parkingCard(_ spot: ParkingSpot, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Your parking spot")
+                .font(.headline)
+            Text("Saved \(spot.savedAt.formatted(date: .abbreviated, time: .shortened))")
+                .foregroundStyle(Theme.secondaryText)
+            if let note = spot.note {
+                Text("“\(note)”")
+            }
+            contactAction("Open in Maps", systemImage: "car") { Parking.mapsURL(spot) }
+            Button("Close") {
+                controller.dismissParkingCard()
+            }
+            .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.parkingCard")
     }
 
     private func contactAction(_ title: String, systemImage: String, url: @escaping () -> URL?) -> some View {

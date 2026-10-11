@@ -4,8 +4,8 @@ import Foundation
 // agent passes the sum or the conversion and reads back the app's answer instead of working it
 // out. Everything runs here: no network, no account, no permission, nothing stored or logged.
 // Only + − × ÷, powers, brackets and percent; no names, variables or functions, so nothing in an
-// expression can do anything but arithmetic. Currencies are not converted (they need live rates
-// from an outside service, an owner decision).
+// expression can do anything but arithmetic. Currencies are converted by `convert_currency`
+// with the ECB's daily rates (ADR-291), not here.
 
 extension VoiceToolName {
     public static let calculate = "calculate"
@@ -336,7 +336,7 @@ extension VoiceToolReply {
             let to = UnitConversion.unit(named: request.to)?.symbol ?? request.to
             return "converted: \(Calculator.text(request.value)) \(from) = \(Calculator.text(result, digits: 7)) \(to). Calculated by the app; say this number, don't work it out again."
         case .failure(.unknownUnit(let name)):
-            return "failed: the app doesn't know the unit \"\(name)\". Use a standard symbol such as km, mi, kg, lb, l, cup, °C, °F, km/h, m², h. Currencies can't be converted."
+            return "failed: the app doesn't know the unit \"\(name)\". Use a standard symbol such as km, mi, kg, lb, l, cup, °C, °F, km/h, m², h. For money, use convert_currency."
         case .failure(.differentKinds(let a, let b)):
             return "failed: \(a.symbol) is a \(a.kind.rawValue) and \(b.symbol) is a \(b.kind.rawValue); they can't be converted into each other."
         case .failure(.notFinite):

@@ -396,11 +396,17 @@ final class DeviceConnections {
             reminder.isCompleted = false
         case .due(let newDue):
             guard !reminder.isCompleted else { return .changedElsewhere }
-            let oldDate = before.due.flatMap { EventChange.moment($0, local: .current) }
-            reminder.dueDateComponents = newDue.map(Self.components)
-            let newDate = newDue.flatMap { EventChange.moment($0, local: .current) }
-            for alarm in reminder.alarms ?? [] where oldDate != nil && alarm.absoluteDate == oldDate {
-                if let newDate { alarm.absoluteDate = newDate } else { reminder.removeAlarm(alarm) }
+            moveDue(of: reminder, from: before.due, to: newDue)
+        case .details(let newDue, let details):
+            // ADR-293: the priority and list must also still be as the card showed them.
+            guard !reminder.isCompleted, ReminderPriority.from(eventKit: reminder.priority) == before.priority,
+                  before.listID == nil || reminder.calendar?.calendarIdentifier == before.listID else { return .changedElsewhere }
+            if let newDue { moveDue(of: reminder, from: before.due, to: newDue) }
+            if let line = details.addNote { reminder.notes = EventChange.notes(reminder.notes, adding: line) }
+            if let priority = details.priority { reminder.priority = priority.eventKitValue }
+            if let list = details.toList {
+                guard let target = eventStore.calendar(withIdentifier: list.id), target.allowsContentModifications else { return .changedElsewhere }
+                reminder.calendar = target
             }
         }
         try eventStore.save(reminder, commit: true)
@@ -410,6 +416,18 @@ final class DeviceConnections {
         case .complete: return snapshot.isCompleted ? .verified : .unconfirmed
         case .reopen: return !snapshot.isCompleted ? .verified : .unconfirmed
         case .due(let newDue): return !snapshot.isCompleted && EventChange.sameDue(snapshot.due, newDue) ? .verified : .unconfirmed
+        case .details(let newDue, let details):
+            return ReminderDetails.confirms(snapshot, notes: back.notes, change: details, newDue: newDue) ? .verified : .unconfirmed
+        }
+    }
+
+    /// A new due; an alarm set for the old due moves with it, or goes when the due is cleared.
+    private func moveDue(of reminder: EKReminder, from oldDue: ReminderDue?, to newDue: ReminderDue?) {
+        let oldDate = oldDue.flatMap { EventChange.moment($0, local: .current) }
+        reminder.dueDateComponents = newDue.map(Self.components)
+        let newDate = newDue.flatMap { EventChange.moment($0, local: .current) }
+        for alarm in reminder.alarms ?? [] where oldDate != nil && alarm.absoluteDate == oldDate {
+            if let newDate { alarm.absoluteDate = newDate } else { reminder.removeAlarm(alarm) }
         }
     }
 
@@ -469,7 +487,17 @@ final class DeviceConnections {
             due: due,
             markerURL: reminder.url?.absoluteString,
             isCompleted: reminder.isCompleted,
-            repeats: readRepeat(reminder.recurrenceRules, calendar: .current))
+            repeats: readRepeat(reminder.recurrenceRules, calendar: .current),
+            priority: ReminderPriority.from(eventKit: reminder.priority),
+            listID: reminder.calendar?.calendarIdentifier)
+    }
+
+    /// The Reminders lists Doddy may move a reminder to (ADR-293): names and identifiers only.
+    func reminderLists() -> [ReminderListRef] {
+        guard access(for: .reminders) == .granted else { return [] }
+        return eventStore.calendars(for: .reminder)
+            .filter(\.allowsContentModifications)
+            .map { ReminderListRef(id: $0.calendarIdentifier, title: $0.title) }
     }
 
     /// Incomplete reminders due by `end` (overdue included), for Home → Today. Title and due
