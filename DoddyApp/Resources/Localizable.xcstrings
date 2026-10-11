@@ -925,6 +925,17 @@
         }
       }
     },
+    "Birthdays": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urodziny"
+          }
+        }
+      }
+    },
     "Blocked": {
       "extractionState": "manual",
       "localizations": {
@@ -4973,6 +4984,17 @@
         }
       }
     },
+    "None of your contacts has a birthday saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żaden z Twoich kontaktów nie ma zapisanych urodzin."
+          }
+        }
+      }
+    },
     "None set for today.": {
       "extractionState": "manual",
       "localizations": {
@@ -5442,6 +5464,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiadomienia i SMS-y zostaną wyłączone. Twoje wspomnienia na tym iPhonie zostają."
+          }
+        }
+      }
+    },
+    "Notifications are off for Doddy, so birthdays can't be reminded. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia Doddy’ego są wyłączone, więc nie może przypominać o urodzinach. Włącz je w Ustawieniach iOS."
           }
         }
       }
@@ -6201,6 +6234,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wybierz przynajmniej jeden temat lub kanał."
+          }
+        }
+      }
+    },
+    "Pick the people whose birthday Doddy should remind you of, at 9:00 on the day. Read from Contacts on this iPhone; nothing is sent anywhere or added to Calendar.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz osoby, o których urodzinach Doddy ma Ci przypominać, o 9:00 w dniu urodzin. Odczytywane z Kontaktów na tym iPhonie; nic nie jest nigdzie wysyłane ani dodawane do Kalendarza."
           }
         }
       }
@@ -7624,6 +7668,17 @@
         }
       }
     },
+    "Set for %lld people. Checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione dla osób: %lld. Sprawdzone."
+          }
+        }
+      }
+    },
     "Set reminder": {
       "extractionState": "manual",
       "localizations": {
@@ -8944,6 +8999,17 @@
         }
       }
     },
+    "The birthday reminders couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić przypomnień o urodzinach. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
     "The check-in couldn't be set. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -9923,6 +9989,17 @@
         }
       }
     },
+    "Turn on Contacts in Settings, Connections, to see birthdays here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz Kontakty w Ustawieniach, w sekcji Połączenia, aby zobaczyć tu urodziny."
+          }
+        }
+      }
+    },
     "Turn on notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -10084,6 +10161,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Odznacz, czego nie chcesz, albo stuknij Zmień, aby poprawić krok. Reszta wykona się w tej kolejności, a każdy krok dostanie własny wynik."
+          }
+        }
+      }
+    },
+    "Up to %lld people. The notification shows the name only if notifications may show note text (Settings, Privacy).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do %lld osób. Powiadomienie pokazuje imię tylko wtedy, gdy powiadomienia mogą pokazywać treść notatek (Ustawienia, Prywatność)."
           }
         }
       }

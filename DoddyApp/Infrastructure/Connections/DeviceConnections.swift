@@ -475,6 +475,26 @@ final class DeviceConnections {
                 emailAddresses: contact.emailAddresses.map { $0.value as String })
         }
     }
+
+    /// Contacts with a birthday (ADR-272): name and day only, read on this iPhone. Nil without
+    /// Contacts permission. Nothing else about the contact is read.
+    func birthdays() -> [BirthdayContact]? {
+        guard access(for: .contacts) == .granted else { return nil }
+        let keys: [CNKeyDescriptor] = [CNContactFormatter.descriptorForRequiredKeys(for: .fullName), CNContactBirthdayKey as CNKeyDescriptor]
+        var found: [BirthdayContact] = []
+        do {
+            try contactStore.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
+                guard let birthday = contact.birthday, let month = birthday.month, let day = birthday.day else { return }
+                found.append(BirthdayContact(
+                    id: contact.identifier,
+                    name: CNContactFormatter.string(from: contact, style: .fullName) ?? "Unnamed contact",
+                    month: month, day: day))
+            }
+        } catch {
+            return nil
+        }
+        return found
+    }
 }
 
 /// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).

@@ -323,9 +323,10 @@ struct ConnectionInfo {
                 canDo: [
                     "Look up a contact by name and show the details on your screen",
                     "Call, text or email them from that card, after you tap",
+                    "Remind you of the birthdays you pick, in Settings, Birthdays",
                 ],
                 leavesPhone: "Only the names Doddy finds. Numbers and email addresses stay on your screen.",
-                staysHere: "Doddy never calls, texts or emails anyone by itself.")
+                staysHere: "Doddy never calls, texts or emails anyone by itself. Birthdays are read on this iPhone only.")
         case .messages:
             ConnectionInfo(
                 symbol: "text.bubble",

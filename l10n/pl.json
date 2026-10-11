@@ -1019,5 +1019,13 @@
  "No list lines were found in that photo. Nothing was added.": "Na tym zdjęciu nie znaleziono pozycji listy. Nic nie zostało dodane.",
  "That photo is too large to read. Nothing was added.": "To zdjęcie jest zbyt duże, by je odczytać. Nic nie zostało dodane.",
  "Read %lld lines from the photo. Check them before Create.": "Odczytano ze zdjęcia pozycje: %lld. Sprawdź je przed utworzeniem listy.",
- "Read %lld lines from the photo; %lld were too long or past the limit. Check them before Create.": "Odczytano ze zdjęcia pozycje: %lld; pominięto: %lld (za długie lub ponad limit). Sprawdź je przed utworzeniem listy."
+ "Read %lld lines from the photo; %lld were too long or past the limit. Check them before Create.": "Odczytano ze zdjęcia pozycje: %lld; pominięto: %lld (za długie lub ponad limit). Sprawdź je przed utworzeniem listy.",
+ "Birthdays": "Urodziny",
+ "Pick the people whose birthday Doddy should remind you of, at 9:00 on the day. Read from Contacts on this iPhone; nothing is sent anywhere or added to Calendar.": "Wybierz osoby, o których urodzinach Doddy ma Ci przypominać, o 9:00 w dniu urodzin. Odczytywane z Kontaktów na tym iPhonie; nic nie jest nigdzie wysyłane ani dodawane do Kalendarza.",
+ "None of your contacts has a birthday saved.": "Żaden z Twoich kontaktów nie ma zapisanych urodzin.",
+ "Up to %lld people. The notification shows the name only if notifications may show note text (Settings, Privacy).": "Do %lld osób. Powiadomienie pokazuje imię tylko wtedy, gdy powiadomienia mogą pokazywać treść notatek (Ustawienia, Prywatność).",
+ "Turn on Contacts in Settings, Connections, to see birthdays here.": "Włącz Kontakty w Ustawieniach, w sekcji Połączenia, aby zobaczyć tu urodziny.",
+ "Set for %lld people. Checked.": "Ustawione dla osób: %lld. Sprawdzone.",
+ "Notifications are off for Doddy, so birthdays can't be reminded. Turn them on in iOS Settings.": "Powiadomienia Doddy’ego są wyłączone, więc nie może przypominać o urodzinach. Włącz je w Ustawieniach iOS.",
+ "The birthday reminders couldn't be set. Try again.": "Nie udało się ustawić przypomnień o urodzinach. Spróbuj jeszcze raz."
 }
