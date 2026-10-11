@@ -81,6 +81,14 @@ else
   not_run "Messaging server tests" "node/npm not found on PATH"
 fi
 
+# Landing page waitlist functions (site/api), against an in-memory @vercel/blob stand-in; no network.
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  if [ ! -d site/node_modules ]; then run_step "Site install (npm ci)" npm ci --prefix site --no-audit --no-fund; fi
+  run_step "Site waitlist function tests" npm test --prefix site
+else
+  not_run "Site waitlist function tests" "node/npm not found on PATH"
+fi
+
 if [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
 elif ! command -v xcodebuild >/dev/null 2>&1; then
