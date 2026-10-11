@@ -27,7 +27,9 @@ enum WidgetSnapshotFile {
         url.flatMap { try? Data(contentsOf: $0) }.flatMap(WidgetSnapshot.decoded)
     }
 
-    /// Writes and reads back; throws when the file on disk isn't the snapshot written. Readable
+    /// Writes and reads back; throws when the file on disk isn't the bytes written or doesn't
+    /// decode. Bytes, not decoded dates, are compared: a `Date` can read back a hair different
+    /// even when the file is exactly right (review I1). Readable
     /// after the first unlock, so Lock Screen widgets can draw; note text there is still hidden
     /// by iOS while the iPhone is locked (`privacySensitive`).
     static func write(_ snapshot: WidgetSnapshot) throws {
@@ -38,7 +40,7 @@ enum WidgetSnapshotFile {
         #else
         try data.write(to: url, options: [.atomic])
         #endif
-        guard let back = try? Data(contentsOf: url), WidgetSnapshot.decoded(back) == snapshot else {
+        guard let back = try? Data(contentsOf: url), back == data, WidgetSnapshot.decoded(back) != nil else {
             throw CocoaError(.fileWriteUnknown)
         }
     }

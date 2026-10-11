@@ -76,4 +76,10 @@ final class AlarmVoiceTests: XCTestCase {
         XCTAssertTrue(ConnectionPause.applies(to: .listAlarms))
         XCTAssertEqual(ActivityRequest.describe(.listAlarms, calendar: .current)?.isLookup, true)
     }
+
+    /// Review F5: an unreadable AlarmKit list is "unknown", never "none set".
+    func testAnUnreadableListIsUnknownNotNone() {
+        XCTAssertTrue(VoiceToolReply.alarmsUnreadable.hasPrefix("unknown:"))
+        XCTAssertFalse(VoiceToolReply.alarmsUnreadable.contains("none"))
+    }
 }

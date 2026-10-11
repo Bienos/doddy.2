@@ -57,6 +57,22 @@ final class PlanEditTests: XCTestCase {
         XCTAssertNil(undated.due)
     }
 
+    func testAnEditKeepsTheYearOnABuddhistOrJapaneseCalendar() throws {
+        for identifier in [Calendar.Identifier.buddhist, .japanese] {
+            var local = Calendar(identifier: identifier)
+            local.timeZone = calendar.timeZone
+            let data = try JSONSerialization.data(withJSONObject: ["title": "Rent", "due": "2026-10-17T12:00"])
+            let original = PlanStep(number: 2, toolName: VoiceToolName.createReminder,
+                                    request: VoiceToolRequest.parse(name: VoiceToolName.createReminder, parametersJSON: data, now: now, calendar: local))
+            var form = PlanStepForm(original, now: now, calendar: local)
+            form.text = "Rent and water"
+            guard case .step(let changed) = form.apply(to: original, now: now, calendar: local),
+                  case .createReminder(let draft) = changed.request else { return XCTFail("\(identifier): edit refused") }
+            XCTAssertEqual(draft.due?.year, 2026, "\(identifier)")
+            XCTAssertEqual(draft.due?.day, 17, "\(identifier)")
+        }
+    }
+
     func testAnEditToAPastTimeIsRefusedWithAScreenLine() {
         let original = step(VoiceToolName.createReminder, ["title": "Rent", "due": "2026-10-17T12:00"])
         var form = PlanStepForm(original, now: now, calendar: calendar)

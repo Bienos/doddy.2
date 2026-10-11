@@ -148,4 +148,17 @@ final class MemoryRecordTests: XCTestCase {
         let raw = try XCTUnwrap(properties["rawText"] as? [String: Any])
         XCTAssertEqual(raw["maxLength"] as? Int, MemoryLimits.maxTextLength)
     }
+
+    /// Review B9: one millisecond conversion. Files round, the database rounds down, and a whole
+    /// millisecond survives both unchanged.
+    func testEpochMillisecondsRoundingAndRoundTrip() {
+        let t = Date(timeIntervalSince1970: 1_760_000_000.1236)
+        XCTAssertEqual(EpochMilliseconds.rounded(t), 1_760_000_000_124)
+        XCTAssertEqual(EpochMilliseconds.truncated(t), 1_760_000_000_123)
+        for ms in stride(from: Int64(1_760_000_000_000), to: 1_760_000_020_000, by: 7) {
+            let date = EpochMilliseconds.date(ms)
+            XCTAssertEqual(EpochMilliseconds.rounded(date), ms)
+            XCTAssertEqual(EpochMilliseconds.truncated(date), ms)
+        }
+    }
 }

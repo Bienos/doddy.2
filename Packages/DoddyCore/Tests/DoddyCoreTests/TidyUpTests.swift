@@ -38,6 +38,19 @@ final class TidyUpTests: XCTestCase {
         XCTAssertEqual(tidy.count, 3)
     }
 
+    func testNotesWithAPhotoOrVoiceMemoAreNeverCopies() throws {
+        let first = try note("Parking spot", daysAgo: 3)
+        let photo = try note("Parking spot", daysAgo: 2)
+        let memo = try note("parking spot", daysAgo: 1)
+        let memories = [first, photo, memo]
+        XCTAssertEqual(TidyUp.suggestions(memories: memories, lists: [], reminders: [], now: now).duplicates.first?.copies.count, 2)
+        let tidy = TidyUp.suggestions(memories: memories, lists: [], reminders: [], now: now, withAttachments: [photo.id, memo.id])
+        XCTAssertTrue(tidy.duplicates.isEmpty)
+        let kept = TidyUp.suggestions(memories: memories, lists: [], reminders: [], now: now, withAttachments: [first.id])
+        XCTAssertEqual(kept.duplicates.first?.keep.id, photo.id, "the note with an attachment is left out of the group")
+        XCTAssertEqual(kept.duplicates.first?.copies.map(\.id), [memo.id])
+    }
+
     func testNothingToTidy() throws {
         let tidy = TidyUp.suggestions(memories: [try note("one", daysAgo: 1)], lists: [], reminders: [], now: now)
         XCTAssertTrue(tidy.isEmpty)

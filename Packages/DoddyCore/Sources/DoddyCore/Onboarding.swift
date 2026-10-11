@@ -6,7 +6,8 @@ import Foundation
 // Doddy cannot read the iPhone's Back Tap setting, and no public API reports it. Every
 // "done" state here is what the user told us, never a verified system setting.
 
-/// One screen of the written Back Tap guide, in order.
+/// One step of first-use setup, in order, as stored with `OnboardingProgress`. The words the
+/// user sees are `BackTapGuide`'s.
 public enum SetupStep: String, CaseIterable, Codable, Sendable {
     /// "Two taps. A little help." Start or set up later.
     case welcome
@@ -16,11 +17,6 @@ public enum SetupStep: String, CaseIterable, Codable, Sendable {
     case openSettings, settings, accessibility, touch, backTap, doubleTap
     /// Go to the Home Screen and double-tap the back of the iPhone.
     case test
-
-    /// Settings pages the user can report being on, in order.
-    public static let walkthrough: [SetupStep] = [.openSettings, .settings, .accessibility, .touch, .backTap, .doubleTap]
-
-    public var isWalkthroughPage: Bool { Self.walkthrough.contains(self) }
 
     public var next: SetupStep? {
         let all = Self.allCases
@@ -35,66 +31,11 @@ public enum SetupStep: String, CaseIterable, Codable, Sendable {
     }
 }
 
-/// Written copy for each walkthrough page. iOS labels as documented by Apple
-/// (support.apple.com/guide/iphone/back-tap-iphaa57e7885/ios), reviewed October 2026.
-public struct SetupPageCopy: Equatable, Sendable {
-    public let title: String
-    /// Where the user should be, e.g. "Settings → Accessibility".
-    public let path: String
-    public let instruction: String
-    /// What the user taps to say they reached this page.
-    public let report: String
-}
-
 public enum SetupGuideCopy {
-    /// Version of the step map. A guide saved under another version restarts from the
-    /// beginning instead of resuming on a page that may no longer exist.
+    /// Version of the step map, stored with `OnboardingProgress`. A guide saved under another
+    /// version restarts from the beginning instead of resuming on a page that may no longer exist.
+    /// The guide's words and steps are `BackTapGuide` (BackTapSetup.swift).
     public static let version = "backtap-written-1"
-
-    public static let fullPath = "Settings → Accessibility → Touch → Back Tap → Double Tap → Open Doddy"
-
-    public static func page(_ step: SetupStep) -> SetupPageCopy? {
-        switch step {
-        case .openSettings:
-            SetupPageCopy(
-                title: "Open Settings",
-                path: "Home Screen",
-                instruction: "Leave Doddy and open the Settings app. Doddy can't open the Back Tap page for you or see your screen, so come back here whenever you want the next step.",
-                report: "I'm not in Settings yet")
-        case .settings:
-            SetupPageCopy(
-                title: "Choose Accessibility",
-                path: "Settings",
-                instruction: "Scroll down and choose Accessibility.",
-                report: "I'm in Settings")
-        case .accessibility:
-            SetupPageCopy(
-                title: "Choose Touch",
-                path: "Settings → Accessibility",
-                instruction: "In Accessibility, find the Physical and Motor section, then choose Touch.",
-                report: "I'm in Accessibility")
-        case .touch:
-            SetupPageCopy(
-                title: "Find Back Tap",
-                path: "Settings → Accessibility → Touch",
-                instruction: "Scroll to the bottom of Touch and choose Back Tap. If there's no Back Tap, this iPhone or its iOS version may not support it. You can still open Doddy from the Home Screen.",
-                report: "I'm in Touch")
-        case .backTap:
-            SetupPageCopy(
-                title: "Choose Double Tap",
-                path: "Settings → Accessibility → Touch → Back Tap",
-                instruction: "Choose Double Tap. If Double Tap already does something you want to keep, leave it and set this up later.",
-                report: "I'm in Back Tap")
-        case .doubleTap:
-            SetupPageCopy(
-                title: "Choose your shortcut",
-                path: "Back Tap → Double Tap",
-                instruction: "Scroll to the Shortcuts section and choose Open Doddy. If it isn't listed, go back and create the shortcut first.",
-                report: "I'm in Double Tap")
-        case .welcome, .shortcut, .test:
-            nil
-        }
-    }
 }
 
 public enum SetupDecision: String, CaseIterable, Codable, Sendable {
@@ -193,23 +134,5 @@ public struct OnboardingProgress: Equatable, Sendable {
         OnboardingProgress(
             walkthroughVersion: walkthroughVersion, setupDecision: setupDecision, setupStep: setupStep,
             introDecision: decision, updatedAt: date)
-    }
-}
-
-/// The Back Tap test. Only an Open Doddy action received after the test started (and not
-/// long after) counts as a receipt. A receipt proves the shortcut ran, not that a double tap
-/// ran it, so the user is still asked.
-public struct TapTestWindow: Equatable, Sendable {
-    public static let duration: TimeInterval = 5 * 60
-
-    public let startedAt: Date
-
-    public init(startedAt: Date) {
-        self.startedAt = startedAt
-    }
-
-    public func accepts(receiptAt receipt: Date?) -> Bool {
-        guard let receipt else { return false }
-        return receipt >= startedAt && receipt <= startedAt.addingTimeInterval(Self.duration)
     }
 }

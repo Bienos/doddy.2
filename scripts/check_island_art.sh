@@ -13,12 +13,14 @@ cd "$(dirname "$0")/.."
 command -v swiftc >/dev/null 2>&1 || { echo "NOT RUN: swiftc not found on PATH"; exit 2; }
 
 work="$(mktemp -d)"
-trap 'rm -rf "$work"' EXIT
+art=Shared/IslandArt/IslandBoardArt.generated.swift
+# The generator writes over the committed file; put it back however this script ends (an
+# interrupted run must not leave a modified tracked file).
+trap '[ -f "$work/committed.swift" ] && cp "$work/committed.swift" "$art"; rm -rf "$work"' EXIT
 
-cp Shared/IslandArt/IslandBoardArt.generated.swift "$work/committed.swift"
+cp "$art" "$work/committed.swift"
 python3 -I tools/island_boards/generate_island_art.py >/dev/null
-if ! cmp -s "$work/committed.swift" Shared/IslandArt/IslandBoardArt.generated.swift; then
-    cp "$work/committed.swift" Shared/IslandArt/IslandBoardArt.generated.swift
+if ! cmp -s "$work/committed.swift" "$art"; then
     echo "FAIL: IslandBoardArt.generated.swift differs from a fresh run of the generator"
     exit 1
 fi

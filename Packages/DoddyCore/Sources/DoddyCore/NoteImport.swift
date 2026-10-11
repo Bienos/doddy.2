@@ -200,7 +200,7 @@ public enum NoteImport {
             return nil
         case .list(let list):
             if list.name.count > ListLimits.nameLength { return .listNameTooLong }
-            if list.count > ListLimits.itemsPerList || (list.open + list.ticked).contains(where: { $0.count > ListLimits.itemLength }) {
+            if list.count > ListLimits.itemsPerList || (list.open + list.ticked).contains(where: { !ListText.fitsItemLength($0) }) {
                 return .tooManyItems
             }
             return nil

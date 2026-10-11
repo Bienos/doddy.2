@@ -94,6 +94,31 @@ public enum ListError: Error, Equatable, Sendable {
     case notANote
 }
 
+/// Undo of a list change (review C10): "Undone" only when every item it meant to take back
+/// came back as it was. Otherwise it says which did and which didn't.
+public enum ListUndoError: Error, Equatable, Sendable {
+    case nothingUndone
+    case partlyUndone(undone: [String], notUndone: [String])
+
+    /// `reversed` are the items the repository read back as taken back.
+    public static func check(expected: [ListItem], reversed: [ListItem]) throws(ListUndoError) {
+        let back = Set(reversed.map(\.id))
+        let missed = expected.filter { !back.contains($0.id) }
+        guard !missed.isEmpty else { return }
+        let undone = expected.filter { back.contains($0.id) }
+        throw undone.isEmpty ? .nothingUndone : .partlyUndone(undone: undone.map(\.text), notUndone: missed.map(\.text))
+    }
+
+    public var message: String {
+        switch self {
+        case .nothingUndone:
+            "Nothing was undone: the items were changed or deleted since."
+        case .partlyUndone(let undone, let notUndone):
+            "Only part was undone: \(undone.joined(separator: ", ")). Not undone, as they were changed or deleted since: \(notUndone.joined(separator: ", "))."
+        }
+    }
+}
+
 /// What an add actually did. Only `added` changed anything.
 public struct ListAddResult: Equatable, Sendable {
     public let added: [ListItem]
@@ -117,6 +142,9 @@ public protocol ListRepository: Sendable {
     func list(id: UUID) async throws -> DoddyList?
     /// A new list (a `list` note) with its first items, in one transaction.
     func create(name: String, items: [String], source: ListItemSource) async throws -> DoddyList
+    /// As `create`, with the items whose text is in `done` ticked, in the same transaction
+    /// (an imported checklist, review G5): the list is there whole or not at all.
+    func create(name: String, items: [String], done: Set<String>, source: ListItemSource) async throws -> DoddyList
     func add(_ texts: [String], to listID: UUID, source: ListItemSource) async throws -> ListAddResult
     /// A new name: same rules as a new list; the first name stays as the original text.
     func rename(listID: UUID, to name: String) async throws -> DoddyList
@@ -126,7 +154,9 @@ public protocol ListRepository: Sendable {
     func remove(_ itemIDs: [UUID]) async throws -> [ListItem]
     func clearDone(listID: UUID) async throws -> [ListItem]
     func untickAll(listID: UUID) async throws -> [ListItem]
-    /// Puts removed items back exactly as they were (Undo). Items whose list is gone are skipped.
+    /// Puts removed items back as they were (Undo). Items whose list is gone, or whose list is
+    /// full, are skipped; an item whose place was taken meanwhile goes after the last one.
+    /// Returns the items as stored.
     func restore(_ items: [ListItem]) async throws -> [ListItem]
     /// Every item of every list, for export.
     func allItems() async throws -> [ListItem]
@@ -141,6 +171,7 @@ public struct UnavailableListRepository: ListRepository {
     public func lists() async throws -> [DoddyList] { throw error }
     public func list(id: UUID) async throws -> DoddyList? { throw error }
     public func create(name: String, items: [String], source: ListItemSource) async throws -> DoddyList { throw error }
+    public func create(name: String, items: [String], done: Set<String>, source: ListItemSource) async throws -> DoddyList { throw error }
     public func add(_ texts: [String], to listID: UUID, source: ListItemSource) async throws -> ListAddResult { throw error }
     public func rename(listID: UUID, to name: String) async throws -> DoddyList { throw error }
     public func setDone(_ itemIDs: [UUID], done: Bool) async throws -> [ListItem] { throw error }
@@ -158,6 +189,12 @@ public enum ListText {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
             .split(whereSeparator: \.isNewline).joined(separator: " ")
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Whether an item fits `ListLimits.itemLength` as the database counts it: in Unicode code
+    /// points, not visible characters, so a line of emoji can't break the database rule.
+    public static func fitsItemLength(_ text: String) -> Bool {
+        text.unicodeScalars.count <= ListLimits.itemLength
     }
 
     public static func checkedName(_ name: String) throws(ListError) -> String {
@@ -207,7 +244,9 @@ public enum ListMatch {
 
     /// The same words first; then items that contain all the said words as whole words
     /// ("milk" finds "oat milk"). Two or more: `.several`, and nothing is changed.
-    public static func item(_ phrase: String, in items: [ListItem]) -> ListMatchResult<ListItem> {
+    /// `partial: false` is for removing (review C9): an item that only contains the words is
+    /// offered as a choice (`.several`), so "remove milk" never deletes "oat milk" on its own.
+    public static func item(_ phrase: String, in items: [ListItem], partial: Bool = true) -> ListMatchResult<ListItem> {
         let wanted = key(phrase)
         guard !wanted.isEmpty else { return .none }
         let exact = items.filter { key($0.text) == wanted }
@@ -215,6 +254,7 @@ public enum ListMatch {
         if exact.count > 1 { return .several(exact) }
         let words = Set(wanted.split(separator: " ").map(String.init))
         let containing = items.filter { words.isSubset(of: Set(key($0.text).split(separator: " ").map(String.init))) }
+        if !partial { return containing.isEmpty ? .none : .several(containing) }
         switch containing.count {
         case 0: return .none
         case 1: return .one(containing[0])
@@ -289,7 +329,7 @@ public enum ListsPrompt {
     public static func render(_ lists: [DoddyList]) -> String {
         guard !lists.isEmpty else { return "(no lists yet)" }
         return lists.map { list in
-            "- \(list.name) (\(list.open.count) open, \(list.done.count) ticked)"
+            "- \(ToolData.clean(list.name)) (\(list.open.count) open, \(list.done.count) ticked)"
         }.joined(separator: "\n")
     }
 }
@@ -297,23 +337,34 @@ public enum ListsPrompt {
 extension VoiceToolReply {
     /// No list by that name: nothing changed; the agent asks.
     public static func listNotFound(_ name: String, lists: [DoddyList]) -> String {
-        let names = lists.map { "\"\($0.name)\"" }.joined(separator: ", ")
-        return "not found: there is no list called \"\(name)\". Nothing changed. "
-            + (lists.isEmpty ? "The user has no lists yet. " : "Their lists: \(names). ")
-            + "Ask the user which list they mean, or whether to start a new one with create_list."
+        let ask = "Ask the user which list they mean, or whether to start a new one with create_list."
+        guard !lists.isEmpty else {
+            return "not found: there is no list called \"\(name)\". Nothing changed. The user has no lists yet. \(ask)"
+        }
+        return "not found: there is no list called \"\(name)\". Nothing changed. \(ask) Their lists:\n" + names(lists)
     }
 
     public static func listAmbiguous(_ name: String, lists: [DoddyList]) -> String {
-        "not changed: \"\(name)\" matches more than one list (\(lists.map { "\"\($0.name)\"" }.joined(separator: ", "))). Ask the user which one."
+        "not changed: \"\(name)\" matches more than one list. Ask the user which one:\n" + names(lists)
     }
 
+    /// The user's list names, as data (ToolData).
+    private static func names(_ lists: [DoddyList]) -> String {
+        ToolData.block(lists.map { "- \"\(ToolData.clean($0.name))\"" })
+    }
+
+    /// The list's name and the stored items follow as data (ToolData); a shared list's name and
+    /// items can come from someone else.
     public static func listAdded(_ result: ListAddResult, list: String) -> String {
-        var parts: [String] = []
+        let name = "Name: \"\(ToolData.clean(list))\""
+        var text: String
         if result.added.isEmpty {
-            parts.append("not added: nothing new was added to \"\(list)\".")
+            text = "not added: nothing new was added to the list. Its name:\n" + ToolData.block([name])
         } else {
-            parts.append("added to \"\(list)\": \(result.added.map(\.text).joined(separator: ", ")).")
+            text = "added to the list: \(itemCount(result.added.count)). Its name, then the items added:\n"
+                + ToolData.block([name] + result.added.map { "- \(ToolData.clean($0.text))" })
         }
+        var parts: [String] = []
         if !result.alreadyThere.isEmpty {
             parts.append("Already on the list, not added again: \(result.alreadyThere.joined(separator: ", ")).")
         }
@@ -323,43 +374,64 @@ extension VoiceToolReply {
         if !result.noRoom.isEmpty {
             parts.append("Not added, the list is full (\(ListLimits.itemsPerList) items): \(result.noRoom.joined(separator: ", ")).")
         }
-        return parts.joined(separator: " ")
+        if !parts.isEmpty { text += "\n" + parts.joined(separator: " ") }
+        return text
     }
+
+    private static func itemCount(_ count: Int) -> String { "\(count) item\(count == 1 ? "" : "s")" }
 
     public static func listRead(_ list: DoddyList) -> String {
+        // The name and items are the user's words, between the data markers (review C4).
         let open = list.open
+        let name = "Name: \"\(ToolData.clean(list.name))\""
         guard !open.isEmpty else {
-            return "\"\(list.name)\": nothing left\(list.done.isEmpty ? "; the list is empty" : " (\(list.done.count) ticked)")."
+            return "One list: nothing left\(list.done.isEmpty ? "; the list is empty" : " (\(list.done.count) ticked)").\n" + ToolData.block([name])
         }
-        let shown = open.prefix(ListLimits.readAloud).map(\.text)
-        var text = "\"\(list.name)\", \(open.count) open, in order: \(shown.joined(separator: "; "))"
-        if open.count > shown.count { text += "; and \(open.count - shown.count) more (all on the user's screen)" }
-        text += "."
-        if !list.done.isEmpty { text += " Ticked: \(list.done.count)." }
-        return text + " Read the items in the user's own words; never add any."
+        let shown = open.prefix(ListLimits.readAloud).map { "- \(ToolData.clean($0.text))" }
+        var text = "One list, \(open.count) open; its name, then the open items in order:\n" + ToolData.block([name] + shown)
+        if open.count > shown.count { text += "\n…and \(open.count - shown.count) more (all on the user's screen)." }
+        if !list.done.isEmpty { text += "\nTicked: \(list.done.count)." }
+        return text + "\nRead the items in the user's own words; never add any."
     }
 
-    /// `changed` were ticked or removed; the rest could not be matched.
+    /// `changed` were ticked or removed; the rest could not be matched. The list's name, the
+    /// changed items and the items a word could mean follow as data (ToolData).
     public static func listChanged(
         verb: String, changed: [ListItem], list: String, notFound: [String], ambiguous: [(said: String, options: [ListItem])]
     ) -> String {
-        var parts: [String] = []
+        var data = ["Name: \"\(ToolData.clean(list))\""]
+        var text: String
         if changed.isEmpty {
-            parts.append("not changed: nothing on \"\(list)\" was \(verb).")
+            text = "not changed: nothing on the list was \(verb)."
         } else {
-            parts.append("\(verb) on \"\(list)\": \(changed.map(\.text).joined(separator: ", ")).")
+            text = "\(verb) on the list: \(itemCount(changed.count))."
+            data += changed.map { "- \(ToolData.clean($0.text))" }
         }
         for (said, options) in ambiguous {
-            parts.append("\"\(said)\" matches several items (\(options.map { "\"\($0.text)\"" }.joined(separator: ", "))): not \(verb); ask the user which one.")
+            let word = "\"\(ToolData.clean(said))\""
+            if options.count == 1, let only = options.first {
+                // A partial match offered as a choice (ListMatch.item, partial: false).
+                data.append("\(word) only partly matches \"\(ToolData.clean(only.text))\"")
+            } else {
+                data.append("\(word) matches several items: \(options.map { "\"\(ToolData.clean($0.text))\"" }.joined(separator: ", "))")
+            }
+        }
+        text += changed.isEmpty ? " Its name" : " Its name, then the items \(verb)"
+        text += ambiguous.isEmpty ? ":\n" : ", then the words that matched more than one item or only part of one:\n"
+        text += ToolData.block(data)
+        if !ambiguous.isEmpty {
+            text += "\nThose words were not \(verb); ask the user which item they mean."
         }
         if !notFound.isEmpty {
-            parts.append("Not on the list: \(notFound.joined(separator: ", ")).")
+            text += "\nNot on the list: \(notFound.joined(separator: ", "))."
         }
-        return parts.joined(separator: " ")
+        return text
     }
 
+    /// The list's name and its items follow as data (ToolData).
     public static func listCreated(_ list: DoddyList) -> String {
-        "created: the list \"\(list.name)\" with \(list.items.count) item\(list.items.count == 1 ? "" : "s")\(list.items.isEmpty ? "" : ": " + list.items.map(\.text).joined(separator: ", "))."
+        "created: a list with \(itemCount(list.items.count)). Its name\(list.items.isEmpty ? "" : ", then the items"):\n"
+            + ToolData.block(["Name: \"\(ToolData.clean(list.name))\""] + list.items.map { "- \(ToolData.clean($0.text))" })
     }
 
     public static let declinedList = "declined: the user chose not to start this list. Nothing was made."
