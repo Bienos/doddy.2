@@ -6,4 +6,6 @@ import AVFAudio
 @MainActor
 enum MicrophoneAccess {
     static var isDenied: Bool { AVAudioApplication.shared.recordPermission == .denied }
+    /// Allowed already; not yet asked is not allowed (ADR-311).
+    static var isAllowed: Bool { AVAudioApplication.shared.recordPermission == .granted }
 }

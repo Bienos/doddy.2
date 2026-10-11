@@ -264,3 +264,10 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | X6 | Add Talk to Doddy and Next reminder (small) widgets; try light, dark, tinted and clear Home Screens | Wave and reach in light and dark (dark: thin cream edge); tinted and clear show the symbols, no grey blobs |
 | X7 | On the watch, add the Doddy complication (circular with nothing coming up, and rectangular) on a full-colour face and a tinted face | Doddy's round face in colour on full-colour faces, and on tinted faces on watchOS 11+; monochrome faces show the symbol or name only |
 | X8 | Fresh install: go through the opening, then the welcome; go to the first question and back; turn on Reduce Motion and reopen | Four panels cross-fade once and stop on Doddy waving; going back doesn't replay; Reduce Motion shows only the wave panel. The opening (ADR-225) is unchanged |
+
+## 4j. First-use fixes (ADR-311)
+| # | Do this | Expect |
+|---|---|---|
+| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
+| O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
+

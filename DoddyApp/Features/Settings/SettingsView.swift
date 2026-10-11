@@ -352,11 +352,12 @@ struct SettingsView: View {
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
                     Text(listenOnOpen
-                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. iOS asks for the microphone the first time and shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when iOS has refused the microphone, or when you open Doddy from Back Tap or Siri, which start their own."
+                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. It starts by itself only after you've allowed the microphone, which iOS asks the first time you tap Talk to Doddy; iOS shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when you open Doddy from Back Tap or Siri, which start their own."
                         : "Off: nothing listens until you tap Talk to Doddy.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("settings.listenOnOpen.note")
+                    VoiceProviderTestSwitch()
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
                     TextField("Token server (https://…)", text: $voiceTokenServer)
@@ -928,5 +929,30 @@ struct JSONExport: Transferable {
             try MemoryExport.json(export.records, listItems: export.listItems, corrections: export.corrections, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
+    }
+}
+
+/// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to compare
+/// them. Same notes, lists, tools and cards either way; it takes effect when the next conversation
+/// starts, and Settings › What leaves this iPhone follows it. Here rather than on Home, where it sat
+/// under Talk to Doddy for every new user (ADR-311).
+struct VoiceProviderTestSwitch: View {
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
+
+    var body: some View {
+        let provider = VoiceProvider(stored: voiceProvider)
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("Test voice", selection: $voiceProvider) {
+                ForEach(VoiceProvider.allCases) { option in
+                    Text(verbatim: option.shortName).tag(option.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("settings.voiceProvider")
+            Text(verbatim: provider == .openAIRealtime
+                ? "Testing: OpenAI runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
+                : "Testing: ElevenLabs runs your next conversation.")
+                .font(.caption2).foregroundStyle(Theme.secondaryText)
+        }
     }
 }
