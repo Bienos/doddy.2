@@ -52,3 +52,50 @@ Don't claim "Doddy is fully in Polish": screens built at run time, long privacy 
   - no Xcode build, so not checked whether Xcode accepts the generated InfoPlist/AppShortcuts catalogs or whether XcodeGen adds the widget and watch catalogs as resources;
   - never seen on a Polish iPhone or watch;
   - the translations need a native read-through, the privacy ones first.
+
+## Catching up (ADR-273, 2026-10-11, owner: "build next")
+- **Coverage:** 972 of 991 app strings (was 904). 68 new lines:
+  - Focus and Breathing;
+  - the Dynamic Island words: "Note saved", "Plan ready", "Time's up", "Open Doddy to …" (also in the widget catalog);
+  - read aloud;
+  - Hey Doddy settings;
+  - Siri note readback ("Ask Doddy what I saved");
+  - end-of-conversation save suggestions;
+  - the island style screen;
+  - the note history notice;
+  - the Undo hint in What Doddy did;
+  - the long privacy paragraph in Settings, which had fallen out of the table when its English changed.
+- **The Siri phrase is quoted exactly.** The Settings help and the privacy paragraph quote the Polish phrase Siri listens for, "Zapytaj aplikację Doddy, co mam zapisane" (`l10n/pl_shortcuts.json`), so a Polish user says what actually works.
+- **Birthdays added to the privacy paragraph.** The English Settings paragraph now says "contact names and birthdays (day and month)", the ADR-269 disclosure it was missing; the Polish says the same.
+- **Left in English on purpose (19):**
+  - punctuation;
+  - example URLs;
+  - the social handles;
+  - "SWISH!";
+  - the names "Dynamic Island" and "Hey Doddy" (the English wake word);
+  - the "LIVE" island badge;
+  - the developer-only Native Island test screen.
+- **Still English** (built in code, not covered by the catalog):
+  - the What Doddy did Undo button ("Undo" / "Undoing…", a ternary like the existing "Check in Reminders");
+  - the Undo sheet's question and explanation and the birthday and calculator replies (DoddyCore).
+- **Verified:** `tools/build_strings_catalog.py --check` PASS; `scripts/ci.sh --core-only` PASS (643 DoddyCore tests).
+- **Not verified:** not read by a native Polish speaker, and not checked on screen for clipped text (checklist PL1).
+- **Undo in Polish (ADR-274, 2026-10-11):**
+  - The Undo confirmation (question, explanation, button) on the What Doddy did sheet and on the voice card follows the iPhone's language (`NotificationLanguage`, as for notifications), e.g. "Usunąć „Dentysta” z Kalendarza?" / "Usuń".
+  - Dates on it are numeric (2026-10-12 18:00) in both languages. A reminder that had no due date reads "Termin zostanie usunięty, jak było przed zmianą".
+  - The row buttons "Undo" / "Undoing…" now go through the catalog ("Cofnij" / "Cofanie…").
+  - The rest of each What Doddy did row (app name, result, notes) is still English: it is made in DoddyCore, like before.
+  - 973 of 992 strings. `ActivityUndoTests.testTheSheetIsInPolishOnAPolishIPhone`.
+- **What Doddy did in Polish (ADR-275, 2026-10-11):**
+  - **How:** rows are still kept in English (the activity file and old rows don't change) and are translated when shown, with the iPhone's language (`NotificationLanguage.current`).
+  - **What is translated:**
+    - app names ("Kalendarz", "Przypomnienia" …) and results ("Zrobione", "Nie wiadomo, czy się udało", "Cofnięte" …);
+    - every row title Doddy writes ("Dodaj wydarzenie", "Odhacz na liście" …);
+    - Doddy's own fixed notes (paused, not connected, interrupted, Check in Reminders, every Undo result);
+    - plan headings with Polish plurals ("Plan · 3 kroki") and counts as "zrobione: 2 · niepewne: 1";
+    - the plan progress on the conversation screen.
+  - **What is not reworded:** the detail (the user's own words and dates), and any reason an app or server gave, which is shown as kept. For a failed Undo, the frame is Polish and the reason stays as given.
+  - **Fixed on the way:** the English row title "Draft a email" is now "Draft an email"; old rows still translate.
+  - **Tests:** `ActivityTextTests` builds a row for every kind of request and fails if a title has no Polish, so a new row kind can't quietly show in English. A planted missing title was caught.
+  - 974 of 993 strings; `scripts/ci.sh --core-only` PASS (648 DoddyCore tests).
+

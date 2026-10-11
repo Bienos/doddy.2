@@ -12,11 +12,12 @@ public enum ConnectionPause {
     public static func applies(to request: VoiceToolRequest) -> Bool {
         switch request {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
+             .calculate, .convertUnits,
              .addToList, .readList, .checkOff, .removeFromList, .createList:
             false
-        case .readCalendar, .createCalendarEvent, .createReminder, .lookupContact, .setTimer,
+        case .readCalendar, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .runShortcut, .draftMessage, .cloudTool, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder, .setAlarm,
+             .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm:
             true
         case .remindAboutNote(let draft):

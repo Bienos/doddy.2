@@ -47,7 +47,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
              VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents: .calendar
         case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
              VoiceToolName.moveReminders: .reminders
-        case VoiceToolName.lookupContact: .contacts
+        case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays: .contacts
         case VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm: .timers
         case VoiceToolName.openMap: .maps
         case VoiceToolName.runShortcut: .shortcuts
@@ -134,7 +134,7 @@ public struct MessageDraft: Equatable, Sendable {
 }
 
 /// What the agent is allowed to hear about an event: title and time only.
-public struct CalendarEventSummary: Equatable, Sendable {
+public struct CalendarEventSummary: Codable, Equatable, Sendable {
     /// This occurrence of the event on this iPhone (event identifier + start), for nudges.
     /// Never sent to the voice agent.
     public let id: String?
@@ -168,6 +168,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case needsClarification(name: String, ReminderClarification)
     /// Only names go back to the agent; details stay on the user's screen.
     case lookupContact(name: String)
+    /// Birthdays saved in Contacts in the next `days` days, read only (ADR-269).
+    case upcomingBirthdays(days: Int)
+    /// Arithmetic and unit conversion, worked out on the iPhone (ADR-270).
+    case calculate(expression: String)
+    case convertUnits(UnitConversionRequest)
+    /// "Undo that": the newest undoable change from this conversation, after a card (ADR-271).
+    case undoLast
     case setTimer(TimerDraft)
     /// A real alarm (ADR-260), on iOS 26 and later.
     case setAlarm(AlarmDraft)
@@ -238,6 +245,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.lookupContact:
             guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .lookupContact(name: person)
+        case VoiceToolName.upcomingBirthdays:
+            return parseBirthdays(args, name: name)
+        case VoiceToolName.calculate:
+            return parseCalculate(args, name: name)
+        case VoiceToolName.convertUnits:
+            return parseConversion(args, name: name)
+        case VoiceToolName.undoLast:
+            return .undoLast
         case VoiceToolName.setTimer:
             return parseTimer(args, name: name)
         case VoiceToolName.setAlarm:
@@ -434,6 +449,11 @@ struct Arguments {
 
     func number(_ key: String) -> Double? {
         values[key] as? Double
+    }
+
+    /// The key is present, whatever its value.
+    func has(_ key: String) -> Bool {
+        values[key] != nil
     }
 }
 

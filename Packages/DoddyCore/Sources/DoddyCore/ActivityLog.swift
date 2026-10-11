@@ -113,6 +113,8 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Remind about a note", detail: "“\(draft.noteText)” · \(target)", isLookup: false)
         case .lookupContact(let name):
             return ActivityRequest(app: .contacts, title: "Looked for a contact", detail: "“\(name)”", isLookup: true)
+        case .upcomingBirthdays(let days):
+            return ActivityRequest(app: .contacts, title: "Read birthdays", detail: days == 1 ? "Today" : "Next \(days) days", isLookup: true)
         case .setTimer(let draft):
             let minutes = draft.seconds / 60, seconds = draft.seconds % 60
             let length = minutes > 0 ? "\(minutes) min\(seconds > 0 ? " \(seconds) s" : "")" : "\(seconds) s"
@@ -124,8 +126,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .runShortcut(let name):
             return ActivityRequest(app: .shortcuts, title: "Run shortcut", detail: "“\(name)”", isLookup: false)
         case .draftMessage(let draft):
-            let kind = draft.channel == .text ? "text" : "email"
-            return ActivityRequest(app: .messages, title: "Draft a \(kind)", detail: "to \(draft.recipientName)", isLookup: false)
+            return ActivityRequest(
+                app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
+                detail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             return describe(cloud: call.name)
         case .addToList(let request):
@@ -158,9 +161,13 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .reminders, title: "Move reminders", detail: "due by \(ReminderText.due(dueBy)) → \(ReminderText.due(to))", isLookup: false)
         case .deleteReminder(let title):
             return ActivityRequest(app: .reminders, title: "Delete reminder", detail: "“\(title)”", isLookup: false)
-        case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator:
+        case .undoLast:
+            // The row being undone records what happened (ActivityLog.undid), not a new row.
+            return nil
+        case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
-            // uses no app either, and leaves no trace of the conversation (ADR-215).
+            // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and
+            // unit conversions are worked out inside Doddy and use no app (ADR-270).
             return nil
         }
     }
@@ -209,11 +216,15 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
     public var checkedAt: Date?
     /// Set when this was one step of a plan card. Older entries have none.
     public let plan: ActivityPlanRef?
+    /// What Doddy needs to put it back (ADR-268). Only kept for changes Doddy made and checked.
+    public let undo: ActivityUndo?
+    /// Set after the user tapped Undo.
+    public var undoState: UndoState?
 
     public init(
         id: UUID = UUID(), at: Date, app: ActivityApp, title: String, detail: String?,
         outcome: ActivityOutcome, note: String? = nil, reminderKey: String? = nil, checkedAt: Date? = nil,
-        plan: ActivityPlanRef? = nil
+        plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil, undoState: UndoState? = nil
     ) {
         self.id = id
         self.at = at
@@ -225,15 +236,18 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
         self.plan = plan
+        self.undo = outcome == .done ? undo : nil
+        self.undoState = undoState
     }
 
     /// Builds the entry from what was asked and the reply the agent was given. The reply is the
     /// app's own verified result (VoiceToolReply), so the log can never claim more than the agent heard.
-    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil) {
+    /// `undo` is kept only when that reply says the change was made and checked.
+    public init(id: UUID = UUID(), request: ActivityRequest, reply: String, at: Date, plan: ActivityPlanRef? = nil, undo: ActivityUndo? = nil) {
         let (outcome, note) = Self.outcome(of: reply, isLookup: request.isLookup)
         self.init(
             id: id, at: at, app: request.app, title: request.title, detail: request.detail, outcome: outcome,
-            note: note, reminderKey: request.reminderKey, plan: plan)
+            note: note, reminderKey: request.reminderKey, plan: plan, undo: undo)
     }
 
     /// Recorded the moment the user confirms a change, before it runs (see ActivityLog.recoverInterrupted).
@@ -264,6 +278,21 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
         if text.hasPrefix("added:"), text.contains("already in Reminders") { return (.alreadyThere, nil) }
         if text.hasPrefix("added:") || text.hasPrefix("saved:") || text.hasPrefix("drafted:") { return (.done, nil) }
+        // A change to an event or reminder, checked by reading it back (ADR-229).
+        if text.hasPrefix("changed:") || text.hasPrefix("completed:") { return (.done, nil) }
+        // A delete, checked by looking again (ADR-259 on the default line).
+        if text.hasPrefix("deleted:") { return (.done, nil) }
+        if text.hasPrefix("not changed:") || text.hasPrefix("not found:") { return (.notDone, nil) }
+        // Lists (ADR-216), answered from the store's own result (ADR-272). Something was added,
+        // ticked, removed or a list was made; or nothing was, and why.
+        if text.hasPrefix("created:") || text.hasPrefix("added to \"") || text.hasPrefix("ticked on \"") || text.hasPrefix("removed on \"") {
+            return (.done, nil)
+        }
+        if text.hasPrefix("not added:") {
+            let onlyDuplicates = text.contains("Already on the list") && !text.contains("Too long") && !text.contains("the list is full")
+            return onlyDuplicates ? (.alreadyThere, nil) : (.notDone, nil)
+        }
+        if text.hasPrefix("not created:") { return (.notDone, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
