@@ -291,3 +291,10 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Z5 | Settings: turn Pause all connections on and off | The crouching Doddy beside the footer only while paused |
 | Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
 | Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
+
+## 4n. A shorter introduction (ADR-327)
+| # | Do this | Expect |
+|---|---|---|
+| I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
+| I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
+

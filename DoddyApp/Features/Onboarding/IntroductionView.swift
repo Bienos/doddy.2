@@ -19,7 +19,7 @@ struct IntroductionView: View {
     /// The welcome's storybook has turned its pages (ADR-299).
     @State private var storyPlayed = false
 
-    private let keys = ProfileKey.allCases
+    private let keys = ProfileKey.introductionQuestions
 
     var body: some View {
         Group {

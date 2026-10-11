@@ -117,4 +117,12 @@ final class TapTestWindowTests: XCTestCase {
         XCTAssertTrue(window.accepts(receiptAt: start.addingTimeInterval(60)))
         XCTAssertFalse(window.accepts(receiptAt: start.addingTimeInterval(TapTestWindow.duration + 1)))
     }
+
+    /// ADR-327: the introduction asks three questions; the other three fields still exist and
+    /// can be added in Settings, so nothing about storing or forgetting them changes.
+    func testTheIntroductionAsksThreeQuestionsAndKeepsEveryField() {
+        XCTAssertEqual(ProfileKey.introductionQuestions, [.name, .help, .context])
+        XCTAssertEqual(Set(ProfileKey.allCases), [.name, .help, .style, .language, .humor, .context])
+        XCTAssertTrue(Set(ProfileKey.introductionQuestions).isSubset(of: Set(ProfileKey.allCases)))
+    }
 }
