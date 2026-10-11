@@ -42,11 +42,11 @@ public enum WakeGreeting {
         return "Hey \(name ?? fallbackName), what's up?"
     }
 
-    /// What Doddy says first. After the wake word: the greeting. Otherwise the agent's usual
-    /// opening, so a conversation started with a tap sounds as it always did.
+    /// What Doddy says first. After the wake word: the greeting. Otherwise the live agent's own
+    /// opening (as read from ElevenLabs on 2026-10-11), so a tap conversation sounds as it did.
     public static func openingLine(afterWakeWord: Bool, name: String?, polish: Bool) -> String {
         if afterWakeWord { return line(name: name, polish: polish) }
-        return polish ? "Hej, tu Doddy. Co słychać?" : "Hey, it's Doddy. What's on your mind?"
+        return polish ? "Hej, tu Doddy. Co słychać?" : "Hey, it's Doddy. What's up?"
     }
 }
 

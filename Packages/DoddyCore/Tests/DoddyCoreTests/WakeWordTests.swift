@@ -32,7 +32,7 @@ final class WakeWordTests: XCTestCase {
 
     func testOpeningLineIsUnchangedForATap() {
         XCTAssertEqual(WakeGreeting.openingLine(afterWakeWord: false, name: "Pat", polish: false),
-                       "Hey, it's Doddy. What's on your mind?")
+                       "Hey, it's Doddy. What's up?")
         XCTAssertEqual(WakeGreeting.openingLine(afterWakeWord: false, name: "Pat", polish: true),
                        "Hej, tu Doddy. Co słychać?")
         XCTAssertEqual(WakeGreeting.openingLine(afterWakeWord: true, name: "Pat", polish: false),
