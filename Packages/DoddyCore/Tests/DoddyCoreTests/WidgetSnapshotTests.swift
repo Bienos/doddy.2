@@ -86,12 +86,48 @@ final class WidgetSnapshotTests: XCTestCase {
         XCTAssertEqual(WidgetSnapshot.shortened("  Hi \n second"), "Hi")
     }
 
+    /// ADR-331: "Hide character artwork" reaches widgets and the watch, even with content off,
+    /// and a snapshot written without it still reads (pictures shown).
+    func testHideCharacterArtTravelsAndOldSnapshotsStillRead() throws {
+        let shown = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                        showReminderText: false, isOn: true, now: now)
+        XCTAssertFalse(shown.hidesPictures)
+        XCTAssertFalse(String(decoding: try shown.encoded(), as: UTF8.self).contains("hidesDoddy"))
+        let hidden = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                         showReminderText: false, isOn: true, now: now, hidesDoddy: true)
+        XCTAssertEqual(WidgetSnapshot.decoded(try hidden.encoded())?.hidesPictures, true)
+        let off = WidgetSnapshot.make(memories: [], lists: [], pinned: PinnedNotes(ids: []), reminders: [],
+                                      showReminderText: false, isOn: false, now: now, hidesDoddy: true)
+        XCTAssertTrue(off.hidesPictures)
+        let old = Data(#"{"version":\#(WidgetSnapshot.currentVersion),"writtenAt":0,"isOn":true,"pinned":[],"reminders":[],"lists":[]}"#.utf8)
+        XCTAssertEqual(WidgetSnapshot.decoded(old)?.hidesPictures, false)
+    }
+
     func testRoundTripAndRefusesOtherVersionsOrDamage() throws {
         let snapshot = WidgetSnapshot(writtenAt: now, isOn: true, pinned: [.init(id: UUID(), text: "Kod: 4512")], reminders: [], lists: [])
         XCTAssertEqual(WidgetSnapshot.decoded(try snapshot.encoded()), snapshot)
         let future = WidgetSnapshot(version: 99, writtenAt: now, isOn: true, pinned: [], reminders: [], lists: [])
         XCTAssertNil(WidgetSnapshot.decoded(try future.encoded()))
         XCTAssertNil(WidgetSnapshot.decoded(Data("{".utf8)))
+    }
+
+    /// Review I1: built at a real `Date()` (sub-millisecond fraction), the snapshot reads back
+    /// equal, so a correct write is never taken for a failed one. About half failed before.
+    func testASnapshotMadeAtARealNowReadsBackEqual() throws {
+        let dentist = try note("Dentist: bring the referral")
+        let start = Date()
+        for step in 0..<200 {
+            let now = start.addingTimeInterval(Double(step) * 0.000_731)
+            let reminder = MemoryReminder(id: UUID(), memoryID: dentist.id, fireAt: now.addingTimeInterval(3600.000_42),
+                                          timeZoneID: "UTC", createdAt: now)
+            for isOn in [true, false] {
+                let snapshot = WidgetSnapshot.make(
+                    memories: [dentist], lists: [], pinned: PinnedNotes(ids: [dentist.id]), reminders: [reminder],
+                    showReminderText: true, isOn: isOn, now: now)
+                XCTAssertEqual(WidgetSnapshot.decoded(try snapshot.encoded()), snapshot, "now = \(now.timeIntervalSince1970)")
+                XCTAssertLessThan(abs(snapshot.writtenAt.timeIntervalSince(now)), 0.001)
+            }
+        }
     }
 
     func testWidgetLinkOpensOneNoteOnly() {

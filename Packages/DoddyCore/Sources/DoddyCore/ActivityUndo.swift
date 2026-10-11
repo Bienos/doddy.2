@@ -26,6 +26,8 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
     case listAdded(listID: UUID, list: String, items: [ListItem])
     case listTicked(listID: UUID, list: String, items: [ListItem])
     case listRemoved(listID: UUID, list: String, items: [ListItem])
+    /// A note saved by voice (ADR-277): deleted only if nothing about it changed since.
+    case savedNote(id: UUID, text: String)
 
     /// Undo is offered for this long after the change.
     public static let window: TimeInterval = 24 * 3_600
@@ -34,7 +36,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         switch self {
         case .addedEvent, .changedEvent: .calendar
         case .addedReminder, .changedReminder: .reminders
-        case .listAdded, .listTicked, .listRemoved: .memories
+        case .listAdded, .listTicked, .listRemoved, .savedNote: .memories
         }
     }
 
@@ -44,6 +46,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case .addedEvent, .changedEvent: "Calendar"
         case .addedReminder, .changedReminder: "Reminders"
         case .listAdded, .listTicked, .listRemoved: "the list"
+        case .savedNote: "your notes"
         }
     }
 
@@ -53,7 +56,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         switch self {
         case .addedEvent, .changedEvent: .calendar
         case .addedReminder, .changedReminder: .reminders
-        case .listAdded, .listTicked, .listRemoved: nil
+        case .listAdded, .listTicked, .listRemoved, .savedNote: nil
         }
     }
 
@@ -84,7 +87,14 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case (.listTicked(_, let list, let items), .polish): "Odznaczyć \(Self.names(items, .polish)) na liście „\(list)”?"
         case (.listRemoved(_, let list, let items), .english): "Put \(Self.names(items, .english)) back on “\(list)”?"
         case (.listRemoved(_, let list, let items), .polish): "Przywrócić \(Self.names(items, .polish)) na listę „\(list)”?"
+        case (.savedNote(_, let text), .english): "Delete the note “\(Self.short(text))”?"
+        case (.savedNote(_, let text), .polish): "Usunąć notatkę „\(Self.short(text))”?"
         }
+    }
+
+    /// A note's words, cut for the sheet's question.
+    static func short(_ text: String) -> String {
+        text.count <= 80 ? text : String(text.prefix(79)) + "…"
     }
 
     /// "“milk”, “eggs” and 2 more", in the sheet's language.
@@ -145,6 +155,10 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
             return polish
                 ? "Doddy usunął je głosem. Wrócą dokładnie takie, jakie były, jeśli lista nadal istnieje."
                 : "Doddy removed these by voice. They go back exactly as they were, if the list still exists."
+        case .savedNote:
+            return polish
+                ? "Doddy zapisał tę notatkę głosem. Zostanie usunięta tylko wtedy, gdy nic się w niej nie zmieniło: te same słowa, bez poprawek, zdjęcia, nagrania ani przypomnienia."
+                : "Doddy saved this note by voice. It is deleted only if nothing about it changed since: the same words, and no edits, photo, recording or reminder."
         }
     }
 
@@ -160,6 +174,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case .listAdded: return polish ? "Usuń" : "Remove"
         case .listTicked: return polish ? "Odznacz" : "Untick"
         case .listRemoved: return polish ? "Przywróć" : "Put back"
+        case .savedNote: return polish ? "Usuń" : "Delete"
         }
     }
 
@@ -260,6 +275,20 @@ extension ActivityUndo {
         default:
             return false
         }
+    }
+}
+
+// MARK: Notes saved by voice (ADR-277)
+
+extension ActivityUndo {
+    /// A note Doddy saved is still exactly as saved: the same words, never corrected or edited,
+    /// and nothing added to it since (photo, recording or reminder). Anything else is the user's
+    /// now, so Undo leaves it alone.
+    public static func noteUnchanged(
+        _ record: MemoryRecord, savedText: String, corrections: Int, hasPhoto: Bool, hasRecording: Bool, hasReminder: Bool
+    ) -> Bool {
+        record.rawText == savedText && record.currentText == savedText && !record.userEdited
+            && corrections == 0 && !hasPhoto && !hasRecording && !hasReminder
     }
 }
 
@@ -369,21 +398,25 @@ extension VoiceToolReply {
     public static let undoDeclined = "declined: the user chose to keep it. Nothing changed."
 
     /// What the agent hears after the user tapped the undo card. "undone" only after the read-back.
+    /// The title or list name follows as data (ToolData): an invite's title is someone else's text.
     public static func undo(_ result: UndoResult, _ undo: ActivityUndo) -> String {
         let place = undo.placeName
+        func title(_ text: String) -> String { " Its title:\n" + ToolData.block(["Title: \"\(ToolData.clean(text))\""]) }
+        func name(_ text: String) -> String { " Its name:\n" + ToolData.block(["Name: \"\(ToolData.clean(text))\""]) }
         switch result {
         case .undone:
             switch undo {
-            case .addedEvent(_, let event): return "undone: \"\(event.title)\" was removed from Calendar. Checked."
-            case .addedReminder(_, let title, _): return "undone: \"\(title)\" was removed from Reminders. Checked."
-            case .changedEvent(let plan): return "undone: \"\(plan.before.title)\" is back as it was. Checked in Calendar."
-            case .changedReminder(_, let title, _, _, let markedDone):
+            case .addedEvent(_, let event): return "undone: the event was removed from Calendar. Checked." + title(event.title)
+            case .addedReminder(_, let reminder, _): return "undone: the reminder was removed from Reminders. Checked." + title(reminder)
+            case .changedEvent(let plan): return "undone: the event is back as it was. Checked in Calendar." + title(plan.before.title)
+            case .changedReminder(_, let reminder, _, _, let markedDone):
                 return markedDone
-                    ? "undone: \"\(title)\" is open again in Reminders. Checked."
-                    : "undone: \"\(title)\" has its old due back. Checked in Reminders."
-            case .listAdded(_, let list, _): return "undone: the items were removed from \"\(list)\". Checked."
-            case .listTicked(_, let list, _): return "undone: the items are unticked on \"\(list)\". Checked."
-            case .listRemoved(_, let list, _): return "undone: the items are back on \"\(list)\". Checked."
+                    ? "undone: the reminder is open again in Reminders. Checked." + title(reminder)
+                    : "undone: the reminder has its old due back. Checked in Reminders." + title(reminder)
+            case .listAdded(_, let list, _): return "undone: the items were removed from the list. Checked." + name(list)
+            case .listTicked(_, let list, _): return "undone: the items are unticked on the list. Checked." + name(list)
+            case .listRemoved(_, let list, _): return "undone: the items are back on the list. Checked." + name(list)
+            case .savedNote: return "undone: the note was deleted. Checked."
             }
         case .leftAlone:
             return "not undone: it changed in \(place) since Doddy did it, so Doddy left it alone. Nothing changed."
@@ -404,7 +437,7 @@ extension ActivityUndo {
         switch self {
         case .changedEvent(let mine): return plan == mine
         case .changedReminder(let id, _, _, _, _): return reminderID == id
-        case .addedEvent, .addedReminder, .listAdded, .listTicked, .listRemoved: return false
+        case .addedEvent, .addedReminder, .listAdded, .listTicked, .listRemoved, .savedNote: return false
         }
     }
 }

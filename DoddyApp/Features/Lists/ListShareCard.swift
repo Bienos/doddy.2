@@ -13,9 +13,15 @@ struct ListShareCard: Transferable, Sendable {
     let showsDoddy: Bool
 
     init(list: DoddyList, defaults: UserDefaults = .standard) {
-        name = list.name
-        items = list.open.map(\.text)
-        showsDoddy = !defaults.bool(forKey: PreferenceKey.hideCharacterArt)
+        self.init(name: list.name, items: list.open.map(\.text),
+                  showsDoddy: !defaults.bool(forKey: PreferenceKey.hideCharacterArt))
+    }
+
+    /// For previews and tests (ADR-336).
+    init(name: String, items: [String], showsDoddy: Bool) {
+        self.name = name
+        self.items = items
+        self.showsDoddy = showsDoddy
     }
 
     static var transferRepresentation: some TransferRepresentation {
@@ -62,7 +68,9 @@ struct ListShareCardView: View {
                     }
                 }
                 if card.items.count > ListShareCard.maxItems {
-                    Text("and \(card.items.count - ListShareCard.maxItems) more").foregroundStyle(secondary)
+                    Text(String(format: NSLocalizedString("And %lld more", comment: "List share card: items not drawn"),
+                                card.items.count - ListShareCard.maxItems))
+                        .foregroundStyle(secondary)
                 }
             }
             Text("From Doddy").font(.system(size: 13, weight: .medium)).foregroundStyle(secondary)

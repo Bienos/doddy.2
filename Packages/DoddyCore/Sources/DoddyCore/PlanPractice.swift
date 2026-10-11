@@ -11,7 +11,7 @@ public enum PlanPractice {
         let weekday = calendar.component(.weekday, from: today)
         let ahead = (7 - weekday + 7) % 7
         let saturday = calendar.date(byAdding: .day, value: ahead == 0 ? 7 : ahead, to: today) ?? today
-        let day = VoiceToolReply.localText(saturday, hasTime: false, calendar: calendar)
+        let day = VoiceToolReply.localText(saturday, hasTime: false, calendar: ReminderDueRules.gregorian(calendar))
         let json = """
         [{"tool":"save_memory","text":"Spare key: blue tin above the fridge"},\
         {"tool":"create_reminder","title":"Bring the spare key and an umbrella","due":"\(day)T12:00"},\

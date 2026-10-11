@@ -32,6 +32,7 @@ struct DoddyMotionView: View {
                 }
             }
             .accessibilityHidden(true)
+            .doddyArtMarker("doddy.motion.\(motion.rawValue)")
             .task(id: motion) {
                 start = Date()
                 finished = false

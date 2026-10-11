@@ -98,6 +98,34 @@ final class SQLiteProfileRepositoryTests: XCTestCase {
         XCTAssertTrue(profile.isEmpty)
     }
 
+    /// Review B8: "forgotten" and "deleted" are reported only after reading back. A trigger that
+    /// silently skips the deletes stands in for a storage that didn't do it.
+    func testForgetAndDeleteAllAreReadBack() async throws {
+        let database = try DoddyDatabase.inMemory()
+        let profiles = SQLiteProfileRepository(database: database, now: { Self.t0 })
+        let memories = SQLiteMemoryRepository(database: database)
+        var draft = ProfileDraft()
+        draft[.name] = "Ola"
+        _ = try await profiles.commit(draft, basedOn: .empty)
+        _ = try await memories.save(NewMemory(text: "Spare keys are in the blue tin.", capturedAt: t0))
+        try await database.queue.write { db in
+            try db.execute(sql: """
+                CREATE TEMP TRIGGER keep_profile BEFORE DELETE ON profile_fields BEGIN SELECT RAISE(IGNORE); END;
+                CREATE TEMP TRIGGER keep_notes BEFORE DELETE ON memories BEGIN SELECT RAISE(IGNORE); END;
+                """)
+        }
+        do {
+            try await profiles.forgetProfile()
+            XCTFail("the answers are still stored")
+        } catch ProfileStoreError.verificationFailed {}
+        do {
+            try await memories.deleteAll()
+            XCTFail("the note is still stored")
+        } catch MemoryStoreError.verificationFailed {}
+        let profile = try await profiles.profile()
+        XCTAssertEqual(profile.value(.name), "Ola")
+    }
+
     func testForgettingTheProfileKeepsMemoriesAndDeletingMemoriesKeepsTheProfile() async throws {
         let database = try DoddyDatabase.inMemory()
         let profiles = SQLiteProfileRepository(database: database, now: { Self.t0 })

@@ -55,7 +55,7 @@ struct PinnedNotesView: View {
 
     var body: some View {
         if let message = WidgetCopy.message(for: entry.snapshot) {
-            WidgetMessage(text: message)
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
         } else if let notes = entry.snapshot?.pinned, !notes.isEmpty {
             let shown = Array(notes.prefix(family == .systemMedium ? 4 : family == .systemSmall ? 2 : 1))
             VStack(alignment: .leading, spacing: 6) {
@@ -102,7 +102,7 @@ struct NextReminderView: View {
 
     var body: some View {
         if let message = WidgetCopy.message(for: entry.snapshot) {
-            WidgetMessage(text: message)
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
         } else if let next = entry.snapshot?.reminders(after: entry.date).first {
             let what = next.text ?? "A note reminder"
             let when = Text(next.fireAt, format: .dateTime.weekday(.abbreviated).hour().minute())
@@ -155,7 +155,7 @@ struct ParkingWidgetView: View {
 
     var body: some View {
         if let message = WidgetCopy.message(for: entry.snapshot) {
-            WidgetMessage(text: message)
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
         } else if let parked = entry.snapshot?.parking {
             let when = Text(parked.savedAt, format: .dateTime.weekday(.abbreviated).hour().minute())
             switch family {
@@ -271,7 +271,7 @@ struct ListWidgetView: View {
 
     var body: some View {
         if let message = WidgetCopy.message(for: entry.snapshot) {
-            WidgetMessage(text: message)
+            WidgetMessage(text: message, turnedAway: WidgetCopy.isTurnedOff(entry.snapshot))
         } else if let list = entry.list {
             VStack(alignment: .leading, spacing: family == .accessoryRectangular ? 1 : 6) {
                 HStack {
@@ -335,11 +335,16 @@ struct TalkToDoddyWidgetView: View {
                 // Lock Screen widgets in one tint, so the cream face reads light and his lines dark.
                 ZStack {
                     AccessoryWidgetBackground()
-                    Image("WidgetDoddy_face")
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(Circle())
-                        .padding(4)
+                    if WidgetDoddyArt.isHidden {
+                        // "Hide character artwork" is on in Doddy (ADR-331).
+                        Image(systemName: "waveform").font(.title2)
+                    } else {
+                        Image("WidgetDoddy_face")
+                            .resizable()
+                            .scaledToFit()
+                            .clipShape(Circle())
+                            .padding(4)
+                    }
                 }
                 .accessibilityElement()
                 .accessibilityLabel("Talk to Doddy")
@@ -347,7 +352,7 @@ struct TalkToDoddyWidgetView: View {
                 VStack(spacing: 8) {
                     // Doddy waving hello (ADR-299), as when "Hey Doddy" greets you. Tinted and
                     // clear Home Screens keep the symbol: the drawing doesn't tint well.
-                    if renderingMode == .fullColor {
+                    if renderingMode == .fullColor, !WidgetDoddyArt.isHidden {
                         WidgetPose(pose: .wave, height: 76)
                     } else {
                         Image(systemName: "waveform").font(.largeTitle)
@@ -414,13 +419,38 @@ struct WidgetPose: View {
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
-        let box = pose.figure
-        let width = height * CGFloat(box.width / box.height) / 1.5
-        IslandPoseView(pose: pose, maxSize: CGSize(width: width, height: height), edged: colorScheme == .dark)
+        // Nothing when "Hide character artwork" is on in Doddy (ADR-331).
+        if !WidgetDoddyArt.isHidden {
+            let box = pose.figure
+            let width = height * CGFloat(box.width / box.height) / 1.5
+            IslandPoseView(pose: pose, maxSize: CGSize(width: width, height: height), edged: colorScheme == .dark)
+        }
+    }
+}
+
+/// "Hide character artwork" in the app (ADR-331), passed on in the shared snapshot. Widgets and
+/// Live Activities then leave Doddy's pictures out; the island falls back to its board. A build
+/// without the App Group can't know, and shows him.
+enum WidgetDoddyArt {
+    static var isHidden: Bool { WidgetSnapshotFile.read()?.hidesPictures == true }
+}
+
+extension IslandScene {
+    /// The scene as a widget draws it: no Whole Doddy pose when his pictures are hidden (ADR-331).
+    var respectingHiddenArt: IslandScene {
+        guard WidgetDoddyArt.isHidden else { return self }
+        var scene = self
+        scene.pose = nil
+        return scene
     }
 }
 
 enum WidgetCopy {
+    /// Widgets were turned off in Doddy's Settings: there is a snapshot, and it says off.
+    static func isTurnedOff(_ snapshot: WidgetSnapshot?) -> Bool {
+        WidgetSnapshotFile.url != nil && snapshot.map { !$0.isOn } == true
+    }
+
     /// Why a widget shows none of the user's things, or nil when it can.
     static func message(for snapshot: WidgetSnapshot?) -> String? {
         guard WidgetSnapshotFile.url != nil else { return "Open Doddy to set up widgets." }
@@ -431,10 +461,20 @@ enum WidgetCopy {
 
 struct WidgetMessage: View {
     let text: String
+    /// The user turned widgets off in Doddy (ADR-331): Doddy turned away, not looking. Home Screen
+    /// sizes in full colour only; `WidgetPose` also respects "Hide character artwork".
+    var turnedAway = false
+    @Environment(\.widgetFamily) private var family
+    @Environment(\.widgetRenderingMode) private var renderingMode
 
     var body: some View {
-        Text(text).font(.footnote).foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        HStack(alignment: .center, spacing: 10) {
+            if turnedAway, renderingMode == .fullColor, family == .systemSmall || family == .systemMedium {
+                WidgetPose(pose: .turnedAway, height: 60)
+            }
+            Text(text).font(.footnote).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 }
 

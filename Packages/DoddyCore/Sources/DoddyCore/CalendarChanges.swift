@@ -22,6 +22,8 @@ public struct EventChangeDraft: Equatable, Sendable {
     /// Only this date counts (an all-day event named by its day).
     public let currentIsDayOnly: Bool
     public let newStart: Date?
+    /// `newStart` named only a day ("move it to Friday"): a timed event keeps its time of day.
+    public let newStartIsDayOnly: Bool
     public let newEnd: Date?
     public let newTitle: String?
     /// A new place (ADR-281). Replaces the old one, which the card shows (never the agent).
@@ -31,8 +33,10 @@ public struct EventChangeDraft: Equatable, Sendable {
     /// The notes replaced by this text, "" to clear them (ADR-314). The card shows the old notes.
     public let replaceNotes: String?
 
-    public init(title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?,
-                newLocation: String? = nil, addNote: String? = nil, replaceNotes: String? = nil) {
+    public init(
+        title: String, currentStart: Date, currentIsDayOnly: Bool, newStart: Date?, newEnd: Date?, newTitle: String?,
+        newLocation: String? = nil, addNote: String? = nil, replaceNotes: String? = nil, newStartIsDayOnly: Bool = false
+    ) {
         self.replaceNotes = replaceNotes
         self.newLocation = newLocation
         self.addNote = addNote
@@ -40,6 +44,7 @@ public struct EventChangeDraft: Equatable, Sendable {
         self.currentStart = currentStart
         self.currentIsDayOnly = currentIsDayOnly
         self.newStart = newStart
+        self.newStartIsDayOnly = newStartIsDayOnly
         self.newEnd = newEnd
         self.newTitle = newTitle
     }
@@ -177,6 +182,17 @@ public enum EventChange {
             if event.allDay {
                 start = calendar.startOfDay(for: newStart)
                 end = calendar.date(byAdding: .day, value: max(1, Int((length / 86_400).rounded())), to: start) ?? start
+            } else if draft.newStartIsDayOnly {
+                // A day alone keeps the event's time of day, never midnight (review C7).
+                let time = calendar.dateComponents([.hour, .minute, .second], from: event.start)
+                var moved = calendar.dateComponents([.year, .month, .day], from: newStart)
+                (moved.hour, moved.minute, moved.second) = (time.hour, time.minute, time.second)
+                // A time the clocks skip on that day is not shifted: no plan, and the agent asks.
+                guard let date = calendar.date(from: moved),
+                      calendar.dateComponents([.hour, .minute], from: date) == DateComponents(hour: time.hour, minute: time.minute)
+                else { return nil }
+                start = date
+                end = date.addingTimeInterval(length)
             } else {
                 start = newStart
                 end = newStart.addingTimeInterval(length)
@@ -274,32 +290,51 @@ extension String {
 }
 
 extension VoiceToolReply {
+    /// The title is the agent's words, so it follows as data (ToolData).
     public static func eventNotFound(_ title: String) -> String {
-        "not found: no event called \"\(title)\" at that time on the user's calendar. Nothing changed. Call read_calendar for that day and use the exact title and start it returns."
+        "not found: no event with the title below at that time on the user's calendar. Nothing changed. Call read_calendar for that day and use the exact title and start it returns.\n"
+            + eventTitle(title)
     }
 
     public static func eventAmbiguous(_ events: [CalendarEventSummary], calendar: Calendar) -> String {
-        let times = events.prefix(4).map { "\"\($0.title)\" \(localText($0.start, hasTime: !$0.allDay, calendar: calendar))" }
-        return "not changed: more than one event matches (\(times.joined(separator: "; "))). Ask the user which one."
+        let times = events.prefix(4).map { "- \"\(ToolData.clean($0.title))\" \(localText($0.start, hasTime: !$0.allDay, calendar: calendar))" }
+        return "not changed: more than one event matches. Ask the user which one:\n" + ToolData.block(times)
     }
 
     public static let eventChangeInvalid = "failed: that change doesn't make sense (the end would be before the start, or nothing would change). Nothing changed. Ask the user what they want."
 
     public static func eventChanged(_ after: CalendarEventSummary, calendar: Calendar) -> String {
+        eventChanged(after, extra: "", data: [], calendar: calendar)
+    }
+
+    /// The title, and any new place or added note, follow as data (ToolData).
+    private static func eventChanged(_ after: CalendarEventSummary, extra: String, data: [String], calendar: Calendar) -> String {
         let when = after.allDay
             ? "\(localText(after.start, hasTime: false, calendar: calendar)) (all day)"
             : "\(localText(after.start, hasTime: true, calendar: calendar))–\(localText(after.end, hasTime: true, calendar: calendar))"
-        return "changed: \"\(after.title)\" is now \(when). Checked in Calendar."
+        return "changed: the event is now \(when).\(extra) Checked in Calendar.\n"
+            + ToolData.block(["Title: \"\(ToolData.clean(after.title))\""] + data)
+    }
+
+    /// A title read from Calendar or Reminders, as data (ToolData): an invite's title is someone else's text.
+    private static func eventTitle(_ title: String) -> String {
+        ToolData.block(["Title: \"\(ToolData.clean(title))\""])
     }
 
     /// With the place or an added note (ADR-281). The old place is never sent to the agent.
     public static func eventChanged(_ plan: EventChangePlan, calendar: Calendar) -> String {
         var extra = ""
-        if let place = plan.newLocation { extra += place.isEmpty ? " Its place was cleared." : " Its place is now \"\(place)\"." }
-        if let note = plan.addNote { extra += " Added to its notes: \"\(note)\"." }
+        var data: [String] = []
+        if let place = plan.newLocation {
+            extra += place.isEmpty ? " Its place was cleared." : " Its place changed."
+            if !place.isEmpty { data.append("New place: \"\(ToolData.clean(place))\"") }
+        }
+        if let note = plan.addNote {
+            extra += " A line was added to its notes."
+            data.append("Added to its notes: \"\(ToolData.clean(note))\"")
+        }
         if plan.removeNote != nil { extra += " The added line came off its notes again." }
-        let base = eventChanged(plan.after, calendar: calendar)
-        return String(base.dropLast(" Checked in Calendar.".count)) + extra + " Checked in Calendar."
+        return eventChanged(plan.after, extra: extra, data: data, calendar: calendar)
     }
 
     public static let eventChangeTimePassed = "failed: the new time passed while the card was waiting. Nothing changed. Ask the user for a new time."
@@ -309,30 +344,34 @@ extension VoiceToolReply {
     public static let changeDeclined = "declined: the user chose not to make this change. Nothing changed."
 
     public static func reminderNotFound(_ title: String) -> String {
-        "not found: no open reminder called \"\(title)\" in Reminders. Nothing changed. Ask the user for its exact name."
+        "not found: no open reminder with the title below in Reminders. Nothing changed. Ask the user for its exact name.\n"
+            + eventTitle(title)
     }
 
     public static func reminderAmbiguous(_ reminders: [ReminderSnapshot]) -> String {
-        let lists = reminders.prefix(4).map { "\"\($0.title)\" in \($0.listTitle)\($0.due.map { ", due \(ReminderText.due($0))" } ?? "")" }
-        return "not changed: more than one open reminder matches (\(lists.joined(separator: "; "))). Ask the user which one."
+        let lists = reminders.prefix(4).map {
+            "- \"\(ToolData.clean($0.title))\" in \(ToolData.clean($0.listTitle))\($0.due.map { ", due \(ReminderText.due($0))" } ?? "")"
+        }
+        return "not changed: more than one open reminder matches. Ask the user which one:\n" + ToolData.block(lists)
     }
 
     public static func reminderChanged(_ title: String, due: ReminderDue?) -> String {
-        "changed: the reminder \"\(title)\" is now due \(due.map(ReminderText.due) ?? "with no date"). Checked in Reminders."
+        "changed: the reminder is now due \(due.map(ReminderText.due) ?? "with no date"). Checked in Reminders.\n" + eventTitle(title)
     }
 
     public static func reminderCompleted(_ title: String) -> String {
-        "completed: the reminder \"\(title)\" is marked done in Reminders. Checked."
+        "completed: the reminder is marked done in Reminders. Checked.\n" + eventTitle(title)
     }
 
     public static let reminderChangedElsewhere = "failed: the reminder changed, was completed or disappeared in Reminders since the card was shown. Nothing was changed by Doddy. Ask the user to check Reminders."
     public static let undoUnconfirmed = "unknown: Calendar or Reminders didn't confirm putting it back. Ask the user to check."
     public static func eventDeleted(_ event: CalendarEventSummary, calendar: Calendar) -> String {
-        "deleted: \"\(event.title)\" (\(localText(event.start, hasTime: !event.allDay, calendar: calendar))) is gone from Calendar. Checked."
+        "deleted: the event at \(localText(event.start, hasTime: !event.allDay, calendar: calendar)) is gone from Calendar. Checked.\n"
+            + eventTitle(event.title)
     }
 
     public static func reminderDeleted(_ title: String) -> String {
-        "deleted: the reminder \"\(title)\" is gone from Reminders. Checked."
+        "deleted: the reminder is gone from Reminders. Checked.\n" + eventTitle(title)
     }
 
     public static let deleteDeclined = "declined: the user chose not to delete it. Nothing changed."
@@ -350,13 +389,14 @@ extension VoiceToolRequest {
         guard case .due(let current) = ReminderDueRules.wallClock(startText, calendar: calendar), let currentStart = current.date(in: calendar) else {
             return .invalid(name: name, reason: "start is not a date")
         }
-        var newStart: Date?, newEnd: Date?
+        var newStart: Date?, newEnd: Date?, newStartIsDayOnly = false
         if let text = args.text("new_start") {
             switch ReminderDueRules.check(text, now: now, calendar: calendar) {
             case .clarify(let clarification): return .needsClarification(name: name, clarification)
             case .due(let due):
                 guard let date = due.date(in: calendar) else { return .invalid(name: name, reason: "new_start is not a date") }
                 newStart = date
+                newStartIsDayOnly = !due.hasTime
             }
         }
         if let text = args.text("new_end") {
@@ -386,7 +426,7 @@ extension VoiceToolRequest {
         return .changeCalendarEvent(EventChangeDraft(
             title: title, currentStart: currentStart, currentIsDayOnly: !current.hasTime,
             newStart: newStart, newEnd: newEnd, newTitle: newTitle, newLocation: newLocation, addNote: addNote,
-            replaceNotes: replaceNotes))
+            replaceNotes: replaceNotes, newStartIsDayOnly: newStartIsDayOnly))
     }
 
     /// title + start (as read_calendar returned them): the occurrence to delete (ADR-259).

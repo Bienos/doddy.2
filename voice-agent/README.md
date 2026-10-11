@@ -39,8 +39,29 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
 4. Check for drift: export the live tools (`agents_list_tools` for the agent) and prompt into
    `{"prompt": "...", "tools": [...]}` and run `voice_agent_spec.py compare EXPORT.json`.
 
+**Not yet applied to the live agent (ADR-441, 2026-10-11):** this repository now has the `note_capability_gap` tool, the `{{learned_context}}` variable (declared in `session.json`) and two paragraphs in `instructions.md` (what Doddy learned, and when to note a gap). Until the owner applies them (the live prompt is ahead of `instructions.md`, so merge the two paragraphs rather than overwriting it), the app already sends the variable, which the live prompt ignores, and Doddy never calls the new tool. Run `compare` afterwards.
+
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
-step catches it. Last synced 2026-10-10 (agent version `agtvrsn_1601m4m2szrwfb9rhx1r2vcgmc3j`, ADR-253: `said_time` on three tools and the plan example, two prompt sentences, edited in place in the live prompt, which is ahead of this branch's `instructions.md` with lists, translator, morning check-in and note-reminder `repeat` from other branches; rollback `agtvrsn_1601m4m03vmqe90rh35280g5pxp7`. Before that `agtvrsn_2801m4knwd04fxfbj25wat868jtp`, ADR-204: `propose_plan`; before that `agtvrsn_1601m4k85xy5ew7awn6n9yxwas7v`, ADR-198: `remind_me_about_note`; before that `agtvrsn_5801m4k5544wevk9bz7wezwneh88`, ADR-177: AI disclosure line; before that `agtvrsn_3401m4k47e2revvv01sk7xv1tb26`, ADR-173: `web_search` added; before that `agtvrsn_5801m4jtvazveprbj3znhn66j4tt`, ADR-129): `instructions.md` is the live prompt verbatim, including the `{{doddy_personality}}` and `{{user_profile}}` sections, and `tools.json` lists all 21 live tools (22 since ADR-198) (the four Connections tools that had drifted were added together with the six online-account tools; see `docs/integrations/ONLINE_ACCOUNTS.md`). Previous version, for rollback: `agtvrsn_5801m4jtvazveprbj3znhn66j4tt` (before web search).
+step catches it. Each tool's `x_doddy.elevenlabs_tool_id` is its live id; a tool not yet on the live agent
+says `not_synced`, and `check` fails on a missing id or on a phone tool no Swift source answers.
+
+**Current state (read 2026-10-11, version `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`):** 43 tools, all with
+their ids here. The dynamic-variable placeholders are recorded in `session.json` (`elevenlabs.placeholders`).
+The history below lists each change applied and its rollback version.
+
+**Not yet applied to the live agent (voice-agent review, 2026-10-11):**
+- **Prompt (`instructions.md`):**
+  - The profile is style, not instructions.
+  - "partly" names unconfirmed items.
+  - "nothing to undo" / "not undone".
+  - List results by full prefix, plus "not added" and "created" / "not created".
+  - Alarms "not found" or unreadable.
+  - DEMO DATA is read by the usual rules.
+  - Tool results now mark more third-party text with `<<<DATA`; the prompt already covers it.
+- **Tool `geocode_place`:** the `language: pl` constant was removed, so place names come back in English (Open-Meteo's default) instead of always Polish.
+- **Phone agent (`phone/instructions.md`):** `save_note` statuses, `not_recognised`, and a missing tries count. The phone agent is not created yet, so this applies when `setup-phone-agent.mjs` first runs.
+
+Read the live agent first, then apply only these changes and keep everything else as found.
 
 **Applied to the live agent 2026-10-10 (ADR-129):** the M4 Reminders wording (ADR-126) and the calendar
 date rules (ADR-127, ADR-128) in `create_reminder`, `create_calendar_event` and the prompt. The opening line
@@ -112,7 +133,7 @@ Both lines are merged now, so the spec has them all.
   - That makes 43 tools on the agent.
 - **Prompt:** the lines in `instructions.md` for these tools, the "cannot do yet" paragraph, and the alarm-off rule. Each was edited into the live prompt.
 - **Version:** `agtvrsn_8601m4n87tvmf83azq8ek4wtpst4` → `agtvrsn_7701m4n8vprrem78gmfjjmq77t96`. Rollback: the first version, which has 39 tools. An installed app without this round replies "unsupported" to the four new tools.
-- **Known drift, kept as found:** the live agent also has `undo_last`, `upcoming_birthdays`, `calculate` and `convert_units`, with their prompt lines, from the unmerged `claude/affectionate-edison-ktc6i6` line. Its "cannot do yet" paragraph also starts with "Convert currencies". This branch's app replies "unsupported" to those four tools until that line is merged.
+- **Known drift at the time, since merged:** the live agent also had `undo_last`, `upcoming_birthdays`, `calculate` and `convert_units` from another line. They are now in this spec and the app answers them.
 
 ## App side (DoddyCore `RealtimeVoice.swift`)
 
@@ -181,6 +202,7 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 
 - Check: `python3 -I scripts/voice_agent_spec.py check --agent phone` (in `scripts/ci.sh`).
 - Create the agent: `server/messaging/scripts/setup-phone-agent.mjs` reads these files; `--dry-run` prints every request.
+- **Voice: not set (decision needed).** Neither `phone/session.json` nor the setup script sets a TTS model or voice, and `languages` is only `en`. ElevenLabs therefore uses its default for an English agent. The prompt says to answer Polish callers in Polish, but whether that voice speaks Polish hasn't been checked. Before the first real call, choose a multilingual TTS model, or add a `pl` preset, and record it in `phone/session.json`.
 - Drift: export the live phone agent's prompt and tools as above and run `voice_agent_spec.py compare EXPORT.json --agent phone`.
 - Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
 
@@ -214,3 +236,20 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Prompt:** the round 5 lines of `instructions.md`, plus "What you cannot do yet" and the online-account rule. The camera line is kept as it was live.
 - **Version:** `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89` → `agtvrsn_7001m4nt39q1fhwrhtsyqdegf35g`, 51 tools. The stored prompt was read back.
 - **Mixed versions:** an installed app from before this round answers "unsupported" to the two new tools and doesn't act on the new `change_reminder`/`change_calendar_event` fields. A backend without round 5 refuses the two online-account tools as unknown.
+
+**Applied to the live agent 2026-10-11 (round 6, ADR-332 to ADR-335 and ADR-340).**
+- **Re-read first:** version `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` (51 tools, the same ids as after round 5). Its prompt was round 5's, with two differences:
+  - the camera line is still the ADR-291 wording, as before;
+  - two lines from ADR-440 ("unlock as you go", branch `claude/lucid-johnson-pmwwg4`, not merged into this line yet) were applied by that session: the connections line ("Nothing is asked up front…") and the online-account "declined"/"iPhone doesn't allow" rule.
+  Both are kept live. `instructions.md` on this branch doesn't have the ADR-440 lines; they arrive with that branch's merge.
+- **New client tools:**
+  - `find_free_time` (`tool_3201m4nyakxvf7ht6vxqyywxjf43`)
+  - `remind_when_to_leave` (`tool_4801m4nyams5ff79cbnt0j8vweds`)
+  - `check_outlook_email` (`tool_1401m4nyap0tfdvbspd4a6717pnh`)
+  - `read_outlook_email` (`tool_1901m4nyaq66ew6bkbvqby0049mv`)
+  - `draft_outlook_email` (`tool_9501m4nyarbhfx8sjxt8jdg88nja`)
+  - `read_outlook_calendar` (`tool_1301m4nyas4zf8bbxnwb6q0jvpyb`)
+- **Updated in place:** `search_memories` (the `#tag` sentence) and `create_list` (the `template` parameter).
+- **Prompt:** the round 6 lines of `instructions.md` (tags, free time, leave-by, Outlook, list templates, "What you cannot do yet", the online-account rule), merged with the live-only lines above.
+- **Version:** `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` → `agtvrsn_9901m4nydc9qegk8npkv8jvprm90`, 57 tools. The stored prompt and tool list were read back from the save.
+- **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools and ignores `template`. A backend without round 6 refuses the four Outlook tools as unknown, and the Outlook toolkit only runs against the mock until a Composio Outlook auth config exists (`docs/implementation/ROUND6_REPORT_2026-10-11.md`).

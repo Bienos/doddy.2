@@ -34,6 +34,30 @@ public struct CallNote: Equatable, Sendable, Decodable, Identifiable {
     public var createdDate: Date? { ServerDates.parse(createdAt) }
 }
 
+/// A call note the server holds but can't decrypt (e.g. after a key change). Only when it was
+/// said is known; it can still be discarded with `deleteCallNote`.
+public struct UnreadableCallNote: Equatable, Sendable, Decodable, Identifiable {
+    public let id: UUID
+    public let createdAt: String
+
+    public var createdDate: Date? { ServerDates.parse(createdAt) }
+}
+
+/// Everything waiting in the call-notes inbox, including the notes that can't be read.
+public struct CallInbox: Equatable, Sendable, Decodable {
+    public let notes: [CallNote]
+    public let unreadable: [UnreadableCallNote]
+
+    private enum CodingKeys: String, CodingKey { case notes, unreadable }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        notes = try container.decode([CallNote].self, forKey: .notes)
+        // Servers before the unreadable list omit it.
+        unreadable = try container.decodeIfPresent([UnreadableCallNote].self, forKey: .unreadable) ?? []
+    }
+}
+
 public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
     public let id: UUID
     public let direction: String
@@ -44,8 +68,10 @@ public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
 }
 
 public struct CallRequest: Equatable, Sendable, Decodable {
-    public let callId: UUID
-    /// `requested` (ElevenLabs accepted it) or `unknown` (no answer from ElevenLabs; not redialled).
+    /// Nil when the server's answer never reached the phone.
+    public let callId: UUID?
+    /// `requested` (ElevenLabs accepted it) or `unknown` (no answer from ElevenLabs, or the
+    /// server's answer was lost on the way back; the phone may already be ringing; not redialled).
     public let status: String
 }
 
@@ -84,7 +110,7 @@ public struct MemoryCopyItem: Equatable, Sendable, Encodable {
 
 extension DoddyServerClient {
     public func callSettings() async throws -> CallSettings {
-        try await decoded(.get, "/v1/calls/settings")
+        try await getJSON("/v1/calls/settings")
     }
 
     public func setInboundCalls(_ on: Bool) async throws {
@@ -105,15 +131,22 @@ extension DoddyServerClient {
         try await expect(204, .delete, "/v1/calls/pin")
     }
 
+    /// Waits longer than the server's own ElevenLabs timeout (15 s). A request that may have
+    /// reached the server without an answer coming back is `unknown`, never "offline, try again".
     public func callMeNow() async throws -> CallRequest {
-        let response = try await authorized(.post, "/v1/calls/outbound", body: nil)
+        let response: ServerResponse
+        do {
+            response = try await authorized(.post, "/v1/calls/outbound", body: nil, startsSomething: true, timeout: 30)
+        } catch is OutcomeUnknown {
+            return CallRequest(callId: nil, status: "unknown")
+        }
         guard response.status == 202, let request = try? JSONDecoder().decode(CallRequest.self, from: response.body)
         else { throw Self.error(from: response) }
         return request
     }
 
     public func recentCalls() async throws -> [CallRecord] {
-        let list: CallList = try await decoded(.get, "/v1/calls")
+        let list: CallList = try await getJSON("/v1/calls")
         return list.calls
     }
 
@@ -131,20 +164,18 @@ extension DoddyServerClient {
         return result.count
     }
 
+    /// Only the readable notes. Use `callInbox()` so notes that can't be read can be discarded.
     public func callNotes() async throws -> [CallNote] {
-        let list: NoteList = try await decoded(.get, "/v1/call-notes")
-        return list.notes
+        try await callInbox().notes
+    }
+
+    /// Throws when the inbox couldn't be loaded; an empty inbox is only ever what the server said.
+    public func callInbox() async throws -> CallInbox {
+        try await getJSON("/v1/call-notes")
     }
 
     public func deleteCallNote(_ id: UUID) async throws {
         try await expect(204, .delete, "/v1/call-notes/\(id.uuidString.lowercased())")
-    }
-
-    private func decoded<T: Decodable>(_ method: HTTPMethod, _ path: String) async throws -> T {
-        let response = try await authorized(method, path, body: nil)
-        guard response.status == 200, let value = try? JSONDecoder().decode(T.self, from: response.body)
-        else { throw Self.error(from: response) }
-        return value
     }
 }
 
@@ -154,5 +185,4 @@ private struct PinBody: Encodable { let pin: String }
 private struct EnabledBody: Encodable { let enabled: Bool }
 private struct SnapshotBody: Encodable { let items: [MemoryCopyItem] }
 private struct CountBody: Decodable { let count: Int }
-private struct NoteList: Decodable { let notes: [CallNote] }
 private struct CallList: Decodable { let calls: [CallRecord] }

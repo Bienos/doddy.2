@@ -37,9 +37,14 @@ There's no build step: plain HTML, CSS and a small vanilla script. Visits are co
 - **Storage:** private Vercel Blob store `doddy-waitlist` (Frankfurt). One file per email, named by a SHA-256 hash of the email, so the same address is stored once and emails never appear in file names or logs.
 - **Optional questions:** after a new signup the form is replaced by three optional questions (iPhone / Android / something else; where they heard about Doddy; what they'd like Doddy to do, max 300 characters). `api/waitlist.js` returns a one-time key to that browser and stores only its hash; `api/waitlist-answers.js` saves answers only with that key, keeps known choices only and strips formula characters. Skipping sends nothing. Android pickers are told Doddy starts on iPhone.
 - **Checks in `api/waitlist.js`:** same-site origin only, 2 KB body limit, email format and length, honeypot field, leading formula characters stripped.
+- **Same reply for a known email:** a signup for an email already on the list gets the same `added` reply, without the answers key, so the form can't be used to check who signed up.
+- **Answers can't bring a deleted signup back:** `api/waitlist-answers.js` writes only if the file is still the one it read (`ifMatch` on the etag). A signup deleted in between gets 403, and nothing is written.
+- **Tests:** `npm test` in `site/` (also in `scripts/ci.sh`) runs the waitlist, answers, export and admin functions against an in-memory `@vercel/blob` stand-in (`test/fake-blob.js`), with no network. `.vercelignore` keeps `test/` out of the deployment.
 - **Admin page:** `/admin/` (Doddy style, not linked from the site, `noindex`). Sign in with `WAITLIST_ADMIN_PASSWORD`. Shows total, today, last 7 days, latest signup, answer breakdowns (phone, heard about Doddy, latest wishes), sign-ups per day (30 days, 14 on phones), and a searchable, filterable table (iPhone, Android, answered, has a wish) with copy, delete (two taps, for removal requests), copy all emails and download for Excel. Data comes from `api/waitlist-admin.js` (GET list, DELETE one by hashed id); shared code in `api/_waitlist-store.js`.
 - **Download:** open `/api/waitlist-export` in a browser, enter any username and the `WAITLIST_ADMIN_PASSWORD`; you get `doddy-waitlist-YYYY-MM-DD.csv` (UTF-8 with BOM, opens in Excel). Change the password in Vercel → Project → Settings → Environment Variables, then redeploy.
 - **Not built:** rate limiting beyond Vercel's defaults, double opt-in emails, multiple admin accounts.
+- **Admin password:** the admin routes have no lockout, so `WAITLIST_ADMIN_PASSWORD` must be long and random (for example `openssl rand -base64 24`), never a word.
+- **Rate limit (owner, recommended):** add a Vercel Firewall rule (Project → Firewall → Rules): rate-limit `/api/` by IP to about 20 requests a minute. It needs no code, and slows scripted signups and admin password guessing. Not set yet.
 
 ## Analytics
 
@@ -100,13 +105,19 @@ sent before the script has loaded. No npm dependency, no build step.
 
 A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards, six pairs of the small things the page talks about (spare keys, locker 4471, Marta's book, shoe size 31, Wi-Fi password, parked on B2). A match makes Doddy say where the thing is; finishing swaps him to the fist-bump pose. Cards are buttons with spoken labels ("Card 3, face down" / "Card 3: Spare keys, matched"), so it works with a keyboard and VoiceOver; Doddy's bubble is a polite live region. Nothing is stored. Hidden without JavaScript. Icons are inline line drawings in `memory.js`.
 
+## Builds on Vercel
+
+`vercel.json` has an `ignoreCommand`: a push builds this project only when something under `site/` changed since the last deployment (or, without one, in the last commit). It builds whenever it can't tell. `gateway/` and `server/voice-token/` have the same rule. Before this, every push to any branch built all three projects and used up the free plan's 100 deployments a day.
+
 ## Needs the owner
 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
 2. **Waitlist:** add a contact address people can use to ask for deletion; the form promises deletion on request.
 3. **Domain, contact address and privacy policy.** Hosted on Vercel (project `doddy`, team bienos) at https://doddy-eight.vercel.app, deployed from this branch to production. The Vercel project's production branch is the repo default (`claude/loving-dirac-uuxoux`), so pushes here create previews; redeploy production after changes, or point the production branch at this one in Vercel settings. No custom domain, contact address or privacy policy yet.
 4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them.
-5. **Brand approval:** colours, character drawings and wordmark are candidates (`docs/design/CANONICAL_DESIGN_DIRECTION.md`), not an approved brand.
+5. **Character art:** the poses in `assets/poses/` are the v1.3 SVGs. From 2026-10-11, new Doddy art comes only from the owner's `DODDY-Numbered-Video-Assets-v01` pack (CLAUDE.md), so any change to the poses replaces them from that pack.
+6. **Voice testing line:** the page says "Voice hasn't been tested on a real iPhone yet." Change it only when the owner confirms otherwise.
+7. **Brand approval:** colours, character drawings and wordmark are candidates (`docs/design/CANONICAL_DESIGN_DIRECTION.md`), not an approved brand.
 
 ## Checked (2026-10-09, design v3, headless Chromium 1194 via Playwright, local server)
 

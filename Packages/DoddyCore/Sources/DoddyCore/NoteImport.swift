@@ -50,6 +50,8 @@ public enum NoteImport {
         case tooLong(length: Int)
         case listNameTooLong
         case tooManyItems
+        /// One checklist item is longer than a list item can be (counted as the database counts).
+        case listItemTooLong
         case listNameTaken(String)
         /// The same words are already a note in Doddy, or earlier in this import.
         case alreadySaved
@@ -200,9 +202,8 @@ public enum NoteImport {
             return nil
         case .list(let list):
             if list.name.count > ListLimits.nameLength { return .listNameTooLong }
-            if list.count > ListLimits.itemsPerList || (list.open + list.ticked).contains(where: { $0.count > ListLimits.itemLength }) {
-                return .tooManyItems
-            }
+            if list.count > ListLimits.itemsPerList { return .tooManyItems }
+            if (list.open + list.ticked).contains(where: { !ListText.fitsItemLength($0) }) { return .listItemTooLong }
             return nil
         }
     }

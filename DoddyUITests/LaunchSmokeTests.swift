@@ -11,16 +11,13 @@ final class LaunchSmokeTests: XCTestCase {
     private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false,
                         listen: Bool = false, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        // Overrides UserDefaults for this launch only.
-        app.launchArguments += ["-appearance", "system", "-inMemoryStore", "YES", "-backTapSetupStatus", backTapSetup]
-        if onboardingDone { app.launchArguments += ["-onboardingDone", "YES"] }
+        // Overrides UserDefaults for this launch only. The opening and listening on open are on by
+        // default; most tests turn them off and start straight on Home (UITestLaunch).
+        app.launchArguments += UITestLaunch.arguments(
+            store: .inMemory, onboardingDone: onboardingDone, backTapSetup: backTapSetup, opening: opening, listen: listen)
         // The Quick start (ADR-324) shows once per install; UserDefaults outlive the in-memory store.
         if !onboardingDone { app.launchArguments += ["-quickStartOffered", "NO"] }
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
-        // The opening (ADR-225) is on by default; most tests start straight on Home.
-        if !opening { app.launchArguments += ["-openingScene", "NO"] }
-        // Listening on open is on by default too; it would open a conversation over every test.
-        if !listen { app.launchArguments += ["-listenOnOpen", "NO"] }
         app.launchArguments += extra
         app.launch()
         return app
@@ -242,8 +239,9 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true, opening: true)
         let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
-        // Just over the timeline's length: it fades out on its own.
-        XCTAssertTrue(scene.waitForNonExistence(timeout: 4))
+        // It fades out on its own after its timeline (OpeningScene.Beat.end, 2.4 s); the margin is for slow
+        // simulators, since this checks that it ends by itself, not how long it takes.
+        XCTAssertTrue(scene.waitForNonExistence(timeout: 10))
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
 
         XCUIDevice.shared.press(.home)
@@ -263,7 +261,7 @@ final class LaunchSmokeTests: XCTestCase {
     func testListeningOnOpenIsOnByDefaultAndOpensTheConversation() {
         // Default listening switch; no agent ID, so the conversation stops at "Couldn't connect"
         // before it ever asks for the microphone or reaches ElevenLabs.
-        let app = launch(onboardingDone: true, listen: true, extra: ["-voiceAgentID", ""])
+        let app = launch(onboardingDone: true, listen: true)
         XCTAssertTrue(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 5), "opened by itself")
         XCTAssertEqual(app.staticTexts["voice.status"].label, "Couldn't connect")
         app.buttons["Close"].tap()
