@@ -21,11 +21,8 @@ final class ShareViewController: UIViewController {
         host.didMove(toParent: self)
         let items = extensionContext?.inputItems.compactMap { $0 as? NSExtensionItem } ?? []
         let model = model
-        // Item providers aren't Sendable: they are read off the main actor and only the strings come back.
-        Task.detached {
-            let shared = await ShareModel.extract(items)
-            await model.show(text: shared.text, link: shared.link)
-        }
+        // Item providers aren't Sendable, so they never leave the main actor; see `ShareModel.load`.
+        Task { await model.load(items) }
     }
 }
 
@@ -45,20 +42,39 @@ final class ShareModel {
     /// An earlier share the app hasn't picked up yet; sending replaces it.
     private(set) var replacesWaiting = false
 
+    func load(_ items: [NSExtensionItem]) async {
+        let shared = await Self.extract(items)
+        show(text: shared.text, link: shared.link)
+    }
+
     /// The shared text and the first web link. A file's address is never taken as a link.
-    nonisolated static func extract(_ items: sending [NSExtensionItem]) async -> (text: String?, link: String?) {
+    private static func extract(_ items: [NSExtensionItem]) async -> (text: String?, link: String?) {
         var text = items.compactMap { $0.attributedContentText?.string }.first { !$0.isEmpty }
         var link: String?
         for provider in items.flatMap({ $0.attachments ?? [] }) {
             if link == nil, provider.hasItemConformingToTypeIdentifier(UTType.url.identifier),
-               let url = try? await provider.loadItem(forTypeIdentifier: UTType.url.identifier) as? URL, !url.isFileURL {
-                link = url.absoluteString
+               let shared = await loadString(from: provider, as: .url, { ($0 as? URL).flatMap { $0.isFileURL ? nil : $0.absoluteString } }) {
+                link = shared
             } else if text == nil, provider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier),
-                      let shared = try? await provider.loadItem(forTypeIdentifier: UTType.plainText.identifier) as? String {
+                      let shared = await loadString(from: provider, as: .plainText, { $0 as? String }) {
                 text = shared
             }
         }
         return (text, link)
+    }
+
+    /// Reads one item with the callback API. The provider is only used here, on the main actor; the
+    /// callback runs on another queue and hands back nothing but the resulting string.
+    private static func loadString(
+        from provider: NSItemProvider,
+        as type: UTType,
+        _ transform: @escaping @Sendable (NSSecureCoding?) -> String?
+    ) async -> String? {
+        await withCheckedContinuation { continuation in
+            provider.loadItem(forTypeIdentifier: type.identifier, options: nil) { item, _ in
+                continuation.resume(returning: transform(item))
+            }
+        }
     }
 
     func show(text: String?, link: String?) {

@@ -135,7 +135,8 @@ In order of risk:
 ### Round 5 (2026-10-11, ADR-310 to ADR-312, ADR-314 to ADR-318): most likely to need a fix
 **First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
 - **Share extension (ADR-311):** a new target, so XcodeGen must embed it.
-  - `ShareModel.extract(_ items: sending [NSExtensionItem])` is `nonisolated` and is called from `Task.detached`, because item providers aren't Sendable. Swift 6 region checks may still object; the fallback is to load the strings inside `viewDidLoad` with completion handlers.
+  - **First real Xcode build (owner screenshot, 2026-10-11):** `ShareViewController.swift` failed with "Sending 'items' risks causing data races" and "Passing closure as a 'sending' parameter" on the `Task.detached` + `sending [NSExtensionItem]` version. Changed to the fallback: no detach and no `sending`; `ShareModel.load` runs on the main actor and reads each provider with the callback form of `loadItem`, which returns only a `String`. **Not yet re-built after this change.**
+  - `NSItemProvider.loadItem(forTypeIdentifier:options:completionHandler:)` inside `withCheckedContinuation`, with a `@Sendable` transform closure.
   - `NSItemProvider.loadItem(forTypeIdentifier:)` with `async` and `as? URL` / `as? String`.
   - `Config/DoddyShare-Info.plist`'s `NSExtensionPrincipalClass` is `$(PRODUCT_MODULE_NAME).ShareViewController`.
   - The App Group is now on by default (owner, 2026-10-11). Signing needs the team chosen for every target, and the group registered (automatic signing does it). If a simulator `xcodebuild test` without a team refuses the entitlements, run it with the four `DODDY_*_ENTITLEMENTS` set to `""`.
