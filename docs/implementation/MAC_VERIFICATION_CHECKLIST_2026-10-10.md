@@ -323,6 +323,9 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 ## 4l. First-use fixes (ADR-325)
 | O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
 | O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
+## 4n. A shorter introduction (ADR-327)
+| I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
+| I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
 ## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
 | H1 | Settings › turn on "Hide character artwork"; look at every widget, the Lock Screen Talk to Doddy, StandBy, a conversation's island and Lock Screen card, a focus timer, shopping mode, a snoozed alarm | No Doddy anywhere: the island shows its board, the cards and widgets their symbols or text only. Turn it off: he's back after the widgets reload |
 | H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
