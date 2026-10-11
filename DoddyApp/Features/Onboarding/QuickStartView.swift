@@ -98,6 +98,8 @@ struct QuickStartView: View {
                     isOn: $choices.useProfileInVoice, id: "quickStart.profile")
             }
 
+            QuickAccessTips()
+
             Button {
                 Task { await apply() }
             } label: {
@@ -130,6 +132,7 @@ struct QuickStartView: View {
                         .accessibilityIdentifier("quickStart.receipt.\(receipt.id)")
                 }
             }
+            QuickAccessTips()
             Text("Change or turn off any of these in Settings.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
@@ -232,3 +235,32 @@ private struct QuickStartRow: View {
         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: 1))
     }
 }
+
+/// Ways to start Doddy without opening the app (ADR-402). They are already built (Siri phrase,
+/// the Talk to Doddy control, the Action Button); this only says where they are. Nothing here is
+/// switched on by Doddy, and Doddy can't see whether the user set them up, so nothing claims it.
+private struct QuickAccessTips: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Start me without opening the app")
+                .font(.headline)
+            tip("mic", Text("Siri: say \u{201C}Hey Siri, talk to Doddy\u{201D}."))
+            tip("button.programmable", Text("Action Button, on iPhones that have one: iOS Settings \u{203A} Action Button \u{203A} Controls \u{203A} Talk to Doddy."))
+            tip("switch.2", Text("Control Center or the Lock Screen: add the Talk to Doddy control (edit Control Center, Add a Control, search Doddy)."))
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: 1))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("quickStart.quickAccess")
+    }
+
+    private func tip(_ symbol: String, _ text: Text) -> some View {
+        Label {
+            text.font(.subheadline)
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(Theme.accentText)
+        }
+    }
+}
+
