@@ -1,7 +1,7 @@
 # Unlock as you go — consent is asked when a request needs it, never up front
 Date: 2026-10-11. Owner instruction (voice note, paraphrased): *"The user experience should be unlocking functions as we go. At the start he has voice and everything available. Connecting Gmail, sending a text, writing something: if that needs approval, only then prompt him. The first time he has to approve the consent for Doddy to use it. Don't ask at the start and don't have everything unlocked. As he goes, anything he asks for, if a consent is needed, ask then, only then, and keep the access if allowed."*
 
-Decision log row: `DECISIONS.md` ADR-324. Status: **decided, not built**. Nothing in this document is implemented yet; the "today" column below is what the code does now.
+Decision log row: `DECISIONS.md` ADR-324. Status: **built on Linux, not compiled with Xcode, not run on an iPhone** (owner, 2026-10-11: "go build it, one card with two taps"). What was built and what is verified: `docs/implementation/UNLOCK_STATUS.md`. The "today" column below describes the code before this round.
 
 ## The principle in one paragraph
 First launch asks for nothing: no account, no system permission, no switch. Talking to Doddy works at once (iOS itself asks for the microphone on the first talk; that is the only up-front system prompt and it is Apple's). When a request needs something Doddy is not yet allowed to use, Doddy asks **right there, in the conversation, for exactly that one thing**, with a card. If the user allows it, the access stays until they take it away in Settings, and the request they made continues without being asked again. If they decline, nothing changes, Doddy says one sentence, and the same request later asks again. Doddy never asks for a consent nobody's request needs.
@@ -28,7 +28,7 @@ First launch asks for nothing: no account, no system permission, no switch. Talk
 6. **Not now is quiet.** Declining changes nothing, is not recorded as a preference, and is not followed by "are you sure". The same request later asks again, because asking is the only way the function unlocks.
 7. **Honest about iOS.** If iOS denied a permission earlier, the card says Doddy cannot ask again and offers Open Settings. No "verified" or "set up" claim the app cannot check.
 
-## Build plan (not started)
+## Build plan (built 2026-10-11; see UNLOCK_STATUS.md for what is verified)
 - `DoddyApp/Features/Voice/VoiceSessionController.swift`: new pending-card case for consent (`connection`, `account`, `tool`), raised from the device `Access.notDetermined/.denied` path and from `VoiceCloudTools` failure codes; holds the original tool call and re-runs it after Allow.
 - `DoddyApp/Features/Voice/VoiceView.swift`: `connectionCard` reworded and extended; account connect reuses `OnlineAccountsModel.connect`, tool switch reuses its switch call; Open Settings for an iOS denial.
 - `Packages/DoddyCore/.../VoiceCloudTools.swift`: failure strings stop telling the user to go to Settings; they say a card is shown.
@@ -37,9 +37,9 @@ First launch asks for nothing: no account, no system permission, no switch. Talk
 - Tests: card raised for each code and never from agent text; Allow re-runs the same arguments once; decline leaves switches untouched; a write after consent still needs its approval; denial state shows Open Settings; no card without a request (Home, launch).
 - Docs: `ONBOARDING_STATUS.md` and `docs/trust/03_TRUST_FEATURES_AND_UX.md` UX-03 get a pointer here; `DECISIONS.md` row moves from "decided, not built" when the Mac build and a real iPhone run are reported.
 
-## Owner decisions still open
-- When the account was not connected **and** the needed tool is off, is one card with two taps acceptable, or two cards in a row? (Recommended: one card, two steps, two taps.)
-- Card wording per tool (the "what it is for" line). Draft: "Doddy would read the newest email that matches, on your request only."
+## Owner decisions
+- **Decided (2026-10-11): one card, two taps** when the account isn't connected and the tool is off. The card lists both steps; each is its own button, in order, and the second appears only after the first is verified.
+- Card wording per tool: the card uses the server's own blurb for the tool (the same text as Settings, Online accounts) and, when a connect step is shown, the account's access text. No agent words.
 
 ## Not claimed
-No part of this is built, compiled, or run. The current in-call "Turn on" card for iPhone connections is the only existing piece, and it still ends with "Then ask again".
+Built and tested on Linux only (the DoddyCore part). The iOS app is not compiled, nothing ran on an iPhone, and the live ElevenLabs agent prompt is not updated. Details: `docs/implementation/UNLOCK_STATUS.md`.

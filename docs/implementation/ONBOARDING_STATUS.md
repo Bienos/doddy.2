@@ -4,6 +4,8 @@ Date: 2026-10-09. Owner request: "implement onboarding etc screens". Source desi
 > **Changed at branch consolidation (2026-10-09, DECISIONS.md ADR-089):** the written Back Tap guide below (part 1, `SetupGuideView`, the `OpenDoddyIntent` receipt and Settings → Getting started) was **removed**, because V2 already ships a Back Tap guide that was tried on the owner's iPhone (`V2_SHORTCUT_SETUP_STATUS.md`). First use is now the optional introduction only; Back Tap is offered from the Home card and Settings → Back Tap and Siri. Parts 2 and 3 are unchanged. The UI test for the written guide was removed with it.
 
 ## Flow
+> **Unlock as you go (ADR-324, 2026-10-11):** first use still asks for no permission, account or switch. Each is asked for by a card in the conversation the first time a request needs it, and only then (`docs/product/UNLOCK_AS_YOU_GO.md`, `UNLOCK_STATUS.md`).
+
 First launch → **Two taps. A little help.** (optional Back Tap guide) → **Hey. Let's talk.** (optional introduction) → Home. Each part can be skipped; skipping never blocks the app, and neither is forced again. Both can be reopened from Settings.
 
 ### 1. Written Back Tap guide (`Features/Onboarding/SetupGuideView.swift`)
