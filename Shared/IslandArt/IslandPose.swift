@@ -19,6 +19,9 @@ enum IslandPose: String, CaseIterable, Sendable {
     case onelegBalance = "oneleg_balance"
     /// "Pause all connections" is on (ADR-323): crouching, lying low.
     case sneakyCrouch = "sneaky_crouch"
+    /// Notes hidden from widgets or the watch (ADR-331): turned away, not looking. Frame 5 of
+    /// the pack's turn strip (018), cut like the other strip frames.
+    case turnedAway = "turned_away"
 
     var assetName: String { "WholeDoddy_\(rawValue)" }
 
@@ -43,6 +46,7 @@ enum IslandPose: String, CaseIterable, Sendable {
         case .basketballDribble: (34, 83, 375, 467)
         case .onelegBalance: (10, 78, 389, 531)
         case .sneakyCrouch: (77, 89, 338, 524)
+        case .turnedAway: (112, 118, 287, 564)
         }
         return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
     }

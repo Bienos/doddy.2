@@ -13,7 +13,7 @@ struct DoddyToolLiveActivity: Widget {
             ToolLockScreenView(attributes: context.attributes, state: context.state, isStale: context.isStale)
                 .doddyCreamLockScreen()
         } dynamicIsland: { context in
-            let scene = context.attributes.islandScene(context.state, isStale: context.isStale)
+            let scene = context.attributes.islandScene(context.state, isStale: context.isStale).respectingHiddenArt
             let startedAt = context.attributes.startedAt
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -82,7 +82,7 @@ private struct ToolLockScreenView: View {
     let isStale: Bool
 
     var body: some View {
-        let scene = attributes.islandScene(state, isStale: isStale)
+        let scene = attributes.islandScene(state, isStale: isStale).respectingHiddenArt
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
                 IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live)

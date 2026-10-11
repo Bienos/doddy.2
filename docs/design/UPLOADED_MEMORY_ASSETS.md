@@ -138,3 +138,10 @@ too, and the earlier sets come out byte-identical.
 
 The alarm, shopping and notification pictures use image sets already listed (`WholeDoddy_yawn_stretch`,
 `_tiptoe`, `_crosslegged`, `_wave`). In the pack's sit strip Doddy sits on a cardboard box.
+
+## Turned away, for hidden notes (ADR-331, 11 October 2026)
+
+`WholeDoddy_turned_away` (app and widgets; 200×300 and 300×450) and `WatchDoddy_turned_away` (watch
+app; 120×180 @2x) are frame 5 of `018_doddy_turn_v01.png` (SHA-256 above, ADR-313), cut by
+`cut_frames.py --shared --rows-max-y 605` like the other turn frames and downscaled with Lanczos.
+Nothing redrawn.

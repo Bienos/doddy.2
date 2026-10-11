@@ -23,8 +23,12 @@ struct AlarmLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    IslandPoseView(pose: .yawnStretch, maxSize: CGSize(width: 44, height: 52))
-                        .padding(.leading, 6)
+                    if WidgetDoddyArt.isHidden {
+                        Image(systemName: "alarm")
+                    } else {
+                        IslandPoseView(pose: .yawnStretch, maxSize: CGSize(width: 44, height: 52))
+                            .padding(.leading, 6)
+                    }
                 }
                 DynamicIslandExpandedRegion(.trailing) { countdown(context.state).monospacedDigit() }
                 DynamicIslandExpandedRegion(.bottom) { Text("Snoozed").font(.caption) }
