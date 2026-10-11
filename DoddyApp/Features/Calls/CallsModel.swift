@@ -44,12 +44,21 @@ final class CallsModel {
     func setOutbound(_ on: Bool) async { await change { try await $0.setOutboundConsent(on) } }
 
     /// On: switch the copy on, then upload what is on the phone now. Off: the server deletes it.
+    /// If the upload fails after the server switched the copy on, the switch shows on (as the
+    /// server reports), the message says the memories aren't copied yet, and the upload is tried
+    /// again when Doddy next comes to the front (DOD-08/11).
     func setMemoryCopy(_ on: Bool, records: [MemoryRecord]) async {
         await change { client in
             try await client.setMemoryCopy(enabled: on)
             UserDefaults.standard.set(on, forKey: PreferenceKey.memoryCopyOn)
             if on {
-                try await client.replaceMemoryCopy(MemoryCopyItem.from(records))
+                do {
+                    try await MemoryCopySync.shared.uploadNow(records)
+                } catch {
+                    self.message = String(
+                        format: NSLocalizedString("Memory on calls is on, but your memories aren't copied yet: %@ Doddy tries again the next time you open it, or turn this off to delete the copy.", comment: ""),
+                        Self.text(for: error))
+                }
             } else {
                 MemoryCopySync.shared.stop()
             }
