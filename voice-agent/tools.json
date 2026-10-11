@@ -146,7 +146,7 @@
     {
       "type": "function",
       "name": "undo_last",
-      "description": "Undo the newest change you made in this conversation in Calendar or Reminders: an event or reminder you added, an event you moved or renamed, or a reminder you re-timed or marked done. The app finds it and shows the user a card; nothing changes until they tap. It only puts back what Doddy did, and leaves it alone if it changed since. It can't undo a delete, notes, lists, timers, alarms, emails, tasks or anything from an earlier conversation (the user can use Settings, What Doddy did).",
+      "description": "Undo the newest change you made in this conversation in Calendar or Reminders: an event or reminder you added, an event you moved, renamed or gave a new place or an added line of notes, or a reminder you re-timed or marked done. The app finds it and shows the user a card; nothing changes until they tap. It only puts back what Doddy did, and leaves it alone if it changed since. It can't undo a delete, several changes from one card, a repeating event you added, saved notes, lists, timers, alarms, emails, tasks or anything from an earlier conversation (the user can use Settings, What Doddy did).",
       "parameters": {
         "type": "object",
         "properties": {},

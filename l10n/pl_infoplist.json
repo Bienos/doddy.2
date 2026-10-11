@@ -20,8 +20,8 @@
   "pl": "Doddy używa Twojej lokalizacji tylko do przypomnień ustawionych w danym miejscu: żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł Ci przypomnieć, gdy tam dotrzesz albo stamtąd wyjdziesz. Doddy nie śledzi, dokąd chodzisz."
  },
  "NSContactsUsageDescription": {
-  "en": "Doddy looks up a contact by name when you ask, and reads birthdays for the people you pick to be reminded of. The details stay on this iPhone. Turn this off in Settings, Connections.",
-  "pl": "Doddy wyszukuje kontakt po imieniu, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. Szczegóły zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+  "en": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. Numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections.",
+  "pl": "Doddy wyszukuje kontakt po imieniu albo sprawdza, czyje urodziny się zbliżają, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. Numery, adresy e-mail i lata urodzenia zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
  },
  "NSAlarmKitUsageDescription": {
   "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",

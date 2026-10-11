@@ -107,7 +107,7 @@ targets:
         INFOPLIST_KEY_NSRemindersFullAccessUsageDescription: "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
         # Place reminders only (ADR-196): "While Using", never "Always"; iOS watches the place itself.
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "Doddy uses your location only for reminders you set at a place: to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave. Doddy doesn't track where you go."
-        INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name when you ask, and reads birthdays for the people you pick to be reminded of. The details stay on this iPhone. Turn this off in Settings, Connections."
+        INFOPLIST_KEY_NSContactsUsageDescription: "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. Numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections."
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyWidgets:
