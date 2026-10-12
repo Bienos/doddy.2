@@ -59,6 +59,7 @@ The history below lists each change applied and its rollback version.
   Everything else is as found. The other lines' passages were kept, and their unreleased lines were not added. The text sent was checked byte for byte against the merge result before saving.
 - **Tool `geocode_place`** (`tool_5701m4f28p90fm186x0zhn54sy71`): the `language: pl` query constant was removed, and every other setting was kept as read.
 - **Version:** `agtvrsn_9901m4nydc9qegk8npkv8jvprm90` (rollback) → `agtvrsn_4901m4p0dby0fj6sba6a04emb9b4`. The LLM, temperature and the 57 tool ids are unchanged (read back from the save). Tool updates don't create a version.
+- **Read again 2026-10-12:** live is now `agtvrsn_5201m4p132brf30th15nggeqarf0` (59 tools). Another line added its own changes on top: `@Marta` search, `upcoming_renewals`, `add_to_diary`, the parcel-code note on `read_email`, and two tools. All 23 lines above are still there.
 - **For the other lines:** when you next apply your prompt, start from this live version (or merge the default branch first). Otherwise these 23 lines are lost.
 - **Phone agent (`phone/instructions.md`):** `save_note` statuses, `not_recognised`, and a missing tries count. These apply when `setup-phone-agent.mjs` first creates the agent; it doesn't exist yet.
 
