@@ -312,56 +312,24 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
 | Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
 
-## 4k. Quick start (ADR-324, `QUICK_START_STATUS.md`)
+## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
 | # | Do this | Expect |
 |---|---|---|
-| Q1 | Fresh install; skip the introduction | Quick start with three rows (08:00 weekdays, 21:00, Sunday 18:00 in the iPhone's clock style): morning and tidy-up ticked, the wrap-up **not** ticked (Reminders is off on a fresh install); no profile row. **Not now** goes to Home; Settings shows all three still off |
-| Q2 | Fresh install; skip; tap **Turn these on**; allow notifications | iOS asks once. "Morning check-in set." and the other two; Settings shows them on at those times; the pending notifications exist (relaunch and check Settings' receipts) |
-| Q3 | Fresh install; skip; **Turn these on**; don't allow | Three "Notifications are off for Doddy…" lines, nothing claimed as set |
-| Q5 | Fresh install; skip; **Turn these on** with the look-back ticked; allow notifications | "Weekly look-back set."; Settings › Weekly look-back shows Sunday 19:00, the tidy-up Sunday 18:00 |
-| Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |
-## 4l. First-use fixes (ADR-325)
-| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
-| O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
-## 4n. A shorter introduction (ADR-327)
-| I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
-| I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
-## 4o. "Hey Doddy" with one tap (ADR-328)
-Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
-| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
-| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
-| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
-| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
-## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
 | H1 | Settings › turn on "Hide character artwork"; look at every widget, the Lock Screen Talk to Doddy, StandBy, a conversation's island and Lock Screen card, a focus timer, shopping mode, a snoozed alarm | No Doddy anywhere: the island shows its board, the cards and widgets their symbols or text only. Turn it off: he's back after the widgets reload |
 | H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
 | H3 | Settings › Widgets: turn "Show in widgets" off; on the watch, hide notes and lists | Widgets (small and medium, full colour): Doddy turned away beside "Turned off in Doddy's Settings."; the watch: turned away above its hidden message |
 | H4 | Build everything (app, widgets, watch app, watch widgets) | Compiles. If not, the errors are new to this checklist: the four batches before were never compiled |
 
-## 4q. Quick access tips (ADR-402)
+## 4l. Previews, watch icon and Doddy UI tests (ADR-336)
 | # | Do this | Expect |
 |---|---|---|
-| A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
-## 4m. Home's first visit (ADR-326)
-| H1 | Fresh install, finish onboarding | Home: under Talk to Doddy, "Try saying: “Remember the gate code is 4821.” …"; no Back Tap card; no Today card. Bottom: "Doddy is an AI, not a person." and What leaves this iPhone |
-| H2 | Tap What leaves this iPhone; Done. Then Settings › Privacy | The row-by-row screen opens as a sheet and closes. Settings › Privacy starts with the paragraph that used to be on Home |
-| H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count |
-## 4l. Previews, watch icon and Doddy UI tests (ADR-336)
 | P1 | Open `DoddyApp/DesignSystem/DoddyArtPreviews.swift`, `DoddyWidgets/DoddyWidgetPreviews.swift` and the end of `DoddyWatchWidgets/DoddyWatchComplications.swift` in Xcode's canvas | Every pose, strip, scenery strip, the storybook, share card, Siri snippet, widgets, Live Activities and complications draw; use this before tapping through the app |
 | P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
 | P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |
 
-
-## 4p. A guided first conversation (ADR-401)
-Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.
+## 4m. The whole wave and the storyboards (ADR-380)
 | # | Do this | Expect |
 |---|---|---|
-| F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
-| F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
-## 4r. "Ask me about it" (ADR-403)
-| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
-| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
-## 4m. The whole wave and the storyboards (ADR-380)
 | W1 | Delete the app, install, launch on a morning (before noon) with the opening off; open Home | He waves once (five frames, ending on the open hand), then sits on his box. Relaunch the same morning: breaths, not a wave. Next morning: a wave again |
 | W2 | Open the morning check-in | A small Doddy waves once at the bottom of the coffee-shop strip, over the strip only, not over any text |
 | W3 | Welcome (Introduction) screen | The page-turn storyboard plays as before (four panels), now through the shared `PanelStoryView` |
@@ -375,6 +343,8 @@ Needs first: the new "First conversation" section on the live agent, with placeh
 
 ## 4n. What I've learned (ADR-440, ADR-441, `M6_LEARNING_LOOP_STATUS.md`)
 Nothing in this section has run on a device or a simulator: the Swift logic is tested on Linux, the screens, the voice session wiring and the live voice agent are not. Items L8 and L9 also need the owner to sync the new tool and the new variable to the live ElevenLabs agent first (`voice-agent/README.md`).
+| # | Do this | Expect |
+|---|---|---|
 | L1 | Settings → What Doddy knows → What I've learned, on a fresh install | Row says "Off"; both switches off; "Corrections this week 0"; nothing listed; Export and Delete everything disabled |
 | L2 | Turn "Learn from how I use Doddy" on. Have a voice conversation and say "I prefer my reminders at nine in the morning." End it | After the "Worth keeping?" card (or instead of it), a card "Remember this about you?" with those exact words, Save, Not now, Never this. Nothing is stored until Save |
 | L3 | Tap Save; then open What I've learned; force-quit and reopen the app | "Saved…" appears after the tap, never before; the fact is listed with its kind, "confirmed <date>", "from a conversation on <date>" and an end date; it is still there after reopening |
@@ -389,8 +359,65 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4o. First-use fixes (ADR-325)
+| # | Do this | Expect |
+|---|---|---|
+| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
+| O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
+
+## 4p. Home's first visit (ADR-326)
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Fresh install, finish onboarding | Home: under Talk to Doddy, "Try saying: “Remember the gate code is 4821.” …"; no Back Tap card; no Today card. Bottom: "Doddy is an AI, not a person." and What leaves this iPhone |
+| H2 | Tap What leaves this iPhone; Done. Then Settings › Privacy | The row-by-row screen opens as a sheet and closes. Settings › Privacy starts with the paragraph that used to be on Home |
+| H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count |
+
+## 4q. A guided first conversation (ADR-401)
+Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.
+| # | Do this | Expect |
+|---|---|---|
+| F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
+| F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
+
+## 4r. Quick start (ADR-324, `QUICK_START_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| Q1 | Fresh install; skip the introduction | Quick start with three rows (08:00 weekdays, 21:00, Sunday 18:00 in the iPhone's clock style): morning and tidy-up ticked, the wrap-up **not** ticked (Reminders is off on a fresh install); no profile row. **Not now** goes to Home; Settings shows all three still off |
+| Q2 | Fresh install; skip; tap **Turn these on**; allow notifications | iOS asks once. "Morning check-in set." and the other two; Settings shows them on at those times; the pending notifications exist (relaunch and check Settings' receipts) |
+| Q3 | Fresh install; skip; **Turn these on**; don't allow | Three "Notifications are off for Doddy…" lines, nothing claimed as set |
+| Q5 | Fresh install; skip; **Turn these on** with the look-back ticked; allow notifications | "Weekly look-back set."; Settings › Weekly look-back shows Sunday 19:00, the tidy-up Sunday 18:00 |
+| Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |
+
+## 4s. Quick access tips (ADR-402)
+| # | Do this | Expect |
+|---|---|---|
+| A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
+
+## 4t. A shorter introduction (ADR-327)
+| # | Do this | Expect |
+|---|---|---|
+| I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
+| I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
+
+## 4u. "Hey Doddy" with one tap (ADR-328)
+Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
+| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
+| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
+| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
+
+## 4v. "Ask me about it" (ADR-403)
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
+| # | Do this | Expect |
+|---|---|---|
 | M1 | Build every target | Compiles. #38's app-side changes (`CloudSharingView(onFailed:)`, `CallsModel.discard(_:)`, `KeychainSessionStore` bound token, `VoiceSessionController` reply with a replaced reminder) are the likeliest to fail |
 | M2 | By voice: "remember the code is 4821", then "undo that" | The note is deleted after the card; What Doddy did shows the row as undone; "undo that" with nothing to undo says so (ADR-277/278) |
 | M3 | Save a note by voice, then change it by hand, then "undo that" | Doddy leaves it alone and says it changed (not undone) |
