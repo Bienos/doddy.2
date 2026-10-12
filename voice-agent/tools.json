@@ -834,6 +834,19 @@
         "required": ["name"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_4201m4kveg9ke36tmg4qx8tzq8zq"}
+    },
+    {
+      "type": "function",
+      "name": "note_capability_gap",
+      "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment, sending a message directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. The tool changes nothing and uses no app. The result starts with 'noted'. Never mention this tool or that you wrote it down unless the user asks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "category": {"type": "string", "enum": ["send_message", "payment", "music", "smart_home", "other_app_control", "web_action", "unknown"], "description": "The nearest topic of what could not be done. Use 'unknown' when none fits."}
+        },
+        "required": ["category"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 10, "elevenlabs_tool_id": "not_synced"}
     }
   ]
 }

@@ -149,6 +149,9 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
     /// 017: he sits down on a box (ADR-323). Once on Home after the idle breaths; then he stays
     /// on the box for that launch.
     case sit
+    /// 016: hand up, open, waving (ADR-380). Once: Home's first visit of a morning, the morning
+    /// check-in and other hellos; then it rests on the open-hand wave.
+    case wave
 
     /// The frames the app ships, in order.
     var frames: [Int] {
@@ -160,6 +163,7 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .pop: Array(1...4)
         case .idle: Array(1...4)
         case .sit: Array(1...5)
+        case .wave: Array(1...5)
         }
     }
 
@@ -174,6 +178,7 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .turn: 0.16
         case .idle: 0.3
         case .sit: 0.22
+        case .wave: 0.14
         }
     }
 
@@ -192,6 +197,7 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
         case .pop: (34, 142, 365, 579)
         case .idle: (97, 112, 303, 564)
         case .sit: (37, 123, 362, 564)
+        case .wave: (53, 117, 347, 564)
         }
         return IslandRect(x: box.0 / 400, y: box.1 / 600, width: (box.2 - box.0) / 400, height: (box.3 - box.1) / 600)
     }
@@ -205,4 +211,28 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
 
     /// The one frame shown with Reduce Motion: where a once-only strip ends, a loop's first.
     var stillFrame: Int { loops ? frames[0] : frames[frames.count - 1] }
+}
+
+/// The pack's storyboards, played as cross-faded panels (ADR-299, ADR-380). Panels are cropped
+/// from the pack only (`tools/whole_doddy/cut_panels.py`, `cut_storyboards.py`).
+enum PanelStory: String, CaseIterable, Hashable, Sendable {
+    /// 038: a notebook's page turns and Doddy waves. The welcome.
+    case page
+    /// 037: Doddy steps out of a phone onto the desk. The Back Tap guide.
+    case phone
+    /// 039: Doddy draws a door and walks through. The Face ID lock.
+    case door
+    /// 040: an ink drop, a splash, Doddy in a real street. "What I can do".
+    case ink
+    /// 041: keys found under a cushion. An example in "What I can do", never played.
+    case keys
+
+    var panelCount: Int { self == .keys ? 6 : 4 }
+
+    func assetName(_ panel: Int) -> String {
+        self == .page ? "Storybook_page_\(panel)" : "Story_\(rawValue)_\(panel)"
+    }
+
+    /// Seconds each panel holds before the next fades in.
+    var hold: Double { self == .page ? 1.1 : 0.9 }
 }

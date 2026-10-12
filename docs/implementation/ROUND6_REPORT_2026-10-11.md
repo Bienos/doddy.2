@@ -85,7 +85,7 @@ Don't say "implemented", "tested" or "privacy guaranteed" about any of this. It 
 
 1. **Outlook:** create a Composio Outlook auth config and try it with your own Microsoft account. Until then it is demo data only.
 2. **CarPlay:** the entitlement request in `CARPLAY_PLAN.md` still needs sending; the rules (ADR-338) are ready for it.
-3. **"Unlock as you go" (ADR-324, branch `claude/lucid-johnson-pmwwg4`):** that session already put two of its lines into the live prompt, and round 6 kept them. Its app code isn't on this line yet. Until it's merged, an app from this line says "switched off, see Settings" while the agent expects a card. Merge it, or tell me to take those two lines out of the live prompt.
+3. **"Unlock as you go" (ADR-440, branch `claude/lucid-johnson-pmwwg4`):** that session already put two of its lines into the live prompt, and round 6 kept them. Its app code isn't on this line yet. Until it's merged, an app from this line says "switched off, see Settings" while the agent expects a card. Merge it, or tell me to take those two lines out of the live prompt.
 
 ## Next recommended step
 

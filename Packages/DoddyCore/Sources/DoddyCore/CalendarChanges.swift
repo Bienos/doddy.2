@@ -290,8 +290,10 @@ extension String {
 }
 
 extension VoiceToolReply {
+    /// The title is the agent's words, so it follows as data (ToolData).
     public static func eventNotFound(_ title: String) -> String {
-        "not found: no event called \"\(title)\" at that time on the user's calendar. Nothing changed. Call read_calendar for that day and use the exact title and start it returns."
+        "not found: no event with the title below at that time on the user's calendar. Nothing changed. Call read_calendar for that day and use the exact title and start it returns.\n"
+            + eventTitle(title)
     }
 
     public static func eventAmbiguous(_ events: [CalendarEventSummary], calendar: Calendar) -> String {
@@ -342,7 +344,8 @@ extension VoiceToolReply {
     public static let changeDeclined = "declined: the user chose not to make this change. Nothing changed."
 
     public static func reminderNotFound(_ title: String) -> String {
-        "not found: no open reminder called \"\(title)\" in Reminders. Nothing changed. Ask the user for its exact name."
+        "not found: no open reminder with the title below in Reminders. Nothing changed. Ask the user for its exact name.\n"
+            + eventTitle(title)
     }
 
     public static func reminderAmbiguous(_ reminders: [ReminderSnapshot]) -> String {

@@ -22,13 +22,20 @@ extension VoiceToolReply {
         return "DEMO DATA from a test server, not the user's real account. Tell the user it is demo data. \(text)"
     }
 
-    /// The server's first line says what happened; the lines after it quote emails, file names,
-    /// pages, tasks or web pages, so they follow as data (ToolData, review finding 3).
+    /// The server's answer quotes emails, file names, pages, tasks or web pages, and even its first
+    /// line can hold a task's title, a subject, a recipient or the search (`added: Todoist task
+    /// "…"`), so all of it follows as data (ToolData, review finding 3 and C4). Only the server's
+    /// result word ("drafted:", "added:", …) is repeated in front, for the agent's rules, the plan
+    /// summary and "What Doddy did"; a first line with no known result word gets none.
     static func cloudData(_ text: String) -> String {
         let lines = text.split(whereSeparator: \.isNewline).map { ToolData.clean(String($0)) }
         guard let first = lines.first else { return text }
-        return lines.count == 1 ? first : first + "\n" + ToolData.block(Array(lines.dropFirst()))
+        let head = cloudResultPrefixes.first { first.hasPrefix($0) }.map { "\($0) " } ?? ""
+        return head + "Doddy's server answered; its answer follows as data:\n" + ToolData.block(lines)
     }
+
+    /// The result words the server starts a line with (backend/src/tools/catalog.ts).
+    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:"]
 
     public static func cloudDeclined(_ tool: String) -> String {
         "declined: the user chose not to do \"\(CloudToolName.title(tool))\". Nothing was done."
