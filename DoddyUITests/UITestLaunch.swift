@@ -26,22 +26,34 @@ enum UITestLaunch {
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
         arguments += ["-voiceAgentID", ""]
         arguments += ["-openingScene", opening ? "YES" : "NO", "-listenOnOpen", listen ? "YES" : "NO"]
+        // Memories remembers Notes or Lists in UserDefaults, which outlive the in-memory store: a
+        // test that opened Lists would leave every later test looking at Lists, not the notes.
+        arguments += ["-memoriesShowsLists", "NO"]
         return arguments
     }
 }
 
 extension XCUIApplication {
-    /// Scrolls, one slow swipe at a time, until `element` is on screen, tappable and clear of
-    /// Doddy's tab bar. Settings, Home and the notes list have grown past the fixed swipe counts
-    /// the tests used to have, and Settings and the notes list build their rows lazily.
-    /// Returns whether the element got there.
+    /// Scrolls, a third of the screen at a time, until `element` is on screen, tappable and clear
+    /// of Doddy's tab bar. Settings, Home and the notes list have grown past the fixed swipe
+    /// counts the tests used to have, and Settings and the notes list build their rows lazily.
+    /// A swipe flings a long list past the row between checks, so each step is a drag that holds
+    /// at the end (no momentum), started left of the switches. Returns whether it got there.
     @MainActor @discardableResult
-    func reveal(_ element: XCUIElement, maxSwipes: Int = 30) -> Bool {
-        for _ in 0..<maxSwipes {
+    func reveal(_ element: XCUIElement, maxSteps: Int = 40) -> Bool {
+        for _ in 0..<maxSteps {
             if isReachable(element) { return true }
-            swipeUp(velocity: .slow)
+            scrollStep()
         }
         return isReachable(element)
+    }
+
+    /// Scrolls up a third of the screen with no momentum.
+    @MainActor
+    func scrollStep() {
+        let from = coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.65))
+        let to = coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.35))
+        from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.2)
     }
 
     @MainActor
@@ -51,8 +63,15 @@ extension XCUIApplication {
         return !bar.exists || element.frame.maxY <= bar.frame.minY
     }
 
-    /// A text found by what it says. A container's accessibility identifier replaces its texts'
-    /// own, so `staticTexts["No memories yet"]` stops matching once the empty state has an ID.
+    /// A button found by what it says. A Section's accessibility identifier (Settings' Privacy
+    /// section has `settings.privacy`) replaces its rows' own, so `buttons["settings.dataFlow"]`
+    /// never matches there.
+    @MainActor
+    func button(labelled label: String) -> XCUIElement {
+        buttons.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
+    /// A text found by what it says, whatever accessibility identifier a container gave it.
     @MainActor
     func text(_ label: String) -> XCUIElement {
         staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch

@@ -128,11 +128,11 @@ final class MemoryJourneyTests: XCTestCase {
     @MainActor
     private func scrollTo(_ element: XCUIElement, app: XCUIApplication) {
         // Home at the largest text size is many screens tall.
-        for _ in 0..<30 {
+        for _ in 0..<40 {
             let bar = app.buttons["tab.home"]
             let bottom = bar.exists ? bar.frame.minY - 8 : app.frame.maxY - 40
             if element.exists && element.isHittable && element.frame.maxY < bottom && element.frame.minY > 90 { return }
-            app.swipeUp(velocity: .slow)
+            app.scrollStep()
         }
     }
 

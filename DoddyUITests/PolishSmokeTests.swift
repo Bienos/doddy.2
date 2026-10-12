@@ -31,7 +31,7 @@ final class PolishSmokeTests: XCTestCase {
         XCTAssertTrue(app.text("Brak wspomnień").waitForExistence(timeout: 5))
 
         app.buttons["tab.settings"].tap()
-        let link = app.buttons["settings.dataFlow"]
+        let link = app.button(labelled: "Co opuszcza tego iPhone’a")
         XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["Co opuszcza tego iPhone’a"].waitForExistence(timeout: 5))

@@ -139,7 +139,7 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
-        let link = app.buttons["settings.dataFlow"]
+        let link = app.button(labelled: "What leaves this iPhone")
         XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
