@@ -312,26 +312,24 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | Z6 | Watch app before the iPhone has sent anything; then save a note from the watch | Cross-legged Doddy with the hint; fist pump only after "Saved", with the thin cream edge on black |
 | Z7 | Undo an entry in What Doddy did; leave and come back | He turns back once when it's undone; afterwards the turned frame stands still |
 
-## 4o. "Hey Doddy" with one tap (ADR-328)
-Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
+## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
 | # | Do this | Expect |
 |---|---|---|
-| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
-| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
-| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
-| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
-## 4k. Hide character artwork everywhere, and the code review fixes (ADR-331)
 | H1 | Settings › turn on "Hide character artwork"; look at every widget, the Lock Screen Talk to Doddy, StandBy, a conversation's island and Lock Screen card, a focus timer, shopping mode, a snoozed alarm | No Doddy anywhere: the island shows its board, the cards and widgets their symbols or text only. Turn it off: he's back after the widgets reload |
 | H2 | Same with the watch: the app's screens and the complications | No Doddy on the watch once the iPhone has sent its update; before the first update the watch can't know and shows him |
 | H3 | Settings › Widgets: turn "Show in widgets" off; on the watch, hide notes and lists | Widgets (small and medium, full colour): Doddy turned away beside "Turned off in Doddy's Settings."; the watch: turned away above its hidden message |
 | H4 | Build everything (app, widgets, watch app, watch widgets) | Compiles. If not, the errors are new to this checklist: the four batches before were never compiled |
 
 ## 4l. Previews, watch icon and Doddy UI tests (ADR-336)
+| # | Do this | Expect |
+|---|---|---|
 | P1 | Open `DoddyApp/DesignSystem/DoddyArtPreviews.swift`, `DoddyWidgets/DoddyWidgetPreviews.swift` and the end of `DoddyWatchWidgets/DoddyWatchComplications.swift` in Xcode's canvas | Every pose, strip, scenery strip, the storybook, share card, Siri snippet, widgets, Live Activities and complications draw; use this before tapping through the app |
 | P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
 | P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |
 
 ## 4m. The whole wave and the storyboards (ADR-380)
+| # | Do this | Expect |
+|---|---|---|
 | W1 | Delete the app, install, launch on a morning (before noon) with the opening off; open Home | He waves once (five frames, ending on the open hand), then sits on his box. Relaunch the same morning: breaths, not a wave. Next morning: a wave again |
 | W2 | Open the morning check-in | A small Doddy waves once at the bottom of the coffee-shop strip, over the strip only, not over any text |
 | W3 | Welcome (Introduction) screen | The page-turn storyboard plays as before (four panels), now through the shared `PanelStoryView` |
@@ -345,6 +343,8 @@ Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources
 
 ## 4n. What I've learned (ADR-440, ADR-441, `M6_LEARNING_LOOP_STATUS.md`)
 Nothing in this section has run on a device or a simulator: the Swift logic is tested on Linux, the screens, the voice session wiring and the live voice agent are not. Items L8 and L9 also need the owner to sync the new tool and the new variable to the live ElevenLabs agent first (`voice-agent/README.md`).
+| # | Do this | Expect |
+|---|---|---|
 | L1 | Settings → What Doddy knows → What I've learned, on a fresh install | Row says "Off"; both switches off; "Corrections this week 0"; nothing listed; Export and Delete everything disabled |
 | L2 | Turn "Learn from how I use Doddy" on. Have a voice conversation and say "I prefer my reminders at nine in the morning." End it | After the "Worth keeping?" card (or instead of it), a card "Remember this about you?" with those exact words, Save, Not now, Never this. Nothing is stored until Save |
 | L3 | Tap Save; then open What I've learned; force-quit and reopen the app | "Saved…" appears after the tap, never before; the fact is listed with its kind, "confirmed <date>", "from a conversation on <date>" and an end date; it is still there after reopening |
@@ -359,8 +359,19 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4u. "Hey Doddy" with one tap (ADR-328)
+Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
+| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
+| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
+| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
+| # | Do this | Expect |
+|---|---|---|
 | M1 | Build every target | Compiles. #38's app-side changes (`CloudSharingView(onFailed:)`, `CallsModel.discard(_:)`, `KeychainSessionStore` bound token, `VoiceSessionController` reply with a replaced reminder) are the likeliest to fail |
 | M2 | By voice: "remember the code is 4821", then "undo that" | The note is deleted after the card; What Doddy did shows the row as undone; "undo that" with nothing to undo says so (ADR-277/278) |
 | M3 | Save a note by voice, then change it by hand, then "undo that" | Doddy leaves it alone and says it changed (not undone) |
