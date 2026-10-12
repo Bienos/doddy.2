@@ -391,8 +391,19 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await check("http://localhost/feed")).statusCode, 400);
     assert.equal((await app.inject({ method: "POST", url: "/v1/news/send-now", headers: h })).json().error, "no_topics");
     await put(h, settings({ topics: [], feeds: ["https://my.blog/feed"] }));
-    const sent = (await app.inject({ method: "POST", url: "/v1/news/send-now", headers: h })).json();
-    assert.equal(sent.status, "queued");
+    // send-now builds with the real clock (36 h window), so the post must be recent in real time,
+    // not 3 hours before NOW (that went stale on 2026-10-11). The feed cache is cleared both ways
+    // so neither this post nor the earlier tests' copy leaks across.
+    const fixed = feeds.feeds.get("https://my.blog/feed")!;
+    feeds.feeds.set("https://my.blog/feed", [{ ...fixed[0]!, publishedAt: new Date(Date.now() - 3 * 3_600_000).toISOString() }]);
+    await db.query("DELETE FROM news_cache");
+    try {
+      const sent = (await app.inject({ method: "POST", url: "/v1/news/send-now", headers: h })).json();
+      assert.equal(sent.status, "queued");
+    } finally {
+      feeds.feeds.set("https://my.blog/feed", fixed);
+      await db.query("DELETE FROM news_cache");
+    }
   });
 
   test("if queueing fails, the stories are not marked as sent", async () => {
