@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { CAL, connectMock, harness, tomorrow } from "./helpers.js";
 import { connect, on, ready, run as runTool, start as startRig } from "./toolsRig.js";
+import { enable as enablePay, pay as payPage, prepare as preparePay, startPay } from "./paymentsRig.js";
 
 /**
  * Regenerates contracts/connected-apps/*.json from the mock server (fixed clock), so the Swift
@@ -75,4 +76,30 @@ await on(t2, "web_search");
 writeTool("run-result-web-search", (await runTool(t2, "web_search", { query: "Demo Café opening hours" })).body);
 await t.close();
 await t2.close();
-process.stdout.write(`fixtures written to ${out} and ${outTools}\n`);
+
+// ---- payments (x402): contracts/payments/, decoded by DoddyCore's PaymentsContractTests
+const outPay = join(process.cwd(), "..", "contracts", "payments");
+mkdirSync(outPay, { recursive: true });
+const writePay = (name: string, body: unknown) => writeFileSync(join(outPay, `${name}.json`), `${JSON.stringify(body, null, 2)}\n`);
+const p1 = await startPay();
+writePay("status-off", (await p1.call("GET", "/v1/payments")).body);
+writePay("switch-result-on", (await enablePay(p1)).body);
+const offer = await preparePay(p1);
+writePay("prepared", offer.body);
+writePay("paid", (await payPage(p1, offer.body.approvalId)).body);
+writePay("error-fresh-confirmation", (await payPage(p1, offer.body.approvalId)).body);
+writePay("status-used", (await p1.call("GET", "/v1/payments")).body);
+writePay("receipts", (await p1.call("GET", "/v1/payments/receipts")).body);
+const p2 = await startPay({ wallet: null });
+writePay("status-no-wallet", (await p2.call("GET", "/v1/payments")).body);
+writePay("error-no-wallet", (await enablePay(p2)).body);
+const p3 = await startPay();
+await enablePay(p3);
+writePay("error-over-limit", (await preparePay(p3, undefined, { scenario: "too_expensive" })).body);
+const again = await preparePay(p3, undefined, { scenario: "normal" });
+writePay("error-unconfirmed", (await payPage(p3, again.body.approvalId, undefined, { scenario: "server_error" })).body);
+writePay("status-unresolved", (await p3.call("GET", "/v1/payments")).body);
+await p1.close();
+await p2.close();
+await p3.close();
+process.stdout.write(`fixtures written to ${out}, ${outTools} and ${outPay}\n`);

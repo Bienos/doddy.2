@@ -3,9 +3,10 @@
 Date: 2026-10-12. Owner instruction: "Use Coinbase wallet connection but not as default and build it so Doddy can pay for stuff."
 ADR-450. Status report and constitution evidence log: `docs/implementation/PAYMENTS_STATUS.md`.
 
-> **State: built and tested on Linux against a demo seller and a demo wallet. Never run against the real Coinbase
-> service, a real x402 seller, a funded wallet, an iPhone, or the voice agent.** There is no screen yet where a person
-> approves a payment, so nothing can be paid from the app today.
+> **State: backend built and tested on Linux against a demo seller and a demo wallet. The iPhone approval card with Face
+> ID (ADR-451) is written but has never been compiled or run (no Swift toolchain was available). Nothing has run against
+> the real Coinbase service, a real x402 seller, a funded wallet, or the voice agent.** The only way to start a payment
+> from the app is Settings › Payments › "Pay for a page"; the voice agent cannot start one yet.
 
 ## What this is, and what it is not
 
@@ -23,7 +24,7 @@ ADR-450. Status report and constitution evidence log: `docs/implementation/PAYME
 |---|---|---|
 | Server wallet | `DODDY_PAYMENTS_WALLET=none`: every payment route answers "not set up" | The owner sets `coinbase_cdp` plus four `CDP_*` values (below) |
 | Network | `base-sepolia` (test network, no real money) | Owner sets `DODDY_PAYMENTS_NETWORK=base` |
-| Each person's switch | Off (`pay_x402`, same switch table as the other tools) | The person turns it on in Settings (screen: not built) |
+| Each person's switch | Off (`pay_x402`, same switch table as the other tools) | The person turns it on in Settings › Payments (written, not yet run) |
 | Per payment | 0.25 USDC | `DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC` |
 | Per person per day | 1.00 USDC | `DODDY_PAYMENTS_USER_DAILY_USDC` |
 | Whole server per day | 5.00 USDC | `DODDY_PAYMENTS_SERVICE_DAILY_USDC` |
@@ -128,9 +129,24 @@ variable, never the value. `production` + `live` is still refused until real app
 official contract list (the Base *Sepolia* address was confirmed against Circle's page; the Base *mainnet* address was
 only seen on a third-party page), fund a minimal balance, keep the caps small, and read "Open decisions" below.
 
+## The iPhone side (ADR-451; written, never compiled)
+
+| Piece | Where | What it guarantees |
+|---|---|---|
+| Contracts and client | `Packages/DoddyCore/.../Payments/PaymentsContracts.swift`, `PaymentsClient.swift` | Decode the shared fixtures in `contracts/payments/`. The client can send only a page address and an approval: there is no call that takes an amount, a recipient or a wallet |
+| State machine | `PaymentApprovalModel.swift` | `idle → preparing → awaitingApproval → authenticating → paying → paid / failed / unconfirmed`. Pays at most once per approval; Face ID every time (no remembered yes); an expired approval never reaches Face ID or the server; no cancel or dismiss while paying; after the server was asked to pay, any doubt (lost connection, unreadable answer, 5xx without a receipt) is **unconfirmed, never failed**, and nothing offers "pay again" |
+| Face ID | `FaceIDPaymentAuthenticator` in `DoddyApp/Features/Privacy/AppLock.swift` (the only file allowed LocalAuthentication) | A fresh check per payment; separate from the app lock (never reads or sets `unlockedAt`, so it can't unlock private notes); no Face ID, Touch ID or passcode means refused, never skipped |
+| Card | `DoddyApp/Features/Payments/PaymentApprovalCard.swift` | Shows the server's own lines (the app never composes an amount or recipient); the confirm button carries the server's label; Close is disabled and the sheet can't be swiped away while paying |
+| Settings | `PaymentsView.swift`, a row in `SettingsView.swift` | Switch moves only when the server accepts it; wallet, limits, an unconfirmed-payments warning, recent receipts, and "Pay for a page" |
+| Privacy text | `DataFlow.swift` (Doddy server row) and the Settings paragraph, with Polish | The page address going to the server for a payment is stated |
+
+A request that outlives the app's 20-second timeout (the server may spend longer reading the offer, signing and paying)
+is exactly the case the unconfirmed state exists for: the app shows "Not confirmed", offers **Check again** (which reads
+the server's receipts and resolves the payment from them) and never a retry.
+
 ## What was verified, and what was not
 
-Verified (Linux, Node 22, `npm test` in `backend/`, 257 tests, all pass; baseline before this work 188):
+Verified (Linux, Node 22, `npm test` in `backend/`, 258 tests, all pass; baseline before this work 188):
 x402 v2 parsing and policy; EIP-3009 typed data and header encoding; settlement confirmation rules; SSRF rules for URLs
 and addresses (IPv4/IPv6/mapped forms); the JWT construction for Coinbase (structure and signatures, checked against
 freshly generated keys) and the request the wallet sends (checked against a fake server); the whole prepare/pay flow
@@ -145,8 +161,8 @@ the unknown-outcome rules; privacy (no path or query stored); configuration; the
   differs would lead to `payment_unconfirmed`, never to a false "paid".
 - The real HTTPS client (`PublicHttps`) against a live host. Its address rules are unit-tested and it refuses blocked
   addresses without connecting, but a TLS connection to a real seller has not been made.
-- The iPhone: no approval screen, no Face ID step, no Settings section, no voice-agent tool exists. Nothing in Swift
-  was added (or compiled; this environment has no Xcode).
+- The iPhone: the approval card, Face ID step and Settings › Payments screen are written (see "The iPhone side"
+  below) but were **never compiled or run**: this environment has no Swift toolchain. No voice-agent tool exists.
 
 ## Limits of this version (each refused with a plain message, never guessed)
 
@@ -161,6 +177,6 @@ Base (or Base Sepolia) only; recipient must be a real 0x address; no redirects a
    person owns (Coinbase's Base Account) that grants Doddy a limited, revocable *spend permission*; that needs the
    native wallet connection flow and is the recommended next step, not built.
 2. **Mainnet.** When, with what balance and caps, after the checks above.
-3. **Where the approval happens.** Recommended: a card that shows the preview lines and requires Face ID (the existing
-   app lock, `AppLock.swift`) for every payment, before `POST /v1/payments/pay`.
+3. **Where the approval happens.** Decided and built (not yet run): a card that shows the server's preview lines and
+   asks Face ID for every payment, right before `POST /v1/payments/pay`.
 4. **Physical goods.** Separate milestone and provider choice (virtual cards or checkout APIs).

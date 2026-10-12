@@ -1,0 +1,19 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "This payment needs a fresh confirmation. Nothing was paid.",
+    "correlationId": "1e674e7a-03e5-4364-9dca-e7273d849049",
+    "receipt": {
+      "operationId": "a589aa1c-44c2-4303-856f-f3cb57a7d7b2",
+      "operation": "pay",
+      "timestamp": "2026-10-12T10:00:00.000Z",
+      "mode": "mock",
+      "status": "blocked",
+      "summary": "Not done: This payment needs a fresh confirmation. Nothing was paid.",
+      "errorCode": "confirmation_required",
+      "host": "demo-shop.example",
+      "amount": "0.05",
+      "transaction": null
+    }
+  }
+}

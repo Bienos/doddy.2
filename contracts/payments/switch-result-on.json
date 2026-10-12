@@ -1,0 +1,32 @@
+{
+  "status": {
+    "mode": "mock",
+    "wallet": {
+      "kind": "mock",
+      "configured": true,
+      "account": "0xd0dd…0001",
+      "network": "base-sepolia",
+      "testNetwork": true
+    },
+    "enabled": true,
+    "limits": {
+      "perPayment": "0.25",
+      "perDay": "1.00",
+      "usedToday": "0.00",
+      "asset": "USDC"
+    },
+    "unresolved": 0
+  },
+  "receipt": {
+    "operationId": "b063e9dd-59f1-410e-8cfb-052019dc686c",
+    "operation": "switch",
+    "timestamp": "2026-10-12T10:00:00.000Z",
+    "mode": "mock",
+    "status": "succeeded",
+    "summary": "Payments switched on.",
+    "errorCode": null,
+    "host": null,
+    "amount": null,
+    "transaction": null
+  }
+}

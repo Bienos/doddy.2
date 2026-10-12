@@ -359,6 +359,26 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4o. Payments: the approval card and Face ID (ADR-451, `PAYMENTS_STATUS.md`)
+**Nothing here has been compiled or run.** The Swift was written without a toolchain. Do P1 first; use a server in mock mode (the demo wallet and demo seller move no money) until P12.
+| # | Do this | Expect |
+|---|---|---|
+| P1 | Build every target; run `scripts/ci.sh` | Compiles. `PaymentsTests` (DoddyCore, never run) pass. The new files are `DoddyApp/Features/Payments/*`, `PaymentsClientFactory.swift`, `FaceIDPaymentAuthenticator` in `AppLock.swift`, and the Payments row in `SettingsView.swift` |
+| P2 | Settings › Payments, with the mock server set | "Demo data" banner; the switch is off; Wallet "Demo wallet"; Network "Test network, no real money"; "Pay for a page" is disabled |
+| P3 | Turn the switch on | It moves only after the server answers; "Payments switched on." appears under Recent |
+| P4 | Enter `https://demo-shop.example/articles/42`, tap See the price | A card: "Pay demo-shop.example", five lines (amount first), a countdown that ticks down from about two minutes, a "Pay 0.05 USDC" button with the Face ID icon, and Cancel. Nothing in Recent yet for a payment |
+| P5 | Tap Cancel | The card closes. No payment receipt; Paid today is still 0.00 |
+| P6 | Tap pay and cancel the Face ID sheet | Back on the card with "Face ID wasn't confirmed. Nothing was paid."; Paid today is still 0.00 |
+| P7 | Tap pay and confirm Face ID | "Paid", the summary, a short transaction, "Demo: no real money moved."; after Done, Paid today is 0.05 USDC |
+| P8 | Open the card, wait over two minutes, tap pay | "This confirmation ran out. Nothing was paid." **with no Face ID prompt** |
+| P9 | Simulator or an iPhone with no passcode and no Face ID | "Doddy can only pay after Face ID, Touch ID or a passcode…"; nothing paid |
+| P10 | During the instant of "Paying…" (delay the seller to see it) | Close is greyed and swiping the card down does nothing |
+| P11 | Tap pay, then switch to Airplane Mode at once | "Not confirmed" with Check again and Done, **no way to pay again**; after reconnecting, Check again shows the server's receipt |
+| P12 | Server on the Base test network with a funded Coinbase test account (`docs/integrations/PAYMENTS_X402.md` setup) | Same as P7 but a real transaction you can see on a block explorer |
+| P13 | With the app lock on and unlocked a minute ago, pay | Face ID is asked anyway (an earlier unlock doesn't count); afterwards private notes are still locked |
+| P14 | Privacy › What leaves this iPhone, with a Doddy server set | The Doddy server row mentions payments; so does the Privacy paragraph in Settings |
+| P15 | Switch the iPhone to Polish; Dynamic Type at the largest size; VoiceOver on the card | Labels are Polish (the server's lines are not); the card scrolls; VoiceOver reads the title, the terms as one item, then the pay button as "Pay 0.05 USDC" |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |

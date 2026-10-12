@@ -1,0 +1,18 @@
+{
+  "mode": "mock",
+  "wallet": {
+    "kind": "mock",
+    "configured": true,
+    "account": "0xd0dd…0001",
+    "network": "base-sepolia",
+    "testNetwork": true
+  },
+  "enabled": true,
+  "limits": {
+    "perPayment": "0.25",
+    "perDay": "1.00",
+    "usedToday": "0.05",
+    "asset": "USDC"
+  },
+  "unresolved": 0
+}

@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { afterEach, test } from "node:test";
+import { z } from "zod";
 import { testLimits } from "../src/config.js";
 import { DEMO_PAY_TO, MockPaymentSeller } from "../src/payments/mockSeller.js";
-import { PaymentReceiptSchema, PaymentStatusSchema } from "../src/payments/contracts.js";
+import { PaymentPreparedSchema, PaymentReceiptSchema, PaymentReceiptsSchema, PaymentResultSchema, PaymentStatusSchema } from "../src/payments/contracts.js";
 import type { HttpResult } from "../src/payments/net.js";
 import { PaymentsService } from "../src/payments/service.js";
 import { MockPaymentWallet } from "../src/payments/wallet.js";
@@ -546,5 +549,28 @@ test("demo scenarios are rejected when they are not valid names, and in a live s
     assert.throws(() => live.applyMockScenario("normal"), /only in mock mode/);
   } finally {
     store.close();
+  }
+});
+
+// ------------------------------------------------------------------ shared fixtures
+
+test("contracts/payments fixtures (decoded by the Swift tests) match the server's strict schemas", () => {
+  const dir = join(process.cwd(), "..", "contracts", "payments");
+  const failure = z.object({ error: z.object({ code: z.string(), message: z.string(), correlationId: z.string(), receipt: PaymentReceiptSchema }).strict() }).strict();
+  const switched = z.object({ status: PaymentStatusSchema, receipt: PaymentReceiptSchema }).strict();
+  const schemaFor = (name: string) =>
+    name.startsWith("status-") ? PaymentStatusSchema
+    : name.startsWith("error-") ? failure
+    : name === "prepared" ? PaymentPreparedSchema
+    : name === "paid" ? PaymentResultSchema
+    : name === "receipts" ? PaymentReceiptsSchema
+    : name.startsWith("switch-result") ? switched
+    : null;
+  const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+  assert.ok(files.length >= 12, "the fixtures exist (npm run fixtures)");
+  for (const file of files) {
+    const schema = schemaFor(file.replace(/\.json$/, ""));
+    assert.ok(schema, `a schema for ${file}`);
+    schema.parse(JSON.parse(readFileSync(join(dir, file), "utf8")));
   }
 });

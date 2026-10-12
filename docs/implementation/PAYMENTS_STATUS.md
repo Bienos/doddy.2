@@ -7,8 +7,9 @@ CLAUDE.md rule 6 asks for milestone approval for cloud actions with money; this 
 
 **Bottom line:** the backend can read an x402 offer, show exact terms, take a single-use approval bound to them, sign
 through an optional Coinbase server wallet, send once, and report only what the seller confirms. It has been tested against
-a demo wallet and a demo seller only. **Nothing can be paid from the app today:** the approval screen, Face ID step and
-voice-agent tool are not built, and nothing has run against Coinbase or a real seller.
+a demo wallet and a demo seller only. **Update (ADR-451): the iPhone approval card with Face ID is now written, but it has
+never been compiled or run** (no Swift toolchain here), so treat it as untested. The voice agent cannot start a payment;
+the only entry is Settings › Payments › "Pay for a page". Nothing has run against Coinbase or a real seller.
 
 ## Files changed
 | Area | Files |
@@ -17,7 +18,7 @@ voice-agent tool are not built, and nothing has run against Coinbase or a real s
 | Changed | `app.ts` (wiring), `config.ts` (payment settings), `http.ts` (`/v1/payments` routes), `store.ts` (two tables, spend release, retention), `errors.ts` (receipt type) |
 | Tests | New: `x402`, `paymentsNet`, `coinbase`, `payments`, `payments-config` tests and `paymentsRig.ts`. Changed: `retention.test.ts` (expected shape, plus a payments retention test) |
 | Guard / config / docs | `scripts/check_forbidden_capabilities.sh` (payment rules), `backend/.env.example`, `DECISIONS.md` (ADR-450), `DEPENDENCIES_AND_LICENSES.md` (no new dependency), `docs/integrations/PAYMENTS_X402.md`, this file |
-| **Not touched** | Everything Swift (app, widgets, watch, `Packages/`), `voice-agent/`, `contracts/` fixtures, the existing `/v1/tools` and `/v1/connected-apps` behaviour |
+| **Not touched** | The widgets, watch app, `voice-agent/`, the existing fixtures in `contracts/connected-apps` and `contracts/online-accounts`, and the existing `/v1/tools` and `/v1/connected-apps` behaviour. (The iPhone files added later are listed under "Native approval card" below.) |
 
 ## Shipped behaviour (backend, mock mode and tests)
 - `GET /v1/payments`, `PUT /v1/payments/switch`, `POST /v1/payments/prepare`, `POST /v1/payments/pay`, `GET /v1/payments/receipts`.
@@ -33,7 +34,7 @@ Environment: Linux, Node 22 (`npm ci` then `npm test` in `backend/`; `node --tes
 | Command | Result |
 |---|---|
 | `npm test` before any change (baseline) | 188 tests, 188 pass |
-| `npm test` after this work | **257 tests, 257 pass, 0 fail, 0 skipped** (69 new) |
+| `npm test` after the backend work | 257 tests, 257 pass (69 new). After the fixtures test was added for the native card: **258 tests, 258 pass, 0 fail, 0 skipped** |
 | `npm run typecheck` | clean |
 | `bash scripts/check_forbidden_capabilities.sh` | PASS, including the new payment rules |
 | Guard probe: a temporary Swift file naming `PAYMENT-SIGNATURE` and a backend file calling `api.cdp.coinbase.com` | guard failed on both (exit 1); probes deleted afterwards |
@@ -51,7 +52,7 @@ flow over HTTP including every failure the demo seller and demo wallet can produ
    transaction on a block explorer. Confirms the `PAYMENT-SIGNATURE` encoding and the `PAYMENT-RESPONSE` header name.
 3. **Real HTTPS client** (`PublicHttps`): a live TLS connection, a blocked address, an oversize body.
 4. The unconfirmed-payment path with a real seller that times out after payment.
-5. Everything on the phone (none of it exists): approval card, Face ID, Settings section, voice tool.
+5. Everything on the phone: build it, run `PaymentsTests`, and walk checklist 4o (P1 to P15). None of it has run. The voice tool still does not exist.
 
 ## Security and privacy risks
 | Risk | State |
@@ -74,15 +75,15 @@ flow over HTTP including every failure the demo seller and demo wallet can produ
 5. Physical goods: separate milestone and provider.
 
 ## Next recommended milestone
-Native approval path, behind the existing Mac verification process: Swift contracts and fixtures mirrored from
-`payments/contracts.ts`; a payment card (preview lines, Face ID via `AppLock`, `confirmLabel`); a "Payments" Settings
-section (switch, wallet label, limits, unresolved payments); a voice-agent tool that can only call `prepare` and hands
-the card to the person; the Mac checklist. Then the live Coinbase and seller checks above on the test network.
+1. **Compile and run what was written** (checklist 4o P1 to P11, mock server): expect compile fixes, since no Swift
+   toolchain was available. 2. The live Coinbase and seller checks above on the test network (P12). 3. Only then a
+   voice-agent tool that can call `prepare` and hands the card to the person (the agent must never reach `pay`; that stays
+   behind the card and Face ID), with the agent spec and `VoiceSessionController` changes that needs.
 
 ## Constitution evidence log
 | Rule | Requirement | Enforcing code | Tests | Gap / claim to limit |
 |---|---|---|---|---|
-| DOD-07 | No purchase without explicit approval of the exact action | `PaymentsService.pay`: `consumeApproval` bound to `offerDigest` (page, recipient, amount, token, wallet), checked against a fresh offer, consumed before signing | `payments.test.ts`: reuse, expiry, other user, other page, price change, switch off, races | The **explicit human approval step does not exist yet** (no screen). The server enforces that an approval exists; it cannot tell whether a person saw the card. Do not claim "user approves payments" until the app does it |
+| DOD-07 | No purchase without explicit approval of the exact action | `PaymentsService.pay`: `consumeApproval` bound to `offerDigest` (page, recipient, amount, token, wallet), checked against a fresh offer, consumed before signing | `payments.test.ts`: reuse, expiry, other user, other page, price change, switch off, races | The approval card and a fresh Face ID per payment are **written but never compiled or run**. The server enforces that an approval exists; it cannot tell whether a person saw the card, so "a person approves every payment" is true only once the card has been run on a device (checklist P4 to P8, P13). Do not claim it before then |
 | DOD-08 | Never assert success without a trusted confirmation; unknown is not success, never blindly retried | `confirmSettlement` (success + tx hash + network + payer); `unknown()` path; single `http.get` after signing; 15-minute duplicate block | `x402.test.ts` settlement table; `payments.test.ts` four unknown scenarios, declined, wallet failure | Settlement header name and encoding follow the spec text, not a live seller (a mismatch yields `unknown`, never a false success) |
 | DOD-09 | Admit errors; plain recovery | Plain messages naming what happened and what is safe ("Nothing was paid" only when proven, else "may or may not"); unresolved count in status | message assertions in `payments.test.ts` | Wording not yet reviewed by the owner or shown in a UI |
 | DOD-11 | Privacy as an observable right; untrusted web content is not instructions (DC-027) | Receipts/ledger store host and amount only; page content labelled data, clipped, control characters removed, never stored; `url_hash` not the URL; logs are route templates | privacy test (no path or query anywhere); paid-content tests | Page content does reach the voice agent (by design, labelled). The seller learns the page address and the server's IP |
@@ -92,3 +93,42 @@ the card to the person; the Mac checklist. Then the live Coinbase and seller che
 **Claims to limit:** do not write that payments are "implemented" for users, "secure" or "tested with Coinbase". Accurate: "backend
 payment path built and tested against a demo wallet and demo seller; Coinbase adapter written to Coinbase's published auth scheme and not
 yet run; no app screen or voice tool yet."
+
+## Native approval card (ADR-451, 2026-10-12, owner: "build the native approval card with Face ID")
+**Written without a Swift toolchain: never compiled, never run. NOT RUN.** Everything below needs a Mac (checklist 4o).
+
+| Area | Files |
+|---|---|
+| DoddyCore (new, `Payments/`) | `PaymentsContracts.swift` (mirror of `payments/contracts.ts`), `PaymentsClient.swift` (typed client, `mightHaveBeenPaid`), `PaymentApprovalModel.swift` (the state machine, `PaymentAuthenticator` protocol), `PaymentsSettingsModel.swift` |
+| DoddyCore tests (new) | `PaymentsTests.swift`: 37 tests (4 contract, 5 client, 23 state-machine, 5 settings), none of them run |
+| App (new) | `Features/Payments/PaymentApprovalCard.swift`, `Features/Payments/PaymentsView.swift`, `Infrastructure/PaymentsClientFactory.swift` |
+| App (changed) | `Features/Privacy/AppLock.swift` (`FaceIDPaymentAuthenticator`), `Features/Settings/SettingsView.swift` (Payments row; privacy paragraph) |
+| Text | `DataFlow.swift` (Doddy server row), `l10n/pl.json` and the regenerated `Localizable.xcstrings` (38 new Polish lines) |
+| Shared fixtures | `contracts/payments/*.json` (12 files from the real server, one per response shape) and the generator in `backend/test/fixtures.generate.ts` |
+| Docs | `MAC_VERIFICATION_CHECKLIST_2026-10-10.md` section 4o, `PAYMENTS_X402.md`, `DECISIONS.md` (ADR-451), this file |
+
+**What was actually run for this part:** `npm test` in `backend/` (258 pass; includes a test that every
+`contracts/payments` fixture matches the server's strict schemas); `bash scripts/check_forbidden_capabilities.sh` (PASS, so no
+wallet, signing or payment-protocol names are in the Swift, and LocalAuthentication is still only in `AppLock.swift`);
+`python3 -I tools/build_strings_catalog.py --check` (PASS); a bracket-balance check of the new Swift files; a search for
+name clashes with existing declarations. **Not run:** the Swift compiler, `swift test`, `scripts/ci.sh`, Xcode, a device.
+
+**Design choices worth knowing**
+- *Unconfirmed, never failed.* The app's request times out at 20 s, but a payment can take longer on the server. If the app
+  loses the answer it cannot know, so it shows "Not confirmed", never a retry; **Check again** reads the server's receipts.
+- *Face ID is its own check.* It never touches `AppLock.unlockedAt`, so paying can't unlock private notes and an earlier
+  unlock can't count as a payment's yes. No biometrics or passcode on the iPhone means the payment is refused.
+- *The app composes nothing financial.* It shows the server's lines and label verbatim; the client has no field for an
+  amount, recipient or wallet.
+- *Not wired into the voice agent.* `VoiceSessionController` and `voice-agent/` were not touched: blind edits to a 2,000-line
+  controller that handles live conversations were not worth the risk before the card itself has compiled.
+
+**Constitution evidence (native part).** DOD-07: Face ID fresh per payment, single `pay` per approval, expired approval
+never offered (`PaymentApprovalModelTests`, not run). DOD-08: unconfirmed never failed (`testLosingContact...`,
+`testTheServersOwnDoubt...`, not run). DOD-11: the page address going to the server is stated in the Doddy server row and
+the Settings paragraph. **Gap:** none of the Swift tests has run; the card's layout, Dynamic Type, VoiceOver and Polish
+have never been seen.
+
+**Decisions for the owner:** (1) Is "Pay for a page" in Settings acceptable as the only entry until the voice tool exists, or
+should it be hidden outside development builds? (2) Should a payment over a set amount ask for Face ID *and* a typed
+confirmation of the amount? (3) Should an unconfirmed payment keep a banner on Home, not only in Settings › Payments?

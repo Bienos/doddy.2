@@ -64,6 +64,26 @@ final class AppLock {
     }
 }
 
+/// Face ID (or Touch ID, or the passcode) for ONE payment (ADR-451). Asked fresh every time, right
+/// before Doddy's server is told to pay, whether or not the app lock is on. It is a separate check
+/// on purpose: it never reads or sets `AppLock.unlockedAt`, so confirming a payment can't unlock
+/// private notes, and an earlier unlock can't stand in for a payment's yes. No Face ID, Touch ID or
+/// passcode on this iPhone means `.unavailable`, and the payment is refused (never skipped).
+@MainActor
+struct FaceIDPaymentAuthenticator: PaymentAuthenticator {
+    func confirm(reason: String) async -> PaymentAuthResult {
+        let context = LAContext() // a new context each time: nothing carried over from an earlier check
+        var error: NSError?
+        guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else { return .unavailable }
+        do {
+            let ok = try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason)
+            return ok ? .confirmed : .cancelled
+        } catch {
+            return .cancelled
+        }
+    }
+}
+
 /// Which notes are private, on this iPhone only (ADR-310). Every change is read back.
 enum PrivateNotesStore {
     static func current() -> PrivateNotes {

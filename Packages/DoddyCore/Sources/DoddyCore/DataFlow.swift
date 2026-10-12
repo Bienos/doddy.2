@@ -167,8 +167,8 @@ public enum DataFlow {
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
-                what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
-                when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
+                what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back. If you start a payment, the web address of the page you pay for goes there too: the server reads the price from that site, and pays only after you confirm with Face ID.",
+                when: "When you use Connected Apps, Doddy uses an online-account tool you switched on, or you start a payment.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet
                     ? "No Doddy server is set, so nothing goes there."
