@@ -256,6 +256,54 @@
     },
     {
       "type": "function",
+      "name": "upcoming_renewals",
+      "description": "Read the bills and subscriptions the user typed into Doddy (name, next date, how often and, if they gave one, the amount), for the next few days. Use it when the user asks what renews or is due to pay soon. Only mention what the tool returned; amounts are the user's own, never checked against a bank. It changes nothing: adding or changing them is done on the screen, in Lists, Bills and subscriptions.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "description": "How many days to look ahead, today included: 30 by default, up to 92."
+          }
+        },
+        "required": []
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": false,
+        "speak_before": "auto",
+        "timeout_secs": 15,
+        "elevenlabs_tool_id": "tool_8801m4p10mbbe2avb1a9ygw4vjky",
+        "app_handler": "other_branch"
+      }
+    },
+    {
+      "type": "function",
+      "name": "add_to_diary",
+      "description": "Propose one line for the user's diary in Doddy. Use it only when the user clearly asks to add something to their diary or journal (e.g. 'add to my diary: long walk by the river'). Write the line in the user's own words and language; don't add to it, sum it up or comment on it. The app shows the line on a card and keeps it only when the user taps Save; if the diary is off, Save turns it on. The result starts with 'saved', 'declined' or 'failed'. Before this tool runs, say only one short line, e.g. 'Confirm on screen and I'll add it.' (Polish: 'Potwierdź na ekranie, a dopiszę.'). You can never read the diary. Never suggest writing in it, never ask how their day was for it, and never mention streaks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "The line exactly as the user said it, at most 500 characters."
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": true,
+        "speak_before": "force",
+        "timeout_secs": 90,
+        "elevenlabs_tool_id": "tool_8201m4p10nhsfdqayngyjt5g2pp7",
+        "app_handler": "other_branch"
+      }
+    },
+    {
+      "type": "function",
       "name": "calculate",
       "description": "Work out a sum on the user's iPhone. Use it for every calculation the user asks for (totals, splitting a bill, tips, percentages, recipe scaling) instead of doing the maths yourself, then say the result it returns. Only numbers with a dot for decimals, + - * / ^ for powers, % (a percent of the number before it) and brackets; no words, units or currency signs. For '15% of 80' send '80 * 15%'.",
       "parameters": {

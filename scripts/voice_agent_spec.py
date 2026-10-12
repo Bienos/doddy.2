@@ -134,7 +134,13 @@ def check_app(tools, sources=APP_SOURCES):
         tool_id = x.get("elevenlabs_tool_id")
         if tool_id != "not_synced" and not re.fullmatch(r"tool_[a-z0-9]+", str(tool_id)):
             errors.append(f"tool {name}: x_doddy.elevenlabs_tool_id must be the live tool id, or 'not_synced' until it is synced")
-        if x.get("runs_on") == "phone" and f'"{name}"' not in swift:
+        named = f'"{name}"' in swift
+        if x.get("app_handler") == "other_branch":
+            # A tool that is already live but whose app side is on another branch (README). It is the one
+            # way past the handler rule, it is printed by `check`, and it must go once the app names the tool.
+            if named:
+                errors.append(f"tool {name}: x_doddy.app_handler 'other_branch' is stale, the app now names this tool; remove it")
+        elif x.get("runs_on") == "phone" and not named:
             errors.append(f"tool {name}: runs on the phone but no Swift source names it, so the app would answer it as unsupported")
     return errors
 
@@ -293,6 +299,9 @@ def main(argv):
         web = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "web"]
         groups = "; ".join(f"{label}: {', '.join(names)}" for label, names in (("phone", phone), ("web", web)) if names)
         print(f"PASS voice agent spec ({where}): {len(tools['tools'])} tools ({groups})")
+        waiting = [t["name"] for t in tools["tools"] if t["x_doddy"].get("app_handler") == "other_branch"]
+        if waiting:
+            print(f"NOTE: no app handler on this branch for {', '.join(waiting)} (live on the agent; app side is on another branch)")
     elif cmd == "openai":
         print(json.dumps(openai_session(tools, session, instructions), ensure_ascii=False, indent=2))
     elif cmd == "elevenlabs":
