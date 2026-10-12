@@ -327,12 +327,9 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 | P2 | Build and run the watch app | The candidate icon (same as the iPhone's) on the watch's Home Screen; no asset catalog error |
 | P3 | Run `DoddyArtTests` (UI tests) | All five pass. If the marker elements aren't found, the `doddyArtMarker` modifier may need `.accessibilityHidden(false)` before it: fix the marker, not the tests |
 
-## 4r. "Ask me about it" (ADR-403)
+## 4m. The whole wave and the storyboards (ADR-380)
 | # | Do this | Expect |
 |---|---|---|
-| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
-| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
-## 4m. The whole wave and the storyboards (ADR-380)
 | W1 | Delete the app, install, launch on a morning (before noon) with the opening off; open Home | He waves once (five frames, ending on the open hand), then sits on his box. Relaunch the same morning: breaths, not a wave. Next morning: a wave again |
 | W2 | Open the morning check-in | A small Doddy waves once at the bottom of the coffee-shop strip, over the strip only, not over any text |
 | W3 | Welcome (Introduction) screen | The page-turn storyboard plays as before (four panels), now through the shared `PanelStoryView` |
@@ -346,6 +343,8 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 
 ## 4n. What I've learned (ADR-440, ADR-441, `M6_LEARNING_LOOP_STATUS.md`)
 Nothing in this section has run on a device or a simulator: the Swift logic is tested on Linux, the screens, the voice session wiring and the live voice agent are not. Items L8 and L9 also need the owner to sync the new tool and the new variable to the live ElevenLabs agent first (`voice-agent/README.md`).
+| # | Do this | Expect |
+|---|---|---|
 | L1 | Settings → What Doddy knows → What I've learned, on a fresh install | Row says "Off"; both switches off; "Corrections this week 0"; nothing listed; Export and Delete everything disabled |
 | L2 | Turn "Learn from how I use Doddy" on. Have a voice conversation and say "I prefer my reminders at nine in the morning." End it | After the "Worth keeping?" card (or instead of it), a card "Remember this about you?" with those exact words, Save, Not now, Never this. Nothing is stored until Save |
 | L3 | Tap Save; then open What I've learned; force-quit and reopen the app | "Saved…" appears after the tap, never before; the fact is listed with its kind, "confirmed <date>", "from a conversation on <date>" and an end date; it is still there after reopening |
@@ -360,8 +359,16 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4v. "Ask me about it" (ADR-403)
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
+| # | Do this | Expect |
+|---|---|---|
 | M1 | Build every target | Compiles. #38's app-side changes (`CloudSharingView(onFailed:)`, `CallsModel.discard(_:)`, `KeychainSessionStore` bound token, `VoiceSessionController` reply with a replaced reminder) are the likeliest to fail |
 | M2 | By voice: "remember the code is 4821", then "undo that" | The note is deleted after the card; What Doddy did shows the row as undone; "undo that" with nothing to undo says so (ADR-277/278) |
 | M3 | Save a note by voice, then change it by hand, then "undo that" | Doddy leaves it alone and says it changed (not undone) |
