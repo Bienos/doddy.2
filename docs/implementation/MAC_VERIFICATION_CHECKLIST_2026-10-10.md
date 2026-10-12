@@ -359,6 +359,17 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4o. Stale tool calls (ADR-443)
+`VoiceSessionController` changed without a compile: `handle(_:attempt:)`, `ToolGate.decide` in place of the four checks, and the `ToolCallOwners` checks. Build first. To make a lookup slow enough, use Settings › Developer › Network Link Conditioner › Very Bad Network.
+| # | Do this | Expect |
+|---|---|---|
+| S1 | Build the app target | Compiles. The new code is in `handle`, `handleOpenAICall`, `propose`, `reply`, `dropStale`, `handlePlan`, `runPlan` |
+| S2 | End + Start while a Gmail draft is preparing ("draft an email to Ana saying hi", then End and Start at once) | No card in the new conversation. The new agent never hears about the draft. What Doddy did lists the draft request as not done; nothing was sent or drafted |
+| S3 | "Remind me about my parking note when I get to <a place>", then End and Start before the place list shows | No place card in the new conversation; the place choice of any card there is unchanged |
+| S4 | Confirm "add a reminder…" and End and Start straight after the tap | The reminder is added (check Reminders); What Doddy did shows its real result; the new conversation's agent is not told about it |
+| S5 | Normal use, no End: a single card (confirm and decline), a plan card, Pause all on, a connection switched off, translator mode | Same replies and cards as before this change (the order of checks is unchanged) |
+| S6 | Repeat S2 with the OpenAI test voice | Same as S2 |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |

@@ -230,6 +230,10 @@ final class VoiceSessionController {
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
+    /// The start each open tool call came from (ADR-443): a card or result is shown or sent only
+    /// while that start is still `startAttempt`, so a lookup that finishes after End and a new
+    /// Start never reaches the new conversation.
+    private var callOwners = ToolCallOwners()
     /// Shared with "Hey Doddy" listening, which may have started it (ADR-254).
     private let island = VoiceLiveActivity.shared
     /// True once this conversation has shown its state on the island, so only it ends it.
@@ -248,6 +252,8 @@ final class VoiceSessionController {
     private(set) var audioNote: String?
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
+    /// Tool calls dropped because their conversation ended (ADR-443). Tool names only, no content.
+    private static let toolLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-tools")
     /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
     private let devices: any DeviceConnecting
     private var conversation: (any LiveVoiceLink)?
@@ -297,6 +303,7 @@ final class VoiceSessionController {
     /// with `link` standing in for the provider so a test can read the reply. The app never calls it.
     func showCardForTesting(_ action: PendingAction, link: any LiveVoiceLink) {
         conversation = link
+        callOwners.record(action.toolCallID, attempt: startAttempt)
         pendingAction = action
     }
     #endif
@@ -320,6 +327,7 @@ final class VoiceSessionController {
         // never opens, keeps or hears a conversation.
         startAttempt += 1
         let attempt = startAttempt
+        callOwners.forget(before: attempt)
         isOffline = false
         offlineSaved = nil
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
@@ -464,7 +472,7 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.correct(original, to: corrected) }
         }
         config.onUnhandledClientToolCall = { call in
-            Task { @MainActor in await ref.value?.handle(call) }
+            Task { @MainActor in await ref.value?.handle(call, attempt: attempt) }
         }
         config.onError = { error in
             let offline = Offline.isNoConnection(error)
@@ -649,7 +657,9 @@ final class VoiceSessionController {
         case .assistantTranscriptCorrected(let original, let corrected):
             correct(original, to: corrected)
         case .functionCall(let call):
-            Task { await handleOpenAICall(call) }
+            // The start this call belongs to, read now: the task below may run after End and a new Start.
+            let attempt = startAttempt
+            Task { await handleOpenAICall(call, attempt: attempt) }
         case .error(let message):
             fail(message)
             Task { await stop() }
@@ -660,12 +670,14 @@ final class VoiceSessionController {
 
     /// Into the same tool handling as ElevenLabs. Web tools get a plain "not here" so Doddy says
     /// so instead of making up an answer.
-    private func handleOpenAICall(_ call: RealtimeFunctionCall) async {
+    private func handleOpenAICall(_ call: RealtimeFunctionCall, attempt: Int) async {
         if openAIWebTools.contains(call.name) {
+            callOwners.record(call.callID, attempt: attempt)
             await reply(call.callID, "Weather and Wikipedia don't work in the OpenAI voice test. Tell the user that in one sentence, and that switching Home back to ElevenLabs brings them back.", isError: true)
             return
         }
-        await handle(ClientToolCallEvent(toolName: call.name, toolCallId: call.callID, parametersData: call.argumentsData, eventId: 0, expectsResponse: true))
+        await handle(ClientToolCallEvent(toolName: call.name, toolCallId: call.callID, parametersData: call.argumentsData, eventId: 0, expectsResponse: true),
+                     attempt: attempt)
     }
 
     /// Keeps the conversation going when the user opens another app that plays or records sound
@@ -1084,17 +1096,21 @@ final class VoiceSessionController {
     /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
-        // Ended while the lists loaded: nothing changes after End (review H9).
-        guard isLive else { return }
+        // Ended (or ended and started again) while the lists loaded: nothing changes after End
+        // (review H9, ADR-443).
+        guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
         do {
             let result = try await store.addToList(request.items, listID: list.id, source: .voice)
             var lines = result.added.map { ListReceipt.Line.added($0.text) }
             lines += result.alreadyThere.map { .note("\($0) · already on the list, not added again") }
             lines += result.tooLong.map { .note("too long to add: \($0.prefix(40))…") }
             lines += result.noRoom.map { .note("\($0) · the list is full") }
-            listReceipt = ListReceipt(
-                listID: list.id, title: result.added.isEmpty ? "Nothing new for \(list.name)" : "Added to \(list.name)",
-                lines: lines, undo: result.added.isEmpty ? nil : store.listUndo)
+            // The write ran; its receipt only shows on its own conversation's screen (ADR-443).
+            if isCurrent(toolCallID) {
+                listReceipt = ListReceipt(
+                    listID: list.id, title: result.added.isEmpty ? "Nothing new for \(list.name)" : "Added to \(list.name)",
+                    lines: lines, undo: result.added.isEmpty ? nil : store.listUndo)
+            }
             // What Doddy did can undo it for a day (ADR-276); kept only when something was added.
             let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: list.id, list: list.name, items: result.added)
             await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name), undo: undo)
@@ -1105,6 +1121,7 @@ final class VoiceSessionController {
 
     private func readList(_ name: String, toolCallID: String) async {
         guard let list = await resolveList(name, toolCallID: toolCallID) else { return }
+        guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
         listReceipt = ListReceipt(listID: list.id, title: "\(list.name) · \(list.summary)", lines: list.open.map { .open($0.text) })
         await reply(toolCallID, VoiceToolReply.listRead(list))
     }
@@ -1112,8 +1129,9 @@ final class VoiceSessionController {
     /// Ticks or removes only clear matches; items that match several are offered to tap.
     private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
-        // Ended while the lists loaded: nothing changes after End (review H9).
-        guard isLive else { return }
+        // Ended (or ended and started again) while the lists loaded: nothing changes after End
+        // (review H9, ADR-443).
+        guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
         let pool = tick ? list.open : list.items
         var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
         for phrase in request.items {
@@ -1135,11 +1153,13 @@ final class VoiceSessionController {
                 }
             }
             let verb = tick ? "ticked" : "removed"
-            listReceipt = ListReceipt(
-                listID: list.id, title: "\(tick ? "Ticked on" : "Removed from") \(list.name)",
-                lines: changed.map { tick ? .ticked($0.text) : .removed($0.text) } + notFound.map { .note("not on the list: \($0)") },
-                undo: changed.isEmpty ? nil : store.listUndo,
-                choices: ambiguous.first.map { ListReceipt.Choices(said: $0.said, options: $0.options, tick: tick) })
+            if isCurrent(toolCallID) {
+                listReceipt = ListReceipt(
+                    listID: list.id, title: "\(tick ? "Ticked on" : "Removed from") \(list.name)",
+                    lines: changed.map { tick ? .ticked($0.text) : .removed($0.text) } + notFound.map { .note("not on the list: \($0)") },
+                    undo: changed.isEmpty ? nil : store.listUndo,
+                    choices: ambiguous.first.map { ListReceipt.Choices(said: $0.said, options: $0.options, tick: tick) })
+            }
             let undo: ActivityUndo? = changed.isEmpty ? nil
                 : tick ? .listTicked(listID: list.id, list: list.name, items: changed)
                 : .listRemoved(listID: list.id, list: list.name, items: changed)
@@ -1671,29 +1691,40 @@ final class VoiceSessionController {
         saveSuggestions = nil
     }
 
-    private func handle(_ call: ClientToolCallEvent) async {
+    /// `attempt` is the start the call arrived in. From here on every card, screen change and
+    /// result checks it (ADR-443): `propose` and `reply` for all of them, and the places below that
+    /// change the screen or a list after an `await`.
+    private func handle(_ call: ClientToolCallEvent, attempt: Int) async {
         // A call still queued when the user tapped End runs nothing (review H9).
-        guard isLive else { return }
+        guard isLive, attempt == startAttempt else { return }
+        callOwners.record(call.toolCallId, attempt: attempt)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
-        // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
-        // is looked up or logged.
-        if translator != nil, !TranslatorPolicy.allows(request) {
+        // Translator (ADR-215), plan, Pause all, then the tool's switch, in that order (ToolGate).
+        let gate = ToolGate.decide(
+            toolName: call.toolName, request: request, translatorOn: translator != nil,
+            pauseAll: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), isOn: { isOn($0) })
+        switch gate {
+        case .translatorRefused:
+            // Checked before anything is looked up or logged.
             await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))
             return
-        }
-        if call.toolName == VoiceToolName.proposePlan {
+        case .plan:
             await handlePlan(call)
             return
+        case .paused, .notConnected, .run:
+            break
         }
         asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)?.naming(call.toolName)
-        // Settings → Pause all: no other app or account is used; notes still work.
-        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
+        switch gate {
+        case .paused:
+            // Settings → Pause all: no other app or account is used; notes still work.
             await reply(call.toolCallId, ConnectionPause.reply)
             return
-        }
-        if let connection = VoiceConnection.serving(call.toolName), !isOn(connection) {
+        case .notConnected(let connection):
             await notConnected(call.toolCallId, connection)
             return
+        case .translatorRefused, .plan, .run:
+            break
         }
         switch request {
         case .searchMemories(let query):
@@ -1786,6 +1817,7 @@ final class VoiceSessionController {
             await handleLeaveBy(request, toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
+            guard isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
             let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
             ingredientsUnticked = open
             propose(.ingredients(toolCallID: call.toolCallId, listID: list.id, listName: list.name, dish: proposal.dish,
@@ -1946,7 +1978,7 @@ final class VoiceSessionController {
         for step in steps {
             if let block = await planBlock(for: step) {
                 blocked[step.number] = block
-                if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
+                if connectionNeeded == nil, isCurrent(call.toolCallId), case .notConnected(let connection) = block { connectionNeeded = connection }
             } else if let call = step.cloudCall {
                 // As a single card: the server checks the switch, the connection and the arguments,
                 // and returns the preview the card shows with an approval for exactly these.
@@ -1955,6 +1987,12 @@ final class VoiceSessionController {
                 case .blocked(let block): blocked[step.number] = block
                 }
             }
+        }
+        // Ended, or ended and started again, while the steps were checked: no card, no reply and
+        // no plan state in the next conversation (review H9, ADR-443).
+        guard isLive, isCurrent(call.toolCallId) else {
+            dropStale(call.toolCallId, steps: steps)
+            return
         }
         // Nothing could run: answer now instead of showing a card with nothing to tick.
         guard blocked.count < steps.count else {
@@ -1968,8 +2006,6 @@ final class VoiceSessionController {
             await reply(call.toolCallId, PlanReply.summary(results))
             return
         }
-        // Ended while the steps were checked: no card after End (review H9).
-        guard isLive else { return }
         // Another card may have been shown while the steps were checked (the checks wait).
         guard pendingAction == nil else {
             await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
@@ -1985,6 +2021,9 @@ final class VoiceSessionController {
     /// Ticked steps run one after another, each through the same path as its single card, and each
     /// gets its own result. A step that fails doesn't stop the others; none is retried.
     private func runPlan(_ toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock]) async {
+        // The steps the user approved run to the end and are logged even if the conversation ends;
+        // only its own screen shows their progress (ADR-443).
+        let attempt = startAttempt
         askedPlans[toolCallID] = nil
         let ticked = planTicked
         let changed = planChanged
@@ -2012,10 +2051,11 @@ final class VoiceSessionController {
                 text = ran.0
                 undo = ran.1
             }
-            planStatus?.results[step.number] = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry, undo: undo)
+            let logged = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry, undo: undo)
+            if attempt == startAttempt { planStatus?.results[step.number] = logged }
             results.append((step, text))
         }
-        planStatus?.isRunning = false
+        if attempt == startAttempt { planStatus?.isRunning = false }
         // A saved procedure with exactly these steps counts as used (ADR-440).
         if !ticked.subtracting(blocked.keys).isEmpty {
             await store.learning?.planRan(tools: steps.map(\.toolName))
@@ -2219,6 +2259,12 @@ final class VoiceSessionController {
                 await reply(toolCallID, VoiceToolReply.placeNotFound(query))
                 return
             }
+            // Maps answered after End (and maybe a new Start): the place choice belongs to the
+            // conversation on screen now, so it is not touched (ADR-443).
+            guard isCurrent(toolCallID) else {
+                dropStale(toolCallID)
+                return
+            }
             // Refused here, not in propose(): resetting the choice for a card that isn't shown
             // would change the place on the card that is (review H8).
             guard pendingAction == nil else {
@@ -2302,6 +2348,8 @@ final class VoiceSessionController {
             if await PlaceLocation.shared.readiness() == .ready, let here = await PlaceLocation.shared.currentCoordinate() {
                 distance = Parking.distance(from: (here.latitude, here.longitude), to: (spot.latitude, spot.longitude))
             }
+            // Location was read after an await: no parking card in a later conversation (ADR-443).
+            guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
             parkingCard = spot
             await reply(toolCallID, VoiceToolReply.parkingFound(spot, now: Date(), calendar: .current, distanceMeters: distance))
         case .clear:
@@ -2316,8 +2364,9 @@ final class VoiceSessionController {
     }
 
     private func propose(_ action: PendingAction, toolCallID: String) {
-        // A proposal that finished its lookups after End shows no card (review H9).
-        guard isLive else { return }
+        // A proposal that finished its lookups after End shows no card (review H9), and one that
+        // finished after End and a new Start shows none in the new conversation (ADR-443).
+        guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
         guard pendingAction == nil else {
             Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
             return
@@ -2553,6 +2602,8 @@ final class VoiceSessionController {
     }
 
     private func proposeBulk(_ items: [BulkItem], verb: String, skipped: [String], toolCallID: String) async {
+        // The reminders were read after an await: the ticks belong to the conversation on screen.
+        guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
         guard !items.isEmpty else { return await reply(toolCallID, VoiceToolReply.bulkNothing) }
         guard items.count <= BulkChange.maxItems else { return await reply(toolCallID, VoiceToolReply.bulkTooMany(items.count)) }
         bulkUnticked = []
@@ -2753,6 +2804,8 @@ final class VoiceSessionController {
     }
 
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
+        // Some callers waited first (notification access): no prompt in a later conversation.
+        guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
         connectionNeeded = connection
         await reply(toolCallID, VoiceToolReply.notConnected(connection))
     }
@@ -2781,27 +2834,57 @@ final class VoiceSessionController {
                 activity.append(ActivityEntry(request: request, reply: text, at: Date(), undo: undo))
             }
         }
+        // Logged above whatever happens (a confirmed change that ran is still recorded), but sent
+        // only to the conversation that asked (ADR-443): a result from an ended conversation never
+        // reaches the next one.
+        guard callOwners.finish(toolCallID, attempt: startAttempt) else {
+            Self.toolLog.notice("result of a tool call from an ended conversation was not sent")
+            return
+        }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
+    }
+
+    /// True while the conversation `toolCallID` arrived in is still the one on screen (ADR-443).
+    private func isCurrent(_ toolCallID: String) -> Bool {
+        callOwners.isCurrent(toolCallID, attempt: startAttempt)
+    }
+
+    /// A call whose conversation ended before its card or result was ready (ADR-443): nothing is
+    /// shown or sent. What it asked is logged as not done, once; `stop()` has usually done that.
+    private func dropStale(_ toolCallID: String, steps: [PlanStep] = []) {
+        callOwners.forget(toolCallID)
+        Self.toolLog.notice("dropped a tool call from an ended conversation")
+        if started[toolCallID] == nil, let request = asked.removeValue(forKey: toolCallID) {
+            activity.append(Self.unanswered(request))
+        }
+        guard !steps.isEmpty else { return }
+        let planID = UUID()
+        for step in steps {
+            guard let request = step.activity(calendar: .current) else { continue }
+            activity.append(Self.unanswered(request, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count)))
+        }
+    }
+
+    /// A request that got no answer: nothing happened.
+    private static func unanswered(_ request: ActivityRequest, plan: ActivityPlanRef? = nil) -> ActivityEntry {
+        var entry = ActivityEntry(request: request, reply: "", at: Date(), plan: plan)
+        entry.outcome = .notDone
+        entry.note = ActivityLog.unansweredNote
+        return entry
     }
 
     /// Requests still waiting on a card when the conversation ends: nothing happened.
     private func logUnanswered() {
         // Confirmed changes still running keep their entry; their result replaces it when it arrives.
         for (toolCallID, request) in asked where started[toolCallID] == nil {
-            var entry = ActivityEntry(request: request, reply: "", at: Date())
-            entry.outcome = .notDone
-            entry.note = ActivityLog.unansweredNote
-            activity.append(entry)
+            activity.append(Self.unanswered(request))
             asked[toolCallID] = nil
         }
         for (_, steps) in askedPlans {
             let planID = UUID()
             for step in steps {
                 guard let request = step.activity(calendar: .current) else { continue }
-                var entry = ActivityEntry(request: request, reply: "", at: Date(), plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
-                entry.outcome = .notDone
-                entry.note = ActivityLog.unansweredNote
-                activity.append(entry)
+                activity.append(Self.unanswered(request, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count)))
             }
         }
         askedPlans = [:]
