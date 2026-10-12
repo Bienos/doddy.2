@@ -3,7 +3,7 @@ import { type CompleteRequest, CompleteRequestSchema, type ConnectionReason, typ
 import type { Limits } from "../config.js";
 import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
-import type { ConnectionRow, Store } from "../store.js";
+import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
   CLOUD_TOOLS,
@@ -190,6 +190,8 @@ export class CloudToolsService {
       now,
       ttlSeconds: this.limits.attemptTtlSeconds,
     });
+    // The unfinished attempt this one replaces can still be finished at the provider: its connection goes.
+    await this.removeQueued(attempt.superseded);
     const callbackUrl = `${this.deps.publicBaseUrl}/v1/oauth/return?attempt=${attempt.attemptId}`;
     const link = await this.limiter.withSlot(userId, async () => {
       if (this.mode === "live") this.limiter.reserveToolRun(userId, now);
@@ -199,7 +201,11 @@ export class CloudToolsService {
         throw toAppError(error);
       }
     });
-    this.store.setPendingConnection(attempt.attemptId, link.pendingConnectionId);
+    if (!this.store.setPendingConnection(attempt.attemptId, link.pendingConnectionId, this.now())) {
+      // A newer Connect replaced this one while the link was made; this link must not be used.
+      if (link.pendingConnectionId) await this.removeQueued([{ connectionId: link.pendingConnectionId, userId, provider: id }]);
+      throw new AppError("attempt_invalid", { message: "A newer Connect replaced this one. Use the newest link." });
+    }
     return {
       mode: this.mode,
       attemptId: attempt.attemptId,
@@ -217,7 +223,12 @@ export class CloudToolsService {
     const title = TOOLKITS[id].title;
     const now = this.now();
     const attempt = this.store.consumeAttempt({ attemptId: request.attemptId, userId, provider: id, nonce: request.nonce, now });
-    if (!attempt) throw new AppError("attempt_invalid");
+    if (!attempt) {
+      // Too late: the user may have finished at the provider after the attempt expired. That
+      // connection can never be completed, so it is removed instead of left live.
+      await this.removeQueued(this.store.expireAttempts(now, [id], userId));
+      throw new AppError("attempt_invalid");
+    }
 
     const composioUserId = this.store.composioUserId(userId, now);
     const fail = (errorCode: string, summary: string): never => {
@@ -347,10 +358,31 @@ export class CloudToolsService {
     return { toolkit: this.view(userId, id), receipt };
   }
 
+  /**
+   * Hourly (app.ts): ends attempts nobody completed in time and removes their connections at the
+   * provider, then retries removals that failed earlier. Without it, a user who finished a
+   * provider's consent after leaving Doddy would keep a grant no one tracks once `prune` drops the attempt.
+   */
+  async sweepAbandoned(): Promise<void> {
+    const now = this.now();
+    const toolkits = Object.keys(TOOLKITS);
+    const ended = this.store.expireAttempts(now, toolkits);
+    const retry = this.store.cleanupsToRetry(toolkits, now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    await this.removeQueued([...ended, ...retry]);
+  }
+
   /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
   private async discardRemote(userId: string, id: ToolkitId, ids: (string | null)[]): Promise<void> {
-    for (const connectionId of new Set(ids.filter((c): c is string => !!c))) {
+    const queued = [...new Set(ids.filter((c): c is string => !!c))].map((connectionId) => {
       this.store.queueCleanup(connectionId, userId, id, this.now());
+      return { connectionId, userId, provider: id };
+    });
+    await this.removeQueued(queued);
+  }
+
+  /** Already queued: removed at the provider and dequeued, or kept as `failed` to retry. */
+  private async removeQueued(queued: readonly QueuedCleanup[]): Promise<void> {
+    for (const connectionId of new Set(queued.map((q) => q.connectionId))) {
       let result: "removed" | "failed";
       try {
         result = await this.provider.removeConnection({ connectionId, signal: this.timeout() });

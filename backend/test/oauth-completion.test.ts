@@ -152,14 +152,17 @@ test("mismatched owner: user B cannot complete user A's attempt", async () => {
   assert.equal(res.body.error.code, "attempt_invalid");
 });
 
-test("a new attempt supersedes the previous unfinished one", async () => {
+test("a new attempt supersedes the previous unfinished one and removes its connection at the provider", async () => {
   const fake = new FakeComposio();
   h = await harness({ provider: liveProvider(fake) });
   const first = await start(h, fake);
-  await start(h, fake);
-  fake.activate(first.pending);
+  const second = await start(h, fake);
+  // The first link could still be finished at Google; no one could complete it through Doddy.
+  assert.ok(!fake.accounts.has(first.pending), "the superseded attempt's connection is gone");
+  assert.ok(fake.accounts.has(second.pending));
   const res = await complete(h, first, { kind: "callback", status: "success", connectedAccountId: first.pending });
   assert.equal(res.body.error.code, "attempt_invalid");
+  assert.equal((await h.call("GET", CAL)).body.remoteCleanup, "none");
 });
 
 test("completion kind must match the server's configured flow", async () => {

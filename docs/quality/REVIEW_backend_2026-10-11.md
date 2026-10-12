@@ -114,3 +114,14 @@ Tests after the fixes: `npm test` (includes the `tsc` build) → **132 pass, 0 f
 - A canceled or denied connect now also deletes its pending Composio connection.
 - Completing a connect can take a little longer when cleanup runs.
 - Receipts older than 90 days, or beyond the newest 200 per user, are deleted.
+
+## Follow-up (2026-10-12, DODDY Brain audit §5 #4, ADR-445)
+
+Finding 2's fix covered completions that fail **after** the attempt is consumed. Three ways a sign-in could still leave a live grant that Doddy didn't track:
+1. **Superseded:** a second Connect ended the first attempt (`createAttempt`) but left its pending connection at Composio, where the user could still finish it.
+2. **Late completion:** `complete` on an expired attempt threw `attempt_invalid` and removed nothing.
+3. **Abandoned:** the user finished consent in the browser but never returned to Doddy. A day after expiry, `prune` deleted the attempt row and with it the only copy of the connection id.
+
+Fixed: ending an attempt without redeeming it (supersede, expiry, or a link that arrives after a supersede) queues its pending connection for removal **in the same transaction**, unless the connection is recorded as a Doddy connection. Connect and a late `complete` remove it at once. An hourly sweep (`sweepAbandoned`, run before `prune`) ends expired attempts and retries failed removals: rows older than 5 minutes, 20 per sweep, 24 tries per row. A row past that stays visible as `remoteCleanup: failed` and is still retried before the next Connect. `test/abandoned-attempts.test.ts` (7 tests) and the updated supersede test; the two HTTP-level ones fail on the old code. `npm test`: 195 pass. Not run against the real Composio API.
+
+**Behaviour changes to note:** a second Connect deletes the first link's pending connection, so the first link no longer works (it never could be completed). `remoteCleanup` can briefly read `pending` or `failed` after a Connect if that removal is slow or fails.
