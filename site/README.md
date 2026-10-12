@@ -137,3 +137,7 @@ A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards,
 - Remember it (2026-10-09, headless Chromium 1194 via Playwright, `vercel.json` headers): full game at 1440, 390 and 320 px; a mismatch flips back, a pair played by keyboard (focus + Enter) matches, the win message and fist-bump pose show, New game resets; no horizontal scroll, console errors or CSP violations; hidden with JavaScript off. Screenshots: `VISUAL_REVIEW/landing/v3-remember-1440.png`, `v3-remember-390.png`. Not checked: VoiceOver, real touch.
 
 Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom, touch throwing), VoiceOver, Lighthouse.
+
+## Hosting (new Vercel team)
+
+Vercel project `doddy` on team `doddyyyy` (root directory `site/`). Needs `WAITLIST_ADMIN_PASSWORD` (set) and a Vercel Blob store named `doddy-waitlist` for the waitlist.

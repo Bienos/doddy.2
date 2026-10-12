@@ -66,3 +66,7 @@ Workers need only a short entry file in place of `api/voice-token.js`.
 ```sh
 npm test      # Node 22+, no dependencies
 ```
+
+## Hosting (new Vercel team)
+
+Vercel project `doddy-voice-token` on team `doddyyyy` (root directory `server/voice-token/`). It fails closed until `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID` and `DODDY_ACCESS_CODES` are set.
