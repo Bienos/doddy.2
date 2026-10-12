@@ -12,7 +12,10 @@ export const PAY_TOOL = "pay_x402";
 
 export const PaymentSwitchSchema = z.object({ enabled: z.boolean() }).strict();
 export const PaymentPrepareSchema = z.object({ url: z.string().trim().min(8).max(2048) }).strict();
-export const PaymentPaySchema = z.object({ url: z.string().trim().min(8).max(2048), approvalId: z.string().uuid() }).strict();
+/** `confirmAmount` is what the person typed; the server requires it to equal the price from the confirm threshold up. */
+export const PaymentPaySchema = z
+  .object({ url: z.string().trim().min(8).max(2048), approvalId: z.string().uuid(), confirmAmount: z.string().trim().max(20).optional() })
+  .strict();
 
 export const PaymentReceiptSchema = z
   .object({
@@ -61,6 +64,9 @@ export const PaymentPreparedSchema = z
   .object({
     mode: Mode,
     preview: z.object({ title: z.string(), lines: z.array(z.string()), confirmLabel: z.string() }).strict(),
+    /** USDC, e.g. "0.25": what the person must type when `confirmAmountRequired`. */
+    amount: z.string(),
+    confirmAmountRequired: z.boolean(),
     approvalId: z.string().uuid(),
     expiresAt: z.string(),
   })

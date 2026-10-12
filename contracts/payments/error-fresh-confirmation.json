@@ -2,9 +2,9 @@
   "error": {
     "code": "capability_disabled",
     "message": "This payment needs a fresh confirmation. Nothing was paid.",
-    "correlationId": "1e674e7a-03e5-4364-9dca-e7273d849049",
+    "correlationId": "2833626a-8c7a-4d93-89c0-c315cae721f0",
     "receipt": {
-      "operationId": "a589aa1c-44c2-4303-856f-f3cb57a7d7b2",
+      "operationId": "234e50ed-a13a-47d1-9863-be79c3f478f1",
       "operation": "pay",
       "timestamp": "2026-10-12T10:00:00.000Z",
       "mode": "mock",

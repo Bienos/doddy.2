@@ -27,6 +27,7 @@ import {
   NETWORKS,
   type NetworkId,
   parsePaymentRequired,
+  parseUsdc,
   type PaymentRequired,
   paymentSignatureHeader,
   type RefusalReason,
@@ -37,6 +38,8 @@ import {
 export interface PaymentsPolicy {
   network: NetworkId;
   maxPerPayment: number;
+  /** From this amount up the person must also type the amount (the server refuses a payment without it). */
+  confirmAmount: number;
   userDaily: number;
   serviceDaily: number;
   /** Empty: any public https site (each payment still needs its own approval). */
@@ -206,6 +209,8 @@ export class PaymentsService {
     return {
       mode: this.mode,
       preview: { title: `Pay ${host}`, lines, confirmLabel: `Pay ${amountText} USDC` },
+      amount: amountText,
+      confirmAmountRequired: offer.accepted.amount >= this.policy.confirmAmount,
       approvalId,
       expiresAt: new Date(expiresAt).toISOString(),
     };
@@ -233,6 +238,18 @@ export class PaymentsService {
 
       // The approval is bound to what the page asks NOW: a changed price, recipient or token fails here, before anything is signed.
       if (!approval(true)) throw unconfirmed();
+      // From the threshold up, the person must also type the price. Checked against the offer just read, before
+      // anything is reserved or used up, so a wrong or missing entry costs the person nothing and keeps the approval.
+      if (accepted.amount >= this.policy.confirmAmount) {
+        const typed = request.confirmAmount === undefined ? null : parseUsdc(request.confirmAmount);
+        if (typed !== accepted.amount) {
+          const message =
+            request.confirmAmount === undefined || request.confirmAmount === ""
+              ? `Type the amount (${amountText} USDC) to confirm this payment. Nothing was paid.`
+              : `The amount you typed doesn't match ${amountText} USDC. Nothing was paid.`;
+          throw this.refuse(userId, "pay", "capability_disabled", message, "amount_confirmation_required", host, amountText);
+        }
+      }
       // Daily room is reserved before the approval is used up, so a limit refusal doesn't cost the person their confirmation.
       const spend = this.spendChecks(userId, this.now());
       if (!this.store.reserveUsage(spend, accepted.amount)) {

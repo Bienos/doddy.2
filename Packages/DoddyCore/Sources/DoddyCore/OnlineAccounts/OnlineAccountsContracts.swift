@@ -200,5 +200,6 @@ public struct CloudToolCall: Equatable, Sendable {
         self.arguments = arguments
     }
 
-    public var isWrite: Bool { CloudToolName.isWrite(name) }
+    /// A payment counts as a write for every gate that asks (it always waits for a card and Face ID).
+    public var isWrite: Bool { CloudToolName.isWrite(name) || name == PaymentToolName.payForPage }
 }

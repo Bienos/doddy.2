@@ -55,6 +55,11 @@ enum PreferenceKey {
     static let voiceTokenServer = "voiceTokenServer"
     /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
     static let connectedAppsServerURL = "connectedAppsServerURL"
+    /// Payments were switched on at some point; until then Home never asks the server about payments (ADR-452).
+    static let paymentsEverEnabled = "paymentsEverEnabled"
+    /// How many unconfirmed payments the person said they checked, and the server's last count (ADR-452).
+    static let paymentsAcknowledgedUnresolved = "paymentsAcknowledgedUnresolved"
+    static let paymentsLastUnresolved = "paymentsLastUnresolved"
     /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"

@@ -2,9 +2,9 @@
   "error": {
     "code": "quota_exceeded",
     "message": "This costs 5.00 USDC, more than Doddy's limit of 0.25 USDC per payment. Nothing was paid.",
-    "correlationId": "aae7b611-c59b-4098-8522-848353c99475",
+    "correlationId": "fc4c4615-4dd7-4042-8547-b54381cbdde8",
     "receipt": {
-      "operationId": "a60026e0-1e16-4842-8700-4280c2190567",
+      "operationId": "8ef684c4-63d1-4561-b726-5016f11d5d46",
       "operation": "prepare",
       "timestamp": "2026-10-12T10:00:00.000Z",
       "mode": "mock",

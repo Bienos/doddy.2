@@ -2,9 +2,9 @@
   "error": {
     "code": "provider_unavailable",
     "message": "demo-shop.example didn't confirm the payment of 0.05 USDC, so it may or may not have gone through. Don't pay again yet: check your wallet's history. The authorization can't be used after 10:01 UTC.",
-    "correlationId": "cb131563-7c40-40ab-9d2d-04896b360918",
+    "correlationId": "1f80a38a-a220-4341-89fa-392899615562",
     "receipt": {
-      "operationId": "03bcc8b0-87e8-48fe-95e6-9eb44db4b79c",
+      "operationId": "ae5cbc35-8b10-4da8-a271-7e6233d41f00",
       "operation": "pay",
       "timestamp": "2026-10-12T10:00:00.000Z",
       "mode": "mock",

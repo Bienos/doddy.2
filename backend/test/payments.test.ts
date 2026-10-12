@@ -552,6 +552,79 @@ test("demo scenarios are rejected when they are not valid names, and in a live s
   }
 });
 
+// ------------------------------------------------------------------ typed amount (larger payments)
+
+test("below the confirm amount no typing is needed; at or above it the terms say so", async () => {
+  rig = await startPay(); // demo price 0.05, threshold 0.10
+  await enable(rig);
+  const small = (await prepare(rig)).body;
+  assert.equal(small.amount, "0.05");
+  assert.equal(small.confirmAmountRequired, false);
+  assert.equal((await pay(rig, small.approvalId)).status, 200);
+  await rig.close();
+
+  rig = await startPay({ policy: defaultPolicy({ confirmAmount: 50_000 }) }); // exactly the price: "from this amount up"
+  await enable(rig);
+  const large = (await prepare(rig)).body;
+  assert.equal(large.confirmAmountRequired, true);
+  assert.equal(large.amount, "0.05");
+});
+
+test("a larger payment is refused without the typed amount, and the approval is kept for the retry", async () => {
+  rig = await startPay({ policy: defaultPolicy({ confirmAmount: 50_000 }) });
+  await enable(rig);
+  const { body } = await prepare(rig);
+
+  const missing = await pay(rig, body.approvalId);
+  assert.equal(missing.status, 403);
+  assert.equal(missing.body.error.receipt.errorCode, "amount_confirmation_required");
+  assert.equal(missing.body.error.receipt.status, "blocked");
+  assert.equal(missing.body.error.message, "Type the amount (0.05 USDC) to confirm this payment. Nothing was paid.");
+  for (const typed of ["0.5", "0.04", "5", "abc", "0,05", "0.05 USDC", "", "1e-1"]) {
+    const wrong = await pay(rig, body.approvalId, SHOP, {}, typed);
+    assert.equal(wrong.status, typed.length > 20 ? 400 : 403, typed);
+    assert.equal(wrong.body.error.receipt?.errorCode ?? "x", wrong.status === 403 ? "amount_confirmation_required" : "x", typed);
+  }
+  assert.equal(wallet().signed.length, 0, "nothing was signed");
+  assert.equal(paidRequests(rig).length, 0);
+  assert.equal(await used(), "0.00", "nothing was reserved");
+  assert.equal(rows("SELECT * FROM payments").length, 0);
+
+  // The same approval still works once the right amount is typed.
+  const ok = await pay(rig, body.approvalId, SHOP, {}, "0.05");
+  assert.equal(ok.status, 200, ok.text);
+  assert.equal(wallet().signed.length, 1);
+});
+
+test("the typed amount may be written any way that means the same number", async () => {
+  for (const typed of ["0.05", "0.050", "00.05", " 0.05 "]) {
+    rig = await startPay({ policy: defaultPolicy({ confirmAmount: 50_000 }) });
+    await enable(rig);
+    const { body } = await prepare(rig);
+    const res = await pay(rig, body.approvalId, SHOP, {}, typed);
+    assert.equal(res.status, 200, `${JSON.stringify(typed)}: ${res.text}`);
+    await rig.close();
+  }
+});
+
+test("the price is checked against the page's CURRENT offer: a typed amount for an old price does not pass", async () => {
+  rig = await startPay({ policy: defaultPolicy({ confirmAmount: 50_000 }) });
+  await enable(rig);
+  const { body } = await prepare(rig, SHOP, { scenario: "price_changes" }); // pay-time offer is 0.10
+  const res = await pay(rig, body.approvalId, SHOP, {}, "0.05");
+  assert.equal(res.status, 403);
+  assert.equal(wallet().signed.length, 0);
+});
+
+test("typing an amount when none is required is harmless, and only a string is accepted", async () => {
+  rig = await startPay();
+  await enable(rig);
+  const { body } = await prepare(rig);
+  assert.equal((await rig.call("POST", "/v1/payments/pay", { body: { url: SHOP, approvalId: body.approvalId, confirmAmount: 5 } })).status, 400);
+  assert.equal((await pay(rig, body.approvalId, SHOP, {}, "9.99")).status, 200, "the price is not taken from what was typed");
+  assert.equal(paidRequests(rig)[0].payload.authorization.value, "50000");
+});
+
 // ------------------------------------------------------------------ shared fixtures
 
 test("contracts/payments fixtures (decoded by the Swift tests) match the server's strict schemas", () => {
@@ -561,13 +634,13 @@ test("contracts/payments fixtures (decoded by the Swift tests) match the server'
   const schemaFor = (name: string) =>
     name.startsWith("status-") ? PaymentStatusSchema
     : name.startsWith("error-") ? failure
-    : name === "prepared" ? PaymentPreparedSchema
+    : name.startsWith("prepared") ? PaymentPreparedSchema
     : name === "paid" ? PaymentResultSchema
     : name === "receipts" ? PaymentReceiptsSchema
     : name.startsWith("switch-result") ? switched
     : null;
   const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
-  assert.ok(files.length >= 12, "the fixtures exist (npm run fixtures)");
+  assert.ok(files.length >= 14, "the fixtures exist (npm run fixtures)");
   for (const file of files) {
     const schema = schemaFor(file.replace(/\.json$/, ""));
     assert.ok(schema, `a schema for ${file}`);

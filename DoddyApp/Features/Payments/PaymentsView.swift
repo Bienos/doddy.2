@@ -20,6 +20,8 @@ struct PaymentsView: View {
     @State private var settings: PaymentsSettingsModel
     @State private var approval: PaymentApprovalModel
     @State private var address = ""
+    /// How many unconfirmed payments the person said they checked (kept on this iPhone, ADR-452).
+    @State private var acknowledged = UserDefaultsPaymentsBannerStorage().acknowledged()
 
     init(settings: PaymentsSettingsModel, approval: PaymentApprovalModel) {
         _settings = State(initialValue: settings)
@@ -53,11 +55,16 @@ struct PaymentsView: View {
                 EmptyView()
             }
 
-            if settings.unresolved > 0 {
+            if settings.unresolved > acknowledged {
                 Section {
                     Label("Some payments weren't confirmed. Check your wallet's history before paying that page again.", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(Theme.error)
                         .accessibilityIdentifier("payments.unresolved")
+                    Button("I've checked my wallet") {
+                        UserDefaultsPaymentsBannerStorage().setAcknowledged(settings.unresolved)
+                        acknowledged = settings.unresolved
+                    }
+                    .accessibilityIdentifier("payments.checked")
                 }
             }
 
@@ -88,7 +95,13 @@ struct PaymentsView: View {
         .background(Theme.canvas)
         .navigationTitle("Payments")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await settings.refresh() }
+        .task {
+            await settings.refresh()
+            if settings.isEnabled { UserDefaultsPaymentsBannerStorage().markEverEnabled() }
+        }
+        .onChange(of: settings.isEnabled) { _, on in
+            if on { UserDefaultsPaymentsBannerStorage().markEverEnabled() }
+        }
         .sheet(isPresented: Binding(get: { approval.phase != .idle }, set: { shown in if !shown { approval.dismiss() } })) {
             PaymentApprovalCard(model: approval)
         }

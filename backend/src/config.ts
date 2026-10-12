@@ -63,6 +63,8 @@ export interface PaymentsSettings {
   /** Defaults to the Base test network: real money needs an explicit `base`. */
   network: NetworkId;
   maxPerPayment: number;
+  /** From this amount up, the person must also type the amount to confirm (enforced by the server). */
+  confirmAmount: number;
   userDaily: number;
   serviceDaily: number;
   /** Empty: any public https site. Each payment still needs its own approval. */
@@ -144,6 +146,7 @@ const EnvSchema = z.object({
   DODDY_PAYMENTS_WALLET: z.enum(["none", "coinbase_cdp"]).default("none"),
   DODDY_PAYMENTS_NETWORK: z.enum(NETWORK_IDS).default("base-sepolia"),
   DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC: z.string().default("0.25"),
+  DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC: z.string().default("0.10"),
   DODDY_PAYMENTS_USER_DAILY_USDC: z.string().default("1.00"),
   DODDY_PAYMENTS_SERVICE_DAILY_USDC: z.string().default("5.00"),
   DODDY_PAYMENTS_ALLOWED_HOSTS: z.string().default(""),
@@ -339,6 +342,7 @@ function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): Payment
     return parsed;
   };
   const maxPerPayment = amount("DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC", e.DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC);
+  const confirmAmount = amount("DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC", e.DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC);
   const userDaily = amount("DODDY_PAYMENTS_USER_DAILY_USDC", e.DODDY_PAYMENTS_USER_DAILY_USDC);
   const serviceDaily = amount("DODDY_PAYMENTS_SERVICE_DAILY_USDC", e.DODDY_PAYMENTS_SERVICE_DAILY_USDC);
   if (maxPerPayment > userDaily && userDaily > 0) problems.push("DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC must not exceed DODDY_PAYMENTS_USER_DAILY_USDC");
@@ -371,6 +375,7 @@ function loadPayments(e: z.infer<typeof EnvSchema>, problems: string[]): Payment
     wallet: e.DODDY_PAYMENTS_WALLET,
     network: e.DODDY_PAYMENTS_NETWORK,
     maxPerPayment,
+    confirmAmount,
     userDaily,
     serviceDaily,
     allowedHosts,

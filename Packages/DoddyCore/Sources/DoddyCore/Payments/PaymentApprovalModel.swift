@@ -17,6 +17,43 @@ public protocol PaymentAuthenticator {
     func confirm(reason: String) async -> PaymentAuthResult
 }
 
+/// How a payment ended, for whoever is waiting on it (the voice agent's tool call).
+public enum PaymentOutcome: Equatable, Sendable {
+    case paid(PaymentResult)
+    /// Nothing was paid (the server said so, or refused before trying).
+    case failed(String, PaymentReceipt?)
+    /// The payment may or may not have gone through. Nobody should try again.
+    case unconfirmed(String, PaymentReceipt?)
+    /// The person closed the card before paying.
+    case cancelled
+}
+
+/// USDC amounts as the server writes them ("0.25"), compared as numbers so "0.250" and "0.25" agree.
+public enum PaymentAmount {
+    /// 6 decimals, like the token. Nil for anything but digits with an optional fractional part.
+    public static func atomic(_ text: String) -> Int? {
+        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        let whole: Substring
+        var fraction: Substring = ""
+        if let dot = trimmed.firstIndex(of: ".") {
+            whole = trimmed[..<dot]
+            fraction = trimmed[trimmed.index(after: dot)...]
+            guard !fraction.isEmpty, fraction.count <= 6, fraction.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+        } else {
+            whole = Substring(trimmed)
+        }
+        guard !whole.isEmpty, whole.count <= 9, whole.allSatisfy({ $0.isASCII && $0.isNumber }) else { return nil }
+        let padded = String(fraction) + String(repeating: "0", count: 6 - fraction.count)
+        guard let w = Int(whole), let f = Int(padded) else { return nil }
+        return w * 1_000_000 + f
+    }
+
+    public static func matches(_ typed: String, _ expected: String) -> Bool {
+        guard let a = atomic(typed), let b = atomic(expected) else { return false }
+        return a == b
+    }
+}
+
 /// The card that asks "pay this?" and what follows. One payment, one pass through these states:
 ///
 ///     idle -> preparing -> awaitingApproval -> authenticating -> paying -> paid
@@ -25,6 +62,7 @@ public protocol PaymentAuthenticator {
 ///                                  `-> idle (cancel) `-> awaitingApproval (Face ID not confirmed)
 ///
 /// The rules that matter, each enforced by the shape of this type rather than by the screen:
+/// - From the server's threshold up, the person also types the amount (checked here before Face ID, and again by the server).
 /// - The server is asked to pay at most once per approval: `pay` is reachable only from `authenticating`
 ///   after a confirmed check, and the next state is never one that can reach it again.
 /// - Face ID is asked every time, right before paying; there is no remembered "yes".
@@ -48,7 +86,9 @@ public final class PaymentApprovalModel {
         case unconfirmed(String, PaymentReceipt?)
     }
 
-    public private(set) var phase: Phase = .idle
+    public private(set) var phase: Phase = .idle { didSet { resolveWaiters() } }
+    /// What the person has typed to confirm a larger amount. The card binds a text field to it.
+    public var typedAmount = ""
     /// A short note that doesn't end the flow (e.g. Face ID wasn't confirmed).
     public private(set) var notice: String?
 
@@ -57,6 +97,7 @@ public final class PaymentApprovalModel {
     private let now: @Sendable () -> Date
     private var url: String?
     private var sentAt: Date?
+    @ObservationIgnored private var waiters: [CheckedContinuation<PaymentOutcome, Never>] = []
 
     public init(client: (any PaymentsClient)?, authenticator: any PaymentAuthenticator, now: @escaping @Sendable () -> Date = { Date() }) {
         self.client = client ?? UnconfiguredPaymentsClient()
@@ -83,6 +124,40 @@ public final class PaymentApprovalModel {
         }
     }
 
+    /// The terms ask for the amount to be typed.
+    public var needsTypedAmount: Bool { prepared?.confirmAmountRequired ?? false }
+
+    /// The pay button may be tapped: terms are showing and, if the amount must be typed, it matches.
+    public var canApprove: Bool {
+        guard case .awaitingApproval(let prepared) = phase else { return false }
+        return !prepared.confirmAmountRequired || PaymentAmount.matches(typedAmount, prepared.amount)
+    }
+
+    /// Suspends until the payment has an outcome: paid, failed, unconfirmed, or cancelled by the person.
+    /// Returns at once if it already has one. Used by the voice agent's tool call, which then tells the
+    /// agent what happened; the agent never pays, it only waits for the person.
+    public func outcome() async -> PaymentOutcome {
+        if let known = Self.outcome(of: phase) { return known }
+        return await withCheckedContinuation { waiters.append($0) }
+    }
+
+    private static func outcome(of phase: Phase) -> PaymentOutcome? {
+        switch phase {
+        case .paid(let result): .paid(result)
+        case .failed(let message, let receipt): .failed(message, receipt)
+        case .unconfirmed(let message, let receipt): .unconfirmed(message, receipt)
+        case .idle: .cancelled
+        case .preparing, .awaitingApproval, .authenticating, .paying: nil
+        }
+    }
+
+    private func resolveWaiters() {
+        guard !waiters.isEmpty, let result = Self.outcome(of: phase) else { return }
+        let pending = waiters
+        waiters = []
+        for waiter in pending { waiter.resume(returning: result) }
+    }
+
     /// Seconds left on the approval, if the server's time can be read.
     public func secondsLeft() -> Int? {
         guard let prepared, let expiry = prepared.expiryDate else { return nil }
@@ -100,6 +175,7 @@ public final class PaymentApprovalModel {
             return
         }
         notice = nil
+        typedAmount = ""
         url = page
         phase = .preparing
         do {
@@ -117,6 +193,11 @@ public final class PaymentApprovalModel {
         guard case .awaitingApproval(let prepared) = phase, let url else { return }
         if isExpired(prepared) {
             phase = .failed("This confirmation ran out. Nothing was paid. Start again to see the current price.", nil)
+            return
+        }
+        // From the threshold up the person types the price. Before Face ID, so a typo never costs a prompt.
+        if prepared.confirmAmountRequired && !PaymentAmount.matches(typedAmount, prepared.amount) {
+            notice = "Type the amount shown (\(prepared.amount) USDC) to confirm."
             return
         }
         notice = nil
@@ -142,7 +223,8 @@ public final class PaymentApprovalModel {
         phase = .paying(prepared)
         sentAt = now()
         do {
-            let result = try await client.pay(url: url, approvalId: prepared.approvalId)
+            let typed = prepared.confirmAmountRequired ? typedAmount.trimmingCharacters(in: .whitespaces) : nil
+            let result = try await client.pay(url: url, approvalId: prepared.approvalId, confirmAmount: typed)
             // Only a succeeded receipt is "paid". Anything else on a 200 is not trusted.
             if result.receipt.status == .succeeded {
                 phase = .paid(result)
@@ -166,6 +248,7 @@ public final class PaymentApprovalModel {
     /// Cancel before paying. Nothing was sent to the wallet or the seller; the approval simply runs out.
     public func cancel() {
         guard case .awaitingApproval = phase else { return }
+        typedAmount = ""
         phase = .idle
         notice = nil
         url = nil
@@ -175,6 +258,7 @@ public final class PaymentApprovalModel {
     public func finish() {
         switch phase {
         case .paid, .failed, .unconfirmed:
+            typedAmount = ""
             phase = .idle
             notice = nil
             url = nil

@@ -48,6 +48,7 @@ test("by default no wallet is set up, the network is the test network, and the l
     assert.equal(p.cdp, null);
     assert.equal(p.network, "base-sepolia");
     assert.equal(p.maxPerPayment, 250_000);
+    assert.equal(p.confirmAmount, 100_000, "larger payments also need the amount typed");
     assert.equal(p.userDaily, 1_000_000);
     assert.equal(p.serviceDaily, 5_000_000);
     assert.deepEqual(p.allowedHosts, []);

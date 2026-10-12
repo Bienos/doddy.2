@@ -56,7 +56,7 @@ private final class PaymentsFakeClient: PaymentsClient, @unchecked Sendable {
     var switchResult: Result<PaymentSwitchResult, PaymentsError>
     var duringPay: (@Sendable () async -> Void)?
     private(set) var prepareCalls: [String] = []
-    private(set) var payCalls: [(url: String, approvalId: UUID)] = []
+    private(set) var payCalls: [(url: String, approvalId: UUID, confirmAmount: String?)] = []
     private(set) var switchCalls: [Bool] = []
 
     init() throws {
@@ -75,8 +75,8 @@ private final class PaymentsFakeClient: PaymentsClient, @unchecked Sendable {
         prepareCalls.append(url)
         return try prepareResult.get()
     }
-    func pay(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentResult {
-        payCalls.append((url, approvalId))
+    func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult {
+        payCalls.append((url, approvalId, confirmAmount))
         await duringPay?()
         return try payResult.get()
     }
@@ -117,6 +117,14 @@ final class PaymentsContractTests: XCTestCase {
         XCTAssertEqual(prepared.preview.confirmLabel, "Pay 0.05 USDC")
         XCTAssertEqual(prepared.preview.lines.count, 5)
         XCTAssertEqual(prepared.preview.lines.first, "Amount: 0.05 USDC")
+        XCTAssertEqual(prepared.amount, "0.05")
+        XCTAssertFalse(prepared.confirmAmountRequired, "a small payment needs no typing")
+        let large = try paymentFixture(PaymentPrepared.self, "prepared-confirm-amount")
+        XCTAssertTrue(large.confirmAmountRequired)
+        XCTAssertEqual(large.amount, "0.05")
+        let refusal = try paymentFixture(PaymentErrorBody.self, "error-amount-confirmation")
+        XCTAssertEqual(refusal.error.receipt?.errorCode, "amount_confirmation_required")
+        XCTAssertEqual(refusal.error.receipt?.status, .blocked)
 
         let paid = try paymentFixture(PaymentResult.self, "paid")
         XCTAssertEqual(paid.receipt.status, .succeeded)
@@ -132,6 +140,20 @@ final class PaymentsContractTests: XCTestCase {
             XCTAssertNotNil(body.error.receipt, name)
             XCTAssertFalse(body.error.message.isEmpty, name)
         }
+    }
+
+    func testAmountsAreComparedAsNumbers() {
+        XCTAssertEqual(PaymentAmount.atomic("0.25"), 250_000)
+        XCTAssertEqual(PaymentAmount.atomic(" 1 "), 1_000_000)
+        XCTAssertEqual(PaymentAmount.atomic("0.000001"), 1)
+        for bad in ["", ".", ".5", "1.", "-1", "1e3", "0,25", "0.25 USDC", "0.1234567", "١٫٥", "1234567890", "a"] {
+            XCTAssertNil(PaymentAmount.atomic(bad), bad)
+        }
+        XCTAssertTrue(PaymentAmount.matches("0.250", "0.25"))
+        XCTAssertTrue(PaymentAmount.matches("00.25", "0.25"))
+        XCTAssertFalse(PaymentAmount.matches("0.5", "0.25"))
+        XCTAssertFalse(PaymentAmount.matches("", "0.25"))
+        XCTAssertFalse(PaymentAmount.matches("abc", "abc"), "two unreadable amounts never match")
     }
 
     func testTheApprovalExpiryIsReadWithMilliseconds() throws {
@@ -247,7 +269,8 @@ final class PaymentsClientTests: XCTestCase {
         XCTAssertEqual(try JSONSerialization.jsonObject(with: XCTUnwrap(capture.requests.last?.body)) as? [String: Bool], ["enabled": true])
 
         capture.reply = (200, try paymentFixtureData("receipts"))
-        XCTAssertFalse(try await client(capture).receipts().isEmpty)
+        let receipts = try await client(capture).receipts()
+        XCTAssertFalse(receipts.isEmpty)
     }
 
     func testNoTokenMeansNothingIsSent() async {
@@ -490,6 +513,109 @@ final class PaymentApprovalModelTests: XCTestCase {
         XCTAssertTrue(client.payCalls.isEmpty)
     }
 
+    // MARK: Larger payments: type the amount
+
+    private func largeClient() throws -> PaymentsFakeClient {
+        let client = try PaymentsFakeClient()
+        client.prepareResult = .success(try paymentFixture(PaymentPrepared.self, "prepared-confirm-amount"))
+        return client
+    }
+
+    func testALargerPaymentNeedsTheAmountTypedBeforeFaceID() async throws {
+        let client = try largeClient()
+        let auth = PaymentsFakeAuthenticator()
+        let model = await ready(client, auth)
+        XCTAssertTrue(model.needsTypedAmount)
+        XCTAssertFalse(model.canApprove, "nothing typed yet")
+
+        await model.approve()
+        XCTAssertTrue(auth.reasons.isEmpty, "no Face ID prompt for a missing amount")
+        XCTAssertTrue(client.payCalls.isEmpty)
+        XCTAssertEqual(model.notice, "Type the amount shown (0.05 USDC) to confirm.")
+        guard case .awaitingApproval = model.phase else { return XCTFail("\(model.phase)") }
+
+        model.typedAmount = "0.5"
+        XCTAssertFalse(model.canApprove)
+        await model.approve()
+        XCTAssertTrue(auth.reasons.isEmpty)
+        XCTAssertTrue(client.payCalls.isEmpty)
+
+        model.typedAmount = " 0.050 "
+        XCTAssertTrue(model.canApprove, "the same number written another way")
+        await model.approve()
+        XCTAssertEqual(auth.reasons.count, 1)
+        XCTAssertEqual(client.payCalls.count, 1)
+        XCTAssertEqual(client.payCalls.first?.confirmAmount, "0.050", "what the person typed, trimmed; the server compares it too")
+        guard case .paid = model.phase else { return XCTFail("\(model.phase)") }
+        XCTAssertEqual(model.typedAmount, "0.050", "kept for the outcome until the card is closed")
+        model.finish()
+        XCTAssertEqual(model.typedAmount, "")
+    }
+
+    func testASmallPaymentSendsNoTypedAmount() async throws {
+        let client = try PaymentsFakeClient()
+        let model = await ready(client, PaymentsFakeAuthenticator())
+        XCTAssertFalse(model.needsTypedAmount)
+        XCTAssertTrue(model.canApprove)
+        model.typedAmount = "9.99" // ignored: the price is the server's
+        await model.approve()
+        XCTAssertNil(client.payCalls.first?.confirmAmount)
+    }
+
+    func testTheServersOwnAmountRefusalIsAFailureThatPaidNothing() async throws {
+        let client = try largeClient()
+        client.payResult = .failure(try serverError("error-amount-confirmation"))
+        let model = await ready(client, PaymentsFakeAuthenticator())
+        model.typedAmount = "0.05"
+        await model.approve()
+        guard case .failed(let message, let receipt) = model.phase else { return XCTFail("\(model.phase)") }
+        XCTAssertTrue(message.contains("Nothing was paid"))
+        XCTAssertEqual(receipt?.errorCode, "amount_confirmation_required")
+    }
+
+    func testCancellingClearsTheTypedAmount() async throws {
+        let client = try largeClient()
+        let model = await ready(client, PaymentsFakeAuthenticator())
+        model.typedAmount = "0.05"
+        model.cancel()
+        XCTAssertEqual(model.typedAmount, "")
+    }
+
+    // MARK: Waiting for the outcome (the voice agent's tool call)
+
+    func testOutcomeIsPaidOnlyAfterThePersonPays() async throws {
+        let client = try PaymentsFakeClient()
+        let model = await ready(client, PaymentsFakeAuthenticator())
+        async let waiting = model.outcome()
+        await model.approve()
+        guard case .paid(let result) = await waiting else { return XCTFail("not paid") }
+        XCTAssertEqual(result.receipt.status, .succeeded)
+        XCTAssertEqual(client.payCalls.count, 1, "waiting for an outcome never pays")
+    }
+
+    func testOutcomeIsCancelledWhenThePersonClosesTheCard() async throws {
+        let client = try PaymentsFakeClient()
+        let model = await ready(client, PaymentsFakeAuthenticator())
+        async let waiting = model.outcome()
+        model.dismiss()
+        let result = await waiting
+        XCTAssertEqual(result, .cancelled)
+        XCTAssertTrue(client.payCalls.isEmpty)
+    }
+
+    func testOutcomeReportsRefusalsAndDoubts() async throws {
+        let refused = try PaymentsFakeClient()
+        refused.prepareResult = .failure(try serverError("error-over-limit"))
+        let refusedModel = await ready(refused, PaymentsFakeAuthenticator())
+        guard case .failed = await refusedModel.outcome() else { return XCTFail("a refused price is a failure, known at once") }
+
+        let doubt = try PaymentsFakeClient()
+        doubt.payResult = .failure(.transport("URLError"))
+        let doubtModel = await ready(doubt, PaymentsFakeAuthenticator())
+        await doubtModel.approve()
+        guard case .unconfirmed = await doubtModel.outcome() else { return XCTFail("a lost answer is unconfirmed") }
+    }
+
     func testClosingTheSheetBeforePayingCancelsAndAfterAnOutcomeClears() async throws {
         let client = try PaymentsFakeClient()
         let model = await ready(client, PaymentsFakeAuthenticator())
@@ -666,5 +792,99 @@ final class PaymentsSettingsModelTests: XCTestCase {
         XCTAssertEqual(model.load, .ready)
         XCTAssertNotNil(model.status)
         XCTAssertNotNil(model.message)
+    }
+}
+
+// MARK: Home banner for unconfirmed payments
+
+private final class FakeBannerStorage: PaymentsBannerStorage, @unchecked Sendable {
+    var enabled = false
+    var checked = 0
+    var last = 0
+    func everEnabled() -> Bool { enabled }
+    func markEverEnabled() { enabled = true }
+    func acknowledged() -> Int { checked }
+    func setAcknowledged(_ count: Int) { checked = count }
+    func lastUnresolved() -> Int { last }
+    func setLastUnresolved(_ count: Int) { last = count }
+}
+
+@MainActor
+final class PaymentsBannerModelTests: XCTestCase {
+    private func status(unresolved: Int) throws -> PaymentStatus {
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: paymentFixtureData("status-off")) as? [String: Any])
+        json["unresolved"] = unresolved
+        return try JSONDecoder().decode(PaymentStatus.self, from: JSONSerialization.data(withJSONObject: json))
+    }
+
+    private func make(_ client: PaymentsFakeClient?, _ storage: FakeBannerStorage) -> PaymentsBannerModel {
+        PaymentsBannerModel(client: client, storage: storage)
+    }
+
+    func testHomeNeverAsksTheServerBeforePaymentsWereEverSwitchedOn() async throws {
+        let client = try PaymentsFakeClient()
+        client.statusResult = .success(try status(unresolved: 3))
+        let model = make(client, FakeBannerStorage())
+        await model.refresh()
+        XCTAssertFalse(model.isVisible)
+        XCTAssertEqual(model.unresolved, 0)
+    }
+
+    func testTheBannerShowsWhileTheServerCountsMoreThanThePersonChecked() async throws {
+        let storage = FakeBannerStorage()
+        storage.enabled = true
+        let client = try PaymentsFakeClient()
+        client.statusResult = .success(try status(unresolved: 1))
+        let model = make(client, storage)
+        await model.refresh()
+        XCTAssertTrue(model.isVisible)
+        XCTAssertEqual(storage.last, 1, "remembered, so it shows at once next time and when offline")
+
+        model.acknowledge()
+        XCTAssertFalse(model.isVisible, "'I've checked' hides it")
+        XCTAssertEqual(storage.checked, 1)
+
+        // Another payment is left unconfirmed: the count passes what was checked, so it shows again.
+        client.statusResult = .success(try status(unresolved: 2))
+        await model.refresh()
+        XCTAssertTrue(model.isVisible)
+    }
+
+    func testPrunedRecordsLowerWhatWasChecked() async throws {
+        let storage = FakeBannerStorage()
+        storage.enabled = true
+        storage.checked = 3
+        let client = try PaymentsFakeClient()
+        client.statusResult = .success(try status(unresolved: 1))
+        let model = make(client, storage)
+        await model.refresh()
+        XCTAssertEqual(storage.checked, 1, "never above the server's count, or a new unconfirmed payment would stay hidden")
+        XCTAssertFalse(model.isVisible)
+        client.statusResult = .success(try status(unresolved: 2))
+        await model.refresh()
+        XCTAssertTrue(model.isVisible)
+    }
+
+    func testOfflineKeepsTheLastCountAndNoServerMeansNoBanner() async throws {
+        let storage = FakeBannerStorage()
+        storage.enabled = true
+        storage.last = 1
+        let client = try PaymentsFakeClient()
+        client.statusResult = .failure(.transport("URLError"))
+        let model = make(client, storage)
+        XCTAssertTrue(model.isVisible, "the last known count shows before any answer")
+        await model.refresh()
+        XCTAssertTrue(model.isVisible, "a failed ask doesn't make a doubtful payment disappear")
+
+        let unset = make(nil, storage)
+        await unset.refresh()
+        XCTAssertFalse(unset.isVisible, "with no server there is nothing to check")
+    }
+
+    func testSwitchingPaymentsOnStartsTheCounting() {
+        let storage = FakeBannerStorage()
+        let model = make(nil, storage)
+        model.noteEnabled()
+        XCTAssertTrue(storage.enabled)
     }
 }

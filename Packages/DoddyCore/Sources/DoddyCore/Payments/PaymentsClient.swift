@@ -67,7 +67,8 @@ public protocol PaymentsClient: Sendable {
     /// Shows exactly what would be paid and returns a single-use approval for those terms. Pays nothing.
     func prepare(url: String) async throws(PaymentsError) -> PaymentPrepared
     /// Pays once. Never call it twice for one approval, and never retry it: see `PaymentsError.mightHaveBeenPaid`.
-    func pay(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentResult
+    /// `confirmAmount` is what the person typed, sent only when the terms asked for it.
+    func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult
     func receipts() async throws(PaymentsError) -> [PaymentReceipt]
 }
 
@@ -101,8 +102,8 @@ public struct BackendPaymentsClient: PaymentsClient {
         try await call("POST", "v1/payments/prepare", body: PrepareBody(url: url))
     }
 
-    public func pay(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentResult {
-        try await call("POST", "v1/payments/pay", body: PayBody(url: url, approvalId: approvalId.uuidString.lowercased()))
+    public func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult {
+        try await call("POST", "v1/payments/pay", body: PayBody(url: url, approvalId: approvalId.uuidString.lowercased(), confirmAmount: confirmAmount))
     }
 
     public func receipts() async throws(PaymentsError) -> [PaymentReceipt] {
@@ -123,6 +124,8 @@ public struct BackendPaymentsClient: PaymentsClient {
     struct PayBody: Encodable, Equatable {
         let url: String
         let approvalId: String
+        /// Omitted from the JSON when nil.
+        let confirmAmount: String?
     }
 
     private func call<Body: Encodable, Response: Decodable>(_ method: String, _ path: String, body: Body?) async throws(PaymentsError) -> Response {
@@ -163,6 +166,6 @@ public struct UnconfiguredPaymentsClient: PaymentsClient {
     public func status() async throws(PaymentsError) -> PaymentStatus { throw .notConfigured }
     public func setSwitch(enabled: Bool) async throws(PaymentsError) -> PaymentSwitchResult { throw .notConfigured }
     public func prepare(url: String) async throws(PaymentsError) -> PaymentPrepared { throw .notConfigured }
-    public func pay(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentResult { throw .notConfigured }
+    public func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult { throw .notConfigured }
     public func receipts() async throws(PaymentsError) -> [PaymentReceipt] { throw .notConfigured }
 }

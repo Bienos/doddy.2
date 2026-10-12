@@ -94,6 +94,7 @@ export function buildApp(
     policy: {
       network: config.payments.network,
       maxPerPayment: config.payments.maxPerPayment,
+      confirmAmount: config.payments.confirmAmount,
       userDaily: config.payments.userDaily,
       serviceDaily: config.payments.serviceDaily,
       allowedHosts: config.payments.allowedHosts,

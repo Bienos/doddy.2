@@ -120,8 +120,7 @@ name clashes with existing declarations. **Not run:** the Swift compiler, `swift
   unlock can't count as a payment's yes. No biometrics or passcode on the iPhone means the payment is refused.
 - *The app composes nothing financial.* It shows the server's lines and label verbatim; the client has no field for an
   amount, recipient or wallet.
-- *Not wired into the voice agent.* `VoiceSessionController` and `voice-agent/` were not touched: blind edits to a 2,000-line
-  controller that handles live conversations were not worth the risk before the card itself has compiled.
+- *Voice agent:* not wired in this round (see "Voice agent, typed amount and Home banner" below, which supersedes this).
 
 **Constitution evidence (native part).** DOD-07: Face ID fresh per payment, single `pay` per approval, expired approval
 never offered (`PaymentApprovalModelTests`, not run). DOD-08: unconfirmed never failed (`testLosingContact...`,
@@ -129,6 +128,42 @@ never offered (`PaymentApprovalModelTests`, not run). DOD-08: unconfirmed never 
 the Settings paragraph. **Gap:** none of the Swift tests has run; the card's layout, Dynamic Type, VoiceOver and Polish
 have never been seen.
 
-**Decisions for the owner:** (1) Is "Pay for a page" in Settings acceptable as the only entry until the voice tool exists, or
-should it be hidden outside development builds? (2) Should a payment over a set amount ask for Face ID *and* a typed
-confirmation of the amount? (3) Should an unconfirmed payment keep a banner on Home, not only in Settings › Payments?
+**Decisions for the owner, answered 2026-10-12:** (1) "Pay for a page" stays in Settings as an entry point: **ok**. (2) Larger
+payments also need the amount typed: **yes** (built below). (3) An unconfirmed payment gets a banner on Home: **yes** (built below).
+
+## Voice agent, typed amount and Home banner (ADR-452, 2026-10-12)
+Owner: "wire the voice agent to prepare payments", then answers "ok / yes / yes" to the three open decisions above.
+**Backend part run and tested on Linux. Swift and the voice tool: written, never compiled or run, NOT RUN.**
+
+| Area | What |
+|---|---|
+| Backend (tested) | `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC` (default 0.10); `prepare` returns `amount` and `confirmAmountRequired`; `pay` takes `confirmAmount` and refuses with `amount_confirmation_required` before reserving or signing, keeping the approval; 14 fixtures in `contracts/payments/` (2 new) |
+| Voice spec | `voice-agent/tools.json` `pay_for_page(url)` (phone tool, on-screen confirm, 120 s, `not_synced`); a rule in `voice-agent/instructions.md`. The spec checker passes for both agents; the phone-call agent has no payment tool |
+| DoddyCore (new) | `Payments/VoicePayments.swift` (tool name, the one-argument rule, replies), `Payments/PaymentsBannerModel.swift`; `PaymentAmount` and `outcome()` in `PaymentApprovalModel.swift` |
+| DoddyCore (changed) | `VoiceCloudTools.swift` (routes the tool), `OnlineAccountsContracts.swift` (`CloudToolCall.isWrite`), `CarProfile.swift` (refused while driving), `ActivityLog.swift` ("Paid for a page", no address), `VoiceTools.swift` (`paid:` is a done word), `PaymentsClient.swift`/`PaymentsContracts.swift` (`confirmAmount`, `amount`) |
+| App (new) | `Features/Payments/UnconfirmedPaymentsBanner.swift`, `Infrastructure/PaymentsBannerStorage.swift` |
+| App (changed) | `VoiceSessionController.swift` (`handlePayForPage`), `VoiceView.swift` (the sheet), `PaymentApprovalCard.swift` (typed amount field), `PaymentsView.swift` ("I've checked my wallet"), `HomeView.swift`, `RootView.swift` (three preference keys) |
+| Tests (Swift, not run) | `PaymentsTests.swift` 50 tests (5 contract, 5 client, 30 state machine, 5 settings, 5 banner); `PaymentsVoiceTests.swift` 11 tests |
+| Text | 7 more Polish lines (45 for the feature in all); the Doddy server data-flow row and Settings paragraph already mention payments |
+
+**Run for this part:** `npm test` in `backend/` (**263 pass**, 5 new typed-amount tests and a 14-fixture schema test), `tsc` typecheck, `scripts/check_forbidden_capabilities.sh`
+(PASS), `voice_agent_spec.py check` for the app and phone agents (PASS), `build_strings_catalog.py --check` (PASS), `build_blog.py --check` (PASS), a bracket-balance
+check of all 20 changed Swift files, a name-clash search. **Not run:** the Swift compiler, `swift test`, `scripts/ci.sh`, Xcode, a device, a live ElevenLabs agent.
+
+**How the agent is kept from paying**
+- It supplies one string, `url`; the app refuses any other argument (`PaymentToolName.address`), and the server refuses an amount or recipient from any client.
+- The tool call returns only after the person has decided: it waits on `PaymentApprovalModel.outcome()`. Nothing in the agent's reach calls `pay`.
+- The person's confirmation is a tap (plus the typed amount from 0.10 USDC up) and Face ID, not speech. The agent is told that saying yes does not approve.
+- It rides the cloud-tool route, so the existing gates apply and were tested: refused while driving, refused when connections are paused, never a plan step.
+- Replies: `paid:` only for a confirmed payment; `declined:`, `unknown:` (never retry), `failed:`. Page content and failure reasons follow as marked data.
+- A new tool name in `CloudToolName.all` was avoided on purpose: a test pins that list to the server's online-account catalog.
+
+**Known limits**
+- If the person takes longer than the tool's 120 s timeout (the approval itself lasts 2 minutes), ElevenLabs gives up waiting. The card still works and the receipt is recorded, but the agent never hears the outcome.
+- `pay_for_page` is `not_synced`: the live agent does not have the tool until the owner syncs it.
+- A page address spoken aloud is hard to get right; the agent is told to ask for the full address and never to guess. Web search results carry only site names, so they cannot supply one.
+- The banner depends on the server's count, which only clears when a record is pruned (90 days); "I've checked" hides it locally. No server-side "resolved" call exists.
+
+**Constitution evidence (this part).** DOD-07: typed amount from the threshold, enforced by the server (`payments.test.ts`, run) and the state machine (`PaymentApprovalModelTests`, not run); the agent can only propose (`PaymentsVoiceTests`, not run). DOD-08: `unknown:` never reads as done (`testOnlyAConfirmedPaymentIsDone`, not run). DOD-11: page content and reasons are marked data; the address is not logged in "What Doddy did". **Gap:** the whole agent-to-card path has never run; the ElevenLabs agent has not been tested with the tool; the typed-amount threshold (0.10) is an assumption for the owner to confirm.
+
+**Decisions for the owner:** (1) Is 0.10 USDC the right threshold for typing the amount? (2) Should the agent's wait be longer than 120 s, or should the outcome be delivered later as a spoken follow-up? (3) Sync `pay_for_page` to the live agent only after checklist 4o passes on a device.

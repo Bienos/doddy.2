@@ -72,6 +72,10 @@ public struct PaymentPreview: Codable, Equatable, Sendable {
 public struct PaymentPrepared: Codable, Equatable, Sendable {
     public let mode: ConnectedAppsMode
     public let preview: PaymentPreview
+    /// USDC, e.g. "0.25": what the person must type when `confirmAmountRequired`.
+    public let amount: String
+    /// From the server's threshold up, the person must also type the amount. The server refuses a payment without it.
+    public let confirmAmountRequired: Bool
     public let approvalId: UUID
     public let expiresAt: String
 

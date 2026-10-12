@@ -8,7 +8,7 @@ import SwiftUI
 /// What it will not do, by the shape of `PaymentApprovalModel`: pay without a fresh Face ID, pay twice,
 /// be cancelled or swiped away while the payment is being sent, or offer "pay again" when it isn't sure.
 struct PaymentApprovalCard: View {
-    var model: PaymentApprovalModel
+    @Bindable var model: PaymentApprovalModel
 
     var body: some View {
         NavigationStack {
@@ -123,6 +123,21 @@ struct PaymentApprovalCard: View {
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("payment.working")
         } else {
+            if prepared.confirmAmountRequired {
+                // Larger payments: the person types the price, so a tap alone can't pay. The server checks it too.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Type the amount to confirm")
+                        .font(.subheadline.weight(.medium))
+                    TextField(prepared.amount, text: $model.typedAmount)
+                        .keyboardType(.decimalPad)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.title3.monospaced())
+                        .accessibilityIdentifier("payment.amount")
+                    Text("Larger payments need the amount typed, not just a tap.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
             Button {
                 Task { await model.approve() }
             } label: {
@@ -132,6 +147,7 @@ struct PaymentApprovalCard: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Theme.ink)
+            .disabled(!model.canApprove)
             .accessibilityIdentifier("payment.approve")
 
             Button("Cancel", role: .cancel) { model.cancel() }

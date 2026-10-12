@@ -99,6 +99,12 @@ writePay("error-over-limit", (await preparePay(p3, undefined, { scenario: "too_e
 const again = await preparePay(p3, undefined, { scenario: "normal" });
 writePay("error-unconfirmed", (await payPage(p3, again.body.approvalId, undefined, { scenario: "server_error" })).body);
 writePay("status-unresolved", (await p3.call("GET", "/v1/payments")).body);
+const p4 = await startPay({ policy: { confirmAmount: 50_000 } });
+await enablePay(p4);
+const large = await preparePay(p4);
+writePay("prepared-confirm-amount", large.body);
+writePay("error-amount-confirmation", (await payPage(p4, large.body.approvalId)).body);
+await p4.close();
 await p1.close();
 await p2.close();
 await p3.close();

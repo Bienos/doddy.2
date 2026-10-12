@@ -600,6 +600,8 @@ public enum VoiceToolReply {
     /// plan summary both read these, so a new result verb must be added here (review C1, D3).
     public static let donePrefixes = [
         "added:", "saved:", "drafted:", "changed:", "completed:", "deleted:", "created:",
+        // A payment the server confirmed (ADR-452); anything unclear is "unknown:", never this.
+        "paid:",
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",

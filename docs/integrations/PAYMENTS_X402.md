@@ -6,7 +6,8 @@ ADR-450. Status report and constitution evidence log: `docs/implementation/PAYME
 > **State: backend built and tested on Linux against a demo seller and a demo wallet. The iPhone approval card with Face
 > ID (ADR-451) is written but has never been compiled or run (no Swift toolchain was available). Nothing has run against
 > the real Coinbase service, a real x402 seller, a funded wallet, or the voice agent.** The only way to start a payment
-> from the app is Settings › Payments › "Pay for a page"; the voice agent cannot start one yet.
+> from the app is Settings › Payments › "Pay for a page", or by asking the voice agent (ADR-452, written, never run, and
+> **not yet synced to the live ElevenLabs agent**: `pay_for_page` is `not_synced` in `voice-agent/tools.json`).
 
 ## What this is, and what it is not
 
@@ -26,6 +27,7 @@ ADR-450. Status report and constitution evidence log: `docs/implementation/PAYME
 | Network | `base-sepolia` (test network, no real money) | Owner sets `DODDY_PAYMENTS_NETWORK=base` |
 | Each person's switch | Off (`pay_x402`, same switch table as the other tools) | The person turns it on in Settings › Payments (written, not yet run) |
 | Per payment | 0.25 USDC | `DODDY_PAYMENTS_MAX_PER_PAYMENT_USDC` |
+| Type the amount to confirm | From 0.10 USDC up | `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC` (see "Larger payments") |
 | Per person per day | 1.00 USDC | `DODDY_PAYMENTS_USER_DAILY_USDC` |
 | Whole server per day | 5.00 USDC | `DODDY_PAYMENTS_SERVICE_DAILY_USDC` |
 | Which sites | Any public https site | `DODDY_PAYMENTS_ALLOWED_HOSTS=a.example,b.example` |
@@ -76,18 +78,49 @@ history. The signed authorization stops being usable after `validBefore` (at mos
 when. A server that stops mid-payment leaves a ledger row that shows as unresolved after five minutes; nothing is
 forgotten.
 
+## Larger payments: the person types the amount (ADR-452)
+
+From `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC` (default 0.10) up, `prepare` returns `confirmAmountRequired: true` and the card
+asks the person to type the amount. **The server enforces it**, not only the screen: `pay` compares `confirmAmount`, as a
+number, with the price of the offer it has just read, and refuses with `amount_confirmation_required` (403, a blocked
+receipt) if it is missing or different. This happens before anything is reserved or signed, and the approval is kept, so a
+typo costs nothing. The check is against the *current* offer, so a typed price for an old offer doesn't pass. Below the
+threshold nothing is typed and a `confirmAmount` that is sent is ignored (the price always comes from the page).
+
+## The voice agent (ADR-452)
+
+`pay_for_page(url)` in `voice-agent/tools.json` lets the agent **propose** paying for one page. It cannot pay.
+
+| The agent can | The agent cannot |
+|---|---|
+| Name a page: the full https address the user gave | Name an amount, a recipient, a network or a wallet (the app refuses any other argument) |
+| Wait for the person's decision and hear the outcome | Approve: saying "yes" out loud does nothing; the card needs a tap (and the typed amount for larger payments) and Face ID |
+| Say "paid" only if the result starts with `paid:` | Retry: after `unknown:` it is told never to try that page again |
+
+What the app does with the call (`VoiceSessionController.handlePayForPage`): opens the same approval card as Settings
+(the server's own terms, Face ID), then answers the agent with `paid:`, `declined:` (the person closed the card),
+`unknown:` (unconfirmed, tell them to check the wallet) or `failed:`. What the page returned, and any reason the server
+gave, follow as marked data (`<<<DATA … DATA>>>`) so a hostile page cannot close the block or pose as a result line.
+
+It rides the existing online-account tool route so the same gates apply: not while driving (`CarProfile`), refused when
+the person has paused connections, never a step of a plan (the plan allow-list is explicit), and the activity log says
+"Paid for a page" without the address. The phone-call agent (`voice-agent/phone/`) has no payment tool.
+
+**Owner step, not done:** the tool is `not_synced`. Sync it to the live ElevenLabs agent (`voice-agent/README.md`) after the
+app has been built and the card verified on a device (checklist 4o), then set the real tool id in `tools.json`.
+
 ## HTTP contract (`/v1/payments`, separate from `/v1/tools` on purpose)
 
 The existing app decodes the tools catalog and receipts strictly. Payments live under their own path so they cannot
 change what the shipped app sees. Request bodies are strict (a wallet, amount, recipient, network or token from a
-client is a 400). Errors reuse the existing error codes; the specific reason is in `receipt.errorCode`.
+client is a 400; the one number a client may send is the amount the person typed, `confirmAmount`, which the server checks). Errors reuse the existing error codes; the specific reason is in `receipt.errorCode`.
 
 | Route | Body | Result |
 |---|---|---|
 | `GET /v1/payments` | | `PaymentStatus`: wallet kind/short address/network/testNetwork, `enabled`, limits and used today, `unresolved` |
 | `PUT /v1/payments/switch` | `{enabled}` | `{status, receipt}`; turning on needs a wallet |
-| `POST /v1/payments/prepare` | `{url}` | `{mode, preview{title,lines,confirmLabel}, approvalId, expiresAt}` |
-| `POST /v1/payments/pay` | `{url, approvalId}` | `{mode, text, receipt}`; `text` is for the voice agent (page content labelled as data, clipped to 4000 characters, never stored) |
+| `POST /v1/payments/prepare` | `{url}` | `{mode, preview{title,lines,confirmLabel}, amount, confirmAmountRequired, approvalId, expiresAt}` |
+| `POST /v1/payments/pay` | `{url, approvalId, confirmAmount?}` | `{mode, text, receipt}`; `text` is for the voice agent (page content labelled as data, clipped to 4000 characters, never stored) |
 | `GET /v1/payments/receipts` | | the person's last 30 payment receipts |
 
 Schemas: `backend/src/payments/contracts.ts`. Demo scenarios (mock mode only) via the header
@@ -146,7 +179,7 @@ the server's receipts and resolves the payment from them) and never a retry.
 
 ## What was verified, and what was not
 
-Verified (Linux, Node 22, `npm test` in `backend/`, 258 tests, all pass; baseline before this work 188):
+Verified (Linux, Node 22, `npm test` in `backend/`, 263 tests, all pass; baseline before this work 188):
 x402 v2 parsing and policy; EIP-3009 typed data and header encoding; settlement confirmation rules; SSRF rules for URLs
 and addresses (IPv4/IPv6/mapped forms); the JWT construction for Coinbase (structure and signatures, checked against
 freshly generated keys) and the request the wallet sends (checked against a fake server); the whole prepare/pay flow
@@ -162,7 +195,8 @@ the unknown-outcome rules; privacy (no path or query stored); configuration; the
 - The real HTTPS client (`PublicHttps`) against a live host. Its address rules are unit-tested and it refuses blocked
   addresses without connecting, but a TLS connection to a real seller has not been made.
 - The iPhone: the approval card, Face ID step and Settings › Payments screen are written (see "The iPhone side"
-  below) but were **never compiled or run**: this environment has no Swift toolchain. No voice-agent tool exists.
+  below) but were **never compiled or run**: this environment has no Swift toolchain. The same is true of the voice tool,
+  and the live ElevenLabs agent does not have it.
 
 ## Limits of this version (each refused with a plain message, never guessed)
 

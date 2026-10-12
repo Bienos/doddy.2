@@ -30,6 +30,10 @@ public enum CarProfile {
             if case .find = action { return .run }
             return .refuse(reason: "Saving or clearing the parking spot is done on the iPhone, not while driving.")
         case .cloudTool(let call):
+            // A payment needs Face ID and often a typed amount on the iPhone: never while driving.
+            if call.name == PaymentToolName.payForPage {
+                return .refuse(reason: "A payment needs Face ID on the iPhone, so not while driving.")
+            }
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run

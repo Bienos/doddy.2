@@ -155,6 +155,9 @@ final class VoiceSessionController {
     static private(set) var conversationInProgress = false
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    /// The payment card the voice agent asked for (ADR-452). Only a page address came from the agent; the card
+    /// shows Doddy's server's own terms. Kept after the outcome until the person closes the card.
+    private(set) var paymentApproval: PaymentApprovalModel?
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
@@ -2150,7 +2153,36 @@ final class VoiceSessionController {
 
     /// Gmail, Drive, Notion, Todoist and web search go through Doddy's server, which checks the tool's
     /// switch (and, for accounts, the connection and the grant). Reads answer at once; writes show a card first.
+    /// The voice agent proposed paying for a page (ADR-452). The agent only names the page. The card shows the
+    /// server's exact terms; the person confirms (typing the amount for larger payments), then Face ID; only then
+    /// does Doddy's server pay. The agent hears the outcome after the person has decided, and never pays itself.
+    private func handlePayForPage(_ call: CloudToolCall, toolCallID: String) async {
+        guard let url = PaymentToolName.address(from: call) else {
+            await reply(toolCallID, VoiceToolReply.paymentBadArguments, isError: true)
+            return
+        }
+        if let open = paymentApproval, open.phase != .idle {
+            await reply(toolCallID, VoiceToolReply.paymentCardOpen, isError: true)
+            return
+        }
+        guard let client = PaymentsClientFactory.make() else {
+            await reply(toolCallID, VoiceToolReply.paymentNotSetUp, isError: true)
+            return
+        }
+        let model = PaymentApprovalModel(client: client, authenticator: FaceIDPaymentAuthenticator())
+        paymentApproval = model
+        await model.start(url: url)
+        let outcome = await model.outcome()
+        var failed = false
+        if case .failed = outcome { failed = true }
+        await reply(toolCallID, VoiceToolReply.paymentOutcome(outcome), isError: failed)
+    }
+
     private func handleCloud(_ cloud: CloudToolCall, toolCallID: String) async {
+        if cloud.name == PaymentToolName.payForPage {
+            await handlePayForPage(cloud, toolCallID: toolCallID)
+            return
+        }
         guard let client = OnlineAccountsClientFactory.make() else {
             await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
             return

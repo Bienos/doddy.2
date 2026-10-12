@@ -359,7 +359,7 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
-## 4o. Payments: the approval card and Face ID (ADR-451, `PAYMENTS_STATUS.md`)
+## 4o. Payments: the approval card, Face ID, the voice tool and the Home banner (ADR-451, ADR-452, `PAYMENTS_STATUS.md`)
 **Nothing here has been compiled or run.** The Swift was written without a toolchain. Do P1 first; use a server in mock mode (the demo wallet and demo seller move no money) until P12.
 | # | Do this | Expect |
 |---|---|---|
@@ -378,6 +378,15 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | P13 | With the app lock on and unlocked a minute ago, pay | Face ID is asked anyway (an earlier unlock doesn't count); afterwards private notes are still locked |
 | P14 | Privacy › What leaves this iPhone, with a Doddy server set | The Doddy server row mentions payments; so does the Privacy paragraph in Settings |
 | P15 | Switch the iPhone to Polish; Dynamic Type at the largest size; VoiceOver on the card | Labels are Polish (the server's lines are not); the card scrolls; VoiceOver reads the title, the terms as one item, then the pay button as "Pay 0.05 USDC" |
+| P16 | With a server whose demo price is at or above the threshold (set `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC=0.05`), open the card | A field "Type the amount to confirm" with the price as its hint; the pay button is greyed until what you type equals it ("0.050" works, "0.5" doesn't); a wrong entry shows "Type the amount shown…" and no Face ID prompt |
+| P17 | Settings › Payments after leaving a payment unconfirmed (Airplane Mode right after tapping pay), then open Home | A banner "A payment wasn't confirmed" with Open Payments and "I've checked"; "I've checked" hides it; another unconfirmed payment shows it again; before payments were ever switched on, Home never contacts the server about payments |
+| P18 | Voice (after syncing `pay_for_page`, or with the dev agent's tool added): "pay for https://demo-shop.example/articles/42" | Doddy says one short line to confirm on screen; the payment card opens over the conversation with the server's terms; nothing is paid until you tap and confirm Face ID |
+| P19 | In that conversation, say "yes, pay it" instead of tapping | Nothing happens; Doddy does not treat speech as approval |
+| P20 | Complete the payment | Doddy says it was paid only after the card shows Paid; What Doddy did shows "Paid for a page" as Done with no address |
+| P21 | Close the card with Cancel (or swipe it away) before paying | Doddy hears the user chose not to pay and does not offer again; What Doddy did shows "you said no" |
+| P22 | Lose the connection right after tapping pay | The card shows "Not confirmed"; Doddy says it may or may not have gone through, to check the wallet, and does not try again |
+| P23 | Say "pay for the shoe shop" (no address), or "pay for this page" after a web search | Doddy asks for the full web address; it doesn't invent one |
+| P24 | Drive mode (CarPlay profile) and ask it to pay; then Settings › Pause all connections and ask again | Refused in both cases with nothing opened |
 
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.

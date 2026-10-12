@@ -68,6 +68,8 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     DueRemindersView()
 
+                    UnconfirmedPaymentsBanner()
+
                     HStack(alignment: .center) {
                         DoddyWordmark()
                         Spacer()

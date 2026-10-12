@@ -34,6 +34,7 @@ export const NONCE = `0x${"7e".repeat(32)}`;
 export const defaultPolicy = (over: Partial<PaymentsPolicy> = {}): PaymentsPolicy => ({
   network: "base-sepolia",
   maxPerPayment: 250_000,
+  confirmAmount: 100_000,
   userDaily: 1_000_000,
   serviceDaily: 5_000_000,
   allowedHosts: [],
@@ -107,7 +108,8 @@ export async function startPay(
 type Call = Parameters<PayRig["call"]>[2];
 export const enable = (r: PayRig, token = USER_A) => r.call("PUT", "/v1/payments/switch", { token, body: { enabled: true } });
 export const prepare = (r: PayRig, url = SHOP, o: Call = {}) => r.call("POST", "/v1/payments/prepare", { ...o, body: { url } });
-export const pay = (r: PayRig, approvalId: string, url = SHOP, o: Call = {}) => r.call("POST", "/v1/payments/pay", { ...o, body: { url, approvalId } });
+export const pay = (r: PayRig, approvalId: string, url = SHOP, o: Call = {}, confirmAmount?: string) =>
+  r.call("POST", "/v1/payments/pay", { ...o, body: { url, approvalId, ...(confirmAmount !== undefined ? { confirmAmount } : {}) } });
 export const status = (r: PayRig, token = USER_A) => r.call("GET", "/v1/payments", { token });
 
 /** Payment-signature headers the seller saw, decoded. */

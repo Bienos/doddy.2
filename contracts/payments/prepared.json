@@ -11,6 +11,8 @@
     ],
     "confirmLabel": "Pay 0.05 USDC"
   },
-  "approvalId": "91b6a09a-3646-4054-94c5-b8b14e5f2fe7",
+  "amount": "0.05",
+  "confirmAmountRequired": false,
+  "approvalId": "80097ce8-bfdc-42da-8f84-381eea364a32",
   "expiresAt": "2026-10-12T10:02:00.000Z"
 }

@@ -188,6 +188,17 @@
         }
       }
     },
+    "A payment wasn't confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatność nie została potwierdzona"
+          }
+        }
+      }
+    },
     "A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.": {
       "extractionState": "manual",
       "localizations": {
@@ -2861,6 +2872,17 @@
         }
       }
     },
+    "Doddy can't tell whether it went through. Check your wallet's history before paying that page again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie wie, czy płatność doszła do skutku. Zanim zapłacisz za tę stronę ponownie, sprawdź historię portfela."
+          }
+        }
+      }
+    },
     "Doddy can't use that address. Use a public web address (https://…).": {
       "extractionState": "manual",
       "localizations": {
@@ -4489,6 +4511,28 @@
         }
       }
     },
+    "I've checked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzone"
+          }
+        }
+      }
+    },
+    "I've checked my wallet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Portfel sprawdzony"
+          }
+        }
+      }
+    },
     "If it repeats, only this time changes. Nothing is deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -5002,6 +5046,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Język"
+          }
+        }
+      }
+    },
+    "Larger payments need the amount typed, not just a tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Większe płatności wymagają wpisania kwoty, a nie tylko stuknięcia."
           }
         }
       }
@@ -7378,6 +7433,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz Doddy’ego, żeby zobaczyć aktualną listę."
+          }
+        }
+      }
+    },
+    "Open Payments": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Płatności"
           }
         }
       }
@@ -12768,6 +12834,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Typ"
+          }
+        }
+      }
+    },
+    "Type the amount to confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz kwotę, aby potwierdzić"
           }
         }
       }

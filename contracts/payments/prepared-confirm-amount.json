@@ -1,0 +1,18 @@
+{
+  "mode": "mock",
+  "preview": {
+    "title": "Pay demo-shop.example",
+    "lines": [
+      "Amount: 0.05 USDC",
+      "Pay to: demo-shop.example (wallet 0x0000…0d01)",
+      "Paid from: Demo wallet (no real money) 0xd0dd…0001",
+      "Network: Base Sepolia (test network, no real money)",
+      "Today: 0.00 of 1.00 USDC used"
+    ],
+    "confirmLabel": "Pay 0.05 USDC"
+  },
+  "amount": "0.05",
+  "confirmAmountRequired": true,
+  "approvalId": "259781e0-9719-4038-b654-064930f288f2",
+  "expiresAt": "2026-10-12T10:02:00.000Z"
+}
