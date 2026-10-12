@@ -133,6 +133,29 @@ export class Store {
         body TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
+      CREATE TABLE IF NOT EXISTS payment_receipts (
+        operation_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        body TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS payment_receipts_user ON payment_receipts(user_id, created_at);
+      -- One row per payment attempt, written BEFORE anything is sent, so a crash leaves a visible
+      -- "unconfirmed" row instead of nothing. Host and amount only: never the page path or query.
+      CREATE TABLE IF NOT EXISTS payments (
+        payment_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        host TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        network TEXT NOT NULL,
+        url_hash TEXT NOT NULL,
+        valid_before INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        transaction_hash TEXT
+      );
+      CREATE INDEX IF NOT EXISTS payments_user ON payments(user_id, created_at);
     `);
   }
 
@@ -369,6 +392,57 @@ export class Store {
     return rows.map((r) => JSON.parse(r.body) as unknown);
   }
 
+  // ------------------------------------------------------------ payments
+
+  savePaymentReceipt(userId: string, receipt: { operationId: string }, now: number): void {
+    this.db
+      .prepare("INSERT INTO payment_receipts (operation_id, user_id, created_at, body) VALUES (?, ?, ?, ?)")
+      .run(receipt.operationId, userId, now, JSON.stringify(receipt));
+  }
+
+  paymentReceipts(userId: string, limit: number): unknown[] {
+    const rows = this.db
+      .prepare("SELECT body FROM payment_receipts WHERE user_id = ? ORDER BY created_at DESC, rowid DESC LIMIT ?")
+      .all(userId, limit) as { body: string }[];
+    return rows.map((r) => JSON.parse(r.body) as unknown);
+  }
+
+  /** Written before the first byte of a payment is signed or sent. */
+  insertPayment(row: { paymentId: string; userId: string; now: number; host: string; amount: number; network: string; urlHash: string; validBefore: number }): void {
+    this.db
+      .prepare(
+        `INSERT INTO payments (payment_id, user_id, created_at, updated_at, host, amount, network, url_hash, valid_before, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'signing')`,
+      )
+      .run(row.paymentId, row.userId, row.now, row.now, row.host, row.amount, row.network, row.urlHash, row.validBefore);
+  }
+
+  setPaymentStatus(paymentId: string, status: "signing" | "sent" | "settled" | "declined" | "unknown" | "not_sent", now: number, transactionHash: string | null = null): void {
+    this.db.prepare("UPDATE payments SET status = ?, updated_at = ?, transaction_hash = COALESCE(?, transaction_hash) WHERE payment_id = ?").run(status, now, transactionHash, paymentId);
+  }
+
+  /**
+   * Payments that were sent but never confirmed: marked unknown, or still "signing"/"sent" long after
+   * they should have finished (the server stopped mid-payment).
+   */
+  unresolvedPayments(userId: string, now: number, staleMs: number): number {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM payments WHERE user_id = ?
+           AND (status = 'unknown' OR (status IN ('signing', 'sent') AND updated_at < ?))`,
+      )
+      .get(userId, now - staleMs) as { n: number };
+    return Number(row.n);
+  }
+
+  /** Same page paid (or maybe paid) recently and not confirmed either way: a second payment waits. */
+  hasUnconfirmedPaymentFor(userId: string, urlHash: string, since: number): boolean {
+    const row = this.db
+      .prepare("SELECT 1 AS hit FROM payments WHERE user_id = ? AND url_hash = ? AND created_at >= ? AND status IN ('signing', 'sent', 'unknown') LIMIT 1")
+      .get(userId, urlHash, since) as { hit: number } | undefined;
+    return row !== undefined;
+  }
+
   // ------------------------------------------------------------ usage
 
   /**
@@ -391,6 +465,14 @@ export class Store {
     });
   }
 
+  /** Gives back a reservation that never turned into a provider call (floors at zero). */
+  releaseUsage(checks: readonly { counter: string; period: string }[], units: number): void {
+    this.transaction(() => {
+      const sub = this.db.prepare("UPDATE usage SET count = MAX(0, count - ?) WHERE counter = ? AND period = ?");
+      for (const c of checks) sub.run(units, c.counter, c.period);
+    });
+  }
+
   /**
    * Retention (review 2026-10-11): drops attempts and approvals a day after they expire, usage
    * periods no limit reads any more, and receipts older than 90 days or beyond the newest 200 per
@@ -402,7 +484,7 @@ export class Store {
     const monthCutoff = `month:${new Date(now - 400 * DAY).toISOString().slice(0, 7)}`;
     return this.transaction(() => {
       const run = (sql: string, ...params: (string | number)[]) => Number(this.db.prepare(sql).run(...params).changes);
-      const receipts = (table: "receipts" | "tool_receipts") =>
+      const receipts = (table: "receipts" | "tool_receipts" | "payment_receipts") =>
         run(`DELETE FROM ${table} WHERE created_at < ?`, now - 90 * DAY) +
         run(`DELETE FROM ${table} WHERE rowid IN (
                SELECT rowid FROM (SELECT rowid, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, rowid DESC) AS rn FROM ${table})
@@ -415,6 +497,8 @@ export class Store {
           run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < ?", monthCutoff),
         receipts: receipts("receipts"),
         toolReceipts: receipts("tool_receipts"),
+        paymentReceipts: receipts("payment_receipts"),
+        payments: run("DELETE FROM payments WHERE created_at < ?", now - 90 * DAY),
       };
     });
   }

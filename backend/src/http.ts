@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { SessionVerifier } from "./auth.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
 import { AppError } from "./errors.js";
+import { PAYMENT_SCENARIOS, type PaymentScenario, type PaymentsService } from "./payments/service.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
@@ -17,6 +18,8 @@ export interface HttpDeps {
   service: ConnectedAppsService;
   /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
   tools?: CloudToolsService;
+  /** Paying for things (x402). Routes exist only when provided; each says "not set up" until a wallet is. */
+  payments?: PaymentsService;
   verifier: SessionVerifier;
   appReturnUrl: string;
   maxBodyBytes: number;
@@ -63,6 +66,17 @@ export function createHandler(deps: HttpDeps) {
       }
     : {};
 
+  const payments = deps.payments;
+  const paymentsRoutes: Record<string, (userId: string, body: unknown) => unknown | Promise<unknown>> = payments
+    ? {
+        "GET /v1/payments": (userId) => payments.status(userId),
+        "GET /v1/payments/receipts": (userId) => ({ receipts: payments.receipts(userId) }),
+        "PUT /v1/payments/switch": (userId, body) => payments.setSwitch(userId, body),
+        "POST /v1/payments/prepare": (userId, body) => payments.prepare(userId, body),
+        "POST /v1/payments/pay": (userId, body) => payments.pay(userId, body),
+      }
+    : {};
+
   return async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const started = Date.now();
     const correlationId = randomUUID();
@@ -99,7 +113,8 @@ export function createHandler(deps: HttpDeps) {
       const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;
       const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
-      if (!handler && !toolsHandler && !toolkitRoute) throw new AppError("not_found");
+      const paymentsHandler = paymentsRoutes[key];
+      if (!handler && !toolsHandler && !toolkitRoute && !paymentsHandler) throw new AppError("not_found");
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
@@ -111,6 +126,16 @@ export function createHandler(deps: HttpDeps) {
       if (scenario && !scenario.success) throw new AppError("invalid_request");
 
       const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+      if (payments && paymentsHandler) {
+        const rawPayments = header(req, "x-doddy-payments-scenario");
+        if (rawPayments !== undefined) {
+          if (!PAYMENT_SCENARIOS.has(rawPayments)) throw new AppError("invalid_request");
+          payments.applyMockScenario(rawPayments as PaymentScenario);
+        }
+        const paymentsResult = await paymentsHandler(user.userId, body);
+        status = 200;
+        return send(res, 200, paymentsResult);
+      }
       if (tools && (toolsHandler || toolkitRoute)) {
         const rawTools = header(req, "x-doddy-tools-scenario");
         if (rawTools !== undefined) {

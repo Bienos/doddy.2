@@ -32,7 +32,10 @@
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
-#    can never pick another paid endpoint).
+#    can never pick another paid endpoint),
+#  - payments (x402): Coinbase's API only in backend/src/payments/coinbase.ts, the HTTPS client for sellers
+#    only in backend/src/payments/net.ts, wallet signing called only from the payments service (after an
+#    approval bound to the exact terms), and no wallet, key or payment-signing code anywhere in the app.
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -75,7 +78,7 @@ photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI
 photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsset\.fetch|UIImagePickerController|AVCaptureSession|NSCameraUsageDescription|NSPhotoLibrary(Add)?UsageDescription'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
-secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY|CDP_(API_KEY|WALLET)_SECRET[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9+/=]{20,})'
 allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
@@ -87,6 +90,12 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# Payments (x402): the Coinbase wallet adapter, the seller HTTPS client, and the one service that may sign.
+payments_wallet=backend/src/payments/coinbase.ts
+payments_net=backend/src/payments/net.ts
+payments_service=backend/src/payments/service.ts
+# Nothing that signs or names a payment belongs in the iPhone app: keys and signing stay on the server.
+payments_in_app='x402|PAYMENT-SIGNATURE|PAYMENT-REQUIRED|transferWithAuthorization|TransferWithAuthorization|eip155|secp256k1|CDP_API_KEY|CDP_WALLET_SECRET'
 # "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
 # isn't kept or sent" stays checkable.
 wake_file=DoddyApp/Features/Voice/WakeWordListener.swift
@@ -188,6 +197,23 @@ if [ -d "$backend_src" ]; then
   if grep -RInE '/v1/(discover|inspect)|monid_(discover|inspect|run)' --include='*.ts' "$backend_src"; then
     echo "FAIL: Monid endpoint discovery in the backend; web search must stay one fixed endpoint." >&2; status=1
   fi
+  # Payments (x402). Coinbase is reached from one file; sellers from one file; and only the payments
+  # service may ask a wallet to sign (it does so after a single-use approval bound to the exact terms).
+  if grep -RInE 'cdp\.coinbase\.com|api\.coinbase\.com|sign/typed-data' --include='*.ts' "$backend_src" | code_only | grep -v "^$payments_wallet:"; then
+    echo "FAIL: Coinbase called outside $payments_wallet." >&2; status=1
+  fi
+  if grep -RInE 'from "(node:)?https"' --include='*.ts' "$backend_src" | code_only | grep -v "^$payments_net:"; then
+    echo "FAIL: an HTTPS client outside $payments_net; sellers are only reached through its address checks." >&2; status=1
+  fi
+  if grep -RInE '\.signTransferAuthorization\(' --include='*.ts' "$backend_src" | code_only | grep -v "^$payments_service:"; then
+    echo "FAIL: wallet signing called outside $payments_service." >&2; status=1
+  fi
+  if grep -RInE 'fetch\(' --include='*.ts' backend/src/payments | code_only | grep -v "^$payments_wallet:"; then
+    echo "FAIL: payments code makes a request outside the wallet adapter and the seller client." >&2; status=1
+  fi
+fi
+if grep -RInE --include='*.swift' "$payments_in_app" "${dirs[@]}" | code_only; then
+  echo "FAIL: payment, wallet or signing code in the app. Payments are signed on the server only (docs/integrations/PAYMENTS_X402.md)." >&2; status=1
 fi
 secret_paths=("${dirs[@]}" project.yml scripts)
 for extra in backend/src backend/test contracts .env.example backend/.env.example; do [ -e "$extra" ] && secret_paths+=("$extra"); done
@@ -214,5 +240,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; payments: Coinbase only in the wallet adapter, seller HTTPS only in the address-checking client, wallet signing only from the payments service, and no wallet or signing code in the app."
 exit "$status"
