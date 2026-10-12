@@ -98,9 +98,10 @@ final class LaunchSmokeTests: XCTestCase {
         // The long Settings form creates rows lazily; scroll until the section is on screen.
         XCTAssertTrue(app.reveal(consent))
         XCTAssertEqual(consent.value as? String, "0")
+        // The status row is five rows below the switch, so it may not have been created yet.
         let status = app.descendants(matching: .any)["settings.assistantStatus"].firstMatch
-        XCTAssertTrue(status.exists)
-        XCTAssertTrue(status.label.contains("Off"))
+        XCTAssertTrue(app.reveal(status))
+        XCTAssertTrue(status.label.contains("Off"), status.label)
     }
 
     @MainActor
