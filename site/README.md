@@ -1,6 +1,6 @@
 # Doddy landing page
 
-A static, single-page site that explains Doddy (the character) and the Doddy app, built from `prompts/LANDING_PAGE_DESIGN.md`. Live on Vercel at https://doddy-eight.vercel.app (see "Needs the owner" for hosting details).
+A static, single-page site that explains Doddy (the character) and the Doddy app, built from `prompts/LANDING_PAGE_DESIGN.md`. Live on Vercel at https://doddy-nine.vercel.app (see "Needs the owner" for hosting details).
 
 ## Preview
 
@@ -113,7 +113,7 @@ A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards,
 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
 2. **Waitlist:** add a contact address people can use to ask for deletion; the form promises deletion on request.
-3. **Domain, contact address and privacy policy.** Hosted on Vercel (project `doddy`, team bienos) at https://doddy-eight.vercel.app, deployed from this branch to production. The Vercel project's production branch is the repo default (`claude/loving-dirac-uuxoux`), so pushes here create previews; redeploy production after changes, or point the production branch at this one in Vercel settings. No custom domain, contact address or privacy policy yet.
+3. **Domain, contact address and privacy policy.** Hosted on Vercel (project `doddy`, team bienos) at https://doddy-nine.vercel.app, deployed from this branch to production. The Vercel project's production branch is the repo default (`claude/loving-dirac-uuxoux`), so pushes here create previews; redeploy production after changes, or point the production branch at this one in Vercel settings. No custom domain, contact address or privacy policy yet.
 4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them.
 5. **Character art:** the poses in `assets/poses/` are the v1.3 SVGs. From 2026-10-11, new Doddy art comes only from the owner's `DODDY-Numbered-Video-Assets-v01` pack (CLAUDE.md), so any change to the poses replaces them from that pack.
 6. **Voice testing line:** the page says "Voice hasn't been tested on a real iPhone yet." Change it only when the owner confirms otherwise.
