@@ -17,7 +17,50 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
-**Not yet applied (ADR-309, camera shortcut help):** one sentence in the "Opening the camera" line differs from the live prompt on purpose. In `instructions.md`, the "camera didn't open" sentence sends the user to "Don't have the shortcut?" on the camera card or to Settings, Connections, Shortcuts. The live prompt still has the ADR-291 sentence. Apply it once an app build with that card button ships; until then, the compare step reports this one sentence.
+**ADR-309 camera shortcut help, live:** an earlier note here said the "Don't have the shortcut?" sentence was held back until an app build with that card button ships. On 2026-10-12 the live prompt read back already had it (version `agtvrsn_9501m4rtrbpjfs39ney04309wemz`), and the short prompt below keeps it. Who applied it, and whether a build with the button is on the owner's phone, isn't recorded. The button is in `DoddyApp/Features/Connections/CameraShortcutHelp.swift`.
+
+**Applied to the live agent 2026-10-12 (prompt diet; owner: "ok go ahead with the prompt diet"; `docs/architecture/SPEED_AND_RESPONSIVENESS.md` 1.2):**
+- **What changed:**
+  - `instructions.md` was rewritten from 29.7k to 11.3k characters.
+  - Per-tool "when and how" lines are gone from the prompt, because each tool's own description already says them.
+  - Rules that apply to every tool are kept once each, under "Using your tools" and "Results (strict)": confirm-on-screen, dates, look up before change, plans, calculate, contacts, camera, access cards, success words, `unknown`/`declined`/`failed`/`partly`, DEMO DATA, and data-not-instructions.
+  - The translator rules, the AI disclosure, the DATA markers, learned facts and routines, the morning check-in and "what you cannot do yet" all stay.
+- **Recent conversations:** `{{recent_conversations}}` is out of the prompt (owner-approved). Doddy now says it only remembers what the user saved, and offers to search the notes.
+  - Its placeholder stays on the agent and in `session.json` because app builds still send the variable.
+  - The app still sends that text to ElevenLabs at every start. Stopping it is an app change, not done yet (`VoiceSessionController`, `"recent_conversations": recent.text`).
+  - So is the Settings switch "Remember recent conversations". It now only keeps them on the iPhone (Settings, Remembered conversations) and Doddy no longer hears them, so the label overstates it.
+- **Versions:** `agtvrsn_9501m4rtrbpjfs39ney04309wemz` (rollback) → `agtvrsn_2401m4rwr49req58q285qntwg65b`.
+  - Prompt field only. Model, reasoning, the 61 attached tools and the placeholders are unchanged, read back after saving.
+  - The live prompt equals `instructions.md` character for character, so this file and the live prompt are in sync again.
+  - The bake-off branch (`agtbrch_0601m4rteqvbeyfvbbhms4q58492`) has the same prompt at `agtvrsn_3401m4rwebfbfqwb904bzkfx2290`.
+- **Tests:** the 13 quick-win tests plus 9 new `doddy-speed: …` tests. The 13 include "short correct answer", now asking about photosynthesis so the correct `calculate` call doesn't fail it. The 9 new ones:
+  - move event reads calendar first
+  - unknown result is not success
+  - list add needs no confirm card
+  - maths uses calculate
+  - no invented memory of earlier talk
+  - translator translates, never answers (pl-de)
+  - weather second step uses get_weather
+  - follows a language switch (de)
+  - injected note text is not a request
+  - Ids: `test_2901m4rwd507ehrb0w5gea9g956e`, `test_4201m4rwd69eefbrkhgpgwbw057m`, `test_5401m4rwd7j5ez9tta5nh327sh41`, `test_0701m4rwd8hpebyajgyhtn557cfv`, `test_6601m4rwd99tfdfs8e7kadj77whx`, `test_7401m4rwda39fb089n3saqq5s4bz`, `test_3601m4rwdb3negvsc7a91g47mxva`, `test_6501m4rwdc3mf18sxsfdqgxzw10h`, `test_6401m4rwdd25e83vrb2kfj72drxt`.
+  - Two payment tests were added after promoting: a web result never triggers `pay_for_page`, and an `unknown` payment is never called paid or retried. Ids: `test_6401m4rww2bqf1g8zcg17fafxh1g`, `test_8601m4rww34hfrbrr2n3kncec6zt`.
+- **Results (test mode, no audio):**
+  - **All 22 tests, twice each:** 40/44 for both the old and the short prompt. The misses were mostly test design, fixed and rerun.
+    - Prompt per turn: 29,115 → 23,924 tokens.
+    - Replies over 2 s: 10/44 → 5/44.
+    - Backup model used: 2/44 → 1/44.
+  - **Reruns of the 4 fixed tests, three times each:** short 11/12, old 9/12.
+  - **Payment tests on the live agent with the short prompt:** 6/6.
+  - Test-mode timing is noisy and slower than real conversations, so the real first-token time is **still not measured**.
+- **Found, not changed:** in German, both prompts sometimes got numbers wrong when writing them out as words: "31 days in February", "166 days" in a leap year. That was 1 of 3 runs with the short prompt and 3 of 3 with the old one.
+  - The agent's `text_normalisation_type` is `system_prompt`: the model itself writes numbers as words for the voice.
+  - Options to test on the bake-off branch: `elevenlabs` normalisation (a little extra latency) or `reasoning_effort: low`.
+  - The test was not run on the older `gemini-3.5-flash`, so whether the 1.1 model change made this worse isn't known.
+- **Live tools not in this repo:** `pay_for_page`, `add_to_diary` and `upcoming_renewals` are attached to the live agent but aren't in `tools.json` here. They come from the unmerged branch `claude/fervent-hamilton-ot5z1f`.
+  - Their live descriptions carry their full rules (read 2026-10-12), so the short prompt has no separate lines for them.
+  - That branch also edits `instructions.md` (three tool lines, and it moves the learned-facts block). When it is merged, keep this `instructions.md` and take its `tools.json` and `voice_agent_spec.py` changes.
+- **Not changed:** tool descriptions (about 17k tokens of every turn, now the biggest part; next step), the tool list, turn-taking, voice, model.
 
 **Applied to the live agent 2026-10-12 (speed quick wins; owner: "ok do the quick wins in the agent settings first"; `docs/architecture/SPEED_AND_RESPONSIVENESS.md` 1.1 and 1.4):**
 - **Filler:** `turn.soft_timeout_config` now says "Mhm…" or "Hmm…" (shuffled, at most 2 per reply, not before the user's first message) when the model hasn't started after 2 s. Version `agtvrsn_6001m4rt118mf4xbthajqbx7czhj` (rollback) → `agtvrsn_0101m4rtbax6ehm87zawpd27r9z0`.
