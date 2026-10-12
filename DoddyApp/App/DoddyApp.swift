@@ -19,6 +19,10 @@ struct DoddyApp: App {
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
         store.noteReminders = noteReminders
+        // The learning loop (ADR-440) listens to "What Doddy did" for what was corrected.
+        let learning = LearningStore(service: environment.learningService)
+        learning.attach(to: ActivityLogStore.shared)
+        store.learning = learning
         // A reminder's "Done" or "Tomorrow 09:00" can start the app in the background.
         NoteReminderRouter.shared.reminders = noteReminders
         // A tick from a widget can also start the app in the background (ADR-219).
@@ -58,6 +62,7 @@ struct DoddyApp: App {
                 // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
                 .task { await UpdatesModel().syncPushTokenIfOn() }
                 .task { await SystemNoteNotifications.registerCategory() }
+                .task { await store.learning?.reload() }
                 .task { ShoppingModeController.shared.reattach() }
                 .task {
                     await SharedListsController.shared.load()

@@ -55,7 +55,7 @@ final class VoiceContextTests: XCTestCase {
         assertOneBlock(VoiceToolReply.listRead(list))
         XCTAssertTrue(VoiceToolReply.listRead(list).contains("Name: \"Shopping\""))
         XCTAssertTrue(VoiceToolReply.listNotFound("x", lists: [list]).hasPrefix("not found:"))
-        XCTAssertTrue(VoiceToolReply.listNotFound("x", lists: [list]).hasSuffix("<<<DATA\n- \"Shopping\"\nDATA>>>"))
+        XCTAssertTrue(VoiceToolReply.listNotFound("x", lists: [list]).hasSuffix("<<<DATA\nAsked for: \"x\"\n- \"Shopping\"\nDATA>>>"))
         XCTAssertTrue(VoiceToolReply.listAmbiguous("x", lists: [list, list]).hasPrefix("not changed:"))
     }
 

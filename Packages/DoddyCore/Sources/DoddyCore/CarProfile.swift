@@ -22,6 +22,9 @@ public enum CarProfile {
         case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .calculate, .convertUnits,
              .convertCurrency, .readList, .listAlarms, .needsClarification, .unsupported, .invalid:
             return .run
+        case .noteCapabilityGap:
+            // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
+            return .run
         case .parkingSpot(let action):
             // Finding the car is a look-up; saving or clearing the spot waits until parked.
             if case .find = action { return .run }

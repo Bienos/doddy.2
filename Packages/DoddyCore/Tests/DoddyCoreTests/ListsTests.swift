@@ -122,7 +122,7 @@ final class ListsTests: XCTestCase {
         let added = item("eggs")
         let reply = VoiceToolReply.listAdded(
             ListAddResult(added: [added], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "Shopping")
-        XCTAssertEqual(reply, "added to the list: 1 item. Its name, then the items added:\n<<<DATA\nName: \"Shopping\"\n- eggs\nDATA>>>\nAlready on the list, not added again: milk.")
+        XCTAssertEqual(reply, "added to the list: 1 item. Already on the list, not added again: 1 item. Its name, then the items added, then the items not added:\n<<<DATA\nName: \"Shopping\"\n- eggs\n- Already on the list: milk\nDATA>>>")
         XCTAssertTrue(VoiceToolReply.listAdded(ListAddResult(added: [], alreadyThere: ["milk"], tooLong: [], noRoom: []), list: "S").hasPrefix("not added:"))
         XCTAssertTrue(VoiceToolReply.listNotFound("groceries", lists: [try list("Shopping")]).contains("\"Shopping\""))
         let changed = VoiceToolReply.listChanged(
@@ -136,7 +136,10 @@ final class ListsTests: XCTestCase {
             "milk" matches several items: "oat milk", "milk chocolate"
             DATA>>>
             Those words were not ticked; ask the user which item they mean.
-            Not on the list: bread.
+            Not on the list, so not ticked: 1 item. Those words:
+            <<<DATA
+            - bread
+            DATA>>>
             """)
 
         // A new list's name and items are data too (review finding 3).

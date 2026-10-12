@@ -38,6 +38,8 @@ final class MemoryStore {
     private(set) var recentlyDeleted: DeletedNote?
     /// Reloaded with the memories: a deleted memory takes its note reminder with it.
     var noteReminders: NoteReminderStore?
+    /// What Doddy learned about the user (ADR-440). The voice session and Settings reach it here.
+    var learning: LearningStore?
 
     init(environment: AppEnvironment) {
         self.environment = environment

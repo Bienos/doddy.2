@@ -29,7 +29,9 @@ final class FreeTimeTests: XCTestCase {
         XCTAssertEqual(days[0].slots.map(\.end), [at(14, 11), at(14, 18)])
         XCTAssertEqual(days[0].allDayTitles, ["Mum's birthday"])
         let reply = VoiceToolReply.freeTime(days, request: request, calendar: calendar)
-        XCTAssertTrue(reply.contains("Thursday 2027-01-14: 09:15–11:00, 17:00–18:00 (all-day: \"Mum's birthday\")"), reply)
+        XCTAssertTrue(reply.contains("Thursday 2027-01-14: 09:15–11:00, 17:00–18:00 (1 all-day event, below)"), reply)
+        // Calendar titles follow as data (ToolData).
+        XCTAssertTrue(reply.contains("All-day events' titles, by day:\n<<<DATA\n- Thursday 2027-01-14: \"Mum's birthday\"\nDATA>>>"), reply)
         XCTAssertTrue(reply.contains("Nothing was booked"))
     }
 

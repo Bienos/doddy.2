@@ -78,7 +78,13 @@ final class ReminderDetailsTests: XCTestCase {
     func testReplyAndLogNameTheChangesNotTheNote() {
         let change = ReminderDetailsChange(addNote: "PIN 4417", priority: .high, toList: ReminderListRef(id: "w", title: "Work"))
         let reply = VoiceToolReply.reminderDetailsChanged("Call the bank", change: change, due: nil)
-        XCTAssertEqual(reply, "changed: reminder \"Call the bank\": note added, high priority, moved to the list \"Work\". Checked in Reminders.")
+        XCTAssertEqual(reply, """
+            changed: the reminder below: note added, high priority, moved to another list (below). Checked in Reminders.
+            <<<DATA
+            Title: "Call the bank"
+            List: "Work"
+            DATA>>>
+            """)
         let request = ActivityRequest.describe(.changeReminder(ReminderChangeDraft(title: "Call the bank", newDue: nil, markDone: false, addNote: "PIN 4417", priority: .high, listName: "Work")), calendar: calendar)
         XCTAssertNotNil(request)
         XCTAssertFalse(request?.detail?.contains("4417") ?? true, "the note's text isn't logged")
@@ -138,7 +144,8 @@ final class ReminderRenameRepeatTests: XCTestCase {
     func testReplyAndLogNeverCarryTheNotes() {
         let change = ReminderDetailsChange(newTitle: "Gym with Tom", repeatChange: .stop, replaceNotes: "PIN 4417")
         let reply = VoiceToolReply.reminderDetailsChanged("Gym", change: change, due: nil)
-        XCTAssertTrue(reply.hasPrefix("changed: reminder \"Gym\": renamed to \"Gym with Tom\", notes replaced, no longer repeats"), reply)
+        XCTAssertTrue(reply.hasPrefix("changed: the reminder below: renamed (new title below), notes replaced, no longer repeats"), reply)
+        XCTAssertTrue(reply.hasSuffix("<<<DATA\nTitle: \"Gym\"\nNew title: \"Gym with Tom\"\nDATA>>>"), reply)
         XCTAssertFalse(reply.contains("4417"))
         let draft = ReminderChangeDraft(title: "Gym", newDue: nil, markDone: false, newTitle: "Gym with Tom", repeatChange: .stop, replaceNotes: "PIN 4417")
         let row = ActivityRequest.describe(.changeReminder(draft), calendar: calendar)
