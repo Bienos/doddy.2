@@ -50,6 +50,25 @@ web search verified there. That account is no longer the one in use; delete the 
 
 Checks after a search: Render logs show `POST /v1/tools/run` with status 200; app.monid.ai shows the run and its cost.
 
+## Switching web search to OpenAI (ADR-442)
+
+1. The code must be on the branch this service deploys (auto-deploy is off: deploy by hand after it is there).
+2. OpenAI dashboard: create an API key for Doddy's server, and set a monthly budget limit on its project. That limit
+   is the backstop if Doddy's own daily caps are set too high.
+3. Render → service → Environment:
+
+   | Key | Value |
+   |---|---|
+   | `OPENAI_API_KEY` | **secret**: the key from step 2 (`sk-…`) |
+   | `DODDY_WEB_SEARCH_PROVIDER` | `openai`. Required while `MONID_API_KEY` is still set: with both keys and no choice, the server refuses to start and says so |
+   | `OPENAI_WEB_SEARCH_MODEL` | optional; empty = `gpt-5.5` |
+   | `OPENAI_WEB_SEARCH_REASONING` | optional; empty = `low` |
+
+4. Deploy. In the app, Settings → Online accounts → Web search should now say the words go "on to OpenAI". Ask Doddy
+   something current. Checks: Render logs show `POST /v1/tools/run` with status 200; OpenAI's usage page shows the
+   web search calls and their cost.
+5. Back to Monid: set `DODDY_WEB_SEARCH_PROVIDER=monid`, or delete `OPENAI_API_KEY`.
+
 ## Adding the accounts later (Composio)
 
 2026-10-11: on the new service the owner entered a Composio key, the Google Calendar pair and a Gmail pair, and the

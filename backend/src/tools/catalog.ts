@@ -762,7 +762,7 @@ export const MOVE_TODOIST_TASK: CloudToolDefinition = {
 // ------------------------------------------------------------------ Gmail: one email's text
 
 /** C1 controls, soft hyphens, zero-width and bidi characters, which can hide text from the listener. */
-const INVISIBLE = /[\u0080-\u009f­​-‏‪-‮⁠-⁩﻿]/g;
+export const INVISIBLE =/[\u0080-\u009f­​-‏‪-‮⁠-⁩﻿]/g;
 
 /** An email's text for speech: no tags, no links, no control or invisible characters, at most `max` characters. */
 export function emailText(value: unknown, max: number): string | null {

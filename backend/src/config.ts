@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
-import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
+import { MONID_DEFAULT_BASE_URL, OPENAI_DEFAULT_SEARCH_MODEL } from "./tools/websearch.js";
 
 /**
  * Environment configuration. Every value is read once at start-up and validated.
@@ -17,7 +17,7 @@ export interface Limits {
   userDailyReads: number;
   /** Online-account tool runs (Gmail, Drive, Notion, Todoist, Outlook) per user per UTC day. */
   userDailyToolRuns: number;
-  /** Web searches (Monid, paid by Doddy) per user, and for the whole service, per UTC day. */
+  /** Web searches (Monid or OpenAI, paid by Doddy) per user, and for the whole service, per UTC day. */
   userDailyWebSearches: number;
   serviceDailyWebSearches: number;
   serviceDailyCalls: number;
@@ -51,6 +51,18 @@ export interface MonidSettings {
   baseUrl: string;
 }
 
+export type ReasoningEffort = "none" | "low" | "medium" | "high";
+
+/** OpenAI web search (Responses API, built-in `web_search` tool). Absent: not set up. */
+export interface OpenAISearchSettings {
+  apiKey: string;
+  model: string;
+  /** Null: the request carries no `reasoning` setting (for models without one). */
+  reasoningEffort: ReasoningEffort | null;
+}
+
+export type WebSearchProviderName = "monid" | "openai";
+
 export interface Config {
   mode: Mode;
   env: Env;
@@ -66,6 +78,9 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  openai: OpenAISearchSettings | null;
+  /** Which of the two answers web searches in live mode. Null: web search is not set up. */
+  webSearchProvider: WebSearchProviderName | null;
   limits: Limits;
 }
 
@@ -91,6 +106,9 @@ const intSetting = (fallback: number, min: number, max: number) =>
     (v) => (v === undefined || v === "" ? fallback : Number(v)),
     z.number().int().min(min).max(max),
   );
+
+/** A dashboard field left empty means "not set". */
+const emptyAsUnset = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 
 const EnvSchema = z.object({
   DODDY_MODE: z.enum(["mock", "live"]).default("mock"),
@@ -120,6 +138,11 @@ const EnvSchema = z.object({
   COMPOSIO_OUTLOOK_TOOLKIT_VERSION: z.string().optional(),
   MONID_API_KEY: z.string().optional(),
   MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_WEB_SEARCH_MODEL: z.preprocess(emptyAsUnset, z.string().default(OPENAI_DEFAULT_SEARCH_MODEL)),
+  // "omit" sends no reasoning setting, for a model that has none.
+  OPENAI_WEB_SEARCH_REASONING: z.preprocess(emptyAsUnset, z.enum(["none", "low", "medium", "high", "omit"]).default("low")),
+  DODDY_WEB_SEARCH_PROVIDER: z.preprocess(emptyAsUnset, z.enum(["monid", "openai"]).optional()),
   DODDY_LIMIT_USER_DAILY_WEB_SEARCHES: intSetting(30, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES: intSetting(200, 1, 100_000),
   DODDY_LIMIT_SERVICE_DAILY_CALLS: intSetting(300, 1, 1_000_000),
@@ -189,8 +212,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
-  // Live mode needs Composio (accounts) or Monid (web search), or both. Composio is optional: a
-  // server can run web search only, and the accounts then show "Not set up" (never demo data).
+  // Live mode needs Composio (accounts) or a web search key (Monid or OpenAI), or both. Composio is
+  // optional: a server can run web search only, and the accounts then show "Not set up" (never demo data).
   let composio: ComposioSettings | null = null;
   const composioNames = ["COMPOSIO_API_KEY", "COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID", "COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION"] as const;
   const composioGiven = composioNames.some((name) => (e[name] ?? "").trim() !== "");
@@ -201,8 +224,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       problems.push("DODDY_MODE=live with DODDY_ENV=production is blocked until real app sign-in exists");
     }
     if (e.DODDY_AUTH_MODE !== "signed") problems.push("DODDY_MODE=live requires DODDY_AUTH_MODE=signed");
-    if (!composioGiven && (e.MONID_API_KEY ?? "").trim() === "") {
-      problems.push("DODDY_MODE=live needs Composio (COMPOSIO_API_KEY and the Google Calendar pair) or MONID_API_KEY");
+    if (!composioGiven && (e.MONID_API_KEY ?? "").trim() === "" && (e.OPENAI_API_KEY ?? "").trim() === "") {
+      problems.push("DODDY_MODE=live needs Composio (COMPOSIO_API_KEY and the Google Calendar pair) or MONID_API_KEY or OPENAI_API_KEY");
     }
     // Half a Composio setup is a mistake, not a feature: all three or none.
     const missing = composioGiven ? composioNames.filter((name) => !e[name] || e[name]!.trim() === "") : [];
@@ -255,6 +278,31 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
   }
 
+  // Web search through OpenAI. Same rules: optional, live mode only, validated when set.
+  let openai: OpenAISearchSettings | null = null;
+  const openaiKey = (e.OPENAI_API_KEY ?? "").trim();
+  if (e.DODDY_MODE === "live" && openaiKey !== "") {
+    if (!/^sk-[A-Za-z0-9_-]{20,}$/.test(openaiKey)) problems.push("OPENAI_API_KEY must look like sk-<secret>");
+    const model = e.OPENAI_WEB_SEARCH_MODEL.trim();
+    if (!/^[A-Za-z0-9][A-Za-z0-9._:-]{0,99}$/.test(model)) problems.push("OPENAI_WEB_SEARCH_MODEL is not a model name");
+    const effort = e.OPENAI_WEB_SEARCH_REASONING;
+    openai = { apiKey: openaiKey, model, reasoningEffort: effort === "omit" ? null : effort };
+  }
+
+  // Which one answers searches: the one named, or the only one set up. Both set up and none named is
+  // refused rather than guessed, because the two send search words to different companies.
+  let webSearchProvider: WebSearchProviderName | null = null;
+  if (e.DODDY_MODE === "live") {
+    const named = e.DODDY_WEB_SEARCH_PROVIDER;
+    if (named === "openai" && openaiKey === "") problems.push("DODDY_WEB_SEARCH_PROVIDER=openai needs OPENAI_API_KEY");
+    else if (named === "monid" && monidKey === "") problems.push("DODDY_WEB_SEARCH_PROVIDER=monid needs MONID_API_KEY");
+    else if (named) webSearchProvider = named;
+    else if (monidKey !== "" && openaiKey !== "") {
+      problems.push("MONID_API_KEY and OPENAI_API_KEY are both set: choose one with DODDY_WEB_SEARCH_PROVIDER (monid or openai)");
+    } else if (openaiKey !== "") webSearchProvider = "openai";
+    else if (monidKey !== "") webSearchProvider = "monid";
+  }
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -270,6 +318,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     composio,
     toolkits,
     monid,
+    openai,
+    webSearchProvider,
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,

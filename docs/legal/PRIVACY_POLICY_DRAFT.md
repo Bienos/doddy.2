@@ -195,7 +195,7 @@ Common points:
 
 | Item | Detail |
 |---|---|
-| Who | Doddy's backend (`backend/`, Node), which talks to Composio and on to Google (Calendar, Gmail, Drive), Microsoft (Outlook), Notion and Todoist; and to Monid for web search. Render, Frankfurt, free plan (`render.yaml`). `ONLINE_ACCOUNTS.md` says web search ran on a Render service; the account connections have not been run against real accounts. **[CONFIRM: what is deployed; hosting terms; Composio and Monid terms, regions, sub-processors, retention; a data processing agreement]** |
+| Who | Doddy's backend (`backend/`, Node), which talks to Composio and on to Google (Calendar, Gmail, Drive), Microsoft (Outlook), Notion and Todoist; and to Monid or OpenAI for web search (one of the two, set in the server's settings, ADR-442). Render, Frankfurt, free plan (`render.yaml`). `ONLINE_ACCOUNTS.md` says web search ran on a Render service; the account connections have not been run against real accounts. **[CONFIRM: what is deployed; hosting terms; Composio and Monid terms, regions, sub-processors, retention; a data processing agreement]** |
 | What the app sends | A session token. What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. (`SECURITY_AND_PERMISSIONS.md`, `DataFlow` row `doddyServer`.) |
 | What comes back | Results (calendar entries, email previews, file names, page titles, tasks, web results). They go to the app and, during a conversation, to ElevenLabs so Doddy can speak them. |
 | Stored by the backend | A map from your Doddy user to a random Composio user ID. Connection metadata (provider, status, granted scopes, a masked account label). Short-lived attempt records. Receipts (tool, time, status, counts; no titles, subjects, search words or text). Usage counters, never pruned. (`SECURITY_AND_PERMISSIONS.md` "Data boundaries", `ONLINE_ACCOUNTS.md`.) The backend stores no event titles, email text or notes. |
@@ -382,7 +382,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A20 | Daily news data to Anthropic or OpenAI and GNews | `server/messaging/README.md`; ADR-163, ADR-197; `DataFlow.swift` row `messagingServer` |
 | A21 | News retention 14 / 30 days, 24 h cache | `server/messaging/src/news/digest.ts`; `news/sources.ts` |
 | A22 | Backend, Composio, receipts, no retention policy | `docs/integrations/SECURITY_AND_PERMISSIONS.md`; `docs/integrations/ONLINE_ACCOUNTS.md` |
-| A23 | Web search through Monid, search words not stored | `ONLINE_ACCOUNTS.md` (ADR-173) |
+| A23 | Web search through Monid or OpenAI (`store: false`), search words not stored by Doddy | `ONLINE_ACCOUNTS.md` (ADR-173, ADR-442) |
 | A24 | Gmail compose scope can send | ADR-099 |
 | A25 | Production live mode refused until sign-in | ADR-077; `SECURITY_AND_PERMISSIONS.md` |
 | A26 | Picovoice AccessKey only; wake word on device | `DataFlow.swift` row `picovoice`; ADR-254 |
@@ -438,7 +438,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 
 **Processors and agreements (data processing agreement, sub-processors, region)**
 - [ ] ElevenLabs: agreement, sub-processors (including Google Gemini), region, EU residency, retention, zero-retention mode, recording on or off, deletion by conversation or user ID, training use.
-- [ ] OpenAI: voice test, Ask Doddy gateway and news writer; retention and `store:false`; region; agreement.
+- [ ] OpenAI: voice test, Ask Doddy gateway, news writer and web search (ADR-442); retention and `store:false` (including with the web search tool); region; agreement.
 - [ ] Google (Gemini via ElevenLabs; Google Analytics; Google Fonts; Calendar, Gmail and Drive APIs). Google OAuth verification and the wider Gmail compose scope (ADR-099).
 - [ ] Anthropic (news writer). GNews. Twilio (Verify, SMS, calls). Apple (APNs, Maps, Siri, CloudKit).
 - [ ] Composio and Monid: terms, regions, sub-processors, retention, agreement.
@@ -494,7 +494,7 @@ Based on the code and `PrivacyInfo.xcprivacy`. Apple counts data that leaves the
 | Contacts | Yes, when asked in a voice conversation | Not declared. Probably linked to the voice conversation. | No | App functionality | Contact names and birthday day and month go to ElevenLabs. | **[CONFIRM: missing from the manifest]** |
 | Precise or coarse location | Mostly no. Where you are is sent to Apple Maps, which is Apple. A parking spot stays on the iPhone. | Not declared | No | App functionality | Place reminders, leave-by, parking. | **[CONFIRM: does Apple Maps use count as collection by the app?]** |
 | Emails or text messages | Possibly: email previews and one whole email reach ElevenLabs through your connected account. | Not declared | No | App functionality | Only when you switch the matching tool on. | **[CONFIRM: "Emails or text messages", "Other user content"]** |
-| Search history | Possibly: web search words go to the backend and Monid; Ask Doddy questions go to the gateway. | Not declared | No | App functionality | | **[CONFIRM]** |
+| Search history | Possibly: web search words go to the backend and on to Monid or OpenAI; Ask Doddy questions go to the gateway. | Not declared | No | App functionality | | **[CONFIRM]** |
 | Photos or videos | No. Photos stay on the iPhone and are chosen with the picker. | | | | | **[CONFIRM]** |
 | Health, fitness, financial info, browsing history, purchases | No | | | | | |
 | Usage data, diagnostics, advertising data | No for the app. The server has request logs. **[CONFIRM: whether server logs count as "diagnostics" or "performance data"]** | | | | | **[CONFIRM]** |

@@ -32,7 +32,7 @@
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
-#    can never pick another paid endpoint).
+#    can never pick another paid endpoint); OpenAI too only in the web search module (ADR-442).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -85,7 +85,7 @@ composio_adapter=backend/src/providers/composio.ts
 # the same answer shapes. Nothing else may name a slug.
 tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
-# Web search: the only file that may talk to Monid.
+# Web search: the only file that may talk to Monid or OpenAI.
 websearch=backend/src/tools/websearch.ts
 # "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
 # isn't kept or sent" stays checkable.
@@ -187,6 +187,9 @@ if [ -d "$backend_src" ]; then
   fi
   if grep -RInE '/v1/(discover|inspect)|monid_(discover|inspect|run)' --include='*.ts' "$backend_src"; then
     echo "FAIL: Monid endpoint discovery in the backend; web search must stay one fixed endpoint." >&2; status=1
+  fi
+  if grep -RInE 'openai\.com|/v1/responses' --include='*.ts' "$backend_src" | code_only | grep -v "^$websearch:"; then
+    echo "FAIL: OpenAI called outside $websearch." >&2; status=1
   fi
 fi
 secret_paths=("${dirs[@]}" project.yml scripts)

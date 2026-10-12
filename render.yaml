@@ -113,6 +113,17 @@ services:
       # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
       - key: MONID_API_KEY
         sync: false
+      # Web search through OpenAI (optional, ADR-442). With both keys set, DODDY_WEB_SEARCH_PROVIDER
+      # (monid or openai) must say which one answers; with one key, that one does.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DODDY_WEB_SEARCH_PROVIDER
+        sync: false
+      # Empty = gpt-5.5 and reasoning "low"; change these to make searches cheaper or faster.
+      - key: OPENAI_WEB_SEARCH_MODEL
+        sync: false
+      - key: OPENAI_WEB_SEARCH_REASONING
+        sync: false
 
   - type: web
     name: doddy-messaging

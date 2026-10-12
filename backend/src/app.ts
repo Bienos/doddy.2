@@ -13,7 +13,7 @@ import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
-import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
+import { MockWebSearchProvider, MonidWebSearchProvider, OpenAIWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
 export function buildApp(
@@ -47,14 +47,13 @@ export function buildApp(
     toolsProvider = config.composio ? new ComposioToolsProvider(config.composio.apiKey, config.toolkits) : new UnconfiguredToolsProvider();
   }
   else toolsProvider = new MockToolsProvider();
-  // Web search: live only with a Monid key (otherwise "not set up"); mock mode uses offline demo results.
+  // Web search: live only with the chosen provider's key (otherwise "not set up"); mock mode uses
+  // offline demo results.
   const webSearch =
     overrides.webSearch !== undefined
       ? overrides.webSearch
       : config.mode === "live"
-        ? config.monid
-          ? new MonidWebSearchProvider(config.monid)
-          : null
+        ? liveWebSearch(config)
         : new MockWebSearchProvider();
   const tools = new CloudToolsService({
     store,
@@ -78,4 +77,10 @@ export function buildApp(
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
   return { server, store, service, tools, provider };
+}
+
+function liveWebSearch(config: Config): WebSearchProvider | null {
+  if (config.webSearchProvider === "openai" && config.openai) return new OpenAIWebSearchProvider(config.openai);
+  if (config.webSearchProvider === "monid" && config.monid) return new MonidWebSearchProvider(config.monid);
+  return null;
 }

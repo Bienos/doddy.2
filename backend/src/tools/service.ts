@@ -49,7 +49,7 @@ const APPROVAL_TTL_SECONDS = 120;
 export interface ToolsServiceDeps {
   store: Store;
   provider: ToolsProvider;
-  /** Web search through Monid. Null or absent: the section shows "not set up" and never runs. */
+  /** Web search (Monid or OpenAI). Null or absent: the section shows "not set up" and never runs. */
   webSearch?: WebSearchProvider | null;
   limits: Limits;
   publicBaseUrl: string;
@@ -138,13 +138,13 @@ export class CloudToolsService {
     };
   }
 
-  /** Web search has no account: it is "connected" whenever this server has Monid set up. */
+  /** Web search has no account: it is "connected" whenever this server has a search provider set up. */
   private webView(userId: string): ToolkitView {
     const configured = this.webSearch?.isConfigured() === true;
     return {
       id: WEB_SECTION_ID,
       title: WEB_SECTION.title,
-      access: WEB_SECTION.access,
+      access: this.webSearch?.access ?? WEB_SECTION.access,
       needsAccount: false,
       status: configured ? "connected" : "unavailable",
       reason: null,
@@ -584,7 +584,7 @@ export class CloudToolsService {
 
   /**
    * Same order as account tools, minus the account: known tool -> valid arguments -> switch on ->
-   * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed)
+   * set up -> limits (incl. the web search caps) -> one provider call (never retried: each one is billed)
    * -> normalized result -> receipt. Search words are not stored anywhere, receipts included.
    */
   private async runWebSearch(userId: string, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
