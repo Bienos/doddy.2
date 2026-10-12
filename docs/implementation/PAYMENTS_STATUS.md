@@ -160,10 +160,10 @@ check of all 20 changed Swift files, a name-clash search. **Not run:** the Swift
 
 **Known limits**
 - If the person takes longer than the tool's 120 s timeout (the approval itself lasts 2 minutes), ElevenLabs gives up waiting. The card still works and the receipt is recorded, but the agent never hears the outcome.
-- `pay_for_page` is `not_synced`: the live agent does not have the tool until the owner syncs it.
+- ~~`pay_for_page` is `not_synced`~~ **Synced 2026-10-12** at the owner's request (tool `tool_1401m4rmxkm5eg3v87sphf87c45p`, agent version `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`, 59 tools, read back). Done before the app was built or checklist 4o was walked, against my earlier advice; the exposure is small because an app without ADR-452 answers the tool as unsupported. The live prompt was not rewritten (it is ahead of `instructions.md`), so the tool's description carries the rules.
 - A page address spoken aloud is hard to get right; the agent is told to ask for the full address and never to guess. Web search results carry only site names, so they cannot supply one.
 - The banner depends on the server's count, which only clears when a record is pruned (90 days); "I've checked" hides it locally. No server-side "resolved" call exists.
 
 **Constitution evidence (this part).** DOD-07: typed amount from the threshold, enforced by the server (`payments.test.ts`, run) and the state machine (`PaymentApprovalModelTests`, not run); the agent can only propose (`PaymentsVoiceTests`, not run). DOD-08: `unknown:` never reads as done (`testOnlyAConfirmedPaymentIsDone`, not run). DOD-11: page content and reasons are marked data; the address is not logged in "What Doddy did". **Gap:** the whole agent-to-card path has never run; the ElevenLabs agent has not been tested with the tool; the typed-amount threshold (0.10) is an assumption for the owner to confirm.
 
-**Decisions for the owner:** (1) Is 0.10 USDC the right threshold for typing the amount? (2) Should the agent's wait be longer than 120 s, or should the outcome be delivered later as a spoken follow-up? (3) Sync `pay_for_page` to the live agent only after checklist 4o passes on a device.
+**Decisions for the owner:** (1) Is 0.10 USDC the right threshold for typing the amount? (2) Should the agent's wait be longer than 120 s, or should the outcome be delivered later as a spoken follow-up? (3) ~~Sync after checklist 4o~~ done early; the first real conversation with the tool should be on the test network with the mock or Base Sepolia wallet (checklist P18 to P22).

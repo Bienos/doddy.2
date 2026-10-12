@@ -7,7 +7,7 @@ ADR-450. Status report and constitution evidence log: `docs/implementation/PAYME
 > ID (ADR-451) is written but has never been compiled or run (no Swift toolchain was available). Nothing has run against
 > the real Coinbase service, a real x402 seller, a funded wallet, or the voice agent.** The only way to start a payment
 > from the app is Settings › Payments › "Pay for a page", or by asking the voice agent (ADR-452, written, never run, and
-> **not yet synced to the live ElevenLabs agent**: `pay_for_page` is `not_synced` in `voice-agent/tools.json`).
+> **synced to the live ElevenLabs agent on 2026-10-12**: tool `tool_1401m4rmxkm5eg3v87sphf87c45p`, agent version `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`; the live prompt line is not applied, see below).
 
 ## What this is, and what it is not
 
@@ -106,8 +106,11 @@ It rides the existing online-account tool route so the same gates apply: not whi
 the person has paused connections, never a step of a plan (the plan allow-list is explicit), and the activity log says
 "Paid for a page" without the address. The phone-call agent (`voice-agent/phone/`) has no payment tool.
 
-**Owner step, not done:** the tool is `not_synced`. Sync it to the live ElevenLabs agent (`voice-agent/README.md`) after the
-app has been built and the card verified on a device (checklist 4o), then set the real tool id in `tools.json`.
+**Synced to the live agent 2026-10-12 (owner's instruction), before the app was built or the card seen on a device.** The tool is attached
+(`tool_1401m4rmxkm5eg3v87sphf87c45p`, agent version `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`, 59 tools). What keeps this safe until the app
+ships: an installed app without ADR-452 answers the tool as unsupported; the server refuses everything unless a wallet is set
+up; and each person's switch starts off. The prompt line for the tool is *not* in the live prompt (it is ahead of
+`instructions.md`); the rules are in the tool's description. Rollback: agent version before `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`.
 
 ## HTTP contract (`/v1/payments`, separate from `/v1/tools` on purpose)
 
@@ -195,8 +198,8 @@ the unknown-outcome rules; privacy (no path or query stored); configuration; the
 - The real HTTPS client (`PublicHttps`) against a live host. Its address rules are unit-tested and it refuses blocked
   addresses without connecting, but a TLS connection to a real seller has not been made.
 - The iPhone: the approval card, Face ID step and Settings › Payments screen are written (see "The iPhone side"
-  below) but were **never compiled or run**: this environment has no Swift toolchain. The same is true of the voice tool,
-  and the live ElevenLabs agent does not have it.
+  below) but were **never compiled or run**: this environment has no Swift toolchain. The same is true of the voice tool
+  (the live agent has it, but no app build can answer it yet).
 
 ## Limits of this version (each refused with a plain message, never guessed)
 
