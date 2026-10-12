@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "ignoreCommand": "p=$VERCEL_GIT_PREVIOUS_SHA; git cat-file -e \"$p^{commit}\" 2>/dev/null || p=HEAD^; git cat-file -e \"$p^{commit}\" 2>/dev/null && git diff --quiet \"$p\" HEAD -- .",
+  "ignoreCommand": "p=$VERCEL_GIT_PREVIOUS_SHA; [ \"$p\" = \"$(git rev-parse HEAD)\" ] && exit 1; git cat-file -e \"$p^{commit}\" 2>/dev/null || p=HEAD^; git cat-file -e \"$p^{commit}\" 2>/dev/null && git diff --quiet \"$p\" HEAD -- .",
   "headers": [
     {
       "source": "/(.*)",
