@@ -88,7 +88,8 @@ final class MemoryBaselineTests: XCTestCase {
         XCTAssertTrue(springboard.buttons["Stop"].waitForExistence(timeout: 8))
         springboard.buttons["Stop"].tap()
         app.activate()
-        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture ended", timeout: 5), "System Stop must reach the app handler.")
+        // Like Unmute above, the system button reaches the app's handler a few seconds later.
+        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture ended", timeout: 10), "System Stop must reach the app handler.")
         XCTAssertTrue(count.waitForLabel("0 native activities", timeout: 5))
     }
 
