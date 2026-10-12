@@ -30,7 +30,8 @@ flowchart TD
 | Reasoning | `AssistantService.answer` → `AssistantClient` (replaceable port) | Existing, re-used |
 | Result verification | `CitationVerifier` | Existing, re-used |
 | Diagnostics | `BrainTrace` (counts and decisions, no text) | Built |
-| Capability registry and resolver | `ToolCatalog` + `CapabilityResolver` | Planned (Phase 3), design in 04 |
+| Tool registry | `ToolCatalog` (`DoddyCore/Brain/ToolCatalog.swift`), cross-checked with `tools.json` and the server | **Built** (ADR-445) |
+| Availability resolver | `CapabilityResolver` | Planned, design in 04 |
 | Tool gate | `ToolGate.decide` (`DoddyCore/Brain/ToolGate.swift`), called by `VoiceSessionController.handle` | **Built** (ADR-444) |
 | Stale-session guard | `ToolCallOwnership` (`DoddyCore/Brain/ToolCallOwnership.swift`) | **Built** (ADR-443) |
 | Learning | `LearningService` | Existing; unchanged |

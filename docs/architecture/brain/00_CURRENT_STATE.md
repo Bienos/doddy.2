@@ -52,7 +52,7 @@ flowchart LR
 | Action status / unknown outcomes | IMPLEMENTED (`ActivityOutcome.notSure`, `inProgress` → `notSure` after crash; server `outcome_unknown`) | `ActivityLog.swift:36,430`, `service.ts:490-507` |
 | Learning loop (facts, procedures, outcome events, gaps) | IMPLEMENTED (Phase C), voice only | `Learning/`, `docs/architecture/LEARNING_LOOP.md` §13 |
 | Capability catalog | PARTIAL: product-level, gates UI only, no tool names | `Capabilities.swift` |
-| Per-tool policy (risk, confirmation, timeout) | PARTIAL: split across `tools.json` `x_doddy`, `CloudToolName.writes`, `VoiceConnection.serving`, `PlanTool.allowed`, and the controller's switch | see 04 |
+| Per-tool policy (risk, confirmation, timeout) | PARTIAL: split across `tools.json` `x_doddy`, `CloudToolName.writes`, `VoiceConnection.serving`, `PlanTool.allowed`, and the controller's switch. Since ADR-445 one typed table (`ToolCatalog`) is checked against all of them | see 04 |
 | Generic `ToolExecutor` / `ToolProposal` ports | MOCKED (only `UnavailableToolExecutor`; voice bypasses them) | `Ports.swift:159-209`, `AppEnvironment.swift:57` |
 | Shared brain / orchestration boundary | **MISSING before this change**; Phase 1 adds it for typed questions | `Brain/` (ADR-442) |
 | Proactive (morning check-in, evening wrap-up, note reminders, push/text/calls) | PARTIAL; needs the messaging server for remote parts | `MorningCheckIn.swift`, `EveningWrapUp.swift`, `server/messaging` |

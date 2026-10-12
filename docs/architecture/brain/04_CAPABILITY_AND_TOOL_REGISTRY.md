@@ -10,13 +10,19 @@
 | `PlanTool.allowed` | 7 tools a plan may contain | plans |
 | `CapabilityCatalog` | 15 product capabilities, `notImplemented / limited / needsSetup / available` | UI claims only |
 
-## Proposal (Phase 3, not built)
+## Built: `ToolCatalog` (ADR-445)
+`DoddyCore/Brain/ToolCatalog.swift` holds effect and approval per tool; `ToolCatalogTests` run every cross-check listed below,
+plus the server's `risk` in `backend/src/tools/catalog.ts`. Risk tiers are not stored: lookup ≈ L0/L1, localChange and handoff ≈ L2,
+accountWrite ≈ L3. `CapabilityResolver` (availability) is still a proposal.
+
+## Proposal (Phase 3)
 A Swift `ToolCatalog` of `ToolDescriptor` values, **derived from the constants above, not a second list**:
 `name, runsOn, effect (lookup | localChange | accountWrite | handoff | session), approval (none | card | serverApproval),
 connection: VoiceConnection?, planEligible, riskTier (L0–L4, docs/trust/04)`.
 
 - **Cross-check test (the main value):** every `tools.json` name has a descriptor and the reverse. `confirm_on_screen ⇔ approval != none`.
-  `accountWrite ⇒ serverApproval`. `PlanTool.allowed ⊆ approval != none`. A drift between spec and app then fails CI before it reaches the live agent.
+  `accountWrite ⇒ serverApproval`. Plan steps are changes that finish inside Doddy (as built: `add_to_list` has no single card;
+  in a plan the plan card approves it). A drift between spec and app then fails CI before it reaches the live agent.
 - **`CapabilityResolver.availability(tool, environment)`** → `available | needsSetup(reason) | limited(reason) | disabled(reason) | unsupported | unverified`.
   It is built from `CapabilityCatalog`, the connection switches, `ConnectionPause`, iOS permission and `AlarmScheduler.support()`.
   The existing `CapabilityStatus` cases are reused, plus `disabled` (a switch is off) and `unsupported` (`.unsupported(name:)`).

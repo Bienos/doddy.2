@@ -7,7 +7,8 @@
 | 2 | Voice egress target for `search_memories`; one greedy-fill helper; DATA markers for profile and learned context | Needs owner decision on voice start context (03 §Gaps 1) |
 | 3a | Stale-session guard (`ToolCallOwnership`, controller call sites) | **Built** (ADR-443); core Linux-tested, controller not compiled |
 | 3b | `ToolGate.decide` (the gate chain of `handle`) | **Built** (ADR-444); equivalence-tested on Linux, controller not compiled |
-| 3c | `ToolCatalog` + spec cross-check; plan loop into core | Next |
+| 3c | `ToolCatalog` + cross-check with `tools.json` and the server | **Built** (ADR-445); core only |
+| 3d | Plan step loop into core; `CapabilityResolver` | Next |
 | 4 | Typed tools through the same gate (needs a gateway tool contract) | Needs owner approval |
 | 5 | Proactive jobs (08) | Design only; any scheduler is a separate approved task |
 | 6 | Evaluation from `BrainTrace` + labelled sets | Not started |
@@ -33,6 +34,10 @@ failed with a misleading "Shorten it" message. Everything else is unchanged; the
 - `Packages/DoddyCore/Sources/DoddyCore/Brain/ToolGate.swift` (new) + `ToolGateTests` (8 tests, >10,000 equivalence cases)
 - `VoiceSessionController.handle` calls `ToolGate.decide` instead of its four inline checks.
 
+## Phase 3c changes (ADR-445)
+- `Packages/DoddyCore/Sources/DoddyCore/Brain/ToolCatalog.swift` (new) + `ToolCatalogTests` (9 tests). No app change.
+
 ## Next smallest verified task
-**`ToolCatalog` cross-check (Phase 3c, design in 04).** Per-tool effect and approval, derived from the existing constants,
-with a test that `voice-agent/tools.json`'s `confirm_on_screen` agrees for every tool. Core-only, no app change.
+**Plan step loop into core (Phase 3d, design in 05).** The ticked / blocked / unticked resolution and the summary of
+`runPlan` (`VoiceSessionController.swift`) as a pure function with injected step runners, tested on Linux, then one
+controller edit. `PlanReply` prefixes stay unchanged.
