@@ -19,6 +19,7 @@ rules, **not** live gateway, model or voice behaviour.
 | `AssistantService.ask` compatibility | `testAssistantServiceAskTakesTheSamePath` + the 16 existing `AssistantServiceTests` | Passing |
 | Tool selection, unknown tool, approval, payload integrity, multi-step, partial failure, timeout, duplication | existing `VoiceToolsTests`, `PlanTests`, `ActivityLogTests`, `OnlineAccountsTests`, backend tests | Existing; not re-run as brain tests |
 | Voice interruption / stale session | `ToolCallOwnershipTests` (5); controller wiring: Mac checklist 5c | Core passing; app NOT RUN |
+| Tool gate (translator, plan, Pause all, switches) | `ToolGateTests` (8, equivalence with the old controller code) | Passing; controller NOT RUN |
 | Capability honesty | `HonestyTests`, `RealtimeVoiceTests` (cloud subset) | Partial: Phase 3 cross-check |
 | Learning only under user control | `LearningTests`, `LearningServiceTests` | Existing |
 

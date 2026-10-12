@@ -384,3 +384,4 @@ These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_
 | S4 | Normal use: a card, a list add, a plan, a calendar read, a contact lookup in one conversation | All behave as before (results reach the agent; nothing is dropped) |
 | S5 | OpenAI test voice: ask for the weather | Still told it doesn't work there (the reply reaches the agent) |
 | S6 | `DoddyTests/VoiceSessionControllerTests` | Pass unchanged (the test seam registers its card's call) |
+| S7 | (ADR-444) Translator on: ask for the calendar; Pause all on: ask for the calendar, then a note; Calendar switch off: ask for the calendar; a plan with Pause all on | Refused without a log row; "paused" with a row; the note works; the "turn on Calendar" prompt; the plan card shows its steps as skipped (unchanged behaviour) |

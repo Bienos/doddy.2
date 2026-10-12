@@ -6,7 +6,8 @@
 | 1 | `BrainCoordinator` + `ContextAssembler` for typed questions; Ask wired through it; imported-note egress fix | **Built, Linux-tested** (ADR-442); app compile on Xcode NOT RUN |
 | 2 | Voice egress target for `search_memories`; one greedy-fill helper; DATA markers for profile and learned context | Needs owner decision on voice start context (03 §Gaps 1) |
 | 3a | Stale-session guard (`ToolCallOwnership`, controller call sites) | **Built** (ADR-443); core Linux-tested, controller not compiled |
-| 3b | `ToolCatalog` + spec cross-check; `ToolGate` decision function; plan loop into core | Next |
+| 3b | `ToolGate.decide` (the gate chain of `handle`) | **Built** (ADR-444); equivalence-tested on Linux, controller not compiled |
+| 3c | `ToolCatalog` + spec cross-check; plan loop into core | Next |
 | 4 | Typed tools through the same gate (needs a gateway tool contract) | Needs owner approval |
 | 5 | Proactive jobs (08) | Design only; any scheduler is a separate approved task |
 | 6 | Evaluation from `BrainTrace` + labelled sets | Not started |
@@ -28,7 +29,10 @@ failed with a misleading "Shorten it" message. Everything else is unchanged; the
   plan and ingredients cards, parking and list receipts and the connection prompt need `isCurrent`; `reply` logs late
   results but sends only to the conversation that asked. Not compiled here: Mac checklist 5c.
 
+## Phase 3b changes (ADR-444)
+- `Packages/DoddyCore/Sources/DoddyCore/Brain/ToolGate.swift` (new) + `ToolGateTests` (8 tests, >10,000 equivalence cases)
+- `VoiceSessionController.handle` calls `ToolGate.decide` instead of its four inline checks.
+
 ## Next smallest verified task
-**`ToolGate.decide` (Phase 3b).** A pure function in `DoddyCore` that reproduces the gate chain at the top of
-`VoiceSessionController.handle` (translator → plan → Pause all → connection switch), with table tests on Linux.
-Then one controller edit to call it. After that, the `ToolCatalog` cross-check against `voice-agent/tools.json` (04).
+**`ToolCatalog` cross-check (Phase 3c, design in 04).** Per-tool effect and approval, derived from the existing constants,
+with a test that `voice-agent/tools.json`'s `confirm_on_screen` agrees for every tool. Core-only, no app change.

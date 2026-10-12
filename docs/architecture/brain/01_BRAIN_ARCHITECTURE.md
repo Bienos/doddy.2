@@ -31,7 +31,8 @@ flowchart TD
 | Result verification | `CitationVerifier` | Existing, re-used |
 | Diagnostics | `BrainTrace` (counts and decisions, no text) | Built |
 | Capability registry and resolver | `ToolCatalog` + `CapabilityResolver` | Planned (Phase 3), design in 04 |
-| Tool gate and execution lifecycle | `ToolGate` over `VoiceToolRequest`/`PlanProposal` | Planned (Phase 3), design in 06 |
+| Tool gate | `ToolGate.decide` (`DoddyCore/Brain/ToolGate.swift`), called by `VoiceSessionController.handle` | **Built** (ADR-444) |
+| Stale-session guard | `ToolCallOwnership` (`DoddyCore/Brain/ToolCallOwnership.swift`) | **Built** (ADR-443) |
 | Learning | `LearningService` | Existing; unchanged |
 | Character | `PersonalityPrompt`, `voice-agent/instructions.md`, `docs/trust/02_*` | Existing; never consulted for permissions |
 

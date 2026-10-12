@@ -1688,25 +1688,28 @@ final class VoiceSessionController {
         // ended conversation that arrives once the next has started (ADR-443).
         guard isCurrent(call.toolCallId) else { return }
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
-        // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
-        // is looked up or logged.
-        if translator != nil, !TranslatorPolicy.allows(request) {
-            await reply(call.toolCallId, VoiceToolReply.translatorRefused(call.toolName))
-            return
+        // Translator mode (nothing looked up or logged, a plan card included, ADR-215), the plan's
+        // own path, Settings → Pause all (notes still work), then the connection's switch: decided
+        // by `ToolGate` in DoddyCore with the settings read here (ADR-444).
+        let decision = ToolGate.decide(toolName: call.toolName, request: request, environment: ToolGateEnvironment(
+            translatorOn: translator != nil,
+            connectionsPaused: UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey),
+            connectionsOn: Set(VoiceConnection.allCases.filter { isOn($0) })))
+        if decision.logsRequest {
+            asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)?.naming(call.toolName)
         }
-        if call.toolName == VoiceToolName.proposePlan {
+        switch decision {
+        case .refuse(let text), .paused(let text):
+            await reply(call.toolCallId, text)
+            return
+        case .plan:
             await handlePlan(call)
             return
-        }
-        asked[call.toolCallId] = ActivityRequest.describe(request, calendar: .current)?.naming(call.toolName)
-        // Settings → Pause all: no other app or account is used; notes still work.
-        if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey), ConnectionPause.applies(to: request) {
-            await reply(call.toolCallId, ConnectionPause.reply)
-            return
-        }
-        if let connection = VoiceConnection.serving(call.toolName), !isOn(connection) {
+        case .notConnected(let connection):
             await notConnected(call.toolCallId, connection)
             return
+        case .proceed:
+            break
         }
         switch request {
         case .searchMemories(let query):
