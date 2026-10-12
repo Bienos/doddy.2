@@ -7,36 +7,45 @@ import XCTest
 /// The voice controller's confirmation cards with a fake Calendar (AppTests review 2026-10-11,
 /// finding 2). App-target tests: NOT RUN in the authoring environment (no Xcode).
 ///
-/// Not covered here, for lack of a seam: tool calls arriving from the provider (`handle` and
-/// `handleOpenAICall` are private and need `isLive`), the alarm list (static `AlarmScheduler`),
-/// and a second `start` ending the first (needs the microphone and a provider).
+/// Tool calls reach the controller through the DEBUG seam `handleToolCallForTesting`, the same
+/// path as an OpenAI Realtime call.
 final class VoiceSessionControllerTests: XCTestCase {
-    /// A controller with a fake Calendar and a fake provider link. `restore()` puts the Calendar
-    /// switch back as it was; each test calls it in a `defer`.
+    /// A controller with a fake Calendar, fake alarms and a fake provider link. `restore()` puts
+    /// the settings it changed back as they were; each test calls it in a `defer`.
     @MainActor
     private struct Harness {
         let devices = FakeDevices()
         let link = FakeLink()
         let controller: VoiceSessionController
-        private let savedCalendarSwitch: Any?
+        /// Settings the controller reads, as they were before this test.
+        private let saved: [(key: String, value: Any?)]
 
-        init() {
-            // The card re-checks Settings → Connections at the tap; turned on for this test only.
-            let key = VoiceConnection.calendar.preferenceKey
-            savedCalendarSwitch = UserDefaults.standard.object(forKey: key)
-            UserDefaults.standard.set(true, forKey: key)
+        /// `alarms` is what the alarm list reads; nil means iOS couldn't read it.
+        init(alarms: [DoddyAlarm]? = []) {
+            // Settings → Connections is re-checked at each call and tap: Calendar and Timers on,
+            // Pause all off, for this test only.
+            let on = [VoiceConnection.calendar.preferenceKey, VoiceConnection.timers.preferenceKey]
+            saved = (on + [ConnectionPause.preferenceKey]).map { ($0, UserDefaults.standard.object(forKey: $0)) }
+            for key in on { UserDefaults.standard.set(true, forKey: key) }
+            UserDefaults.standard.set(false, forKey: ConnectionPause.preferenceKey)
             controller = VoiceSessionController(
                 store: MemoryStore(environment: .live(arguments: ["-inMemoryStore"])),
                 activity: ActivityLogStore(fileURL: nil),
-                devices: devices)
+                devices: devices,
+                alarms: { alarms })
         }
 
         func show(_ action: VoiceSessionController.PendingAction) {
             controller.showCardForTesting(action, link: link)
         }
 
+        /// One tool call from the provider, mid-conversation.
+        func call(_ name: String, id: String, arguments: String = "{}") async {
+            await controller.handleToolCallForTesting(RealtimeFunctionCall(callID: id, name: name, arguments: arguments), link: link)
+        }
+
         func restore() {
-            UserDefaults.standard.set(savedCalendarSwitch, forKey: VoiceConnection.calendar.preferenceKey)
+            for (key, value) in saved { UserDefaults.standard.set(value, forKey: key) }
         }
     }
 
@@ -137,6 +146,49 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertTrue(reply.hasPrefix("unknown:"), reply)
         XCTAssertEqual(reply, VoiceToolReply.eventChangeUnconfirmed)
         XCTAssertNil(t.controller.changeReceipt)
+    }
+
+    // MARK: Unreadable alarm list (DOD-08)
+
+    /// An alarm list iOS couldn't read is `unknown:`, never "none set".
+    @MainActor
+    func testUnreadableAlarmListRepliesUnknown() async throws {
+        let t = Harness(alarms: nil)
+        defer { t.restore() }
+
+        await t.call(VoiceToolName.listAlarms, id: "call-7")
+
+        XCTAssertEqual(t.link.results.map(\.id), ["call-7"])
+        let reply = try XCTUnwrap(t.link.results.first?.text)
+        XCTAssertTrue(reply.hasPrefix("unknown:"), reply)
+        XCTAssertEqual(reply, VoiceToolReply.alarmsUnreadable)
+    }
+
+    /// Unreadable is not "not found": the alarm may still ring, so no card and nothing cancelled.
+    @MainActor
+    func testCancelAlarmWithUnreadableListRepliesUnknown() async throws {
+        let t = Harness(alarms: nil)
+        defer { t.restore() }
+
+        await t.call(VoiceToolName.cancelAlarm, id: "call-8", arguments: "{\"time\":\"07:00\"}")
+
+        XCTAssertEqual(t.link.results.map(\.id), ["call-8"])
+        let reply = try XCTUnwrap(t.link.results.first?.text)
+        XCTAssertTrue(reply.hasPrefix("unknown:"), reply)
+        XCTAssertEqual(reply, VoiceToolReply.alarmsUnreadable)
+        XCTAssertNil(t.controller.pendingAction)
+        XCTAssertEqual(t.devices.writeCount, 0)
+    }
+
+    /// The control case: a list that was read and is empty says "none".
+    @MainActor
+    func testReadableEmptyAlarmListSaysNone() async {
+        let t = Harness(alarms: [])
+        defer { t.restore() }
+
+        await t.call(VoiceToolName.listAlarms, id: "call-9")
+
+        XCTAssertEqual(t.link.results.map(\.text), [VoiceToolReply.alarms([])])
     }
 
     // MARK: Fixtures

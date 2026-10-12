@@ -250,6 +250,8 @@ final class VoiceSessionController {
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
     /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
     private let devices: any DeviceConnecting
+    /// Doddy's alarms, nil when iOS couldn't read them; a fake in tests (AppTests review finding 2).
+    private let readAlarms: @MainActor () -> [DoddyAlarm]?
     private var conversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
     private(set) var provider: VoiceProvider = .elevenLabs
@@ -284,12 +286,14 @@ final class VoiceSessionController {
 
     init(
         store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared,
-        devices: any DeviceConnecting = DeviceConnections()
+        devices: any DeviceConnecting = DeviceConnections(),
+        alarms: @escaping @MainActor () -> [DoddyAlarm]? = AlarmScheduler.currentIfReadable
     ) {
         self.store = store
         self.logs = logs
         self.activity = activity
         self.devices = devices
+        self.readAlarms = alarms
     }
 
     #if DEBUG
@@ -298,6 +302,17 @@ final class VoiceSessionController {
     func showCardForTesting(_ action: PendingAction, link: any LiveVoiceLink) {
         conversation = link
         pendingAction = action
+    }
+
+    /// Test seam only: runs one tool call as if the provider had sent it mid-conversation, with
+    /// `link` receiving the reply. Tool calls run only while live (review H9), so the phase is
+    /// live for the call and put back after. The app never calls it.
+    func handleToolCallForTesting(_ call: RealtimeFunctionCall, link: any LiveVoiceLink) async {
+        conversation = link
+        let before = phase
+        phase = .listening
+        await handleOpenAICall(call)
+        phase = before
     }
     #endif
 
@@ -1816,14 +1831,14 @@ final class VoiceSessionController {
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
             // list is said as such, never as "none" (voice-agent review 2).
-            guard let alarms = AlarmScheduler.currentIfReadable() else {
+            guard let alarms = readAlarms() else {
                 await reply(call.toolCallId, VoiceToolReply.alarmsUnreadable)
                 return
             }
             await reply(call.toolCallId, VoiceToolReply.alarms(alarms))
         case .cancelAlarm(let clock, let label):
             // Unreadable is not "not found": the alarm may still ring.
-            guard let alarms = AlarmScheduler.currentIfReadable() else {
+            guard let alarms = readAlarms() else {
                 await reply(call.toolCallId, VoiceToolReply.alarmsUnreadable)
                 return
             }

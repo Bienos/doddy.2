@@ -148,3 +148,9 @@ Every fix below is in app-target Swift on the draft branch `claude/zealous-lampo
 - `DeviceConnections` now conforms to `Sendable` explicitly (a `@MainActor` class).
 - `any DeviceConnecting` is passed where `some ReminderStore` is expected, which relies on Swift opening the existential implicitly.
 - The new tests compile only in Debug builds.
+
+## Finding 2, remaining items (2026-10-12, owner said "go")
+
+App-target Swift again: **none of it has been compiled or run with Xcode.**
+
+- **Unreadable alarm list:** done. The controller takes `alarms: @MainActor () -> [DoddyAlarm]?`, defaulting to `AlarmScheduler.currentIfReadable`, so call sites don't change. A second DEBUG-only seam, `handleToolCallForTesting(_:link:)`, runs one tool call through the same path as an OpenAI Realtime call (the phase is live for the call and put back after). New tests: an unreadable list (nil) replies `unknown:` for `list_alarms` and for `cancel_alarm` (no card, nothing written); a readable empty list says "none".
