@@ -43,7 +43,7 @@ final class MemoryBaselineTests: XCTestCase {
         app.terminate()
         app.launch()
         app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 
     @MainActor

@@ -29,3 +29,32 @@ enum UITestLaunch {
         return arguments
     }
 }
+
+extension XCUIApplication {
+    /// Scrolls, one slow swipe at a time, until `element` is on screen, tappable and clear of
+    /// Doddy's tab bar. Settings, Home and the notes list have grown past the fixed swipe counts
+    /// the tests used to have, and Settings and the notes list build their rows lazily.
+    /// Returns whether the element got there.
+    @MainActor @discardableResult
+    func reveal(_ element: XCUIElement, maxSwipes: Int = 30) -> Bool {
+        for _ in 0..<maxSwipes {
+            if isReachable(element) { return true }
+            swipeUp(velocity: .slow)
+        }
+        return isReachable(element)
+    }
+
+    @MainActor
+    private func isReachable(_ element: XCUIElement) -> Bool {
+        guard element.exists, element.isHittable else { return false }
+        let bar = buttons["tab.home"]
+        return !bar.exists || element.frame.maxY <= bar.frame.minY
+    }
+
+    /// A text found by what it says. A container's accessibility identifier replaces its texts'
+    /// own, so `staticTexts["No memories yet"]` stops matching once the empty state has an ID.
+    @MainActor
+    func text(_ label: String) -> XCUIElement {
+        staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+}

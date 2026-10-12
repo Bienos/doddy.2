@@ -35,7 +35,9 @@ final class MemoryJourneyTests: XCTestCase {
         app.buttons["capture.done"].tap()
         app.buttons["tab.memories"].tap()
         let savedCard = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch
-        XCTAssertTrue(savedCard.waitForExistence(timeout: 5)); savedCard.tap()
+        // The notes are a lazy stack below the heading, scenery, Find and the picker.
+        scrollTo(savedCard, app: app)
+        XCTAssertTrue(savedCard.exists); savedCard.tap()
         XCTAssertTrue(app.staticTexts["detail.currentText"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["detail.currentText"].label, original)
         app.navigationBars.buttons["Back"].tap()
@@ -87,7 +89,7 @@ final class MemoryJourneyTests: XCTestCase {
         app.buttons["Delete"].tap()
         XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 6))
         app.terminate(); app.launch(); app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -114,7 +116,7 @@ final class MemoryJourneyTests: XCTestCase {
         screenshot(app, "Native dark accessibility capture")
         app.buttons["Cancel"].tap()
         app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -125,11 +127,12 @@ final class MemoryJourneyTests: XCTestCase {
 
     @MainActor
     private func scrollTo(_ element: XCUIElement, app: XCUIApplication) {
-        for _ in 0..<7 {
+        // Home at the largest text size is many screens tall.
+        for _ in 0..<30 {
             let bar = app.buttons["tab.home"]
             let bottom = bar.exists ? bar.frame.minY - 8 : app.frame.maxY - 40
             if element.exists && element.isHittable && element.frame.maxY < bottom && element.frame.minY > 90 { return }
-            app.swipeUp()
+            app.swipeUp(velocity: .slow)
         }
     }
 
