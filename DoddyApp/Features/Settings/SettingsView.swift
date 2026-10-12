@@ -21,6 +21,13 @@ struct SettingsView: View {
     @State private var accessCodeError: String?
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+
+    /// The privacy summary that used to be at the bottom of Home (ADR-326).
+    private var privacySummary: String {
+        memoryCopyOn
+            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+    }
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
     @State private var tokenMessage: String?
@@ -230,6 +237,12 @@ struct SettingsView: View {
                 Section("Privacy") {
                     // ADR-310: Face ID when Doddy opens, and after a minute away.
                     AppLockToggle()
+                    // The short version that used to sit at the bottom of Home (ADR-326); it follows
+                    // Memory on calls as it did there.
+                    Text(privacySummary)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("settings.privacySummary")
                     // iPhone search (ADR-330), off until switched on.
                     SpotlightToggle()
                     NavigationLink {
@@ -377,11 +390,12 @@ struct SettingsView: View {
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
                     Text(listenOnOpen
-                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. iOS asks for the microphone the first time and shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when iOS has refused the microphone, or when you open Doddy from Back Tap or Siri, which start their own."
+                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. It starts by itself only after you've allowed the microphone, which iOS asks the first time you tap Talk to Doddy; iOS shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when you open Doddy from Back Tap or Siri, which start their own."
                         : "Off: nothing listens until you tap Talk to Doddy.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("settings.listenOnOpen.note")
+                    VoiceProviderTestSwitch()
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
                     TextField("Token server (https://…)", text: $voiceTokenServer)
@@ -1011,5 +1025,30 @@ struct JSONExport: Transferable {
             try MemoryExport.json(export.records, listItems: export.listItems, corrections: export.corrections, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
+    }
+}
+
+/// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to compare
+/// them. Same notes, lists, tools and cards either way; it takes effect when the next conversation
+/// starts, and Settings › What leaves this iPhone follows it. Here rather than on Home, where it sat
+/// under Talk to Doddy for every new user (ADR-325).
+struct VoiceProviderTestSwitch: View {
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
+
+    var body: some View {
+        let provider = VoiceProvider(stored: voiceProvider)
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("Test voice", selection: $voiceProvider) {
+                ForEach(VoiceProvider.allCases) { option in
+                    Text(verbatim: option.shortName).tag(option.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("settings.voiceProvider")
+            Text(verbatim: provider == .openAIRealtime
+                ? "Testing: OpenAI runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
+                : "Testing: ElevenLabs runs your next conversation.")
+                .font(.caption2).foregroundStyle(Theme.secondaryText)
+        }
     }
 }

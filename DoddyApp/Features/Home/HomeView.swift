@@ -29,20 +29,16 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
-    /// Memory on calls: a copy of the notes is on the Doddy messaging server (DOD-11).
-    @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
-    /// Testing only (ADR-265): who runs Doddy's voice, ElevenLabs (default) or OpenAI Realtime.
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
+    /// First visit (ADR-326): until a conversation has really connected, Home keeps to Talk to
+    /// Doddy and holds back the Back Tap and Today cards.
+    @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
+    @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
+    @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
+    @State private var showDataFlow = false
     private var router: ShortcutRouter { .shared }
 
     /// Where notes are kept, as switched on now: never "only on this iPhone" while a copy is on the server.
     /// Whole sentences, not pieced together, so each has its Polish line.
-    private var statusText: String {
-        memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-    }
-
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
     /// four times and sits down on his box (ADR-323). The first time Home shows on a morning he
     /// waves instead (ADR-380). Waits a moment first, so an opening that is about to start wins.
@@ -139,8 +135,13 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.talk")
                         .modifier(SlideIn(shown: buttonsShown, delay: 0))
 
-                        voiceProviderSwitch
-                            .modifier(SlideIn(shown: buttonsShown, delay: 0))
+                        if !hadFirstConversation && store.environment.capabilities.isAvailable(.voiceInput) {
+                            Text("Try saying: \u{201C}Remember the gate code is 4821.\u{201D} I'll ask before I keep anything.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.secondaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityIdentifier("home.firstHint")
+                        }
 
                         Button { showAsk = true } label: {
                             HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
@@ -176,20 +177,30 @@ struct HomeView: View {
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                         .frame(maxWidth: .infinity)
 
-                    TodayCard(openSettings: { selectedTab = .settings })
+                    // Today only points to Settings until something is connected; on the first
+                    // visit that is one more thing to read before talking (ADR-326).
+                    if hadFirstConversation || calendarOn || remindersOn {
+                        TodayCard(openSettings: { selectedTab = .settings })
+                    }
 
-                    // Back Tap exists only on iPhone (ADR-337).
-                    if router.setup.phase == .notStarted, DeviceSupport.hasBackTap {
+                    // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
+                    if router.setup.phase == .notStarted, DeviceSupport.hasBackTap, hadFirstConversation {
                         backTapCard
                     }
+                    HeyDoddyCard()
                     aboutYou
 
                     recent
 
-                    Text(statusText)
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityIdentifier("home.status")
+                    // The longer summary is in Settings › Privacy (ADR-326).
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Doddy is an AI, not a person.")
+                            .accessibilityIdentifier("home.status")
+                        Button("What leaves this iPhone") { showDataFlow = true }
+                            .accessibilityIdentifier("home.dataFlow")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -198,6 +209,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
+            .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
@@ -310,12 +322,28 @@ struct HomeView: View {
                 Text("Recently saved")
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
+                // "Ask me about it" (ADR-403): a conversation about that note; never on a private one.
+                let privateNotes = PrivateNotesStore.current()
+                let canTalk = store.environment.capabilities.isAvailable(.voiceInput)
                 ForEach(store.memories.prefix(3)) { record in
-                    NavigationLink(value: record.id) {
-                        MemoryRow(record: record)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    HStack(spacing: 8) {
+                        NavigationLink(value: record.id) {
+                            MemoryRow(record: record)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        if canTalk && NoteQuestion.canAsk(about: record, privateNotes: privateNotes) {
+                            Button { router.askAboutNote(record.id) } label: {
+                                Image(systemName: "waveform.circle")
+                                    .font(.title2)
+                                    .frame(minWidth: 44, minHeight: 44)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(Theme.accentText)
+                            .accessibilityLabel("Ask me about it")
+                            .accessibilityIdentifier("home.recent.ask")
+                        }
                     }
-                    .buttonStyle(.plain)
                     Divider()
                 }
             }
@@ -323,28 +351,6 @@ struct HomeView: View {
             Text("Nothing saved yet. You choose what stays.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
-        }
-    }
-}
-
-extension HomeView {
-    /// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to
-    /// compare them. Same notes, lists, tools and cards either way; it takes effect when the next
-    /// conversation starts, and Settings › What leaves this iPhone follows it.
-    fileprivate var voiceProviderSwitch: some View {
-        let provider = VoiceProvider(stored: voiceProvider)
-        return VStack(alignment: .leading, spacing: 6) {
-            Picker("Test voice", selection: $voiceProvider) {
-                ForEach(VoiceProvider.allCases) { option in
-                    Text(verbatim: option.shortName).tag(option.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("home.voiceProvider")
-            Text(verbatim: provider == .openAIRealtime
-                ? "Testing: OpenAI runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
-                : "Testing: ElevenLabs runs your next conversation.")
-                .font(.caption2).foregroundStyle(Theme.secondaryText)
         }
     }
 }
@@ -399,3 +405,93 @@ enum HomeIdle {
         return true
     }
 }
+
+/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-326).
+private struct DataFlowSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DataFlowView()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+        }
+    }
+}
+
+/// "Hey Doddy" with one tap (ADR-328): offered once, after a few conversations that really
+/// connected, and only when one tap is enough (`HeyDoddyOffer`). Turn on and Not now both end the
+/// offer for good. After Turn on it shows the listener's own state, never a "Listening" it isn't.
+private struct HeyDoddyCard: View {
+    @AppStorage(PreferenceKey.connectedConversations) private var conversations = 0
+    @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
+    @AppStorage(PreferenceKey.heyDoddyOfferDone) private var offerDone = false
+    @State private var listener = WakeWordListener.shared
+    /// Read once: the Keychain isn't read again on every redraw of Home.
+    @State private var oneTapReady = WakeOneTapSetup.isReady
+    @State private var isTurningOn = false
+    @State private var showsResult = false
+
+    var body: some View {
+        if showsResult {
+            result
+        } else if HeyDoddyOffer.shouldOffer(conversations: conversations, heyDoddyOn: heyDoddyOn,
+                                            dismissed: offerDone, oneTapReady: oneTapReady) {
+            offer
+        }
+    }
+
+    private var offer: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Talk without tapping")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            Text("Say \u{201C}Hey Doddy\u{201D} and I'll answer. I listen for it on this iPhone, with iOS's orange microphone dot showing, until you stop me. It uses some battery.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+            HStack(spacing: 12) {
+                Button {
+                    isTurningOn = true
+                    offerDone = true
+                    Task {
+                        await listener.turnOn()
+                        isTurningOn = false
+                        showsResult = true
+                    }
+                } label: {
+                    if isTurningOn { Text("Turning on…") } else { Text("Turn on") }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(isTurningOn)
+                .accessibilityIdentifier("home.heyDoddy.turnOn")
+                Button("Not now") { offerDone = true }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .disabled(isTurningOn)
+                    .accessibilityIdentifier("home.heyDoddy.notNow")
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var result: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Hey Doddy")
+                .font(.headline)
+            Text(listener.keyProblem ?? listener.state.summary)
+                .font(.subheadline)
+                .foregroundStyle(listener.keyProblem == nil ? Theme.secondaryText : Theme.error)
+                .accessibilityIdentifier("home.heyDoddy.status")
+            Text("Change it in Settings \u{203A} Hey Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+}
+
