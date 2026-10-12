@@ -19,6 +19,9 @@ public struct AssistantAnswer: Equatable, Sendable {
     public let notesSent: [MemoryRecord]
     /// Searching notes failed, so the question went without them. The UI must say so.
     public let notesSearchFailed: Bool
+    /// Matching notes held back because the gateway does not accept their source (e.g. imported
+    /// files, ADR-442). A count only; the notes themselves stay on the device.
+    public var notesWithheld: Int = 0
 }
 
 public enum AssistantLimits {
@@ -26,9 +29,11 @@ public enum AssistantLimits {
     public static let maxTurns = 6
 }
 
-/// recall -> selected notes -> gateway -> citation check. Stateless: the chat lives in the UI, in memory.
+/// context -> gateway -> citation check. Stateless: the chat lives in the UI, in memory.
+/// `ask` runs through `BrainCoordinator` (ADR-442); `answer` is the reasoning step on its own.
 public struct AssistantService: Sendable {
-    private let recall: any RecallService
+    /// Chooses what may leave the device with a question (ADR-442).
+    public let context: ContextAssembler
     private let client: any AssistantClient
     private let sleep: @Sendable (Duration) async throws -> Void
     private let backoff: [Duration]
@@ -40,7 +45,7 @@ public struct AssistantService: Sendable {
         backoff: [Duration] = [.milliseconds(500), .milliseconds(1500)],
         sleep: @escaping @Sendable (Duration) async throws -> Void = { try await Task.sleep(for: $0) }
     ) {
-        self.recall = recall
+        self.context = ContextAssembler(recall: recall)
         self.client = client
         self.backoff = backoff
         self.sleep = sleep
@@ -53,36 +58,39 @@ public struct AssistantService: Sendable {
         locale: String = "en",
         policy: AssistantPolicy
     ) async throws(AssistantError) -> AssistantAnswer {
+        let request = BrainRequest(text: question, sessionID: sessionID, history: history, locale: locale)
+        return try await BrainCoordinator(assistant: self).respond(request, policy: policy).result.get()
+    }
+
+    /// Checked before anything is searched or sent.
+    static func validate(_ question: String, policy: AssistantPolicy) throws(AssistantError) {
         guard policy.consentGranted else { throw .consentRequired }
         guard !question.allSatisfy(\.isWhitespace),
               question.unicodeScalars.count <= AssistantLimits.maxQuestionLength
         else { throw .invalidRequest }
-        if Task.isCancelled { throw .cancelled }
+    }
 
-        var selected: [MemoryCandidate] = []
-        var searchFailed = false
-        if policy.includeNotes {
-            do {
-                if case .matches(let found) = try await recall.recall(question, limit: 20) {
-                    selected = GroundingSelector.select(from: found)
-                }
-            } catch is CancellationError {
-                throw .cancelled
-            } catch {
-                searchFailed = true
-            }
-        }
-
+    /// Sends one question with already assembled context and checks the reply's citations against
+    /// exactly what was sent. Retries only transient failures.
+    public func answer(
+        _ question: String,
+        context: AssembledContext,
+        sessionID: UUID,
+        history: [ConversationTurn] = [],
+        locale: String = "en"
+    ) async throws(AssistantError) -> AssistantAnswer {
         let request = AssistantRequest(
             sessionID: sessionID,
             userText: question,
-            groundingMemories: selected,
+            groundingMemories: context.notes,
             recentTurns: Self.prepare(history),
             locale: Self.safeLocale(locale))
 
         let reply = try await send(request)
         let verified = try CitationVerifier.verify(reply, for: request)
-        return AssistantAnswer(answer: verified, notesSent: selected.map(\.record), notesSearchFailed: searchFailed)
+        return AssistantAnswer(
+            answer: verified, notesSent: context.notes.map(\.record), notesSearchFailed: context.notesSearchFailed,
+            notesWithheld: context.notesWithheldBySource)
     }
 
     private func send(_ request: AssistantRequest) async throws(AssistantError) -> AssistantReply {

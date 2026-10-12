@@ -22,6 +22,9 @@ final class AskController {
     private(set) var isSending = false
     /// Last failure, shown with a retry. The question itself is put back in `draft`.
     private(set) var error: AssistantError?
+    /// Counts and decisions of the last question (no text): route, notes sent or held back,
+    /// whether the network was reached (ADR-442). Kept in memory only, like the chat.
+    private(set) var lastTrace: BrainTrace?
     var draft = ""
 
     private let sessionID = UUID()
@@ -44,14 +47,13 @@ final class AskController {
         messages.append(Message(text: question, kind: .user))
         let sessionID = self.sessionID
 
+        // Typed questions run through the shared brain boundary (ADR-442): route, context, answer, check.
+        let brain = BrainCoordinator(assistant: service)
+        let request = BrainRequest(text: question, sessionID: sessionID, history: history, locale: locale)
         task = Task { [weak self] in
-            let result: Result<AssistantAnswer, AssistantError>
-            do throws(AssistantError) {
-                result = .success(try await service.ask(question, sessionID: sessionID, history: history, locale: locale, policy: policy))
-            } catch {
-                result = .failure(error)
-            }
-            self?.finish(question: question, result: result)
+            let outcome = await brain.respond(request, policy: policy)
+            self?.lastTrace = outcome.trace
+            self?.finish(question: question, result: outcome.result)
         }
     }
 
