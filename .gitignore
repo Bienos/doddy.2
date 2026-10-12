@@ -21,6 +21,7 @@ xcuserdata/
 *.p12
 *.mobileprovision
 *.xcconfig.local
+Config/Team.local.xcconfig
 # OS
 .DS_Store
 # Connected Apps backend

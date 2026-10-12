@@ -9,6 +9,9 @@ options:
     watchOS: "10.0"
   createIntermediateGroups: true
   generateEmptyDirectories: false
+configFiles:
+  Debug: Config/Team.xcconfig
+  Release: Config/Team.xcconfig
 packages:
   DoddyCore:
     path: Packages/DoddyCore
@@ -31,8 +34,9 @@ settings:
     SWIFT_VERSION: "6.0"
     TARGETED_DEVICE_FAMILY: "1"
     CODE_SIGN_STYLE: Automatic
-    # No signing team is committed. Select your own team in Xcode to run on a device.
-    DEVELOPMENT_TEAM: ""
+    # No signing team is committed, and none is set here: DEVELOPMENT_TEAM comes from
+    # Config/Team.local.xcconfig (git-ignored, written once by `make team ID=<TeamID>`) through
+    # `configFiles` above, so it survives every `make project` and needs no clicking in Xcode.
     # Override this at build time for an isolated simulator install; keep the owner's default.
     DODDY_APP_BUNDLE_IDENTIFIER: com.bienos.doddy2.dev
     # Push notifications from the Doddy messaging server (ADR-142, ADR-174). Off by default. Now that
@@ -41,18 +45,15 @@ settings:
     # kept for older xcodebuild lines and is no longer used by any target.
     DODDY_PUSH_ENTITLEMENTS: ""
     # The App Group `group.$(DODDY_APP_BUNDLE_IDENTIFIER)` is ON (owner, 2026-10-11: paid Apple
-    # Developer account). It is the shared folder the widgets (ADR-219), "Save to Doddy" in the
+    # Developer account). The four DODDY_*_ENTITLEMENTS defaults now live in Config/Team.xcconfig
+    # (so `make team FREE=1` can switch them off). It is the shared folder the widgets (ADR-219), "Save to Doddy" in the
     # Share Sheet (ADR-311) and the parking widget (ADR-315) need. Choose the team in Xcode;
     # automatic signing registers the group. With push as well, set DODDY_APP_ENTITLEMENTS to
     # Config/Doddy-Push-AppGroup.entitlements. To build without the App Group (e.g. a free Apple
     # ID), set these four to "": the widgets then say "Open Doddy to set up widgets" and the
     # share extension says sharing isn't set up.
-    DODDY_APP_ENTITLEMENTS: Config/Doddy-AppGroup.entitlements
-    DODDY_WIDGET_ENTITLEMENTS: Config/DoddyWidgets.entitlements
-    DODDY_SHARE_ENTITLEMENTS: Config/DoddyShare.entitlements
     # Watch complications (ADR-262) read the snapshot from the watch's App Group (used by the
     # watch app and its widget extension).
-    DODDY_WATCH_ENTITLEMENTS: Config/DoddyWatch.entitlements
     # Shared lists through iCloud (ADR-263), off by default (needs a paid team with iCloud). To
     # turn on: DODDY_CLOUD_CONTAINER = iCloud.$(DODDY_APP_BUNDLE_IDENTIFIER), and
     # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-iCloud.entitlements (or

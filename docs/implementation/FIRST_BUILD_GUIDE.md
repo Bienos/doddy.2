@@ -37,7 +37,7 @@ scripts/ci.sh                  # everything, including xcodebuild test on the fi
 - To pick the simulator: `DODDY_DESTINATION="platform=iOS Simulator,name=iPhone 16" scripts/ci.sh`.
 - To build only (faster first signal): `xcodebuild build -project Doddy.xcodeproj -scheme Doddy -destination "generic/platform=iOS Simulator"`.
 - **The watch app** is a dependency of the iPhone app, so the build above compiles it too. On its own: `xcodebuild build -project Doddy.xcodeproj -target DoddyWatch -sdk watchsimulator`.
-- **Signing for a device:** no team is committed. In Xcode, choose your team for Doddy, DoddyWidgets and DoddyWatch.
+- **Signing for a device:** no team is committed. Set yours once, outside Xcode: `make team ID=<your 10-character Team ID>` (developer.apple.com → Account → Membership details), then `make project`. On a free "Personal Team" add `FREE=1` (App Groups need the paid programme; widgets and the share extension then say they aren't set up). With no ID, `make team` reads the team from the Doddy.xcodeproj you already chose it in. It is saved in the git-ignored `Config/Team.local.xcconfig` and applied to every target (app, widgets, share extension, watch) on every regeneration, so there is nothing to click in Xcode. Not yet run on a Mac.
   - Widgets with content and the watch's companion pairing need the bundle ids to line up: `<app>`, `<app>.widgets`, `<app>.watchkitapp`.
   - The App Group is opt-in (see the comment at the top of `project.yml`).
   - Push is opt-in too.
@@ -135,7 +135,8 @@ In order of risk:
 ### Round 5 (2026-10-11, ADR-310 to ADR-312, ADR-314 to ADR-318): most likely to need a fix
 **First build: still BLOCKED** (no Xcode here; Actions doesn't start jobs). In order of risk:
 - **Share extension (ADR-311):** a new target, so XcodeGen must embed it.
-  - `ShareModel.extract(_ items: sending [NSExtensionItem])` is `nonisolated` and is called from `Task.detached`, because item providers aren't Sendable. Swift 6 region checks may still object; the fallback is to load the strings inside `viewDidLoad` with completion handlers.
+  - **First real Xcode build (owner screenshot, 2026-10-11):** `ShareViewController.swift` failed with "Sending 'items' risks causing data races" and "Passing closure as a 'sending' parameter" on the `Task.detached` + `sending [NSExtensionItem]` version. Changed to the fallback: no detach and no `sending`; `ShareModel.load` runs on the main actor and reads each provider with the callback form of `loadItem`, which returns only a `String`. **Not yet re-built after this change.**
+  - `NSItemProvider.loadItem(forTypeIdentifier:options:completionHandler:)` inside `withCheckedContinuation`, with a `@Sendable` transform closure.
   - `NSItemProvider.loadItem(forTypeIdentifier:)` with `async` and `as? URL` / `as? String`.
   - `Config/DoddyShare-Info.plist`'s `NSExtensionPrincipalClass` is `$(PRODUCT_MODULE_NAME).ShareViewController`.
   - The App Group is now on by default (owner, 2026-10-11). Signing needs the team chosen for every target, and the group registered (automatic signing does it). If a simulator `xcodebuild test` without a team refuses the entitlements, run it with the four `DODDY_*_ENTITLEMENTS` set to `""`.
@@ -174,3 +175,10 @@ In order of risk:
 - **Quick actions (ADR-339):** the async `windowScene(_:performActionFor:)` on the existing scene delegate; `connectionOptions.shortcutItem` on cold launch.
 - **Memories tags (ADR-333):** `MemoryTagRow` with `ForEach(tags, id: \.tag)` over tuples.
 - **List templates (ADR-334):** `.swipeActions` inside a `Form` section in `NewListSheet`.
+
+### Second Xcode build (owner screenshot, 2026-10-11, Xcode on the watchOS 27 SDK): errors and fixes
+Not re-built after these changes.
+- `DoddyApp/App/DoddyApp.swift`: "Cannot find 'MorningCheckInSettings' / 'TidyUpSettings' / 'EveningWrapUpSettings' / 'WeeklyLookBackSettings' in scope". The file only imported SwiftUI; added `import DoddyCore`.
+- `DoddyApp/Features/Photos/PhotoTextReader.swift`: "'RecognizedText' is ambiguous". The newer Vision SDK declares its own `RecognizedText`. An app-module `typealias RecognizedText = DoddyCore.RecognizedText` now wins everywhere in the app.
+- `DoddyApp/Infrastructure/Connections/DeviceConnections.swift`: `undo(_:)` was not exhaustive over `ActivityUndo` (the list and note cases of ADR-276/277 are reversed by the store). Added a case returning `.notDone` that writes nothing. If your copy shows `<#code#>` placeholders there, Xcode's "add missing cases" fix-it inserted them; take this version instead.
+- Signing: "requires a development team" for Doddy, DoddyWatch, DoddyWidgets, DoddyShare. Not code; choose your team on every target.

@@ -309,6 +309,11 @@ final class DeviceConnections {
                 ? !snapshot.isCompleted
                 : !snapshot.isCompleted && EventChange.sameDue(snapshot.due, oldDue)
             return restored ? .undone : .notSure
+
+        case .listAdded, .listTicked, .listRemoved, .savedNote:
+            // Doddy's own lists and notes are reversed by the store (ADR-276, ADR-277); callers route them
+            // there because `connection` is nil. Reaching this means nothing was written.
+            return .notDone("That isn't a Calendar or Reminders change.")
         }
     }
 
@@ -664,6 +669,8 @@ protocol DeviceConnecting: ReminderStore, Sendable {
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
+    func eventNotes(_ event: CalendarEventSummary) -> String?
+    func reminderLists() -> [ReminderListRef]
     func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome
     func deleteEvent(_ event: CalendarEventSummary) throws -> DeviceConnections.ChangeOutcome
     func deleteReminder(_ before: ReminderSnapshot) throws -> DeviceConnections.ChangeOutcome
