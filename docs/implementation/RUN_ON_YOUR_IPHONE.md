@@ -59,6 +59,14 @@ The app ships with no server addresses (build board card "Point the app at its s
 The two Render servers are on the free plan: the first request after a quiet spell can take about a minute
 while they wake up.
 
+**Down since 12 October (checked 23:15 UTC):** the Vercel account `doddyyyy` is blocked, so the voice pass
+server, the Ask Doddy gateway and the website all answer `402 DEPLOYMENT_DISABLED`. The reason and the fix
+are in the Vercel dashboard (billing or plan); no code change helps. Until it's cleared:
+- **Voice:** leave *Token server* empty. The app then talks to the development agent directly ("Use the
+  development agent" in Settings → Voice). It works for you alone; it's the open agent the P0 card is about.
+- **Ask Doddy (typed questions)** won't answer. Test it after the account is back.
+- The two Render servers (accounts and search, messages) answered normally at the same time.
+
 ## Before you start testing
 - The voice agent is public with its login off (build board P0 "Switch on login for the voice agent"). Fine
   while you're the only tester. Switch it on before anyone else gets the app.
