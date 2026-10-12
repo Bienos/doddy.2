@@ -160,7 +160,7 @@ check of all 20 changed Swift files, a name-clash search. **Not run:** the Swift
 
 **Known limits**
 - If the person takes longer than the tool's 120 s timeout (the approval itself lasts 2 minutes), ElevenLabs gives up waiting. The card still works and the receipt is recorded, but the agent never hears the outcome.
-- ~~`pay_for_page` is `not_synced`~~ **Synced 2026-10-12** at the owner's request (tool `tool_1401m4rmxkm5eg3v87sphf87c45p`, agent version `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`, 59 tools, read back). Done before the app was built or checklist 4o was walked, against my earlier advice; the exposure is small because an app without ADR-452 answers the tool as unsupported. The live prompt was not rewritten (it is ahead of `instructions.md`), so the tool's description carries the rules.
+- ~~`pay_for_page` is `not_synced`~~ **Synced 2026-10-12** at the owner's request (tool `tool_1401m4rmxkm5eg3v87sphf87c45p`, agent version `agtvrsn_8101m4rmy839eks9hgq6hd4pps70`, 60 tool ids, read back). Done before the app was built or checklist 4o was walked, against my earlier advice; the exposure is small because an app without ADR-452 answers the tool as unsupported. The `pay_for_page` prompt line was merged into the live prompt afterwards (version `agtvrsn_9601m4rnnbnxesh9sm34aad15p04`; one added line, verified by diff), so both the prompt and the tool's description carry the rules.
 - A page address spoken aloud is hard to get right; the agent is told to ask for the full address and never to guess. Web search results carry only site names, so they cannot supply one.
 - The banner depends on the server's count, which only clears when a record is pruned (90 days); "I've checked" hides it locally. No server-side "resolved" call exists.
 
