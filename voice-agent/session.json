@@ -63,10 +63,12 @@
   },
   "elevenlabs": {
     "agent_id": "agent_0501m4et27vyeawrwqfdxxfszfa6",
-    "llm": "gemini-3.5-flash",
+    "llm": "gemini-3.6-flash",
+    "reasoning_effort": "minimal",
     "temperature": 0.5,
     "timezone": "Europe/Warsaw",
     "turn": {"turn_eagerness": "eager", "speculative_turn": true, "turn_model": "turn_v3", "turn_timeout": 7},
+    "soft_timeout": {"timeout_seconds": 2, "messages": ["Mhm…", "Hmm…"], "randomize": true, "max_per_reply": 2, "not_before_first_user_message": true, "note": "A short, language-neutral hum when the model has not started speaking after 2 s (SPEED_AND_RESPONSIVENESS.md 1.4). Static on purpose: a filler never claims anything was done."},
     "language_presets": "One preset per non-English language in 'languages', each overriding only the first message (ADR-212). The built-in language_detection tool (only_at_conversation_start false) switches between them at any point in a conversation.",
     "tts": {"model_id": "eleven_v4_turbo", "voice_id": "oDULUm0GMltHA6mVZkWh", "speed": 1.0, "stability": 0.5},
     "client_overrides": {"tts": ["voice_id", "speed", "stability"], "agent": ["language"], "note": "Settings, Voice and personality (VoiceStyle, ADR-105); only changed values are sent"},

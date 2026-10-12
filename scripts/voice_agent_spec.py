@@ -25,6 +25,8 @@ AGENTS = {"app": SPEC, "phone": SPEC / "phone"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
+# A sound while a slow tool runs (ElevenLabs tool_call_sound, played every time).
+SOUNDS = {"typing"}
 
 
 def load(spec=SPEC):
@@ -73,6 +75,10 @@ def check(tools, session, instructions):
             errors.append(f"{where}: x_doddy.speak_before must be one of {sorted(SPEAK_BEFORE)}")
         if x.get("confirm_on_screen") and x.get("speak_before") != "force":
             errors.append(f"{where}: on-screen confirmation needs speak_before 'force' so the user is told to look")
+        if "sound" in x and x["sound"] not in SOUNDS:
+            errors.append(f"{where}: x_doddy.sound must be one of {sorted(SOUNDS)}")
+        if x.get("sound") and x.get("confirm_on_screen"):
+            errors.append(f"{where}: no sound on a tool that waits for the user's tap")
         if not isinstance(x.get("timeout_secs"), int) or x["timeout_secs"] <= 0:
             errors.append(f"{where}: x_doddy.timeout_secs must be a positive integer")
         if x.get("runs_on") == "web":
@@ -178,6 +184,9 @@ def elevenlabs_tool(tool):
         "pre_tool_speech": x["speak_before"],
         "force_pre_tool_speech": x["speak_before"] == "force",
     }
+    if x.get("sound"):
+        common["tool_call_sound"] = x["sound"]
+        common["tool_call_sound_behavior"] = "always"
     if x["runs_on"] == "phone":
         return {**common, "type": "client", "expects_response": True, "parameters": {
             "type": "object",
@@ -259,6 +268,8 @@ def compare(tools, instructions, export, where="voice-agent/"):
             diffs.append(f"tool {name}: timeout {cfg.get('response_timeout_secs')} live vs {x['timeout_secs']} spec")
         if cfg.get("pre_tool_speech") != x["speak_before"]:
             diffs.append(f"tool {name}: pre_tool_speech {cfg.get('pre_tool_speech')} live vs {x['speak_before']} spec")
+        if cfg.get("tool_call_sound") != x.get("sound"):
+            diffs.append(f"tool {name}: tool_call_sound {cfg.get('tool_call_sound')} live vs {x.get('sound')} spec")
         if live[name].get("id") and x.get("elevenlabs_tool_id") and live[name]["id"] != x["elevenlabs_tool_id"]:
             diffs.append(f"tool {name}: live id {live[name]['id']} vs spec {x['elevenlabs_tool_id']}")
         want = {k: (v["type"], v.get("description", ""), v.get("enum")) for k, v in s["parameters"]["properties"].items()}

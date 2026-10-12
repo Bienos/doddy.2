@@ -1,6 +1,12 @@
 # Speed and responsiveness — making Doddy fast without making him dumb (proposal)
 
-Status: **PROPOSAL, nothing in this document is built.** Written 2026-10-12 from (1) a read of the code at `ce02763`, (2) real per-turn timings that ElevenLabs recorded for three of the owner's own voice conversations, and (3) current public guidance on voice-agent latency (sources in §9). Every change below needs the owner's go-ahead; Phase 3 is a new milestone in the sense of `CLAUDE.md` rule 6 (cloud AI changes need milestone approval). An ADR number is assigned when a part is approved.
+Status: **PROPOSAL; only the agent-setting quick wins listed under Progress are applied, nothing in the app or backend is built.** Written 2026-10-12 from (1) a read of the code at `ce02763`, (2) real per-turn timings that ElevenLabs recorded for three of the owner's own voice conversations, and (3) current public guidance on voice-agent latency (sources in §9). Every change below needs the owner's go-ahead; Phase 3 is a new milestone in the sense of `CLAUDE.md` rule 6 (cloud AI changes need milestone approval). An ADR number is assigned when a part is approved.
+
+**Progress (2026-10-12, owner: "ok do the quick wins in the agent settings first"):**
+- **Applied to the live ElevenLabs agent:** 1.4, the filler after 2 s and forced pre-tool speech with a typing sound on the 10 slow online tools. 1.1, the model moved from `gemini-3.5-flash` to `gemini-3.6-flash` with minimal reasoning, chosen by a branch bake-off with 13 quality tests.
+- **Where the details are:** versions, rollback points, test ids and results are in `voice-agent/README.md` (2026-10-12 entry).
+- **Not measured yet:** the real-conversation first-token time after the change. Read it from the next real conversations.
+- **Not started:** 1.2 prompt diet, 1.3 fewer tools, 1.5 merged tools, 1.6 `available_tools`, 1.7 warm backend, and Phases 2–4.
 
 **One-line answer:** Doddy is slow mainly because every turn sends a ~15–28k-token prompt to a reasoning model that thinks before it speaks, and because answers that need a tool cost one extra model round trip per tool. Speech recognition, the voice and the tools themselves are already fast. The fix is a **fast talker, careful doer** design: a small, lean voice layer that always answers within about a second, and a separate "brain" that does slow, clever work in the background and reports back — plus a shorter path from tap to listening.
 

@@ -515,7 +515,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_9801m4hqrq17emqbnq8vxnr8r34a"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_9801m4hqrq17emqbnq8vxnr8r34a"}
     },
     {
       "type": "function",
@@ -528,7 +528,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_2901m4nf3yzbeeq9jy2hp5jhwzef"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_2901m4nf3yzbeeq9jy2hp5jhwzef"}
     },
     {
       "type": "function",
@@ -570,7 +570,7 @@
         },
         "required": ["name"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_6001m4hqrreee7baywf1w3fe92m6"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_6001m4hqrreee7baywf1w3fe92m6"}
     },
     {
       "type": "function",
@@ -583,7 +583,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_0501m4hqrs7gf6xr08d3fttdy9rg"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_0501m4hqrs7gf6xr08d3fttdy9rg"}
     },
     {
       "type": "function",
@@ -596,7 +596,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_5301m4nszh67fbqbhsg52p4r7ynp"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_5301m4nszh67fbqbhsg52p4r7ynp"}
     },
     {
       "type": "function",
@@ -610,7 +610,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1401m4nyap0tfdvbspd4a6717pnh"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1401m4nyap0tfdvbspd4a6717pnh"}
     },
     {
       "type": "function",
@@ -623,7 +623,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1901m4nyaq66ew6bkbvqby0049mv"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1901m4nyaq66ew6bkbvqby0049mv"}
     },
     {
       "type": "function",
@@ -652,7 +652,7 @@
         },
         "required": ["from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1301m4nyas4zf8bbxnwb6q0jvpyb"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_1301m4nyas4zf8bbxnwb6q0jvpyb"}
     },
     {
       "type": "function",
@@ -666,7 +666,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_9601m4hqrt0fexpa9hz0yhrzt2f1"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_9601m4hqrt0fexpa9hz0yhrzt2f1"}
     },
     {
       "type": "function",
@@ -722,7 +722,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "auto", "timeout_secs": 30, "elevenlabs_tool_id": "tool_7201m4k45t77e8gst4gstscv7w3z"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "speak_before": "force", "sound": "typing", "timeout_secs": 30, "elevenlabs_tool_id": "tool_7201m4k45t77e8gst4gstscv7w3z"}
     },
     {
       "type": "function",
