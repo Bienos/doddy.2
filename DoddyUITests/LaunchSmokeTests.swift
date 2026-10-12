@@ -66,21 +66,14 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["today.openSettings"].waitForExistence(timeout: 5))
 
         app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
 
         app.buttons["tab.settings"].tap()
         // Settings is a lazy Form under a header section; scroll until the row has been created.
-        let nothingSaved = app.staticTexts["Nothing saved. Doddy only keeps what you review and save."]
-        for _ in 0..<4 where !nothingSaved.waitForExistence(timeout: 1) { app.swipeUp() }
-        XCTAssertTrue(nothingSaved.exists)
+        XCTAssertTrue(app.reveal(app.text("Nothing saved. Doddy only keeps what you review and save.")))
         // Privacy sits below About you and Your memories.
-        let microphone = app.staticTexts["Microphone"]
-        for _ in 0..<6 {
-            if microphone.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(microphone.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Only while talking"].exists)
+        XCTAssertTrue(app.reveal(app.text("Microphone")))
+        XCTAssertTrue(app.text("Only while talking").exists)
     }
 
     @MainActor
@@ -103,11 +96,7 @@ final class LaunchSmokeTests: XCTestCase {
         app.buttons["tab.settings"].tap()
         let consent = app.switches["settings.assistantConsent"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
-        for _ in 0..<10 {
-            if consent.exists && consent.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(consent.exists)
+        XCTAssertTrue(app.reveal(consent))
         XCTAssertEqual(consent.value as? String, "0")
         let status = app.descendants(matching: .any)["settings.assistantStatus"].firstMatch
         XCTAssertTrue(status.exists)
@@ -132,11 +121,7 @@ final class LaunchSmokeTests: XCTestCase {
         let status = app.descendants(matching: .any)["settings.backTap.status"].firstMatch
         // The long Settings form lazily creates rows; scroll to the status rather than
         // treating an off-screen label as a product failure.
-        for _ in 0..<8 {
-            if status.exists && status.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(status.exists)
+        XCTAssertTrue(app.reveal(status))
         XCTAssertTrue(status.label.contains("Set up later"))
         XCTAssertFalse(status.label.localizedCaseInsensitiveContains("verified"))
     }
@@ -154,15 +139,15 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
-        let link = app.buttons["settings.dataFlow"]
-        for _ in 0..<6 {
-            if link.exists && link.isHittable { break }
-            app.swipeUp()
-        }
+        let link = app.button(labelled: "What leaves this iPhone")
+        XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
-        // Ask Doddy starts off, so it is listed under "Not sent right now".
-        XCTAssertTrue(app.staticTexts["Ask Doddy is off, so nothing goes there."].waitForExistence(timeout: 5))
+        // Ask Doddy starts off, so it is listed under "Not sent right now". Each row reads as one
+        // element (destination and note combined), so the note is checked in the row's label.
+        let askRow = app.descendants(matching: .any)["dataFlow.askDoddy"].firstMatch
+        XCTAssertTrue(app.reveal(askRow))
+        XCTAssertTrue(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
     }
 
     @MainActor
@@ -171,10 +156,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
         let row = app.buttons["settings.activity"]
-        for _ in 0..<8 {
-            if row.exists && row.isHittable { break }
-            app.swipeUp()
-        }
+        XCTAssertTrue(app.reveal(row))
         row.tap()
         XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
     }
@@ -185,10 +167,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
         let row = app.buttons["settings.planPractice"]
-        for _ in 0..<8 {
-            if row.exists && row.isHittable { break }
-            app.swipeUp()
-        }
+        XCTAssertTrue(app.reveal(row))
         row.tap()
         XCTAssertTrue(app.navigationBars["Try a plan card"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["practice.banner"].exists)
@@ -212,7 +191,8 @@ final class LaunchSmokeTests: XCTestCase {
         scene.tap()
         XCTAssertTrue(scene.waitForNonExistence(timeout: 5))
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["home.save"].isHittable, "the app is usable as soon as the opening is gone")
+        // Save sits below Doddy and the scenery on Home; it is reachable once the opening is gone.
+        XCTAssertTrue(app.reveal(app.buttons["home.save"]), "the app is usable as soon as the opening is gone")
         // "Start listening when I open Doddy" is switched off for this launch: no conversation, no microphone.
         XCTAssertFalse(app.navigationBars["Talk to Doddy"].exists)
         XCTAssertFalse(app.staticTexts["Listening"].exists)
@@ -248,17 +228,14 @@ final class LaunchSmokeTests: XCTestCase {
         // before it ever asks for the microphone or reaches ElevenLabs.
         let app = launch(onboardingDone: true, listen: true)
         XCTAssertTrue(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 5), "opened by itself")
-        XCTAssertEqual(app.staticTexts["voice.status"].label, "Couldn't connect")
+        // iOS 26 reports the status title twice, nested; both carry the same label.
+        XCTAssertEqual(app.staticTexts["voice.status"].firstMatch.label, "Couldn't connect")
         app.buttons["Close"].tap()
 
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
         let toggle = app.switches["settings.listenOnOpen"]
-        for _ in 0..<10 {
-            if toggle.exists && toggle.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(toggle.exists)
+        XCTAssertTrue(app.reveal(toggle))
         XCTAssertEqual(toggle.value as? String, "1")
     }
 
