@@ -70,3 +70,7 @@ If a required variable is missing, or a limit/budget/store variable is set but i
 - Client addresses come from Vercel's `x-vercel-forwarded-for` / `x-real-ip` headers. Deployed directly on Vercel that is right; behind another proxy those headers can be spoofed or collapse everyone into one bucket. IPv6 clients are bucketed by /64.
 - Without the shared store the limits and the daily budget are per instance (above). There is no per-user monthly quota. The shared adapters were tested only against an in-process fake of the Upstash REST API; **no real store has been created or called.**
 - Nothing stops a model from stating a personal "fact" without citing a note; the app labels any uncited answer *"Not from your notes"* rather than pretending to catch it.
+
+## Hosting (new Vercel team)
+
+Vercel project `doddy-gateway` on team `doddyyyy` (root directory `gateway/`). It does nothing useful until `OPENAI_API_KEY`, the shared-limits Redis store and the other variables above are set.
