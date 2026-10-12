@@ -216,7 +216,7 @@ Not in Phase B (Phase C): the proposers themselves (the `SaveSuggestions` extens
 - Running a routine is by voice only. The plan card lives in the voice session, so Settings has no Run button.
 - The routine's name is suggested in the iPhone's language and renamed in Settings; it is not edited on the card.
 - Fact evidence is the sentence, not the conversation, so "Never this" holds across conversations. A routine sequence with any row is never proposed again on new evidence.
-- Gaps are written only when the agent calls `note_capability_gap`; no rule detects them, so they undercount (decision 4, as warned). The live agent has no such tool until the owner syncs it.
+- Gaps are written only when the agent calls `note_capability_gap`; no rule detects them, so they undercount (decision 4, as warned). The tool is on the live agent since 2026-10-12 (`voice-agent/README.md`); that Doddy calls it in a real conversation is not yet observed.
 - `sensitiveMode` is always false: the app has no character router yet. Only the content filter applies.
 - Typed Ask does not use learned facts; the gateway limits would have to be raised in step first.
 
