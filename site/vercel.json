@@ -48,6 +48,16 @@
   ],
   "redirects": [
     {
+      "source": "/waitlist",
+      "destination": "/#join",
+      "permanent": false
+    },
+    {
+      "source": "/waitlist/",
+      "destination": "/#join",
+      "permanent": false
+    },
+    {
       "source": "/blog/hello-doddy",
       "destination": "/blog/",
       "permanent": false
