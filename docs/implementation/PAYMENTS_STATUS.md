@@ -68,11 +68,13 @@ flow over HTTP including every failure the demo seller and demo wallet can produ
 | Daily caps and the 15-minute guard are per server process state in SQLite | Fine for the single instance this backend is designed for (as the other limits) |
 
 ## Decisions required (owner)
-1. Whose money: keep the owner-funded server wallet (single owner), or move to a person-owned Coinbase wallet with a limited, revocable spend permission (recommended for more than one person; needs the native connection flow).
-2. Mainnet: when, which balance and caps; confirm the Base mainnet USDC address against Circle's list first.
-3. Approval UX: a card with the preview lines plus Face ID for every payment (recommended).
-4. x402 v1 sellers: add support, or keep v2 only.
-5. Physical goods: separate milestone and provider.
+**Answered 2026-10-12 (owner: "approve everything").** Recorded as approvals of what is built or recommended, nothing wider:
+1. Whose money: **approved as built**, the owner-funded server wallet, single owner. A person-owned Coinbase wallet with a revocable spend permission is still the way for more than one person; that is a new milestone, not covered by this approval.
+2. Mainnet: **not approved, still open.** It needs the owner's balance and caps, and the Base mainnet USDC address confirmed against Circle's list (it has only been seen on a third-party page). Nothing on mainnet is switched on.
+3. Approval UX: **approved**, a card with the preview lines plus Face ID for every payment, and the typed amount from 0.10 USDC (the threshold in the last section is confirmed too).
+4. x402 v1 sellers: **v2 only**, as built.
+5. Physical goods: **separate milestone and provider**, not started.
+Approving a decision is not verification: checklist 4o (P1 to P24) is still unwalked, and the Swift and the agent-to-card path have never run.
 
 ## Next recommended milestone
 1. **Compile and run what was written** (checklist 4o P1 to P11, mock server): expect compile fixes, since no Swift
@@ -166,4 +168,4 @@ check of all 20 changed Swift files, a name-clash search. **Not run:** the Swift
 
 **Constitution evidence (this part).** DOD-07: typed amount from the threshold, enforced by the server (`payments.test.ts`, run) and the state machine (`PaymentApprovalModelTests`, not run); the agent can only propose (`PaymentsVoiceTests`, not run). DOD-08: `unknown:` never reads as done (`testOnlyAConfirmedPaymentIsDone`, not run). DOD-11: page content and reasons are marked data; the address is not logged in "What Doddy did". **Gap:** the whole agent-to-card path has never run; the ElevenLabs agent has not been tested with the tool; the typed-amount threshold (0.10) is an assumption for the owner to confirm.
 
-**Decisions for the owner:** (1) Is 0.10 USDC the right threshold for typing the amount? (2) Should the agent's wait be longer than 120 s, or should the outcome be delivered later as a spoken follow-up? (3) ~~Sync after checklist 4o~~ done early; the first real conversation with the tool should be on the test network with the mock or Base Sepolia wallet (checklist P18 to P22).
+**Decisions for the owner:** (1) Is 0.10 USDC the right threshold for typing the amount? (2) Should the agent's wait be longer than 120 s, or should the outcome be delivered later as a spoken follow-up? **Answered 2026-10-12 ("approve everything"): 0.10 USDC stays; the 120 s wait stays, and a later spoken follow-up is not built.** (3) ~~Sync after checklist 4o~~ done early; the first real conversation with the tool should be on the test network with the mock or Base Sepolia wallet (checklist P18 to P22).
