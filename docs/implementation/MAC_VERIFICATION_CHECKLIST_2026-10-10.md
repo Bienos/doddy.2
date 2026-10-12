@@ -359,6 +359,15 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4p. What Doddy did forgets notes (ADR-446)
+`DoddyApp.swift` (one line wiring the activity log into `MemoryStore`) and the Delete all text in `SettingsView.swift` changed without a compile. The logic is tested on Linux.
+| # | Do this | Expect |
+|---|---|---|
+| P1 | Build the app target | Compiles |
+| P2 | Save a note by voice; open What Doddy did | The row offers Undo. Set the iPhone's date a day and an hour ahead, reopen Doddy: no Undo on that row, the row is still there |
+| P3 | Save a note by voice, then delete the note in Notes | Its row in What Doddy did no longer offers Undo; the row stays |
+| P4 | With Notes rows and a Calendar row in What Doddy did, Settings → Delete all memories | The confirmation ends "So are the notes and lists rows in What Doddy did." (Polish: "Znikają też wiersze notatek i list w „Co zrobił Doddy”."). Afterwards only the Calendar row is left, and its Undo still works within the day |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |

@@ -40,6 +40,15 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         }
     }
 
+    /// The note or list this undo would change, by its id; nil for Calendar and Reminders.
+    public var memoryID: UUID? {
+        switch self {
+        case .savedNote(let id, _): id
+        case .listAdded(let listID, _, _), .listTicked(let listID, _, _), .listRemoved(let listID, _, _): listID
+        case .addedEvent, .addedReminder, .changedEvent, .changedReminder: nil
+        }
+    }
+
     /// Where it is checked, for the row's note: "Calendar", "Reminders" or "the list".
     public var placeName: String {
         switch self {

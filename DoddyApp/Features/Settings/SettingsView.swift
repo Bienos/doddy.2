@@ -607,7 +607,7 @@ struct SettingsView: View {
                 Button("Delete all", role: .destructive) { Task { await deleteAll() } }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too.")
+                Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
             }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)

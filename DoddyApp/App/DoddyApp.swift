@@ -23,6 +23,8 @@ struct DoddyApp: App {
         let learning = LearningStore(service: environment.learningService)
         learning.attach(to: ActivityLogStore.shared)
         store.learning = learning
+        // Deleting a note, or everything, also clears what "What Doddy did" kept of it (review C2).
+        store.activity = ActivityLogStore.shared
         // A reminder's "Done" or "Tomorrow 09:00" can start the app in the background.
         NoteReminderRouter.shared.reminders = noteReminders
         // A tick from a widget can also start the app in the background (ADR-219).

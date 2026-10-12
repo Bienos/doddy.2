@@ -404,11 +404,37 @@ public enum ActivityLog {
         pruned([entry] + entries, now: now)
     }
 
-    /// Also drops note text that older versions kept (review C2). The app prunes at launch and on
-    /// every new entry, and saves when anything changed, so it leaves the file too.
+    /// Also drops note text that older versions kept (review C2), and what Undo needed once Undo
+    /// is no longer offered (a day, `ActivityUndo.window`): that can quote a note or list items,
+    /// and the row stays for 30 days. The app prunes at launch and on every new entry, and saves
+    /// when anything changed, so it leaves the file too.
     public static func pruned(_ entries: [ActivityEntry], now: Date) -> [ActivityEntry] {
         let cutoff = now.addingTimeInterval(-Double(keepDays) * 86_400)
-        return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries).map(withoutNoteText))
+        return Array(entries.filter { $0.at >= cutoff }.sorted { $0.at > $1.at }.prefix(maxEntries).map { entry in
+            let kept = withoutNoteText(entry)
+            return now.timeIntervalSince(kept.at) >= ActivityUndo.window ? withoutUndo(kept) : kept
+        })
+    }
+
+    /// A note or list was deleted: rows keep what happened, but no longer what Undo needed for it
+    /// (its text or items). Undo of it couldn't run anyway.
+    public static func forgetting(memoryID: UUID, in entries: [ActivityEntry]) -> [ActivityEntry] {
+        entries.map { $0.undo?.memoryID == memoryID ? withoutUndo($0) : $0 }
+    }
+
+    /// "Delete all memories": the Notes and lists rows go with them. Rows for Calendar, Reminders
+    /// and the other apps stay, since those changes are still there.
+    public static func forgettingNotes(_ entries: [ActivityEntry]) -> [ActivityEntry] {
+        entries.filter { $0.app != .memories && $0.undo?.memoryID == nil }
+    }
+
+    /// The same row without what Undo needed; its outcome, note and any Undo result stay.
+    static func withoutUndo(_ entry: ActivityEntry) -> ActivityEntry {
+        guard entry.undo != nil else { return entry }
+        return ActivityEntry(
+            id: entry.id, at: entry.at, app: entry.app, title: entry.title, detail: entry.detail, outcome: entry.outcome,
+            note: entry.note, reminderKey: entry.reminderKey, checkedAt: entry.checkedAt, plan: entry.plan,
+            undo: nil, undoState: entry.undoState, tool: entry.tool)
     }
 
     /// Notes and lists rows used to start their detail with the quoted note, search or list name
