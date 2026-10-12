@@ -264,6 +264,7 @@ enum IslandSceneChecks {
             expect(b.x >= 0 && b.y >= 0 && b.x + b.width <= 1 && b.y + b.height <= 1 && b.width > 0.2 && b.height > 0.3, "\(p) figure box")
             guard let head = p.facePose.head else { expect(false, "\(p) face pose \(p.facePose) has no head"); continue }
             expect(head.diameter > 0.2 && head.diameter < 0.7 && head.x > 0.2 && head.x < 0.8 && head.y > 0 && head.y < 0.5, "\(p) head")
+            expect(p.faceAssetName == "WholeDoddy_face_\(p.facePose.rawValue)", "\(p) face picture is its face pose's")
         }
         return failures
     }
