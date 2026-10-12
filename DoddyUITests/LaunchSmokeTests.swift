@@ -143,8 +143,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
-        // Ask Doddy starts off, so it is listed under "Not sent right now".
-        XCTAssertTrue(app.staticTexts["Ask Doddy is off, so nothing goes there."].waitForExistence(timeout: 5))
+        // Ask Doddy starts off, so it is listed under "Not sent right now". Each row reads as one
+        // element (destination and note combined), so the note is checked in the row's label.
+        let askRow = app.descendants(matching: .any)["dataFlow.askDoddy"].firstMatch
+        XCTAssertTrue(app.reveal(askRow))
+        XCTAssertTrue(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
     }
 
     @MainActor

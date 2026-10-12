@@ -34,11 +34,11 @@ enum UITestLaunch {
 }
 
 extension XCUIApplication {
-    /// Scrolls, a third of the screen at a time, until `element` is on screen, tappable and clear
+    /// Scrolls, about half a screen at a time, until `element` is on screen, tappable and clear
     /// of Doddy's tab bar. Settings, Home and the notes list have grown past the fixed swipe
     /// counts the tests used to have, and Settings and the notes list build their rows lazily.
     /// A swipe flings a long list past the row between checks, so each step is a drag that holds
-    /// at the end (no momentum), started left of the switches. Returns whether it got there.
+    /// at the end (no momentum). Returns whether it got there.
     @MainActor @discardableResult
     func reveal(_ element: XCUIElement, maxSteps: Int = 40) -> Bool {
         for _ in 0..<maxSteps {
@@ -48,11 +48,13 @@ extension XCUIApplication {
         return isReachable(element)
     }
 
-    /// Scrolls up a third of the screen with no momentum.
+    /// Scrolls up just over half the screen with no momentum: less than the visible height, so no
+    /// row is stepped over. It starts in the left margin, clear of switches and text fields (a
+    /// drag that starts on a text field doesn't scroll).
     @MainActor
     func scrollStep() {
-        let from = coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.65))
-        let to = coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.35))
+        let from = coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.75))
+        let to = coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.2))
         from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.2)
     }
 
