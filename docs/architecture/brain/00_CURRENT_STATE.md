@@ -74,7 +74,7 @@ flowchart LR
 ## 5. Known reliability and security issues (from the 2026-10-11 reviews, re-checked against code)
 | # | Issue | Status | Evidence |
 |---|---|---|---|
-| 1 | A tool call from an ended conversation can still show its card, or reply, in the next one (cloud `prepare`, recall, Maps finish after End + Start) | **OPEN** | `handle` checks `isLive` only on entry (`:1676`); `propose` checks `isLive`, not the start attempt (`:2318`); `reply` sends to the current `conversation` (`:2776`) |
+| 1 | A tool call from an ended conversation can still show its card, or reply, in the next one (cloud `prepare`, recall, Maps finish after End + Start) | **FIXED in source** (ADR-443; not compiled, Mac checklist 5c) | `handle` checks `isLive` only on entry (`:1676`); `propose` checks `isLive`, not the start attempt (`:2318`); `reply` sends to the current `conversation` (`:2776`) |
 | 2 | Typed questions that match an imported note fail as a whole ("memory-source" → "Shorten it and try again") | **FIXED by this change** (ADR-442) | `gateway/src/validate.js:18` vs `GroundingSelector` |
 | 3 | Reinstall orphans the server memory copy | OPEN | `ServerKeychainStore.swift:58-66` |
 | 4 | Late OAuth completion can leave a Composio grant live | OPEN | `backend/src/store.ts:205-215,307-310,411` |

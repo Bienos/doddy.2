@@ -15,7 +15,7 @@ A timeout after a cloud write was submitted becomes `outcome_unknown` (`service.
 `unknown: … ask the user to check before trying again`, so it is never told to retry blindly.
 
 ## Gaps (priority order)
-1. **Stale session (OPEN, safety).** A call from conversation A can show its card, or reply, in conversation B (00 §5 #1). Fix: carry the start attempt with every call and drop results whose attempt is no longer current. Apply this at `propose`, at `reply`, and after every `await` in `handle`/`handleCloud`.
+1. **Stale session: fixed in source by ADR-443** (`ToolCallOwnership`; Mac build pending). A call from conversation A can show its card, or reply, in conversation B (00 §5 #1). Fix: carry the start attempt with every call and drop results whose attempt is no longer current. Apply this at `propose`, at `reply`, and after every `await` in `handle`/`handleCloud`.
 2. **Phone-tool approval binds to the card, not a digest.** A changed payload means a new card today, because "Change" re-renders it. A digest test would make that explicit.
 3. **Gate chain untestable on Linux** (`handle`, `:1674-1697`).
 

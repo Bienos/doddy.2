@@ -226,6 +226,9 @@ final class VoiceSessionController {
     private let activity: ActivityLogStore
     /// What each open tool call asked for, until its reply is sent and logged.
     private var asked: [String: ActivityRequest] = [:]
+    /// Which conversation (start attempt) each tool call arrived in (ADR-443). A call whose
+    /// conversation was ended shows no card, runs no change and sends no result to the next one.
+    private var callOwners = ToolCallOwnership()
     /// Changes the user confirmed that are running now, logged "in progress" before they ran.
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
@@ -297,6 +300,7 @@ final class VoiceSessionController {
     /// with `link` standing in for the provider so a test can read the reply. The app never calls it.
     func showCardForTesting(_ action: PendingAction, link: any LiveVoiceLink) {
         conversation = link
+        callOwners.arrived(action.toolCallID, attempt: startAttempt)
         pendingAction = action
     }
     #endif
@@ -320,6 +324,7 @@ final class VoiceSessionController {
         // never opens, keeps or hears a conversation.
         startAttempt += 1
         let attempt = startAttempt
+        callOwners.starting(attempt)
         isOffline = false
         offlineSaved = nil
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
@@ -464,7 +469,7 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.correct(original, to: corrected) }
         }
         config.onUnhandledClientToolCall = { call in
-            Task { @MainActor in await ref.value?.handle(call) }
+            Task { @MainActor in await ref.value?.handle(call, attempt: attempt) }
         }
         config.onError = { error in
             let offline = Offline.isNoConnection(error)
@@ -649,7 +654,9 @@ final class VoiceSessionController {
         case .assistantTranscriptCorrected(let original, let corrected):
             correct(original, to: corrected)
         case .functionCall(let call):
-            Task { await handleOpenAICall(call) }
+            // The attempt this event arrived in (ADR-443), not the one current when the task runs.
+            let attempt = startAttempt
+            Task { await handleOpenAICall(call, attempt: attempt) }
         case .error(let message):
             fail(message)
             Task { await stop() }
@@ -660,12 +667,13 @@ final class VoiceSessionController {
 
     /// Into the same tool handling as ElevenLabs. Web tools get a plain "not here" so Doddy says
     /// so instead of making up an answer.
-    private func handleOpenAICall(_ call: RealtimeFunctionCall) async {
+    private func handleOpenAICall(_ call: RealtimeFunctionCall, attempt: Int) async {
+        callOwners.arrived(call.callID, attempt: attempt)
         if openAIWebTools.contains(call.name) {
             await reply(call.callID, "Weather and Wikipedia don't work in the OpenAI voice test. Tell the user that in one sentence, and that switching Home back to ElevenLabs brings them back.", isError: true)
             return
         }
-        await handle(ClientToolCallEvent(toolName: call.name, toolCallId: call.callID, parametersData: call.argumentsData, eventId: 0, expectsResponse: true))
+        await handle(ClientToolCallEvent(toolName: call.name, toolCallId: call.callID, parametersData: call.argumentsData, eventId: 0, expectsResponse: true), attempt: attempt)
     }
 
     /// Keeps the conversation going when the user opens another app that plays or records sound
@@ -1084,8 +1092,9 @@ final class VoiceSessionController {
     /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
-        // Ended while the lists loaded: nothing changes after End (review H9).
-        guard isLive else { return }
+        // Ended while the lists loaded: nothing changes after End (review H9), nor in the next
+        // conversation (ADR-443).
+        guard isCurrent(toolCallID) else { return }
         do {
             let result = try await store.addToList(request.items, listID: list.id, source: .voice)
             var lines = result.added.map { ListReceipt.Line.added($0.text) }
@@ -1105,6 +1114,7 @@ final class VoiceSessionController {
 
     private func readList(_ name: String, toolCallID: String) async {
         guard let list = await resolveList(name, toolCallID: toolCallID) else { return }
+        guard isCurrent(toolCallID) else { return }
         listReceipt = ListReceipt(listID: list.id, title: "\(list.name) · \(list.summary)", lines: list.open.map { .open($0.text) })
         await reply(toolCallID, VoiceToolReply.listRead(list))
     }
@@ -1112,8 +1122,9 @@ final class VoiceSessionController {
     /// Ticks or removes only clear matches; items that match several are offered to tap.
     private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
-        // Ended while the lists loaded: nothing changes after End (review H9).
-        guard isLive else { return }
+        // Ended while the lists loaded: nothing changes after End (review H9), nor in the next
+        // conversation (ADR-443).
+        guard isCurrent(toolCallID) else { return }
         let pool = tick ? list.open : list.items
         var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
         for phrase in request.items {
@@ -1671,9 +1682,11 @@ final class VoiceSessionController {
         saveSuggestions = nil
     }
 
-    private func handle(_ call: ClientToolCallEvent) async {
-        // A call still queued when the user tapped End runs nothing (review H9).
-        guard isLive else { return }
+    private func handle(_ call: ClientToolCallEvent, attempt: Int) async {
+        callOwners.arrived(call.toolCallId, attempt: attempt)
+        // A call still queued when the user tapped End runs nothing (review H9), nor one of an
+        // ended conversation that arrives once the next has started (ADR-443).
+        guard isCurrent(call.toolCallId) else { return }
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // Translating: no tool runs at all, a plan card included (ADR-215). Checked before anything
         // is looked up or logged.
@@ -1786,6 +1799,7 @@ final class VoiceSessionController {
             await handleLeaveBy(request, toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
+            guard isCurrent(call.toolCallId) else { return }
             let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
             ingredientsUnticked = open
             propose(.ingredients(toolCallID: call.toolCallId, listID: list.id, listName: list.name, dish: proposal.dish,
@@ -1946,7 +1960,7 @@ final class VoiceSessionController {
         for step in steps {
             if let block = await planBlock(for: step) {
                 blocked[step.number] = block
-                if connectionNeeded == nil, case .notConnected(let connection) = block { connectionNeeded = connection }
+                if connectionNeeded == nil, isCurrent(call.toolCallId), case .notConnected(let connection) = block { connectionNeeded = connection }
             } else if let call = step.cloudCall {
                 // As a single card: the server checks the switch, the connection and the arguments,
                 // and returns the preview the card shows with an approval for exactly these.
@@ -1968,8 +1982,9 @@ final class VoiceSessionController {
             await reply(call.toolCallId, PlanReply.summary(results))
             return
         }
-        // Ended while the steps were checked: no card after End (review H9).
-        guard isLive else { return }
+        // Ended while the steps were checked: no card after End (review H9), and none in the
+        // next conversation (ADR-443).
+        guard isCurrent(call.toolCallId) else { return }
         // Another card may have been shown while the steps were checked (the checks wait).
         guard pendingAction == nil else {
             await reply(call.toolCallId, VoiceToolReply.failed("Another item is waiting for the user's answer."))
@@ -2302,6 +2317,7 @@ final class VoiceSessionController {
             if await PlaceLocation.shared.readiness() == .ready, let here = await PlaceLocation.shared.currentCoordinate() {
                 distance = Parking.distance(from: (here.latitude, here.longitude), to: (spot.latitude, spot.longitude))
             }
+            guard isCurrent(toolCallID) else { return }
             parkingCard = spot
             await reply(toolCallID, VoiceToolReply.parkingFound(spot, now: Date(), calendar: .current, distanceMeters: distance))
         case .clear:
@@ -2316,8 +2332,9 @@ final class VoiceSessionController {
     }
 
     private func propose(_ action: PendingAction, toolCallID: String) {
-        // A proposal that finished its lookups after End shows no card (review H9).
-        guard isLive else { return }
+        // A proposal that finished its lookups after End shows no card (review H9), nor one that
+        // finishes after the next conversation started (ADR-443).
+        guard isCurrent(toolCallID) else { return }
         guard pendingAction == nil else {
             Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
             return
@@ -2753,7 +2770,8 @@ final class VoiceSessionController {
     }
 
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
-        connectionNeeded = connection
+        // The "turn it on" prompt belongs to the conversation that asked (ADR-443).
+        if isCurrent(toolCallID) { connectionNeeded = connection }
         await reply(toolCallID, VoiceToolReply.notConnected(connection))
     }
 
@@ -2781,7 +2799,15 @@ final class VoiceSessionController {
                 activity.append(ActivityEntry(request: request, reply: text, at: Date(), undo: undo))
             }
         }
+        // A result of an ended conversation is logged above but never sent to the next one
+        // (ADR-443): that conversation never asked for it.
+        guard callOwners.belongs(toolCallID, to: startAttempt) else { return }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
+    }
+
+    /// The call arrived in the conversation that is open and live now (ADR-443).
+    private func isCurrent(_ toolCallID: String) -> Bool {
+        isLive && callOwners.belongs(toolCallID, to: startAttempt)
     }
 
     /// Requests still waiting on a card when the conversation ends: nothing happened.

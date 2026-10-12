@@ -5,7 +5,8 @@
 | 0 | Audit, inventory, target design (00–10) | Done 2026-10-12 |
 | 1 | `BrainCoordinator` + `ContextAssembler` for typed questions; Ask wired through it; imported-note egress fix | **Built, Linux-tested** (ADR-442); app compile on Xcode NOT RUN |
 | 2 | Voice egress target for `search_memories`; one greedy-fill helper; DATA markers for profile and learned context | Needs owner decision on voice start context (03 §Gaps 1) |
-| 3 | `ToolCatalog` + spec cross-check; `ToolGate` + stale-session guard; plan loop into core | Next: see below |
+| 3a | Stale-session guard (`ToolCallOwnership`, controller call sites) | **Built** (ADR-443); core Linux-tested, controller not compiled |
+| 3b | `ToolCatalog` + spec cross-check; `ToolGate` decision function; plan loop into core | Next |
 | 4 | Typed tools through the same gate (needs a gateway tool contract) | Needs owner approval |
 | 5 | Proactive jobs (08) | Design only; any scheduler is a separate approved task |
 | 6 | Evaluation from `BrainTrace` + labelled sets | Not started |
@@ -21,8 +22,13 @@ Behaviour change: notes whose source the gateway rejects (`imported_file`) are n
 failed with a misleading "Shorten it" message. Everything else is unchanged; the 16 existing `AssistantServiceTests` pass unmodified.
 `AskView` does not show `notesWithheld` yet (a SwiftUI change; Mac needed to check it).
 
+## Phase 3a changes (ADR-443)
+- `Packages/DoddyCore/Sources/DoddyCore/Brain/ToolCallOwnership.swift` (new) + `ToolCallOwnershipTests` (5 tests)
+- `DoddyApp/Features/Voice/VoiceSessionController.swift`: each call recorded with its start attempt; `propose`, list writes,
+  plan and ingredients cards, parking and list receipts and the connection prompt need `isCurrent`; `reply` logs late
+  results but sends only to the conversation that asked. Not compiled here: Mac checklist 5c.
+
 ## Next smallest verified task
-**Stale-session guard + `ToolGate` (Phase 3a).** A pure `ToolGate.decide` that reproduces `VoiceSessionController.swift:1676-1697`,
-plus `isCurrent(attempt:)`, with table tests on Linux. Then three call-site edits in the controller (`handle` after each `await`,
-`propose`, `reply`) so a call from an ended conversation can never show a card or reply in the next one. The controller
-edit needs a Mac build and the manual check "End + Start while a Gmail draft is preparing → no card in the new conversation".
+**`ToolGate.decide` (Phase 3b).** A pure function in `DoddyCore` that reproduces the gate chain at the top of
+`VoiceSessionController.handle` (translator → plan → Pause all → connection switch), with table tests on Linux.
+Then one controller edit to call it. After that, the `ToolCatalog` cross-check against `voice-agent/tools.json` (04).
