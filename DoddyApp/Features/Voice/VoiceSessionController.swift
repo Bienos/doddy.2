@@ -252,6 +252,10 @@ final class VoiceSessionController {
     private let devices: any DeviceConnecting
     /// Doddy's alarms, nil when iOS couldn't read them; a fake in tests (AppTests review finding 2).
     private let readAlarms: @MainActor () -> [DoddyAlarm]?
+    /// Asks iOS for the microphone; a fake in tests (review H1).
+    private let askMicrophone: @MainActor () async -> Bool
+    /// Opens the ElevenLabs conversation; nil uses the SDK. A fake link in tests (review H1).
+    private let openLink: (@MainActor (ElevenLabsConfiguration, ConversationConfig) async throws -> any LiveVoiceLink)?
     private var conversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
     private(set) var provider: VoiceProvider = .elevenLabs
@@ -287,13 +291,17 @@ final class VoiceSessionController {
     init(
         store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared,
         devices: any DeviceConnecting = DeviceConnections(),
-        alarms: @escaping @MainActor () -> [DoddyAlarm]? = AlarmScheduler.currentIfReadable
+        alarms: @escaping @MainActor () -> [DoddyAlarm]? = AlarmScheduler.currentIfReadable,
+        microphone: @escaping @MainActor () async -> Bool = VoiceSessionController.microphoneAllowed,
+        openLink: (@MainActor (ElevenLabsConfiguration, ConversationConfig) async throws -> any LiveVoiceLink)? = nil
     ) {
         self.store = store
         self.logs = logs
         self.activity = activity
         self.devices = devices
         self.readAlarms = alarms
+        self.askMicrophone = microphone
+        self.openLink = openLink
     }
 
     #if DEBUG
@@ -382,7 +390,7 @@ final class VoiceSessionController {
             fail(reason)
             return
         }
-        guard await Self.microphoneAllowed() else {
+        guard await askMicrophone() else {
             if attempt == startAttempt { phase = .microphoneDenied }
             return
         }
@@ -521,7 +529,12 @@ final class VoiceSessionController {
 
         Self.allowOtherAppsAudio()
         do {
-            let started = try await ElevenLabs.startConversation(auth: auth, config: config)
+            let started: any LiveVoiceLink
+            if let openLink {
+                started = try await openLink(auth, config)
+            } else {
+                started = try await ElevenLabs.startConversation(auth: auth, config: config)
+            }
             guard attempt == startAttempt, isLive else {
                 // Closed (or closed and started again) while connecting: end it so nothing keeps
                 // listening and its tool calls stop (review H1).

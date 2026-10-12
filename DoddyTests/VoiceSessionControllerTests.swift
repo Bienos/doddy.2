@@ -8,7 +8,8 @@ import XCTest
 /// finding 2). App-target tests: NOT RUN in the authoring environment (no Xcode).
 ///
 /// Tool calls reach the controller through the DEBUG seam `handleToolCallForTesting`, the same
-/// path as an OpenAI Realtime call.
+/// path as an OpenAI Realtime call; `start` gets a fake microphone answer and a fake ElevenLabs
+/// link through the initializer.
 final class VoiceSessionControllerTests: XCTestCase {
     /// A controller with a fake Calendar, fake alarms and a fake provider link. `restore()` puts
     /// the settings it changed back as they were; each test calls it in a `defer`.
@@ -191,6 +192,52 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.map(\.text), [VoiceToolReply.alarms([])])
     }
 
+    // MARK: A start replaced while connecting is ended (review H1, DOD-11)
+
+    /// Start, stop while the provider is still connecting, start again: when the first
+    /// connection arrives late it is ended at once, and only the second is the conversation.
+    @MainActor
+    func testStartReplacedWhileConnectingEndsTheFirstLink() async throws {
+        let key = VoiceProvider.preferenceKey
+        let savedProvider = UserDefaults.standard.object(forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)  // ElevenLabs, the path with the seam
+        defer { UserDefaults.standard.set(savedProvider, forKey: key) }
+        let links = HeldLinks()
+        let controller = VoiceSessionController(
+            store: MemoryStore(environment: .live(arguments: ["-inMemoryStore"])),
+            logs: ConversationLogStore(fileURL: nil),
+            activity: ActivityLogStore(fileURL: nil),
+            devices: FakeDevices(),
+            microphone: { true },
+            openLink: { _, _ in await links.open() })
+        let mode = VoiceConnectionMode.publicAgent(agentID: "test-agent")
+
+        let first = Task { await controller.start(mode, profile: .empty) }
+        try await links.waitUntilFirstIsHeld()
+        // A second start while the first is connecting does nothing.
+        await controller.start(mode, profile: .empty)
+        XCTAssertEqual(links.opened.count, 1)
+
+        await controller.stop()
+        await controller.start(mode, profile: .empty)
+        links.releaseFirst()
+        await first.value
+
+        XCTAssertEqual(links.opened.count, 2)
+        let (old, current) = (links.opened[0], links.opened[1])
+        XCTAssertEqual(old.endCount, 1, "the replaced connection must be ended")
+        XCTAssertEqual(current.endCount, 0)
+        XCTAssertTrue(controller.isLive)
+        // Only the second link is the conversation: Mute reaches it and not the first.
+        await controller.toggleMute()
+        XCTAssertEqual(current.muteCount, 1)
+        XCTAssertEqual(old.muteCount, 0)
+
+        await controller.stop()
+        XCTAssertEqual(current.endCount, 1)
+        XCTAssertEqual(old.endCount, 1)
+    }
+
     // MARK: Fixtures
 
     private static func event(id: String, title: String) -> CalendarEventSummary {
@@ -289,17 +336,51 @@ private final class FakeLink: LiveVoiceLink, @unchecked Sendable {
 
     private let lock = NSLock()
     private var sent: [Sent] = []
+    private var ended = 0
+    private var muted = 0
 
     var results: [Sent] { lock.withLock { sent } }
+    /// How many times the conversation was ended, and Mute was set.
+    var endCount: Int { lock.withLock { ended } }
+    var muteCount: Int { lock.withLock { muted } }
 
     func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws {
         lock.withLock { sent.append(Sent(id: toolCallId, text: result, isError: isError)) }
     }
 
-    func setMuted(_ muted: Bool) async throws {}
+    func setMuted(_ muted: Bool) async throws { lock.withLock { self.muted += 1 } }
     func sendMessage(_ text: String) async throws {}
     func updateContext(_ context: String) async throws {}
-    func endConversation() async {}
+    func endConversation() async { lock.withLock { ended += 1 } }
     func setAgentVolume(_ volume: Double) -> Double? { nil }
+}
+
+/// The provider connecting: the first link opened waits until the test releases it, as a slow
+/// connection would; later ones open at once.
+@MainActor
+private final class HeldLinks {
+    private(set) var opened: [FakeLink] = []
+    private var held: CheckedContinuation<Void, Never>?
+
+    func open() async -> any LiveVoiceLink {
+        let link = FakeLink()
+        opened.append(link)
+        if opened.count == 1 { await withCheckedContinuation { held = $0 } }
+        return link
+    }
+
+    func waitUntilFirstIsHeld() async throws {
+        for _ in 0..<500 where held == nil {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        guard held != nil else { throw NeverReachedProvider() }
+    }
+
+    struct NeverReachedProvider: Error {}
+
+    func releaseFirst() {
+        held?.resume()
+        held = nil
+    }
 }
 #endif
