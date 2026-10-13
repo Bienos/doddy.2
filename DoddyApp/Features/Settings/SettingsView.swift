@@ -283,12 +283,15 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    // Shipped builds use the built-in address (ServiceAddresses); only the token is typed.
+                    #if DEBUG
                     TextField("Server address (https://…)", text: $connectedAppsServerURL)
                         .font(.body.monospaced())
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("settings.connectedAppsServer")
+                    #endif
                     if hasSessionToken {
                         StatusRow(title: "Session token", value: "Saved in Keychain")
                         Button("Remove session token", role: .destructive) {
@@ -384,12 +387,15 @@ struct SettingsView: View {
                         .accessibilityIdentifier("settings.listenOnOpen.note")
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
+                    // Shipped builds use the built-in token server (ServiceAddresses); only the code is typed.
+                    #if DEBUG
                     TextField("Token server (https://…)", text: $voiceTokenServer)
                         .font(.body.monospaced())
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("settings.voiceTokenServer")
+                    #endif
                     if hasAccessCode {
                         Button("Remove access code", role: .destructive) {
                             VoiceAccessCodeStore.delete()
@@ -530,6 +536,8 @@ struct SettingsView: View {
                     Toggle("Use relevant saved notes", isOn: $assistantUseNotes)
                         .disabled(!assistantConsent)
                         .accessibilityIdentifier("settings.assistantUseNotes")
+                    // Shipped builds use the built-in gateway (ServiceAddresses); only the invite is typed.
+                    #if DEBUG
                     TextField("Gateway address (https://…)", text: $gatewayAddress)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
@@ -539,6 +547,7 @@ struct SettingsView: View {
                         Label("That isn't a valid https address.", systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
+                    #endif
                     SecureField(hasInviteCode ? "Invite code saved. Enter a new one to replace it" : "Invite code", text: $inviteDraft)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()

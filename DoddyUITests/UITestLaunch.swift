@@ -25,6 +25,9 @@ enum UITestLaunch {
         arguments += ["-appearance", appearance, "-backTapSetupStatus", backTapSetup]
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
         arguments += ["-voiceAgentID", ""]
+        // No built-in server addresses (ServiceAddresses): tests never reach the live servers, and
+        // voice stays in development mode, so it still stops at "Couldn't connect".
+        arguments += ["-voiceTokenServer", "", "-gatewayAddress", "", "-connectedAppsServerURL", ""]
         arguments += ["-openingScene", opening ? "YES" : "NO", "-listenOnOpen", listen ? "YES" : "NO"]
         // Memories remembers Notes or Lists in UserDefaults, which outlive the in-memory store: a
         // test that opened Lists would leave every later test looking at Lists, not the notes.

@@ -3,13 +3,13 @@
 # Sends no secrets: the voice token and gateway checks use a made-up code and an empty body, so a
 # working server refuses them. Override the addresses with the environment variables below.
 #   scripts/check_live_services.sh
-#   DODDY_GATEWAY_URL=https://my-gateway.vercel.app scripts/check_live_services.sh
+#   DODDY_GATEWAY_URL=https://my-gateway.example scripts/check_live_services.sh
 set -u
 
 BACKEND_URL="${DODDY_BACKEND_URL:-https://doddy-yaci.onrender.com}"
 MESSAGING_URL="${DODDY_MESSAGING_URL:-https://doddy-messaging-zw1n.onrender.com}"
 VOICE_TOKEN_URL="${DODDY_VOICE_TOKEN_URL:-https://doddy-voice-token.onrender.com}"
-GATEWAY_URL="${DODDY_GATEWAY_URL:-https://doddy-gateway.vercel.app}"
+GATEWAY_URL="${DODDY_GATEWAY_URL:-https://doddy-gateway.onrender.com}"
 
 failures=0
 
@@ -35,13 +35,13 @@ probe backend GET "$BACKEND_URL/v1/health" 200 \
   "Render service 'doddy' is down or asleep too long: Render dashboard -> doddy -> Logs."
 probe messaging GET "$MESSAGING_URL/healthz" 200 \
   "Render service 'doddy-messaging' is down: check its Logs and DATABASE_URL."
-# A wrong code must get 401. 402 = Vercel disabled the deployment (billing); 500 = env vars missing.
+# A wrong code must get 401. 500 = env vars missing.
 probe voice-token POST "$VOICE_TOKEN_URL/api/voice-token" 401 \
   "500 server_not_configured: add ELEVENLABS_API_KEY and DODDY_ACCESS_CODES in Render (doddy-voice-token -> Environment); Render redeploys on save." \
   -H 'authorization: Bearer not-a-real-code-000000'
-# An empty body must get 400 (invalidRequest). 503 = env vars missing; 402 = Vercel billing.
+# An empty body must get 400 (invalidRequest). 503 = env vars missing.
 probe gateway POST "$GATEWAY_URL/api/register" 400 \
-  "402: fix Vercel billing. 503 notConfigured: set the OPENAI_*, GATEWAY_* and Redis variables (gateway/README.md) and redeploy." \
+  "503 notConfigured: add the OPENAI_*, GATEWAY_* and UPSTASH_* variables in Render (doddy-gateway -> Environment; runbook part 4)." \
   -H 'content-type: application/json' --data '{}'
 
 if [ "$failures" -eq 0 ]; then

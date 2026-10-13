@@ -14,6 +14,8 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
+        // Before anything reads them: the live servers' addresses (GO_LIVE_RUNBOOK_2026-10-13).
+        ServiceAddresses.register()
         // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
         ServerKeychainStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared

@@ -13,9 +13,9 @@ app). Never put them in chat, in git or in this file.
 |---|---|---|---|
 | iOS app | GitHub Actions, Xcode 26.6 | Compiles; unit tests and all 26 UI tests pass (PR #69/#70) | n/a |
 | Backend (web search, Gmail, Calendar, Notion, Todoist, Outlook through Composio) | Render `doddy`, https://doddy-yaci.onrender.com, free plan | Up, live mode, signed tokens. Only the Calendar capability reports in; no account has been connected through it yet | OK |
-| Messaging server (notifications, texts, calls, daily news) | Render `doddy-messaging`, https://doddy-messaging-zw1n.onrender.com, free plan | Up (`/healthz` ok). **No worker service** exists, so nothing queued is ever sent. Twilio, APNs and the news keys are unknown | OK |
+| Messaging server (notifications, texts, calls, daily news) | Render `doddy-messaging`, https://doddy-messaging-zw1n.onrender.com, free plan; free Postgres `doddy-messaging-db` expires **2026-11-10** | Up (`/healthz` ok). The worker runs inside the web process (`RUN_WORKER_IN_WEB`, log "worker started in the web process"), but the free plan sleeps, so scheduled sends stop while it sleeps. Log at start: push off, SMS off, calls off, news writer on, news search off | OK |
 | Voice token server | Render `doddy-voice-token`, https://doddy-voice-token.onrender.com, free plan (moved from Vercel 2026-10-13, owner's choice) | Up (`/healthz` ok), branch `claude/affectionate-tesla-nqu0nj`, auto-deploy off. Answers `500 server_not_configured` until you add `ELEVENLABS_API_KEY` and `DODDY_ACCESS_CODES`. The old Vercel project still answers 402 | FAIL 500 until the two secrets are in |
-| Ask Doddy gateway (OpenAI) | Vercel team `doddyyyy`, project `doddy-gateway` | **Down: same 402** | FAIL 402 |
+| Ask Doddy gateway (OpenAI) | Render `doddy-gateway`, https://doddy-gateway.onrender.com, free plan (moved from Vercel 2026-10-13, ADR-442) | Up (`/healthz` ok). Answers `503 notConfigured` until you add the keys in Part 4 | FAIL 503 until Part 4 |
 | ElevenLabs voice agent | `agent_0501m4et27vyeawrwqfdxxfszfa6` | Live. **Authentication off**, recordings kept forever (`retention_days: -1`), at most 2 calls at once and 10 a day | n/a |
 | "Hey Doddy" | Picovoice, your own AccessKey typed into the app | Nothing to deploy; needs your key | n/a |
 
@@ -370,3 +370,24 @@ G. CarPlay: only if the entitlement has come through (docs/implementation/CARPLA
 Never deploy, change live agents, or spend money without my explicit yes in this session. End with the
 milestone report CLAUDE.md asks for.
 ```
+
+---
+
+## Update 2026-10-13 (later): what changed after this runbook was written (ADR-442)
+
+- **Voice token server and Ask Doddy gateway now run on Render** (free), not Vercel. Vercel billing no longer
+  matters for them; Part 2 can be skipped.
+- **The app has the four addresses built in** (`DoddyApp/Infrastructure/Server/ServiceAddresses.swift`). You no
+  longer type a token server, gateway or server address in Settings: skip those lines in Parts 3.2, 4.6, 5.1 and
+  6.6. Debug builds from Xcode still show the fields, pre-filled. TestFlight builds hide them.
+- **Part 4 (Ask Doddy) on Render instead of Vercel:** in Render → `doddy-gateway` → **Environment**, add
+  `OPENAI_API_KEY`, `OPENAI_MODEL`, both `OPENAI_PRICE_*_PER_MTOK_USD`, `GATEWAY_TOKEN_SECRET` (use Render's
+  **Generate**) and `GATEWAY_INVITE_CODES`. `REQUIRE_SHARED_LIMITS=1` and `DAILY_BUDGET_USD=1.00` are already set.
+  For the limits store, make a free database at console.upstash.com → **Redis** → Create (region eu-central-1,
+  Frankfurt), open its **REST API** section, and copy `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` into
+  Render. Save, rebuild and deploy, then `scripts/check_live_services.sh` should show `gateway 400`.
+- **Part 6.1 (messaging worker) is not needed:** the worker already runs inside `doddy-messaging`. What you need is
+  for it to stay awake. In Render → `doddy-messaging` → **Settings** → **Instance Type**, choose **Starter**
+  ($7/month), so scheduled news and texts go out on time. Before 2026-11-10, also upgrade the database:
+  Render → `doddy-messaging-db` → **Upgrade** → Basic-256mb ($6/month). Otherwise it's deleted and every messaging
+  account goes with it.
