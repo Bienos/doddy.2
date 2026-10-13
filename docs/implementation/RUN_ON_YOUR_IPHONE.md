@@ -4,14 +4,21 @@ Owner: "I want it built in Xcode first, not the App Store … start properly tes
 a development build straight from your Mac to your own iPhone. It is not TestFlight and not the App Store.
 
 ## What the branch holds
-Branch `claude/friendly-bohr-gy15jv` = the default branch, plus the new app icon from your pack (ADR-460)
-and this guide. Since 13 October the default branch holds the iOS compile fixes (#69) and the UI test fixes
-(#70).
+Branch `claude/zealous-albattani-7ay32v` (13 October, evening) = the default branch at `e2734941` (everything
+merged up to #79: the first-use screens, action status and recovery, the Watch, iPad and Mac work, the audit
+fixes), plus four merges that were still on their own branches:
+- the app icon from your pack (ADR-460) and this guide (from `claude/friendly-bohr-gy15jv`);
+- the island's pre-cut round faces for its compact and minimal views;
+- the "Big brain. Small body." share card in Settings (PR #78, ADR-462 here);
+- the voice screen that leads with Doddy and a sound wave, the transcript one tap away (ADR-463, ADR-464 here).
 
 What is known about it, honestly:
-- The default branch compiles on Xcode 26.6 in GitHub CI (iOS Simulator), and the unit tests and all 26 UI
-  tests pass there (run 38325945549, #69's head before it merged).
-- This branch with the icon also builds and passes every test in CI (run 38322023821, 13 October).
+- The default branch at `e2734941` compiles on Xcode 26.6 in GitHub CI (iOS Simulator), and the unit tests and
+  the UI tests pass there (run 38426020997, PR #79's head, which has the same tree).
+- `claude/friendly-bohr-gy15jv` (the icon on top of the default branch) also built and passed every test in CI
+  (run 38322023821 on 13 October).
+- This branch: every Linux check passes (`scripts/ci.sh --core-only` with Swift 6.1). Its own hosted CI run is
+  38457949789; `STATUS.md` records the outcome. The wave and the faces had never been compiled before it.
 - Nothing has been installed on a real iPhone. Signing has never been done. Expect Xcode to ask for things the
   first time.
 
@@ -24,7 +31,7 @@ What is known about it, honestly:
 1. Get the branch:
    ```sh
    git clone https://github.com/Bienos/doddy.2 && cd doddy.2      # or: git fetch origin in your copy
-   git checkout claude/friendly-bohr-gy15jv
+   git checkout claude/zealous-albattani-7ay32v
    brew install xcodegen
    make project                    # writes Doddy.xcodeproj
    open Doddy.xcodeproj
