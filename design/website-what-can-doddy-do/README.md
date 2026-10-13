@@ -211,7 +211,7 @@ Rule (CLAUDE.md, 2026-10-11): only the owner's `DODDY-Numbered-Video-Assets-v01`
 | `assets/props/*.png` | `010_doddy_props_v01.png` (alpha sheet) | each prop cropped to its alpha bounds |
 | `assets/fx/*.png` | `011_doddy_fx_v01.png` (alpha sheet) | as above |
 | `assets/faces/*.png` | `004_doddy_expr_front_v02.png` (flat sheet) | circular crops |
-| `assets/site/` | the live site (`home.png`, `capture.png`, `poster-v2.jpg`, the v1.3 waving SVG) | used only in mockup 01, which reproduces today's homepage as it is |
+| `assets/site/` | the live site: the four app screens, `poster-v2.jpg`, and the eleven v1.3 pose SVGs | mockup 01 (today's homepage as it is), mockup 24 (the pose comparison) and mockup 25a (the homepage proposal, which swaps them for the pack) |
 
 Exception 1: five everyday objects the pack has no prop for (alarm clock, suitcase, calendar, shopping bag, speech bubble) are drawn as inline SVG in `mockups/src/partials/symbols.html`, in the props sheet's own ink `#080808`, cream `#FCF4E4` and orange `#FC6800`. They are objects, not Doddy; if the owner would rather have them drawn by the pack's illustrator, they are five symbols to swap.
 Exception 2: mockup 01 shows the v1.3 SVG pose because the live homepage does; replacing it is a separate owner decision already listed in `site/README.md`.
