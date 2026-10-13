@@ -399,6 +399,33 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | S7 | "Add milk to the shopping list", then End at once (slow device or many lists) | What Doddy did shows the add as done (or "in progress" for a moment), never "not done" when milk is on the list |
 | S8 | Confirm a plan with a note and a reminder, End and Start while it runs | Both steps run and are logged; the new conversation shows no plan progress and its saved-notes count starts at 0 |
 
+## 4u. "Hey Doddy" with one tap (ADR-328)
+Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
+| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
+| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
+| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
+
+## 4v. "Ask me about it" (ADR-403)
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
+
+## 4q. A guided first conversation (ADR-401)
+Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.
+| # | Do this | Expect |
+|---|---|---|
+| F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
+| F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
+
+## 4s. Quick access tips (ADR-402)
+| # | Do this | Expect |
+|---|---|---|
+| A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |
