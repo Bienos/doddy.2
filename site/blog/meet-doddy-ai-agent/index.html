@@ -12,12 +12,13 @@
   <meta property="og:type" content="article">
   <meta property="og:title" content="Meet Doddy, an AI companion that wants to do it all for you · Doddy">
   <meta property="og:description" content="Doddy is an AI companion for your iPhone with a big goal. One day it should help with anything you need, and it will always ask before it acts. Here&#x27;s what it does today, what it can&#x27;t do yet, how we keep it safe, and answers to the questions people ask most.">
-  <meta property="og:image" content="https://doddy-eight.vercel.app/assets/og-image.png">
-  <meta property="og:url" content="https://doddy-eight.vercel.app/blog/meet-doddy-ai-agent/">
-  <link rel="canonical" href="https://doddy-eight.vercel.app/blog/meet-doddy-ai-agent/">
+  <meta property="og:image" content="https://www.doddy.lol/assets/og-image.png">
+  <meta property="og:url" content="https://www.doddy.lol/blog/meet-doddy-ai-agent/">
+  <link rel="canonical" href="https://www.doddy.lol/blog/meet-doddy-ai-agent/">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="alternate" type="application/rss+xml" title="Doddy blog" href="/blog/feed.xml">
-  <link rel="icon" href="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
@@ -27,6 +28,7 @@
   <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
   <script src="/_vercel/insights/script.js" defer></script>
   <script src="/analytics.js" defer></script>
+  <script src="/nav.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -37,14 +39,31 @@
       <nav aria-label="Sections">
         <ul class="nav-links">
           <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>
           <li><a href="/#meet">Meet Doddy</a></li>
-          <li><a href="/blog/" aria-current="false">Blog</a></li>
+          <li><a href="/#play">Take a shot</a></li>
+          <li><a href="/blog/">Blog</a></li>
           <li><a href="/#privacy">Privacy</a></li>
         </ul>
       </nav>
+      <button class="menu-button" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
       <a class="button small" href="/#join">Join early access</a>
+      <div class="menu-sheet" id="menu-sheet" aria-label="Menu">
+        <ul>
+          <li><a href="/#how">How it works</a></li>
+          <li><a href="/what-can-doddy-do/" class="menu-new">What can Doddy do? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="/#meet">Meet Doddy</a></li>
+          <li><a href="/#play">Take a shot</a></li>
+          <li><a href="/blog/">Blog</a></li>
+          <li><a href="/#privacy">Privacy</a></li>
+        </ul>
+        <a class="button" href="/#join">Join early access</a>
+      </div>
     </div>
   </header>
+
 
   <main id="main">
     <article class="post">
@@ -166,6 +185,7 @@
         <p class="wordmark">Doddy</p>
         <ul class="foot-links">
           <li><a href="/">Home</a></li>
+          <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>
           <li><a href="/blog/">Blog</a></li>
           <li><a href="/blog/feed.xml">RSS</a></li>
           <li><a href="/#join">Join early access</a></li>

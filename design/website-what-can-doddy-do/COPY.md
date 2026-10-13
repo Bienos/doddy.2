@@ -147,7 +147,7 @@ New words the Phase 2 mockups need. The owner delegated the decision on 13 Octob
 - Hero second action: What Doddy does all day (the film keeps "Watch the film (1:15)" in its own section)
 - Teaser heading: Three moments from an ordinary day. · Lede: What a mate in your pocket does with them. Seven more on their own page, each one saying whether it's built, in testing, or later, maybe. · Buttons: See the whole day · Start at 08:45
 - If character art option A: Meet Doddy's "A hand-drawn mate with an orange backpack, oversized trainers and a basketball that never quite gets put down." loses the backpack; proposed: "A hand-drawn mate with oversized trainers and a basketball that never quite gets put down."
-- The voice line "Voice hasn't been tested on a real iPhone yet." is stale per the voice status doc; shown in 25a as "Voice is being tried on real iPhones now." The site README rule stands: the owner confirms this one at build.
+- The voice line "Voice hasn't been tested on a real iPhone yet." is stale per the voice status doc; shown in 25a as "Voice is being tried on real iPhones now." **Decided 13 October (owner: "remove these hasn't been testing, just say loading"): the site now says "Voice is in testing."** (mockup 25a keeps the earlier wording; the build is `site/`, ADR-471).
 
 ### New page head (mockup 25 · 11)
 - Title: What can Doddy do? · Doddy

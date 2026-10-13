@@ -306,7 +306,7 @@ Made by the studio on the owner's delegation; each applied to the mockups where 
 4. **The surprise rule: in. The idle blink: no.** The hero holds still until touched; nothing loops.
 5. **Both additions: in.** The hero follows the visitor's clock; every moment has a share line. The share image is a crop of the page's own art.
 6. **The copy: approved by delegation** (`COPY.md`, "Copy added in Phase 2").
-7. **The voice line:** the proposal (25a) shows "Voice is being tried on real iPhones now."; the site README rule stands, so the owner confirms it at build.
+7. **The voice line:** closed on 13 October by the owner ("remove these hasn't been testing, just say loading"): the live page says "Voice is in testing." (mockup 25a keeps the earlier proposal wording). **The page is built (ADR-471); the mockups here are the design record, and `tools/gen25a.py` no longer runs against the changed homepage.**
 8. **Canonical host: https://www.doddy.lol/**, where the site already answers (the live fetch redirects there).
 
 ## Phase 5 — Stopped here
