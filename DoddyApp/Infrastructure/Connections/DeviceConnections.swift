@@ -238,6 +238,11 @@ final class DeviceConnections {
     /// throws, a fresh look decides: still as Doddy left it means nothing was written.
     func undo(_ undo: ActivityUndo) async -> UndoResult {
         switch undo {
+        case .listAdded, .listTicked, .listRemoved, .savedNote:
+            // Lists and notes are Doddy's own (ADR-276, ADR-277): callers send them to the store,
+            // never here. Nothing is written.
+            return .notDone("That isn't a Calendar or Reminders change.")
+
         case .addedEvent(let eventID, let added):
             guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
             guard let event = eventStore.event(withIdentifier: eventID), !event.hasRecurrenceRules,
@@ -664,6 +669,8 @@ protocol DeviceConnecting: ReminderStore, Sendable {
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
+    func eventNotes(_ event: CalendarEventSummary) -> String?
+    func reminderLists() -> [ReminderListRef]
     func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome
     func deleteEvent(_ event: CalendarEventSummary) throws -> DeviceConnections.ChangeOutcome
     func deleteReminder(_ before: ReminderSnapshot) throws -> DeviceConnections.ChangeOutcome
