@@ -213,4 +213,41 @@ extension MemoryCategory {
 enum DeviceSupport {
     /// Accessibility › Touch › Back Tap is an iPhone setting; iPad has none.
     @MainActor static var hasBackTap: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+    /// Live Activities: every iPhone, and iPad from iPadOS 26 (ADR-453; earlier iPads have none, so
+    /// shopping mode is hidden there instead of saying "turn them on in Settings", ADR-432).
+    @MainActor static var hasLiveActivities: Bool {
+        switch UIDevice.current.userInterfaceIdiom {
+        case .phone:
+            return true
+        case .pad:
+            if #available(iOS 26.0, *) { return true }
+            return false
+        default:
+            return false
+        }
+    }
+    /// The Dynamic Island and the styles for it: iPhone only (ADR-432, ADR-453).
+    @MainActor static var hasDynamicIsland: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+    /// The sidebar replaces the tab bar on a wide screen (ADR-430), but not on an iPhone: a large
+    /// iPhone in landscape is regular width too, and keeps the tab bar.
+    @MainActor static var hasSidebar: Bool { UIDevice.current.userInterfaceIdiom != .phone }
+    /// Only an iPhone places a phone call itself. iPad shows Doddy's number without a call link (ADR-437).
+    @MainActor static var hasPhoneCalls: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+}
+
+/// One readable column on a wide screen (ADR-337, ADR-437): content at most 760 pt wide and
+/// centred, while what comes after it (a background) still fills the screen. Compact width
+/// (every iPhone in portrait, iPad Slide Over) is unchanged.
+struct ReadableColumn: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: sizeClass == .regular ? 760 : .infinity)
+            .frame(maxWidth: .infinity)
+    }
+}
+
+extension View {
+    func readableColumn() -> some View { modifier(ReadableColumn()) }
 }

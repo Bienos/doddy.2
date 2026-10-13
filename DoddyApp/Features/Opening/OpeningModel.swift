@@ -17,6 +17,13 @@ enum OpeningPreferences {
     static func listenOnOpen(_ defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: PreferenceKey.listenOnOpen) == nil ? listenOnOpenDefault : defaults.bool(forKey: PreferenceKey.listenOnOpen)
     }
+
+    /// How much slower than real time the opening plays: only ever set by a UI test's launch
+    /// argument `-openingTimeScale`, so the scene is still on screen when the test first looks
+    /// (`OpeningScene.sceneTime` keeps it between 1 and 10). There is no setting for it.
+    static func timeScale(_ defaults: UserDefaults = .standard) -> Double {
+        defaults.double(forKey: "openingTimeScale")
+    }
 }
 
 /// The four basketball drawings the opening sketches and animates, read once from the SVGs
@@ -49,6 +56,8 @@ struct OpeningPlay: Equatable, Sendable {
     let thenListen: Bool
     let drawings: OpeningDrawings
     let startedAt: Date
+    /// 1 on a phone; a UI test can slow the clock (`OpeningPreferences.timeScale`).
+    var timeScale: Double = 1
 }
 
 /// Home's state right after the opening: Doddy in the listening pose, ready to talk. Over after
@@ -169,7 +178,7 @@ final class OpeningModel {
             handingOver = false
             play = OpeningPlay(
                 reducedMotion: reducedMotion, thenListen: thenListen,
-                drawings: drawings, startedAt: now)
+                drawings: drawings, startedAt: now, timeScale: OpeningPreferences.timeScale())
         case .listenOnly:
             // Let Home appear first, so the conversation slides up over it as it does from the button.
             Task { @MainActor in

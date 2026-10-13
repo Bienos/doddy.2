@@ -116,6 +116,13 @@ struct MemoryDetailView: View {
                         Text(isDeleting ? "Deleting…" : "Delete this memory").frame(maxWidth: .infinity, minHeight: 44)
                     }
                     .tint(Theme.error).disabled(isDeleting).accessibilityIdentifier("detail.delete")
+                    // On the button, so on iPad its popover points here (ADR-437).
+                    .confirmationDialog("Delete this memory?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                        Button("Delete", role: .destructive, action: beginDelete)
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text(deleteMessage)
+                    }
                 } else {
                     Text("This memory no longer exists.").foregroundStyle(Theme.secondaryText)
                 }
@@ -127,12 +134,6 @@ struct MemoryDetailView: View {
         .toolbar(.visible, for: .navigationBar)
         .toolbar { ToolbarItem(placement: .principal) { DoddyWordmark() } }
         .sheet(item: $correction) { CorrectionView(record: $0) }
-        .confirmationDialog("Delete this memory?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete", role: .destructive, action: beginDelete)
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text(deleteMessage)
-        }
     }
 
     /// Undo (ADR-183) brings the note back, not its reminder, so the message says so.

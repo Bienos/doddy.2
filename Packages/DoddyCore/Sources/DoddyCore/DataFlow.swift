@@ -206,10 +206,63 @@ public enum DataFlow {
         ]
     }
 
+    /// Settings → Privacy "Network": where something can go right now, built from `rows` so it
+    /// never lists less than What leaves this iPhone (audit 2026-10-12 §5 #6, ADR-447).
+    public static func networkSummary(_ state: DataFlowState) -> String {
+        let names = rows(state).filter(\.isActive).compactMap { networkNames[$0.id] }
+        guard let last = names.last else { return "None" }
+        let list = names.count == 1 ? last : names.dropLast().joined(separator: ", ") + " and " + last
+        return list + ". Each only when you use it; What leaves this iPhone says what goes."
+    }
+
+    /// Settings → Privacy "Cloud AI": the AI services that can get what you say or type right now.
+    public static func cloudAISummary(_ state: DataFlowState) -> String {
+        let active = Set(rows(state).filter(\.isActive).map(\.id))
+        var parts: [String] = []
+        if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
+        if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
+        if active.contains("askDoddy") { parts.append("OpenAI (Ask Doddy)") }
+        if active.contains("messagingServer") {
+            parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
+        }
+        return parts.isEmpty ? "None" : parts.joined(separator: "; ")
+    }
+
+    /// The short name each row has in the Network summary. Every row id is here or in
+    /// `notInNetworkSummary` (DataFlowTests), so a new row can't be left out by accident.
+    static let networkNames: [String: String] = [
+        "elevenlabs": "ElevenLabs (while talking)",
+        "openaiVoice": "OpenAI (while talking)",
+        "iCloudSharing": "iCloud (lists you share)",
+        "lookups": "Open-Meteo and Wikipedia (looked up by ElevenLabs)",
+        "exchangeRates": "the European Central Bank (exchange rates; nothing about you)",
+        "placeSearch": "Apple Maps (place searches)",
+        "tokenServer": "your voice token server",
+        "doddyServer": "your Doddy server (Connected Apps)",
+        "messagingServer": "your Doddy messaging server",
+        "siri": "Siri (when you ask it)",
+        "picovoice": "Picovoice (\"Hey Doddy\" key check)",
+        "askDoddy": "the Ask Doddy gateway",
+    ]
+
+    /// Covered by another name (translator mode goes to whichever service runs the voice, which is
+    /// named), or not sent by the app (a backup file goes where you save it).
+    static let notInNetworkSummary: Set<String> = ["translator", "backup"]
+
+    private static func newsWriter(_ state: DataFlowState) -> String {
+        switch state.newsWriterProvider {
+        case "anthropic": "Anthropic"
+        case "openai": "OpenAI"
+        default: "Anthropic or OpenAI"
+        }
+    }
+
     /// What never leaves, apart from the uses listed above.
     public static func staysOnPhone(_ state: DataFlowState) -> [String] {
         [
             "Your saved notes, except as listed above.",
+            // ADR-362: drafts are never searched, sent, exported or backed up.
+            "Unfinished notes: what you typed before tapping Save, until you save or discard it (30 days at most).",
             // ADR-252: the corrections table is read only by the note screen and exports.
             "Earlier wordings of notes you corrected, except in files you export.",
             "What Doddy did (the activity list).",

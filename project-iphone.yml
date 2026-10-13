@@ -1,0 +1,33 @@
+# The iPhone + iPad app without the Apple Watch app, for iPhone/iPad work: a watch compile error
+# can't break this build, and it builds faster. Everything comes from project.yml; only the app's
+# dependency list is replaced, the same list minus `DoddyWatch`. Ship from project.yml, which
+# embeds the watch app. scripts/check_platform_specs.py keeps the two lists in step.
+# Generate on a Mac with:  make project-iphone   -> DoddyiPhone.xcodeproj
+include:
+  - project.yml
+name: DoddyiPhone
+targets:
+  Doddy:
+    dependencies:REPLACE:
+      - target: DoddyWidgets
+      - target: DoddyShare
+      - package: DoddyCore
+        product: DoddyCore
+      - package: DoddyCore
+        product: DoddyDesignTokens
+      - package: DoddyCore
+        product: DoddyPersistence
+      - package: ElevenLabs
+      - package: LiveKit
+      - package: Porcupine
+        product: Porcupine
+# Only the iPhone app's scheme here; the watch app has its own in project.yml.
+schemes:REPLACE:
+  Doddy:
+    build:
+      targets:
+        Doddy: all
+    test:
+      targets:
+        - DoddyTests
+        - DoddyUITests

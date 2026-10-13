@@ -129,6 +129,16 @@ struct SettingsView: View {
                     Button("Forget all of this", role: .destructive) { confirmForget = true }
                         .disabled(profiles.profile.isEmpty)
                         .accessibilityIdentifier("settings.forgetProfile")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            "Forget your name and preferences?",
+                            isPresented: $confirmForget, titleVisibility: .visible
+                        ) {
+                            Button("Forget", role: .destructive) { Task { await forgetProfile() } }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("This removes what you told Doddy in the introduction from this iPhone. Your saved memories stay.")
+                        }
                     if let forgetError {
                         Label(forgetError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
@@ -186,6 +196,18 @@ struct SettingsView: View {
                     }
                     .disabled(!store.isStorageAvailable)
                     .accessibilityIdentifier("settings.restoreMemories")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            restorePlan.map(RestoreCopy.title) ?? "",
+                            isPresented: Binding(get: { restorePlan != nil }, set: { if !$0 { restorePlan = nil } }),
+                            titleVisibility: .visible,
+                            presenting: restorePlan
+                        ) { plan in
+                            Button(RestoreCopy.action(plan)) { Task { await restore(plan) } }
+                            Button("Cancel", role: .cancel) { restorePlan = nil }
+                        } message: { plan in
+                            Text(RestoreCopy.details(plan))
+                        }
                     if let restoreMessage {
                         Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
                             .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
@@ -193,6 +215,16 @@ struct SettingsView: View {
                     Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
                         .disabled(!hasSavedAnything)
                         .accessibilityIdentifier("settings.deleteAll")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            deleteAllTitle,
+                            isPresented: $confirmDeleteAll, titleVisibility: .visible
+                        ) {
+                            Button("Delete all", role: .destructive) { Task { await deleteAll() } }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
+                        }
                     if let deleteError {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
@@ -252,7 +284,8 @@ struct SettingsView: View {
                     }
                     .accessibilityIdentifier("settings.dataFlow")
                     StatusRow(title: "Account required", value: privacy.accountRequired ? "Yes" : "No")
-                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? "While talking (ElevenLabs, token server), when you use Connected Apps, and when you use Ask Doddy" : "None")
+                    // From the same rows as What leaves this iPhone, for the settings right now (ADR-447).
+                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? DataFlow.networkSummary(.current()) : "None")
                     StatusRow(
                         title: "Microphone",
                         value: !privacy.microphoneUsed ? "Not used"
@@ -260,7 +293,7 @@ struct SettingsView: View {
                             : listenOnOpen ? "Only while talking. A conversation starts when you open Doddy; turn that off under Voice"
                             : "Only while talking")
                     StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
-                    StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? "ElevenLabs (voice); OpenAI if Ask Doddy is on" : "Off (not built)")
+                    StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? DataFlow.cloudAISummary(.current()) : "Off (not built)")
                     StatusRow(title: "Sync", value: privacy.syncText)
                     // DataFlow (What leaves this iPhone) restates this paragraph row by row; change both together.
                     Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on \u{201C}Hey Doddy\u{201D}, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.")
@@ -386,7 +419,8 @@ struct SettingsView: View {
 
                 Section("Voice") {
                     PersonalityLinkRow()
-                    IslandStyleLinkRow()
+                    // The Dynamic Island and Lock Screen styles: iPhone only (ADR-432, ADR-453).
+                    if DeviceSupport.hasDynamicIsland { IslandStyleLinkRow() }
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
                     Text(listenOnOpen
@@ -541,6 +575,16 @@ struct SettingsView: View {
                             if wanted { showAssistantConsent = true } else { assistantConsent = false }
                         }))
                         .accessibilityIdentifier("settings.assistantConsent")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            "Turn on Ask Doddy?",
+                            isPresented: $showAssistantConsent, titleVisibility: .visible
+                        ) {
+                            Button("Turn on") { assistantConsent = true }
+                            Button("Not now", role: .cancel) {}
+                        } message: {
+                            Text("When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to OpenAI to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. We ask OpenAI not to keep the reply, but we can't verify that. Voice conversations are separate. You can turn this off at any time.")
+                        }
                     Toggle("Use relevant saved notes", isOn: $assistantUseNotes)
                         .disabled(!assistantConsent)
                         .accessibilityIdentifier("settings.assistantUseNotes")
@@ -605,46 +649,8 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
-            .confirmationDialog(
-                "Turn on Ask Doddy?",
-                isPresented: $showAssistantConsent, titleVisibility: .visible
-            ) {
-                Button("Turn on") { assistantConsent = true }
-                Button("Not now", role: .cancel) {}
-            } message: {
-                Text("When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to OpenAI to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. We ask OpenAI not to keep the reply, but we can't verify that. Voice conversations are separate. You can turn this off at any time.")
-            }
-            .confirmationDialog(
-                deleteAllTitle,
-                isPresented: $confirmDeleteAll, titleVisibility: .visible
-            ) {
-                Button("Delete all", role: .destructive) { Task { await deleteAll() } }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too.")
-            }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)
-            }
-            .confirmationDialog(
-                restorePlan.map(RestoreCopy.title) ?? "",
-                isPresented: Binding(get: { restorePlan != nil }, set: { if !$0 { restorePlan = nil } }),
-                titleVisibility: .visible,
-                presenting: restorePlan
-            ) { plan in
-                Button(RestoreCopy.action(plan)) { Task { await restore(plan) } }
-                Button("Cancel", role: .cancel) { restorePlan = nil }
-            } message: { plan in
-                Text(RestoreCopy.details(plan))
-            }
-            .confirmationDialog(
-                "Forget your name and preferences?",
-                isPresented: $confirmForget, titleVisibility: .visible
-            ) {
-                Button("Forget", role: .destructive) { Task { await forgetProfile() } }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This removes what you told Doddy in the introduction from this iPhone. Your saved memories stay.")
             }
             .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
         }
