@@ -28,6 +28,14 @@
 	<string>$(DODDY_CLOUD_CONTAINER)</string>
 	<key>CKSharingSupported</key>
 	<true/>
+	<!-- One Doddy window at a time (ADR-436). iPad would otherwise allow several windows, each
+	     bound to the same conversation router, so two voice screens could open at once. SwiftUI
+	     supplies the scene itself; the app delegate still picks the share-accept scene delegate. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

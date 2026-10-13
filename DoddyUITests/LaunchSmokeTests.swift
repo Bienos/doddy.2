@@ -164,7 +164,9 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testBackTapCardCanBeDeferredAndNeverShowsAsVerified() {
+    func testBackTapCardCanBeDeferredAndNeverShowsAsVerified() throws {
+        // Back Tap is an iPhone setting; iPad hides it (ADR-337, covered by the test below).
+        try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .pad, "Back Tap is iPhone-only")
         let app = launch(onboardingDone: true, backTapSetup: "notStarted")
         XCTAssertTrue(app.buttons["home.backTap.later"].waitForExistence(timeout: 5))
         for _ in 0..<4 {
@@ -184,6 +186,29 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.reveal(status))
         XCTAssertTrue(status.label.contains("Set up later"))
         XCTAssertFalse(status.label.localizedCaseInsensitiveContains("verified"))
+    }
+
+    /// iPad full screen (ADR-337, ADR-430): a sidebar in place of the tab bar, and no Back Tap
+    /// card or row, even with Back Tap set up as "not started".
+    @MainActor
+    func testIPadHasASidebarAndNoBackTap() throws {
+        try XCTSkipUnless(UIDevice.current.userInterfaceIdiom == .pad, "iPad only")
+        let app = launch(onboardingDone: true, backTapSetup: "notStarted")
+        let memories = app.descendants(matching: .any)["tab.memories"].firstMatch
+        XCTAssertTrue(memories.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.buttons["home.backTap.setup"].exists)
+        XCTAssertFalse(app.buttons["home.backTap.later"].exists)
+
+        app.descendants(matching: .any)["tab.settings"].firstMatch.tap()
+        // The Back Tap row would sit in the same section as this switch, so look once it is on screen.
+        let siri = app.switches["settings.siriReadsNotes"]
+        for _ in 0..<8 {
+            if siri.exists && siri.isHittable { break }
+            app.swipeUp()
+        }
+        XCTAssertTrue(siri.exists, app.debugDescription)
+        XCTAssertFalse(app.descendants(matching: .any)["settings.backTap.status"].firstMatch.exists)
+        XCTAssertFalse(app.buttons["settings.backTap"].exists)
     }
 
     @MainActor

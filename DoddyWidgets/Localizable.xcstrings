@@ -147,10 +147,40 @@
     "Kept in Doddy on this iPhone": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept in Doddy on this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept in Doddy on this iPhone"
+                }
+              }
+            }
+          }
+        },
         "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapisane w Doddym na tym iPhonie"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisane w Doddym na tym iPadzie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisane w Doddym na tym iPhonie"
+                }
+              }
+            }
           }
         }
       }
@@ -206,6 +236,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nowa notatka"
+          }
+        }
+      }
+    },
+    "New note in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa notatka w Doddym"
           }
         }
       }

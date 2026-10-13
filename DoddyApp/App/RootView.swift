@@ -351,30 +351,57 @@ struct RootView: View {
         }
     }
 
-    private var tabContent: some View {
-        VStack(spacing: 0) {
-            TabView(selection: $selectedTab) {
-                HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
-                    .tabItem { Label("Home", systemImage: "house") }
-                    .tag(AppTab.home)
-                MemoriesView(showFind: $showFind)
-                    .tabItem { Label("Memories", systemImage: "note.text") }
-                    .tag(AppTab.memories)
-                SettingsView()
-                    .tabItem { Label("Settings", systemImage: "gearshape") }
-                    .tag(AppTab.settings)
+    @ViewBuilder private var tabContent: some View {
+        if horizontalSizeClass == .regular && DeviceSupport.hasSidebar {
+            // iPad on a wide screen (ADR-430): a sidebar instead of the tab bar.
+            SidebarLayout(selectedTab: $selectedTab, homePath: $homePath) {
+                VStack(spacing: 0) {
+                    selectedScreen
+                        // One readable column (ADR-337) inside the detail column.
+                        .frame(maxWidth: 760)
+                        .frame(maxWidth: .infinity)
+                    if let deleted = store.recentlyDeleted {
+                        UndoDeleteBar(deleted: deleted)
+                    }
+                }
+                .background(Theme.canvas)
             }
-            .toolbar(.hidden, for: .tabBar)
-            // iPad (ADR-337): one readable column in the middle of a wide screen.
-            .frame(maxWidth: horizontalSizeClass == .regular ? 760 : .infinity)
-            .frame(maxWidth: .infinity)
-            .background(Theme.canvas)
-            if let deleted = store.recentlyDeleted {
-                UndoDeleteBar(deleted: deleted)
+        } else {
+            VStack(spacing: 0) {
+                TabView(selection: $selectedTab) {
+                    HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
+                        .tabItem { Label("Home", systemImage: "house") }
+                        .tag(AppTab.home)
+                    MemoriesView(showFind: $showFind)
+                        .tabItem { Label("Memories", systemImage: "note.text") }
+                        .tag(AppTab.memories)
+                    SettingsView()
+                        .tabItem { Label("Settings", systemImage: "gearshape") }
+                        .tag(AppTab.settings)
+                }
+                .toolbar(.hidden, for: .tabBar)
+                // A large iPhone in landscape is also regular width: one readable column (ADR-337).
+                .frame(maxWidth: horizontalSizeClass == .regular ? 760 : .infinity)
+                .frame(maxWidth: .infinity)
+                .background(Theme.canvas)
+                if let deleted = store.recentlyDeleted {
+                    UndoDeleteBar(deleted: deleted)
+                }
+                // A sibling reserves real viewport space. A TabView-level safeAreaInset
+                // left nested NavigationStack's final action behind the bar on iOS 27.
+                DoddyTabBar(selectedTab: $selectedTab)
             }
-            // A sibling reserves real viewport space. A TabView-level safeAreaInset
-            // left nested NavigationStack's final action behind the bar on iOS 27.
-            DoddyTabBar(selectedTab: $selectedTab)
+        }
+    }
+
+    /// The sidebar's detail column shows one screen at a time. Home's path lives here, so Home
+    /// keeps its place across a switch; Memories and Settings start at their top, as after a
+    /// relaunch.
+    @ViewBuilder private var selectedScreen: some View {
+        switch selectedTab {
+        case .home: HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
+        case .memories: MemoriesView(showFind: $showFind)
+        case .settings: SettingsView()
         }
     }
 }

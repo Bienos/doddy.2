@@ -38,6 +38,8 @@ struct VoiceView: View {
                     ProgressView()
                 }
             }
+            // A full-screen cover on iPad: one readable column, the paper still edge to edge (ADR-437).
+            .readableColumn()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.canvas)
             .navigationTitle("Talk to Doddy")

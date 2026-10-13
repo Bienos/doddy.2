@@ -129,6 +129,16 @@ struct SettingsView: View {
                     Button("Forget all of this", role: .destructive) { confirmForget = true }
                         .disabled(profiles.profile.isEmpty)
                         .accessibilityIdentifier("settings.forgetProfile")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            "Forget your name and preferences?",
+                            isPresented: $confirmForget, titleVisibility: .visible
+                        ) {
+                            Button("Forget", role: .destructive) { Task { await forgetProfile() } }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("This removes what you told Doddy in the introduction from this iPhone. Your saved memories stay.")
+                        }
                     if let forgetError {
                         Label(forgetError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
@@ -186,6 +196,18 @@ struct SettingsView: View {
                     }
                     .disabled(!store.isStorageAvailable)
                     .accessibilityIdentifier("settings.restoreMemories")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            restorePlan.map(RestoreCopy.title) ?? "",
+                            isPresented: Binding(get: { restorePlan != nil }, set: { if !$0 { restorePlan = nil } }),
+                            titleVisibility: .visible,
+                            presenting: restorePlan
+                        ) { plan in
+                            Button(RestoreCopy.action(plan)) { Task { await restore(plan) } }
+                            Button("Cancel", role: .cancel) { restorePlan = nil }
+                        } message: { plan in
+                            Text(RestoreCopy.details(plan))
+                        }
                     if let restoreMessage {
                         Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
                             .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
@@ -193,6 +215,16 @@ struct SettingsView: View {
                     Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
                         .disabled(!hasSavedAnything)
                         .accessibilityIdentifier("settings.deleteAll")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            deleteAllTitle,
+                            isPresented: $confirmDeleteAll, titleVisibility: .visible
+                        ) {
+                            Button("Delete all", role: .destructive) { Task { await deleteAll() } }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
+                        }
                     if let deleteError {
                         Label(deleteError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
@@ -387,7 +419,8 @@ struct SettingsView: View {
 
                 Section("Voice") {
                     PersonalityLinkRow()
-                    IslandStyleLinkRow()
+                    // The Dynamic Island and Lock Screen styles: iPhone only (ADR-432, ADR-453).
+                    if DeviceSupport.hasDynamicIsland { IslandStyleLinkRow() }
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
                     Text(listenOnOpen
@@ -542,6 +575,16 @@ struct SettingsView: View {
                             if wanted { showAssistantConsent = true } else { assistantConsent = false }
                         }))
                         .accessibilityIdentifier("settings.assistantConsent")
+                        // On the row that opens it, so on iPad its popover points here (ADR-437).
+                        .confirmationDialog(
+                            "Turn on Ask Doddy?",
+                            isPresented: $showAssistantConsent, titleVisibility: .visible
+                        ) {
+                            Button("Turn on") { assistantConsent = true }
+                            Button("Not now", role: .cancel) {}
+                        } message: {
+                            Text("When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to OpenAI to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. We ask OpenAI not to keep the reply, but we can't verify that. Voice conversations are separate. You can turn this off at any time.")
+                        }
                     Toggle("Use relevant saved notes", isOn: $assistantUseNotes)
                         .disabled(!assistantConsent)
                         .accessibilityIdentifier("settings.assistantUseNotes")
@@ -606,46 +649,8 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
-            .confirmationDialog(
-                "Turn on Ask Doddy?",
-                isPresented: $showAssistantConsent, titleVisibility: .visible
-            ) {
-                Button("Turn on") { assistantConsent = true }
-                Button("Not now", role: .cancel) {}
-            } message: {
-                Text("When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to OpenAI to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. We ask OpenAI not to keep the reply, but we can't verify that. Voice conversations are separate. You can turn this off at any time.")
-            }
-            .confirmationDialog(
-                deleteAllTitle,
-                isPresented: $confirmDeleteAll, titleVisibility: .visible
-            ) {
-                Button("Delete all", role: .destructive) { Task { await deleteAll() } }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
-            }
             .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
                 prepareRestore(result)
-            }
-            .confirmationDialog(
-                restorePlan.map(RestoreCopy.title) ?? "",
-                isPresented: Binding(get: { restorePlan != nil }, set: { if !$0 { restorePlan = nil } }),
-                titleVisibility: .visible,
-                presenting: restorePlan
-            ) { plan in
-                Button(RestoreCopy.action(plan)) { Task { await restore(plan) } }
-                Button("Cancel", role: .cancel) { restorePlan = nil }
-            } message: { plan in
-                Text(RestoreCopy.details(plan))
-            }
-            .confirmationDialog(
-                "Forget your name and preferences?",
-                isPresented: $confirmForget, titleVisibility: .visible
-            ) {
-                Button("Forget", role: .destructive) { Task { await forgetProfile() } }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This removes what you told Doddy in the introduction from this iPhone. Your saved memories stay.")
             }
             .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
         }

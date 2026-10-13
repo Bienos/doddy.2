@@ -24,6 +24,8 @@ struct AskView: View {
                 Divider()
                 composer
             }
+            // A full-screen cover on iPad: one readable column (ADR-437).
+            .readableColumn()
             .background(Theme.canvas)
             .navigationTitle("Ask Doddy")
             .navigationBarTitleDisplayMode(.inline)
