@@ -11,8 +11,7 @@ and this guide. Since 13 October the default branch holds the iOS compile fixes 
 What is known about it, honestly:
 - The default branch compiles on Xcode 26.6 in GitHub CI (iOS Simulator), and the unit tests and all 26 UI
   tests pass there (run 38325945549, #69's head before it merged).
-- The icon changes only the asset catalogs. A CI run of this branch with the icon was still going when this
-  was written.
+- This branch with the icon also builds and passes every test in CI (run 38322023821, 13 October).
 - Nothing has been installed on a real iPhone. Signing has never been done. Expect Xcode to ask for things the
   first time.
 
