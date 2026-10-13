@@ -1,4 +1,20 @@
-# Voice provider test switch: ElevenLabs vs OpenAI Realtime (ADR-265)
+# Voice provider: OpenAI Realtime (default) or ElevenLabs (ADR-265, ADR-442)
+
+## Update 2026-10-13 (ADR-442): OpenAI Realtime is the default, with a model picker
+
+Owner: change only the model, to Realtime, because it is cheaper; keep ElevenLabs; "a switcher inside the app between realtime 2.1 and 2.1 mini".
+
+- **Default:** no stored choice → OpenAI Realtime **if a token server is set** (the OpenAI key lives there), otherwise ElevenLabs (which is the only one that can start without a token server). A choice made on Home always wins (`VoiceProvider.effective`).
+- **Model picker on Home** (shown while OpenAI is the voice): `2.1` = `gpt-realtime-2.1`, `2.1 mini` = `gpt-realtime-2.1-mini`; default **mini** (about a third of the audio price: $10/$20 vs $32/$64 per 1M audio tokens in/out, `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md`; OpenAI's model page for mini confirms $10/$20). Read when the next conversation starts.
+- **Token server** takes `{"provider":"openai","model":"…"}`, refuses any model outside the two-id allowlist (`400 unknown_model`, nothing sent to OpenAI), and falls back to `OPENAI_REALTIME_MODEL` (default mini) when the app names none. The spending cap is still the OpenAI project's own limit.
+- **Privacy copy** that said conversations go to ElevenLabs now names OpenAI or ElevenLabs (English and Polish, microphone prompt included); the What-leaves-this-iPhone ElevenLabs row is off when OpenAI is running the voice. Retention of OpenAI Realtime audio/transcripts is **still not verified**.
+- **Cost, honestly:** these are list prices per audio token, not a measured bill per minute. Measure real billed minutes on both models before claiming a saving.
+- **Not done / known gaps:** weather, Wikipedia and place lookup still only work on ElevenLabs (they are ElevenLabs server tools; the user is told). Voice choice/speed/expressiveness in Settings apply to ElevenLabs only. Phone calls, the Hey Doddy wake word's conversation provider logic and everything else are unchanged. Mini's Polish and tool-calling quality are for the owner to judge on a device.
+- **Tests run:** `node --test server/voice-token/test/handler.test.js` 20 pass (14 before + 6: model pick, both allowed models, allowlist refusal incl. non-string, ElevenLabs ignores a model, default is mini). `scripts/voice_agent_spec.py check`, `scripts/check_forbidden_capabilities.sh` and `tools/build_strings_catalog.py --check` pass. **Swift (DoddyCore tests, app) NOT RUN: no Swift toolchain in this environment; the new tests in `OpenAIRealtimeTests.swift` are unrun and the app edits are unbuilt.**
+
+---
+
+Everything below is the original ADR-265 test-switch description (2026-10-11); where it says "test", "ElevenLabs is the default" or "default `gpt-realtime`", the update above governs.
 
 **Status:** built for testing. Token server and DoddyCore logic tested on Linux. **The app code is not
 compiled with Xcode, has never connected to OpenAI and has never been heard on a device.**

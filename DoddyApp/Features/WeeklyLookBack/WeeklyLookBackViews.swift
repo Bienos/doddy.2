@@ -140,7 +140,7 @@ struct WeeklyLookBackSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                settings.hour = parts.hour ?? 18
+                settings.hour = parts.hour ?? 19
                 settings.minute = parts.minute ?? 0
             })
     }

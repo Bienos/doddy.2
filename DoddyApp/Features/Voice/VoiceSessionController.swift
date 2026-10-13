@@ -148,6 +148,11 @@ final class VoiceSessionController {
         didSet {
             Self.conversationInProgress = isLive
             syncIsland()
+            // Listening comes only from the provider's own event, so this marks a conversation
+            // that really connected, not a tap that failed (ADR-326).
+            if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
+                UserDefaults.standard.set(true, forKey: PreferenceKey.hadFirstConversation)
+            }
         }
     }
     /// True while any conversation holds the microphone (the island keeps it alive in other
@@ -253,8 +258,10 @@ final class VoiceSessionController {
     /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
     private let devices: any DeviceConnecting
     private var conversation: (any LiveVoiceLink)?
-    /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
+    /// Who runs the conversation now (Home's voice switch, read when it starts; ADR-265, ADR-442).
     private(set) var provider: VoiceProvider = .elevenLabs
+    /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
+    private(set) var openAIModel: OpenAIRealtimeModel = .default
     private var startedAt: Date?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
@@ -444,7 +451,12 @@ final class VoiceSessionController {
             WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
                 afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
         ]
-        provider = VoiceProvider(stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey))
+        // OpenAI Realtime is the default where the token server is set (ADR-442); a choice on Home wins.
+        let tokenServerSet: Bool
+        if case .tokenServer = mode { tokenServerSet = true } else { tokenServerSet = false }
+        provider = VoiceProvider.effective(
+            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: tokenServerSet)
+        openAIModel = OpenAIRealtimeModel(stored: UserDefaults.standard.string(forKey: OpenAIRealtimeModel.preferenceKey))
         if provider == .openAIRealtime {
             await startOpenAI(mode, variables: variables)
             return
@@ -577,11 +589,11 @@ final class VoiceSessionController {
     private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
         let attempt = startAttempt
         guard case .tokenServer(let endpoint, let accessCode) = mode else {
-            fail("The OpenAI test voice needs Doddy's token server. Add it in Settings → Voice, or switch Home back to ElevenLabs.")
+            fail("OpenAI's voice needs Doddy's token server. Add it in Settings → Voice, or switch Home to ElevenLabs.")
             return
         }
         guard let spec = OpenAISpec.bundled() else {
-            fail("This build is missing Doddy's voice spec, so the OpenAI test voice can't start. Switch Home back to ElevenLabs.")
+            fail("This build is missing Doddy's voice spec, so OpenAI's voice can't start. Switch Home to ElevenLabs.")
             return
         }
         let sessionUpdate: String
@@ -589,7 +601,7 @@ final class VoiceSessionController {
             let instructions = try RealtimeInstructions.render(spec.template, variables: variables)
             sessionUpdate = try OpenAIRealtimeWire.sessionUpdate(instructions: instructions, toolsJSON: spec.tools, eagerness: .high)
         } catch {
-            fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home back to ElevenLabs.")
+            fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home to ElevenLabs.")
             return
         }
         // The same opening the ElevenLabs agent gets (ADR-254: the "Hey Doddy" greeting or his usual one).
@@ -598,7 +610,7 @@ final class VoiceSessionController {
 
         let grant: OpenAIRealtimeGrant
         do throws(VoiceTokenError) {
-            grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant()
+            grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant(model: openAIModel)
         } catch {
             if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return
@@ -631,9 +643,9 @@ final class VoiceSessionController {
     private static func openAITokenMessage(_ error: VoiceTokenError) -> String {
         switch error {
         case .badResponse:
-            "The token server doesn't offer the OpenAI test voice yet. Redeploy server/voice-token and set OPENAI_API_KEY there, or switch Home back to ElevenLabs."
+            "The token server doesn't offer the OpenAI voice yet. Redeploy server/voice-token and set OPENAI_API_KEY there, or switch Home to ElevenLabs."
         case .serverNotConfigured:
-            "OPENAI_API_KEY isn't set on the token server, so the OpenAI test voice can't start. Switch Home back to ElevenLabs to talk now."
+            "OPENAI_API_KEY isn't set on the token server, so the OpenAI voice can't start. Switch Home to ElevenLabs to talk now."
         default:
             VoiceTokenServer.message(for: error)
         }
@@ -671,7 +683,7 @@ final class VoiceSessionController {
     /// so instead of making up an answer.
     private func handleOpenAICall(_ call: RealtimeFunctionCall) async {
         if openAIWebTools.contains(call.name) {
-            await reply(call.callID, "Weather and Wikipedia don't work in the OpenAI voice test. Tell the user that in one sentence, and that switching Home back to ElevenLabs brings them back.", isError: true)
+            await reply(call.callID, "Weather and Wikipedia don't work with the OpenAI voice. Tell the user that in one sentence, and that switching Home to ElevenLabs brings them back.", isError: true)
             return
         }
         await handle(ClientToolCallEvent(toolName: call.name, toolCallId: call.callID, parametersData: call.argumentsData, eventId: 0, expectsResponse: true))
