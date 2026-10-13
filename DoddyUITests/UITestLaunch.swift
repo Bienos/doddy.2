@@ -28,6 +28,9 @@ enum UITestLaunch {
         arguments += ["-appearance", appearance, "-backTapSetupStatus", backTapSetup]
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
         arguments += ["-voiceAgentID", ""]
+        // No built-in server addresses (ServiceAddresses): tests never reach the live servers, and
+        // voice stays in development mode, so it still stops at "Couldn't connect".
+        arguments += ["-voiceTokenServer", "", "-gatewayAddress", "", "-connectedAppsServerURL", ""]
         arguments += ["-openingScene", opening ? "YES" : "NO", "-listenOnOpen", listen ? "YES" : "NO"]
         // The opening's whole timeline is 2.4 s, and on CI the launch and the first idle wait can
         // take longer than that, so a test sometimes looked only after it had ended. Played 6×

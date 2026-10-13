@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "description": "Doddy M2 assistant gateway: holds the provider key, authenticates invited devices, rate-limits, and calls the model. Not deployed.",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "start": "node server.js",
     "test": "node --test \"test/*.test.js\"",
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },

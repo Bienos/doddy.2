@@ -329,12 +329,15 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    // Shipped builds use the built-in address (ServiceAddresses); only the token is typed.
+                    #if DEBUG
                     TextField("Server address (https://…)", text: $connectedAppsServerURL)
                         .font(.body.monospaced())
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("settings.connectedAppsServer")
+                    #endif
                     if hasSessionToken {
                         StatusRow(title: "Session token", value: "Saved in Keychain")
                         Button("Remove session token", role: .destructive) {
@@ -432,6 +435,10 @@ struct SettingsView: View {
                     VoiceProviderPicker(idPrefix: "settings")
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
+                    // Shipped builds have no token server and no access code: Talk to Doddy uses the
+                    // development agent directly (owner, 2026-10-13: "public agent, no code"). A debug
+                    // build can still set a token server, an access code or another agent.
+                    #if DEBUG
                     TextField("Token server (https://…)", text: $voiceTokenServer)
                         .font(.body.monospaced())
                         .keyboardType(.URL)
@@ -465,6 +472,7 @@ struct SettingsView: View {
                             Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
                         }
                     }
+                    #endif
                     Text("With a token server, Doddy sends only your access code to it to get a one-conversation pass; the conversation itself goes to OpenAI, or ElevenLabs if you switch Home's voice to it. Without one, only ElevenLabs works, and the development agent is open to anyone who has its ID. Conversations count toward the owner's OpenAI or ElevenLabs usage.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -588,6 +596,8 @@ struct SettingsView: View {
                     Toggle("Use relevant saved notes", isOn: $assistantUseNotes)
                         .disabled(!assistantConsent)
                         .accessibilityIdentifier("settings.assistantUseNotes")
+                    // Shipped builds use the built-in gateway (ServiceAddresses); only the invite is typed.
+                    #if DEBUG
                     TextField("Gateway address (https://…)", text: $gatewayAddress)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
@@ -597,6 +607,7 @@ struct SettingsView: View {
                         Label("That isn't a valid https address.", systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
+                    #endif
                     SecureField(hasInviteCode ? "Invite code saved. Enter a new one to replace it" : "Invite code", text: $inviteDraft)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()

@@ -1,11 +1,11 @@
 import DoddyCore
 import Foundation
 
-/// Where the Doddy messaging server (`server/messaging`) lives. None is deployed yet (S1 status),
-/// so the default is empty and its features report "needs setup" until an address is entered.
+/// Where the Doddy messaging server (`server/messaging`) lives: Render `doddy-messaging`
+/// (GO_LIVE_RUNBOOK_2026-10-13). Its features still say what's missing (push, texts) until the
+/// server has those keys.
 enum ServerConfig {
-    /// Fill in once `render.yaml` is applied, e.g. `https://doddy-messaging.onrender.com`.
-    static let defaultBaseURL = ""
+    static let defaultBaseURL = ServiceAddresses.messaging
 
     /// Settings → Notifications and texts lets a development build point at a different server.
     /// The address typed in Settings counts in debug builds only (ADR-175); shipped builds use

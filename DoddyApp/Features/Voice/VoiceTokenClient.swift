@@ -28,7 +28,9 @@ struct VoiceTokenClient: Sendable {
     }
 
     private func post(_ body: Data?) async throws(VoiceTokenError) -> (Int, Data) {
-        var request = URLRequest(url: endpoint, timeoutInterval: 15)
+        // 60 s, not 15: the token server runs on Render's free plan, which sleeps when idle and
+        // takes up to about a minute to wake. The voice screen can still be closed meanwhile.
+        var request = URLRequest(url: endpoint, timeoutInterval: 60)
         request.httpMethod = "POST"
         request.setValue("Bearer \(accessCode)", forHTTPHeaderField: "Authorization")
         if let body {
