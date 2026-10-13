@@ -277,6 +277,18 @@ public enum OpeningScene {
         reducedMotion ? Beat.stillEnd : Beat.end
     }
 
+    /// The slowest clock a launch may ask for (`-openingTimeScale`, UI tests only).
+    public static let maxTimeScale = 10.0
+
+    /// Scene time for `elapsed` wall-clock seconds. A UI test plays the opening slower so it is still
+    /// on screen when the test first looks at the app (launch and the first idle wait can take
+    /// longer than the whole 2.4 s timeline on CI). Anything missing, below 1 or not a number plays
+    /// at the real speed; anything above `maxTimeScale` is held to it.
+    public static func sceneTime(elapsed: TimeInterval, timeScale: Double) -> TimeInterval {
+        let scale = timeScale.isFinite ? min(max(timeScale, 1), maxTimeScale) : 1
+        return elapsed / scale
+    }
+
     public static func isFinished(at t: TimeInterval, reducedMotion: Bool) -> Bool {
         t >= duration(reducedMotion: reducedMotion)
     }

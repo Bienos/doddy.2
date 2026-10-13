@@ -370,4 +370,19 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertGreaterThan(Ease.backOut(0.7), 1, "overshoots")
         XCTAssertEqual(StagePoint.bezierHeading(StagePoint(x: 0, y: 0), StagePoint(x: 1, y: 0), StagePoint(x: 2, y: 0), 0.5), 0, accuracy: 1e-9)
     }
+
+    func testATestLaunchCanSlowTheClockButNeverSpeedItUp() {
+        // Real speed: scene time is wall-clock time.
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 1.2, timeScale: 1), 1.2)
+        // A UI test's slower clock: the 2.4 s timeline lasts 12 s, and still ends.
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 12, timeScale: 5), Beat.end, accuracy: 1e-9)
+        XCTAssertTrue(OpeningScene.isFinished(at: OpeningScene.sceneTime(elapsed: 12, timeScale: 5), reducedMotion: false))
+        XCTAssertFalse(OpeningScene.isFinished(at: OpeningScene.sceneTime(elapsed: 11, timeScale: 5), reducedMotion: false))
+        // Missing (0), below 1, or not a number: real speed. Above the limit: held to it.
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: 0), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: 0.25), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: .nan), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: .infinity), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 20, timeScale: 1000), 20 / OpeningScene.maxTimeScale, accuracy: 1e-9)
+    }
 }
