@@ -43,7 +43,7 @@ One agent per language made each table (`l10n/site/<code>.json`, 187 strings). E
 1. **"A mate in your pocket"** (film chapter 1:05) is a variant of the tagline. Kept in English in French, Portuguese and Polish; translated in the other languages. Choose one rule.
 2. **Length in buttons.** "Join early access" is the header button and is long in several languages (Portuguese, German, Polish, French). The header wraps onto a second row on phones in five of them. Shorter wording needs an owner decision, because the same key also appears in the hero and the footer.
 3. **"In testing" and "Later, maybe"** are translated for meaning, not word for word (German "Testphase", Italian "In test"). Say if the English words should stay.
-4. **Polish "Paczkomat"** (parcel locker) is an InPost trademark. A generic term may be safer.
+4. **Polish parcel locker: changed.** "Paczkomat" is InPost's trademark, so the Polish page now says "skrytka na paczki" (parcel locker). Check the wording reads naturally.
 5. **The emergency line and the early-access wording** need the same native read as the app (see the app sections above).
 
 **Per language, the lines to check first**
