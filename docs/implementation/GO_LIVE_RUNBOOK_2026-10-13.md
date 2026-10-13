@@ -14,7 +14,7 @@ app). Never put them in chat, in git or in this file.
 | iOS app | GitHub Actions, Xcode 26.6 | Compiles; unit tests and all 26 UI tests pass (PR #69/#70) | n/a |
 | Backend (web search, Gmail, Calendar, Notion, Todoist, Outlook through Composio) | Render `doddy`, https://doddy-yaci.onrender.com, free plan | Up, live mode, signed tokens. Only the Calendar capability reports in; no account has been connected through it yet | OK |
 | Messaging server (notifications, texts, calls, daily news) | Render `doddy-messaging`, https://doddy-messaging-zw1n.onrender.com, free plan | Up (`/healthz` ok). **No worker service** exists, so nothing queued is ever sent. Twilio, APNs and the news keys are unknown | OK |
-| Voice token server | Vercel team `doddyyyy`, project `doddy-voice-token` | **Down: Vercel answers `402 Payment required / DEPLOYMENT_DISABLED`** | FAIL 402 |
+| Voice token server | Render `doddy-voice-token`, https://doddy-voice-token.onrender.com, free plan (moved from Vercel 2026-10-13, owner's choice) | Up (`/healthz` ok), branch `claude/affectionate-tesla-nqu0nj`, auto-deploy off. Answers `500 server_not_configured` until you add `ELEVENLABS_API_KEY` and `DODDY_ACCESS_CODES`. The old Vercel project still answers 402 | FAIL 500 until the two secrets are in |
 | Ask Doddy gateway (OpenAI) | Vercel team `doddyyyy`, project `doddy-gateway` | **Down: same 402** | FAIL 402 |
 | ElevenLabs voice agent | `agent_0501m4et27vyeawrwqfdxxfszfa6` | Live. **Authentication off**, recordings kept forever (`retention_days: -1`), at most 2 calls at once and 10 a day | n/a |
 | "Hey Doddy" | Picovoice, your own AccessKey typed into the app | Nothing to deploy; needs your key | n/a |
@@ -117,7 +117,7 @@ every recording is kept forever. Fix it in this order. Turning authentication on
 Checked 2026-10-13: all three variables below are already set on Vercel `doddy-voice-token`. The only thing
 stopping it is Vercel's 402. You have two ways out:
 - **A. Fix Vercel billing** (Part 2). Nothing else changes. Address: `https://doddy-voice-token.vercel.app`.
-- **B. Run it on Render instead**, on the free plan you already use. `server/voice-token/server.js` (added
+- **B. Run it on Render instead** (**chosen 2026-10-13; the service exists**), on the free plan you already use. `server/voice-token/server.js` (added
   2026-10-13) runs the same code as a plain Node process; steps are in `server/voice-token/README.md`,
   "Deploy on Render". You type `ELEVENLABS_API_KEY` and `DODDY_ACCESS_CODES` into Render yourself. The address
   becomes `https://<service>.onrender.com`. Free instances sleep, so the first try after a pause can fail; the

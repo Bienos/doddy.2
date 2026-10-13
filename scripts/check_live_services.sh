@@ -8,7 +8,7 @@ set -u
 
 BACKEND_URL="${DODDY_BACKEND_URL:-https://doddy-yaci.onrender.com}"
 MESSAGING_URL="${DODDY_MESSAGING_URL:-https://doddy-messaging-zw1n.onrender.com}"
-VOICE_TOKEN_URL="${DODDY_VOICE_TOKEN_URL:-https://doddy-voice-token.vercel.app}"
+VOICE_TOKEN_URL="${DODDY_VOICE_TOKEN_URL:-https://doddy-voice-token.onrender.com}"
 GATEWAY_URL="${DODDY_GATEWAY_URL:-https://doddy-gateway.vercel.app}"
 
 failures=0
@@ -37,7 +37,7 @@ probe messaging GET "$MESSAGING_URL/healthz" 200 \
   "Render service 'doddy-messaging' is down: check its Logs and DATABASE_URL."
 # A wrong code must get 401. 402 = Vercel disabled the deployment (billing); 500 = env vars missing.
 probe voice-token POST "$VOICE_TOKEN_URL/api/voice-token" 401 \
-  "402: fix Vercel billing (team doddyyyy). 500: set ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, DODDY_ACCESS_CODES and redeploy." \
+  "500 server_not_configured: add ELEVENLABS_API_KEY and DODDY_ACCESS_CODES in Render (doddy-voice-token -> Environment); Render redeploys on save." \
   -H 'authorization: Bearer not-a-real-code-000000'
 # An empty body must get 400 (invalidRequest). 503 = env vars missing; 402 = Vercel billing.
 probe gateway POST "$GATEWAY_URL/api/register" 400 \
