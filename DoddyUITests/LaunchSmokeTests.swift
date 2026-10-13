@@ -15,6 +15,8 @@ final class LaunchSmokeTests: XCTestCase {
         // default; most tests turn them off and start straight on Home (UITestLaunch).
         app.launchArguments += UITestLaunch.arguments(
             store: .inMemory, onboardingDone: onboardingDone, backTapSetup: backTapSetup, opening: opening, listen: listen)
+        // The Quick start (ADR-324) shows once per install; UserDefaults outlive the in-memory store.
+        if !onboardingDone { app.launchArguments += ["-quickStartOffered", "NO"] }
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launchArguments += extra
         app.launch()
@@ -27,6 +29,13 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["intro.begin"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["intro.skip"].exists)
         app.buttons["intro.skip"].tap()
+
+        // Quick start (ADR-324): the notifications are offered; with nothing saved, the profile isn't.
+        XCTAssertTrue(app.buttons["quickStart.notNow"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["quickStart.morning"].exists)
+        XCTAssertEqual(app.switches["quickStart.evening"].value as? String, "0", "Reminders is off on a fresh install")
+        XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
+        app.buttons["quickStart.notNow"].tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "A little less to carry.")
@@ -51,6 +60,17 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["profile.save"].waitForExistence(timeout: 5))
         app.buttons["profile.remove.help"].tap()
         app.buttons["profile.save"].tap()
+
+        // Sharing the saved answers with the voice is offered, but never pre-ticked (ADR-324).
+        let share = app.switches["quickStart.profile"]
+        XCTAssertTrue(app.reveal(share))
+        XCTAssertEqual(share.value as? String, "0")
+        // Quick start is a full-screen cover: the tab bar behind it still exists, so reveal(_:)
+        // would wait for Not now to rise above a bar that isn't in the way. Step until it's tappable.
+        let notNow = app.buttons["quickStart.notNow"]
+        XCTAssertTrue(notNow.waitForExistence(timeout: 5))
+        for _ in 0..<10 where !notNow.isHittable { app.scrollStep() }
+        notNow.tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")

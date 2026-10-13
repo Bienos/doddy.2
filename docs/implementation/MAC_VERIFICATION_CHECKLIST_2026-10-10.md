@@ -359,6 +359,15 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4r. Quick start (ADR-324, `QUICK_START_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| Q1 | Fresh install; skip the introduction | Quick start with three rows (08:00 weekdays, 21:00, Sunday 18:00 in the iPhone's clock style): morning and tidy-up ticked, the wrap-up **not** ticked (Reminders is off on a fresh install); no profile row. **Not now** goes to Home; Settings shows all three still off |
+| Q2 | Fresh install; skip; tap **Turn these on**; allow notifications | iOS asks once. "Morning check-in set." and the other two; Settings shows them on at those times; the pending notifications exist (relaunch and check Settings' receipts) |
+| Q3 | Fresh install; skip; **Turn these on**; don't allow | Three "Notifications are off for Doddy…" lines, nothing claimed as set |
+| Q5 | Fresh install; skip; **Turn these on** with the look-back ticked; allow notifications | "Weekly look-back set."; Settings › Weekly look-back shows Sunday 19:00, the tidy-up Sunday 18:00 |
+| Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |
