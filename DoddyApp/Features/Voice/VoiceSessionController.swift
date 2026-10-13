@@ -326,6 +326,26 @@ final class VoiceSessionController {
         callOwners.record(action.toolCallID, attempt: startAttempt)
         pendingAction = action
     }
+
+    /// Test seam only (audit 2026-10-12 §5 #10): a conversation that is live, as `start` leaves
+    /// it, with `link` standing in for the provider and no microphone. A new start number, like
+    /// every real start.
+    func beginForTesting(link: any LiveVoiceLink) {
+        startAttempt += 1
+        callOwners.forget(before: startAttempt)
+        conversation = link
+        phase = .listening
+    }
+
+    /// Test seam only: a tool call from the provider. The start it arrived in is taken now, as the
+    /// ElevenLabs and OpenAI callbacks do, and the returned task runs it.
+    @discardableResult
+    func receiveToolCallForTesting(name: String, id: String, parameters: String) -> Task<Void, Never> {
+        let attempt = startAttempt
+        let call = ClientToolCallEvent(
+            toolName: name, toolCallId: id, parametersData: Data(parameters.utf8), eventId: 0, expectsResponse: true)
+        return Task { await handle(call, attempt: attempt) }
+    }
     #endif
 
     var isLive: Bool {
