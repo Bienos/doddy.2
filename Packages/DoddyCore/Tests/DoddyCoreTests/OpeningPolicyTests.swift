@@ -6,12 +6,12 @@ final class OpeningPolicyTests: XCTestCase {
     private func conditions(
         sceneOn: Bool = true, listenOnOpen: Bool = true, characterArtHidden: Bool = false,
         reduceMotion: Bool = false, voiceOverRunning: Bool = false, atHome: Bool = true,
-        voiceAvailable: Bool = true, microphoneDenied: Bool = false, somethingIsOpen: Bool = false
+        voiceAvailable: Bool = true, microphoneAllowed: Bool = true, somethingIsOpen: Bool = false
     ) -> OpeningConditions {
         OpeningConditions(
             sceneOn: sceneOn, listenOnOpen: listenOnOpen, characterArtHidden: characterArtHidden,
             reduceMotion: reduceMotion, voiceOverRunning: voiceOverRunning, atHome: atHome,
-            voiceAvailable: voiceAvailable, microphoneDenied: microphoneDenied, somethingIsOpen: somethingIsOpen)
+            voiceAvailable: voiceAvailable, microphoneAllowed: microphoneAllowed, somethingIsOpen: somethingIsOpen)
     }
 
     func testWithListeningOffTheOpeningPlaysAndNothingListens() {
@@ -25,10 +25,19 @@ final class OpeningPolicyTests: XCTestCase {
     func testListeningOnOpenNeedsTheSwitchVoiceAndTheMicrophone() {
         XCTAssertEqual(OpeningPolicy.decide(conditions(), trigger: .coldLaunch), .scene(reducedMotion: false, thenListen: true))
         XCTAssertEqual(OpeningPolicy.decide(conditions(voiceAvailable: false), trigger: .coldLaunch), .scene(reducedMotion: false, thenListen: false))
-        XCTAssertEqual(OpeningPolicy.decide(conditions(microphoneDenied: true), trigger: .coldLaunch), .scene(reducedMotion: false, thenListen: false))
+        XCTAssertEqual(OpeningPolicy.decide(conditions(microphoneAllowed: false), trigger: .coldLaunch), .scene(reducedMotion: false, thenListen: false))
         XCTAssertEqual(OpeningPolicy.decide(conditions(sceneOn: false), trigger: .coldLaunch), .listenOnly)
         XCTAssertEqual(OpeningPolicy.decide(conditions(sceneOn: false, listenOnOpen: false), trigger: .coldLaunch), .nothing)
-        XCTAssertEqual(OpeningPolicy.decide(conditions(sceneOn: false, microphoneDenied: true), trigger: .coldLaunch), .nothing)
+        XCTAssertEqual(OpeningPolicy.decide(conditions(sceneOn: false, microphoneAllowed: false), trigger: .coldLaunch), .nothing)
+    }
+
+    /// ADR-325: a microphone never asked about counts as not allowed, so iOS's question comes after
+    /// the user's own tap on Talk to Doddy, never the moment the app opens.
+    func testNoConversationStartsByItselfBeforeTheMicrophoneIsAllowed() {
+        let notYetAsked = conditions(microphoneAllowed: false)
+        XCTAssertFalse(OpeningPolicy.decide(notYetAsked, trigger: .coldLaunch).listens)
+        XCTAssertFalse(OpeningPolicy.decide(notYetAsked, trigger: .returned(after: 3600)).listens)
+        XCTAssertTrue(OpeningPolicy.decide(conditions(microphoneAllowed: true), trigger: .coldLaunch).listens)
     }
 
     func testTheSceneGivesWayToAccessibilitySettings() {

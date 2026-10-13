@@ -76,7 +76,11 @@ final class DoddyArtTests: XCTestCase {
             let toggle = app.switches["settings.pauseAll"]
             // A lazy Form row: it exists only once scrolled to.
             XCTAssertTrue(app.reveal(toggle))
-            app.swipeUp()
+            // Doddy sits in the section's footer, beside its text. Step until that text is on screen:
+            // a swipeUp flings an unknown distance and the lazy Form drops a footer it has passed.
+            let footer = app.staticTexts.matching(NSPredicate(
+                format: "label BEGINSWITH %@", paused ? "Paused: Doddy" : "Each one starts off. Turning one on")).firstMatch
+            XCTAssertTrue(app.reveal(footer))
             XCTAssertEqual(marker("doddy.pose.sneaky_crouch", in: app).exists, paused, "paused: \(paused)")
             app.terminate()
         }
