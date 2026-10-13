@@ -40,7 +40,10 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
         // ADR-402: where Siri, the Action Button and the control are, without claiming they're set.
         XCTAssertTrue(app.descendants(matching: .any)["quickStart.quickAccess"].exists)
-        app.buttons["quickStart.notNow"].tap()
+        // The tips box can push Not now below the fold; the tab bar behind this cover isn't in the way.
+        let notNow = app.buttons["quickStart.notNow"]
+        for _ in 0..<10 where !notNow.isHittable { app.scrollStep() }
+        notNow.tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "A little less to carry.")
