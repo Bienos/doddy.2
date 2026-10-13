@@ -5,9 +5,12 @@ import Foundation
 /// `UserDefaults` read of these keys sees them without other changes. A debug build can still
 /// point Settings at another server; a shipped build always uses these, because the fields are
 /// hidden there and any address saved by an earlier build is dropped at launch.
+///
+/// Voice has no built-in token server: owner, 2026-10-13, "public agent, no code". Talk to Doddy
+/// uses the development agent directly, with no access code. `server/voice-token` stays deployed
+/// (`doddy-voice-token` on Render) for when ElevenLabs authentication is turned on: then add it
+/// back here and hide nothing else.
 enum ServiceAddresses {
-    /// `server/voice-token` on Render (`doddy-voice-token`).
-    static let voiceTokenServer = "https://doddy-voice-token.onrender.com"
     /// `gateway/` on Render (`doddy-gateway`): Ask Doddy.
     static let gateway = "https://doddy-gateway.onrender.com"
     /// `backend/` on Render (`doddy`): web search and online accounts.
@@ -17,12 +20,14 @@ enum ServiceAddresses {
 
     static func register(_ defaults: UserDefaults = .standard) {
         let builtIn = [
-            PreferenceKey.voiceTokenServer: voiceTokenServer,
             PreferenceKey.gatewayAddress: gateway,
             PreferenceKey.connectedAppsServerURL: connectedApps,
         ]
         #if !DEBUG
-        for key in builtIn.keys { defaults.removeObject(forKey: key) }
+        // An earlier build may have saved a token server: voice uses the development agent now.
+        for key in Array(builtIn.keys) + [PreferenceKey.voiceTokenServer, PreferenceKey.voiceAgentID] {
+            defaults.removeObject(forKey: key)
+        }
         #endif
         defaults.register(defaults: builtIn)
     }

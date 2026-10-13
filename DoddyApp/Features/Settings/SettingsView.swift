@@ -387,7 +387,9 @@ struct SettingsView: View {
                         .accessibilityIdentifier("settings.listenOnOpen.note")
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
-                    // Shipped builds use the built-in token server (ServiceAddresses); only the code is typed.
+                    // Shipped builds have no token server and no access code: Talk to Doddy uses the
+                    // development agent directly (owner, 2026-10-13: "public agent, no code"). A debug
+                    // build can still set a token server, an access code or another agent.
                     #if DEBUG
                     TextField("Token server (https://…)", text: $voiceTokenServer)
                         .font(.body.monospaced())
@@ -395,7 +397,6 @@ struct SettingsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("settings.voiceTokenServer")
-                    #endif
                     if hasAccessCode {
                         Button("Remove access code", role: .destructive) {
                             VoiceAccessCodeStore.delete()
@@ -423,6 +424,7 @@ struct SettingsView: View {
                             Button("Use the development agent") { voiceAgentID = VoiceConfig.developmentAgentID }
                         }
                     }
+                    #endif
                     Text("With a token server, Doddy sends only your access code to it to get a one-conversation pass; the conversation itself goes to ElevenLabs. Without one, the development agent is open to anyone who has its ID. Conversations count toward the owner's ElevenLabs minutes.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)

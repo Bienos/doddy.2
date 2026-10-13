@@ -391,3 +391,19 @@ milestone report CLAUDE.md asks for.
   ($7/month), so scheduled news and texts go out on time. Before 2026-11-10, also upgrade the database:
   Render → `doddy-messaging-db` → **Upgrade** → Basic-256mb ($6/month). Otherwise it's deleted and every messaging
   account goes with it.
+
+---
+
+## Update 2026-10-13 (voice, later): no access code (ADR-442 amendment)
+
+Owner decision: Talk to Doddy uses the **public development agent with no access code**. In the app, shipped builds
+have no token server, no access-code field and no agent-ID field. Steps 3.2 to 3.4 above are not used. What that means:
+
+- Anyone who finds the agent ID (`agent_0501m4et27vyeawrwqfdxxfszfa6`, inside the app) can talk to it on your
+  ElevenLabs minutes. The agent's own limits (10 calls a day, 2 at once) are the only cap, so check them in the
+  ElevenLabs dashboard if you expect heavy use.
+- Do **not** turn on "Enable authentication" in ElevenLabs: the app would then be refused. To go private later,
+  turn it on, add the token server's address back in `ServiceAddresses.swift` (`https://doddy-voice-token.onrender.com`,
+  register it with `PreferenceKey.voiceTokenServer`), and give each tester a code in `DODDY_ACCESS_CODES`.
+- The Render service `doddy-voice-token` still runs and costs nothing on the free plan; it's simply unused.
+- Debug builds from Xcode still show the Token server, Access code and agent ID fields for testing.
