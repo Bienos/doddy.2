@@ -24,7 +24,7 @@
     "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone."
   },
   "NSRemindersFullAccessUsageDescription": {
-    "de": "Doddy fügt eine Erinnerung erst hinzu, ändert, erledigt oder löscht sie erst, nachdem du auf Hinzufügen, Ändern, Als erledigt markieren oder Löschen getippt hast. Schalte das unter Einstellungen, Verbindungen aus.",
+    "de": "Doddy fügt eine Erinnerung erst hinzu, ändert, erledigt oder löscht sie erst, nachdem du auf Hinzufügen, Ändern, Erledigt oder Löschen getippt hast. Schalte das unter Einstellungen, Verbindungen aus.",
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
   },
   "NSSpeechRecognitionUsageDescription": {

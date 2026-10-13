@@ -33,6 +33,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | `claude/admiring-curie-bsuwv9-all` (PR #67) | Quick start, the first-use fixes, Home's first visit and the shorter intro merged on 13 Oct (#76). Still open: "Hey Doddy" with one tap, the guided first conversation, Quick start shortcuts and "Ask me about it" (#53, #56, #57, #58). | High for what's left: the wake word and the first conversation |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
+| `claude/inspiring-rubin-1agiui` | Screens in eight more languages (Spanish, German, French, Simplified Chinese, Japanese, Brazilian Portuguese, Italian, Croatian) as machine-translated drafts, the generator that builds them (ADR-458) and `l10n/REVIEW_NOTES.md`. No Swift code changes; the catalogs and both Info.plist language lists change. Not compiled, not seen on a device, not read by a native speaker. | None: no voice code or voice-agent change |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 | PR #44 `claude/peaceful-hopper-v3gx75` | Action status, session recovery, Stop listening, unfinished notes, "Listen until I finish" | High: changes the voice session |
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
@@ -47,6 +48,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 - **Vercel deployments are blocked** (account billing and the daily deployment limit), so the Vercel checks on PRs are red whatever the change. GitHub Actions runs again since 2026-10-12.
 
 ## Waiting on the owner
+- The emergency number in the privacy text for the eight new languages, and a native review of them (`l10n/REVIEW_NOTES.md`).
 - Whether notes sync between the Mac and the iPhone (today they never do).
 - The kitchen timer Live Activity.
 - A Pencil drawing canvas.
