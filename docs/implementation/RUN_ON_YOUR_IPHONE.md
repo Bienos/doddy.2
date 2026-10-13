@@ -49,10 +49,10 @@ The app ships with no server addresses (build board card "Point the app at its s
 
 | Settings section | Field | Value |
 | --- | --- | --- |
-| Voice | Token server | `https://sliondswemhneuzehpoq.supabase.co/functions/v1/voice-token` (Supabase, since 13 Oct) |
-| Voice | Access code | a code you put in that function's `DODDY_ACCESS_CODES` secret in the Supabase dashboard |
-| Ask Doddy (typed questions) | Gateway address | `https://doddy-gateway.vercel.app` |
-| Ask Doddy (typed questions) | Invite code | the invite code you were given privately (`M2_STATUS.md`) |
+| Voice | Token server | `https://doddy-voice-token.onrender.com/api/voice-token` (Render, since 13 Oct) |
+| Voice | Access code | one of the codes in that service's `DODDY_ACCESS_CODES` (Render dashboard → doddy-voice-token → Environment) |
+| Ask Doddy (typed questions) | Gateway address | `https://doddy-gateway.onrender.com` (Render, since 13 Oct) |
+| Ask Doddy (typed questions) | Invite code | one of the codes in that service's `GATEWAY_INVITE_CODES` (Render dashboard → doddy-gateway → Environment) |
 | Connected Apps server (development) | Server address | `https://doddy-yaci.onrender.com` |
 | Connected Apps server (development) | Session token | mint one: `docs/integrations/DEPLOY_RENDER.md`, step 4 |
 | Messages from Doddy → Notifications and texts | Server (development) | `https://doddy-messaging-zw1n.onrender.com` |
@@ -60,15 +60,15 @@ The app ships with no server addresses (build board card "Point the app at its s
 The two Render servers are on the free plan: the first request after a quiet spell can take about a minute
 while they wake up.
 
-**The Vercel account `doddyyyy` is blocked** (since 12 October; still `402 DEPLOYMENT_DISABLED` on 13 October),
-so the old voice pass address `doddy-voice-token.vercel.app` and the Ask Doddy gateway don't answer.
-- **Voice pass:** moved to the Supabase Edge Function in the table above (13 October). It answers only once
-  its two secrets are set in the Supabase dashboard: `DODDY_ACCESS_CODES` and `OPENAI_API_KEY`. Until then it
-  says `server_not_configured` (checked 18:15 UTC on 13 October). With it set, Home's voice picker can use
-  OpenAI (ADR-442). Without a token server, leave the field empty: the app then uses ElevenLabs' development
-  agent directly. That works for you alone; it's the open agent the P0 card is about.
-- **Ask Doddy (typed questions)** won't answer until the gateway is back or moved too.
-- The two Render servers (accounts and search, messages) answered normally.
+**Vercel is no longer used for these.** The Vercel account `doddyyyy` is blocked (since 12 October), so the voice
+pass server and the Ask Doddy gateway now run on Render, next to the other two servers (owner, 13 October: "go
+with render"). Checked at 18:45 UTC on 13 October: both answer, and the voice pass server is configured (a wrong
+code gets `401 invalid_access_code`).
+- All four Render servers are on the **free plan**: after about 15 idle minutes one sleeps, and the first request
+  can take 30 to 60 seconds. The app waits only 15 seconds for a voice pass, so the first voice start after a quiet
+  spell can fail; try again a minute later. The Starter plan keeps a service awake.
+- Without a token server, leave the field empty: the app then uses ElevenLabs' development agent directly. That
+  works for you alone; it's the open agent the P0 card is about.
 
 ## Before you start testing
 - The voice agent is public with its login off (build board P0 "Switch on login for the voice agent"). Fine
