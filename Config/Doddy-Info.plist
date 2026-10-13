@@ -10,7 +10,8 @@
 -->
 <plist version="1.0">
 <dict>
-	<!-- Screens in English and Polish (ADR-223); iOS picks by the iPhone's language. -->
+	<!-- Screens in English and the languages with a table in l10n/ (ADR-223, ADR-458); iOS picks by
+	     the iPhone's language. tools/build_strings_catalog.py writes the array; don't edit it. -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleLocalizations</key>

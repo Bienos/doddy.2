@@ -2,7 +2,7 @@
 
 Copy everything below the line into a Claude Code session opened on this repository (it reads and writes the files itself). Replace `<CODE>` and `<LANGUAGE>` first, for example `de` and `German`. Run it once per language. The language codes are listed at the end of this page.
 
-To use it in a plain chat window instead, attach `l10n/pl.json`, `l10n/pl_infoplist.json` and `l10n/pl_shortcuts.json`, and add: "Work through the table 100 keys at a time, in file order, and answer each batch with JSON only, so the batches can be joined into one file."
+To use it in a plain chat window instead, run `python3 -I tools/l10n_batch.py show <CODE>` yourself, paste what it prints with the rules below, save the answer to a file and run `merge` on it; repeat until `status` shows nothing missing.
 
 ---
 
@@ -14,25 +14,22 @@ You are translating the iPhone app **Doddy** into **<LANGUAGE>** (code `<CODE>`)
 - `l10n/pl_infoplist.json`: the eight iOS permission prompts, with the English under `en`.
 - `l10n/pl_shortcuts.json`: the 26 Siri phrases.
 
-## Output
+## How to write the files
 
-Write three files, in the same shape as their Polish counterparts:
+Never type a key and never edit the JSON files by hand. `tools/l10n_batch.py` does it, a batch at a time:
 
-1. `l10n/<CODE>.json`: an object with **every key from `l10n/pl.json`, copied byte for byte**, mapped to its <LANGUAGE> text. Same key order as the Polish file.
-2. `l10n/<CODE>_infoplist.json`: the same keys as `l10n/pl_infoplist.json`, each an object with `"en"` copied unchanged and `"<CODE>"` holding the translation.
-3. `l10n/<CODE>_shortcuts.json`: the same keys as `l10n/pl_shortcuts.json`, mapped to the <LANGUAGE> phrase a person would say to Siri.
+1. `python3 -I tools/l10n_batch.py show <CODE> --count 60` prints the next strings still missing: a number, the English as a person reads it (`EN:`), and the Polish (`PL:`).
+2. Translate them. Save a JSON object from number to your text to a file in your scratch folder, for example `{"0": " (compartida)", "1": "%@ a las %@. …"}`. Real characters, real line breaks (`\n` inside the JSON string), no `é` escapes.
+3. `python3 -I tools/l10n_batch.py merge <CODE> that-file.json`. It writes `l10n/<CODE>.json` and refuses any text that is empty, has different `%` placeholders from the English, or (for Siri phrases) does not name `${applicationName}` exactly once or drops `${list}`; the rest is kept. Redo the refused numbers in the next batch.
+4. Repeat 1 to 3 until `python3 -I tools/l10n_batch.py status <CODE>` shows 0 missing for `ui` (1,358 strings). Then do the same with `--table infoplist` (the 8 permission prompts) and `--table shortcuts` (the 26 Siri phrases).
 
-Write valid JSON, UTF-8, two-space indent, `ensure_ascii` off (real characters, not `é`). No commentary inside the files. Finish with a short note in the chat: how many keys you wrote, and a list of the keys you are least sure about so a native speaker can start there.
+Finish with a short note in the chat: the three counts from `status`, and the numbers you are least sure about so a native speaker can start there.
 
 ## Rules that the build enforces
 
-The build script rejects a file that breaks these, so check them before you finish.
-
-1. **Keys are untouchable.** Copy each key exactly, including its escapes: `\n`, `\"`, `\u{203A}`, `\u{201C}`. Do not fix the English, reorder, drop or add keys.
-2. **Values are plain text.** Where a key says `\n`, the value has a real line break. Where a key says `\"`, the value has a real `"` (or the quotation marks that language uses). Where a key says `\u{203A}`, the value has the real character `›`. The Polish file shows this.
-3. **Placeholders stay.** `%@`, `%lld`, `%d` and `%%` must appear in the value exactly as many times, and in the same order, as in the key. A value may not contain any other `%`.
-4. **Siri phrases** keep `${applicationName}` exactly once, and keep `${list}` if the English phrase has it.
-5. **No empty values.** If a line is hard, give your best translation and list its key in the note.
+1. **Placeholders stay.** `%@`, `%lld`, `%d` and `%%` must appear in your text exactly as many times, and in the same order, as in the English. No other `%`.
+2. **Siri phrases** keep `${applicationName}` exactly once, and keep `${list}` if the English phrase has it. They are what a person says out loud to Siri, so they must sound natural in <LANGUAGE>.
+3. **No empty text, no skipped numbers.** If a line is hard, give your best translation and list its number in the note.
 
 ## Rules for the text
 
@@ -50,7 +47,7 @@ The build script rejects a file that breaks these, so check them before you fini
 
 ## When you are done
 
-Run `python3 -I tools/build_strings_catalog.py --check`. Until the script reads languages other than Polish (see `l10n/README.md`), it will not read your file; say so in the note rather than claiming the app shows <LANGUAGE>. Do not edit the `.xcstrings` catalogs by hand.
+Run `python3 -I tools/build_strings_catalog.py`, then the same with `--check`. That puts <CODE> into the app's String Catalogs and into `CFBundleLocalizations` in both Info.plists. Commit the three tables, the regenerated `.xcstrings` files and the two plists together. Do not edit the `.xcstrings` catalogs by hand, and do not claim the app shows <LANGUAGE> until it has been run on a device and a native speaker has reviewed it (`l10n/README.md`, steps 3 and 4).
 
 ---
 
