@@ -387,6 +387,15 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
 | I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
 
+## 4u. "Hey Doddy" with one tap (ADR-328)
+Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
+| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
+| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
+| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
+
 ## 4v. "Ask me about it" (ADR-403)
 | # | Do this | Expect |
 |---|---|---|
