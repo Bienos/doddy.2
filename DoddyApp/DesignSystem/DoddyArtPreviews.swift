@@ -101,6 +101,10 @@ private struct KeysPreviewGrid: View {
                                           showsDoddy: true))
 }
 
+#Preview("Big brain share card") {
+    BigBrainShareCardView()
+}
+
 #Preview("Siri snippet poses") {
     VStack {
         SiriDoddySnippet(pose: .listening)

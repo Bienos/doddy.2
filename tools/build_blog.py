@@ -201,7 +201,7 @@ def nice_date(d: date) -> str:
 # ---------- Pages ----------
 
 def page(title: str, description: str, path: str, main: str, og_type: str = "website", extra_head: str = "",
-         og_image: str = "/assets/og-image.png") -> str:
+         og_image: str = "/assets/og-big-brain.png") -> str:
     t, d, url = html.escape(title), html.escape(description), SITE_URL + path
     return f"""<!doctype html>
 <html lang="en">
@@ -386,7 +386,7 @@ def post_page(p: dict) -> str:
     head = f'\n  <meta property="article:published_time" content="{p['date']}">'
     if p.get("keywords"):
         head += f'\n  <meta name="keywords" content="{html.escape(p['keywords'])}">'
-    og = p.get("og_image") or "/assets/og-image.png"
+    og = p.get("og_image") or "/assets/og-big-brain.png"
     if not (ROOT / "site" / og.lstrip("/")).is_file():
         sys.exit(f"{p['stem']}: og_image not found in site/: {og}")
     return page(f"{p['title']} · Doddy", p["summary"], f"/blog/{p['slug']}/", main, og_type="article",
