@@ -108,7 +108,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(app.buttons["today.openSettings"].exists, "nothing connected yet, so no Today card")
 
         let link = app.buttons["home.dataFlow"]
-        for _ in 0..<6 where !(link.exists && link.isHittable) { app.swipeUp() }
+        XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
