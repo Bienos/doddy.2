@@ -9079,6 +9079,17 @@
         }
       }
     },
+    "Opens TikTok or Instagram outside Doddy. Doddy's card is just his picture: nothing you saved is in it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera TikToka lub Instagram poza Doddym. Karta Doddy’ego to tylko jego obrazek: nie ma na niej nic z Twoich zapisów."
+          }
+        }
+      }
+    },
     "Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -11822,6 +11833,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnij"
+          }
+        }
+      }
+    },
+    "Share Doddy's card": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij kartę Doddy’ego"
           }
         }
       }

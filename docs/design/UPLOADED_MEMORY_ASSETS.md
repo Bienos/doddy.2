@@ -201,3 +201,18 @@ table above). `tools/make_app_icon.py` checks that hash, then writes three 1024�
 Crop, scale and placement only: no line, colour or shape of the pose is changed, and nothing is generated.
 Run `python3 -I tools/make_app_icon.py` again if the pose file changes. This records provenance, not a
 commercial-rights or brand-master decision.
+
+## The "Big brain. Small body." card (ADR-462, 13 October 2026)
+
+The owner sent this card as a picture in the Claude session and, asked whether to use it although
+the pose isn't in `DODDY-Numbered-Video-Assets-v01`, answered "use what i sent I think". This is the one
+Doddy picture outside that pack, approved for this card. The original (1104 × 560 WebP, SHA-256
+`40f0aac9e5048049638dbe374a87a4cf7b6dd8b3042d5640d228e32e42b05a21`) is not stored in the repository.
+How it was made (generated or drawn) was not recorded. Doddy wears an orange backpack in it, which the
+pack's own README leaves off.
+
+| Image set | What was done |
+| --- | --- |
+| `ShareDoddy_big_brain` (app) | `tools/whole_doddy/cut_share_card.py`: the dark window edge at the right is cropped off, only the paper touching the picture's edges is removed (the cream face, shoes and pink brain stay), and the marks right of the lettering are kept: Doddy, the brain, sweat drops, motion and orange marks, ground strokes. `art@3x.png` is that output (565 × 544, SHA-256 `9d7ceaf03724ea8a9304d35aef8f7d5c6966cd3291624381e8681b18c2504041`); `art@2x.png` is its Lanczos downscale (377 × 363). |
+
+The lettering is not cut out: both cards set it as text. Nothing is redrawn, recoloured or generated.

@@ -1,0 +1,44 @@
+<!doctype html>
+<!-- "Big brain. Small body." link-preview card (ADR-462), 1200 x 630. Rendered to PNG by render.cjs.
+     Colours from site/tokens.css; type is the site's (Caveat for Doddy's voice, Bricolage Grotesque for the
+     name), loaded from Google Fonts like the site. The art is the app's ShareDoddy_big_brain image set. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Big brain. Small body.</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Caveat:wght@600;700&display=block">
+  <link rel="stylesheet" href="../../site/tokens.css">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      width: 1200px; height: 630px; overflow: hidden; position: relative;
+      background: var(--canvas); color: var(--reading-ink);
+    }
+    .headline {
+      position: absolute; left: 76px; top: 84px; margin: 0;
+      font: 700 128px/0.88 "Caveat", cursive; letter-spacing: -0.01em;
+    }
+    .headline span { display: block; }
+    .headline .small { color: var(--orange-cue); transform: rotate(-2deg); transform-origin: left center; margin-top: 6px; }
+    .stroke { position: absolute; left: 72px; top: 330px; width: 420px; height: 34px; }
+    .brand { position: absolute; left: 80px; bottom: 64px; margin: 0; }
+    .name { display: block; font: 800 80px/1 "Bricolage Grotesque", sans-serif; letter-spacing: 0.01em; }
+    .tagline { display: block; margin-top: 8px; font: 600 46px/1 "Caveat", cursive; }
+    .mate { position: relative; display: inline-block; }
+    .mate svg { position: absolute; left: -4px; right: -4px; bottom: -8px; width: calc(100% + 8px); height: 12px; }
+    .art { position: absolute; right: 34px; bottom: 30px; width: 565px; height: 544px; }
+  </style>
+</head>
+<body>
+  <h1 class="headline"><span>Big brain.</span><span class="small">Small body.</span></h1>
+  <svg class="stroke" viewBox="0 0 420 34" aria-hidden="true">
+    <path d="M6 24 C 110 12, 270 6, 414 14" fill="none" stroke="var(--orange-cue)" stroke-width="9" stroke-linecap="round"/>
+  </svg>
+  <p class="brand">
+    <span class="name">DODDY</span>
+    <span class="tagline">Your <span class="mate">mate<svg viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><path d="M3 8 C 30 4, 70 3, 97 6" fill="none" stroke="var(--orange-cue)" stroke-width="4" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></span> in your pocket.</span>
+  </p>
+  <img class="art" src="../../DoddyApp/Resources/Assets.xcassets/ShareDoddy_big_brain.imageset/art@3x.png" width="565" height="544" alt="Doddy walking along, carrying a brain much bigger than he is">
+</body>
+</html>
