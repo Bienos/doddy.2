@@ -35,7 +35,7 @@ struct ConnectionsView: View {
                     }
                 }
 
-                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs and are always on.")
+                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }

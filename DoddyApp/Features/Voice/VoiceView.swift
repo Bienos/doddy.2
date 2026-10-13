@@ -125,9 +125,13 @@ struct VoiceView: View {
                         }
                         .accessibilityElement(children: .combine)
 
-                        // Testing only (ADR-265): the copy below names ElevenLabs; say plainly when it isn't.
+                        // ADR-265/442: the copy below names ElevenLabs; say plainly when it isn't.
                         if controller.provider == .openAIRealtime {
-                            Label("Test voice: OpenAI runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.", systemImage: "testtube.2")
+                            Label {
+                                Text(verbatim: "OpenAI Realtime \(controller.openAIModel.shortName) runs this conversation instead of ElevenLabs. Your voice, this conversation and what Doddy knows go to OpenAI. Weather and Wikipedia don't work with it.")
+                            } icon: {
+                                Image(systemName: "waveform.badge.mic")
+                            }
                                 .font(.footnote)
                                 .foregroundStyle(Theme.secondaryText)
                                 .accessibilityIdentifier("voice.openAITest")
@@ -148,7 +152,7 @@ struct VoiceView: View {
 
                         if controller.isPrivate {
                             Label {
-                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and keeps its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
                                     .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")
@@ -231,7 +235,7 @@ struct VoiceView: View {
                                 .id("parkingCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs\u{2019} servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
+                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to OpenAI, or ElevenLabs if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -1263,7 +1267,7 @@ struct VoiceView: View {
             languageChip(setup.kind == .faceToFace ? "Them" : "Around you", setup.other?.nativeName ?? "Detect")
         }
         Text(setup.kind == .faceToFace
-             ? "While translating, Doddy only translates: no notes, reminders or other tools, and this conversation isn't kept on this iPhone. Their voice goes to ElevenLabs too. Doddy first tells them, in their language, that he's an AI translator."
+             ? "While translating, Doddy only translates: no notes, reminders or other tools, and this conversation isn't kept on this iPhone. Their voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too. Doddy first tells them, in their language, that he's an AI translator."
              : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
