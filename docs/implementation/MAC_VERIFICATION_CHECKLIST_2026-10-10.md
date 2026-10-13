@@ -386,6 +386,45 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 |---|---|---|
 | I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
 | I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
+## 4x. Stale tool calls (ADR-458)
+`VoiceSessionController` changed without a compile: `handle(_:attempt:)`, `ToolGate.decide` in place of the four checks, and the `ToolCallOwners` checks. Build first. To make a lookup slow enough, use Settings › Developer › Network Link Conditioner › Very Bad Network.
+| # | Do this | Expect |
+|---|---|---|
+| S1 | Build the app target | Compiles. The new code is in `handle`, `handleOpenAICall`, `propose`, `reply`, `dropStale`, `handlePlan`, `runPlan` |
+| S2 | End + Start while a Gmail draft is preparing ("draft an email to Ana saying hi", then End and Start at once) | No card in the new conversation. The new agent never hears about the draft. What Doddy did lists the draft request as not done; nothing was sent or drafted |
+| S3 | "Remind me about my parking note when I get to <a place>", then End and Start before the place list shows | No place card in the new conversation; the place choice of any card there is unchanged |
+| S4 | Confirm "add a reminder…" and End and Start straight after the tap | The reminder is added (check Reminders); What Doddy did shows its real result; the new conversation's agent is not told about it, and its screen shows no "Added" status for it |
+| S5 | Normal use, no End: a single card (confirm and decline), a plan card, Pause all on, a connection switched off, translator mode | Same replies and cards as before this change (the order of checks is unchanged) |
+| S6 | Repeat S2 with the OpenAI test voice | Same as S2 |
+| S7 | "Add milk to the shopping list", then End at once (slow device or many lists) | What Doddy did shows the add as done (or "in progress" for a moment), never "not done" when milk is on the list |
+| S8 | Confirm a plan with a note and a reminder, End and Start while it runs | Both steps run and are logged; the new conversation shows no plan progress and its saved-notes count starts at 0 |
+
+## 4u. "Hey Doddy" with one tap (ADR-328)
+Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
+| # | Do this | Expect |
+|---|---|---|
+| W1 | Fresh install with no Picovoice key of your own. Settings › Hey Doddy | Just the switch and its note; the Picovoice fields are under "Use my own Picovoice key and file". Turn it on, allow the microphone: "Now" says listening; say "Hey Doddy": a conversation starts with the greeting |
+| W2 | Fresh install; have 3 conversations (each reaching Listening); go to Home | The "Talk without tapping" card. Not now hides it for good (relaunch: still gone). On another fresh install, Turn on → microphone question → the card shows the listener's real state |
+| W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
+| W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
+
+## 4v. "Ask me about it" (ADR-403)
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
+
+## 4q. A guided first conversation (ADR-401)
+Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.
+| # | Do this | Expect |
+|---|---|---|
+| F1 | Fresh install; first Talk to Doddy; wait after the greeting | Doddy says in 2–3 sentences what he can do and offers one thing to try. End; second conversation: no tour |
+| F2 | Fresh install; first conversation, but ask for something straight away ("remind me at 6") | Doddy helps with that and gives no tour |
+
+## 4s. Quick access tips (ADR-402)
+| # | Do this | Expect |
+|---|---|---|
+| A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
 ## 4w. Privacy rows follow What leaves this iPhone (ADR-447)
 `SettingsView.swift` (two rows) and `DataFlowView.swift` (the shared `DataFlowState.current()`) changed without a compile here.
 | # | Do this | Expect |

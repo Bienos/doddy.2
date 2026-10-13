@@ -14,6 +14,24 @@ Authorization: Bearer <access code>
 → 500 {"error": "server_not_configured"} · 502/504 upstream errors
 ```
 
+### "Hey Doddy" key (ADR-328)
+
+So a tester can turn on "Hey Doddy" with one tap instead of making a Picovoice account, the app asks once
+for the owner's Picovoice AccessKey and keeps it in the iPhone's Keychain (Porcupine needs it on the phone):
+
+```
+POST /api/voice-token
+Authorization: Bearer <access code>
+Content-Type: application/json
+{"provider": "picovoice"}
+→ 200 {"accessKey": "…"}
+→ 401 {"error": "invalid_access_code"}
+→ 500 {"error": "server_not_configured"}  (no PICOVOICE_ACCESS_KEY)
+```
+
+It starts no paid conversation, so it isn't counted per hour. The key is never logged. Rotate it in the
+Picovoice Console if a phone or code is lost; phones then need "Hey Doddy" turned off and on again.
+
 ### OpenAI Realtime voice (ADR-265, default since ADR-442)
 
 Doddy's voice runs on OpenAI Realtime by default when a token server is set; Home's switch can still pick ElevenLabs. The app then sends a body naming the model it picked in Home (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`; without `model`, the server uses `OPENAI_REALTIME_MODEL`, else mini):
@@ -47,6 +65,7 @@ They never contain codes, tokens, keys, IP addresses or anything the user said.
 | `OPENAI_API_KEY` | Needed for the OpenAI voice (the default voice, ADR-442). Put a monthly spending limit on its OpenAI project: this server has no counters |
 | `OPENAI_REALTIME_MODEL` | Optional, default `gpt-realtime-2.1-mini`. Used only when the app names no model (an older app build). The app can ask for `gpt-realtime-2.1` or `gpt-realtime-2.1-mini` only; the allowlist is `OPENAI_ALLOWED_MODELS` in `src/handler.js`, so a client can't pick a pricier model |
 | `OPENAI_REALTIME_VOICE` | Optional, default `marin` (OpenAI recommends `marin` or `cedar`) |
+| `PICOVOICE_ACCESS_KEY` | Optional. The owner's Picovoice AccessKey for one-tap "Hey Doddy" (ADR-328). Check the Picovoice plan's limits on active users and keyword-file expiry before giving it to testers |
 | `DODDY_ACCESS_CODES` | `label:code,label:code`. Codes must be ≥16 characters (shorter ones are ignored). Generate with `openssl rand -base64 24`. Remove an entry to revoke that tester |
 
 ## Deploy on Vercel (not done yet; needs the owner)

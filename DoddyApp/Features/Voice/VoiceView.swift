@@ -79,7 +79,8 @@ struct VoiceView: View {
             self.controller = controller
             await controller.start(
                 mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
-                checkIn: ShortcutRouter.shared.takeCheckInBriefing())
+                checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
+                aboutNote: ShortcutRouter.shared.takeNoteToAsk())
         }
         .onDisappear {
             Task { await controller?.stop() }
