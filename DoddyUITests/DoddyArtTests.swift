@@ -24,10 +24,7 @@ final class DoddyArtTests: XCTestCase {
 
     @MainActor
     private func scrollTo(_ element: XCUIElement, app: XCUIApplication) {
-        for _ in 0..<8 {
-            if element.exists && element.isHittable { return }
-            app.swipeUp()
-        }
+        app.reveal(element)
     }
 
     /// Find with no match shows the shrug (ADR-299); "Hide character artwork" removes it.
@@ -77,8 +74,8 @@ final class DoddyArtTests: XCTestCase {
             let app = launch(pauseAll: paused)
             app.buttons["tab.settings"].tap()
             let toggle = app.switches["settings.pauseAll"]
-            XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-            scrollTo(toggle, app: app)
+            // A lazy Form row: it exists only once scrolled to.
+            XCTAssertTrue(app.reveal(toggle))
             app.swipeUp()
             XCTAssertEqual(marker("doddy.pose.sneaky_crouch", in: app).exists, paused, "paused: \(paused)")
             app.terminate()
@@ -91,7 +88,7 @@ final class DoddyArtTests: XCTestCase {
         let app = launch()
         app.buttons["tab.settings"].tap()
         let row = app.buttons["settings.activity"]
-        scrollTo(row, app: app)
+        XCTAssertTrue(app.reveal(row))
         row.tap()
         XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
         XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).waitForExistence(timeout: 5))
