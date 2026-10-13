@@ -1,0 +1,1179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Everyday with Doddy</title>
+<meta name="color-scheme" content="light">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+<style>
+/* Mockup board for a new "Everyday" page on doddy-eight.vercel.app: three concepts the owner can pick from.
+   Layout: a thin ink board bar on top; each concept sits inside a browser frame at the live site's 1200px width;
+   studio notes (dashed cards) sit between the frames. The site is light-only by owner request, so this board is too.
+   Tokens, type and components are copied from the live site's tokens.css and styles.css. Nothing here is the app. */
+:root{
+  color-scheme:light;
+  --reading-ink:#171715; --canvas:#FFF7E9; --orange-cue:#F58A24; --secondary-text:#655F56;
+  --quiet-surface:#F5EAD8; --separator:#DFD5C6; --accent-text:#A64B00; --confirmed:#326746; --error:#A3342E;
+  --display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --hand:"Caveat","Bradley Hand","Segoe Print",cursive;
+  --text:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+  --gutter:clamp(16px,4vw,40px);
+  --paper:color-mix(in srgb,var(--canvas) 35%,#fff);
+  --rule:color-mix(in srgb,var(--separator) 60%,transparent);
+  --lift:0 1px 2px rgb(60 40 10 / 6%),0 16px 36px -20px rgb(60 40 10 / 28%);
+  --lift-strong:0 2px 4px rgb(60 40 10 / 8%),0 40px 80px -32px rgb(60 40 10 / 40%);
+  --board-bar:44px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--board-bar) + 24px)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;color:var(--reading-ink);background:var(--canvas);font:400 1.0625rem/1.6 var(--text);-webkit-text-size-adjust:100%;overflow-x:hidden}
+img{max-width:100%;height:auto;display:block}
+a{color:inherit}
+h1,h2,h3,h4{text-wrap:balance}
+p{margin:0 0 16px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent-text);outline-offset:3px;border-radius:8px}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding-inline:var(--gutter)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- site type + controls (copied from the live site) ---------- */
+.display{font-family:var(--display);font-weight:760;font-variation-settings:"opsz" 96;font-size:clamp(3rem,1.6rem + 6vw,6.25rem);line-height:.94;letter-spacing:-.022em;margin:0 0 24px}
+.display-m{font-family:var(--display);font-weight:750;font-variation-settings:"opsz" 72;font-size:clamp(2.1rem,1.5rem + 2.6vw,3.5rem);line-height:1;letter-spacing:-.03em;margin:0 0 20px}
+.display-s{font-family:var(--display);font-weight:720;font-size:clamp(1.6rem,1.2rem + 1.4vw,2.25rem);line-height:1.05;letter-spacing:-.025em;margin:0 0 14px}
+h3,h4{font-family:var(--display);font-weight:700;font-size:1.375rem;letter-spacing:-.015em;line-height:1.15;margin:0 0 10px}
+.lede{font-size:clamp(1.125rem,1rem + .4vw,1.3125rem);line-height:1.55;max-width:32rem}
+.fineprint{font-size:.875rem;color:var(--secondary-text);max-width:34rem}
+.caption{font-size:.75rem;color:var(--secondary-text);text-align:center;margin:12px 0 0}
+.caption.left{text-align:left}
+.eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--secondary-text);margin:0 0 8px}
+.pill{display:inline-flex;align-items:center;gap:8px;margin:0 0 22px;padding:5px 14px 6px;border:1px solid var(--separator);border-radius:999px;background:color-mix(in srgb,var(--quiet-surface) 70%,transparent);font-size:.875rem;font-weight:600;color:var(--secondary-text)}
+.pill .dot{width:8px;height:8px;border-radius:50%;background:var(--orange-cue)}
+.pill.warn{border-color:var(--accent-text);color:var(--accent-text);background:transparent}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 26px;border:0;border-radius:18px;background:var(--reading-ink);color:var(--canvas);font:650 1rem/1 var(--text);text-decoration:none;cursor:pointer;box-shadow:inset 0 -3px 0 color-mix(in srgb,var(--orange-cue) 85%,transparent);transition:transform 150ms ease,box-shadow 150ms ease}
+.button:hover{transform:translateY(-1px);box-shadow:inset 0 -5px 0 var(--orange-cue)}
+.button.small{min-height:44px;padding:0 18px;border-radius:14px;font-size:.9375rem}
+.ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border:1px solid var(--separator);border-radius:14px;background:transparent;font-weight:600;font-size:.9375rem;color:var(--secondary-text)}
+.ghost:hover{color:var(--reading-ink);border-color:var(--secondary-text)}
+.text-link{display:inline-flex;align-items:center;min-height:44px;font-weight:600;text-decoration-line:underline;text-decoration-thickness:2px;text-underline-offset:6px;text-decoration-color:var(--orange-cue)}
+.actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px 28px;margin:32px 0 20px}
+.speak{font-family:var(--hand);font-weight:700;line-height:1;margin:0;position:relative;display:inline-block}
+.scribble{position:absolute;left:0;bottom:-.18em;width:100%;height:.24em;overflow:visible}
+.scribble path{fill:none;stroke:var(--orange-cue);stroke-width:5;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.section-head{display:grid;gap:8px 64px;margin-bottom:clamp(28px,5vw,48px)}
+.section-head .display-m{margin:0}
+.section-head p{color:var(--secondary-text);max-width:34rem;margin:0;align-self:end}
+@media (min-width:900px){.section-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.scraps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:12px;align-content:start}
+.scraps li,.scrap{padding:10px 16px;background:var(--paper);border:1px solid var(--separator);border-radius:4px 14px 4px 14px;font-family:var(--hand);font-weight:600;font-size:1.5rem;line-height:1.1}
+.scraps li:nth-child(odd){transform:rotate(-1.5deg)}
+.scraps li:nth-child(even){transform:rotate(1.2deg)}
+.tape{position:absolute;z-index:2;top:-13px;width:110px;height:28px;background:color-mix(in srgb,var(--quiet-surface) 75%,transparent);border:1px solid color-mix(in srgb,var(--separator) 70%,transparent);box-shadow:0 2px 6px rgb(60 40 10 / 8%)}
+.chip-check{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--confirmed);color:var(--paper);font-size:.8125rem;font-weight:700}
+
+/* ---------- site nav (copied), rendered inside the frames ---------- */
+.nav{background:color-mix(in srgb,var(--canvas) 86%,transparent);border-bottom:1px solid color-mix(in srgb,var(--separator) 60%,transparent)}
+.nav-inner{display:flex;align-items:center;gap:24px;min-height:68px}
+.wordmark{font-family:var(--hand);font-weight:700;font-size:2.2rem;line-height:1;text-decoration:none;margin:0 auto 0 0}
+.nav-links{display:none;list-style:none;margin:0;padding:0;gap:28px}
+.nav-links a{text-decoration:none;font-size:.9375rem;font-weight:550;color:var(--secondary-text);display:inline-flex;min-height:44px;align-items:center;position:relative}
+.nav-links a:hover{color:var(--reading-ink)}
+.nav-links a[aria-current="page"]{color:var(--reading-ink)}
+.nav-links a[aria-current="page"]::after{content:"";position:absolute;left:0;right:0;bottom:6px;height:3px;border-radius:2px;background:var(--orange-cue)}
+.nav-links a.new{color:var(--reading-ink)}
+.nav-links a.new .tag{position:absolute;top:0;right:-14px;font-family:var(--hand);font-size:1rem;color:var(--accent-text);transform:rotate(8deg)}
+.nav.force-links .nav-links{display:flex;flex-wrap:wrap;gap:12px 22px}
+.nav.force-links .nav-inner{flex-wrap:wrap}
+.nav .button.small{white-space:nowrap}
+.nav .only-narrow{display:inline-flex}
+.nav .short{display:none}
+@media (max-width:819px){.nav-inner{gap:12px}}
+@media (max-width:479px){.nav .long{display:none}.nav .short{display:inline}}
+@media (min-width:820px){.nav-links{display:flex}.nav .only-narrow{display:none}}
+.nav-menu{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid var(--separator);border-radius:12px;background:transparent;font-weight:600;font-size:.9375rem}
+.nav-menu svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+
+/* ---------- board chrome (not part of the site) ---------- */
+.board-bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--reading-ink);color:var(--canvas);min-height:var(--board-bar);font-size:.8125rem}
+.board-bar .wrap{display:flex;align-items:center;gap:20px;min-height:var(--board-bar)}
+.board-bar strong{font-family:var(--display);font-weight:700;letter-spacing:.01em;white-space:nowrap}
+.board-bar ul{list-style:none;margin:0 0 0 auto;padding:0;display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.board-bar ul::-webkit-scrollbar{display:none}
+.board-bar a{display:inline-flex;align-items:center;min-height:var(--board-bar);padding:0 10px;color:color-mix(in srgb,var(--canvas) 80%,transparent);text-decoration:none;white-space:nowrap;font-weight:550}
+.board-bar a:hover{color:var(--canvas)}
+.board-bar a b{color:var(--orange-cue);font-weight:700;margin-right:6px}
+.board-intro{padding:clamp(40px,6vw,72px) 0 clamp(24px,4vw,40px)}
+.board-intro .display-m{max-width:16ch}
+.board-intro-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:32px;align-items:end}
+.board-intro-grid > *,.concept-head > *,.verdict > div,.notes-grid > *,.phone-check > *,.frame,.note{min-width:0}
+code{font-size:.9em;overflow-wrap:anywhere}
+@media (min-width:900px){.board-intro-grid{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr)}}
+.note{position:relative;padding:22px 24px;border:1.5px dashed color-mix(in srgb,var(--accent-text) 55%,transparent);border-radius:18px;background:color-mix(in srgb,var(--quiet-surface) 55%,transparent);max-width:46rem}
+.note .eyebrow{color:var(--accent-text)}
+.note p:last-child,.note ul:last-child{margin-bottom:0}
+.note ul{margin:0;padding-left:20px}
+.note li{margin:4px 0}
+.concept{padding:clamp(40px,6vw,80px) 0 0}
+.concept-head{display:grid;gap:16px 48px;align-items:end;margin-bottom:24px}
+@media (min-width:900px){.concept-head{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.concept-head .letter{display:inline-grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--reading-ink);color:var(--canvas);font-family:var(--display);font-weight:760;font-size:1.6rem;margin-right:14px;vertical-align:middle;box-shadow:inset 0 -4px 0 var(--orange-cue)}
+.concept-head h2{display:flex;align-items:center;flex-wrap:wrap;gap:8px 0}
+.concept-head .rec{display:inline-flex;align-items:center;gap:6px;margin-left:14px;padding:4px 12px;border-radius:999px;background:var(--confirmed);color:var(--paper);font:700 .8125rem/1 var(--text);letter-spacing:.02em;vertical-align:middle}
+.concept-head p{color:var(--secondary-text);margin:0;max-width:34rem}
+.frame{position:relative;background:var(--paper);border:1px solid var(--separator);border-radius:22px;box-shadow:var(--lift-strong);overflow:clip}
+.frame-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--separator);background:var(--quiet-surface)}
+.frame-bar .dots{display:flex;gap:6px}
+.frame-bar .dots i{width:11px;height:11px;border-radius:50%;background:var(--separator);display:block}
+.frame-bar .url{flex:1;min-width:0;padding:6px 12px;border-radius:9px;background:var(--paper);border:1px solid var(--separator);font-size:.8125rem;color:var(--secondary-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frame-bar .url b{color:var(--reading-ink);font-weight:600}
+.frame-body{background:var(--canvas)}
+.frame.narrow{width:100%;max-width:420px;margin:0 auto}
+.verdict{display:grid;gap:20px;margin:28px 0 0}
+@media (min-width:820px){.verdict{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.verdict > div{min-width:0;padding:20px 22px;border-radius:18px;background:var(--paper);border:1px solid var(--separator)}
+.verdict h4{font-size:1.05rem;margin-bottom:6px}
+.verdict p{margin:0;font-size:.9375rem;color:var(--secondary-text)}
+.verdict p + p{margin-top:6px}
+
+/* ---------- Concept A: One ordinary Tuesday ---------- */
+.a-hero{position:relative;isolation:isolate;padding:clamp(36px,6vw,80px) 0 clamp(32px,5vw,64px);overflow:hidden}
+.a-hero::before{content:"";position:absolute;inset:0;z-index:-1;background:repeating-linear-gradient(to bottom,transparent 0 35px,var(--rule) 35px 36px);-webkit-mask:linear-gradient(to bottom,#000 30%,transparent 95%);mask:linear-gradient(to bottom,#000 30%,transparent 95%)}
+.a-hero-grid{display:grid;gap:40px;align-items:center}
+@media (min-width:900px){.a-hero-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}}
+.a-hero-copy{min-width:0}
+.a-hero-stage{position:relative;min-height:400px;display:grid;justify-items:end;align-items:end}
+.a-hero-stage .pose{width:clamp(200px,26vw,290px);position:relative;z-index:1;margin-right:4%}
+.a-hero-stage .speak{position:absolute;left:0;top:6%;font-size:clamp(2rem,1.5rem + 1.6vw,2.8rem);transform:rotate(-5deg);z-index:2}
+.a-tuesday{position:absolute;left:0;bottom:8%;transform:rotate(-6deg);padding:14px 20px 14px;background:var(--quiet-surface);border:1px solid var(--separator);font-family:var(--hand);font-weight:700;font-size:1.9rem;line-height:1;box-shadow:var(--lift);z-index:2}
+.a-tuesday .tape{left:50%;margin-left:-55px;transform:rotate(3deg)}
+.a-tuesday small{display:block;font:600 .8125rem/1.3 var(--text);color:var(--secondary-text);margin-top:6px;letter-spacing:.02em;white-space:nowrap}
+.a-glow{position:absolute;right:0;bottom:0;width:min(420px,100%);height:260px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--orange-cue) 18%,transparent),transparent);z-index:0;pointer-events:none}
+@media (max-width:520px){.a-hero-stage{min-height:340px}.a-hero-stage .speak{top:0}.a-tuesday{bottom:2%;font-size:1.6rem}}
+
+.day-strip{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--board-bar));z-index:5;background:color-mix(in srgb,var(--canvas) 88%,transparent);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-block:1px solid var(--separator)}
+.day-strip ol{list-style:none;margin:0;padding:0;display:flex;gap:0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.day-strip ol::-webkit-scrollbar{display:none}
+.day-strip li{flex:1 0 auto;position:relative}
+.day-strip li:not(:last-child)::after{content:"";position:absolute;right:0;top:50%;width:100%;height:1px;background:var(--separator);z-index:0}
+.day-strip a{position:relative;z-index:1;display:grid;justify-items:center;gap:4px;min-width:112px;padding:10px 12px 8px;text-decoration:none;color:var(--secondary-text);font-size:.75rem;font-weight:600;background:transparent}
+.day-strip a .t{font-family:var(--hand);font-weight:700;font-size:1.35rem;line-height:1;color:var(--reading-ink)}
+.day-strip a .d{width:12px;height:12px;border-radius:50%;border:2px solid var(--separator);background:var(--canvas);transition:transform 180ms ease,background 180ms ease,border-color 180ms ease}
+.day-strip a:hover .d{border-color:var(--secondary-text)}
+.day-strip a.on{color:var(--reading-ink)}
+.day-strip a.on .d{background:var(--orange-cue);border-color:var(--orange-cue);transform:scale(1.25)}
+
+.moments{display:grid;gap:clamp(40px,6vw,88px);padding:clamp(40px,6vw,72px) 0}
+.moment{display:grid;gap:28px;align-items:center;scroll-margin-top:calc(var(--board-bar) + 80px)}
+@media (min-width:900px){
+  .moment{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:48px}
+  .moment:nth-child(even) .moment-copy{order:2}
+  .moment:nth-child(even) .moment-stage{order:1}
+}
+.moment-copy{min-width:0}
+.when{display:flex;align-items:baseline;gap:12px;margin:0 0 10px;color:var(--secondary-text);font-size:.9375rem}
+.when .clock{font-family:var(--hand);font-weight:700;font-size:2.4rem;line-height:1;color:var(--reading-ink);font-variant-numeric:tabular-nums}
+.moment-copy .display-m{font-size:clamp(1.9rem,1.4rem + 2vw,3rem);margin-bottom:18px}
+.chat{display:grid;gap:10px;margin:0 0 18px;max-width:30rem}
+.bubble{position:relative;margin:0;padding:12px 16px 13px;border-radius:18px;max-width:92%}
+.bubble .who{display:block;font:700 .6875rem/1 var(--text);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;color:var(--secondary-text)}
+.bubble.you{justify-self:end;background:var(--reading-ink);color:var(--canvas);border-bottom-right-radius:6px}
+.bubble.you .who{color:color-mix(in srgb,var(--canvas) 70%,transparent)}
+.bubble.dod{justify-self:start;background:var(--paper);border:1px solid var(--separator);border-bottom-left-radius:6px;font-family:var(--hand);font-weight:700;font-size:1.55rem;line-height:1.1}
+.why{font-size:.875rem;color:var(--secondary-text);max-width:30rem;margin:0}
+.moment-stage{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end;min-width:0}
+.moment-stage .pose{width:clamp(96px,12vw,150px);flex:none}
+.moment:nth-child(even) .moment-stage{grid-template-columns:auto minmax(0,1fr)}
+.moment:nth-child(even) .moment-stage .pose{order:-1}
+/* Phones: the card takes the full width and Doddy peeks up at its bottom corner, never over text. */
+@media (max-width:600px){
+  .moment-stage,.moment:nth-child(even) .moment-stage,.try-answer{grid-template-columns:minmax(0,1fr)}
+  .moment-stage .pose,.moment:nth-child(even) .moment-stage .pose,.try-answer .pose{order:2;justify-self:end;width:96px;margin:-10px 10px 0 0}
+  .door-detail .pose{justify-self:end;width:96px}
+}
+
+.ask{position:relative;min-width:0;padding:20px 22px 20px;background:var(--paper);border:1px solid var(--separator);border-radius:22px;box-shadow:var(--lift);transform:rotate(-1deg);transition:transform 240ms ease}
+.ask:hover{transform:rotate(0)}
+.moment:nth-child(even) .ask{transform:rotate(1deg)}
+.moment:nth-child(even) .ask:hover{transform:rotate(0)}
+.ask-app{display:inline-flex;align-items:center;gap:7px;margin:0 0 12px;padding:3px 10px;border-radius:999px;background:var(--quiet-surface);font:700 .6875rem/1.6 var(--text);letter-spacing:.08em;text-transform:uppercase;color:var(--secondary-text)}
+.ask-app::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--orange-cue)}
+.ask-q{font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1.2;letter-spacing:-.015em;margin:0 0 8px}
+.ask-detail{margin:0 0 16px;color:var(--secondary-text);font-size:.9375rem}
+.ask-detail q{quotes:"“" "”"}
+.ask-actions{display:flex;flex-wrap:wrap;gap:10px}
+.ask-done{display:flex;align-items:flex-start;gap:10px;margin:0;padding:12px 14px;border-radius:14px;background:color-mix(in srgb,var(--confirmed) 9%,var(--paper));border:1px solid color-mix(in srgb,var(--confirmed) 35%,transparent);font-size:.9375rem;line-height:1.4;color:var(--secondary-text)}
+.ask-done strong{color:var(--confirmed)}
+.ask-none{margin:0;padding:12px 14px;border-radius:14px;background:var(--quiet-surface);font-size:.9375rem;color:var(--secondary-text)}
+.ask-reset{margin:12px 0 0;padding:0;border:0;background:none;font-size:.8125rem;font-weight:600;color:var(--secondary-text);text-decoration:underline;text-underline-offset:4px;min-height:32px}
+.ask[data-state="ask"] .ask-done,.ask[data-state="ask"] .ask-none,.ask[data-state="ask"] .ask-reset{display:none}
+.ask[data-state="done"] .ask-actions,.ask[data-state="done"] .ask-none{display:none}
+.ask[data-state="none"] .ask-actions,.ask[data-state="none"] .ask-done{display:none}
+.ask-foot{margin:14px 0 0;font-size:.75rem;color:var(--secondary-text)}
+.sum{display:grid;gap:6px;margin:0 0 4px;font-variant-numeric:tabular-nums}
+.sum div{display:flex;justify-content:space-between;gap:16px;padding:6px 0;border-bottom:1px dashed var(--separator);font-size:.9375rem;color:var(--secondary-text)}
+.sum div:last-child{border-bottom:0;color:var(--reading-ink);font-family:var(--display);font-weight:700;font-size:1.25rem}
+.list{list-style:none;margin:0 0 6px;padding:0;display:grid;gap:6px}
+.list li{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--separator);font-size:.9375rem}
+.list li:last-child{border-bottom:0}
+.list .box{width:20px;height:20px;border-radius:6px;border:2px solid var(--separator);flex:none}
+.list .box.done{background:var(--confirmed);border-color:var(--confirmed);position:relative}
+.list .box.done::after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;color:var(--paper);font-size:.75rem;font-weight:700}
+.list .new{margin-left:auto;font-family:var(--hand);font-weight:700;font-size:1.1rem;color:var(--accent-text)}
+.list li.done span:not(.box){text-decoration:line-through;color:var(--secondary-text)}
+
+.rules{padding:clamp(40px,6vw,72px) 0;border-top:1px solid var(--separator)}
+.rules-panel{position:relative;overflow:hidden;isolation:isolate;padding:clamp(28px,5vw,56px);border-radius:32px;background:var(--paper);border:1px solid var(--separator);box-shadow:var(--lift)}
+.rules-panel::after{content:"";position:absolute;right:-120px;top:-120px;width:360px;height:360px;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--orange-cue) 16%,transparent),transparent);pointer-events:none;z-index:-1}
+.rules-grid{display:grid;gap:28px;align-items:start}
+@media (min-width:900px){.rules-grid{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}}
+.facts{list-style:none;margin:0;padding:0;display:grid;gap:24px}
+@media (min-width:640px){.facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.facts svg{width:52px;height:52px;padding:12px;margin-bottom:12px;border-radius:16px;background:var(--quiet-surface);fill:none;stroke:var(--accent-text);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.facts h4{font-size:1.1rem;margin-bottom:4px}
+.facts p{color:var(--secondary-text);margin:0;font-size:.9375rem}
+.rules-doddy{display:flex;gap:14px;align-items:flex-end}
+.rules-doddy .pose{width:120px}
+.rules-doddy .speak{font-size:1.9rem;transform:rotate(-4deg);margin-bottom:40px}
+
+.try{padding:clamp(40px,6vw,72px) 0;border-top:1px solid var(--separator)}
+.try-grid{display:grid;gap:28px;align-items:start}
+@media (min-width:900px){.try-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--separator);background:var(--paper);font-family:var(--hand);font-weight:700;font-size:1.3rem;line-height:1;transition:transform 150ms ease,border-color 150ms ease}
+.chip:hover{transform:translateY(-1px);border-color:var(--secondary-text)}
+.chip[aria-pressed="true"]{background:var(--reading-ink);color:var(--canvas);border-color:var(--reading-ink)}
+.try-answer{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.try-answer .pose{width:clamp(96px,12vw,140px)}
+.try-card{min-width:0;padding:20px 22px;background:var(--paper);border:1px solid var(--separator);border-radius:22px;box-shadow:var(--lift)}
+.try-card .bubble{max-width:100%}
+.try-card .chat{margin-bottom:12px;max-width:none}
+.try-mini{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:14px;border:1px dashed var(--separator);background:var(--quiet-surface);font-size:.9375rem}
+.try-mini .ask-app{margin:0}
+.try-mini .button{min-height:36px;padding:0 12px;border-radius:10px;font-size:.8125rem;pointer-events:none}
+
+.a-join{padding:clamp(24px,4vw,48px) 0 clamp(48px,7vw,80px)}
+.join-panel{display:grid;gap:24px;align-items:end;padding:clamp(28px,5vw,56px);background:radial-gradient(60% 80% at 100% 100%,color-mix(in srgb,var(--orange-cue) 14%,transparent),transparent),var(--paper);border-radius:36px;border:1px solid var(--separator);box-shadow:var(--lift)}
+@media (min-width:820px){.join-panel{grid-template-columns:minmax(0,1fr) 180px}}
+.join-panel .pose{width:160px;justify-self:end}
+.join-panel .display-m{margin-bottom:8px}
+.join-panel p{color:var(--secondary-text);max-width:34rem}
+
+/* ---------- Concept B: The fridge door ---------- */
+.b-hero{padding:clamp(36px,6vw,72px) 0 24px}
+.b-hero-grid{display:grid;gap:24px;align-items:end}
+@media (min-width:900px){.b-hero-grid{grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr)}}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 20px}
+.filter{min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--separator);background:transparent;font-weight:600;font-size:.9375rem;color:var(--secondary-text)}
+.filter[aria-pressed="true"]{background:var(--reading-ink);color:var(--canvas);border-color:var(--reading-ink)}
+.door{position:relative;padding:clamp(20px,4vw,40px);border-radius:32px;border:1px solid var(--separator);background:repeating-linear-gradient(to bottom,transparent 0 35px,var(--rule) 35px 36px),var(--paper);box-shadow:var(--lift)}
+.door-grid{display:flex;flex-wrap:wrap;gap:14px 12px;align-items:flex-start}
+.door .scrap{border:1px solid var(--separator);background:var(--paper);cursor:pointer;text-align:left;transition:transform 160ms ease,box-shadow 160ms ease;box-shadow:0 1px 2px rgb(60 40 10 / 8%)}
+.door .scrap:nth-child(3n+1){transform:rotate(-1.6deg)}
+.door .scrap:nth-child(3n+2){transform:rotate(1.1deg)}
+.door .scrap:nth-child(3n){transform:rotate(-.4deg)}
+.door .scrap:hover{transform:rotate(0) translateY(-2px);box-shadow:var(--lift)}
+.door .scrap[aria-pressed="true"]{background:var(--reading-ink);color:var(--canvas);border-color:var(--reading-ink);transform:rotate(0)}
+.door .scrap[hidden]{display:none}
+.door .scrap .area{display:block;font:600 .6875rem/1 var(--text);letter-spacing:.06em;text-transform:uppercase;color:var(--secondary-text);margin-top:6px}
+.door .scrap[aria-pressed="true"] .area{color:color-mix(in srgb,var(--canvas) 70%,transparent)}
+.door-magnet{position:absolute;width:18px;height:18px;border-radius:50%;background:var(--orange-cue);box-shadow:inset 0 -2px 0 rgb(0 0 0 / 15%)}
+.door-detail{display:grid;gap:20px;align-items:end;margin-top:24px;padding:24px;border-radius:24px;background:var(--quiet-surface);border:1px solid var(--separator)}
+@media (min-width:820px){.door-detail{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 130px}}
+.door-detail .chat{margin:0;max-width:none}
+.door-detail .pose{width:120px;justify-self:end}
+.door-detail .ask{transform:none}
+.b-foot{padding:32px 0 clamp(40px,6vw,64px)}
+
+/* ---------- Concept C: Say it, see it ---------- */
+.c-hero{padding:clamp(36px,6vw,64px) 0 24px}
+.demo{display:grid;gap:28px;align-items:start;padding-bottom:clamp(40px,6vw,64px)}
+@media (min-width:980px){.demo{grid-template-columns:minmax(0,1fr) 330px minmax(0,1fr)}}
+.phrases{display:grid;gap:18px}
+.phrases h4{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--secondary-text);font-family:var(--text);margin:0 0 8px}
+.phrases ul{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.phrase{width:100%;text-align:left;min-height:44px;padding:8px 14px;border-radius:14px;border:1px solid transparent;background:transparent;font-family:var(--hand);font-weight:700;font-size:1.35rem;line-height:1.1}
+.phrase:hover{border-color:var(--separator);background:var(--paper)}
+.phrase[aria-pressed="true"]{background:var(--reading-ink);color:var(--canvas)}
+.device{position:relative;width:min(100%,320px);margin:0 auto;aspect-ratio:390/845;border-radius:48px;padding:9px;background:var(--reading-ink);box-shadow:var(--lift-strong)}
+.screen{position:relative;width:100%;height:100%;border-radius:39px;background:var(--canvas);overflow:hidden;display:flex;flex-direction:column;padding:48px 18px 20px;font-size:.875rem}
+.screen::before{content:"";position:absolute;top:12px;left:50%;width:96px;height:28px;transform:translateX(-50%);border-radius:999px;background:var(--reading-ink)}
+.screen-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.screen-head .wordmark{font-size:1.7rem}
+.status{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid var(--separator);font-size:.75rem;font-weight:600;color:var(--secondary-text)}
+.status .dot{width:7px;height:7px;border-radius:50%;background:var(--orange-cue)}
+.screen .chat{gap:8px;margin-bottom:12px;max-width:none}
+.screen .bubble{padding:9px 12px 10px;font-size:.875rem}
+.screen .bubble.dod{font-size:1.25rem}
+.screen .ask{transform:none;padding:14px 16px;box-shadow:none;border-radius:18px}
+.screen .ask-q{font-size:1.05rem}
+.screen .ask-detail{font-size:.8125rem;margin-bottom:10px}
+.screen .ask-actions .button{min-height:38px;padding:0 12px;border-radius:11px;font-size:.8125rem;pointer-events:none}
+.screen .ask-actions .ghost{min-height:38px;padding:0 10px;border-radius:11px;font-size:.8125rem;pointer-events:none}
+.screen-foot{margin-top:auto;display:flex;align-items:center;justify-content:center;gap:10px;color:var(--secondary-text);font-size:.75rem}
+.screen-foot .mic{width:52px;height:52px;border-radius:50%;background:var(--reading-ink);display:grid;place-items:center}
+.screen-foot .mic svg{width:22px;height:22px;fill:none;stroke:var(--canvas);stroke-width:2;stroke-linecap:round}
+.screen .pose{position:absolute;right:10px;bottom:68px;width:70px;opacity:.95}
+.explain{display:grid;gap:14px}
+.explain .card{padding:18px 20px;border-radius:18px;background:var(--paper);border:1px solid var(--separator)}
+.explain h4{font-size:1rem;margin-bottom:8px}
+.explain ul{margin:0;padding-left:18px;font-size:.9375rem;color:var(--secondary-text)}
+.explain li{margin:4px 0}
+.explain .didnt{border-style:dashed}
+.explain .didnt h4{color:var(--accent-text)}
+
+/* ---------- phone check + notes ---------- */
+.phone-check{display:grid;grid-template-columns:minmax(0,1fr);gap:28px;align-items:start}
+@media (min-width:900px){.phone-check{grid-template-columns:minmax(0,1fr) 330px}}
+.frame.narrow .nav-inner{padding-inline:12px}
+.phone-check .device{aspect-ratio:auto}
+.phone-check .screen{height:auto;padding:0;border-radius:39px}
+.phone-check .screen::before{display:none}
+.phone-check .screen img{width:100%}
+.notes{padding:clamp(40px,6vw,72px) 0 clamp(56px,8vw,96px);border-top:1px solid var(--separator)}
+.notes-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:24px}
+@media (min-width:900px){.notes-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.notes .note{max-width:none}
+.decisions{list-style:none;margin:0;padding:0;display:grid;gap:14px;counter-reset:d}
+.decisions li{position:relative;padding:18px 20px 18px 64px;border-radius:18px;background:var(--paper);border:1px solid var(--separator);counter-increment:d}
+.decisions li::before{content:counter(d);position:absolute;left:18px;top:16px;width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:var(--reading-ink);color:var(--canvas);font-family:var(--display);font-weight:700}
+.decisions li strong{display:block;font-family:var(--display);font-size:1.05rem;margin-bottom:4px}
+.decisions li p{margin:0;color:var(--secondary-text);font-size:.9375rem}
+.decisions .pick{color:var(--confirmed);font-weight:700}
+.foot{padding:28px 0 48px;border-top:1px solid var(--separator);color:var(--secondary-text);font-size:.875rem}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Board chrome: this bar is for the owner reviewing the mockups, not part of the site. -->
+<div class="board-bar" role="navigation" aria-label="Mockup board">
+  <div class="wrap">
+    <strong>Everyday page · mockup board</strong>
+    <ul>
+      <li><a href="#nav"><b>0</b>Navbar</a></li>
+      <li><a href="#concept-a"><b>A</b>One ordinary Tuesday</a></li>
+      <li><a href="#concept-b"><b>B</b>The fridge door</a></li>
+      <li><a href="#concept-c"><b>C</b>Say it, see it</a></li>
+      <li><a href="#phone"><b>·</b>On a phone</a></li>
+      <li><a href="#decisions"><b>·</b>Decisions</a></li>
+    </ul>
+  </div>
+</div>
+
+<main>
+<header class="board-intro">
+  <div class="wrap board-intro-grid">
+    <div>
+      <p class="eyebrow">Design mockups · 13 October 2026 · nothing built yet</p>
+      <h1 class="display-m">A new page that shows what Doddy does in a normal day.</h1>
+      <p class="lede">For someone who has never read a feature list and never will. The page should make them nod: "oh, I'd use that on Tuesday." Three ways to tell that story below. Pick one and we code it.</p>
+    </div>
+    <div class="note">
+      <p class="eyebrow">What stays true on every concept</p>
+      <ul>
+        <li>Doddy asks before it changes anything. Every scene ends on a card you tap, never on something that just happened.</li>
+        <li>Everything shown is in early testing, and the page says so. No ratings, counts, logos or quotes.</li>
+        <li>The cards are drawings of the app's confirmation cards, not screenshots. Names and notes are examples.</li>
+        <li>Character art is the owner's numbered pack (the same poses the app uses), not the older SVGs on the front page.</li>
+      </ul>
+    </div>
+  </div>
+</header>
+
+<!-- ============ 0. Navbar ============ -->
+<section class="concept" id="nav" aria-labelledby="nav-title">
+  <div class="wrap">
+    <div class="concept-head">
+      <h2 class="display-s" id="nav-title"><span class="letter">0</span>Where it lives in the navbar</h2>
+      <p>One new link, second from the left, so it sits right after "How it works". On the new page the same link is underlined in orange. The label is short on purpose; the page title can be longer.</p>
+    </div>
+
+    <p class="eyebrow">Today</p>
+    <div class="frame" style="margin-bottom:24px">
+      <div class="frame-body">
+        <header class="nav force-links"><div class="wrap nav-inner">
+          <a class="wordmark" href="#nav" aria-label="Doddy">Doddy</a>
+          <nav aria-label="Sections, as they are today"><ul class="nav-links">
+            <li><a href="#nav">How it works</a></li><li><a href="#nav">Meet Doddy</a></li><li><a href="#nav">Take a shot</a></li><li><a href="#nav">Blog</a></li><li><a href="#nav">Privacy</a></li>
+          </ul></nav>
+          <a class="button small" href="#nav">Join early access</a>
+        </div></header>
+      </div>
+    </div>
+
+    <p class="eyebrow">Proposed, seen from the front page</p>
+    <div class="frame" style="margin-bottom:24px">
+      <div class="frame-body">
+        <header class="nav force-links"><div class="wrap nav-inner">
+          <a class="wordmark" href="#nav" aria-label="Doddy">Doddy</a>
+          <nav aria-label="Sections, proposed"><ul class="nav-links">
+            <li><a href="#nav">How it works</a></li><li><a class="new" href="#concept-a">Everyday<span class="tag" aria-hidden="true">new</span></a></li><li><a href="#nav">Meet Doddy</a></li><li><a href="#nav">Take a shot</a></li><li><a href="#nav">Blog</a></li><li><a href="#nav">Privacy</a></li>
+          </ul></nav>
+          <a class="button small" href="#nav">Join early access</a>
+        </div></header>
+      </div>
+    </div>
+
+    <p class="eyebrow">Proposed, seen on the new page itself</p>
+    <div class="frame" style="margin-bottom:24px">
+      <div class="frame-bar"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><div class="url">doddy-eight.vercel.app<b>/everyday/</b></div></div>
+      <div class="frame-body">
+        <header class="nav force-links"><div class="wrap nav-inner">
+          <a class="wordmark" href="#nav" aria-label="Doddy">Doddy</a>
+          <nav aria-label="Sections, on the new page"><ul class="nav-links">
+            <li><a href="#nav">How it works</a></li><li><a href="#concept-a" aria-current="page">Everyday</a></li><li><a href="#nav">Meet Doddy</a></li><li><a href="#nav">Take a shot</a></li><li><a href="#nav">Blog</a></li><li><a href="#nav">Privacy</a></li>
+          </ul></nav>
+          <a class="button small" href="#nav">Join early access</a>
+        </div></header>
+      </div>
+    </div>
+
+    <div class="phone-check" style="margin-top:32px">
+      <div class="note">
+        <p class="eyebrow">On phones the navbar has no links today</p>
+        <p>Below 820 px the live site shows only the wordmark and the Join button, so a new page would be unreachable from a phone. Two ways in, and I'd do both:</p>
+        <ul>
+          <li><strong>A small Menu button</strong> next to Join (shown on the right). It opens the same six links as a simple list. No hamburger animation, just a list.</li>
+          <li><strong>A line in the front-page hero:</strong> "See a day with Doddy" as the second link, next to "Watch the film".</li>
+        </ul>
+      </div>
+      <div class="frame narrow">
+        <div class="frame-bar"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><div class="url">doddy-eight.vercel.app <b>· 390 px</b></div></div>
+        <div class="frame-body">
+          <header class="nav"><div class="wrap nav-inner" style="gap:10px">
+            <a class="wordmark" href="#nav" aria-label="Doddy">Doddy</a>
+            <button class="nav-menu" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
+            <a class="button small" href="#nav">Join</a>
+          </div></header>
+          <div style="padding:16px 20px 4px">
+            <p class="eyebrow">Opens to</p>
+            <ul class="nav-links" style="display:grid;gap:0;margin:0 0 12px">
+              <li><a href="#nav">How it works</a></li><li><a href="#concept-a" class="new">Everyday<span class="tag" aria-hidden="true">new</span></a></li><li><a href="#nav">Meet Doddy</a></li><li><a href="#nav">Take a shot</a></li><li><a href="#nav">Blog</a></li><li><a href="#nav">Privacy</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ A. One ordinary Tuesday ============ -->
+<section class="concept" id="concept-a" aria-labelledby="a-title">
+  <div class="wrap">
+    <div class="concept-head">
+      <h2 class="display-s" id="a-title"><span class="letter">A</span>One ordinary Tuesday <span class="rec">Recommended</span></h2>
+      <p>The page is one day, 7:10 to 21:30, told as eight small moments. Each moment is the same shape: what you say, what Doddy says back, and the card Doddy puts in front of you. Tap the card to see what "yes" looks like. A sticky strip of times lets you jump around. This mockup is interactive: scroll it, tap the cards, try the chips at the end.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-bar"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><div class="url">doddy-eight.vercel.app<b>/everyday/</b></div></div>
+      <div class="frame-body">
+
+        <header class="nav"><div class="wrap nav-inner">
+          <a class="wordmark" href="#concept-a" aria-label="Doddy">Doddy</a>
+          <nav aria-label="Sections"><ul class="nav-links">
+            <li><a href="#nav">How it works</a></li><li><a href="#concept-a" aria-current="page">Everyday</a></li><li><a href="#nav">Meet Doddy</a></li><li><a href="#nav">Take a shot</a></li><li><a href="#nav">Blog</a></li><li><a href="#nav">Privacy</a></li>
+          </ul></nav>
+          <button class="nav-menu only-narrow" type="button" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
+          <a class="button small" href="#a-join"><span class="long">Join early access</span><span class="short">Join</span></a>
+        </div></header>
+
+        <section class="a-hero" aria-labelledby="a-hero-title">
+          <div class="wrap a-hero-grid">
+            <div class="a-hero-copy">
+              <p class="pill"><span class="dot" aria-hidden="true"></span>iPhone app, in early testing</p>
+              <h1 class="display" id="a-hero-title">One ordinary Tuesday.</h1>
+              <p class="lede">Eight small moments where you'd usually juggle three apps and a sticky note. What you say to Doddy, and what Doddy does about it.</p>
+              <div class="actions">
+                <a class="button" href="#a-m1">Start at 7:10</a>
+                <a class="text-link" href="#a-join">Join early access</a>
+              </div>
+              <p class="fineprint">Doddy asks before it changes anything. The names and notes on this page are made-up examples.</p>
+            </div>
+            <div class="a-hero-stage">
+              <div class="a-glow" aria-hidden="true"></div>
+              <p class="speak" aria-hidden="true">Walk with me.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+              <div class="a-tuesday" aria-hidden="true"><span class="tape"></span>Tuesday<small>8 moments · 3 min</small></div>
+              <img class="pose" src="media/doddy-wave.png" width="300" height="450" alt="">
+            </div>
+          </div>
+        </section>
+
+        <nav class="day-strip" aria-label="Moments in the day">
+          <div class="wrap"><ol>
+            <li><a href="#a-m1" class="on"><span class="t">7:10</span><span class="d" aria-hidden="true"></span>What's on</a></li>
+            <li><a href="#a-m2"><span class="t">8:20</span><span class="d" aria-hidden="true"></span>Out the door</a></li>
+            <li><a href="#a-m3"><span class="t">10:05</span><span class="d" aria-hidden="true"></span>That email</a></li>
+            <li><a href="#a-m4"><span class="t">12:40</span><span class="d" aria-hidden="true"></span>Quick sums</a></li>
+            <li><a href="#a-m5"><span class="t">15:30</span><span class="d" aria-hidden="true"></span>The car</a></li>
+            <li><a href="#a-m6"><span class="t">17:15</span><span class="d" aria-hidden="true"></span>The list</a></li>
+            <li><a href="#a-m7"><span class="t">18:50</span><span class="d" aria-hidden="true"></span>Two languages</a></li>
+            <li><a href="#a-m8"><span class="t">21:30</span><span class="d" aria-hidden="true"></span>Before bed</a></li>
+          </ol></div>
+        </nav>
+
+        <div class="wrap moments" id="a-moments">
+
+          <article class="moment" id="a-m1" aria-labelledby="a-m1-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">7:10</span>Kitchen, kettle on</p>
+              <h3 class="display-m" id="a-m1-t">What's on today?</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>Morning, Doddy. What's on today?</p>
+                <p class="bubble dod"><span class="who">Doddy</span>Dentist at 15:30. And Ola's birthday is tomorrow.</p>
+              </div>
+              <p class="why">Doddy reads your iPhone calendar and the birthdays on your contact cards. It adds the reminder only if you say yes.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask" data-state="ask">
+                <p class="ask-app">Reminders</p>
+                <p class="ask-q">Remind you to get Ola a card?</p>
+                <p class="ask-detail">Today at 17:00, when you're near the shops.</p>
+                <div class="ask-actions"><button class="button small" type="button" data-act="yes">Remind me</button><button class="ghost" type="button" data-act="no">Not now</button></div>
+                <p class="ask-done"><span class="chip-check" aria-hidden="true">✓</span><span><strong>Set</strong><br>Today, 17:00: get Ola a card.</span></p>
+                <p class="ask-none">Nothing changed. Doddy lets it go.</p>
+                <button class="ask-reset" type="button" data-act="reset">Start again</button>
+              </div>
+              <img class="pose" src="media/doddy-yawn-stretch.png" data-done="media/doddy-fistpump.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+          <article class="moment" id="a-m2" aria-labelledby="a-m2-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">8:20</span>Shoes half on</p>
+              <h3 class="display-m" id="a-m2-t">Out the door on time.</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>When do I need to leave for the dentist?</p>
+                <p class="bubble dod"><span class="who">Doddy</span>Leave at 15:02 and you're there for 15:30. Want a nudge?</p>
+              </div>
+              <p class="why">Doddy works out the trip from where you are to the address on the event. The nudge is a normal notification on your iPhone.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask" data-state="ask">
+                <p class="ask-app">Leave by</p>
+                <p class="ask-q">Nudge you at 15:02?</p>
+                <p class="ask-detail">Dentist, 15:30 · about 28 minutes by car</p>
+                <div class="ask-actions"><button class="button small" type="button" data-act="yes">Yes, nudge me</button><button class="ghost" type="button" data-act="no">No thanks</button></div>
+                <p class="ask-done"><span class="chip-check" aria-hidden="true">✓</span><span><strong>Nudge set</strong><br>15:02, "Time to leave for the dentist."</span></p>
+                <p class="ask-none">No nudge. You'll keep an eye on the clock.</p>
+                <button class="ask-reset" type="button" data-act="reset">Start again</button>
+              </div>
+              <img class="pose" src="media/doddy-tiptoe.png" data-done="media/doddy-fistpump.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+          <article class="moment" id="a-m3" aria-labelledby="a-m3-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">10:05</span>Desk, second coffee</p>
+              <h3 class="display-m" id="a-m3-t">That email, without opening email.</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>Did Marta reply about the invoice?</p>
+                <p class="bubble dod"><span class="who">Doddy</span>Yes, at 9:48. "Looks fine, we'll pay on Friday."</p>
+                <p class="bubble you"><span class="who">You</span>Draft a thanks, see you Thursday.</p>
+              </div>
+              <p class="why">Only if you've connected Gmail. Doddy reads your newest emails and can write drafts. It never sends anything; you do, from Gmail.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask" data-state="ask">
+                <p class="ask-app">Gmail draft</p>
+                <p class="ask-q">Save a reply draft to Marta?</p>
+                <p class="ask-detail"><q>Thanks Marta, see you Thursday.</q></p>
+                <div class="ask-actions"><button class="button small" type="button" data-act="yes">Save draft</button><button class="ghost" type="button" data-act="no">Not now</button></div>
+                <p class="ask-done"><span class="chip-check" aria-hidden="true">✓</span><span><strong>Draft saved in Gmail</strong><br>Not sent. Open Gmail when you want to send it.</span></p>
+                <p class="ask-none">No draft. Nothing was written anywhere.</p>
+                <button class="ask-reset" type="button" data-act="reset">Start again</button>
+              </div>
+              <img class="pose" src="media/doddy-belly-reading.png" data-done="media/doddy-fistpump.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+          <article class="moment" id="a-m4" aria-labelledby="a-m4-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">12:40</span>Lunch, one bill, four people</p>
+              <h3 class="display-m" id="a-m4-t">Quick sums.</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>Split 184 złoty four ways, with a ten percent tip.</p>
+                <p class="bubble dod"><span class="who">Doddy</span>50.60 each. 46 without the tip.</p>
+              </div>
+              <p class="why">Sums, unit swaps and currency are worked out on your iPhone. No card here, because nothing changes; Doddy just answers.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask">
+                <p class="ask-app">Worked out on your iPhone</p>
+                <div class="sum">
+                  <div><span>Bill</span><span>184.00 zł</span></div>
+                  <div><span>Tip, 10%</span><span>18.40 zł</span></div>
+                  <div><span>Total</span><span>202.40 zł</span></div>
+                  <div><span>Each, four ways</span><span>50.60 zł</span></div>
+                </div>
+                <p class="ask-foot">Ask "and in euro?" and Doddy uses the day's central-bank rate.</p>
+              </div>
+              <img class="pose" src="media/doddy-crosslegged.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+          <article class="moment" id="a-m5" aria-labelledby="a-m5-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">15:30</span>Car park under the clinic</p>
+              <h3 class="display-m" id="a-m5-t">Where's the car?</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>Remember where I parked.</p>
+                <p class="bubble dod"><span class="who">Doddy</span>Level B2, by the lifts. Ask me later and I'll point.</p>
+              </div>
+              <p class="why">Doddy reads where the iPhone is right now and keeps it as one spot, on the phone. Ask "where's the car?" afterwards and it opens in Maps.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask" data-state="ask">
+                <p class="ask-app">Parking spot</p>
+                <p class="ask-q">Save your parking spot?</p>
+                <p class="ask-detail">Level B2, by the lifts · 15:31</p>
+                <div class="ask-actions"><button class="button small" type="button" data-act="yes">Save</button><button class="ghost" type="button" data-act="no">Not now</button></div>
+                <p class="ask-done"><span class="chip-check" aria-hidden="true">✓</span><span><strong>Saved</strong><br>Level B2, by the lifts. Replaced the next time you park.</span></p>
+                <p class="ask-none">Not saved. Good luck in B2.</p>
+                <button class="ask-reset" type="button" data-act="reset">Start again</button>
+              </div>
+              <img class="pose" src="media/doddy-kneeling-inspect.png" data-done="media/doddy-fistpump.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+          <article class="moment" id="a-m6" aria-labelledby="a-m6-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">17:15</span>Supermarket, trolley with the wobbly wheel</p>
+              <h3 class="display-m" id="a-m6-t">The list that follows you.</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>Add milk, eggs and the big nappies to the shopping list.</p>
+                <p class="bubble dod"><span class="who">Doddy</span>Added three. Nine things on the list now.</p>
+              </div>
+              <p class="why">Quick list edits don't need a yes; they can be undone instead. Say "got the eggs" and Doddy ticks them off. Shared lists go through your iCloud.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask">
+                <p class="ask-app">Shopping list</p>
+                <ul class="list" aria-label="Shopping list, nine items, three just added">
+                  <li class="done"><span class="box done" aria-hidden="true"></span><span>Bread</span></li>
+                  <li><span class="box" aria-hidden="true"></span><span>Butter</span></li>
+                  <li><span class="box" aria-hidden="true"></span><span>Milk</span><span class="new">just added</span></li>
+                  <li><span class="box" aria-hidden="true"></span><span>Eggs</span><span class="new">just added</span></li>
+                  <li><span class="box" aria-hidden="true"></span><span>Nappies, size 5</span><span class="new">just added</span></li>
+                </ul>
+                <p class="ask-foot">+ 4 more · <button class="ask-reset" type="button" style="margin:0;display:inline">Undo the last change</button></p>
+              </div>
+              <img class="pose" src="media/doddy-reaching-high.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+          <article class="moment" id="a-m7" aria-labelledby="a-m7-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">18:50</span>The plumber speaks Ukrainian</p>
+              <h3 class="display-m" id="a-m7-t">Two languages, one phone.</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>Doddy, translate between me and Olena.</p>
+                <p class="bubble dod"><span class="who">Doddy</span>Face to face, Polish and Ukrainian. Hold the phone between you.</p>
+              </div>
+              <p class="why">While you talk, your voices go to OpenAI or ElevenLabs to run the conversation. Nothing is kept unless you ask Doddy to save a note.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask" data-state="ask">
+                <p class="ask-app">Translator</p>
+                <p class="ask-q">Start translator mode?</p>
+                <p class="ask-detail">Polish ↔ Ukrainian · face to face</p>
+                <div class="ask-actions"><button class="button small" type="button" data-act="yes">Start</button><button class="ghost" type="button" data-act="no">Not now</button></div>
+                <p class="ask-done"><span class="chip-check" aria-hidden="true">✓</span><span><strong>Translating</strong><br>Say "Doddy, stop" to end it.</span></p>
+                <p class="ask-none">Not started. Hand gestures it is.</p>
+                <button class="ask-reset" type="button" data-act="reset">Start again</button>
+              </div>
+              <img class="pose" src="media/doddy-listening.png" data-done="media/doddy-fistpump.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+          <article class="moment" id="a-m8" aria-labelledby="a-m8-t">
+            <div class="moment-copy">
+              <p class="when"><span class="clock">21:30</span>Sofa, lights low</p>
+              <h3 class="display-m" id="a-m8-t">Before you forget.</h3>
+              <div class="chat">
+                <p class="bubble you"><span class="who">You</span>The spare keys are in the blue tin above the fridge.</p>
+                <p class="bubble dod"><span class="who">Doddy</span>Worth keeping?</p>
+              </div>
+              <p class="why">A saved note keeps your exact words, the date and where it came from. It stays on your iPhone, and you can correct it, export it or delete it any time.</p>
+            </div>
+            <div class="moment-stage">
+              <div class="ask" data-state="ask">
+                <p class="ask-app">Memory</p>
+                <p class="ask-q">Save this note?</p>
+                <p class="ask-detail"><q>The spare keys are in the blue tin above the fridge.</q></p>
+                <div class="ask-actions"><button class="button small" type="button" data-act="yes">Save</button><button class="ghost" type="button" data-act="no">Don't save</button></div>
+                <p class="ask-done"><span class="chip-check" aria-hidden="true">✓</span><span><strong>Saved</strong><br>21:31 · your words, kept as said.</span></p>
+                <p class="ask-none">Not saved. Doddy forgets it on the spot.</p>
+                <button class="ask-reset" type="button" data-act="reset">Start again</button>
+              </div>
+              <img class="pose" src="media/doddy-shush.png" data-done="media/doddy-fistpump.png" width="300" height="450" alt="">
+            </div>
+          </article>
+
+        </div>
+
+        <section class="rules" aria-labelledby="a-rules-title">
+          <div class="wrap">
+            <div class="rules-panel">
+              <div class="rules-grid">
+                <div>
+                  <h2 class="display-m" id="a-rules-title">Three things Doddy always does.</h2>
+                  <div class="rules-doddy" aria-hidden="true">
+                    <img class="pose" src="media/doddy-shush.png" width="300" height="450" alt="">
+                    <p class="speak">Every time.</p>
+                  </div>
+                </div>
+                <ul class="facts">
+                  <li>
+                    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M6 10h20v12H12l-6 5z"/><path d="M12 15h8M12 19h5"/></svg>
+                    <h4>Asks first</h4>
+                    <p>Nothing changes until you tap the card. Quick list edits are the exception, and they can be undone.</p>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 4h16v24H8z"/><path d="M12 10h8M12 15h8M12 20h5"/></svg>
+                    <h4>Keeps your words</h4>
+                    <p>A saved note is your exact sentence, with the date and where it came from. A correction sits on top; the original stays.</p>
+                  </li>
+                  <li>
+                    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
+                    <h4>Stays on your iPhone</h4>
+                    <p>Notes, lists and parking spots live on the phone. Voice, calls and connected accounts leave it only when you switch them on, and the app lists each one.</p>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="try" aria-labelledby="a-try-title">
+          <div class="wrap">
+            <div class="section-head">
+              <h2 class="display-m" id="a-try-title">Try saying…</h2>
+              <p>Tap a line to see what Doddy would do with it. Example answers, not a live Doddy.</p>
+            </div>
+            <div class="try-grid">
+              <div class="chips" role="group" aria-label="Things to say">
+                <button class="chip" type="button" data-try="weather" aria-pressed="true">What's the weather in Gdańsk tomorrow?</button>
+                <button class="chip" type="button" data-try="timer" aria-pressed="false">Set a timer for 12 minutes.</button>
+                <button class="chip" type="button" data-try="birthdays" aria-pressed="false">Who's got a birthday this week?</button>
+                <button class="chip" type="button" data-try="free" aria-pressed="false">When am I free on Thursday?</button>
+                <button class="chip" type="button" data-try="list" aria-pressed="false">What's on my shopping list?</button>
+                <button class="chip" type="button" data-try="euro" aria-pressed="false">How much is 40 euro in złoty?</button>
+                <button class="chip" type="button" data-try="lost" aria-pressed="false">What was the Wi-Fi password at Tomek's?</button>
+              </div>
+              <div class="try-answer" aria-live="polite">
+                <div class="try-card" id="try-card">
+                  <div class="chat">
+                    <p class="bubble you"><span class="who">You</span><span id="try-you">What's the weather in Gdańsk tomorrow?</span></p>
+                    <p class="bubble dod"><span class="who">Doddy</span><span id="try-dod">Gdańsk, Wednesday: 14 degrees, light rain after three.</span></p>
+                  </div>
+                  <div class="try-mini" id="try-mini"><span class="ask-app">Weather</span><span>Forecast for the place you named. Nothing saved.</span></div>
+                </div>
+                <img class="pose" id="try-pose" src="media/doddy-listening.png" width="300" height="450" alt="">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="a-join" id="a-join" aria-labelledby="a-join-title">
+          <div class="wrap">
+            <div class="join-panel">
+              <div>
+                <h2 class="display-m" id="a-join-title">Come say hey.</h2>
+                <p>Doddy is in early testing on iPhone. Leave your email on the front page to hear when early access opens.</p>
+                <div class="actions" style="margin-top:8px">
+                  <a class="button" href="#nav">Join early access</a>
+                  <a class="text-link" href="#nav">Back to the front page</a>
+                </div>
+                <p class="fineprint">Doddy is an AI, not a person. Everything on this page is in early testing.</p>
+              </div>
+              <img class="pose" src="media/doddy-fistpump.png" width="300" height="450" alt="">
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <div class="verdict">
+      <div><h4>Why it works</h4><p>A day is something everyone already understands. No one has to learn what a "tool" or a "memory" is; they watch a Tuesday happen.</p><p>The same card shape every time teaches the one thing that matters: Doddy asks, you decide.</p></div>
+      <div><h4>What it costs</h4><p>Eight moments is a long scroll. It needs good copy more than good code, and the moments should be re-read when features change.</p><p>Two moments (Gmail, translator) use connected or cloud features and carry fine print.</p></div>
+      <div><h4>To build</h4><p>One static page in <code>site/everyday/</code> sharing the site's tokens and styles, one small script for the day strip, the cards and the chips. Works without JavaScript (cards show their question, chips hide).</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ B. The fridge door ============ -->
+<section class="concept" id="concept-b" aria-labelledby="b-title">
+  <div class="wrap">
+    <div class="concept-head">
+      <h2 class="display-s" id="b-title"><span class="letter">B</span>The fridge door</h2>
+      <p>No story, just a door covered in the things people actually say. Filter by where you are (home, out, work, family, travel), tap a scrap and it opens into the exchange. Good for browsing; weaker at making a point. Could also live as one section inside concept A later.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-bar"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><div class="url">doddy-eight.vercel.app<b>/everyday/</b></div></div>
+      <div class="frame-body">
+        <section class="b-hero" aria-labelledby="b-hero-title">
+          <div class="wrap">
+            <div class="b-hero-grid">
+              <div>
+                <p class="pill"><span class="dot" aria-hidden="true"></span>iPhone app, in early testing</p>
+                <h1 class="display" id="b-hero-title" style="font-size:clamp(2.6rem,1.4rem + 4.6vw,5rem)">What would you say to Doddy?</h1>
+                <p class="lede">Pick a scrap off the door. Each one is something a person said on a normal day, and what Doddy did about it.</p>
+              </div>
+              <div class="rules-doddy" aria-hidden="true" style="justify-content:flex-end">
+                <p class="speak" style="font-size:2.2rem">Pick one.</p>
+                <img class="pose" src="media/doddy-shrug.png" width="300" height="450" alt="" style="width:170px">
+              </div>
+            </div>
+            <div class="filters" role="group" aria-label="Filter by where you are">
+              <button class="filter" type="button" data-area="all" aria-pressed="true">Everything</button>
+              <button class="filter" type="button" data-area="home" aria-pressed="false">At home</button>
+              <button class="filter" type="button" data-area="out" aria-pressed="false">Out and about</button>
+              <button class="filter" type="button" data-area="work" aria-pressed="false">At work</button>
+              <button class="filter" type="button" data-area="family" aria-pressed="false">Family</button>
+              <button class="filter" type="button" data-area="travel" aria-pressed="false">Travelling</button>
+            </div>
+            <div class="door">
+              <span class="door-magnet" style="left:18px;top:14px" aria-hidden="true"></span>
+              <span class="door-magnet" style="right:40px;top:30px" aria-hidden="true"></span>
+              <span class="door-magnet" style="left:46%;bottom:14px" aria-hidden="true"></span>
+              <div class="door-grid" id="door-grid" role="group" aria-label="Things people say">
+                <button class="scrap" type="button" data-area="out" data-key="park" aria-pressed="true">Where did I park?<span class="area">Out and about</span></button>
+                <button class="scrap" type="button" data-area="home" data-key="eggs" aria-pressed="false">Add eggs to the list<span class="area">At home</span></button>
+                <button class="scrap" type="button" data-area="out" data-key="leave" aria-pressed="false">When should I leave?<span class="area">Out and about</span></button>
+                <button class="scrap" type="button" data-area="work" data-key="email" aria-pressed="false">What did Marta's email say?<span class="area">At work</span></button>
+                <button class="scrap" type="button" data-area="out" data-key="bill" aria-pressed="false">Split the bill four ways<span class="area">Out and about</span></button>
+                <button class="scrap" type="button" data-area="travel" data-key="translate" aria-pressed="false">Translate for me<span class="area">Travelling</span></button>
+                <button class="scrap" type="button" data-area="home" data-key="alarm" aria-pressed="false">Alarm for 6:45<span class="area">At home</span></button>
+                <button class="scrap" type="button" data-area="family" data-key="birthday" aria-pressed="false">Whose birthday is coming up?<span class="area">Family</span></button>
+                <button class="scrap" type="button" data-area="travel" data-key="weather" aria-pressed="false">Weather in Kraków?<span class="area">Travelling</span></button>
+                <button class="scrap" type="button" data-area="home" data-key="home" aria-pressed="false">Remind me when I'm home<span class="area">At home</span></button>
+                <button class="scrap" type="button" data-area="work" data-key="thursday" aria-pressed="false">What's on Thursday?<span class="area">At work</span></button>
+                <button class="scrap" type="button" data-area="travel" data-key="packing" aria-pressed="false">Start a packing list for Kraków<span class="area">Travelling</span></button>
+                <button class="scrap" type="button" data-area="family" data-key="shoes" aria-pressed="false">Ola's shoe size is 31<span class="area">Family</span></button>
+                <button class="scrap" type="button" data-area="work" data-key="todoist" aria-pressed="false">What's due today in Todoist?<span class="area">At work</span></button>
+                <button class="scrap" type="button" data-area="family" data-key="pickup" aria-pressed="false">Text Kuba I'm running late<span class="area">Family</span></button>
+              </div>
+              <div class="door-detail" id="door-detail" aria-live="polite">
+                <div class="chat">
+                  <p class="bubble you"><span class="who">You</span><span id="door-you">Where did I park?</span></p>
+                  <p class="bubble dod"><span class="who">Doddy</span><span id="door-dod">Level B2, by the lifts. Want it in Maps?</span></p>
+                </div>
+                <div class="ask" data-state="ask" id="door-ask">
+                  <p class="ask-app" id="door-app">Parking spot</p>
+                  <p class="ask-q" id="door-q">Open your spot in Maps?</p>
+                  <p class="ask-detail" id="door-detail-text">Level B2, by the lifts · saved 15:31</p>
+                  <div class="ask-actions"><span class="button small" id="door-yes">Open in Maps</span><span class="ghost" id="door-no">Not now</span></div>
+                </div>
+                <img class="pose" id="door-pose" src="media/doddy-kneeling-inspect.png" width="300" height="450" alt="">
+              </div>
+            </div>
+            <p class="caption left">Example answers. Every feature is in early testing, and Doddy asks before it changes anything.</p>
+          </div>
+        </section>
+        <div class="b-foot wrap"><p class="fineprint">Below the door: the same "Three things Doddy always does" panel and the join panel as concept A.</p></div>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <div><h4>Why it works</h4><p>Fast to skim, easy to add to. Fifteen scraps cover more ground than eight scenes, and the filters let a parent or a traveller find their own.</p></div>
+      <div><h4>What it costs</h4><p>It reads like a feature list in disguise. Without a story, the "asks first" rule is easy to miss, and the door gets cluttered as features grow.</p></div>
+      <div><h4>To build</h4><p>Same page shell as A. One data file of scraps; a filter and a detail panel in a small script. Without JavaScript, all scraps show and the detail panel shows the first one.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ C. Say it, see it ============ -->
+<section class="concept" id="concept-c" aria-labelledby="c-title">
+  <div class="wrap">
+    <div class="concept-head">
+      <h2 class="display-s" id="c-title"><span class="letter">C</span>Say it, see it</h2>
+      <p>One phone in the middle of the page. On the left, things you could say, grouped by what they're for. Tap one and the phone shows the conversation and the card. On the right, in plain words: what just happened, and what didn't. The most app-like of the three, and the heaviest.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-bar"><div class="dots" aria-hidden="true"><i></i><i></i><i></i></div><div class="url">doddy-eight.vercel.app<b>/everyday/</b></div></div>
+      <div class="frame-body">
+        <section class="c-hero" aria-labelledby="c-hero-title">
+          <div class="wrap">
+            <div class="section-head">
+              <h1 class="display-m" id="c-hero-title">Say it. See what Doddy does.</h1>
+              <p>Tap anything on the left. The phone shows the conversation; the notes on the right say what changed on your iPhone, and what didn't.</p>
+            </div>
+            <div class="demo">
+              <div class="phrases">
+                <div><h4>Remember</h4><ul>
+                  <li><button class="phrase" type="button" data-c="keys" aria-pressed="true">The spare keys are in the blue tin.</button></li>
+                  <li><button class="phrase" type="button" data-c="park" aria-pressed="false">Remember where I parked.</button></li>
+                </ul></div>
+                <div><h4>Plan</h4><ul>
+                  <li><button class="phrase" type="button" data-c="dentist" aria-pressed="false">Dentist on Tuesday at half three.</button></li>
+                  <li><button class="phrase" type="button" data-c="leave" aria-pressed="false">When do I need to leave?</button></li>
+                </ul></div>
+                <div><h4>Do</h4><ul>
+                  <li><button class="phrase" type="button" data-c="list" aria-pressed="false">Add milk and eggs to the list.</button></li>
+                  <li><button class="phrase" type="button" data-c="timer" aria-pressed="false">Timer for twelve minutes.</button></li>
+                </ul></div>
+                <div><h4>Find out</h4><ul>
+                  <li><button class="phrase" type="button" data-c="weather" aria-pressed="false">Weather in Gdańsk tomorrow?</button></li>
+                  <li><button class="phrase" type="button" data-c="lost" aria-pressed="false">What was Tomek's Wi-Fi password?</button></li>
+                </ul></div>
+                <div><h4>Talk</h4><ul>
+                  <li><button class="phrase" type="button" data-c="translate" aria-pressed="false">Translate between me and Olena.</button></li>
+                </ul></div>
+              </div>
+
+              <div class="device">
+                <div class="screen" id="c-screen">
+                  <div class="screen-head"><span class="wordmark">Doddy</span><span class="status"><span class="dot" aria-hidden="true"></span><span id="c-status">Listening</span></span></div>
+                  <div class="chat">
+                    <p class="bubble you"><span class="who">You</span><span id="c-you">The spare keys are in the blue tin above the fridge.</span></p>
+                    <p class="bubble dod"><span class="who">Doddy</span><span id="c-dod">Worth keeping?</span></p>
+                  </div>
+                  <div class="ask" id="c-ask">
+                    <p class="ask-app" id="c-app">Memory</p>
+                    <p class="ask-q" id="c-q">Save this note?</p>
+                    <p class="ask-detail" id="c-detail">"The spare keys are in the blue tin above the fridge."</p>
+                    <div class="ask-actions"><span class="button small" id="c-yes">Save</span><span class="ghost" id="c-no">Don't save</span></div>
+                  </div>
+                  <img class="pose" id="c-pose" src="media/doddy-listening.png" width="300" height="450" alt="">
+                  <div class="screen-foot"><span class="mic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></div>
+                </div>
+              </div>
+
+              <div class="explain" aria-live="polite">
+                <div class="card"><h4>What just happened</h4><ul id="c-did">
+                  <li>Doddy heard a detail worth keeping and asked.</li>
+                  <li>Nothing is saved until you tap Save.</li>
+                  <li>Saved notes keep your exact words and the date.</li>
+                </ul></div>
+                <div class="card didnt"><h4>What didn't</h4><ul id="c-didnt">
+                  <li>Nothing was stored yet, and nothing left your iPhone except the conversation itself.</li>
+                </ul></div>
+                <p class="caption left">Design preview, not the app. Everything shown is in early testing.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="verdict">
+      <div><h4>Why it works</h4><p>It looks like the thing you'll download. Seeing a card appear on a phone makes "asks first" obvious without a sentence of explanation.</p></div>
+      <div><h4>What it costs</h4><p>The phone has to stay honest with the real app, so every change to a screen means a change here. On a phone-sized screen the three columns stack and the demo loses its punch.</p></div>
+      <div><h4>To build</h4><p>Same shell as A. The phone is CSS (like the device frames on the front page), the states come from one data file. Needs a "Design preview" label until the real app is screenshotted.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ phone check ============ -->
+<section class="concept" id="phone" aria-labelledby="phone-title">
+  <div class="wrap">
+    <div class="concept-head">
+      <h2 class="display-s" id="phone-title"><span class="letter">·</span>Concept A on a phone</h2>
+      <p>A 390 px screenshot of this mockup's concept A, so you can see how the hero, the sticky day strip and the first moments stack. Taken with headless Chromium; a real iPhone will differ in fonts and spacing.</p>
+    </div>
+    <div class="phone-check">
+      <div class="note">
+        <p class="eyebrow">What changes on a phone</p>
+        <ul>
+          <li>The day strip scrolls sideways under your thumb and stays stuck under the navbar.</li>
+          <li>Each moment stacks: time and title, the chat, then the card with Doddy beside it.</li>
+          <li>Chips in "Try saying…" wrap to as many rows as they need; the answer card sits below them.</li>
+          <li>Doddy never sits on top of text. On phones the poses shrink to about 100 px.</li>
+        </ul>
+      </div>
+      <div class="device"><div class="screen"><img src="previews/concept-a-390.png" width="390" height="2600" alt="Concept A at 390 pixels wide: the hero with Doddy waving, the day strip, and the first moment stacked in one column." loading="lazy"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ notes + decisions ============ -->
+<section class="notes" id="decisions" aria-labelledby="decisions-title">
+  <div class="wrap">
+    <div class="concept-head">
+      <h2 class="display-s" id="decisions-title"><span class="letter">·</span>Decisions for the owner</h2>
+      <p>Answer these and the page can be coded in one go. My pick is marked on each.</p>
+    </div>
+    <ol class="decisions">
+      <li><strong>Which concept?</strong><p><span class="pick">A, One ordinary Tuesday.</span> B's door can become one section of A later if people want to browse. C is the most honest-looking but the most work to keep honest.</p></li>
+      <li><strong>The navbar label and address.</strong><p><span class="pick">"Everyday" at /everyday/</span>, second link from the left. Alternatives: "A day with Doddy" (long for a navbar) or "What Doddy does" (sounds like a feature list).</p></li>
+      <li><strong>Phones can't reach it today.</strong><p><span class="pick">Add the small Menu button</span> shown in section 0, and the "See a day with Doddy" link in the front-page hero. Either alone works; both is better.</p></li>
+      <li><strong>The eight moments.</strong><p>Keep all eight, swap any, or cut to six. Candidates to add: "Hey Doddy" from the Dynamic Island, a phone call with memory on, the morning check-in, a Todoist task, a Notion page read aloud. Candidates to cut if you want only on-phone scenes: the Gmail draft (10:05) and the translator (18:50).</p></li>
+      <li><strong>Character art.</strong><p><span class="pick">The owner's numbered pack on this page</span> (as the app uses), while the front page keeps the v1.3 SVGs until you decide to switch the whole site. Mixing is visible if someone looks closely: the pack Doddy has no backpack or ball.</p></li>
+      <li><strong>How honest is "in testing"?</strong><p>Every scene shows something built in the app but not yet verified on a real iPhone. The page carries the same "iPhone app, in early testing" pill as the front page and a fine-print line under the hero. Say if you want the label stronger or softer.</p></li>
+    </ol>
+
+    <div class="notes-grid" style="margin-top:32px">
+      <div class="note">
+        <p class="eyebrow">What's real behind each scene</p>
+        <ul>
+          <li>7:10 calendar and birthdays: Doddy reads the iPhone calendar and contact birthdays, proposes a reminder.</li>
+          <li>8:20 leave-by nudge: trip time from the current location to the event's address.</li>
+          <li>10:05 Gmail: newest emails read, reply drafted, never sent. Needs Gmail connected.</li>
+          <li>12:40 sums and currency: worked out on the phone; currency uses the ECB daily rate.</li>
+          <li>15:30 parking spot: kept on the phone, opens in Apple Maps.</li>
+          <li>17:15 lists: add, read, tick off, undo; shared lists through iCloud.</li>
+          <li>18:50 translator: face-to-face mode, voice through OpenAI or ElevenLabs while it runs.</li>
+          <li>21:30 memory: exact words, date and source kept on the phone; correct, export, delete.</li>
+          <li>"Try saying" extras: weather, timers, free time, Wi-Fi note lookup (and "I couldn't find that" when it isn't there).</li>
+        </ul>
+      </div>
+      <div class="note">
+        <p class="eyebrow">If we code concept A</p>
+        <ul>
+          <li>New files: <code>site/everyday/index.html</code>, <code>site/everyday.css</code>, <code>site/everyday.js</code>. Shares <code>tokens.css</code> and <code>styles.css</code>, loads <code>analytics.js</code> like the blog.</li>
+          <li>Navbar link in <code>site/index.html</code> and in the blog template in <code>tools/build_blog.py</code>; footer links on both; the Menu button for phones.</li>
+          <li>Poses: the twelve pack PNGs from this folder copied to <code>site/assets/poses-pack/</code>, with the provenance line added to the site README.</li>
+          <li>No inline scripts (the site's CSP in <code>vercel.json</code> hashes them). Cards and chips work by keyboard; reduced motion turns off the card tilt.</li>
+          <li>Checks before pushing: 1440, 390 and 320 px, no horizontal scroll, keyboard only, JavaScript off, CSP headers, screenshots into <code>VISUAL_REVIEW/landing/</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="foot"><div class="wrap">
+  <p>Mockup board for the Doddy site, 13 October 2026. Not published anywhere on the site. Character art from the owner's DODDY-Numbered-Video-Assets-v01 pack (the WholeDoddy image sets the app ships); fonts from Google Fonts as on the live site. Doddy is an AI, not a person.</p>
+</div></footer>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(s, r){ return (r||document).querySelector(s); };
+  var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+  /* Concept A: the ask cards. Yes -> receipt and a fist pump; No -> "nothing changed"; Start again resets. */
+  $$('.ask[data-state]').forEach(function(card){
+    var pose = card.parentElement ? $('.pose', card.parentElement) : null;
+    var rest = pose ? pose.getAttribute('src') : null;
+    card.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-act]'); if(!btn) return;
+      var act = btn.getAttribute('data-act');
+      card.setAttribute('data-state', act === 'yes' ? 'done' : act === 'no' ? 'none' : 'ask');
+      if(pose && pose.hasAttribute('data-done')){
+        pose.setAttribute('src', act === 'yes' ? pose.getAttribute('data-done') : rest);
+      }
+      if(act === 'reset'){ var first = $('[data-act="yes"]', card); if(first) first.focus(); }
+    });
+  });
+
+  /* Concept A: the day strip follows the moment in view. */
+  var links = $$('.day-strip a');
+  if('IntersectionObserver' in window && links.length){
+    var byId = {};
+    links.forEach(function(a){ byId[a.getAttribute('href').slice(1)] = a; });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(!en.isIntersecting) return;
+        links.forEach(function(a){ a.classList.remove('on'); });
+        var a = byId[en.target.id]; if(a){ a.classList.add('on'); a.scrollIntoView({block:'nearest', inline:'center', behavior:'auto'}); }
+      });
+    }, {rootMargin:'-40% 0px -50% 0px', threshold:0});
+    $$('.moment').forEach(function(m){ io.observe(m); });
+  }
+
+  /* Concept A: "Try saying…" */
+  var TRY = {
+    weather:  {you:'What’s the weather in Gdańsk tomorrow?', dod:'Gdańsk, Wednesday: 14 degrees, light rain after three.', app:'Weather', mini:'Forecast for the place you named. Nothing saved.', pose:'media/doddy-listening.png'},
+    timer:    {you:'Set a timer for 12 minutes.', dod:'Twelve minutes. Start it?', app:'Timer', mini:'<span class="button">Start</span> The timer runs only after you tap.', pose:'media/doddy-reaching-high.png'},
+    birthdays:{you:'Who’s got a birthday this week?', dod:'Ola, tomorrow. Nobody else until the 24th.', app:'Contacts', mini:'Read from the birthdays on your contact cards. Nothing saved.', pose:'media/doddy-crosslegged.png'},
+    free:     {you:'When am I free on Thursday?', dod:'Thursday: 10 to 12, then after four.', app:'Calendar', mini:'The gaps between your events, worked out on the phone.', pose:'media/doddy-belly-reading.png'},
+    list:     {you:'What’s on my shopping list?', dod:'Nine things. Milk, eggs, nappies, bread… want the rest?', app:'Lists', mini:'Read from your list on the phone. Nothing changed.', pose:'media/doddy-reaching-high.png'},
+    euro:     {you:'How much is 40 euro in złoty?', dod:'About 171 złoty at today’s central-bank rate.', app:'Currency', mini:'European Central Bank daily rate, worked out on the phone.', pose:'media/doddy-crosslegged.png'},
+    lost:     {you:'What was the Wi-Fi password at Tomek’s?', dod:'I couldn’t find that in your saved memories.', app:'Memory', mini:'Doddy only answers from what you saved. When it isn’t there, it says so instead of guessing.', pose:'media/doddy-shrug.png'}
+  };
+  var chips = $$('.chip[data-try]');
+  chips.forEach(function(ch){
+    ch.addEventListener('click', function(){
+      var d = TRY[ch.getAttribute('data-try')]; if(!d) return;
+      chips.forEach(function(c){ c.setAttribute('aria-pressed', c === ch ? 'true' : 'false'); });
+      $('#try-you').textContent = d.you;
+      $('#try-dod').textContent = d.dod;
+      $('#try-mini').innerHTML = '<span class="ask-app">' + d.app + '</span><span>' + d.mini + '</span>';
+      $('#try-pose').setAttribute('src', d.pose);
+    });
+  });
+
+  /* Concept B: the door. */
+  var DOOR = {
+    park:     {you:'Where did I park?', dod:'Level B2, by the lifts. Want it in Maps?', app:'Parking spot', q:'Open your spot in Maps?', d:'Level B2, by the lifts · saved 15:31', yes:'Open in Maps', no:'Not now', pose:'media/doddy-kneeling-inspect.png'},
+    eggs:     {you:'Add eggs to the shopping list.', dod:'Added. Seven things on it now.', app:'Shopping list', q:'Eggs added', d:'Quick list edits don’t need a yes. Undo takes them back.', yes:'Undo', no:'Fine', pose:'media/doddy-reaching-high.png'},
+    leave:    {you:'When should I leave for the dentist?', dod:'15:02 gets you there for 15:30. Nudge?', app:'Leave by', q:'Nudge you at 15:02?', d:'About 28 minutes by car', yes:'Yes, nudge me', no:'No thanks', pose:'media/doddy-tiptoe.png'},
+    email:    {you:'What did Marta’s email say?', dod:'9:48 today: “Looks fine, we’ll pay on Friday.”', app:'Gmail', q:'Read aloud, nothing changed', d:'Only with Gmail connected. Doddy can draft a reply; it never sends.', yes:'Draft a reply', no:'Done', pose:'media/doddy-belly-reading.png'},
+    bill:     {you:'Split 184 złoty four ways with a tip.', dod:'50.60 each. 46 without the tip.', app:'Worked out on your iPhone', q:'202.40 ÷ 4 = 50.60 zł', d:'Sums, unit swaps and currency stay on the phone.', yes:'And in euro?', no:'Thanks', pose:'media/doddy-crosslegged.png'},
+    translate:{you:'Translate between me and Olena.', dod:'Face to face, Polish and Ukrainian. Hold the phone between you.', app:'Translator', q:'Start translator mode?', d:'Voice goes to OpenAI or ElevenLabs while it runs.', yes:'Start', no:'Not now', pose:'media/doddy-listening.png'},
+    alarm:    {you:'Alarm for 6:45.', dod:'6:45 tomorrow. Even in Silent mode.', app:'Alarm', q:'Set an alarm for 6:45?', d:'Rings through Silent mode and Focus.', yes:'Set alarm', no:'Not now', pose:'media/doddy-yawn-stretch.png'},
+    birthday: {you:'Whose birthday is coming up?', dod:'Ola, tomorrow. Nobody else until the 24th.', app:'Contacts', q:'Remind you to get a card?', d:'Today at 17:00', yes:'Remind me', no:'Not now', pose:'media/doddy-crosslegged.png'},
+    weather:  {you:'What’s the weather in Kraków?', dod:'Kraków now: 11 degrees, cloudy. Dry till Thursday.', app:'Weather', q:'Forecast, nothing saved', d:'Three-day forecast for the place you named.', yes:'Thanks', no:'', pose:'media/doddy-shrug.png'},
+    home:     {you:'Remind me about the parcel when I’m home.', dod:'When you get home: the parcel in the locker, code 4471.', app:'Reminders', q:'Remind you when you arrive home?', d:'Opens your note about the locker.', yes:'Remind me', no:'Not now', pose:'media/doddy-kneeling-inspect.png'},
+    thursday: {you:'What’s on Thursday?', dod:'Two things: standup at 9:30, Kasia at 14:00. Free 10 to 12.', app:'Calendar', q:'Read from your calendar', d:'Nothing changed.', yes:'Thanks', no:'', pose:'media/doddy-belly-reading.png'},
+    packing:  {you:'Start a packing list for Kraków: charger, passport, the good shoes.', dod:'New list, three things. Add more any time.', app:'Lists', q:'Make a list called Kraków?', d:'Charger · Passport · The good shoes', yes:'Make it', no:'Not now', pose:'media/doddy-reaching-high.png'},
+    shoes:    {you:'Ola’s shoe size is 31.', dod:'Worth keeping?', app:'Memory', q:'Save this note?', d:'“Ola’s shoe size is 31.” · your words, kept as said', yes:'Save', no:'Don’t save', pose:'media/doddy-shush.png'},
+    todoist:  {you:'What’s due today in Todoist?', dod:'Three: the invoice, call the bank, book the car in.', app:'Todoist', q:'Read from Todoist', d:'Only with Todoist connected. Marking one done asks first.', yes:'Mark the invoice done', no:'Later', pose:'media/doddy-belly-reading.png'},
+    pickup:   {you:'Text Kuba I’m running ten minutes late.', dod:'Drafted. You send it.', app:'Message draft', q:'Open Messages with this text?', d:'“Running ten minutes late, sorry!” · to Kuba', yes:'Open Messages', no:'Not now', pose:'media/doddy-tiptoe.png'}
+  };
+  var scraps = $$('.door .scrap');
+  scraps.forEach(function(s){
+    s.addEventListener('click', function(){
+      var d = DOOR[s.getAttribute('data-key')]; if(!d) return;
+      scraps.forEach(function(o){ o.setAttribute('aria-pressed', o === s ? 'true' : 'false'); });
+      $('#door-you').textContent = d.you; $('#door-dod').textContent = d.dod;
+      $('#door-app').textContent = d.app; $('#door-q').textContent = d.q; $('#door-detail-text').textContent = d.d;
+      $('#door-yes').textContent = d.yes; var no = $('#door-no'); no.textContent = d.no; no.hidden = !d.no;
+      $('#door-pose').setAttribute('src', d.pose);
+    });
+  });
+  $$('.filter[data-area]').forEach(function(f){
+    f.addEventListener('click', function(){
+      var area = f.getAttribute('data-area');
+      $$('.filter[data-area]').forEach(function(o){ o.setAttribute('aria-pressed', o === f ? 'true' : 'false'); });
+      scraps.forEach(function(s){ s.hidden = !(area === 'all' || s.getAttribute('data-area') === area); });
+    });
+  });
+
+  /* Concept C: the phone. */
+  var C = {
+    keys:     {status:'Listening', you:'The spare keys are in the blue tin above the fridge.', dod:'Worth keeping?', app:'Memory', q:'Save this note?', d:'“The spare keys are in the blue tin above the fridge.”', yes:'Save', no:'Don’t save', pose:'media/doddy-listening.png',
+               did:['Doddy heard a detail worth keeping and asked.','Nothing is saved until you tap Save.','Saved notes keep your exact words and the date.'], didnt:['Nothing was stored yet, and nothing left your iPhone except the conversation itself.']},
+    park:     {status:'Thinking…', you:'Remember where I parked.', dod:'Level B2, by the lifts. Keep it?', app:'Parking spot', q:'Save your parking spot?', d:'Level B2, by the lifts · 15:31', yes:'Save', no:'Not now', pose:'media/doddy-kneeling-inspect.png',
+               did:['Doddy read where the phone is right now.','It keeps one spot, replaced the next time you park.','Later, “where’s the car?” opens it in Maps.'], didnt:['Your location is not sent anywhere. The spot lives on the phone.']},
+    dentist:  {status:'Thinking…', you:'Dentist on Tuesday at half three.', dod:'Tuesday 15:30, 45 minutes. Add it?', app:'Calendar', q:'Add to your calendar?', d:'Dentist · Tue 15:30–16:15', yes:'Add', no:'Not now', pose:'media/doddy-belly-reading.png',
+               did:['Doddy turned your sentence into an event.','It shows the exact time before anything is added.','Undo takes it back if you change your mind.'], didnt:['Nothing is in your calendar until you tap Add.']},
+    leave:    {status:'Thinking…', you:'When do I need to leave?', dod:'15:02 for the dentist. Want a nudge?', app:'Leave by', q:'Nudge you at 15:02?', d:'About 28 minutes by car', yes:'Yes, nudge me', no:'No thanks', pose:'media/doddy-tiptoe.png',
+               did:['Doddy found your next event with an address.','It worked out the trip from where you are.','The nudge is a normal iPhone notification.'], didnt:['No nudge is set until you say yes.']},
+    list:     {status:'Speaking', you:'Add milk and eggs to the list.', dod:'Added two. Seven things on the list now.', app:'Shopping list', q:'Milk and eggs added', d:'Quick list edits can be undone instead of asked.', yes:'Undo', no:'Fine', pose:'media/doddy-reaching-high.png',
+               did:['Two items went on your shopping list straight away.','Undo takes them off again.','Say “got the eggs” and Doddy ticks them.'], didnt:['Nothing else on the list was touched. A shared list syncs through your iCloud, not Doddy’s.']},
+    timer:    {status:'Thinking…', you:'Timer for twelve minutes.', dod:'Twelve minutes. Start it?', app:'Timer', q:'Start a 12-minute timer?', d:'Rings on this iPhone', yes:'Start', no:'Not now', pose:'media/doddy-reaching-high.png',
+               did:['Doddy proposes the timer with the exact length.','It runs on your phone like any timer.'], didnt:['It doesn’t start until you tap Start.']},
+    weather:  {status:'Speaking', you:'Weather in Gdańsk tomorrow?', dod:'Gdańsk, Wednesday: 14 degrees, light rain after three.', app:'Weather', q:'Forecast, nothing saved', d:'Three-day forecast for the place you named', yes:'Thanks', no:'', pose:'media/doddy-shrug.png',
+               did:['Doddy looked up the place, then the forecast.','It answered. There is no card to tap because nothing changes.'], didnt:['Nothing was saved. Only the place name went to the weather service.']},
+    lost:     {status:'Speaking', you:'What was Tomek’s Wi-Fi password?', dod:'I couldn’t find that in your saved memories.', app:'Memory', q:'No match', d:'Doddy answers only from what you saved.', yes:'Save it now', no:'OK', pose:'media/doddy-shrug.png',
+               did:['Doddy searched your saved notes.','It found nothing and said so instead of guessing.'], didnt:['Doddy didn’t make anything up, and didn’t look anywhere but your notes.']},
+    translate:{status:'Listening', you:'Translate between me and Olena.', dod:'Face to face, Polish and Ukrainian. Hold the phone between you.', app:'Translator', q:'Start translator mode?', d:'Polish ↔ Ukrainian · face to face', yes:'Start', no:'Not now', pose:'media/doddy-listening.png',
+               did:['Doddy proposes translator mode for two languages.','Say “Doddy, stop” to end it.'], didnt:['Nothing is kept from the conversation unless you ask Doddy to save a note. Voice goes to OpenAI or ElevenLabs only while it runs.']}
+  };
+  var phrases = $$('.phrase[data-c]');
+  phrases.forEach(function(p){
+    p.addEventListener('click', function(){
+      var d = C[p.getAttribute('data-c')]; if(!d) return;
+      phrases.forEach(function(o){ o.setAttribute('aria-pressed', o === p ? 'true' : 'false'); });
+      $('#c-status').textContent = d.status; $('#c-you').textContent = d.you; $('#c-dod').textContent = d.dod;
+      $('#c-app').textContent = d.app; $('#c-q').textContent = d.q; $('#c-detail').textContent = d.d;
+      $('#c-yes').textContent = d.yes; var no = $('#c-no'); no.textContent = d.no; no.hidden = !d.no;
+      $('#c-pose').setAttribute('src', d.pose);
+      $('#c-did').innerHTML = d.did.map(function(t){ return '<li>' + t + '</li>'; }).join('');
+      $('#c-didnt').innerHTML = d.didnt.map(function(t){ return '<li>' + t + '</li>'; }).join('');
+    });
+  });
+})();
+</script>
+</body>
+</html>
