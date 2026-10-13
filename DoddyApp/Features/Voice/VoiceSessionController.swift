@@ -148,6 +148,14 @@ final class VoiceSessionController {
         didSet {
             Self.conversationInProgress = isLive
             syncIsland()
+            // Listening comes only from the provider's own event: this conversation really
+            // connected. Counted once per conversation, for the Hey Doddy card (ADR-328).
+            if phase == .listening, !countedAsConnected {
+                countedAsConnected = true
+                let defaults = UserDefaults.standard
+                defaults.set(defaults.integer(forKey: PreferenceKey.connectedConversations) + 1,
+                             forKey: PreferenceKey.connectedConversations)
+            }
             // Listening comes only from the provider's own event, so this marks a conversation
             // that really connected, not a tap that failed (ADR-326).
             if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
@@ -155,6 +163,7 @@ final class VoiceSessionController {
             }
         }
     }
+    private var countedAsConnected = false
     /// True while any conversation holds the microphone (the island keeps it alive in other
     /// screens). Voice samples in Settings don't play then, so they never take over its audio.
     static private(set) var conversationInProgress = false
@@ -222,6 +231,8 @@ final class VoiceSessionController {
     private var checkInNeedsBriefing = false
     /// The user's first conversation (ADR-401): after the greeting, the app asks for the short tour.
     private var firstConversationNeedsTour = false
+    /// "Ask me about it" (ADR-403): after the greeting, the app names the note.
+    private var noteQuestion: String?
     /// How this conversation was started, and whether it started with the saved notes, profile and
     /// lists in the agent's context (not from Home's Translate). Translating then starts a fresh
     /// conversation, because that context can't be taken back out (review H3).
@@ -322,7 +333,7 @@ final class VoiceSessionController {
     /// "Hey Doddy" started the conversation (ADR-254): Doddy says it first and the island shows it.
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
-        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil
+        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil
     ) async {
         guard !isLive else { return }
         // This start's number (review H1): a start that was ended and replaced while it waited
@@ -341,9 +352,17 @@ final class VoiceSessionController {
         // A translator start sends no notes or lists, so it never carries a check-in too.
         let checkIn = preset == nil ? checkIn : nil
         checkInNeedsBriefing = checkIn != nil
+        // Only a plain conversation, and never a private note (ADR-310).
+        noteQuestion = nil
+        if preset == nil, checkIn == nil, let aboutNote,
+           let record = store.memories.first(where: { $0.id == aboutNote }),
+           NoteQuestion.canAsk(about: record, privateNotes: PrivateNotesStore.current()) {
+            noteQuestion = NoteQuestion.appMessage(for: record)
+        }
         let isFirstConversation = FirstConversationPrompt.isFirst(
             hadConversationBefore: UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation),
             translator: preset != nil, morningCheckIn: checkIn != nil)
+            && noteQuestion == nil  // "Ask me about it" comes first; no tour then
         firstConversationNeedsTour = isFirstConversation
         translator = nil
         listReceipt = nil
@@ -386,6 +405,7 @@ final class VoiceSessionController {
         }
         guard attempt == startAttempt else { return }
         startedAt = Date()
+        countedAsConnected = false
         phase = .connecting
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.
@@ -1564,6 +1584,10 @@ final class VoiceSessionController {
             Task { await sendToAgent(FirstConversationPrompt.appMessage) }
         }
         if fromUser { firstConversationNeedsTour = false }
+        if !fromUser, let question = noteQuestion {
+            noteQuestion = nil
+            Task { await sendToAgent(question) }
+        }
         // The greeting stays on the island only until the user answers.
         if fromUser, wakeGreeting != nil { wakeGreeting = nil }
     }

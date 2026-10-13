@@ -121,3 +121,14 @@ Everything in checklist H1–H14 (`MAC_VERIFICATION_CHECKLIST_2026-10-10.md`), a
 - False wake-up rate with Porcupine's default sensitivity (0.5), battery cost per hour, behaviour with calls and other apps.
 - App Store review: always-on listening in the background may draw questions under Apple's guidelines; not assessed.
 - Commercial use needs a Picovoice plan (owner decision before any release).
+
+## One tap for everyone (ADR-328, 2026-10-11)
+- The keyword file can ship in the app (`DoddyApp/Resources/WakeWord/hey-doddy.ppn`, the owner's) and the
+  AccessKey comes from the token server (`{"provider":"picovoice"}` → `PICOVOICE_ACCESS_KEY`), kept in the
+  Keychain under its own account. A user's own key and file still win.
+- Settings shows only the switch when one tap is enough; the Picovoice fields are under "Use my own Picovoice
+  key and file".
+- Home offers it once, after 3 conversations that really connected (`HeyDoddyOffer`).
+- Owner to do: set the server secret, add the .ppn file, check the Picovoice plan (active users; free-plan
+  keyword files expire after 30 days). Until then the card never shows and Settings works as before.
+
