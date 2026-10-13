@@ -113,8 +113,19 @@ three projects (`doddy` = the website, `doddy-gateway`, `doddy-voice-token`).
 Today "Talk to Doddy" uses the public development agent: anyone with its ID can talk to it on your minutes, and
 every recording is kept forever. Fix it in this order. Turning authentication on first would break the app.
 
+### 3.0 Where the token server runs
+Checked 2026-10-13: all three variables below are already set on Vercel `doddy-voice-token`. The only thing
+stopping it is Vercel's 402. You have two ways out:
+- **A. Fix Vercel billing** (Part 2). Nothing else changes. Address: `https://doddy-voice-token.vercel.app`.
+- **B. Run it on Render instead**, on the free plan you already use. `server/voice-token/server.js` (added
+  2026-10-13) runs the same code as a plain Node process; steps are in `server/voice-token/README.md`,
+  "Deploy on Render". You type `ELEVENLABS_API_KEY` and `DODDY_ACCESS_CODES` into Render yourself. The address
+  becomes `https://<service>.onrender.com`. Free instances sleep, so the first try after a pause can fail; the
+  second works.
+
 ### 3.1 Check the token server's environment
-Vercel → `doddy-voice-token` → Settings → **Environment Variables**. Production needs all three:
+Vercel → `doddy-voice-token` → Settings → **Environment Variables** (or Render → the service → Environment for
+route B). Production needs all three:
 
 | Name | Value |
 |---|---|
@@ -126,7 +137,7 @@ After changing any of them: Deployments → newest Production → Redeploy.
 
 ### 3.2 Point the app at it
 On the iPhone, open Doddy → **Settings** → **Voice**:
-1. **Token server**: `https://doddy-voice-token.vercel.app`.
+1. **Token server**: `https://doddy-voice-token.vercel.app` (route A) or the Render address (route B).
 2. **Access code**: your owner code → **Save**. It's stored in the Keychain.
 3. The connection row must say **Private (token server)**.
 
@@ -139,8 +150,7 @@ On the iPhone, open Doddy → **Settings** → **Voice**:
 ### 3.4 Lock the agent (only after 3.3 worked)
 In the ElevenLabs dashboard → Agents → Doddy:
 1. **Security** → turn on **Enable authentication**. The public ID no longer works; only tokens from your server do.
-2. **Advanced → Privacy**: set conversation retention to a number of days (30 is a sane start) instead of "forever".
-   This is a privacy decision (ADR-057); write the number into `DECISIONS.md`.
+2. Retention: the agent keeps every recording (owner, 2026-10-13: leave it as it is for now; ADR-057).
 3. **Call limits**: concurrency 2 and 10 calls a day today. Raise the daily limit for testing if you need to.
 4. Workspace → **Usage / Billing**: set a monthly spending or credit cap (ADR-068).
 5. Talk to Doddy again from the app. It must still work.

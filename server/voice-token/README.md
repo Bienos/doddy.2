@@ -61,6 +61,23 @@ They never contain codes, tokens, keys, IP addresses or anything the user said.
 `src/handler.js` uses only web-standard `Request`/`Response`/`fetch`, so Supabase Edge Functions or Cloudflare
 Workers need only a short entry file in place of `api/voice-token.js`.
 
+## Deploy on Render (or any host that runs Node)
+
+`server.js` serves the same handler from a plain Node process: `POST /api/voice-token` (the app's path is unchanged)
+and `GET /healthz`. Added 2026-10-13 because the Vercel team answered `402 DEPLOYMENT_DISABLED`.
+
+1. Render → **New → Web Service** → repo `Bienos/doddy.2`. Choose a branch that has `server.js`. Name
+   `doddy-voice-token`, region Frankfurt, plan Free.
+2. Root directory `server/voice-token`. Build command: `true` (there's nothing to install). Start command:
+   `node server.js`. Health check path `/healthz`.
+3. Environment: `NODE_VERSION` = `22`. Add the three required variables above (type the secrets in Render).
+4. Deploy. The endpoint is `https://<service>.onrender.com/api/voice-token`. Continue at step 4 of the Vercel steps.
+
+On the free plan the service sleeps after 15 idle minutes, and waking takes up to about a minute. The app waits only
+15 seconds for a token (`VoiceTokenClient.swift`), so the first "Talk to Doddy" after a pause can fail with a
+connection message; the next try works. The per-tester counter also resets on every restart. A paid instance
+($7/month) never sleeps.
+
 ## Test
 
 ```sh

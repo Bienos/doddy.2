@@ -2,8 +2,11 @@
   "name": "doddy-voice-token",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
+    "start": "node server.js",
     "test": "node --test test/*.test.js"
   }
 }
