@@ -386,6 +386,14 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 |---|---|---|
 | I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
 | I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
+## 4y. What Doddy did forgets notes (ADR-446)
+`DoddyApp.swift` (one line wiring the activity log into `MemoryStore`) and the Delete all text in `SettingsView.swift` changed without a compile. The logic is tested on Linux.
+| # | Do this | Expect |
+|---|---|---|
+| P1 | Build the app target | Compiles |
+| P2 | Save a note by voice; open What Doddy did | The row offers Undo. Set the iPhone's date a day and an hour ahead, reopen Doddy: no Undo on that row, the row is still there |
+| P3 | Save a note by voice, then delete the note in Notes | Its row in What Doddy did no longer offers Undo; the row stays |
+| P4 | With Notes rows and a Calendar row in What Doddy did, Settings → Delete all memories | The confirmation ends "So are the notes and lists rows in What Doddy did." (Polish: "Znikają też wiersze notatek i list w „Co zrobił Doddy”."). Afterwards only the Calendar row is left, and its Undo still works within the day |
 
 ## 4u. "Hey Doddy" with one tap (ADR-328)
 Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.

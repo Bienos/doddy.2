@@ -12057,13 +12057,13 @@
         }
       }
     },
-    "This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too.": {
+    "This removes every note, every list with its items, and the search index from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "To usuwa z tego iPhone’a wszystkie notatki, wszystkie listy z ich pozycjami i indeks wyszukiwania i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian. Wszystko, czego Doddy nauczył się z Twoich słów, oraz liczniki poprawek również zostają usunięte."
+            "value": "To usuwa z tego iPhone’a wszystkie notatki, wszystkie listy z ich pozycjami i indeks wyszukiwania i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian. Wszystko, czego Doddy nauczył się z Twoich słów, oraz liczniki poprawek również zostają usunięte. Znikają też wiersze notatek i list w „Co zrobił Doddy”."
           }
         }
       }

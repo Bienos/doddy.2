@@ -103,3 +103,6 @@ DoddyCore changes, each with a focused test; `make test-core` and `scripts/typec
   - Back Tap setup never claims the iOS setting is verified.
 - **Gaps:** listed above (DOD-06/07/08/09/11).
 - **Claims to limit:** all of this rests on `swift test` on Linux. No device or Xcode build was run.
+
+## Follow-up: C2 (2026-10-12, ADR-446)
+Rows had already stopped keeping note text and searches. Still left: Undo's copy of a note or of list items, kept with the row for 30 days, and Delete all leaving the log. Fixed: the copy is dropped once Undo is no longer offered (a day) and when its note or list is deleted, and Delete all memories removes the Notes and lists rows. `ActivityRetentionTests` (6); 3 of them fail on the old code.

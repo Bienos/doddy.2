@@ -44,6 +44,22 @@ final class ActivityLogStore {
         save()
     }
 
+    /// A note or list was deleted: its rows stay, without the text or items Undo kept (review C2).
+    func forget(memoryID: UUID) {
+        let updated = ActivityLog.forgetting(memoryID: memoryID, in: entries)
+        guard updated != entries else { return }
+        entries = updated
+        save()
+    }
+
+    /// "Delete all memories": the Notes and lists rows go too (review C2). Other apps' rows stay.
+    func forgetNotes() {
+        let updated = ActivityLog.forgettingNotes(entries)
+        guard updated != entries else { return }
+        entries = updated
+        save()
+    }
+
     private func load() {
         guard let fileURL, let data = try? Data(contentsOf: fileURL) else { return }
         let stored = (try? JSONDecoder().decode([ActivityEntry].self, from: data)) ?? []
