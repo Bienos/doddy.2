@@ -388,11 +388,17 @@ struct IslandCompactLeadingView: View {
     let scene: IslandScene
 
     var body: some View {
-        if let pose = scene.pose {
-            IslandPoseFaceView(pose: pose, size: 24)
-        } else {
-            IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
+        Group {
+            if let pose = scene.pose {
+                IslandPoseFaceView(pose: pose, size: 24)
+            } else {
+                IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
+            }
         }
+        // The drawings are hidden from VoiceOver, so the compact island says what Doddy is doing
+        // ("Listening", "Muted"), the same status the expanded island and Lock Screen show.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(scene.title)
     }
 }
 
