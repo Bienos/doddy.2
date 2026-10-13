@@ -359,6 +359,15 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4w. Privacy rows follow What leaves this iPhone (ADR-447)
+`SettingsView.swift` (two rows) and `DataFlowView.swift` (the shared `DataFlowState.current()`) changed without a compile here.
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Build the app target | Compiles |
+| N2 | Fresh install, Settings → Privacy | Network names ElevenLabs, Open-Meteo and Wikipedia, the European Central Bank, Apple Maps and Siri (Siri reading notes starts on), plus the messaging server if this build has one built in, then "Each only when you use it…". Cloud AI says "ElevenLabs (voice)" |
+| N3 | Turn on Ask Doddy, Hey Doddy and Pause all; set a messaging server; come back to Privacy | Network adds the Ask Doddy gateway, Picovoice and the messaging server, and drops the European Central Bank (paused). Cloud AI adds "OpenAI (Ask Doddy)" and the messaging server's calls and news writer |
+| N4 | Open What leaves this iPhone after N3 | Every service with a filled-in row is in the Network row, and nothing else; the screen still updates when a switch changes |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |
