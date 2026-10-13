@@ -93,6 +93,24 @@ Scenes were chosen for usefulness, relatability, humour and whether the pack has
 | 10 | Mobile version of the complete page | `10-mobile-full-page-390.png` (390 × 14930) |
 | 11 | Navigation and transitions | `11-navigation-transitions-1440.png` |
 | 12 | Final CTA and footer | `12-cta-footer-1440.png` |
+| 13 | Headline options for the hero (added after review) | `13-headline-options-1440.png` |
+
+### Headline options (mockup 13)
+
+The owner asked for alternatives to "Life's complicated. Doddy isn't. Usually." without a redesign. Eight options, each in the same shape (brand line in Bricolage, one handwritten beat in Doddy's voice, a supporting line):
+
+| # | Headline | Handwritten beat | Supporting line | Angle |
+|---|---|---|---|---|
+| 0 | Life's complicated. Doddy isn't. | Usually. | From forgotten plans to awkward messages, meet the little guy who helps you figure things out. | the brief's line, as mocked up |
+| 1 | What can Doddy do? | Quite a lot, actually. | Ten moments from an ordinary day, and what a mate in your pocket does with them. | answers the tab the visitor clicked |
+| 2 | Forgot something? | Doddy didn't. | He remembers the thing you said last week, reads your day out loud, and drafts the text you keep deleting. In your words, not his. | leads with the one built feature |
+| 3 | Small stuff, sorted. Big stuff, | calmly. | Doddy is funny about the little problems and plain about the serious ones. Here's a day of both. | the character's rule |
+| 4 | Clever with your problems. | Hopeless with umbrellas. | A little guy who can read your calendar, draft the awkward reply and find the pierogi place, and still can't decide on a jacket. | the brief's contradiction; the joke is on Doddy |
+| 5 | Late. Hungry. Lost. | Sorted. Mostly. | From the 08:45 alarm to the 22:30 reminder: the little things Doddy helps with, and the ones he's still learning. | reads like the homepage scraps |
+| 6 | A mate in your pocket. | Here's what he does all day. | Scroll through one ordinary day. Every scene says what's built, what's in testing, and what's later, maybe. | continues the brand line |
+| 7 | Your day has twelve small problems. | He likes those. | The side-quest fixer: notices the small frictions, helps first, jokes second, and asks before he changes anything. | Doddy's point of view |
+
+Option 2 claims memory, which is the built feature, so it is the safest claim. Options 4 and 5 are the funniest and still honest. Option 1 is the plainest and ties the page to its nav label. Any of them drops into the hero unchanged.
 
 ## Phase 4 — Review and recommendation
 
