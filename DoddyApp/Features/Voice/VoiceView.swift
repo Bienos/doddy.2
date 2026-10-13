@@ -291,10 +291,16 @@ struct VoiceView: View {
             Button {
                 showTranscript.toggle()
             } label: {
-                Label(showTranscript ? "Hide transcript" : "Show transcript",
-                      systemImage: showTranscript ? "text.bubble.fill" : "text.bubble")
-                    .font(.subheadline)
-                    .frame(minHeight: 44)
+                // Two plain literals, so tools/build_strings_catalog.py finds them (ADR-223).
+                Group {
+                    if showTranscript {
+                        Label("Hide transcript", systemImage: "text.bubble.fill")
+                    } else {
+                        Label("Show transcript", systemImage: "text.bubble")
+                    }
+                }
+                .font(.subheadline)
+                .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.accentText)
