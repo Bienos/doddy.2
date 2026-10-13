@@ -1,0 +1,98 @@
+<!--
+title: Mockup 07, an everyday scenario expanded
+active: wcd
+-->
+{{> head}}
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+{{> symbols}}
+{{> nav}}
+  <main id="main">
+    <section class="moment" id="text" aria-labelledby="text-title" style="padding-top: 48px">
+      <div class="wrap moment-grid">
+        <div class="moment-copy">
+          <p class="time">10:20</p>
+          <h2 id="text-title" class="display-m">The awkward text.</h2>
+          <p class="problem">Three drafts. Two deleted. One "hey" sent by accident.</p>
+          <ul class="helps">
+            <li>Writes a draft in your voice, not his.</li>
+            <li>Three nudges: funnier, shorter, more confident.</li>
+            <li>Opens Messages with the draft. Sending stays your job.</li>
+          </ul>
+          <p class="cap testing">Message drafts · in testing</p>
+          <p class="says-small">I don't send. You send.</p>
+        </div>
+        <figure class="scene">
+          <div class="scene-card">
+            <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+            <div class="scene-art">
+              <img class="bg" src="../assets/scenery/train_platform.jpg" alt="">
+              <img class="doddy" src="../assets/poses/listening.png" alt="" style="left: 7%; height: 74%;">
+              <img class="prop" src="../assets/props/phone.png" alt="" style="left: 27%; bottom: 7%; width: 8%">
+              <p class="d-bubble stack">That's a fairly ambitious request, but okay.</p>
+            </div>
+            <p class="u-bubble two-lines">Help me reply without sounding desperate.</p>
+            <div class="scene-panel" style="width: 46%">
+              <strong>Draft to Alex</strong>
+              <p style="margin: 4px 0 6px">Yesterday was fun. Same again next week? No pressure, my calendar is mostly staring at walls.</p>
+              <div class="btns"><span class="primary">Open in Messages</span><span>Change it</span></div>
+            </div>
+          </div>
+          <div class="choices" role="group" aria-label="Change the draft">
+            <label class="chip on"><input type="radio" name="draft" checked><span>Make it funnier</span></label>
+            <label class="chip"><input type="radio" name="draft"><span>Make it shorter</span></label>
+            <label class="chip"><input type="radio" name="draft"><span>Make it more confident</span></label>
+          </div>
+          <figcaption class="caption left">Scripted demonstration. Doddy never sends anything.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="truth" aria-label="The three drafts" style="padding-top: 0">
+      <div class="wrap">
+        <p class="section-label" style="margin:0 0 12px; font-size:.8125rem; font-weight:650; color: var(--secondary-text)">What each nudge does to the draft</p>
+        <div class="frames three">
+          <div class="frame" style="box-shadow: var(--lift)">
+            <div class="frame-label"><b>Funnier</b> selected</div>
+            <div class="frame-body" style="padding: 18px">
+              <div class="scene-panel" style="position: static; width: auto">
+                <strong>Draft to Alex</strong>
+                <p style="margin: 4px 0 6px">Yesterday was fun. Same again next week? No pressure, my calendar is mostly staring at walls.</p>
+                <div class="btns"><span class="primary">Open in Messages</span></div>
+              </div>
+            </div>
+            <p class="frame-note">Doddy's voice stays out of it: the joke is about your calendar, not about Alex.</p>
+          </div>
+          <div class="frame" style="box-shadow: var(--lift)">
+            <div class="frame-label"><b>Shorter</b> selected</div>
+            <div class="frame-body" style="padding: 18px">
+              <div class="scene-panel" style="position: static; width: auto">
+                <strong>Draft to Alex</strong>
+                <p style="margin: 4px 0 6px">Yesterday was fun. Next week?</p>
+                <div class="btns"><span class="primary">Open in Messages</span></div>
+              </div>
+            </div>
+            <p class="frame-note">The card shrinks with the text (200 ms). Reduced motion: it just changes.</p>
+          </div>
+          <div class="frame" style="box-shadow: var(--lift)">
+            <div class="frame-label"><b>More confident</b> selected</div>
+            <div class="frame-body" style="padding: 18px">
+              <div class="scene-panel" style="position: static; width: auto">
+                <strong>Draft to Alex</strong>
+                <p style="margin: 4px 0 6px">Yesterday was fun. Let's do Thursday, same place. I'll book.</p>
+                <div class="btns"><span class="primary">Open in Messages</span></div>
+              </div>
+            </div>
+            <p class="frame-note">"Open in Messages" is the only exit. On the website it opens a note saying the real button lives in the app.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="wrap travel" aria-hidden="true" style="padding-bottom: 48px">
+      <img src="../assets/poses/walk_3.png" alt="">
+      <svg class="path" viewBox="0 0 600 28" preserveAspectRatio="none"><path d="M0 20 C 150 2, 300 30, 600 10"/></svg>
+      <p class="says-small">Next: 13:00, lunch. Finally.</p>
+    </div>
+  </main>
+{{> footer}}

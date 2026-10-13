@@ -1,0 +1,89 @@
+<!--
+title: Mockup 12, final call to action and footer
+active: wcd
+-->
+{{> head}}
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+{{> symbols}}
+{{> nav}}
+  <main id="main">
+    <section class="moment flip" id="personality" aria-labelledby="personality-title" style="padding-top: 40px">
+      <div class="wrap moment-grid">
+        <div class="moment-copy">
+          <p class="time">23:30</p>
+          <h2 id="personality-title" class="display-m">Be more sarcastic.</h2>
+          <p class="problem">Some people want a straight answer. Some want a straight answer with a raised eyebrow.</p>
+          <p class="cap testing">Personality settings · in testing</p>
+        </div>
+        <figure class="scene">
+          <div class="scene-card">
+            <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+            <div class="scene-art">
+              <img class="bg" src="../assets/scenery/basketball_court.jpg" alt="">
+              <img class="doddy" src="../assets/poses/basketball_dribble.png" alt="" style="left: 8%; height: 76%;">
+              <p class="d-bubble stack">Closest I've got is Playful. Oh, wonderful. Permission to be myself.</p>
+            </div>
+            <p class="u-bubble">Be more sarcastic.</p>
+          </div>
+        </figure>
+      </div>
+    </section>
+
+    <div class="wrap travel" aria-hidden="true">
+      <img src="../assets/poses/walk_7.png" alt="">
+      <svg class="path" viewBox="0 0 600 28" preserveAspectRatio="none"><path d="M0 18 C 200 0, 400 28, 600 8"/></svg>
+      <p class="says-small">That's the day. Mostly.</p>
+    </div>
+
+    <section class="truth" aria-labelledby="truth-title">
+      <div class="wrap">
+        <div class="truth-panel">
+          <div>
+            <h2 id="truth-title">What's real today</h2>
+            <p>Doddy is in early testing. The scenes above are scripted, and the labels mean exactly this.</p>
+          </div>
+          <ul class="truth-list">
+            <li><span class="cap built">Built</span><span>Works in the app now: saving notes in your words and finding them again.</span></li>
+            <li><span class="cap testing">In testing</span><span>Built, being tried on real iPhones: voice conversations, calendar, reminders, timers, lists, maps, message drafts, weather, personality settings.</span></li>
+            <li><span class="cap later">Later, maybe</span><span>Not built, no dates promised: translating other people, picking restaurants for you, Android.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="join ask-end" id="join" aria-labelledby="join-title">
+      <div class="wrap">
+        <div class="join-panel">
+          <div class="join-copy">
+            <h2 id="join-title" class="display-m">Still got a problem? Ask Doddy.</h2>
+            <p>Doddy is in early testing. Leave your email to hear when early access opens.</p>
+            <ul class="scraps" aria-label="More everyday problems">
+              <li>Where did I park?</li>
+              <li>Pasta timer, nine minutes</li>
+              <li>Call Mum. Actually call her.</li>
+              <li>Plan my evening</li>
+            </ul>
+            <form class="waitlist" novalidate>
+              <label for="email">Email</label>
+              <div class="field-row">
+                <input id="email" name="email" type="email" placeholder="name@example.com">
+                <button class="button" type="submit">Join early access</button>
+              </div>
+              <p class="fineprint form-note">We'll only use your email to tell you when early access opens, and we'll delete it whenever you ask.</p>
+            </form>
+            <div class="open-app">
+              <p>Want to chat now? <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0">Join the Telegram group</a></p>
+              <p>Follow Doddy: <a class="text-link" href="https://www.tiktok.com/@doddy_mate">TikTok doddy_mate</a> <a class="text-link" href="https://www.instagram.com/doddy_mate/">Instagram doddy_mate</a></p>
+            </div>
+          </div>
+          <picture class="join-pose"><img src="../assets/poses/fistpump.png" width="640" height="960" alt=""></picture>
+        </div>
+        <div class="later">
+          <h2 class="later-title">Later, maybe</h2>
+          <p>In testing now: your calendar, reminders, alarms, timers, lists, maps and message drafts, with changes confirmed on screen first (quick list edits can be undone instead), and Polish alongside English. Not built yet, and no dates promised: translation, Android.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+{{> footer}}

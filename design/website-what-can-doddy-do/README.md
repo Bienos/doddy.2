@@ -1,0 +1,192 @@
+# "What can Doddy do?" — website page mockups
+
+**Status: design proposal, awaiting the owner's choice. Nothing here is live.** No production page was built, `site/` is untouched, nothing was deployed. The mockups are HTML files rendered to PNG with headless Chromium so they can be reviewed at real sizes (1440 px desktop, 390 px phone).
+
+Brief: a new tab on doddy.lol that shows what it feels like to have Doddy in your pocket, through everyday situations, without explaining the technology. Three directions, twelve mockups, one recommendation, then stop for approval.
+
+## Where to look
+
+| | File |
+|---|---|
+| Review gallery (all mockups with notes) | `index.html` |
+| Rendered mockups | `png/` |
+| Mockup pages (open in a browser) | `mockups/*.html` |
+| Sources the pages are built from | `mockups/src/` and `mockups/src/partials/` |
+| Styles | `mockups/site.css` (copy of the live site's tokens + styles), `mockups/mockup.css` (the new page's components) |
+| Artwork used | `assets/` (see Provenance below) |
+
+## Phase 1 — Discovery: what doddy.lol actually is
+
+The live site at https://www.doddy.lol/ is the repository's `site/` folder, served as is. A fetch on 2026-10-13 differed from `site/index.html` in two copy lines only (which voice provider is named first). So the design language was read from the source, not guessed:
+
+- **Light-only "editorial notebook"**: paper `#FFF7E9`, ink `#171715`, orange cue `#F58A24`, secondary text `#655F56`, quiet surface `#F5EAD8`, separator `#DFD5C6`, accent text `#A64B00`, confirmed green `#326746`, error `#A3342E` (`site/tokens.css`, generated from the app's `CandidateTokens.swift`). The mockups use these tokens and no others.
+- **Type**: Bricolage Grotesque for headings (the brand speaking), Caveat only for Doddy's own lines and the wordmark, the system face for reading. Both web fonts load from Google Fonts on the live site; the mockups link them the same way. No font binaries are committed.
+- **Patterns the mockups reuse unchanged**: the sticky nav with the handwritten wordmark and the ink "Join early access" button; the faintly ruled hero paper; the tilted device frame; the taped paper card around the film; the rotated "scraps"; the film's chapter buttons; pills ("iPhone app, in early testing", "In testing"); paper panels with 36 px radius and the warm corner glow; the join panel with the waitlist form; the "Later, maybe" block; the footer.
+- **Navigation today**: How it works · Meet Doddy · Take a shot · Blog · Privacy, plus the button. Below 820 px the links are hidden; there is no phone menu at all. The blog marks its tab with `aria-current="page"` (ink text, orange underline), which the new page reuses.
+- **Character art**: the live site still shows the v1.3 SVG poses, but CLAUDE.md (2026-10-11) says new Doddy art comes only from the owner's `DODDY-Numbered-Video-Assets-v01` pack. The mockups follow that rule; see Provenance.
+
+### What the product can do today (the labels the page must use)
+
+From `prompts/LANDING_PAGE_DESIGN.md` (feature truth table), `docs/implementation/V1_VOICE_STATUS.md`, `docs/product/PERSONALITY_SETTINGS.md` and the live site's own "Later, maybe" paragraph:
+
+| Shown on the page as | What it means | Covers |
+|---|---|---|
+| **Built** | Works in the app now, simulator-tested | Saving a note in your exact words; finding it again with date and source; "I couldn't find that in your saved memories" when nothing matches; edit, export, delete |
+| **In testing** | Built, being tried on real iPhones, not yet verified for release | Voice conversation (ElevenLabs agent); read calendar and add events; reminders; timers; lists; Apple Maps hand-off; message and email drafts (Doddy never sends); contacts; weather (Open-Meteo); Wikipedia look-ups; English/Polish switching; personality settings (humour, reply length, tone, mood; quick picks Doddy's default / Focused / Playful) |
+| **Later, maybe** | Not built, no dates promised | Translating other people; choosing a restaurant for you; Android |
+
+Every change in the app goes through a card with Add / Save / Open and nothing happens until the tap; the receipt is read back afterwards. The scenes show exactly that pattern. No ratings, download counts, testimonials or App Store buttons appear anywhere (the brief's own rule, and the site's).
+
+## Phase 2 — Creative concepts
+
+### The long-list (20 situations, 10 kept)
+
+| # | Situation | Hero object | Capability shown | Label | In the mockups |
+|---|---|---|---|---|---|
+| 1 | You're late. Again. (08:45) | alarm clock | calendar read-out, a "running late" draft | In testing | kept |
+| 2 | Jacket or no jacket? (09:10) | coffee cup | weather for where you are | In testing | kept |
+| 3 | The awkward text (10:20) | phone | message draft with funnier / shorter / more confident | In testing | kept |
+| 4 | What should we eat? (13:00) | note card | search handed to Apple Maps; cheap / best rated / different | In testing (picking for you: later) | kept |
+| 5 | Lost in translation | suitcase | English/Polish today; translating others not built | Later, maybe | kept, shown as a concept |
+| 6 | Explain it like I'm five (15:30) | book | plain explanation, Wikipedia named as the source | In testing | kept |
+| 7 | My brain has left the chat (18:45) | speech bubble | saved note found in your exact words, with receipt | **Built** | kept, the anchor scene |
+| 8 | The shopping bag (20:15) | shopping bag | shared list, add with Undo | In testing | kept |
+| 9 | Don't let me forget (22:30) | calendar | reminder card, Add, read back | In testing | kept |
+| 10 | Be more sarcastic (23:30) | basketball | the real personality quick picks | In testing | kept |
+| 11 | Where did I park? | | save "parked on B2", find it later | Built | CTA scrap |
+| 12 | Pasta timer, nine minutes | | timer card with Start | In testing | CTA scrap |
+| 13 | Call Mum. Actually call her. | | contact lookup, Call button | In testing | CTA scrap |
+| 14 | Plan my evening | | one card for 2–5 changes with tick boxes | In testing | CTA scrap |
+| 15 | The tin above the fridge | | the homepage's own example note | Built | already on the homepage |
+| 16 | Marta's book | | note found | Built | appears as a floating note in scene 7 |
+| 17 | Locker 4471 | | note found | Built | appears as a floating note in scene 7 |
+| 18 | Hey Doddy, hands full | | wake word on the Dynamic Island | In testing, not device-verified | dropped: can't be shown honestly yet |
+| 19 | The Polish grandmother | | language switch mid-conversation | In testing | folded into 5 |
+| 20 | Sunday night, "what did I say I'd do?" | | notes + reminders together | mixed | dropped: two features in one, muddy |
+
+Scenes were chosen for usefulness, relatability, humour and whether the pack has scenery and a pose for them. Doddy's lines follow the character rules in `docs/product/PERSONALITY_SETTINGS.md`: answer first, one dry beat, jokes about the situation and never about the user, no sarcasm at the user ("Be more sarcastic" gets the honest answer that the closest setting is Playful).
+
+### Three directions
+
+| | A · Doddy's daily chaos | B · Doddy's little world | C · Got a problem? Ask Doddy. |
+|---|---|---|---|
+| Shape | One scroll from 08:45 to 23:30; each moment is a taped scene card with Doddy, a line, and the app's card | A paper map of ten places; click a place, Doddy walks there, the situation plays | One screen: Doddy, a row of problem chips, an iPhone showing the scripted conversation |
+| What carries it | Editorial storytelling and Doddy travelling down the page | Exploration and surprise | Speed and polish |
+| Hero | Doddy in a ring of seven objects; objects double as chapter links | The map itself, under a centred headline | Headline, chips, Doddy, phone |
+| Uses the pack's scenery | all ten 16:9 scenes | as place tiles | not in the hero |
+| Phone | Natural: the page is already a vertical story | Weakest: the map becomes a two-column grid of places, the "world" feeling goes | Good: chips then phone |
+| Build cost | medium: static sections, one scroll-spy, pose swaps | high: hit areas, walking paths, two layouts | low |
+
+## Phase 3 — The mockups
+
+| # | Required output | File(s) in `png/` |
+|---|---|---|
+| 01 | Existing homepage with the new tab | `01-homepage-nav-1440.png`, `01-homepage-nav-390.png`, `01-homepage-nav-390-menu.png` |
+| 02 | New page hero, Direction A | `02-hero-a-1440.png`, `02-hero-a-390.png` |
+| 03 | New page hero, Direction B | `03-hero-b-1440.png`, `03-hero-b-390.png` |
+| 04 | New page hero, Direction C | `04-hero-c-1440.png`, `04-hero-c-390.png` |
+| 05 | Full desktop page, recommended direction | `05-full-page-1440.png` (1440 × 10399) |
+| 06 | Interactive scenario selection | `06-scenario-selection-1440.png` |
+| 07 | Expanded everyday scenario | `07-expanded-scenario-1440.png` |
+| 08 | Doddy's interaction states | `08-character-states-1440.png` |
+| 09 | iPhone conversation demonstration | `09-iphone-conversation-1440.png` |
+| 10 | Mobile version of the complete page | `10-mobile-full-page-390.png` (390 × 14930) |
+| 11 | Navigation and transitions | `11-navigation-transitions-1440.png` |
+| 12 | Final CTA and footer | `12-cta-footer-1440.png` |
+
+## Phase 4 — Review and recommendation
+
+**Recommended: Direction A, with C's problem picker folded into its hero and B's scenery as the backdrops.** That is what mockups 05 to 12 show.
+
+Why A:
+
+1. **Instant understanding.** The headline, Doddy, and seven recognisable objects are on screen together; a visitor sees "everyday problems, a character, a phone app" before scrolling. C does this slightly faster; B does it slowest, because a map asks to be explored before it explains.
+2. **Continuity with the site.** The homepage is already a scroll story with taped paper cards, handwritten asides and chapter buttons. A reuses every one of those components; the new page reads as the next page of the same notebook. B introduces a new kind of surface (a map) and C is fine but generic.
+3. **Phones.** Most traffic will come from TikTok and Instagram links on phones. A stacks naturally (mockup 10). B loses its idea on a phone.
+4. **Shareability.** A gives people ten small scenes and lines to screenshot and send; the day structure is a story people retell ("the 08:45 one is me").
+5. **Honesty is easy to keep.** Each moment has one label and one caption; the one built feature (saved notes) gets the anchor scene at 18:45, and the "Later, maybe" scene is shown as a concept in the same voice.
+
+What A takes from the others: C's "pick a problem" becomes the object ring, so the page is still a picker for the impatient; B's places are the scene backgrounds, so the little world exists without the map's cost.
+
+Trade-offs to accept:
+
+- A is long (ten moments). The day strip and the object ring are the cure, and the page can ship with six moments and grow.
+- A needs a little scroll logic (current chapter, Doddy's travel between moments). All of it is progressive enhancement over a plain page; without JavaScript or with reduced motion it is a static page with the same content.
+- The humour is in the copy, so the copy needs the owner's ear before build.
+
+### Navigation decision
+
+- Label **What can Doddy do?** (sentence case like the other items), second position after "How it works": the homepage answers how, the new page answers what.
+- Route **`/what-can-doddy-do/`**, a folder with an index page, like `/blog/`.
+- Active state: the blog's existing `aria-current="page"` rule (ink text, orange underline).
+- Phone: the site currently has no menu at all below 820 px. The proposal adds a 44 px menu button that opens a paper sheet with the six links; the new one carries Doddy's face. The site owner may prefer to keep the phone nav as it is and rely on the footer; the mockups show both states.
+- Transition from the homepage (mockup 11): Doddy pops out of the tab, runs right, an ink wipe, and he lands in the new hero ring. Under 1.5 s, a plain link underneath, and skipped entirely with reduced motion.
+
+### Motion and accessibility rules (from mockups 06 and 08)
+
+Still images only: pose swaps, CSS transforms and opacity; walk and run frames at 8 fps for travel. No canvas, video or rig, because the pack has none. `prefers-reduced-motion`: no travel, no drift, no bubble pop; poses still swap. Objects are links, 116 px on desktop and 70 px on phones; labels are visible on tap. Doddy never covers text; bubbles are real text, not images. Colours are the site's own, so contrast is as already checked on the homepage.
+
+## Product accuracy, in one place
+
+- Scenes are **scripted**; every one says so in its caption.
+- **Built**: only the saved-notes scene (18:45) and the memory phone (09 C). Its lines, dates and "Your typed note" source match the app's real receipt model.
+- **In testing**: everything the voice agent does through a card. The phone mockups show the real pattern (card, tap, read back, "What Doddy did"). The status words Listening / Speaking are the app's own.
+- **Later, maybe**: translation (shown as a concept and labelled), picking restaurants for you, Android.
+- Nothing claims the voice is verified on a real iPhone, no ratings, no downloads, no App Store button, no testimonials.
+- The "What's real today" panel sits above the final CTA so the honesty beat lands before the ask.
+
+## Provenance of the artwork
+
+Rule (CLAUDE.md, 2026-10-11): only the owner's `DODDY-Numbered-Video-Assets-v01` pack (Google Drive folder `1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`). Everything in `assets/` comes from it, with two documented exceptions below.
+
+| Folder | Source in the pack | What was done |
+|---|---|---|
+| `assets/poses/*.png` (16 poses, 640 px wide) | `doddy-extra-poses-expressions-v02/…/01-transparent-poses/*.png` (1024 × 1536), downloaded 2026-10-13 | Lanczos downscale only. Checked against `docs/design/UPLOADED_MEMORY_ASSETS.md`: listening `96375303…`, shush `69fa189d…`, shrug `c68edf3c…`, fist pump `c7a1fd15…` match the hashes recorded there. `wave.png` is frame 4 of `016_doddy_wave_v01.png` (`817a2b87…`) cut with the repo's own `tools/whole_doddy/cut_wave.py`. |
+| `assets/poses/walk_3.png`, `walk_7.png`, `run_2.png`, `jump_3.png` | the app's `DoddyMotion_*` image sets (ADR-313), themselves cut from the pack's 012/014/015 sheets | copied at @3x |
+| `assets/scenery/*.jpg` (17 scenes, 1600 px) | `doddy-complete-scenery-16x9-v06/` (1920 × 1080 PNG) | downscale, JPEG |
+| `assets/props/*.png` | `010_doddy_props_v01.png` (alpha sheet) | each prop cropped to its alpha bounds |
+| `assets/fx/*.png` | `011_doddy_fx_v01.png` (alpha sheet) | as above |
+| `assets/faces/*.png` | `004_doddy_expr_front_v02.png` (flat sheet) | circular crops |
+| `assets/site/` | the live site (`home.png`, `capture.png`, `poster-v2.jpg`, the v1.3 waving SVG) | used only in mockup 01, which reproduces today's homepage as it is |
+
+Exception 1: five everyday objects the pack has no prop for (alarm clock, suitcase, calendar, shopping bag, speech bubble) are drawn as inline SVG in `mockups/src/partials/symbols.html`, in the props sheet's own ink `#080808`, cream `#FCF4E4` and orange `#FC6800`. They are objects, not Doddy; if the owner would rather have them drawn by the pack's illustrator, they are five symbols to swap.
+Exception 2: mockup 01 shows the v1.3 SVG pose because the live homepage does; replacing it is a separate owner decision already listed in `site/README.md`.
+
+Nothing was redrawn, recoloured or generated. The 16 pack poses, the scenery and the sheets are the owner's concept art; the pack's README calls them references to be redrawn and rigged, so the real page would want the owner's sign-off on using them as final web art.
+
+## How to rebuild the renders
+
+```sh
+cd design/website-what-can-doddy-do/mockups
+node build.mjs                      # src/*.html + partials -> mockups/*.html
+npm i playwright                    # or symlink the global one into ../node_modules
+NODE_PATH=$(npm root -g) node render.mjs --fonts <dir>   # -> ../png/*.png
+```
+
+`--fonts` points at a local cache of the two Google Fonts (the CSS plus woff2 files, kept outside the repository per CLAUDE.md); without it the renderer fetches them from Google Fonts. The script fails loudly if a font didn't load, if a page scrolls sideways, or if the console logs an error. Last run 2026-10-13, Chromium 1194: 17 renders, no issues.
+
+## Open decisions for the owner
+
+1. Direction: A as recommended, B, C, or a different mix.
+2. Tab label (What can Doddy do? / Life with Doddy) and position; route `/what-can-doddy-do/`.
+3. Add the phone menu, or keep the phone nav as it is.
+4. Which moments ship first (suggested six: 08:45, 10:20, 18:45, 22:30, 13:00, 23:30) and the copy pass on Doddy's lines.
+5. Whether the pack's scenery and poses may be used as final web art, and whether the five drawn objects should come from the illustrator instead.
+6. Whether "Lost in translation" stays as a labelled concept or is cut.
+7. The transition animation: keep, simplify to a fade, or none.
+
+## Phase 5 — Stopped here
+
+Not done, on purpose: no page under `site/`, no nav change on the live site, no JavaScript for the interactions, no deployment, no Vercel change, no analytics events. The next step after approval is a build milestone: the page folder, the nav item on the homepage and blog templates, the scroll logic, the reduced-motion paths, a Playwright check at 1440 / 390 / 320 like the homepage has, and the CSP review (the page adds no new hosts).
+
+## Constitution evidence log
+
+| Rule | How the mockups respect it | Enforcing code | Tests run | Gaps |
+|---|---|---|---|---|
+| DOD-02 honesty over agreeableness | Every scene labelled Built / In testing / Later, maybe; captions say "scripted demonstration"; no fake metrics | none (design files) | visual review of all renders | labels must be wired to a single source of truth at build time |
+| DOD-03 character without false humanity | Doddy's lines claim no feelings; "Doddy is an AI, not a person" in the footer and hero fine print | none | copy reviewed against `PERSONALITY_SETTINGS.md` | owner's copy pass pending |
+| Actions need explicit approval; "done" only on confirmation | Phone and scene cards show Add / Open / Save and a read-back receipt; Doddy never sends | none | none | the real screens may differ; captions say so |
+| Memory is explicit, never invented | The built scene finds a note the user typed, with date and source | none | none | none |
+| Character art from the owner's pack only | see Provenance | `cut_wave.py` reused; hashes checked | hashes compared for four poses and the wave sheet | five drawn objects are an exception to confirm |
+
+Nothing in this folder is "implemented", "tested on a device" or "privacy guaranteed". It is a proposal.

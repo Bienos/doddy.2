@@ -1,0 +1,94 @@
+<!--
+title: What can Doddy do? Direction B, Doddy's little world
+active: wcd
+-->
+{{> head}}
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+{{> symbols}}
+{{> nav}}
+  <main id="main">
+    <section class="wcd-hero loaded" aria-labelledby="wcd-title">
+      <div class="wrap">
+        <div class="world-intro">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Doddy's little world</p>
+          <h1 id="wcd-title" class="display" style="max-width: 14ch">Life's complicated. Doddy isn't. <span class="hand-word">Usually.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></span></h1>
+          <p class="lede" style="max-width: 36rem">From forgotten plans to awkward messages, meet the little guy who helps you figure things out. Pick a place. Doddy walks there.</p>
+          <div class="actions">
+            <a class="button" href="#world">Explore the world</a>
+            <a class="text-link" href="/#join">Join early access</a>
+          </div>
+        </div>
+
+        <div class="world" id="world" aria-label="An illustrated neighbourhood. Each place opens one everyday situation.">
+          <span class="sun" aria-hidden="true"></span>
+          <svg class="roads" viewBox="0 0 1600 1060" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M190 300 C 260 420, 330 520, 470 560 S 700 560, 800 520 S 1000 420, 1120 330"/>
+            <path d="M470 560 C 420 680, 360 760, 330 860"/>
+            <path d="M800 520 C 840 640, 900 760, 1000 820 S 1200 820, 1260 760"/>
+            <path d="M1120 330 C 1220 330, 1320 330, 1420 300"/>
+            <path d="M600 210 C 640 320, 700 420, 800 520"/>
+            <path d="M1000 820 C 980 880, 960 930, 940 980"/>
+          </svg>
+
+          <a class="place" href="#late" style="left: 3%; top: 4%; rotate: -2deg">
+            <img class="pic" src="../assets/scenery/bedroom.jpg" alt="">
+            <span class="name">Home, 08:45</span><span class="what">You're late. Again.</span>
+            <span class="badge"><svg><use href="#o-alarm"/></svg></span>
+          </a>
+          <a class="place" href="#jacket" style="left: 28%; top: 3%; rotate: 2deg">
+            <img class="pic" src="../assets/scenery/kitchen.jpg" alt="">
+            <span class="name">The kitchen</span><span class="what">Jacket or no jacket?</span>
+            <span class="badge"><img src="../assets/props/coffee.png" alt=""></span>
+          </a>
+          <a class="place" href="#text" style="left: 54%; top: 5%; rotate: -1deg">
+            <img class="pic" src="../assets/scenery/train_platform.jpg" alt="">
+            <span class="name">The station</span><span class="what">The awkward text</span>
+            <span class="badge"><img src="../assets/props/phone.png" alt=""></span>
+          </a>
+          <a class="place" href="#abroad" style="left: 79%; top: 4%; rotate: 2deg">
+            <img class="pic" src="../assets/scenery/paris.jpg" alt="">
+            <span class="name">Somewhere abroad</span><span class="what">Lost in translation</span>
+            <span class="badge"><svg><use href="#o-suitcase"/></svg></span>
+          </a>
+          <a class="place" href="#brain" style="left: 3%; top: 36%; rotate: 2deg">
+            <img class="pic" src="../assets/scenery/cosy_living_room.jpg" alt="">
+            <span class="name">The sofa</span><span class="what">My brain has left the chat</span>
+            <span class="badge"><svg><use href="#o-bubble"/></svg></span>
+          </a>
+          <a class="place is-hover" href="#eat" style="left: 44%; top: 37%; rotate: -2deg">
+            <img class="pic" src="../assets/scenery/corner_cafe.jpg" alt="">
+            <span class="name">The café, 13:00</span><span class="what">What should we eat?</span>
+            <span class="badge"><img src="../assets/props/notecard.png" alt=""></span>
+          </a>
+          <a class="place" href="#explain" style="left: 79%; top: 38%; rotate: 1deg">
+            <img class="pic" src="../assets/scenery/bookshop.jpg" alt="">
+            <span class="name">The bookshop</span><span class="what">Explain it like I'm five</span>
+            <span class="badge"><img src="../assets/props/book.png" alt=""></span>
+          </a>
+          <a class="place" href="#list" style="left: 12%; top: 68%; rotate: -1deg">
+            <img class="pic" src="../assets/scenery/bakery.jpg" alt="">
+            <span class="name">The bakery</span><span class="what">The shopping bag</span>
+            <span class="badge"><svg><use href="#o-bag"/></svg></span>
+          </a>
+          <a class="place" href="#personality" style="left: 44%; top: 69%; rotate: 1deg">
+            <img class="pic" src="../assets/scenery/basketball_court.jpg" alt="">
+            <span class="name">The court</span><span class="what">Be more sarcastic</span>
+            <span class="badge"><img src="../assets/props/basketball.png" alt=""></span>
+          </a>
+          <a class="place" href="#forget" style="left: 74%; top: 68%; rotate: -2deg">
+            <img class="pic" src="../assets/scenery/rooftop.jpg" alt="">
+            <span class="name">The roof, 22:30</span><span class="what">Don't let me forget</span>
+            <span class="badge"><svg><use href="#o-calendar"/></svg></span>
+          </a>
+
+          <div class="you" style="left: 27%; top: 44%">
+            <img src="../assets/poses/walk_3.png" width="300" height="450" alt="Doddy walking">
+          </div>
+          <p class="tag" style="left: 24%; top: 36%">On his way to the café</p>
+        </div>
+        <p class="caption left">Click a place. Doddy walks there, and the situation plays out. Scripted demonstrations, labelled with what's built today.</p>
+      </div>
+    </section>
+  </main>
+{{> footer}}

@@ -1,0 +1,92 @@
+<!--
+title: What can Doddy do? Direction A, Doddy's daily chaos
+active: wcd
+-->
+{{> head}}
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+{{> symbols}}
+{{> nav}}
+  <main id="main">
+    <section class="wcd-hero loaded" aria-labelledby="wcd-title">
+      <div class="wrap wcd-grid">
+        <div class="wcd-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>A day with Doddy, from 08:45 to far too late</p>
+          <h1 id="wcd-title" class="display">Life's complicated. Doddy isn't. <span class="hand-word">Usually.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></span></h1>
+          <p class="lede">From forgotten plans to awkward messages, meet the little guy who helps you figure things out.</p>
+          <div class="actions">
+            <a class="button" href="#late">Start the day</a>
+            <a class="text-link" href="/#join">Join early access</a>
+          </div>
+          <p class="fineprint">Scripted demonstrations, each labelled with what's built today. Doddy is an AI, not a person.</p>
+        </div>
+        <div class="stage" aria-label="Doddy and seven everyday objects. Pick one to jump to its moment of the day.">
+          <div class="stage-glow" aria-hidden="true"></div>
+          <a class="obj o-bubble" href="#brain"><svg><use href="#o-bubble"/></svg><span class="obj-label">18:45 · What was that place?</span></a>
+          <a class="obj o-alarm is-hover" href="#late"><svg><use href="#o-alarm"/></svg><span class="obj-label">08:45 · Late. Again.</span></a>
+          <a class="obj o-phone" href="#text"><img src="../assets/props/phone.png" alt=""><span class="obj-label">10:20 · The awkward text</span></a>
+          <a class="obj o-coffee" href="#eat"><img src="../assets/props/coffee.png" alt=""><span class="obj-label">13:00 · What should we eat?</span></a>
+          <a class="obj o-suitcase" href="#abroad"><svg><use href="#o-suitcase"/></svg><span class="obj-label">Lost in translation</span></a>
+          <a class="obj o-calendar" href="#forget"><svg><use href="#o-calendar"/></svg><span class="obj-label">22:30 · Don't let me forget</span></a>
+          <a class="obj o-bag" href="#list"><svg><use href="#o-bag"/></svg><span class="obj-label">20:15 · The shopping bag</span></a>
+          <figure class="doddy-main"><img src="../assets/poses/yawn_stretch.png" width="640" height="960" alt="Doddy, mid-yawn"></figure>
+          <p class="says" aria-hidden="true">Morning. Ish.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="daystrip" aria-label="Jump to a moment of the day">
+      <div class="wrap">
+        <p class="section-label">Jump to a moment</p>
+        <ol class="chapters">
+          <li><button type="button" aria-current="true"><span class="t">08:45</span>Late. Again.</button></li>
+          <li><button type="button"><span class="t">09:10</span>Jacket or no jacket?</button></li>
+          <li><button type="button"><span class="t">10:20</span>The awkward text</button></li>
+          <li><button type="button"><span class="t">13:00</span>What should we eat?</button></li>
+          <li><button type="button"><span class="t">15:30</span>Explain it like I'm five</button></li>
+          <li><button type="button"><span class="t">18:45</span>My brain has left the chat</button></li>
+          <li><button type="button"><span class="t">20:15</span>The shopping bag</button></li>
+          <li><button type="button"><span class="t">22:30</span>Don't let me forget</button></li>
+          <li><button type="button"><span class="t">23:30</span>Be more sarcastic</button></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="moment" id="late" aria-labelledby="late-title">
+      <div class="wrap moment-grid">
+        <div class="moment-copy">
+          <p class="time">08:45</p>
+          <h2 id="late-title" class="display-m">You're late. Again.</h2>
+          <p class="problem">The alarm went off. You went back to sleep. The meeting didn't.</p>
+          <ul class="helps">
+            <li>Reads today's calendar out loud, with the bit you'd rather not hear first.</li>
+            <li>Drafts a two-line "running late" message. You tap send, Doddy never does.</li>
+            <li>Moves the next thing back twenty minutes, after you tap Add.</li>
+          </ul>
+          <p class="cap testing">Calendar and messages · in testing</p>
+        </div>
+        <figure class="scene">
+          <div class="scene-card">
+            <span class="tape t1" aria-hidden="true"></span>
+            <span class="tape t2" aria-hidden="true"></span>
+            <div class="scene-art">
+              <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+              <img class="doddy" src="../assets/poses/yawn_stretch.png" alt="" style="left: 12%; height: 76%;">
+              <svg class="prop" style="left: 31%; bottom: 7%; width: 12%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+              <img class="fx" src="../assets/fx/burst.png" alt="" style="left: 28%; bottom: 23%; width: 9%">
+              <p class="u-bubble">Doddy, what's happening today?</p>
+              <div class="scene-panel">
+                <strong>Today</strong>
+                <div class="row"><span>Team meeting</span><span class="t late">09:00 · started</span></div>
+                <div class="row"><span>Dentist</span><span class="t">12:30</span></div>
+                <div class="row"><span>Call Mum</span><span class="t">19:00</span></div>
+              </div>
+              <p class="d-bubble left" style="top: 56%; left: 42%; max-width: 30%">Well, your meeting started 15 minutes ago. Excellent start.</p>
+            </div>
+          </div>
+          <figcaption class="caption left">Scripted demonstration. The calendar is read only after you switch it on in Settings.</figcaption>
+        </figure>
+      </div>
+    </section>
+  </main>
+{{> footer}}

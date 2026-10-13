@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mockup 09, iPhone conversation demonstration</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body class="board">
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>09 · iPhone conversation demonstration</h1>
+      <p>Three scripted conversations inside the site's device frame, in the app's Talk to Doddy pattern: a card for every change, nothing done until you tap.</p>
+    </div>
+    <div class="frames three">
+      <div class="frame">
+        <div class="frame-label"><b>A</b> 08:45 · Late. Again. <span class="cap testing" style="margin-left:auto">In testing</span></div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="device chat">
+            <div class="phone-screen">
+              <div class="ph-status"><span>08:47</span><span class="notch" aria-hidden="true"></span><span>▮▮▮</span></div>
+              <div class="ph-head"><img src="../assets/faces/sleepy.png" alt=""><div><div class="ph-name">Doddy</div><span class="ph-state">Listening</span></div></div>
+              <p class="msg me">Doddy, what's happening today?</p>
+              <p class="msg doddy">Well, your meeting started 15 minutes ago. Excellent start.</p>
+              <div class="ph-card">
+                <p class="q">Today</p>
+                <ul class="ph-list">
+                  <li><span>Team meeting</span><span class="t late">09:00 · started</span></li>
+                  <li><span>Dentist</span><span class="t">12:30</span></li>
+                  <li><span>Call Mum</span><span class="t">19:00</span></li>
+                </ul>
+              </div>
+              <p class="msg doddy">Want me to draft a "running late" to Ola? You send it.</p>
+              <div class="ph-chips"><span class="on">Yes, draft it</span><span>Not now</span></div>
+              <div class="ph-bottom"><span class="ph-talk"><span class="dot"></span>Talk to Doddy</span><span class="ph-type">Aa</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="frame-note">Calendar read only with the Calendar switch on. The draft opens in Messages; Doddy never sends.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>B</b> 22:30 · Don't let me forget <span class="cap testing" style="margin-left:auto">In testing</span></div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="device chat">
+            <div class="phone-screen">
+              <div class="ph-status"><span>22:31</span><span class="notch" aria-hidden="true"></span><span>▮▮▮</span></div>
+              <div class="ph-head"><img src="../assets/faces/smile.png" alt=""><div><div class="ph-name">Doddy</div><span class="ph-state quiet">Confirm on screen</span></div></div>
+              <p class="msg me">Remind me to call Mum tomorrow.</p>
+              <p class="msg doddy">Tomorrow, ten? Tap Add and it's in Reminders.</p>
+              <div class="ph-card">
+                <p class="q">Add reminder?</p>
+                <p class="quote">Call Mum · tomorrow, 10:00</p>
+                <div class="row"><span class="ph-btn primary">Add</span><span class="ph-btn">Not now</span></div>
+                <p class="ph-receipt">Added to Reminders · read back 22:31</p>
+              </div>
+              <p class="msg quiet">What Doddy did · 1 change</p>
+              <p class="msg doddy">Done. Say hi from me. Actually don't, that's weird.</p>
+              <div class="ph-bottom"><span class="ph-talk"><span class="dot"></span>Talk to Doddy</span><span class="ph-type">Aa</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="frame-note">The app's real rule: a card with Add, nothing stored until the tap, then read back from Reminders and listed under "What Doddy did".</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>C</b> 18:45 · What was that place? <span class="cap built" style="margin-left:auto">Built</span></div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="device chat">
+            <div class="phone-screen">
+              <div class="ph-status"><span>18:45</span><span class="notch" aria-hidden="true"></span><span>▮▮▮</span></div>
+              <div class="ph-head"><img src="../assets/faces/pleased.png" alt=""><div><div class="ph-name">Doddy</div><span class="ph-state">Speaking</span></div></div>
+              <p class="msg me">What was the name of that place I mentioned last week?</p>
+              <p class="msg doddy">Chmielna. Green door. Your words, not mine.</p>
+              <div class="ph-card">
+                <p class="q">Found in your notes</p>
+                <p class="quote" style="color: var(--reading-ink); font-family: var(--display); font-weight: 650">"The pierogi place on Chmielna, the one with the green door."</p>
+                <ul class="ph-list">
+                  <li><span class="t">Saved</span><span>4 Oct 2026, 13:12</span></li>
+                  <li><span class="t">Source</span><span>Your typed note</span></li>
+                </ul>
+              </div>
+              <p class="msg me">And the one Marta said?</p>
+              <p class="msg doddy">I couldn't find that in your saved memories.</p>
+              <div class="ph-bottom"><span class="ph-talk"><span class="dot"></span>Talk to Doddy</span><span class="ph-type">Aa</span></div>
+            </div>
+          </div>
+        </div>
+        <p class="frame-note">Saved notes are the one built feature: exact words, date and source, and the real "couldn't find that" line when there's no match.</p>
+      </div>
+    </div>
+    <p class="caption left" style="margin-top: 20px">Scripted demonstrations. The real screen is the app's Talk to Doddy view, which may differ; status words (Listening, Speaking) are the app's own.</p>
+  </div>
+</body>
+</html>
