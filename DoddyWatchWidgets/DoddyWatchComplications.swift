@@ -168,17 +168,21 @@ struct WatchDoddyFace: View {
 
     var body: some View {
         face
-            .resizable()
             .scaledToFit()
             .frame(width: size, height: size)
             .clipShape(Circle())
             .accessibilityHidden(true)
     }
 
-    private var face: Image {
-        let image = Image("WatchDoddy_face")
-        if #available(watchOS 11.0, *) { return image.widgetAccentedRenderingMode(.fullColor) }
-        return image
+    /// On the watchOS SDK `widgetAccentedRenderingMode` returns `some View`, not `Image`, so it
+    /// comes after `resizable()`.
+    @ViewBuilder private var face: some View {
+        let image = Image("WatchDoddy_face").resizable()
+        if #available(watchOS 11.0, *) {
+            image.widgetAccentedRenderingMode(.fullColor)
+        } else {
+            image
+        }
     }
 }
 
