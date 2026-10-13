@@ -1,6 +1,6 @@
 # Doddy landing page
 
-A static, single-page site that explains Doddy (the character) and the Doddy app, built from `prompts/LANDING_PAGE_DESIGN.md`. Live on Vercel at https://doddy-eight.vercel.app (see "Needs the owner" for hosting details).
+A static, single-page site that explains Doddy (the character) and the Doddy app, built from `prompts/LANDING_PAGE_DESIGN.md`. Live on Vercel at https://www.doddy.lol (project `doddy`, team `doddyyyy`; `https://doddy.lol` redirects to it). See "Needs the owner" for hosting details.
 
 ## Preview
 
@@ -109,13 +109,13 @@ A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards,
 
 ## Builds on Vercel
 
-`vercel.json` has an `ignoreCommand`: a push builds this project only when something under `site/` changed since the last deployment (or, without one, in the last commit). It builds whenever it can't tell. `gateway/` and `server/voice-token/` have the same rule. Before this, every push to any branch built all three projects and used up the free plan's 100 deployments a day.
+`vercel.json` has an `ignoreCommand`: a push builds this project only when something under `site/` changed since the last deployment (or, without one, in the last commit). It builds whenever it can't tell. `gateway/` and `server/voice-token/` have the same rule. **Merge commits:** the comparison is against the commit's first parent, so a push of the default branch that ends in a merge commit whose `site/` equals its first parent's builds nothing (14 October: such a push, carrying the whole What can Doddy do? work, created no deployment, and www.doddy.lol kept serving the older site). If production doesn't update after a merge, make the newest commit change a file under `site/`. Before this, every push to any branch built all three projects and used up the free plan's 100 deployments a day.
 
 ## Needs the owner
 
 1. **Check the deep link on an iPhone.** The app now registers `doddy://` (`project.yml`) and opens `home`, `memories` or `settings` (`DeepLink` in DoddyCore, handled in `RootView`). Not yet built or tried on a device. Universal Links (needs a domain and an `apple-app-site-association` file) would remove the "isn't installed" guesswork later.
 2. **Waitlist:** add a contact address people can use to ask for deletion; the form promises deletion on request.
-3. **Domain, contact address and privacy policy.** Pages now name `https://www.doddy.lol/` as their canonical host (`canonical`, `og:url`, `og:image`); the RSS feed keeps `https://doddy-eight.vercel.app` so item links and guids don't change under subscribers. Hosted on Vercel (project `doddy`, team bienos) at https://doddy-eight.vercel.app, deployed from this branch to production. The Vercel project's production branch is the repo default (`claude/loving-dirac-uuxoux`), so pushes here create previews; redeploy production after changes, or point the production branch at this one in Vercel settings. No custom domain, contact address or privacy policy yet.
+3. **Domain, contact address and privacy policy.** Pages now name `https://www.doddy.lol/` as their canonical host (`canonical`, `og:url`, `og:image`); the RSS feed keeps `https://doddy-eight.vercel.app` so item links and guids don't change under subscribers. Hosted on Vercel (project `doddy`, team `doddyyyy`) at https://www.doddy.lol, with `doddy.lol` redirecting to it. The old `doddy-eight.vercel.app` belonged to the previous team and answers 402; nothing should point at it. Production deploys from the repo default branch (`claude/loving-dirac-uuxoux`); every other branch gets a preview that sits behind Vercel login. No contact address or privacy policy yet.
 4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them.
 5. **Character art, two places left:** the homepage and the new page use the pack. The basketball game (`court.js`, a canvas that draws `assets/poses/*.svg` and places the ball by those drawings' hand position) and the blog banners (`tools/build_blog.py` `pose()`) still use the v1.3 SVGs. The game needs the pack's basketball shooting frames cut and imported (not yet), or a pack pose with only the ball animated; the banners need a pose choice per post. Then `assets/poses/` can go.
 6. **Voice testing line:** done on the owner's word (13 October): the page says "Voice is in testing." and nothing about real-iPhone testing.
