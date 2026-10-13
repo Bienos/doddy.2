@@ -62,7 +62,8 @@ Cloud tokens live on the server (`server/messaging/`), never in the app.
 | Push (APNs) | **Server + app built (S1)**; not yet run on a device |
 | SMS (Twilio, verified number + explicit opt-in, STOP honoured) | **Server + app built (S1)**; not yet run with real Twilio |
 | iMessage via Apple Messages for Business | Owner applying; live-agent requirement, see `APPLE_MESSAGES_FOR_BUSINESS_APPLICATION.md` |
-| Telegram / WhatsApp | Not chosen |
+| WhatsApp Business via the ElevenLabs Agents integration, on its own number (WhatsApp only), chosen by the user next to SMS (ADR-442) | **Decided 2026-10-13; not built, not run.** Needs the number free of any other WhatsApp registration; Meta-approved templates for Doddy-initiated messages |
+| Telegram | Not chosen |
 | Mac-relay iMessage services | **Rejected**: against Apple's terms, numbers get blocked |
 
 ## D2. News (owner decision 2026-10-10: **RSS + GNews, Claude Haiku one-liners, daily digest**)
