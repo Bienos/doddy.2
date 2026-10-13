@@ -121,3 +121,73 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("What Doddy learned") }, "proposals and counts are always on the phone")
     }
 }
+
+/// Settings → Privacy's Network and Cloud AI rows come from the same rows as What leaves this
+/// iPhone (audit 2026-10-12 §5 #6, ADR-447), so they can't list less than that screen.
+final class DataFlowSummaryTests: XCTestCase {
+    private let base = DataFlowState(
+        rememberConversations: false, shareProfileWithVoice: false, tokenServerSet: false,
+        connectionsOn: [], pauseAll: false, doddyServerSet: false, askDoddyOn: false, askDoddyUsesNotes: true)
+
+    private var everything: DataFlowState {
+        var state = base
+        state.tokenServerSet = true
+        state.doddyServerSet = true
+        state.askDoddyOn = true
+        state.messagingServerSet = true
+        state.siriReadsNotes = true
+        state.heyDoddyOn = true
+        state.sharedLists = 1
+        state.voiceProvider = .openAIRealtime
+        return state
+    }
+
+    func testEveryRowIsNamedInTheNetworkSummaryOrDeliberatelyLeftOut() {
+        for row in DataFlow.rows(everything) {
+            XCTAssertTrue(
+                DataFlow.networkNames[row.id] != nil || DataFlow.notInNetworkSummary.contains(row.id),
+                "\(row.id) is in What leaves this iPhone but not in Settings' Network row")
+        }
+        XCTAssertTrue(DataFlow.notInNetworkSummary.isDisjoint(with: DataFlow.networkNames.keys))
+    }
+
+    func testNetworkNamesExactlyTheActiveRows() {
+        let summary = DataFlow.networkSummary(everything)
+        for row in DataFlow.rows(everything) where row.isActive {
+            if let name = DataFlow.networkNames[row.id] {
+                XCTAssertTrue(summary.contains(name), "\(row.id) is on but missing: \(summary)")
+            }
+        }
+        // The audit's missing ones are there when they're on.
+        for name in ["your Doddy messaging server", "Apple Maps", "European Central Bank", "iCloud", "Picovoice", "Siri", "the Ask Doddy gateway"] {
+            XCTAssertTrue(summary.contains(name), name)
+        }
+    }
+
+    func testSwitchedOffServicesAreNotNamed() {
+        var state = base
+        state.siriReadsNotes = false
+        state.pauseAll = true
+        let summary = DataFlow.networkSummary(state)
+        for name in ["voice token server", "Doddy server", "messaging server", "Ask Doddy", "Siri", "Picovoice", "iCloud", "European Central Bank", "OpenAI"] {
+            XCTAssertFalse(summary.contains(name), "\(name) is off but named: \(summary)")
+        }
+        XCTAssertTrue(summary.hasPrefix("ElevenLabs (while talking)"), "voice is always possible")
+        XCTAssertTrue(summary.hasSuffix("What leaves this iPhone says what goes."))
+    }
+
+    func testCloudAINamesEveryAIServiceThatIsOn() {
+        XCTAssertEqual(DataFlow.cloudAISummary(base), "ElevenLabs (voice)")
+        // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
+        XCTAssertEqual(
+            DataFlow.cloudAISummary(everything),
+            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server")
+        XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
+        var elevenLabs = everything
+        elevenLabs.voiceProvider = .elevenLabs
+        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); OpenAI (Ask Doddy)"))
+        var state = everything
+        state.newsWriterProvider = "anthropic"
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))
+    }
+}
