@@ -131,10 +131,10 @@ function openAIRequest(body = JSON.stringify({ provider: "openai" }), code = COD
 }
 
 test("openai: returns a client secret carrying only model and voice, and never logs secrets", async () => {
-  const upstream = Response.json({ value: "ek_secret", expires_at: 1, session: { model: "gpt-realtime" } });
+  const upstream = Response.json({ value: "ek_secret", expires_at: 1, session: { model: "gpt-realtime-2.1-mini" } });
   const { response, body, logs, calls } = await run(openAIRequest(), { upstream, environment: openAIEnv });
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "ek_secret", provider: "openai", model: "gpt-realtime" });
+  assert.deepEqual(body, { token: "ek_secret", provider: "openai", model: "gpt-realtime-2.1-mini" });
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, "https://api.openai.com/v1/realtime/client_secrets");
@@ -143,7 +143,7 @@ test("openai: returns a client secret carrying only model and voice, and never l
   const sent = JSON.parse(calls[0].init.body);
   assert.deepEqual(sent, {
     expires_after: { anchor: "created_at", seconds: 120 },
-    session: { type: "realtime", model: "gpt-realtime", audio: { output: { voice: "marin" } } },
+    session: { type: "realtime", model: "gpt-realtime-2.1-mini", audio: { output: { voice: "marin" } } },
   });
   // No prompt, notes or tools go through this server.
   assert.equal(sent.session.instructions, undefined);
@@ -156,11 +156,41 @@ test("openai: returns a client secret carrying only model and voice, and never l
 test("openai: model and voice come from the environment", async () => {
   const upstream = Response.json({ value: "ek_secret", session: {} });
   const environment = { ...openAIEnv, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1", OPENAI_REALTIME_VOICE: "cedar" };
+  // No model in the request: the server's own setting decides.
   const { body, calls } = await run(openAIRequest(), { upstream, environment });
   const sent = JSON.parse(calls[0].init.body);
   assert.equal(sent.session.model, "gpt-realtime-2.1");
   assert.equal(sent.session.audio.output.voice, "cedar");
   assert.equal(body.model, "gpt-realtime-2.1");
+});
+
+test("openai: the app can pick either allowed model, and the pick beats the environment", async () => {
+  const environment = { ...openAIEnv, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1" };
+  for (const model of ["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]) {
+    const upstream = Response.json({ value: "ek_secret", session: {} });
+    const { response, body, calls, logs } = await run(
+      openAIRequest(JSON.stringify({ provider: "openai", model })), { upstream, environment: { ...environment, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1" } });
+    assert.equal(response.status, 200);
+    assert.equal(JSON.parse(calls[0].init.body).session.model, model);
+    assert.equal(body.model, model);
+    assert.match(JSON.stringify(logs), new RegExp(`"model":"${model}"`));
+  }
+});
+
+test("openai: a model that is not on the allowlist is refused before OpenAI is called", async () => {
+  for (const model of ["gpt-realtime-2.1-pro", "gpt-4o", "", 7, ["gpt-realtime-2.1"]]) {
+    const { response, body, calls } = await run(
+      openAIRequest(JSON.stringify({ provider: "openai", model })), { environment: openAIEnv });
+    assert.equal(response.status, 400, JSON.stringify(model));
+    assert.deepEqual(body, { error: "unknown_model" });
+    assert.equal(calls.length, 0);
+  }
+});
+
+test("a model named alongside elevenlabs is ignored", async () => {
+  const { response, body } = await run(openAIRequest(JSON.stringify({ provider: "elevenlabs", model: "anything" })));
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { token: "jwt-token" });
 });
 
 test("openai: needs its own key; ElevenLabs keys alone are not enough, and nothing is called", async () => {

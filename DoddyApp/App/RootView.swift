@@ -74,6 +74,10 @@ enum PreferenceKey {
     static let heyDoddyOn = "heyDoddy.on"
     /// The Quick start screen (ADR-324) was shown once, at the end of first use; never again.
     static let quickStartOffered = "quickStartOffered"
+    /// A voice conversation has really connected once on this iPhone (the provider said it is
+    /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326)
+    /// and the voice picker (ADR-443).
+    static let hadFirstConversation = "hadFirstConversation"
 }
 
 enum AppTab: Hashable {
@@ -244,7 +248,7 @@ struct RootView: View {
             voiceOverRunning: voiceOverOn,
             atHome: profiles.route == .home,
             voiceAvailable: store.environment.capabilities.isAvailable(.voiceInput),
-            microphoneDenied: MicrophoneAccess.isDenied,
+            microphoneAllowed: MicrophoneAccess.isAllowed,
             somethingIsOpen: router.isVoicePresented || router.isSetupPresented
                 || router.shownDraft != nil || router.findRequest != nil)
     }
