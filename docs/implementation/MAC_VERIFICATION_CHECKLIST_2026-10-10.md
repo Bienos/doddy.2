@@ -387,6 +387,12 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
 | I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
 
+## 4v. "Ask me about it" (ADR-403)
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
+
 ## 4u. "Hey Doddy" with one tap (ADR-328)
 Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
 | # | Do this | Expect |
