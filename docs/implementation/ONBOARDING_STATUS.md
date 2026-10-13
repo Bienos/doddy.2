@@ -3,6 +3,15 @@ Date: 2026-10-09. Owner request: "implement onboarding etc screens". Source desi
 
 > **Changed at branch consolidation (2026-10-09, DECISIONS.md ADR-089):** the written Back Tap guide below (part 1, `SetupGuideView`, the `OpenDoddyIntent` receipt and Settings → Getting started) was **removed**, because V2 already ships a Back Tap guide that was tried on the owner's iPhone (`V2_SHORTCUT_SETUP_STATUS.md`). First use is now the optional introduction only; Back Tap is offered from the Home card and Settings → Back Tap and Siri. Parts 2 and 3 are unchanged. The UI test for the written guide was removed with it.
 
+> **Current first-use flow (2026-10-13, PRs Bienos/doddy.2#43, #46, #48, #51 landed together, ADR-324 to ADR-327 and ADR-443):**
+> 1. The opening (ADR-225). Listening on open now waits until the microphone has been allowed, so iOS's microphone question only ever follows a tap on Talk to Doddy (ADR-325).
+> 2. **Hey. Let's talk.**: three optional questions (name, what to help with, anything else), not six; style, language and humour keep their Settings defaults and can be added under Settings › About you (ADR-327). Review before save is unchanged.
+> 3. **Quick start**, once per install: morning check-in, evening wrap-up, weekly tidy-up and weekly look-back, each one tap; nothing changes until **Turn these on** (ADR-324). `QUICK_START_STATUS.md`.
+> 4. Home's first visit keeps to talking until a conversation has really connected: a "Try saying…" hint, no Back Tap card, no Today card (unless Calendar or Reminders is already on), and no voice picker. The privacy paragraph is in Settings › Privacy; Home keeps "Doddy is an AI, not a person." and **What leaves this iPhone** (ADR-326).
+> 5. The voice picker (ElevenLabs / OpenAI, and OpenAI's 2.1 / 2.1 mini model, ADR-442) is in Settings › Voice from the start, and on Home after the first conversation (ADR-443).
+>
+> Verification for this step is in DECISIONS.md ADR-443 and Mac checklist 4o, 4p, 4r and 4t. The sections below describe the October 9 build and are kept as history.
+
 ## Flow
 First launch → **Two taps. A little help.** (optional Back Tap guide) → **Hey. Let's talk.** (optional introduction) → Home. Each part can be skipped; skipping never blocks the app, and neither is forced again. Both can be reopened from Settings.
 
