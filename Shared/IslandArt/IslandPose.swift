@@ -25,6 +25,10 @@ enum IslandPose: String, CaseIterable, Sendable {
 
     var assetName: String { "WholeDoddy_\(rawValue)" }
 
+    /// The round face compact and minimal draw for this pose (its `facePose`'s picture), cut by
+    /// tools/whole_doddy/cut_faces.py into the app and widget catalogs.
+    var faceAssetName: String { "WholeDoddy_face_\(facePose.rawValue)" }
+
     /// The figure's box in the picture, as fractions of its width and height, so the drawing
     /// can stand on the island's floor at the largest size that fits.
     var figure: IslandRect {
@@ -63,7 +67,8 @@ enum IslandPose: String, CaseIterable, Sendable {
     }
 
     /// Where the head is in a face pose: its centre as fractions of width and height, and its
-    /// diameter as a fraction of the width. Nil for poses not used as a face.
+    /// diameter as a fraction of the width. Nil for poses not used as a face. tools/whole_doddy/
+    /// cut_faces.py cuts the face pictures from these numbers.
     var head: (x: Double, y: Double, diameter: Double)? {
         switch self {
         case .listening: (205.0 / 400, 152.0 / 600, 172.0 / 400)

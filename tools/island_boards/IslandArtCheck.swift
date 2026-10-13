@@ -14,6 +14,11 @@ struct IslandArtCheck {
             for pose in IslandPose.allCases { print(pose.assetName) }
             return
         }
+        // ...and the round faces compact and minimal draw, one per face pose, in both catalogs.
+        if args.contains("--face-assets") {
+            for name in Set(IslandPose.allCases.map(\.faceAssetName)).sorted() { print(name) }
+            return
+        }
         // ...and the voice screen's talking frames (ADR-299) and the strips (ADR-313), app catalog only.
         if args.contains("--story-assets") {
             for story in PanelStory.allCases {

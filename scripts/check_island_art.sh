@@ -49,6 +49,16 @@ for name in $("$work/island-check" --pose-assets); do
         done
     done
 done
+# The round faces compact and minimal draw (tools/whole_doddy/cut_faces.py), both catalogs.
+for name in $("$work/island-check" --face-assets); do
+    for catalog in DoddyApp/Resources/Assets.xcassets DoddyWidgets/Assets.xcassets; do
+        for file in Contents.json art@2x.png art@3x.png; do
+            if [ ! -f "$catalog/$name.imageset/$file" ]; then
+                echo "FAIL: $catalog/$name.imageset/$file is missing"; missing=1
+            fi
+        done
+    done
+done
 for name in $("$work/island-check" --talking-assets); do
     for file in Contents.json art@2x.png art@3x.png; do
         if [ ! -f "DoddyApp/Resources/Assets.xcassets/$name.imageset/$file" ]; then

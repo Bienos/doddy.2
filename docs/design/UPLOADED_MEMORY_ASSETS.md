@@ -163,6 +163,20 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
 
+### Round faces for the island's compact and minimal views
+`WholeDoddy_face_listening`, `_shush`, `_yawn_stretch`, `_crosslegged` (app and widgets; 48×48 and 72×72).
+Each is a crop of the matching `WholeDoddy_<pose>` image set (itself a downscale of the pack's
+01-transparent-poses picture) to the head circle in `IslandPose.head`, with the pixels outside the circle made
+transparent, cut by `tools/whole_doddy/cut_faces.py`. Nothing redrawn or recoloured. Source = the widget
+catalog's `art@3x.png` (SHA-256):
+
+| Face | Cut from | SHA-256 of the source |
+|---|---|---|
+| `WholeDoddy_face_listening` | `WholeDoddy_listening` | 69ac3b1ab13beb758d9f196cfebc71cbdcfb640b3b3b69cff0e7fa6e1221a482 |
+| `WholeDoddy_face_shush` | `WholeDoddy_shush` | 11b6e3e9b654524e5b9e1852edc7f66638027cda96cbb2d0636179cf2dae49d6 |
+| `WholeDoddy_face_yawn_stretch` | `WholeDoddy_yawn_stretch` | 3ef49ce4d7870c437f6dc242635489e6e7aaed211b047d08b4e3b9842f6d8646 |
+| `WholeDoddy_face_crosslegged` | `WholeDoddy_crosslegged` | e6b3c15fbd5852f30dc0ae7361b9bcf86b3daa1bc689b9f2db62f0518a8a0518 |
+
 ## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
 | Image set | Pack source | SHA-256 of the source | Made how |
 |---|---|---|---|
