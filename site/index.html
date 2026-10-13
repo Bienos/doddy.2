@@ -14,6 +14,29 @@
   <meta property="og:url" content="https://doddy-eight.vercel.app/">
   <link rel="canonical" href="https://doddy-eight.vercel.app/">
   <meta name="twitter:card" content="summary_large_image">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://doddy-eight.vercel.app/">
+  <link rel="alternate" hreflang="es" href="https://doddy-eight.vercel.app/es/">
+  <link rel="alternate" hreflang="de" href="https://doddy-eight.vercel.app/de/">
+  <link rel="alternate" hreflang="fr" href="https://doddy-eight.vercel.app/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://doddy-eight.vercel.app/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://doddy-eight.vercel.app/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://doddy-eight.vercel.app/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://doddy-eight.vercel.app/it/">
+  <link rel="alternate" hreflang="hr" href="https://doddy-eight.vercel.app/hr/">
+  <link rel="alternate" hreflang="pl" href="https://doddy-eight.vercel.app/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://doddy-eight.vercel.app/">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="zh_CN">
+  <meta property="og:locale:alternate" content="ja_JP">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
   <!-- Smart App Banner: enable once Doddy has an App Store ID.
   <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
   -->
@@ -24,6 +47,8 @@
   <link rel="stylesheet" href="tokens.css">
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js')</script>
+  <script src="i18n.js" defer></script>
+  <!-- i18n:dictionary --><!-- /i18n:dictionary -->
   <script src="main.js" defer></script>
   <script src="court.js" defer></script>
   <script src="memory.js" defer></script>
@@ -50,6 +75,7 @@
         </ul>
       </nav>
       <a class="button small" href="#join">Join early access</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>Language</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
     </div>
   </header>
 
@@ -349,7 +375,7 @@
           <div class="join-copy">
             <h2 id="join-title" class="display-m">Come say hey.</h2>
             <p>Doddy is in early testing. Leave your email to hear when early access opens.</p>
-            <form class="waitlist" novalidate>
+            <form class="waitlist" novalidate data-consent="waitlist-note-v1">
               <label for="email">Email</label>
               <div class="field-row">
                 <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-note waitlist-status">
@@ -424,6 +450,7 @@
           <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
           <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
         </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="Language" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
       </div>
       <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
       <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>

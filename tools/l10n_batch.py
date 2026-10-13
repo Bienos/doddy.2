@@ -29,7 +29,11 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 L10N = os.path.join(ROOT, "l10n")
-TABLES = {"ui": "", "infoplist": "_infoplist", "shortcuts": "_shortcuts"}
+TABLES = {"ui": "", "infoplist": "_infoplist", "shortcuts": "_shortcuts", "site": ""}
+SITE_TAGS = re.compile(r"<[^>]*>")
+SITE_TOKEN = re.compile(r"\[\[(?:svg|cmt)\d+\]\]")
+SITE_PLACEHOLDER = re.compile(r"\{[A-Za-z_][A-Za-z0-9_]*\}")
+SITE_BARE_AMP = re.compile(r"&(?!#?[A-Za-z0-9]+;)")
 PLACEHOLDER = re.compile(r"%(?:@|lld|d|%)")
 CODE = re.compile(r"^[a-z]{2,3}(?:-[A-Za-z0-9]+)*$")
 
@@ -55,6 +59,8 @@ def unescape(swift):
 
 
 def path(code, table):
+    if table == "site":
+        return os.path.join(L10N, "site", f"{code}.json")
     return os.path.join(L10N, f"{code}{TABLES[table]}.json")
 
 
@@ -69,6 +75,11 @@ def save(file, data):
 
 def source(table):
     """The English keys in a fixed order (sorted, as the files are written), with their Polish."""
+    if table == "site":
+        file = os.path.join(L10N, "site", "en.json")
+        if not os.path.exists(file):
+            sys.exit("FAIL: l10n/site/en.json is missing; run python3 -I tools/build_site_i18n.py")
+        return sorted(load(file)), {}
     polish = load(path("pl", table))
     if not polish:
         sys.exit(f"FAIL: {os.path.relpath(path('pl', table), ROOT)} is missing")
@@ -76,12 +87,16 @@ def source(table):
 
 
 def english_of(table, key, polish):
+    if table == "site":
+        return key
     if table == "infoplist":
         return polish[key]["en"]
     return unescape(key)
 
 
 def polish_of(table, key, polish):
+    if table == "site":
+        return ""
     if table == "infoplist":
         return polish[key]["pl"]
     return polish[key]
@@ -93,8 +108,25 @@ def current_of(table, key, code, current):
     return current.get(key)
 
 
+def site_problem(key, text):
+    """Why a site text can't be kept, or None: the same tokens, placeholders and tags as the English."""
+    if not text.strip():
+        return "empty"
+    if sorted(SITE_TOKEN.findall(key)) != sorted(SITE_TOKEN.findall(text)):
+        return "the [[svgN]] markup tokens must come back exactly as they are"
+    if sorted(SITE_PLACEHOLDER.findall(key)) != sorted(SITE_PLACEHOLDER.findall(text)):
+        return f"placeholders must be exactly {SITE_PLACEHOLDER.findall(key)}"
+    if sorted(SITE_TAGS.findall(key)) != sorted(SITE_TAGS.findall(text)):
+        return "tags and their attributes must come back exactly as they are"
+    if SITE_BARE_AMP.search(text) and not SITE_BARE_AMP.search(key):
+        return "a bare & must be written as &amp;"
+    return None
+
+
 def problem(table, key, text, polish):
     """Why a text can't be kept, or None."""
+    if table == "site":
+        return site_problem(key, text)
     if not text or not text.strip():
         return "empty"
     english = english_of(table, key, polish)
@@ -125,7 +157,8 @@ def show(args):
         shown += 1
         print(f"#{number}")
         print("EN: " + english_of(args.table, key, polish).replace("\n", "\n    "))
-        print("PL: " + polish_of(args.table, key, polish).replace("\n", "\n    "))
+        if args.table != "site":
+            print("PL: " + polish_of(args.table, key, polish).replace("\n", "\n    "))
         if existing is not None:
             print(f"{args.code.upper()}: " + existing.replace("\n", "\n    "))
         print()

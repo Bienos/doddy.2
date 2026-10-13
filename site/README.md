@@ -46,6 +46,15 @@ There's no build step: plain HTML, CSS and a small vanilla script. Visits are co
 - **Admin password:** the admin routes have no lockout, so `WAITLIST_ADMIN_PASSWORD` must be long and random (for example `openssl rand -base64 24`), never a word.
 - **Rate limit (owner, recommended):** add a Vercel Firewall rule (Project → Firewall → Rules): rate-limit `/api/` by IP to about 20 requests a minute. It needs no code, and slows scripted signups and admin password guessing. Not set yet.
 
+## Languages (ADR-460)
+
+- **Pages:** the landing page is in English and nine other languages: Spanish, German, French, Simplified Chinese, Japanese, Brazilian Portuguese, Italian, Croatian and Polish. Each has its own URL (`/de/`, `/zh-hans/`, …); `/` stays English. The header and footer have a language menu, and every page has `hreflang` links, its canonical URL and an entry in `sitemap.xml`. The blog is English only.
+- **Sources:** `site/index.html` is the English master. `tools/build_site_i18n.py` writes every other page, `sitemap.xml` and the script dictionaries in `site/i18n/`. Don't edit those by hand. `--check` runs in `scripts/ci.sh` and fails when one is out of date.
+- **Translations:** `l10n/site/<code>.json` maps English text to the language. `l10n/site/en.json` lists the keys. Work on them with `python3 -I tools/l10n_batch.py show|merge|status <code> --table site`. A new sentence in the master or in a script needs a line in every table; `--check` names the missing ones. `l10n/site/keep-english.json` lists the sentences that may stay in English (the tagline in the title).
+- **Scripts:** text a script shows goes through `doddyT("English text", values)` in `site/i18n.js`. It returns the translation for the page's language, or the English. `{name}` is filled from the values.
+- **Consent:** the signup form sends its consent wording version (`data-consent`). English uses `waitlist-note-v1`; each other language uses `waitlist-note-v1-<code>`, for example `waitlist-note-v1-de`. The API stores what the page sends. The versions are listed in `docs/legal/PRIVACY_POLICY_DRAFT.md`.
+- **Status:** the translations are drafts until a native speaker has read them. Vercel is not publishing the site at the moment, so the pages can only be checked locally.
+
 ## Analytics
 
 Vercel Web Analytics counts page views and visitors on the landing page. It is the plain-HTML

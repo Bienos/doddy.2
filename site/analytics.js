@@ -72,13 +72,12 @@
     if (!banner) {
       banner = document.createElement('section');
       banner.className = 'consent';
-      banner.setAttribute('aria-label', 'Analytics choice');
+      banner.setAttribute('aria-label', doddyT('Analytics choice'));
       banner.innerHTML =
-        '<p>Can we use Google Analytics? It sets cookies so we can see how people find and use this site. ' +
-        'Nothing is sent to Google unless you say yes, and you can change your mind in the footer.</p>' +
+        '<p>' + doddyT('Can we use Google Analytics? It sets cookies so we can see how people find and use this site. Nothing is sent to Google unless you say yes, and you can change your mind in the footer.') + '</p>' +
         '<div class="consent-actions">' +
-        '<button type="button" class="button small" data-consent="granted">Allow</button>' +
-        '<button type="button" class="button small quiet" data-consent="denied">No thanks</button>' +
+        '<button type="button" class="button small" data-consent="granted">' + doddyT('Allow') + '</button>' +
+        '<button type="button" class="button small quiet" data-consent="denied">' + doddyT('No thanks') + '</button>' +
         '</div>';
       banner.addEventListener('click', function (e) {
         var btn = e.target.closest('[data-consent]');
