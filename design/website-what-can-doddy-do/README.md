@@ -33,7 +33,7 @@ From `prompts/LANDING_PAGE_DESIGN.md` (feature truth table), `docs/implementatio
 | Shown on the page as | What it means | Covers |
 |---|---|---|
 | **Built** | Works in the app now, simulator-tested | Saving a note in your exact words; finding it again with date and source; "I couldn't find that in your saved memories" when nothing matches; edit, export, delete |
-| **In testing** | Built, being tried on real iPhones, not yet verified for release | Voice conversation (ElevenLabs agent); read calendar and add events; reminders; timers; lists; Apple Maps hand-off; message and email drafts (Doddy never sends); contacts; weather (Open-Meteo); Wikipedia look-ups; English/Polish switching; personality settings (humour, reply length, tone, mood; quick picks Doddy's default / Focused / Playful) |
+| **In testing** | Built, being tried on real iPhones, not yet verified for release | Voice conversation (ElevenLabs agent); read calendar and add events; reminders; timers; lists; Apple Maps hand-off; message and email drafts (Doddy never sends); contacts; weather (Open-Meteo); Wikipedia look-ups; English/Polish switching; plans (one card for 2–5 changes with tick boxes, `propose_plan`); personality settings (humour, reply length, tone, mood; quick picks Doddy's default / Focused / Playful) |
 | **Later, maybe** | Not built, no dates promised | Translating other people; choosing a restaurant for you; Android |
 
 Every change in the app goes through a card with Add / Save / Open and nothing happens until the tap; the receipt is read back afterwards. The scenes show exactly that pattern. No ratings, download counts, testimonials or App Store buttons appear anywhere (the brief's own rule, and the site's).
@@ -53,7 +53,7 @@ Every change in the app goes through a card with Add / Save / Open and nothing h
 | 7 | My brain has left the chat (18:45) | speech bubble | saved note found in your exact words, with receipt | **Built** | kept, the anchor scene |
 | 8 | The shopping bag (20:15) | shopping bag | shared list, add with Undo | In testing | kept |
 | 9 | Don't let me forget (22:30) | calendar | reminder card, Add, read back | In testing | kept |
-| 10 | Be more sarcastic (23:30) | basketball | the real personality quick picks | In testing | kept |
+| 10 | Sort tomorrow out (23:30) | pencil | one plan card with a tick box per change (the app's `propose_plan`) | In testing | kept; replaced "Be more sarcastic" after the 13 Oct review |
 | 11 | Where did I park? | | save "parked on B2", find it later | Built | CTA scrap |
 | 12 | Pasta timer, nine minutes | | timer card with Start | In testing | CTA scrap |
 | 13 | Call Mum. Actually call her. | | contact lookup, Call button | In testing | CTA scrap |
@@ -64,8 +64,9 @@ Every change in the app goes through a card with Add / Save / Open and nothing h
 | 18 | Hey Doddy, hands full | | wake word on the Dynamic Island | In testing, not device-verified | dropped: can't be shown honestly yet |
 | 19 | The Polish grandmother | | language switch mid-conversation | In testing | folded into 5 |
 | 20 | Sunday night, "what did I say I'd do?" | | notes + reminders together | mixed | dropped: two features in one, muddy |
+| 21 | Be more sarcastic (23:30) | basketball | the personality quick picks | In testing | shown in the first round; the owner asked for something different |
 
-Scenes were chosen for usefulness, relatability, humour and whether the pack has scenery and a pose for them. Doddy's lines follow the character rules in `docs/product/PERSONALITY_SETTINGS.md`: answer first, one dry beat, jokes about the situation and never about the user, no sarcasm at the user ("Be more sarcastic" gets the honest answer that the closest setting is Playful).
+Scenes were chosen for usefulness, relatability, humour and whether the pack has scenery and a pose for them. Doddy's lines follow the character rules in `docs/product/PERSONALITY_SETTINGS.md`: answer first, one dry beat, jokes about the situation and never about the user, no sarcasm at the user (which is why the 20:15 line lost its "so no excuses" in review).
 
 ### Three directions
 
@@ -114,6 +115,23 @@ The owner asked for alternatives to "Life's complicated. Doddy isn't. Usually." 
 | 7 | Your day has twelve small problems. | He likes those. | The side-quest fixer: notices the small frictions, helps first, jokes second, and asks before he changes anything. | Doddy's point of view |
 
 The owner chose option 1 and asked for "random" in the supporting line; mockups 02 to 05 and 10 carry it. Option 2 claims memory, which is the built feature, so it is the safest claim. Options 4 and 5 are the funniest and still honest. Option 1 is the plainest and ties the page to its nav label. Any of them drops into the hero unchanged.
+
+### Copy review, 13 October (mockup 14 and `COPY.md`)
+
+The owner reviewed the ten moments. Changes made:
+
+| Moment | Change |
+|---|---|
+| 08:45 | kept |
+| 09:10 | Doddy's line now says "17 degrees" |
+| 10:20 | the message being replied to is shown: a paper bubble from Alex in the scene ("Yesterday was fun :)") and a quoted line on the draft card; the ask is "Help me reply to this…" |
+| 13:00 | "near the centre" instead of "nearby"; Doddy's line ends "Opening Maps."; the card search is "cheap pizza near the centre" |
+| Abroad | easier example: a kiosk asks "Sur place ou à emporter?", Doddy gives "Eat in or take away?" |
+| 15:30 | new metaphor: keys and a keyring instead of a coin |
+| 18:45 | a precise, common place: "Trattoria Nonna, Hoża 9" (made up) for Ola's birthday, with "book the table by the window" |
+| 20:15 | "Added to the list. Ola can see it too." (the old line joked at the visitor) |
+| 22:30 | Doddy asks "Morning or evening?"; the card offers Morning 10:00 / Evening 19:00 before Add; the phone mockup matches |
+| 23:30 | replaced by **Sort tomorrow out**: one plan card, tick box per change, Do these (3), each step read back. Scenery: the study; pose: shush; prop: pencil |
 
 ### Showcasing a moment (mockup 15)
 

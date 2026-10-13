@@ -449,3 +449,12 @@ body.board { background: var(--board); }
 .replay { position: absolute; z-index: 3; right: 10px; top: 10px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); border: 1px solid var(--separator); color: var(--reading-ink); font: 700 0.9rem/1 var(--text); box-shadow: var(--lift); }
 .dash-path { position: absolute; z-index: 1; left: 3%; bottom: 10%; width: 40%; height: 20px; }
 .dash-path path { fill: none; stroke: var(--secondary-text); stroke-width: 3; stroke-dasharray: 2 10; stroke-linecap: round; opacity: 0.6; }
+
+/* Review 2 additions: the message being replied to, time options on a reminder card */
+.scene-panel .from { margin: 2px 0 6px; padding: 3px 8px; border-left: 3px solid var(--separator); color: var(--secondary-text); font-size: 0.75rem; line-height: 1.35; }
+.scene-panel .from b { display: block; color: var(--reading-ink); font-size: 0.7rem; }
+.scene-panel .opts { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }
+.scene-panel .opts span { padding: 4px 9px; border-radius: 999px; border: 1.5px solid var(--separator); font-size: 0.75rem; font-weight: 600; }
+.scene-panel .opts .on { background: var(--reading-ink); border-color: var(--reading-ink); color: var(--canvas); }
+.o-bubble-l .who { display: block; margin-bottom: 2px; font-size: 0.7rem; font-weight: 650; color: var(--secondary-text); }
+@media (max-width: 700px) { .from-msg { display: none; } }
