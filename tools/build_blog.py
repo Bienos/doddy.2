@@ -29,7 +29,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 POSTS = ROOT / "blog" / "posts"
 OUT = ROOT / "site" / "blog"
-SITE_URL = "https://doddy-eight.vercel.app"
+SITE_URL = "https://www.doddy.lol"
 TELEGRAM = "https://t.me/+u-YA6P_MISFjYWE0"
 # Must stay byte-identical to index.html: vercel.json allows this inline script by its hash.
 ANALYTICS = ('<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>\n'

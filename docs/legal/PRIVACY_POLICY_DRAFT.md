@@ -30,7 +30,7 @@ This policy covers:
 
 1. the Doddy iPhone app (with its widgets, Share extension and Apple Watch app);
 2. Doddy's servers that the app can talk to (Section 5);
-3. the Doddy website at [WEBSITE ADDRESS] (today `https://doddy-eight.vercel.app`, `site/README.md`) and its waitlist.
+3. the Doddy website at [WEBSITE ADDRESS] (today `https://www.doddy.lol`, `site/README.md`) and its waitlist.
 
 It does not cover the services you connect yourself (Google, Microsoft, Notion, Todoist, Apple, your mobile carrier) or the sites we link to (TikTok, Instagram, Telegram). They have their own policies.
 

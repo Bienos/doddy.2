@@ -44,7 +44,8 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
   - a session that can't hear the user.
 
   Not fixed yet. It needs a device log to confirm the cause.
-- **Vercel deployments are blocked** (account billing and the daily deployment limit), so the Vercel checks on PRs are red whatever the change. GitHub Actions runs again since 2026-10-12.
+- **Vercel deployments are blocked** (account billing and the daily deployment limit), so the Vercel checks on PRs are red whatever the change. GitHub Actions runs again since 2026-10-12. The public site is still up at https://www.doddy.lol (production build `40c3b7d`); only new deployments are blocked.
+- **Where the servers run (checked 2026-10-13):** backend and messaging server on Render, at `e273494` and `ce02763`. The voice token server and the gateway also run on Render, but from the unmerged branch `claude/affectionate-tesla-nqu0nj` (`f835852`), which carries their `server.js` wrappers; this branch does not, so repointing those two services here would break them.
 
 ## Waiting on the owner
 - Whether notes sync between the Mac and the iPhone (today they never do).
