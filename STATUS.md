@@ -7,6 +7,7 @@ Last updated 2026-10-13, 20:00 UTC, on the integration branch `claude/zealous-al
 ## Known-good build
 - **Main branch:** `claude/loving-dirac-uuxoux`.
 - **Last build seen working on a device:** head `ce02763` (PR #60, the learning loop).
+- **Latest build that passed hosted CI:** `c8e38d3f` on the integration branch `claude/zealous-albattani-7ay32v` (run 38457949789, 13 Oct 20:45 UTC); see the section below. Not run on a device.
 - **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
 - **Since then on main:** OpenAI Realtime is the default voice, with a model picker on Home (ADR-442), and the first-use screens landed (#76: ADR-324 to 327, ADR-443). On 13 October the four remaining first-use PRs merged (#53, #56, #57, #58), then #64, #65, #75, and #79 brought in #44, #61, #66, #72, #73 and #74.
 - **Default branch head `e2734941` (13 Oct, 19:04 UTC):** its tree is PR #79's head `50267bb7`, which passed hosted CI (run 38426020997: every target compiles, unit and UI tests pass on the simulator). Not run on a device.
@@ -25,7 +26,7 @@ Last updated 2026-10-13, 20:00 UTC, on the integration branch `claude/zealous-al
 
 Checked on this branch:
 - `scripts/ci.sh --core-only` on Linux with Swift 6.1: every step PASS (DoddyCore tests, app logic type-check, island art and scenes, voice agent specs, string catalogs, platform specs, token server, backend, gateway, messaging and site tests); messaging database tests SKIPPED (no database here).
-- Hosted macOS CI (`ios.yml`, workflow_dispatch) on `c8e38d3f`: run 38457949789. **Result pending when this line was written; the line below it says the outcome.**
+- Hosted macOS CI (`ios.yml`, workflow_dispatch) on `c8e38d3f`: run 38457949789 **passed** at 20:45 UTC on Xcode 26.6: every target compiles, the unit tests pass, and the UI tests pass (29 run, 1 skipped, 0 failures, iOS Simulator); `scripts/ci.sh` RESULT: PASS. The commits after `c8e38d3f` on this branch change only STATUS.md, the run guide and `prompts/`.
 - Nothing on this branch has been run on a device. The voice wave and the island faces were never compiled by their authors; CI is their first compile.
 
 Build it: `make project`, open `Doddy.xcodeproj`, scheme `Doddy`, then `docs/implementation/RUN_ON_YOUR_IPHONE.md`. Merging it into the default branch is the owner's call after a conversation with Doddy on a device.

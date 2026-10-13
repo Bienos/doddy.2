@@ -17,8 +17,9 @@ What is known about it, honestly:
   the UI tests pass there (run 38426020997, PR #79's head, which has the same tree).
 - `claude/friendly-bohr-gy15jv` (the icon on top of the default branch) also built and passed every test in CI
   (run 38322023821 on 13 October).
-- This branch: every Linux check passes (`scripts/ci.sh --core-only` with Swift 6.1). Its own hosted CI run is
-  38457949789; `STATUS.md` records the outcome. The wave and the faces had never been compiled before it.
+- This branch: every Linux check passes (`scripts/ci.sh --core-only` with Swift 6.1), and its hosted CI run
+  38457949789 passed on 13 October at 20:45 UTC (Xcode 26.6: every target compiles; unit tests and 29 UI tests
+  pass on the simulator, 1 skipped). That run was the first compile of the wave and the faces.
 - Nothing has been installed on a real iPhone. Signing has never been done. Expect Xcode to ask for things the
   first time.
 
