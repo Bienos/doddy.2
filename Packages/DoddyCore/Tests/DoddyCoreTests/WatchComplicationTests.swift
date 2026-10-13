@@ -61,3 +61,12 @@ final class WatchListAddTests: XCTestCase {
         XCTAssertEqual(WatchReply.alreadyOnList("milk").message, "“milk” is already on the list. Nothing added.")
     }
 }
+
+final class WatchCaptureLinkTests: XCTestCase {
+    func testOnlyTheNewNoteLinkOpensTheNoteScreen() throws {
+        XCTAssertTrue(WatchCaptureLink.isNewNote(WatchCaptureLink.url))
+        for other in ["doddy://home", "doddy://watch", "doddy://watch/new-note/extra", "doddy://open/new-note", "https://watch/new-note"] {
+            XCTAssertFalse(WatchCaptureLink.isNewNote(try XCTUnwrap(URL(string: other))), other)
+        }
+    }
+}

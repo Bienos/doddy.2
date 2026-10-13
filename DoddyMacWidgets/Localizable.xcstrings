@@ -1,0 +1,39 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy"
+          }
+        }
+      }
+    },
+    "Open Doddy from the menu bar to count your notes here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego z paska menu, żeby policzyć tu swoje notatki."
+          }
+        }
+      }
+    },
+    "Saved on this Mac": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane na tym Macu"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

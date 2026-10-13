@@ -133,8 +133,10 @@ final class DeviceConnections {
         CalendarEventSummary.occurrenceID(itemID: event.calendarItemIdentifier, start: event.startDate)
     }
 
-    /// The event's identifier comes back with a verified add, so Undo can find exactly this event (ADR-268).
-    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: AddOutcome, eventID: String?) {
+    /// Saves one event in the default calendar and returns it as read back with its identifier
+    /// (which Undo uses, ADR-268), or nil when the read-back doesn't show it (or its repeat).
+    /// `EventAddAction` looks first and compares (CalendarEventWriter, ADR-319).
+    func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         guard let calendar = eventStore.defaultCalendarForNewEvents else { throw Failure.noDefaultCalendar }
         let event = EKEvent(eventStore: eventStore)
         event.calendar = calendar
@@ -149,10 +151,9 @@ final class DeviceConnections {
         try eventStore.save(event, span: draft.repeats == nil ? .thisEvent : .futureEvents)
         guard let identifier = event.eventIdentifier, let back = eventStore.event(withIdentifier: identifier),
               CalendarRepeat.same(Self.readRepeat(back.recurrenceRules, calendar: .current), draft.repeats) else {
-            return (.unconfirmed, nil)
+            return nil
         }
-        // Undo removes a single event only, so a repeating one isn't offered for undo.
-        return (.verified, draft.repeats == nil ? identifier : nil)
+        return (Self.summary(back), identifier)
     }
 
     /// Calendar's and Reminders' repeat rule for a `CalendarRepeat` (ADR-282). The end is the
@@ -580,18 +581,30 @@ final class DeviceConnections {
     // MARK: Timers
 
     /// Schedules a local notification for the timer and reads it back from iOS to confirm.
-    func startTimer(_ draft: TimerDraft) async throws -> AddOutcome {
+    /// Doddy's timers still waiting to ring (TimerWriter, ADR-320). The ring time is the one
+    /// written into the notification when it was set, not recomputed from its trigger.
+    func pendingTimers() async -> [PendingTimer] {
+        await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in
+            guard request.identifier.hasPrefix("doddy.timer.") else { return nil }
+            if let seconds = request.content.userInfo["firesAt"] as? Double {
+                return PendingTimer(identifier: request.identifier, firesAt: Date(timeIntervalSince1970: seconds))
+            }
+            guard let date = (request.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate() else { return nil }
+            return PendingTimer(identifier: request.identifier, firesAt: date)
+        }
+    }
+
+    /// Schedules one timer notification under `identifier` (TimerStartAction reads it back).
+    func scheduleTimer(_ draft: TimerDraft, identifier: String) async throws {
         let center = UNUserNotificationCenter.current()
         center.delegate = TimerBanners.shared
         let content = UNMutableNotificationContent()
         content.title = "Timer done"
         content.body = draft.label ?? "Your timer is done."
         content.sound = .default
-        let identifier = "doddy.timer.\(UUID().uuidString)"
+        content.userInfo = ["firesAt": Date().addingTimeInterval(TimeInterval(draft.seconds)).timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
         try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
-        let pending = await center.pendingNotificationRequests()
-        return pending.contains { $0.identifier == identifier } ? .verified : .unconfirmed
     }
 
     // MARK: Contacts
@@ -655,27 +668,29 @@ final class DeviceConnections {
 
 /// The M4 Reminders port (DoddyCore `ReminderAction` drives it; the logic is tested there).
 extension DeviceConnections: ReminderStore {}
+extension DeviceConnections: CalendarEventWriter {}
+extension DeviceConnections: TimerWriter {}
 
 /// What `VoiceSessionController` uses of `DeviceConnections`, so its tests can put in a fake
 /// Calendar and Reminders (AppTests review 2026-10-11, finding 2). The real class is the default;
 /// the signatures are the class's own. Sendable because a `@MainActor` class is; the controller
 /// hands it to DoddyCore's nonisolated `ReminderAction.add`.
 @MainActor
-protocol DeviceConnecting: ReminderStore, Sendable {
+/// What `VoiceSessionController` uses of the device, so a fake can stand in for it in tests.
+/// Events and timers are added through `CalendarEventWriter` and `TimerWriter`, which look first
+/// and read back (ADR-319, ADR-320).
+protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Sendable {
     func access(for connection: VoiceConnection) -> DeviceConnections.Access
     func notificationAccess() async -> DeviceConnections.Access
-    func events(in range: VoiceTimeRange) -> [CalendarEventSummary]
-    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: DeviceConnections.AddOutcome, eventID: String?)
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
     func eventNotes(_ event: CalendarEventSummary) -> String?
-    func reminderLists() -> [ReminderListRef]
     func changeReminder(_ before: ReminderSnapshot, _ change: ReminderChange) throws -> DeviceConnections.ChangeOutcome
     func deleteEvent(_ event: CalendarEventSummary) throws -> DeviceConnections.ChangeOutcome
     func deleteReminder(_ before: ReminderSnapshot) throws -> DeviceConnections.ChangeOutcome
     func reminderSnapshot(id: String) -> ReminderSnapshot?
-    func startTimer(_ draft: TimerDraft) async throws -> DeviceConnections.AddOutcome
+    func reminderLists() -> [ReminderListRef]
     func findContacts(named name: String) throws -> [DeviceConnections.ContactMatch]
     func contactBirthdays() throws -> [ContactBirthday]
 }

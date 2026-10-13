@@ -25,8 +25,19 @@ struct CaptureView: View {
     @State private var memo: VoiceMemoDraft?
     @State private var memoProblem: String?
     @FocusState private var editorFocused: Bool
+    /// Unfinished notes (ADR-362): this screen's draft, kept on the iPhone until Save or Discard.
+    private let drafts = UnfinishedNoteStore.shared
+    private let sharedText: String?
+    @State private var draftID = UUID()
+    @State private var draftStartedAt = Date()
+    @State private var started = false
+    /// The unfinished note this screen opened with.
+    @State private var resumed: UnfinishedNote?
+    /// Another unfinished note, kept, when this screen opened with shortcut text.
+    @State private var otherWaiting: UnfinishedNote?
 
     init(sharedText: String? = nil) {
+        self.sharedText = sharedText
         _text = State(initialValue: sharedText ?? "")
         _isShared = State(initialValue: sharedText != nil)
     }
@@ -57,6 +68,19 @@ struct CaptureView: View {
                     } else {
                         JourneyHeading(eyebrow: "Before it slips away", title: "One less thing\nto remember.",
                                        subtitle: "A thought, a recommendation, where you put the spare keys.")
+                        if let resumed {
+                            ResumedDraftNotice(note: resumed, onStartNew: startNewInstead)
+                        }
+                        if let otherWaiting {
+                            Label(String(format: NSLocalizedString("You also have an unfinished note from %@. It's kept; it opens the next time you start a new note.", comment: ""),
+                                         otherWaiting.updatedAt.formatted(date: .abbreviated, time: .shortened)),
+                                  systemImage: "doc.badge.clock")
+                                .font(.footnote).foregroundStyle(Theme.secondaryText)
+                                .accessibilityIdentifier("capture.otherDraft")
+                        }
+                        if let problem = drafts.problem {
+                            ProblemView(message: problem).accessibilityIdentifier("capture.draftProblem")
+                        }
                         if isShared {
                             Label("Shared into Doddy from a shortcut. Check it, change it if you like, then tap Save. Nothing is saved until you do.", systemImage: "square.and.arrow.down")
                                 .font(.footnote).foregroundStyle(Theme.secondaryText)
@@ -125,18 +149,82 @@ struct CaptureView: View {
                 // Once the shared text is cleared, whatever is typed or pasted next is the user's
                 // own, so it is saved as a typed note, not as "shared".
                 if isShared && text.allSatisfy(\.isWhitespace) { isShared = false }
+                keepDraft()
             }
+            .onChange(of: category) { keepDraft() }
+            .onChange(of: photo != nil) { keepDraft() }
+            .onChange(of: memo != nil) { keepDraft() }
             .confirmationDialog("Discard this note?", isPresented: $confirmDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) {
                     memo?.discardFile()
+                    drafts.remove(id: draftID)
                     dismiss()
                 }
+                // Only offered while the copy on the iPhone is confirmed (ADR-362).
+                if drafts.problem == nil && !text.allSatisfy(\.isWhitespace) {
+                    Button("Keep it for later") {
+                        drafts.flush()
+                        memo?.discardFile()
+                        dismiss()
+                    }
+                }
                 Button("Keep editing", role: .cancel) {}
-            } message: { Text("It hasn't been saved.") }
+            } message: {
+                if drafts.problem == nil && !text.allSatisfy(\.isWhitespace) {
+                    Text("It hasn't been saved. Keep it for later and it opens the next time you start a new note; a photo or recording isn't kept with it.")
+                } else {
+                    Text("It hasn't been saved.")
+                }
+            }
         }
         .interactiveDismissDisabled((hasDraft && saved == nil) || isSaving)
-        .onAppear { ShortcutRouter.shared.captureScreenAppeared() }
-        .onDisappear { ShortcutRouter.shared.captureScreenDisappeared() }
+        .onAppear {
+            ShortcutRouter.shared.captureScreenAppeared()
+            startDraft()
+        }
+        .onDisappear {
+            drafts.flush()
+            ShortcutRouter.shared.captureScreenDisappeared()
+        }
+    }
+
+    /// Once per screen: opens with the newest unfinished note, or keeps shortcut text as one.
+    private func startDraft() {
+        guard !started else { return }
+        started = true
+        switch UnfinishedNoteResume.start(sharedText: sharedText, book: drafts.book) {
+        case .fresh:
+            keepDraft()
+        case .resumed(let note):
+            draftID = note.id
+            draftStartedAt = note.startedAt
+            resumed = note
+            text = note.text
+            category = note.category
+            isShared = note.isSharedText
+        case .sharedWithOtherWaiting(let note):
+            otherWaiting = note
+            keepDraft()
+        }
+    }
+
+    /// The screen's words, kept on the iPhone until Save or Discard.
+    private func keepDraft() {
+        guard started, saved == nil else { return }
+        drafts.keep(UnfinishedNote(id: draftID, text: text, category: category, isSharedText: isShared,
+                                   hadPhoto: photo != nil, hadRecording: memo != nil,
+                                   startedAt: draftStartedAt, updatedAt: Date()))
+    }
+
+    /// "Start a new note instead": the unfinished note stays kept for later.
+    private func startNewInstead() {
+        drafts.flush()
+        resumed = nil
+        draftID = UUID()
+        draftStartedAt = Date()
+        text = ""
+        category = .other
+        isShared = false
     }
 
     private func close() {
@@ -145,6 +233,7 @@ struct CaptureView: View {
     }
 
     private func startAnother() {
+        draftID = UUID(); draftStartedAt = Date(); resumed = nil; otherWaiting = nil
         text = ""; category = .other; saved = nil; errorMessage = nil; isShared = false
         duplicate = nil; allowDuplicate = false; photo = nil; photoProblem = nil
         memo?.discardFile(); memo = nil; memoProblem = nil
@@ -181,7 +270,34 @@ struct CaptureView: View {
             memo.discardFile()
             self.memo = nil
         }
+        // A note now: the draft goes (ADR-362).
+        drafts.remove(id: draftID)
         saved = record
+    }
+}
+
+/// "Here is your unfinished note" at the top of a capture screen that opened with one (ADR-362).
+private struct ResumedDraftNotice: View {
+    let note: UnfinishedNote
+    let onStartNew: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(String(format: NSLocalizedString("Here is your unfinished note from %@. It isn't saved until you tap Save.", comment: ""),
+                         note.updatedAt.formatted(date: .abbreviated, time: .shortened)),
+                  systemImage: "doc.badge.clock")
+                .font(.footnote)
+            if note.hadPhoto || note.hadRecording {
+                Text("Its photo or recording wasn't kept with it. Add it again if you need it.")
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+            Button("Start a new note instead", action: onStartNew)
+                .frame(minHeight: 44)
+                .accessibilityIdentifier("capture.startNewInstead")
+        }
+        .padding(14)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+        .accessibilityIdentifier("capture.resumedDraft")
     }
 }
 

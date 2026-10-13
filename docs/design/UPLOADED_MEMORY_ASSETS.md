@@ -163,6 +163,11 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
 
+## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
+| Image set | Pack source | SHA-256 of the source | Made how |
+|---|---|---|---|
+| `MenuBarDoddy` (Mac app) and `MacDoddy_face` (Mac desktop widget) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | byte-identical copies of `WidgetDoddy_face` `art@2x.png` (120×120, SHA-256 `cdb24f36e3069738…`); nothing redrawn or generated |
+
 ## App icon (ADR-460, 12 October 2026)
 
 Owner: "pick [the] app icon" from the pack, for a first Xcode build on the owner's iPhone. This replaces the

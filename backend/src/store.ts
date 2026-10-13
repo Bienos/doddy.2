@@ -36,6 +36,13 @@ export interface ConnectionRow {
   last_checked_at: number | null;
 }
 
+/** A remote connection Doddy queued for removal, and whose it is. */
+export interface QueuedCleanup {
+  connectionId: string;
+  userId: string;
+  provider: string;
+}
+
 export interface CleanupRow {
   connection_id: string;
   user_id: string;
@@ -47,6 +54,13 @@ export interface CleanupRow {
 }
 
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
+
+/**
+ * The hourly sweep's retry of queued remote removals: only rows older than five minutes (a request
+ * may still be working on a newer one), at most 20 a sweep, and 24 tries (a day) per row. A row
+ * past that stays visible as `failed` and is still retried before the user's next Connect.
+ */
+export const CLEANUP_RETRY = { afterMs: 5 * 60_000, perSweep: 20, maxTries: 24 } as const;
 
 export class Store {
   readonly db: DatabaseSync;
@@ -134,6 +148,13 @@ export class Store {
       );
       CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
     `);
+    // ADR-322: what happened when an approval was used. Outcome and the provider's id only, never
+    // the email or task text. Added to databases made before it.
+    const columns = new Set((this.db.prepare("PRAGMA table_info(approvals)").all() as { name: string }[]).map((c) => c.name));
+    for (const [name, type] of [["outcome", "TEXT"], ["external_id", "TEXT"], ["finished_at", "INTEGER"]] as const) {
+      if (!columns.has(name)) this.db.exec(`ALTER TABLE approvals ADD COLUMN ${name} ${type}`);
+    }
+    this.db.exec("CREATE INDEX IF NOT EXISTS approvals_writes ON approvals(user_id, capability, args_digest, finished_at)");
   }
 
   close(): void {
@@ -175,27 +196,83 @@ export class Store {
     authConfigId: string;
     now: number;
     ttlSeconds: number;
-  }): { attemptId: string; nonce: string; expiresAt: number } {
+  }): { attemptId: string; nonce: string; expiresAt: number; superseded: QueuedCleanup[] } {
     const attemptId = randomUUID();
     const nonce = randomBytes(32).toString("base64url");
     const expiresAt = input.now + input.ttlSeconds * 1000;
-    this.transaction(() => {
-      // A new attempt supersedes any unfinished one for the same user and provider.
-      this.db
-        .prepare("UPDATE attempts SET consumed_at = ? WHERE user_id = ? AND provider = ? AND consumed_at IS NULL")
-        .run(input.now, input.userId, input.provider);
+    const superseded = this.transaction(() => {
+      // A new attempt supersedes any unfinished one for the same user and provider. Its pending
+      // connection can still be finished at the provider, so it is queued for removal now.
+      const open = this.db
+        .prepare("SELECT * FROM attempts WHERE user_id = ? AND provider = ? AND consumed_at IS NULL")
+        .all(input.userId, input.provider) as unknown as AttemptRow[];
+      const queued = this.endAttempts(open, input.now);
       this.db
         .prepare(
           `INSERT INTO attempts (attempt_id, user_id, provider, auth_config_id, nonce_hash, created_at, expires_at)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
         )
         .run(attemptId, input.userId, input.provider, input.authConfigId, sha256(nonce), input.now, expiresAt);
+      return queued;
     });
-    return { attemptId, nonce, expiresAt };
+    return { attemptId, nonce, expiresAt, superseded };
   }
 
-  setPendingConnection(attemptId: string, pendingConnectionId: string | null): void {
-    this.db.prepare("UPDATE attempts SET pending_connection_id = ? WHERE attempt_id = ?").run(pendingConnectionId, attemptId);
+  /**
+   * Records the pending connection the provider made for an attempt. If the attempt ended while
+   * the link was being made (a newer Connect superseded it), the connection is queued for removal
+   * instead and this returns false: no one can complete it through Doddy.
+   */
+  setPendingConnection(attemptId: string, pendingConnectionId: string | null, now: number): boolean {
+    return this.transaction(() => {
+      const row = this.db.prepare("SELECT * FROM attempts WHERE attempt_id = ?").get(attemptId) as AttemptRow | undefined;
+      if (!row) return false;
+      if (row.consumed_at !== null) {
+        if (pendingConnectionId) this.endAttempts([{ ...row, pending_connection_id: pendingConnectionId }], now);
+        return false;
+      }
+      this.db.prepare("UPDATE attempts SET pending_connection_id = ? WHERE attempt_id = ?").run(pendingConnectionId, attemptId);
+      return true;
+    });
+  }
+
+  /**
+   * Ends every unfinished attempt of these providers that has expired (the user never came back,
+   * or came back too late) and queues its pending connection for removal. Called hourly and on a
+   * completion that arrives after expiry; optionally for one user only.
+   */
+  expireAttempts(now: number, providers: readonly string[], userId?: string): QueuedCleanup[] {
+    if (providers.length === 0) return [];
+    const marks = providers.map(() => "?").join(", ");
+    return this.transaction(() => {
+      const rows = (userId === undefined
+        ? this.db
+            .prepare(`SELECT * FROM attempts WHERE consumed_at IS NULL AND expires_at <= ? AND provider IN (${marks})`)
+            .all(now, ...providers)
+        : this.db
+            .prepare(`SELECT * FROM attempts WHERE consumed_at IS NULL AND expires_at <= ? AND user_id = ? AND provider IN (${marks})`)
+            .all(now, userId, ...providers)) as unknown as AttemptRow[];
+      return this.endAttempts(rows, now);
+    });
+  }
+
+  /**
+   * Marks the attempts ended and queues each pending connection for removal, unless it is a
+   * connection Doddy recorded. Every pending connection was made by Doddy for this user's own
+   * Composio id, so removing it never touches anyone else's. Call inside a transaction.
+   */
+  private endAttempts(rows: readonly AttemptRow[], now: number): QueuedCleanup[] {
+    const end = this.db.prepare("UPDATE attempts SET consumed_at = ? WHERE attempt_id = ? AND consumed_at IS NULL");
+    const recorded = this.db.prepare("SELECT 1 FROM connections WHERE connection_id = ?");
+    const queued: QueuedCleanup[] = [];
+    for (const row of rows) {
+      end.run(now, row.attempt_id);
+      const connectionId = row.pending_connection_id;
+      if (!connectionId || recorded.get(connectionId)) continue;
+      this.queueCleanup(connectionId, row.user_id, row.provider, now);
+      queued.push({ connectionId, userId: row.user_id, provider: row.provider });
+    }
+    return queued;
   }
 
   /**
@@ -302,6 +379,23 @@ export class Store {
     this.db
       .prepare("UPDATE cleanups SET state = 'failed', attempts = attempts + 1, last_error = ? WHERE connection_id = ?")
       .run(errorCode, connectionId);
+  }
+
+  /**
+   * Queued removals of these providers to try again: older than `before` (so a request still
+   * working on one isn't raced), tried fewer than `maxAttempts` times, oldest first.
+   */
+  cleanupsToRetry(providers: readonly string[], before: number, maxAttempts: number, limit: number): QueuedCleanup[] {
+    if (providers.length === 0) return [];
+    const marks = providers.map(() => "?").join(", ");
+    const rows = this.db
+      .prepare(
+        `SELECT connection_id, user_id, provider FROM cleanups
+         WHERE provider IN (${marks}) AND created_at < ? AND attempts < ?
+         ORDER BY created_at ASC LIMIT ?`,
+      )
+      .all(...providers, before, maxAttempts, limit) as { connection_id: string; user_id: string; provider: string }[];
+    return rows.map((r) => ({ connectionId: r.connection_id, userId: r.user_id, provider: r.provider }));
   }
 
   cleanupFor(userId: string, provider: string): CleanupRow | null {
@@ -476,4 +570,47 @@ export class Store {
         .changes === 1;
     });
   }
+
+  /** Records what happened after a used approval ran (ADR-322). Only the first record counts. */
+  finishApproval(approvalId: string, outcome: WriteOutcome, externalId: string | null, now: number): void {
+    this.db
+      .prepare("UPDATE approvals SET outcome = ?, external_id = ?, finished_at = ? WHERE approval_id = ? AND consumed_at IS NOT NULL AND outcome IS NULL")
+      .run(outcome, externalId, now, approvalId);
+  }
+
+  /**
+   * What happened when this approval was used, for the same user, tool, account and (unless
+   * `argsDigest` is null, for a tool whose approval is bound to a looked-up target) arguments.
+   * Null when it was never used. `outcome` null: used, but its run hasn't finished (or the server
+   * stopped mid-run), so it may or may not have gone through.
+   */
+  approvalOutcome(input: { approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string | null }): {
+    outcome: WriteOutcome | null;
+    externalId: string | null;
+  } | null {
+    const row = this.db
+      .prepare(
+        `SELECT outcome, external_id FROM approvals
+         WHERE approval_id = ? AND user_id = ? AND capability = ? AND account_id = ? AND (? IS NULL OR args_digest = ?) AND consumed_at IS NOT NULL`,
+      )
+      .get(input.approvalId, input.userId, input.capability, input.accountId, input.argsDigest, input.argsDigest) as
+      | { outcome: WriteOutcome | null; external_id: string | null }
+      | undefined;
+    return row ? { outcome: row.outcome, externalId: row.external_id } : null;
+  }
+
+  /** The newest run of the same write (user, tool, arguments) since `since` that did or may have gone through. */
+  latestWrite(input: { userId: string; capability: string; argsDigest: string; since: number }): { outcome: WriteOutcome; finishedAt: number } | null {
+    const row = this.db
+      .prepare(
+        `SELECT outcome, finished_at FROM approvals
+         WHERE user_id = ? AND capability = ? AND args_digest = ? AND finished_at >= ? AND outcome IN ('succeeded', 'outcome_unknown')
+         ORDER BY finished_at DESC LIMIT 1`,
+      )
+      .get(input.userId, input.capability, input.argsDigest, input.since) as { outcome: WriteOutcome; finished_at: number } | undefined;
+    return row ? { outcome: row.outcome, finishedAt: row.finished_at } : null;
+  }
 }
+
+/** How a used approval's run ended (ADR-322). */
+export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";

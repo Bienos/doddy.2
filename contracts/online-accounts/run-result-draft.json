@@ -4,8 +4,9 @@
   "text": "drafted: Gmail draft to anna@example.com with subject \"Lunch Friday\" was created. It was NOT sent; the user sends it from Gmail.",
   "count": 1,
   "truncated": false,
+  "externalId": "draft_demo_1",
   "receipt": {
-    "operationId": "73a4555a-42fb-438c-bbf0-f3d87c255c08",
+    "operationId": "90d7aac3-c693-4de9-a749-31e59d69a44a",
     "operation": "write",
     "toolkit": "gmail",
     "tool": "draft_email",
@@ -14,6 +15,6 @@
     "status": "succeeded",
     "summary": "Gmail draft created (not sent).",
     "errorCode": null,
-    "providerReference": "mock_log_dec6eb31"
+    "providerReference": "mock_log_20c45d2c"
   }
 }

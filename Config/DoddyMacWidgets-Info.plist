@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the Mac desktop widget (ADR-439). It only reads the note count the menu
+  bar app writes in their App Group folder.
+-->
+<plist version="1.0">
+<dict>
+	<key>DoddyMacAppGroup</key>
+	<string>$(TeamIdentifierPrefix)$(DODDY_APP_BUNDLE_IDENTIFIER).mac</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
+</dict>
+</plist>

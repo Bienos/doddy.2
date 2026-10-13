@@ -40,6 +40,8 @@ final class MemoryStore {
     var noteReminders: NoteReminderStore?
     /// What Doddy learned about the user (ADR-440). The voice session and Settings reach it here.
     var learning: LearningStore?
+    /// "What Doddy did": a deleted note takes the text its rows kept for Undo with it (review C2).
+    var activity: ActivityLogStore?
 
     init(environment: AppEnvironment) {
         self.environment = environment
@@ -123,6 +125,7 @@ final class MemoryStore {
         let audio = recordings[id]
         let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
+        activity?.forget(memoryID: id)
         // Only one deleted note can be undone, so the photo of the one before it goes for good.
         if let old = recentlyDeletedPhoto { environment.photoFiles.delete(old.fileName) }
         recentlyDeletedPhoto = photo
@@ -188,11 +191,14 @@ final class MemoryStore {
     func deleteAll() async throws {
         recentlyDeleted = nil
         try await environment.memoryRepository.deleteAll()
+        activity?.forgetNotes()
         environment.photoFiles.deleteOrphans(keeping: [])
         recentlyDeletedPhoto = nil
         environment.audioFiles.deleteOrphans(keeping: [])
         recentlyDeletedAudio = nil
         await environment.noteReminders?.allMemoriesDeleted()
+        // Unfinished notes go too (ADR-362).
+        UnfinishedNoteStore.shared.removeAll()
         await reload()
     }
 

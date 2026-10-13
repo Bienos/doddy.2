@@ -185,6 +185,8 @@ export interface ToolOutcome {
   items?: ResultItem[];
   /** One line for the receipt. No message bodies. */
   summary: string;
+  /** Writes: the provider's id for what was made (Gmail draft id, Todoist task id), ADR-322. */
+  externalId?: string;
 }
 
 export interface Context {
@@ -267,6 +269,18 @@ export interface CloudToolDefinition {
   resolve?: TargetLookup;
   preview?(args: Record<string, unknown>, resolved: ResolvedTarget | null): ConfirmationPreview;
   normalize(raw: unknown, args: Record<string, unknown>, context: Context, resolved: ResolvedTarget | null): ToolOutcome;
+  /**
+   * Writes (ADR-322): the answer for a repeated run of an approval that already succeeded. The
+   * server keeps no email or task text, so it is rebuilt from the same arguments (whose digest
+   * matched) or, for a tool with a lookup, says only what is known without them.
+   */
+  replay?(args: Record<string, unknown>, externalId: string | null): ToolOutcome;
+  /**
+   * Writes that can be looked for (ADR-322): a read that lists what is there, and whether one
+   * listed item is this write. Used only after an earlier try whose outcome is unknown, and only
+   * when the user has that read switched on. Found is proof; not found proves nothing.
+   */
+  findExisting?: { tool: CloudToolDefinition; arguments(args: Record<string, unknown>): Record<string, unknown>; matches(item: ResultItem, args: Record<string, unknown>): boolean };
 }
 
 // ------------------------------------------------------------------ helpers
@@ -417,14 +431,19 @@ export const DRAFT_EMAIL: CloudToolDefinition = {
   normalize: (raw, args) => {
     const data = dataOf(raw);
     if (typeof data.id !== "string" || data.id === "") throw new ProviderError("malformed_provider_result");
-    return {
-      text: `drafted: Gmail draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Gmail.`,
-      count: 1,
-      truncated: false,
-      summary: "Gmail draft created (not sent).",
-    };
+    return { ...draftOutcome(args), externalId: data.id };
   },
+  replay: (args, externalId) => ({ ...draftOutcome(args), ...(externalId ? { externalId } : {}) }),
 };
+
+function draftOutcome(args: Record<string, unknown>): ToolOutcome {
+  return {
+    text: `drafted: Gmail draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Gmail.`,
+    count: 1,
+    truncated: false,
+    summary: "Gmail draft created (not sent).",
+  };
+}
 
 // ------------------------------------------------------------------ Google Drive
 
@@ -630,14 +649,33 @@ export const ADD_TODOIST_TASK: CloudToolDefinition = {
     const due = typeof data.due === "object" && data.due !== null ? (data.due as Record<string, unknown>) : null;
     const dueText = due ? clip(due.string, 40) ?? clip(due.date, 25) : null;
     const content = clip(data.content, 300) ?? (args.content as string);
-    return {
-      text: `added: Todoist task ${JSON.stringify(content)}${dueText ? ` due ${dueText}` : " with no due date"}.`,
-      count: 1,
-      truncated: false,
-      summary: "Todoist task added.",
-    };
+    return { ...taskOutcome(content, dueText), externalId: data.id };
+  },
+  replay: (args, externalId) => ({
+    ...taskOutcome(args.content as string, (args.due as string | undefined) ?? null),
+    ...(externalId ? { externalId } : {}),
+  }),
+  findExisting: {
+    tool: LIST_TODOIST_TASKS,
+    arguments: (args) => ({ when: "all", search: todoistSearchWord(args.content as string).slice(0, 60) || undefined }),
+    matches: (item, args) => sameWords(item.title, args.content as string),
   },
 };
+
+function taskOutcome(content: string, due: string | null): ToolOutcome {
+  return {
+    text: `added: Todoist task ${JSON.stringify(content)}${due ? ` due ${due}` : " with no due date"}.`,
+    count: 1,
+    truncated: false,
+    summary: "Todoist task added.",
+  };
+}
+
+/** The same words, ignoring case and spacing; a listed title is clipped at 120 characters. */
+function sameWords(listed: string, content: string): boolean {
+  const fold = (value: string) => value.toLocaleLowerCase().replace(/\s+/g, " ").trim();
+  return fold(listed) === fold(clip(content, 120) ?? "");
+}
 
 /** Composio's error text for a failed tool run; only matched here, never forwarded or logged. */
 function looksNotFound(error: unknown): boolean {
@@ -712,6 +750,13 @@ export const COMPLETE_TODOIST_TASK: CloudToolDefinition = {
       summary: "Todoist task completed.",
     };
   },
+  replay: (_args, externalId) => ({
+    text: "completed: the Todoist task from the first try is done.",
+    count: 1,
+    truncated: false,
+    summary: "Todoist task completed.",
+    ...(externalId ? { externalId } : {}),
+  }),
 };
 
 export const MOVE_TODOIST_TASK: CloudToolDefinition = {
@@ -757,6 +802,13 @@ export const MOVE_TODOIST_TASK: CloudToolDefinition = {
       summary: "Todoist task due date changed.",
     };
   },
+  replay: (_args, externalId) => ({
+    text: "moved: the Todoist task from the first try has its new due date.",
+    count: 1,
+    truncated: false,
+    summary: "Todoist task due date changed.",
+    ...(externalId ? { externalId } : {}),
+  }),
 };
 
 // ------------------------------------------------------------------ Gmail: one email's text
@@ -945,8 +997,18 @@ export const DRAFT_EMAIL_REPLY: CloudToolDefinition = {
       count: 1,
       truncated: false,
       summary: "Gmail reply draft created (not sent).",
+      externalId: data.id,
     };
   },
+  // A repeat of a run that succeeded (ADR-322): the email it answered can't be looked up again
+  // the same way, so the answer uses none of this request's words.
+  replay: (_args, externalId) => ({
+    text: "drafted: the Gmail reply draft from the first try was created; nothing ran again. It was NOT sent; the user sends it from Gmail.",
+    count: 1,
+    truncated: false,
+    summary: "Gmail reply draft created (not sent).",
+    ...(externalId ? { externalId } : {}),
+  }),
 };
 
 // ------------------------------------------------------------------ Notion: one page's text
@@ -1202,14 +1264,20 @@ export const DRAFT_OUTLOOK_EMAIL: CloudToolDefinition = {
     const data = dataOf(raw);
     // Only Outlook's draft id confirms it; an answer that says it isn't a draft is not "done" either.
     if (typeof data.id !== "string" || data.id === "" || data.isDraft === false) throw new ProviderError("malformed_provider_result");
-    return {
-      text: `drafted: Outlook draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Outlook.`,
-      count: 1,
-      truncated: false,
-      summary: "Outlook draft created (not sent).",
-    };
+    return { ...outlookDraftOutcome(args), externalId: data.id };
   },
+  // A repeat of a run that succeeded gets the first answer and nothing runs again (ADR-322).
+  replay: (args, externalId) => ({ ...outlookDraftOutcome(args), ...(externalId ? { externalId } : {}) }),
 };
+
+function outlookDraftOutcome(args: Record<string, unknown>): ToolOutcome {
+  return {
+    text: `drafted: Outlook draft to ${args.to as string} with subject ${JSON.stringify(args.subject)} was created. It was NOT sent; the user sends it from Outlook.`,
+    count: 1,
+    truncated: false,
+    summary: "Outlook draft created (not sent).",
+  };
+}
 
 export const MAX_OUTLOOK_CALENDAR_DAYS = 31;
 export const MAX_OUTLOOK_EVENTS = 20;

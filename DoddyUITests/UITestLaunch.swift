@@ -12,6 +12,9 @@ enum UITestLaunch {
         case persistent(UUID)
     }
 
+    /// How much slower than real time the opening plays when a test turns it on.
+    static let openingTimeScale = 6
+
     static func arguments(
         store: Store, onboardingDone: Bool = true, appearance: String = "system", backTapSetup: String = "deferred",
         opening: Bool = false, listen: Bool = false
@@ -26,6 +29,10 @@ enum UITestLaunch {
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
         arguments += ["-voiceAgentID", ""]
         arguments += ["-openingScene", opening ? "YES" : "NO", "-listenOnOpen", listen ? "YES" : "NO"]
+        // The opening's whole timeline is 2.4 s, and on CI the launch and the first idle wait can
+        // take longer than that, so a test sometimes looked only after it had ended. Played 6×
+        // slower (14.4 s) it is still on screen when the test first looks, and still ends by itself.
+        if opening { arguments += ["-openingTimeScale", String(openingTimeScale)] }
         // Memories remembers Notes or Lists in UserDefaults, which outlive the in-memory store: a
         // test that opened Lists would leave every later test looking at Lists, not the notes.
         arguments += ["-memoriesShowsLists", "NO"]

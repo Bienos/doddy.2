@@ -39,8 +39,33 @@ final class ActivityLogStore {
         onChange?(entry, previous, entries.filter { $0.id != entry.id }, sessionID)
     }
 
+    /// Settles unsure note and list entries from Doddy's own notes and lists (ADR-321). Call only
+    /// once the store has loaded: empty lists here would read as "not there".
+    func settleLocal(notes: [MemoryRecord], lists: [DoddyList]) {
+        let settled = LocalCheck.settledAll(entries, notes: notes, lists: lists, at: Date())
+        guard settled != entries else { return }
+        entries = settled
+        save()
+    }
+
     func clear() {
         entries = []
+        save()
+    }
+
+    /// A note or list was deleted: its rows stay, without the text or items Undo kept (review C2).
+    func forget(memoryID: UUID) {
+        let updated = ActivityLog.forgetting(memoryID: memoryID, in: entries)
+        guard updated != entries else { return }
+        entries = updated
+        save()
+    }
+
+    /// "Delete all memories": the Notes and lists rows go too (review C2). Other apps' rows stay.
+    func forgetNotes() {
+        let updated = ActivityLog.forgettingNotes(entries)
+        guard updated != entries else { return }
+        entries = updated
         save()
     }
 
@@ -48,7 +73,8 @@ final class ActivityLogStore {
         guard let fileURL, let data = try? Data(contentsOf: fileURL) else { return }
         let stored = (try? JSONDecoder().decode([ActivityEntry].self, from: data)) ?? []
         // Anything still "in progress" from the last run was cut off; it is never shown as done.
-        entries = ActivityLog.pruned(ActivityLog.recoverInterrupted(stored), now: Date())
+        let now = Date()
+        entries = ActivityLog.pruned(ActivityLog.recoverInterrupted(stored, at: now), now: now)
         if entries != stored { save() }
     }
 

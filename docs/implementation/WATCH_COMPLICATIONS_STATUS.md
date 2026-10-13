@@ -33,3 +33,15 @@ Date: 2026-10-11. Owner: "do all of them" (item 8).
 | DOD-11 observable_privacy | `ComplicationContent` carries only a time, counts and a list name; "off" leaves nothing on the watch | `testOnlyTimesCountsAndListNamesAreShown`, `testNothingIsShownWhenOffOrNotReady` | Not seen on a real watch face |
 | DOD-08 verified_status_and_receipts | The snapshot write is read back before the complications reload | — | — |
 | DOD-10 nonmanipulative_companionship | Relevance only from the user's own reminder times; no streaks or prompts | `testTheSmartStackWantsItInTheHourBeforeAReminder` | — |
+
+## "New note" complication (ADR-434, 2026-10-11)
+- **From the owner's deck:** "Doddy-Watch-iPad-Mac-Review", slides 01, 03 and 13 ("komplikacja Watch otwierająca Capture").
+- **What it is:** a second complication, `NewNoteComplication` (kind `com.bienos.doddy2.watch.newnote`), in the same four sizes. It shows only a pencil and "New note" (in the rectangular size, "Doddy" above it).
+  - It shows nothing of the user's, reads no snapshot, and its timeline never refreshes (`.never`).
+  - Its tap URL is `WatchCaptureLink.url` (`doddy://watch/new-note`). The watch app's `.onOpenURL` opens the existing note screen.
+- **Nothing records on opening:** the person taps the text field to write or dictate. Save still waits for the iPhone's read-back (ADR-232). Back is the cancel.
+- **Tests:** `WatchCaptureLinkTests` (1, Linux PASS).
+- **NOT RUN:**
+  - whether a complication's `widgetURL` reaches the watch app's `onOpenURL` without a registered URL scheme;
+  - whether `navigationDestination(isPresented:)` pushes correctly when the app was already open on another screen;
+  - how it looks on real faces.
