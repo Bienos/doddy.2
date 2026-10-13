@@ -4,15 +4,17 @@ Owner: "I want it built in Xcode first, not the App Store … start properly tes
 a development build straight from your Mac to your own iPhone. It is not TestFlight and not the App Store.
 
 ## What the branch holds
-Branch `claude/friendly-bohr-gy15jv` = the default branch, plus:
-- the iOS compile fixes from #69 and the UI test fixes from #70 (branch `claude/jolly-bell-mlwnqb-uitests`);
-- the new app icon from your pack (ADR-460).
+Branch `claude/friendly-bohr-gy15jv` = the default branch, plus the new app icon from your pack (ADR-460)
+and this guide. Since 13 October the default branch holds the iOS compile fixes (#69) and the UI test fixes
+(#70).
 
 What is known about it, honestly:
-- #69's head compiles on Xcode 26.6 in GitHub CI (iOS Simulator). On #70, CI run 181 had 23 of 26 UI tests
-  passing, and run 182 was still going on 12 October at 22:40 UTC.
-- This exact branch (with the icon) has not been built anywhere yet. Nothing has been installed on a real iPhone.
-- Signing has never been done. Expect Xcode to ask for things the first time.
+- The default branch compiles on Xcode 26.6 in GitHub CI (iOS Simulator), and the unit tests and all 26 UI
+  tests pass there (run 38325945549, #69's head before it merged).
+- The icon changes only the asset catalogs. A CI run of this branch with the icon was still going when this
+  was written.
+- Nothing has been installed on a real iPhone. Signing has never been done. Expect Xcode to ask for things the
+  first time.
 
 ## You need
 - A Mac with **Xcode 26** (CI uses 26.6; alarms use AlarmKit, which needs it) and Homebrew.
