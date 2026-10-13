@@ -49,8 +49,8 @@ The app ships with no server addresses (build board card "Point the app at its s
 
 | Settings section | Field | Value |
 | --- | --- | --- |
-| Voice | Token server | `https://doddy-voice-token.vercel.app/api/voice-token` |
-| Voice | Access code | the owner code you were given as a file (`VOICE_TOKEN_SERVER_STATUS.md`) |
+| Voice | Token server | `https://sliondswemhneuzehpoq.supabase.co/functions/v1/voice-token` (Supabase, since 13 Oct) |
+| Voice | Access code | a code you put in that function's `DODDY_ACCESS_CODES` secret in the Supabase dashboard |
 | Ask Doddy (typed questions) | Gateway address | `https://doddy-gateway.vercel.app` |
 | Ask Doddy (typed questions) | Invite code | the invite code you were given privately (`M2_STATUS.md`) |
 | Connected Apps server (development) | Server address | `https://doddy-yaci.onrender.com` |
@@ -60,13 +60,15 @@ The app ships with no server addresses (build board card "Point the app at its s
 The two Render servers are on the free plan: the first request after a quiet spell can take about a minute
 while they wake up.
 
-**Down since 12 October (checked 23:15 UTC):** the Vercel account `doddyyyy` is blocked, so the voice pass
-server, the Ask Doddy gateway and the website all answer `402 DEPLOYMENT_DISABLED`. The reason and the fix
-are in the Vercel dashboard (billing or plan); no code change helps. Until it's cleared:
-- **Voice:** leave *Token server* empty. The app then talks to the development agent directly ("Use the
-  development agent" in Settings → Voice). It works for you alone; it's the open agent the P0 card is about.
-- **Ask Doddy (typed questions)** won't answer. Test it after the account is back.
-- The two Render servers (accounts and search, messages) answered normally at the same time.
+**The Vercel account `doddyyyy` is blocked** (since 12 October; still `402 DEPLOYMENT_DISABLED` on 13 October),
+so the old voice pass address `doddy-voice-token.vercel.app` and the Ask Doddy gateway don't answer.
+- **Voice pass:** moved to the Supabase Edge Function in the table above (13 October). It answers only once
+  its two secrets are set in the Supabase dashboard: `DODDY_ACCESS_CODES` and `OPENAI_API_KEY`. Until then it
+  says `server_not_configured` (checked 18:15 UTC on 13 October). With it set, Home's voice picker can use
+  OpenAI (ADR-442). Without a token server, leave the field empty: the app then uses ElevenLabs' development
+  agent directly. That works for you alone; it's the open agent the P0 card is about.
+- **Ask Doddy (typed questions)** won't answer until the gateway is back or moved too.
+- The two Render servers (accounts and search, messages) answered normally.
 
 ## Before you start testing
 - The voice agent is public with its login off (build board P0 "Switch on login for the voice agent"). Fine
