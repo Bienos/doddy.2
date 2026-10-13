@@ -76,7 +76,10 @@ final class DoddyArtTests: XCTestCase {
             let toggle = app.switches["settings.pauseAll"]
             // A lazy Form row: it exists only once scrolled to.
             XCTAssertTrue(app.reveal(toggle))
-            app.swipeUp()
+            // The footer sits under the section's last row. A swipeUp flings an unknown distance
+            // and can carry the footer off screen, where the lazy Form drops it; step to it instead.
+            XCTAssertTrue(app.reveal(app.buttons["settings.planPractice"]))
+            app.scrollStep()
             XCTAssertEqual(marker("doddy.pose.sneaky_crouch", in: app).exists, paused, "paused: \(paused)")
             app.terminate()
         }
