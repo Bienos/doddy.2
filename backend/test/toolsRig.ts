@@ -18,6 +18,7 @@ import { Clock, USER_A } from "./helpers.js";
 export interface Rig {
   call(method: string, path: string, o?: { token?: string | null; body?: unknown; scenario?: ToolsMockScenario }): Promise<{ status: number; body: any; text: string }>;
   provider: MockToolsProvider;
+  tools: CloudToolsService;
   /** The offline demo search (null when the rig was started without web search). */
   webSearch: MockWebSearchProvider | null;
   store: Store;
@@ -51,6 +52,7 @@ export async function start(limits: Parameters<typeof testLimits>[0] = {}, o: { 
   let closed = false;
   return {
     provider,
+    tools,
     webSearch: webSearch instanceof MockWebSearchProvider ? webSearch : null,
     store,
     logs,

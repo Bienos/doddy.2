@@ -26,7 +26,7 @@ import { AppError, ProviderError } from "./errors.js";
 import { ConfirmationPolicy, UsageLimiter } from "./policy.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import type { CalendarProvider } from "./providers/types.js";
-import type { ConnectionRow, Store } from "./store.js";
+import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "./store.js";
 import { addDays, isSupportedTimeZone, isValidDateString, localDate, localDayWindow, rfc3339Local } from "./time.js";
 
 export const PROVIDER = "google_calendar";
@@ -159,6 +159,8 @@ export class ConnectedAppsService {
       now,
       ttlSeconds: this.limits.attemptTtlSeconds,
     });
+    // The unfinished attempt this one replaces can still be finished at Google: its connection goes.
+    await this.removeQueued(attempt.superseded);
     const callbackUrl = `${this.deps.publicBaseUrl}/v1/oauth/return?attempt=${attempt.attemptId}`;
     const link = await this.limiter.withSlot(userId, async () => {
       if (this.mode === "live") this.limiter.reserveCall(userId, now);
@@ -168,7 +170,11 @@ export class ConnectedAppsService {
         throw toAppError(error);
       }
     });
-    this.store.setPendingConnection(attempt.attemptId, link.pendingConnectionId);
+    if (!this.store.setPendingConnection(attempt.attemptId, link.pendingConnectionId, this.now())) {
+      // A newer Connect replaced this one while the link was made; this link must not be used.
+      if (link.pendingConnectionId) await this.removeQueued([{ connectionId: link.pendingConnectionId, userId, provider: PROVIDER }]);
+      throw new AppError("attempt_invalid", { message: "A newer Connect replaced this one. Use the newest link." });
+    }
     return {
       mode: this.mode,
       attemptId: attempt.attemptId,
@@ -189,7 +195,12 @@ export class ConnectedAppsService {
       nonce: request.nonce,
       now,
     });
-    if (!attempt) throw new AppError("attempt_invalid");
+    if (!attempt) {
+      // Too late: the user may have finished at Google after the attempt expired. That connection
+      // can never be completed, so it is removed instead of left live.
+      await this.removeQueued(this.store.expireAttempts(now, [PROVIDER], userId));
+      throw new AppError("attempt_invalid");
+    }
 
     const composioUserId = this.store.composioUserId(userId, now);
     const fail = (errorCode: string, summary: string): never => {
@@ -459,10 +470,30 @@ export class ConnectedAppsService {
     return { connection: this.view(userId), receipt };
   }
 
+  /**
+   * Hourly (app.ts): ends attempts nobody completed in time and removes their connections at the
+   * provider, then retries removals that failed earlier. Without it, a user who finished Google's
+   * consent after leaving Doddy would keep a grant no one tracks once `prune` drops the attempt.
+   */
+  async sweepAbandoned(): Promise<void> {
+    const now = this.now();
+    const ended = this.store.expireAttempts(now, [PROVIDER]);
+    const retry = this.store.cleanupsToRetry([PROVIDER], now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    await this.removeQueued([...ended, ...retry]);
+  }
+
   /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
   private async discardRemote(userId: string, ids: (string | null)[]): Promise<void> {
-    for (const connectionId of new Set(ids.filter((id): id is string => !!id))) {
+    const queued = [...new Set(ids.filter((id): id is string => !!id))].map((connectionId) => {
       this.store.queueCleanup(connectionId, userId, PROVIDER, this.now());
+      return { connectionId, userId, provider: PROVIDER };
+    });
+    await this.removeQueued(queued);
+  }
+
+  /** Already queued: removed at the provider and dequeued, or kept as `failed` to retry. */
+  private async removeQueued(queued: readonly QueuedCleanup[]): Promise<void> {
+    for (const connectionId of new Set(queued.map((q) => q.connectionId))) {
       let result: "removed" | "failed";
       try {
         result = await this.provider.removeConnection({ connectionId, signal: this.timeout() });
