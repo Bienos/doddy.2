@@ -229,6 +229,8 @@ final class VoiceSessionController {
     private(set) var readAloudProblem: String?
     /// Opened from the morning check-in (ADR-220): after the greeting, the app asks for the briefing.
     private var checkInNeedsBriefing = false
+    /// The user's first conversation (ADR-401): after the greeting, the app asks for the short tour.
+    private var firstConversationNeedsTour = false
     /// "Ask me about it" (ADR-403): after the greeting, the app names the note.
     private var noteQuestion: String?
     /// How this conversation was started, and whether it started with the saved notes, profile and
@@ -357,6 +359,11 @@ final class VoiceSessionController {
            NoteQuestion.canAsk(about: record, privateNotes: PrivateNotesStore.current()) {
             noteQuestion = NoteQuestion.appMessage(for: record)
         }
+        let isFirstConversation = FirstConversationPrompt.isFirst(
+            hadConversationBefore: UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation),
+            translator: preset != nil, morningCheckIn: checkIn != nil)
+            && noteQuestion == nil  // "Ask me about it" comes first; no tour then
+        firstConversationNeedsTour = isFirstConversation
         translator = nil
         listReceipt = nil
         changeReceipt = nil
@@ -455,6 +462,7 @@ final class VoiceSessionController {
             TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
             ListsPrompt.variableName: listsText,
             MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
+            FirstConversationPrompt.variableName: FirstConversationPrompt.render(isFirst: isFirstConversation),
             // What Doddy says first (ADR-254): the greeting after "Hey Doddy", otherwise his
             // usual opening. Used once the agent's first message is {{opening_line}}
             // (voice-agent/session.json); an agent without it ignores the variable.
@@ -1570,6 +1578,12 @@ final class VoiceSessionController {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
         }
+        // Only if the user hasn't already spoken: then their own request comes first, no tour.
+        if !fromUser, firstConversationNeedsTour {
+            firstConversationNeedsTour = false
+            Task { await sendToAgent(FirstConversationPrompt.appMessage) }
+        }
+        if fromUser { firstConversationNeedsTour = false }
         if !fromUser, let question = noteQuestion {
             noteQuestion = nil
             Task { await sendToAgent(question) }
