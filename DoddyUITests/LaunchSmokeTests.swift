@@ -63,9 +63,11 @@ final class LaunchSmokeTests: XCTestCase {
 
         // Sharing the saved answers with the voice is offered, but never pre-ticked (ADR-324).
         let share = app.switches["quickStart.profile"]
-        for _ in 0..<3 where !share.waitForExistence(timeout: 2) { app.swipeUp() }
+        XCTAssertTrue(app.reveal(share))
         XCTAssertEqual(share.value as? String, "0")
-        app.buttons["quickStart.notNow"].tap()
+        let notNow = app.buttons["quickStart.notNow"]
+        XCTAssertTrue(app.reveal(notNow))
+        notNow.tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")
