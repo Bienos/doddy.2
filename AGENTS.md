@@ -1,8 +1,5 @@
 # Consolidated DESIGN + ENGINEERING rules (read first)
 
-**Start here:** `STATUS.md`, then `docs/platforms/<platform>.md`. The platforms build from separate specs (`project.yml`, `project-iphone.yml`, `project-mac.yml`).
-
-
 This document accompanies `READ_ME_FIRST.md`. **The original agent rules follow below and remain applicable.**
 
 - Use `prompts/00_CLAUDE_MASTER_START.md` for the FIRST action only. New repo `Bienos/doddy.2`; old repo is strictly read-only.
@@ -58,3 +55,8 @@ Merged from `docs/trust/templates/AGENTS.md`; the rules above still apply. Mappi
 State repository reality (implemented / mock / missing / unsupported); name the policy IDs (DOD-xx, UX-xx) a slice covers; propose types, state transitions and tests before editing; never weaken policy or change Doddy's identity to make tests pass.
 
 **Priority:** correctness > informed user control > respectful tone > optional comedy. Fictional on-screen clumsiness is fine; real task incompetence is not.
+
+---
+
+# Where to start (2026-10-11, ADR-457)
+**Start here:** `STATUS.md`, then `docs/platforms/<platform>.md`. The platforms build from separate specs (`project.yml`, `project-iphone.yml`, `project-mac.yml`).

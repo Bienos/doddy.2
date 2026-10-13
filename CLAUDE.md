@@ -1,8 +1,5 @@
 # Consolidated DESIGN + ENGINEERING rules (read first)
 
-**Start here:** read `STATUS.md` (one page: the known-good build, each platform's state, unmerged branches), then only the page for your platform in `docs/platforms/`. Don't read `DECISIONS.md` whole; search it for an ADR number.
-
-
 This document accompanies `READ_ME_FIRST.md`. **The original agent rules follow below and remain applicable.**
 
 - Use `prompts/00_CLAUDE_MASTER_START.md` for the FIRST action only. New repo `Bienos/doddy.2`; old repo is strictly read-only.
@@ -46,3 +43,8 @@ The constitution in `docs/trust/` and `docs/trust/config/doddy_rules.yaml` gover
 # Character art (owner, 2026-10-11)
 Use ONLY the owner's `DODDY-Numbered-Video-Assets-v01` pack (Google Drive folder `1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`). Its imported poses are the `UploadedDoddy_*` and `WholeDoddy_*` image sets; provenance and hashes in `docs/design/UPLOADED_MEMORY_ASSETS.md`. Do not use other Doddy art in new work: not the v1.3 SVG poses in `design/interface-v1.2/assets`, not `design/ios-ready-asset-catalog`, not historical `assets/brand_candidate`. Those stay in the repo as reference only. A pose the app needs that isn't imported yet comes from that pack, never redrawn or generated.
 This replaces the "Character for interface" line near the top for all new work.
+
+---
+
+# Where to start (2026-10-11, ADR-457)
+**Start here:** read `STATUS.md` (one page: the known-good build, each platform's state, unmerged branches), then only the page for your platform in `docs/platforms/`. Don't read `DECISIONS.md` whole; search it for an ADR number.

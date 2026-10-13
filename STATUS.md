@@ -2,10 +2,12 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-11, 21:10 UTC.
+Last updated 2026-10-13, 01:10 UTC (this branch merged with the default branch after #69).
 
 ## Known-good build
-- **Main branch:** `claude/loving-dirac-uuxoux`, head `ce02763` (PR #60, the learning loop).
+- **Main branch:** `claude/loving-dirac-uuxoux`.
+- **Last build seen working on a device:** head `ce02763` (PR #60, the learning loop).
+- **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
 - **Evidence:**
   - The live voice agent worked from this code on 2026-10-11 at 22:35 Warsaw time: a 139 s conversation that used `search_memories`, `save_memory` and `web_search`.
   - The variables the app sent to ElevenLabs match this branch, and not the unmerged `-all` branch.
@@ -18,7 +20,7 @@ Each platform has its own project spec, so one platform's code can't break anoth
 | Platform | Code | Spec → project, scheme | State | Page |
 |---|---|---|---|---|
 | iPhone and iPad | `DoddyApp/`, `Shared/`, `DoddyWidgets/`, `DoddyShare/` | `project.yml` → `Doddy`; `project-iphone.yml` (no Watch app) → `Doddy` | Built and used by the owner on device. The voice agent was seen working on 2026-10-11. | `docs/platforms/iphone.md` |
-| Apple Watch | `DoddyWatch/`, `DoddyWatchWidgets/` | `project.yml` → `DoddyWatch` (embedded in the iPhone app) | Code exists; never compiled or run | `docs/platforms/watch.md` |
+| Apple Watch | `DoddyWatch/`, `DoddyWatchWidgets/` | `project.yml` → `DoddyWatch` (embedded in the iPhone app) | Compiles in hosted CI since #69; never run | `docs/platforms/watch.md` |
 | Mac | `DoddyMac/`, `DoddyMacWidgets/` | `project-mac.yml` → `DoddyMac` | Prototype on PR #61; never compiled | `docs/platforms/mac.md` |
 | Shared core | `Packages/DoddyCore/` | Swift package, used by every platform | Tests run on Linux, 934 passing | `docs/platforms/README.md` |
 
@@ -41,7 +43,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
   - a session that can't hear the user.
 
   Not fixed yet. It needs a device log to confirm the cause.
-- **GitHub Actions don't start jobs** (they fail in seconds with no logs; probably account billing). Hosted CI is effectively off.
+- **Vercel deployments are blocked** (account billing and the daily deployment limit), so the Vercel checks on PRs are red whatever the change. GitHub Actions runs again since 2026-10-12.
 
 ## Waiting on the owner
 - Whether notes sync between the Mac and the iPhone (today they never do).
