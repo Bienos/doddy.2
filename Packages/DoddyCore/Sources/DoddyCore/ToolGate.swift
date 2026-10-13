@@ -1,7 +1,7 @@
 import Foundation
 
 /// The checks a voice tool call passes before its own handling, and which conversation it belongs
-/// to (ADR-443). Pure: the controller reads the switches and its start number and passes them in,
+/// to (ADR-458). Pure: the controller reads the switches and its start number and passes them in,
 /// so the order and the stale-conversation rule are tested here, on any OS.
 public enum ToolGate {
     public enum Decision: Equatable, Sendable {
@@ -34,7 +34,7 @@ public enum ToolGate {
     }
 }
 
-/// Which start of the conversation screen each tool call came from (ADR-443). The controller
+/// Which start of the conversation screen each tool call came from (ADR-458). The controller
 /// counts every start and every end; a call is recorded with the number current when it arrived.
 /// Its card is shown, its screen state set and its result sent only while that number is still
 /// the controller's: a lookup that finishes after End, or after End and a new Start, is dropped
