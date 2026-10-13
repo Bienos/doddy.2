@@ -387,6 +387,11 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
 | I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
 
+## 4s. Quick access tips (ADR-402)
+| # | Do this | Expect |
+|---|---|---|
+| A1 | Fresh install; skip the introduction; read the Quick start; then follow each tip | The box lists Siri, the Action Button and the control. "Hey Siri, talk to Doddy" opens a conversation; the Action Button path and the control exist under those names (iOS 18+). Polish iPhone: the Polish lines and Siri phrase |
+
 ## 4q. A guided first conversation (ADR-401)
 Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.
 | # | Do this | Expect |
