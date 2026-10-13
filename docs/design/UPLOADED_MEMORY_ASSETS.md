@@ -167,3 +167,23 @@ Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). T
 | Image set | Pack source | SHA-256 of the source | Made how |
 |---|---|---|---|
 | `MenuBarDoddy` (Mac app) and `MacDoddy_face` (Mac desktop widget) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | byte-identical copies of `WidgetDoddy_face` `art@2x.png` (120×120, SHA-256 `cdb24f36e3069738…`); nothing redrawn or generated |
+
+## App icon (ADR-460, 12 October 2026)
+
+Owner: "pick [the] app icon" from the pack, for a first Xcode build on the owner's iPhone. This replaces the
+note in the first section that the development app icon is not replaced: the v1.3 candidate (ADR-050) is
+gone from `AppIcon.appiconset`.
+
+Source: `DoddyApp/Resources/Assets.xcassets/UploadedDoddy_Listening.imageset/art.png`, byte-identical to the
+pack's `doddy_listening_v02.png` (SHA-256 `96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41`,
+table above). `tools/make_app_icon.py` checks that hash, then writes three 1024×1024 RGB PNGs with no alpha:
+
+| File | What it is |
+| --- | --- |
+| `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | source pixels (150, 120)–(910, 880), Lanczos to 1024, on paper `#F5EFE2` |
+| `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-dark.png` | source pixels (55, 25)–(1005, 975), Lanczos to 1024, clipped to a paper disc (64 px inset) on `#1D1C19` |
+| `DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | the same file as the iPhone light icon |
+
+Crop, scale and placement only: no line, colour or shape of the pose is changed, and nothing is generated.
+Run `python3 -I tools/make_app_icon.py` again if the pose file changes. This records provenance, not a
+commercial-rights or brand-master decision.
