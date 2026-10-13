@@ -396,3 +396,56 @@ body.board { background: var(--board); }
   .story, .frames.two, .frames.three, .frames.four { grid-template-columns: minmax(0, 1fr); }
   .frame.span2 { grid-column: auto; }
 }
+
+/* ---------- Copy deck (mockup 14) ---------- */
+.deck { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.deck .moment-card { position: relative; padding: 20px 22px 18px; background: var(--paper); border: 1px solid var(--separator); border-radius: 22px; box-shadow: var(--lift); min-width: 0; }
+.deck .time { font-size: 1.7rem; margin: 0 0 2px; }
+.deck h3 { margin: 0 0 12px; font-size: 1.35rem; }
+.deck .cap { position: absolute; right: 16px; top: 16px; }
+.deck dl { margin: 0; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 7px 14px; font-size: 0.9375rem; line-height: 1.45; }
+.deck dt { font: 650 0.6875rem/1.9 var(--text); color: var(--secondary-text); text-transform: uppercase; letter-spacing: 0.05em; }
+.deck dd { margin: 0; min-width: 0; }
+.deck dd.you { font-weight: 600; }
+.deck dd.hand { font-family: var(--hand); font-weight: 700; font-size: 1.4rem; line-height: 1.02; color: var(--reading-ink); }
+.deck dd.hand.aside { color: var(--accent-text); font-size: 1.2rem; }
+.deck dd ul { margin: 0; padding-left: 18px; }
+.deck dd ul li { margin: 0 0 2px; }
+.deck dd .card { display: block; padding: 8px 12px; background: var(--canvas); border: 1px solid var(--separator); border-radius: 12px; font-size: 0.875rem; }
+.deck dd .card b { display: block; }
+.deck dd.small { font-size: 0.8125rem; color: var(--secondary-text); }
+
+/* ---------- Showcase alternatives (mockup 15) ---------- */
+.comic { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.comic .scene-art { aspect-ratio: 4 / 3.2; }
+.comic .scene-art .doddy { height: 64%; }
+.panel-num { position: absolute; left: 10px; top: 8px; z-index: 2; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--reading-ink); color: var(--canvas); font: 800 0.8rem/1 var(--display); }
+.beat { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; margin: 0; padding: 8px 12px 9px; background: color-mix(in srgb, var(--paper) 90%, transparent); border-top: 1px solid var(--separator); font-family: var(--hand); font-weight: 700; font-size: 1.25rem; line-height: 1.02; }
+.comic .u-bubble { max-width: 62%; top: 7%; font-size: 0.8125rem; }
+.comic .d-bubble { font-size: 1.2rem; max-width: 56%; }
+.comic .scene-panel { width: 56%; font-size: 0.75rem; bottom: 24%; }
+.stamp { position: absolute; z-index: 3; padding: 6px 10px; border: 3px solid var(--confirmed); color: var(--confirmed); border-radius: 8px; font: 800 0.75rem/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; rotate: -8deg; background: color-mix(in srgb, var(--paper) 75%, transparent); }
+.big-time { position: absolute; z-index: 2; left: 5%; top: 7%; margin: 0; font-family: var(--hand); font-weight: 700; font-size: 2.8rem; line-height: 1; color: var(--accent-text); rotate: -4deg; }
+.tape-label { position: absolute; z-index: 3; right: 6%; top: 8%; margin: 0; padding: 6px 12px; background: var(--paper); border: 1px solid var(--separator); border-radius: 4px 14px 4px 14px; font-family: var(--hand); font-weight: 700; font-size: 1.5rem; line-height: 1; rotate: 2deg; box-shadow: var(--lift); }
+.flip-hint { position: absolute; z-index: 3; left: 50%; bottom: 14px; translate: -50% 0; padding: 7px 14px; border-radius: 999px; background: var(--reading-ink); color: var(--canvas); font: 650 0.75rem/1 var(--text); white-space: nowrap; box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--orange-cue) 85%, transparent); }
+.flip-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
+.flip-face { position: relative; padding: 10px; background: var(--paper); border: 1px solid var(--separator); border-radius: 28px; box-shadow: var(--lift-strong); }
+.flip-face.back { padding: 24px 26px 22px; background: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px) 0 18px / 100% calc(100% - 36px) no-repeat, var(--quiet-surface); }
+.flip-face.back .time { font-size: 1.8rem; }
+.flip-face.back .d-line { font-family: var(--hand); font-weight: 700; font-size: 1.5rem; line-height: 1.02; margin: 0 0 14px; }
+.flip-face.back .helps { margin: 14px 0 12px; }
+.scene-and-phone { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr); gap: 16px; align-items: end; }
+.scene-and-phone .device.chat { width: 100%; max-width: 230px; justify-self: center; }
+.scene-and-phone .device.chat .phone-screen { font-size: 11px; padding: 40px 10px 12px; }
+.scene-and-phone .ph-status { padding: 12px 20px 0; font-size: 10px; }
+.scene-and-phone .ph-status .notch { height: 20px; top: 8px; }
+.storyboard { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.storyboard .scene-art { aspect-ratio: 16 / 10; }
+.storyboard .u-bubble { max-width: 56%; font-size: 0.8125rem; }
+.storyboard .d-bubble { font-size: 1.15rem; max-width: 54%; }
+.storyboard .scene-panel { width: 52%; font-size: 0.75rem; }
+.storyboard .cue { margin: 10px 0 0; font-size: 0.8125rem; color: var(--secondary-text); }
+.storyboard .cue b { color: var(--reading-ink); }
+.replay { position: absolute; z-index: 3; right: 10px; top: 10px; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--paper); border: 1px solid var(--separator); color: var(--reading-ink); font: 700 0.9rem/1 var(--text); box-shadow: var(--lift); }
+.dash-path { position: absolute; z-index: 1; left: 3%; bottom: 10%; width: 40%; height: 20px; }
+.dash-path path { fill: none; stroke: var(--secondary-text); stroke-width: 3; stroke-dasharray: 2 10; stroke-linecap: round; opacity: 0.6; }

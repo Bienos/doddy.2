@@ -9,6 +9,7 @@ Brief: a new tab on doddy.lol that shows what it feels like to have Doddy in you
 | | File |
 |---|---|
 | Review gallery (all mockups with notes) | `index.html` |
+| The words on the page, one place to edit them | `COPY.md` |
 | Rendered mockups | `png/` |
 | Mockup pages (open in a browser) | `mockups/*.html` |
 | Sources the pages are built from | `mockups/src/` and `mockups/src/partials/` |
@@ -94,6 +95,8 @@ Scenes were chosen for usefulness, relatability, humour and whether the pack has
 | 11 | Navigation and transitions | `11-navigation-transitions-1440.png` |
 | 12 | Final CTA and footer | `12-cta-footer-1440.png` |
 | 13 | Headline options for the hero (added after review) | `13-headline-options-1440.png` |
+| 14 | Copy deck: every line of the ten moments (added after review; editable in `COPY.md`) | `14-copy-deck-1440.png` |
+| 15 | Showcasing a moment: the current card and four alternatives (added after review) | `15-showcase-alternatives-1440.png` |
 
 ### Headline options (mockup 13)
 
@@ -102,7 +105,7 @@ The owner asked for alternatives to "Life's complicated. Doddy isn't. Usually." 
 | # | Headline | Handwritten beat | Supporting line | Angle |
 |---|---|---|---|---|
 | 0 | Life's complicated. Doddy isn't. | Usually. | From forgotten plans to awkward messages, meet the little guy who helps you figure things out. | the brief's line, as mocked up |
-| 1 | What can Doddy do? | Quite a lot, actually. | Ten moments from an ordinary day, and what a mate in your pocket does with them. | answers the tab the visitor clicked |
+| 1 | What can Doddy do? | Quite a lot, actually. | Ten random moments from an ordinary day, and what a mate in your pocket does with them. | answers the tab the visitor clicked. **Chosen by the owner (13 Oct), with "random" added.** Now in every hero. |
 | 2 | Forgot something? | Doddy didn't. | He remembers the thing you said last week, reads your day out loud, and drafts the text you keep deleting. In your words, not his. | leads with the one built feature |
 | 3 | Small stuff, sorted. Big stuff, | calmly. | Doddy is funny about the little problems and plain about the serious ones. Here's a day of both. | the character's rule |
 | 4 | Clever with your problems. | Hopeless with umbrellas. | A little guy who can read your calendar, draft the awkward reply and find the pierogi place, and still can't decide on a jacket. | the brief's contradiction; the joke is on Doddy |
@@ -110,7 +113,21 @@ The owner asked for alternatives to "Life's complicated. Doddy isn't. Usually." 
 | 6 | A mate in your pocket. | Here's what he does all day. | Scroll through one ordinary day. Every scene says what's built, what's in testing, and what's later, maybe. | continues the brand line |
 | 7 | Your day has twelve small problems. | He likes those. | The side-quest fixer: notices the small frictions, helps first, jokes second, and asks before he changes anything. | Doddy's point of view |
 
-Option 2 claims memory, which is the built feature, so it is the safest claim. Options 4 and 5 are the funniest and still honest. Option 1 is the plainest and ties the page to its nav label. Any of them drops into the hero unchanged.
+The owner chose option 1 and asked for "random" in the supporting line; mockups 02 to 05 and 10 carry it. Option 2 claims memory, which is the built feature, so it is the safest claim. Options 4 and 5 are the funniest and still honest. Option 1 is the plainest and ties the page to its nav label. Any of them drops into the hero unchanged.
+
+### Showcasing a moment (mockup 15)
+
+The owner likes the scene cards and asked whether a moment could be shown in a cooler way. Five treatments of the 08:45 moment, all inside the same page:
+
+| # | Treatment | For | Against |
+|---|---|---|---|
+| 0 | The scene card as mocked up | one picture, fast, cheap, works as a still | the brief's four beats land at once |
+| 1 | **The same card playing in three beats on scroll** (recommended upgrade) | tells problem → Doddy appears → the joke → the help in order; pose swaps and three CSS moves; once per visit, about 1.8 s; frame 3 is the static and reduced-motion fallback | a little scroll logic per card |
+| 2 | Three-panel comic strip | the brief's beats literally; very shareable as an image | a third pose and line per moment; panels get small on phones |
+| 3 | Scene plus the phone as proof | clearest about what the app does | busiest frame; wants the real screens once they exist |
+| 4 | Flip card, problem on the front, fix on the back | a small reward for curiosity; natural on phones | ten flip cards are tidier but less of a story |
+
+Recommendation: keep the card, add treatment 1. It changes nothing in the layout and makes each scene a tiny story.
 
 ## Phase 4 — Review and recommendation
 
@@ -192,6 +209,8 @@ NODE_PATH=$(npm root -g) node render.mjs --fonts <dir>   # -> ../png/*.png
 5. Whether the pack's scenery and poses may be used as final web art, and whether the five drawn objects should come from the illustrator instead.
 6. Whether "Lost in translation" stays as a labelled concept or is cut.
 7. The transition animation: keep, simplify to a fade, or none.
+8. How each moment is shown (mockup 15): the card as is, or the card playing in three beats on scroll, or one of the other three.
+9. The copy deck (`COPY.md`, mockup 14): any line to change before build.
 
 ## Phase 5 — Stopped here
 

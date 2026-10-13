@@ -32,6 +32,8 @@ const shots = [
   ['11-navigation-transitions.html', '11-navigation-transitions-1440', 1440, 900, true],
   ['12-cta-footer.html', '12-cta-footer-1440', 1440, 900, true],
   ['13-headline-options.html', '13-headline-options-1440', 1440, 900, true],
+  ['14-copy-deck.html', '14-copy-deck-1440', 1440, 900, true],
+  ['15-showcase-alternatives.html', '15-showcase-alternatives-1440', 1440, 900, true],
   ['02-hero-a.html', '02-hero-a-390', 390, 844, false],
   ['03-hero-b.html', '03-hero-b-390', 390, 844, false],
   ['04-hero-c.html', '04-hero-c-390', 390, 844, false],
