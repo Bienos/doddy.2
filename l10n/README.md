@@ -1,6 +1,6 @@
 # Languages: how Doddy's screens are translated
 
-Status 2026-10-13: the catalogs carry **English, Polish and eight machine-translated drafts**: Spanish, German, French, Simplified Chinese, Japanese, Brazilian Portuguese, Italian and Croatian. The drafts have not been compiled, seen on a device or read by a native speaker; `REVIEW_NOTES.md` lists what to check first and the decisions the owner has to make. This page says what exists, how a language gets added, and how a person switches. The translation prompt is `TRANSLATION_PROMPT.md` next to this file.
+Status 2026-10-13: the catalogs carry **English, Polish and eight machine-translated drafts**: Spanish, German, French, Simplified Chinese, Japanese, Brazilian Portuguese, Italian and Croatian. The drafts have not been compiled, seen on a device or read by a native speaker; `REVIEW_NOTES.md` lists what to check first and the decisions the owner has to make. This page says what exists, how a language gets added, and how a person switches. The translation prompt for the app is `TRANSLATION_PROMPT.md` next to this file; the one for the website is `WEBSITE_TRANSLATION_PROMPT.md`. The website has no translations yet and is English only.
 
 ## What exists
 
