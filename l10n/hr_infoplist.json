@@ -28,7 +28,7 @@
     "hr": "Doddy dodaje, mijenja, dovršava ili briše podsjetnik tek nakon što dodirneš Dodaj, Promijeni, Označi kao obavljeno ili Izbriši. Isključi to u Postavkama, Veze."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "hr": "Doddy pretvara glasovnu bilješku u tekst na ovom iPhoneu kad je snimiš, da možeš provjeriti riječi prije spremanja. Snimka i njezine riječi ne šalju se nikamo."
+    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. If you turn on Hey Doddy, it also listens for the wake word with speech recognition on this iPhone. The sound and its words are not kept or sent anywhere.",
+    "hr": "Doddy zapisuje glasovnu bilješku kao tekst na ovom iPhoneu kad je snimaš, kako bi prije spremanja mogao provjeriti njezine riječi. Ako uključiš Hey Doddy, prepoznavanje govora na ovom iPhoneu sluša i riječ za buđenje. Zvuk i njegove riječi nigdje se ne pohranjuju niti šalju."
   }
 }

@@ -531,8 +531,9 @@ private struct HeyDoddyCard: View {
     @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
     @AppStorage(PreferenceKey.heyDoddyOfferDone) private var offerDone = false
     @State private var listener = WakeWordListener.shared
-    /// Read once: the Keychain isn't read again on every redraw of Home.
-    @State private var oneTapReady = WakeOneTapSetup.isReady
+    /// Read once, not on every redraw of Home: this iPhone can recognize English on the device and
+    /// speech recognition isn't refused.
+    @State private var speechPossible = SpeechWakeEngine.isPossible
     @State private var isTurningOn = false
     @State private var showsResult = false
 
@@ -540,7 +541,7 @@ private struct HeyDoddyCard: View {
         if showsResult {
             result
         } else if HeyDoddyOffer.shouldOffer(conversations: conversations, heyDoddyOn: heyDoddyOn,
-                                            dismissed: offerDone, oneTapReady: oneTapReady) {
+                                            dismissed: offerDone, speechPossible: speechPossible) {
             offer
         }
     }
@@ -582,9 +583,9 @@ private struct HeyDoddyCard: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Hey Doddy")
                 .font(.headline)
-            Text(listener.keyProblem ?? listener.state.summary)
+            Text(listener.state.summary)
                 .font(.subheadline)
-                .foregroundStyle(listener.keyProblem == nil ? Theme.secondaryText : Theme.error)
+                .foregroundStyle(Theme.secondaryText)
                 .accessibilityIdentifier("home.heyDoddy.status")
             Text("Change it in Settings \u{203A} Hey Doddy.")
                 .font(.footnote)

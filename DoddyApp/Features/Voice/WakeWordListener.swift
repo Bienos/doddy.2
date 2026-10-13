@@ -1,4 +1,3 @@
-@preconcurrency import Porcupine
 import AVFAudio
 import DoddyCore
 import Foundation
@@ -6,9 +5,9 @@ import Observation
 import UIKit
 import os
 
-/// "Hey Doddy" (ADR-254). Off unless the user turns it on in Settings and brings their own
-/// Picovoice AccessKey and keyword file. While on, Picovoice Porcupine listens on this iPhone for
-/// the wake word; nothing it hears is kept or sent. Hearing it starts an ordinary voice
+/// "Hey Doddy" (ADR-254, ADR-472). Off unless the user turns it on in Settings. While on, Apple's
+/// on-device speech recognition (`SpeechWakeEngine`) listens on this iPhone for the wake word;
+/// nothing it hears is kept or sent. Hearing it starts an ordinary voice
 /// conversation (the same `VoiceSessionController` a tap starts) and the Dynamic Island greets
 /// the user: "Hey Pat, what's up?".
 ///
@@ -24,8 +23,8 @@ import os
 ///   again at once; if iOS refuses in the background, it waits until Doddy is opened and the
 ///   island goes away rather than claim to listen.
 ///
-/// The only file that uses Porcupine (scripts/check_forbidden_capabilities.sh). Not verified on
-/// a device: see docs/implementation/HEY_DODDY_STATUS.md.
+/// The only file that runs the wake-word engine (scripts/check_forbidden_capabilities.sh). Not
+/// verified on a device: see docs/implementation/HEY_DODDY_STATUS.md.
 @MainActor
 @Observable
 final class WakeWordListener {
@@ -40,9 +39,9 @@ final class WakeWordListener {
     @ObservationIgnored var store: MemoryStore?
     @ObservationIgnored var profiles: ProfileStore?
 
-    @ObservationIgnored private var manager: PorcupineManager?
+    @ObservationIgnored private var engine: SpeechWakeEngine?
     @ObservationIgnored private var running = false
-    /// Porcupine's recorder is running (Stop listening reads it, ADR-361).
+    /// The engine's recorder is running (Stop listening reads it, ADR-361).
     var isEngineRunning: Bool { running }
     @ObservationIgnored private var gate = WakeGate()
     @ObservationIgnored private var inForeground = false
@@ -67,8 +66,6 @@ final class WakeWordListener {
     /// UI-test launches never listen, whatever an earlier run left in the settings.
     private let isAllowedThisLaunch = !ProcessInfo.processInfo.arguments.contains("-inMemoryStore")
     private static let log = Logger(subsystem: "com.bienos.doddy2.dev", category: "hey-doddy")
-    /// Porcupine's default. Higher misses less and wakes up by mistake more often.
-    private static let sensitivity: Float32 = 0.5
     /// When a conversation ended without `stop()` (the agent hung up, the connection dropped),
     /// nobody says when its audio is gone; listening restarts after this instead.
     private static let audioReleaseFallbackDelay: TimeInterval = 1.5
@@ -88,25 +85,21 @@ final class WakeWordListener {
         refresh()
     }
 
-    /// The switch, AccessKey or keyword file changed: start over with the new setup.
+    /// The switch or a permission changed: start over with the new setup.
     func setupChanged() {
         startFailure = nil
         dropEngine()
         refresh()
     }
 
-    /// Why the last "turn on" couldn't get the token server's key (ADR-328), for Settings and the
-    /// Home card. Nil once a key is here.
-    private(set) var keyProblem: String?
-
-    /// Settings → Hey Doddy switch, or the Home card. Fetches the token server's key when no key is
-    /// here yet (ADR-328), then asks iOS for the microphone here, where the user can answer.
+    /// Settings → Hey Doddy switch, or the Home card. Asks iOS for the microphone and for speech
+    /// recognition here, where the user can answer.
     func turnOn() async {
-        keyProblem = await WakeOneTapSetup.fetchKeyIfNeeded()
         UserDefaults.standard.set(true, forKey: PreferenceKey.heyDoddyOn)
         if AVAudioApplication.shared.recordPermission == .undetermined {
             _ = await AVAudioApplication.requestRecordPermission()
         }
+        await SpeechWakeEngine.requestAuthorization()
         setupChanged()
     }
 
@@ -190,8 +183,7 @@ final class WakeWordListener {
             // A Focus with Doddy's filter can pause listening (ADR-312); the switch itself stays on.
             switchedOn: isAllowedThisLaunch && UserDefaults.standard.bool(forKey: PreferenceKey.heyDoddyOn)
                 && !FocusFilterState.shared.settings.pausesHeyDoddy,
-            hasAccessKey: WakeAccessKeyStore.activeKey != nil,
-            hasKeywordFile: WakeKeywordStore.isAvailable,
+            speech: SpeechWakeEngine.availability,
             microphone: Self.microphone,
             conversationOrVoiceScreen: handingOver || waitingForConversationAudio
                 || VoiceSessionController.conversationInProgress || ShortcutRouter.shared.isVoicePresented,
@@ -218,9 +210,9 @@ final class WakeWordListener {
                 target = WakeListenerPolicy.state(current)
             }
         case .paused(.interrupted):
-            // Porcupine's audio stopped itself and starts again if iOS says it may.
+            // The engine's audio stopped itself; it starts again when iOS says it may.
             break
-        case .off, .needsSetUp, .microphoneDenied:
+        case .off, .speechNotAllowed, .speechUnavailable, .microphoneDenied:
             dropEngine()
         default:
             stopEngine()
@@ -242,15 +234,11 @@ final class WakeWordListener {
     // MARK: Engine
 
     private func startEngine(inBackground: Bool) {
-        guard let key = WakeAccessKeyStore.activeKey, let path = WakeKeywordStore.activeURL?.path else { return }
         do {
-            if manager == nil {
-                // Picovoice checks the AccessKey here (online); the audio stays on this iPhone.
-                manager = try PorcupineManager(
-                    accessKey: key, keywordPath: path, sensitivity: Self.sensitivity,
-                    onDetection: Self.detectionHandler(), errorCallback: Self.errorHandler())
+            if engine == nil {
+                engine = SpeechWakeEngine(onDetection: Self.detectionHandler(), onFailure: Self.errorHandler())
             }
-            try manager?.start()
+            try engine?.start()
             running = true
             startFailure = nil
             gate.listeningStarted(at: .now)
@@ -258,7 +246,6 @@ final class WakeWordListener {
         } catch {
             running = false
             Self.log.error("couldn't start listening: \(error.localizedDescription, privacy: .public)")
-            if Self.isSetupError(error) { try? manager?.delete(); manager = nil }
             // In the background iOS may simply refuse the microphone; that's "open Doddy", not a fault.
             if !inBackground || Self.isSetupError(error) { startFailure = Self.message(for: error) }
         }
@@ -266,57 +253,49 @@ final class WakeWordListener {
 
     private func stopEngine() {
         guard running else { return }
-        do { try manager?.stop() } catch {
-            Self.log.error("couldn't stop listening: \(error.localizedDescription, privacy: .public)")
-        }
+        engine?.stop()
         running = false
         gate.listeningStopped()
     }
 
     private func dropEngine() {
         stopEngine()
-        try? manager?.delete()
-        manager = nil
+        engine = nil
     }
 
-    /// Porcupine calls these on its audio thread, so they are made outside the main actor.
-    nonisolated private static func detectionHandler() -> (Int32) -> Void {
-        { _ in Task { @MainActor in WakeWordListener.shared.heard() } }
+    /// The engine calls these on audio and recognition threads, so they are made outside the main actor.
+    nonisolated private static func detectionHandler() -> @Sendable () -> Void {
+        { Task { @MainActor in WakeWordListener.shared.heard() } }
     }
 
-    nonisolated private static func errorHandler() -> (Error) -> Void {
-        { error in
-            let text = error.localizedDescription
-            Task { @MainActor in WakeWordListener.shared.engineFailed(text) }
-        }
+    nonisolated private static func errorHandler() -> @Sendable (String) -> Void {
+        { text in Task { @MainActor in WakeWordListener.shared.engineFailed(text) } }
     }
 
     private func engineFailed(_ description: String) {
         Self.log.error("listening failed: \(description, privacy: .public)")
         stopEngine()
-        startFailure = "The microphone stopped (\(description)). Open Doddy to try again."
+        startFailure = description
         refresh()
     }
 
     private static func isSetupError(_ error: Error) -> Bool {
-        error is PorcupineActivationError || error is PorcupineActivationRefusedError
-            || error is PorcupineActivationLimitError || error is PorcupineKeyError
-            || error is PorcupineIOError || error is PorcupineInvalidArgumentError
+        guard let error = error as? SpeechWakeEngine.StartError else { return false }
+        switch error {
+        case .speechNotAllowed, .unavailable: return true
+        case .audio: return false
+        }
     }
 
     private static func message(for error: Error) -> String {
-        switch error {
-        case is PorcupineActivationRefusedError, is PorcupineKeyError:
-            "Picovoice didn't accept the AccessKey. Check it in Settings."
-        case is PorcupineActivationLimitError:
-            "This AccessKey has reached its Picovoice usage limit."
-        case is PorcupineActivationThrottledError:
-            "Picovoice is limiting checks of this AccessKey right now. Try again later."
-        case is PorcupineActivationError:
-            "Picovoice couldn't check the AccessKey. Check the key and your internet connection."
-        case is PorcupineIOError, is PorcupineInvalidArgumentError:
-            "Porcupine couldn't use the keyword file. Make it for iOS and English in the Picovoice Console and choose it again."
-        default:
+        switch error as? SpeechWakeEngine.StartError {
+        case .speechNotAllowed?:
+            "Doddy isn't allowed to use speech recognition. Allow it in iOS Settings, Doddy."
+        case .unavailable?:
+            "This iPhone can't recognize English on the device, so “Hey Doddy” can't listen without sending sound to Apple. It stays off."
+        case .audio(let reason)?:
+            "The microphone couldn't start (\(reason))."
+        case nil:
             "The microphone couldn't start (\(error.localizedDescription))."
         }
     }
@@ -391,8 +370,8 @@ final class WakeWordListener {
         // The wake word's conversation is starting, or the last one's audio is still shutting
         // down: the island is in someone's hands already.
         if handingOver || waitingForConversationAudio { return }
-        // Listening, or paused by a call or another app (Porcupine's recorder resumes by itself
-        // when iOS allows): the island says which.
+        // Listening, or paused by a call or another app (listening starts again when iOS allows):
+        // the island says which.
         let shown: DoddyVoiceAttributes.ContentState? = switch state {
         case .listening: .wakeListening
         case .paused(.interrupted) where ownsIsland: .wakePaused
@@ -442,7 +421,7 @@ final class WakeWordListener {
         observers.append(center.addObserver(
             forName: AVAudioSession.mediaServicesWereResetNotification, object: nil, queue: .main
         ) { _ in
-            // iOS restarted its audio system: Porcupine's recorder is gone. Start over.
+            // iOS restarted its audio system: the recorder is gone. Start over.
             Task { @MainActor in WakeWordListener.shared.setupChanged() }
         })
     }
@@ -454,7 +433,7 @@ final class WakeWordListener {
             interrupted = true
         } else {
             interrupted = false
-            // Without "should resume" Porcupine's recorder stays stopped: start it again ourselves.
+            // Without "should resume" the recorder stays stopped: start it again ourselves.
             if !shouldResume { stopEngine() }
         }
         refresh()

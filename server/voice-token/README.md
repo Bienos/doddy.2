@@ -12,6 +12,9 @@ The app calls two routes:
   session can be created.
 - `POST /api/voice-token`: validates an active DODDY session and returns an ElevenLabs conversation
   token, OpenAI Realtime client secret, or the configured Picovoice key.
+### "Hey Doddy" key (ADR-328) — legacy, unused since ADR-472
+
+The app no longer asks for this: "Hey Doddy" now uses Apple's on-device speech recognition, with no key. The endpoint and `PICOVOICE_ACCESS_KEY` stay only for old app builds and can be removed once none are in use. Do not set `PICOVOICE_ACCESS_KEY` for a commercial product without a Picovoice commercial plan.
 
 Access tokens last 10 minutes and stay in app memory. Opaque refresh tokens rotate on use and last
 30 days; the app stores the current refresh token and Apple user identifier in the iOS Keychain with

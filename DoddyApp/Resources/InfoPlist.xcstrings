@@ -462,61 +462,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy verschriftlicht ein Sprachmemo auf diesem iPhone, wenn du eins aufnimmst, damit du den Text vor dem Speichern prüfen kannst. Die Aufnahme und ihr Text werden nirgendwohin gesendet."
+            "value": "Doddy verschriftlicht ein Sprachmemo auf diesem iPhone, wenn du eins aufnimmst, damit du den Text vor dem Speichern prüfen kannst. Wenn du Hey Doddy einschaltest, hört Doddy mit der Spracherkennung auf diesem iPhone auch auf das Weckwort. Der Ton und sein Text werden nirgendwo gespeichert oder gesendet."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
+            "value": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. If you turn on Hey Doddy, it also listens for the wake word with speech recognition on this iPhone. The sound and its words are not kept or sent anywhere."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy transcribe una nota de voz en este iPhone cuando la grabas, para que puedas revisar su texto antes de guardarla. La grabación y su texto no se envían a ningún sitio."
+            "value": "Doddy transcribe una nota de voz en este iPhone cuando grabas una, para que puedas revisar sus palabras antes de guardarla. Si activas Hey Doddy, también escucha la palabra de activación con el reconocimiento de voz de este iPhone. El sonido y sus palabras no se guardan ni se envían a ningún sitio."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy transcrit un mémo vocal sur cet iPhone quand tu en enregistres un, pour que tu puisses vérifier ses mots avant d’enregistrer. L’enregistrement et ses mots ne sont envoyés nulle part."
+            "value": "Doddy transcrit une note vocale sur cet iPhone quand tu en enregistres une, pour que tu puisses vérifier ses mots avant de l’enregistrer. Si tu actives Hey Doddy, il écoute aussi le mot d’activation avec la reconnaissance vocale de cet iPhone. Le son et ses mots ne sont ni conservés ni envoyés nulle part."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy pretvara glasovnu bilješku u tekst na ovom iPhoneu kad je snimiš, da možeš provjeriti riječi prije spremanja. Snimka i njezine riječi ne šalju se nikamo."
+            "value": "Doddy zapisuje glasovnu bilješku kao tekst na ovom iPhoneu kad je snimaš, kako bi prije spremanja mogao provjeriti njezine riječi. Ako uključiš Hey Doddy, prepoznavanje govora na ovom iPhoneu sluša i riječ za buđenje. Zvuk i njegove riječi nigdje se ne pohranjuju niti šalju."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy trascrive un memo vocale su questo iPhone quando lo registri, così puoi controllarne il testo prima di salvare. La registrazione e il suo testo non vengono inviati da nessuna parte."
+            "value": "Doddy trascrive una nota vocale su questo iPhone quando ne registri una, così puoi controllarne le parole prima di salvarla. Se attivi Hey Doddy, ascolta anche la parola di attivazione con il riconoscimento vocale di questo iPhone. Il suono e le sue parole non vengono conservati né inviati da nessuna parte."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "ボイスメモを録音すると、Doddyは保存前に言葉を確認できるよう、このiPhone上で文字に書き起こします。録音とその文字はどこにも送られません。"
+            "value": "ボイスメモを録音すると、DoddyはこのiPhone上でその内容を文字に起こし、保存前に言葉を確認できるようにします。Hey Doddyをオンにすると、このiPhoneの音声認識でウェイクワードも聞き取ります。音声とその言葉は、保存も送信もされません。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Nagranie i jego słowa nie są nigdzie wysyłane."
+            "value": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Jeśli włączysz Hej Doddy, rozpoznawanie mowy na tym iPhonie nasłuchuje też słowa wywołującego. Dźwięk i jego słowa nie są nigdzie zapisywane ani wysyłane."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy transcreve uma gravação de voz neste iPhone quando você grava uma, para você conferir as palavras antes de salvar. A gravação e as palavras dela não são enviadas a lugar nenhum."
+            "value": "O Doddy transcreve uma nota de voz neste iPhone quando você grava uma, para você conferir as palavras antes de salvar. Se você ativar o Hey Doddy, ele também escuta a palavra de ativação com o reconhecimento de fala deste iPhone. O som e suas palavras não são guardados nem enviados para lugar nenhum."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "当你录制语音备忘录时，Doddy 会在这台 iPhone 上将其转写成文字，以便你在保存前检查内容。录音及其文字不会发送到任何地方。"
+            "value": "你录制语音备忘录时，Doddy 会在这部 iPhone 上把它转成文字，方便你在保存前核对内容。如果你开启 Hey Doddy，它还会用这部 iPhone 上的语音识别聆听唤醒词。声音及其文字不会被保存，也不会被发送到任何地方。"
           }
         }
       }

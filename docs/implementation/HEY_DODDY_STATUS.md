@@ -1,5 +1,34 @@
 # "Hey Doddy" — status
 
+## Current engine (ADR-472, 2026-10-13): Apple's on-device speech recognition, no Picovoice
+
+**Why:** Picovoice's free plan is for personal, non-commercial use, so Porcupine could not ship in a commercial app
+(owner: "it must be ok to use commercially"). It is removed from `project.yml`, `project-iphone.yml` and the code.
+
+**How it works now:** `DoddyApp/Features/Voice/SpeechWakeEngine.swift` listens with `AVAudioEngine` and an
+`SFSpeechAudioBufferRecognitionRequest` with `requiresOnDeviceRecognition = true` (the capability guard checks it), and
+`WakePhraseMatcher` (DoddyCore, tested on Linux) looks for a greeting straight before a spelling of "Doddy" in the partial
+transcript. An iPhone that can't recognize English on the device does not listen at all; it never falls back to Apple's
+servers. The request is renewed every 45 s because iOS ends a request after about a minute. Nothing for the user to bring:
+Settings → Hey Doddy is a switch, and turning it on asks for the microphone and speech recognition. `WakeWordListener`,
+`WakeGate` (4 s settle time, 12 wake-ups an hour, 20 s silent-wake timeout), the island and the Home card are unchanged.
+
+**What is verified and what is not**
+- Verified on Linux: the phrase matcher, the listener's rules (`WakeListenerPolicy`) and their tests; the capability guard
+  (including that it fails when the on-device line is removed).
+- Compiled and UI-tested: see the CI result recorded in ADR-472 (hosted macOS build).
+- **Not verified on a device (do this first):** that recognition keeps running with the screen locked and the app in the
+  background (iOS may stop speech recognition there even with the audio background mode on); how often it hears "Hey
+  Doddy" in a noisy room and how often it wakes by mistake; battery use over an hour; that "Doddy" is written in one of the
+  spellings `WakePhraseMatcher` accepts; the 45 s renewal not losing a phrase. If background listening doesn't hold, "Hey
+  Doddy" works only while Doddy is open, and the status line and this page must say so.
+- Weaker than Porcupine on purpose-built accuracy, latency and battery. Only English is heard; the phrase is "Hey Doddy".
+
+Everything below this line describes the first version (Picovoice Porcupine, ADR-254) and is kept for history. Where it
+mentions the AccessKey, keyword file, token-server key or Picovoice Console, that no longer exists.
+
+---
+
 Date: 2026-10-11. Owner request: "create a Dodi that can listen in the background and can be waken up on a call, hey
 Dodi, and then … the Dodi dynamic island pop-up shows up and says, hey bud, what's up? … for me right now … just Pat".
 Owner choices: "Own listening mode", detector "Picovoice (Recommended)". Decision: `DECISIONS.md` ADR-254.
