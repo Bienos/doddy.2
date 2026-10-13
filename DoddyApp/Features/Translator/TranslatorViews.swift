@@ -291,7 +291,7 @@ struct TranslatorEndCard: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Translation ended").font(.title3.bold())
             Text(summary.headline).font(.subheadline).foregroundStyle(Theme.secondaryText)
-            Text("Nothing from this conversation is kept on this iPhone, and Doddy won't bring it up later. No notes were saved and nothing was added anywhere. ElevenLabs ran the translation and keeps its own recording, as in Settings › Privacy.")
+            Text("Nothing from this conversation is kept on this iPhone, and Doddy won't bring it up later. No notes were saved and nothing was added anywhere. The voice provider (OpenAI or ElevenLabs) ran the translation and may keep its own recording, as in Settings › Privacy.")
                 .font(.footnote)
             Text("Want something from it? Only on your tap, until \(summary.expiresAt.formatted(date: .omitted, time: .shortened)). After that the text is gone.")
                 .font(.footnote)
@@ -398,7 +398,7 @@ struct TranslatorStartView: View {
                     } else {
                         Text("For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.")
                     }
-                    Text("Both voices go to ElevenLabs to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112.")
+                    Text("Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112.")
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .font(.footnote)

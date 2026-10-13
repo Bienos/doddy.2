@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// The checks before a voice tool call runs, and the stale-conversation rule (ADR-443).
+/// The checks before a voice tool call runs, and the stale-conversation rule (ADR-458).
 final class ToolGateTests: XCTestCase {
     private func request(_ name: String, _ json: String = "{}") -> VoiceToolRequest {
         VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8))
@@ -77,7 +77,7 @@ final class ToolGateTests: XCTestCase {
         }
     }
 
-    // MARK: Stale conversations (ADR-443)
+    // MARK: Stale conversations (ADR-458)
 
     func testCallFromTheCurrentStartIsAnsweredOnce() {
         var owners = ToolCallOwners()

@@ -4,7 +4,9 @@ import Foundation
 // The app reads its settings and state into `OpeningConditions`; this decides; the app acts.
 // Listening on open is the user's own switch (on by default, owner decision), and it never
 // opens the microphone silently: the conversation screen comes up, says "Listening" from real
-// session events, and iOS shows its microphone indicator.
+// session events, and iOS shows its microphone indicator. It starts by itself only once iOS has
+// allowed the microphone, so the first microphone question always follows the user's own tap on
+// Talk to Doddy, never an app launch (ADR-325).
 
 public struct OpeningConditions: Equatable, Sendable {
     /// Settings → Appearance → "Doddy's opening". On unless turned off.
@@ -19,14 +21,15 @@ public struct OpeningConditions: Equatable, Sendable {
     /// First-use onboarding is finished and Home is what the user sees.
     public var atHome: Bool
     public var voiceAvailable: Bool
-    /// iOS refuses the microphone: a conversation would open straight into "Microphone is off" every time.
-    public var microphoneDenied: Bool
+    /// iOS has allowed the microphone. Not yet asked counts as no: the question would pop up the
+    /// moment the app opens. Refused: a conversation would open straight into "Microphone is off".
+    public var microphoneAllowed: Bool
     /// A conversation, the Back Tap guide, a shared draft or a Find request is already up.
     public var somethingIsOpen: Bool
 
     public init(
         sceneOn: Bool, listenOnOpen: Bool, characterArtHidden: Bool, reduceMotion: Bool,
-        voiceOverRunning: Bool, atHome: Bool, voiceAvailable: Bool, microphoneDenied: Bool,
+        voiceOverRunning: Bool, atHome: Bool, voiceAvailable: Bool, microphoneAllowed: Bool,
         somethingIsOpen: Bool
     ) {
         self.sceneOn = sceneOn
@@ -36,7 +39,7 @@ public struct OpeningConditions: Equatable, Sendable {
         self.voiceOverRunning = voiceOverRunning
         self.atHome = atHome
         self.voiceAvailable = voiceAvailable
-        self.microphoneDenied = microphoneDenied
+        self.microphoneAllowed = microphoneAllowed
         self.somethingIsOpen = somethingIsOpen
     }
 }
@@ -78,7 +81,7 @@ public enum OpeningPolicy {
         guard c.atHome, !c.somethingIsOpen else { return .nothing }
         if case .returned(let after) = trigger, after < replayAfter { return .nothing }
         let scene = c.sceneOn && !c.characterArtHidden && !c.voiceOverRunning
-        let listen = c.listenOnOpen && c.voiceAvailable && !c.microphoneDenied
+        let listen = c.listenOnOpen && c.voiceAvailable && c.microphoneAllowed
         if scene { return .scene(reducedMotion: c.reduceMotion, thenListen: listen) }
         if listen { return .listenOnly }
         return .nothing

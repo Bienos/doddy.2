@@ -148,6 +148,11 @@ final class VoiceSessionController {
         didSet {
             Self.conversationInProgress = isLive
             syncIsland()
+            // Listening comes only from the provider's own event, so this marks a conversation
+            // that really connected, not a tap that failed (ADR-326).
+            if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
+                UserDefaults.standard.set(true, forKey: PreferenceKey.hadFirstConversation)
+            }
         }
     }
     /// True while any conversation holds the microphone (the island keeps it alive in other
@@ -230,7 +235,7 @@ final class VoiceSessionController {
     private var started: [String: ActivityEntry] = [:]
     /// Plan cards waiting for the user's answer, so their steps are logged if the conversation ends.
     private var askedPlans: [String: [PlanStep]] = [:]
-    /// The start each open tool call came from (ADR-443): a card or result is shown or sent only
+    /// The start each open tool call came from (ADR-458): a card or result is shown or sent only
     /// while that start is still `startAttempt`, so a lookup that finishes after End and a new
     /// Start never reaches the new conversation.
     private var callOwners = ToolCallOwners()
@@ -252,13 +257,15 @@ final class VoiceSessionController {
     private(set) var audioNote: String?
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
-    /// Tool calls dropped because their conversation ended (ADR-443). Tool names only, no content.
+    /// Tool calls dropped because their conversation ended (ADR-458). Tool names only, no content.
     private static let toolLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-tools")
     /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
     private let devices: any DeviceConnecting
     private var conversation: (any LiveVoiceLink)?
-    /// Who runs the conversation now (Home's test switch, read when it starts; ADR-265).
+    /// Who runs the conversation now (Home's voice switch, read when it starts; ADR-265, ADR-442).
     private(set) var provider: VoiceProvider = .elevenLabs
+    /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
+    private(set) var openAIModel: OpenAIRealtimeModel = .default
     private var startedAt: Date?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
@@ -463,7 +470,12 @@ final class VoiceSessionController {
             WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
                 afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
         ]
-        provider = VoiceProvider(stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey))
+        // OpenAI Realtime is the default where the token server is set (ADR-442); a choice on Home wins.
+        let tokenServerSet: Bool
+        if case .tokenServer = mode { tokenServerSet = true } else { tokenServerSet = false }
+        provider = VoiceProvider.effective(
+            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: tokenServerSet)
+        openAIModel = OpenAIRealtimeModel(stored: UserDefaults.standard.string(forKey: OpenAIRealtimeModel.preferenceKey))
         if provider == .openAIRealtime {
             await startOpenAI(mode, variables: variables)
             return
@@ -596,11 +608,11 @@ final class VoiceSessionController {
     private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
         let attempt = startAttempt
         guard case .tokenServer(let endpoint, let accessCode) = mode else {
-            fail("The OpenAI test voice needs Doddy's token server. Add it in Settings → Voice, or switch Home back to ElevenLabs.")
+            fail("OpenAI's voice needs Doddy's token server. Add it in Settings → Voice, or switch Home to ElevenLabs.")
             return
         }
         guard let spec = OpenAISpec.bundled() else {
-            fail("This build is missing Doddy's voice spec, so the OpenAI test voice can't start. Switch Home back to ElevenLabs.")
+            fail("This build is missing Doddy's voice spec, so OpenAI's voice can't start. Switch Home to ElevenLabs.")
             return
         }
         let sessionUpdate: String
@@ -608,7 +620,7 @@ final class VoiceSessionController {
             let instructions = try RealtimeInstructions.render(spec.template, variables: variables)
             sessionUpdate = try OpenAIRealtimeWire.sessionUpdate(instructions: instructions, toolsJSON: spec.tools, eagerness: .high)
         } catch {
-            fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home back to ElevenLabs.")
+            fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home to ElevenLabs.")
             return
         }
         // The same opening the ElevenLabs agent gets (ADR-254: the "Hey Doddy" greeting or his usual one).
@@ -617,7 +629,7 @@ final class VoiceSessionController {
 
         let grant: OpenAIRealtimeGrant
         do throws(VoiceTokenError) {
-            grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant()
+            grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant(model: openAIModel)
         } catch {
             if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return
@@ -650,9 +662,9 @@ final class VoiceSessionController {
     private static func openAITokenMessage(_ error: VoiceTokenError) -> String {
         switch error {
         case .badResponse:
-            "The token server doesn't offer the OpenAI test voice yet. Redeploy server/voice-token and set OPENAI_API_KEY there, or switch Home back to ElevenLabs."
+            "The token server doesn't offer the OpenAI voice yet. Redeploy server/voice-token and set OPENAI_API_KEY there, or switch Home to ElevenLabs."
         case .serverNotConfigured:
-            "OPENAI_API_KEY isn't set on the token server, so the OpenAI test voice can't start. Switch Home back to ElevenLabs to talk now."
+            "OPENAI_API_KEY isn't set on the token server, so the OpenAI voice can't start. Switch Home to ElevenLabs to talk now."
         default:
             VoiceTokenServer.message(for: error)
         }
@@ -693,7 +705,7 @@ final class VoiceSessionController {
     private func handleOpenAICall(_ call: RealtimeFunctionCall, attempt: Int) async {
         if openAIWebTools.contains(call.name) {
             callOwners.record(call.callID, attempt: attempt)
-            await reply(call.callID, "Weather and Wikipedia don't work in the OpenAI voice test. Tell the user that in one sentence, and that switching Home back to ElevenLabs brings them back.", isError: true)
+            await reply(call.callID, "Weather and Wikipedia don't work with the OpenAI voice. Tell the user that in one sentence, and that switching Home to ElevenLabs brings them back.", isError: true)
             return
         }
         await handle(ClientToolCallEvent(toolName: call.name, toolCallId: call.callID, parametersData: call.argumentsData, eventId: 0, expectsResponse: true),
@@ -814,7 +826,7 @@ final class VoiceSessionController {
         pendingAction = nil
         // The conversation the card belongs to. The change runs to the end even if the user taps
         // End meanwhile; what it shows on screen after an await is shown only if this one is
-        // still on screen (ADR-443).
+        // still on screen (ADR-458).
         let attempt = startAttempt
         // On disk before the change runs: if Doddy is closed mid-way, the next launch shows it
         // as "Not sure" instead of nothing (ActivityLog.recoverInterrupted).
@@ -1123,7 +1135,7 @@ final class VoiceSessionController {
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
         // Ended (or ended and started again) while the lists loaded: nothing changes after End
-        // (review H9, ADR-443).
+        // (review H9, ADR-458).
         guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
         markStarted(toolCallID)
         do {
@@ -1132,7 +1144,7 @@ final class VoiceSessionController {
             lines += result.alreadyThere.map { .note("\($0) · already on the list, not added again") }
             lines += result.tooLong.map { .note("too long to add: \($0.prefix(40))…") }
             lines += result.noRoom.map { .note("\($0) · the list is full") }
-            // The write ran; its receipt only shows on its own conversation's screen (ADR-443).
+            // The write ran; its receipt only shows on its own conversation's screen (ADR-458).
             if isCurrent(toolCallID) {
                 listReceipt = ListReceipt(
                     listID: list.id, title: result.added.isEmpty ? "Nothing new for \(list.name)" : "Added to \(list.name)",
@@ -1157,7 +1169,7 @@ final class VoiceSessionController {
     private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
         // Ended (or ended and started again) while the lists loaded: nothing changes after End
-        // (review H9, ADR-443).
+        // (review H9, ADR-458).
         guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
         let pool = tick ? list.open : list.items
         var matched: [ListItem] = [], notFound: [String] = [], ambiguous: [(said: String, options: [ListItem])] = []
@@ -1720,7 +1732,7 @@ final class VoiceSessionController {
     }
 
     /// `attempt` is the start the call arrived in. From here on every card, screen change and
-    /// result checks it (ADR-443): `propose` and `reply` for all of them, and the places below that
+    /// result checks it (ADR-458): `propose` and `reply` for all of them, and the places below that
     /// change the screen or a list after an `await`.
     private func handle(_ call: ClientToolCallEvent, attempt: Int) async {
         // A call still queued when the user tapped End runs nothing (review H9).
@@ -2017,7 +2029,7 @@ final class VoiceSessionController {
             }
         }
         // Ended, or ended and started again, while the steps were checked: no card, no reply and
-        // no plan state in the next conversation (review H9, ADR-443).
+        // no plan state in the next conversation (review H9, ADR-458).
         guard isLive, isCurrent(call.toolCallId) else {
             dropStale(call.toolCallId, steps: steps)
             return
@@ -2050,7 +2062,7 @@ final class VoiceSessionController {
     /// gets its own result. A step that fails doesn't stop the others; none is retried.
     private func runPlan(_ toolCallID: String, steps: [PlanStep], blocked: [Int: PlanBlock]) async {
         // The steps the user approved run to the end and are logged even if the conversation ends;
-        // only its own screen shows their progress (ADR-443).
+        // only its own screen shows their progress (ADR-458).
         let attempt = startAttempt
         askedPlans[toolCallID] = nil
         let ticked = planTicked
@@ -2288,7 +2300,7 @@ final class VoiceSessionController {
                 return
             }
             // Maps answered after End (and maybe a new Start): the place choice belongs to the
-            // conversation on screen now, so it is not touched (ADR-443).
+            // conversation on screen now, so it is not touched (ADR-458).
             guard isCurrent(toolCallID) else {
                 dropStale(toolCallID)
                 return
@@ -2376,7 +2388,7 @@ final class VoiceSessionController {
             if await PlaceLocation.shared.readiness() == .ready, let here = await PlaceLocation.shared.currentCoordinate() {
                 distance = Parking.distance(from: (here.latitude, here.longitude), to: (spot.latitude, spot.longitude))
             }
-            // Location was read after an await: no parking card in a later conversation (ADR-443).
+            // Location was read after an await: no parking card in a later conversation (ADR-458).
             guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
             parkingCard = spot
             await reply(toolCallID, VoiceToolReply.parkingFound(spot, now: Date(), calendar: .current, distanceMeters: distance))
@@ -2393,7 +2405,7 @@ final class VoiceSessionController {
 
     private func propose(_ action: PendingAction, toolCallID: String) {
         // A proposal that finished its lookups after End shows no card (review H9), and one that
-        // finished after End and a new Start shows none in the new conversation (ADR-443).
+        // finished after End and a new Start shows none in the new conversation (ADR-458).
         guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
         guard pendingAction == nil else {
             Task { await reply(toolCallID, VoiceToolReply.failed("Another item is waiting for the user's answer.")) }
@@ -2445,7 +2457,7 @@ final class VoiceSessionController {
         }
         activity.replace(ActivityLog.undid(current, result: result, at: Date()))
         // The on-screen Undo for the same change is no longer offered (ADR-268 merge); a later
-        // conversation's receipt is a different change and is left alone (ADR-443).
+        // conversation's receipt is a different change and is left alone (ADR-458).
         if result == .undone, onScreen(attempt), let receipt = changeReceipt {
             switch receipt.kind {
             case .event(let plan) where undo.isSameChange(event: plan, reminderID: nil): changeReceipt = nil
@@ -2864,7 +2876,7 @@ final class VoiceSessionController {
             }
         }
         // Logged above whatever happens (a confirmed change that ran is still recorded), but sent
-        // only to the conversation that asked (ADR-443): a result from an ended conversation never
+        // only to the conversation that asked (ADR-458): a result from an ended conversation never
         // reaches the next one.
         guard callOwners.finish(toolCallID, attempt: startAttempt) else {
             Self.toolLog.notice("result of a tool call from an ended conversation was not sent")
@@ -2873,12 +2885,12 @@ final class VoiceSessionController {
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
     }
 
-    /// True while the conversation `toolCallID` arrived in is still the one on screen (ADR-443).
+    /// True while the conversation `toolCallID` arrived in is still the one on screen (ADR-458).
     private func isCurrent(_ toolCallID: String) -> Bool {
         callOwners.isCurrent(toolCallID, attempt: startAttempt)
     }
 
-    /// True while the conversation of start `attempt` is still the one on screen (ADR-443). For a
+    /// True while the conversation of start `attempt` is still the one on screen (ADR-458). For a
     /// change the user confirmed: it runs to the end, but only its own screen shows how it went.
     private func onScreen(_ attempt: Int) -> Bool {
         attempt == startAttempt
@@ -2886,7 +2898,7 @@ final class VoiceSessionController {
 
     /// On disk before a change runs: if the conversation ends, or Doddy is closed, mid-write, the
     /// row says "in progress" (then "Not sure") until the result replaces it, never "not done"
-    /// (`logUnanswered` skips started rows). Confirmed cards and the list tools (ADR-443).
+    /// (`logUnanswered` skips started rows). Confirmed cards and the list tools (ADR-458).
     private func markStarted(_ toolCallID: String) {
         guard started[toolCallID] == nil, let request = asked[toolCallID] else { return }
         let entry = ActivityEntry.started(request, at: Date())
@@ -2894,7 +2906,7 @@ final class VoiceSessionController {
         started[toolCallID] = entry
     }
 
-    /// A call whose conversation ended before its card or result was ready (ADR-443): nothing is
+    /// A call whose conversation ended before its card or result was ready (ADR-458): nothing is
     /// shown or sent. What it asked is logged as not done, once; `stop()` has usually done that.
     private func dropStale(_ toolCallID: String, steps: [PlanStep] = []) {
         callOwners.forget(toolCallID)

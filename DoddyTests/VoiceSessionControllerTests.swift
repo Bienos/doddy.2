@@ -23,6 +23,9 @@ final class VoiceSessionControllerTests: XCTestCase {
         let link = FakeLink()
         let controller: VoiceSessionController
         private let savedSwitches: [VoiceConnection: Any?]
+        /// "Listening" marks the first conversation as had (ADR-326); `beginForTesting` reaches it,
+        /// so the flag is put back too, or the app's later UI tests would skip Home's first visit.
+        private let savedFirstConversation: Any?
 
         init() {
             // The card re-checks Settings → Connections at the tap; turned on for this test only.
@@ -32,6 +35,7 @@ final class VoiceSessionControllerTests: XCTestCase {
                 UserDefaults.standard.set(true, forKey: connection.preferenceKey)
             }
             savedSwitches = saved
+            savedFirstConversation = UserDefaults.standard.object(forKey: PreferenceKey.hadFirstConversation)
             controller = VoiceSessionController(
                 store: MemoryStore(environment: .live(arguments: ["-inMemoryStore"])),
                 activity: ActivityLogStore(fileURL: nil),
@@ -46,6 +50,7 @@ final class VoiceSessionControllerTests: XCTestCase {
             for (connection, value) in savedSwitches {
                 UserDefaults.standard.set(value, forKey: connection.preferenceKey)
             }
+            UserDefaults.standard.set(savedFirstConversation, forKey: PreferenceKey.hadFirstConversation)
         }
     }
 
@@ -167,7 +172,7 @@ final class VoiceSessionControllerTests: XCTestCase {
 }
 
 /// A tool call reaches only the conversation it came from (audit 2026-10-12 §5 #1 and #10,
-/// ADR-443). Each test starts a conversation, lets a tool call get as far as a Reminders or
+/// ADR-458). Each test starts a conversation, lets a tool call get as far as a Reminders or
 /// notification lookup, holds it there, taps End and starts a new conversation, and only then
 /// lets the lookup finish. The last tests run the same calls without End, so a guard that
 /// dropped everything would fail them. NOT RUN in the authoring environment (no Xcode).
