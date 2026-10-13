@@ -435,9 +435,8 @@ struct SettingsView: View {
                     VoiceProviderPicker(idPrefix: "settings")
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
-                    // Shipped builds have no token server and no access code: Talk to Doddy uses the
-                    // development agent directly (owner, 2026-10-13: "public agent, no code"). A debug
-                    // build can still set a token server, an access code or another agent.
+                    // Shipped builds use the built-in token server (ServiceAddresses) and a tester types
+                    // only the access code. A debug build can also set another token server or agent.
                     #if DEBUG
                     TextField("Token server (https://…)", text: $voiceTokenServer)
                         .font(.body.monospaced())
@@ -445,6 +444,7 @@ struct SettingsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("settings.voiceTokenServer")
+                    #endif
                     if hasAccessCode {
                         Button("Remove access code", role: .destructive) {
                             VoiceAccessCodeStore.delete()
@@ -462,6 +462,7 @@ struct SettingsView: View {
                         Label(accessCodeError, systemImage: "exclamationmark.triangle")
                             .foregroundStyle(Theme.error)
                     }
+                    #if DEBUG
                     if voiceTokenServer.allSatisfy(\.isWhitespace) {
                         TextField("ElevenLabs agent ID", text: $voiceAgentID)
                             .font(.body.monospaced())

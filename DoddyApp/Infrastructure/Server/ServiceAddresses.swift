@@ -6,11 +6,15 @@ import Foundation
 /// point Settings at another server; a shipped build always uses these, because the fields are
 /// hidden there and any address saved by an earlier build is dropped at launch.
 ///
-/// Voice has no built-in token server: owner, 2026-10-13, "public agent, no code". Talk to Doddy
-/// uses the development agent directly, with no access code. `server/voice-token` stays deployed
-/// (`doddy-voice-token` on Render) for when ElevenLabs authentication is turned on: then add it
-/// back here and hide nothing else.
+/// Voice goes through the token server (`doddy-voice-token` on Render), so OpenAI Realtime is the
+/// default voice (ADR-442) and the OpenAI key stays on the server. The owner picked this on
+/// 2026-10-13 over "public agent, no code": a tester types one access code in Settings, Voice, and
+/// the token server and agent ID fields stay hidden in shipped builds. Without a code the voice
+/// screen says to add one. Home's switch can still pick ElevenLabs, which then also gets its
+/// token from this server.
 enum ServiceAddresses {
+    /// `server/voice-token` on Render (`doddy-voice-token`): voice passes for both providers.
+    static let voiceTokenServer = "https://doddy-voice-token.onrender.com"
     /// `gateway/` on Render (`doddy-gateway`): Ask Doddy.
     static let gateway = "https://doddy-gateway.onrender.com"
     /// `backend/` on Render (`doddy`): web search and online accounts.
@@ -20,12 +24,14 @@ enum ServiceAddresses {
 
     static func register(_ defaults: UserDefaults = .standard) {
         let builtIn = [
+            PreferenceKey.voiceTokenServer: voiceTokenServer,
             PreferenceKey.gatewayAddress: gateway,
             PreferenceKey.connectedAppsServerURL: connectedApps,
         ]
         #if !DEBUG
-        // An earlier build may have saved a token server: voice uses the development agent now.
-        for key in Array(builtIn.keys) + [PreferenceKey.voiceTokenServer, PreferenceKey.voiceAgentID] {
+        // An address or agent ID saved by an earlier build (or typed in a debug build) must not
+        // redirect a shipped build: the built-in servers always win.
+        for key in Array(builtIn.keys) + [PreferenceKey.voiceAgentID] {
             defaults.removeObject(forKey: key)
         }
         #endif

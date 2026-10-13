@@ -407,3 +407,17 @@ have no token server, no access-code field and no agent-ID field. Steps 3.2 to 3
   register it with `PreferenceKey.voiceTokenServer`), and give each tester a code in `DODDY_ACCESS_CODES`.
 - The Render service `doddy-voice-token` still runs and costs nothing on the free plan; it's simply unused.
 - Debug builds from Xcode still show the Token server, Access code and agent ID fields for testing.
+
+## Update 2026-10-13 (voice, latest): OpenAI Realtime by default, with an access code (ADR-471; supersedes "no access code" above)
+
+Owner decision: "Realtime model by default", option 1 (access code kept). Shipped builds now register the token
+server `https://doddy-voice-token.onrender.com` (`ServiceAddresses.voiceTokenServer`), so the effective voice is OpenAI
+Realtime (ADR-442) and the OpenAI key stays on the server. A tester types one access code in Settings, Voice (the Access
+code field is visible in shipped builds; the token server and agent ID fields stay debug-only). Without a code, the voice
+screen says "Add your access code in Settings → Voice to talk to Doddy." Home's switch can still pick ElevenLabs, which then
+gets its token from the same server (turn ElevenLabs authentication on before relying on that path).
+
+To do before a tester can talk (none of it is done by the code change):
+- Render `doddy-voice-token` needs `OPENAI_API_KEY` and `DODDY_ACCESS_CODES` set, and a **monthly spending limit on the OpenAI project** (the server has no counters).
+- The service still runs the older `f835852` handler from branch `claude/affectionate-tesla-nqu0nj`. Repoint it to this branch and redeploy so it runs the current handler.
+- Not compiled or run: this is Swift. Build on a Mac, enter a code, and talk to Doddy once.
