@@ -6216,6 +6216,65 @@
         }
       }
     },
+    "App language": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Sprache"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma de la app"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Langue de l’app"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jezik aplikacije"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lingua dell’app"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリの言語"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Język aplikacji"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Idioma do app"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用语言"
+          }
+        }
+      }
+    },
     "App navigation": {
       "extractionState": "manual",
       "localizations": {
@@ -8104,7 +8163,7 @@
         }
       }
     },
-    "Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112.": {
+    "Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
@@ -8113,13 +8172,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Beide Stimmen gehen zum Übersetzen an OpenAI oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Deine Notizen, Gespräche und dein Profil werden nicht gesendet. Nichts bleibt auf diesem iPad, außer du tippst am Ende auf Kopieren oder Speichern. Nicht für Notfälle: Ruf 112 an."
+                  "value": "Beide Stimmen gehen zum Übersetzen an OpenAI oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Deine Notizen, Gespräche und dein Profil werden nicht gesendet. Nichts bleibt auf diesem iPad, außer du tippst am Ende auf Kopieren oder Speichern. Nicht für Notfälle: Ruf die lokale Notrufnummer an."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Beide Stimmen gehen zum Übersetzen an OpenAI oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Deine Notizen, Gespräche und dein Profil werden nicht gesendet. Nichts bleibt auf diesem iPhone, außer du tippst am Ende auf Kopieren oder Speichern. Nicht für Notfälle: Ruf 112 an."
+                  "value": "Beide Stimmen gehen zum Übersetzen an OpenAI oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Deine Notizen, Gespräche und dein Profil werden nicht gesendet. Nichts bleibt auf diesem iPhone, außer du tippst am Ende auf Kopieren oder Speichern. Nicht für Notfälle: Ruf die lokale Notrufnummer an."
                 }
               }
             }
@@ -8131,13 +8190,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPad unless you tap Copy or Save at the end. Not for emergencies: call 112."
+                  "value": "Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPad unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112."
+                  "value": "Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number."
                 }
               }
             }
@@ -8149,13 +8208,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Las dos voces se envían a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, para traducirlas. Tus notas, conversaciones y perfil no se envían. No se guarda nada en este iPad a menos que toques Copiar o Guardar al final. No sirve para emergencias: llama al 112."
+                  "value": "Las dos voces se envían a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, para traducirlas. Tus notas, conversaciones y perfil no se envían. No se guarda nada en este iPad a menos que toques Copiar o Guardar al final. No sirve para emergencias: llama a tu número de emergencias local."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Las dos voces se envían a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, para traducirlas. Tus notas, conversaciones y perfil no se envían. No se guarda nada en este iPhone a menos que toques Copiar o Guardar al final. No sirve para emergencias: llama al 112."
+                  "value": "Las dos voces se envían a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, para traducirlas. Tus notas, conversaciones y perfil no se envían. No se guarda nada en este iPhone a menos que toques Copiar o Guardar al final. No sirve para emergencias: llama a tu número de emergencias local."
                 }
               }
             }
@@ -8167,13 +8226,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Les deux voix vont à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pour être traduites. Tes notes, tes conversations et ton profil ne sont pas envoyés. Rien n’est conservé sur cet iPad sauf si tu touches Copier ou Enregistrer à la fin. Pas pour les urgences : appelle le 112."
+                  "value": "Les deux voix vont à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pour être traduites. Tes notes, tes conversations et ton profil ne sont pas envoyés. Rien n’est conservé sur cet iPad sauf si tu touches Copier ou Enregistrer à la fin. Pas pour les urgences : appelle le numéro d’urgence local."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Les deux voix vont à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pour être traduites. Tes notes, tes conversations et ton profil ne sont pas envoyés. Rien n’est conservé sur cet iPhone sauf si tu touches Copier ou Enregistrer à la fin. Pas pour les urgences : appelle le 112."
+                  "value": "Les deux voix vont à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pour être traduites. Tes notes, tes conversations et ton profil ne sont pas envoyés. Rien n’est conservé sur cet iPhone sauf si tu touches Copier ou Enregistrer à la fin. Pas pour les urgences : appelle le numéro d’urgence local."
                 }
               }
             }
@@ -8185,13 +8244,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Oba glasa idu u OpenAI ili u ElevenLabs ako na Početnoj prebaciš glas na njega, radi prevođenja. Tvoje bilješke, razgovori i profil se ne šalju. Ništa se ne čuva na ovom iPadu osim ako na kraju dodirneš Kopiraj ili Spremi. Nije za hitne slučajeve: nazovi 112."
+                  "value": "Oba glasa idu u OpenAI ili u ElevenLabs ako na Početnoj prebaciš glas na njega, radi prevođenja. Tvoje bilješke, razgovori i profil se ne šalju. Ništa se ne čuva na ovom iPadu osim ako na kraju dodirneš Kopiraj ili Spremi. Nije za hitne slučajeve: nazovi lokalni broj za hitne slučajeve."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Oba glasa idu u OpenAI ili u ElevenLabs ako na Početnoj prebaciš glas na njega, radi prevođenja. Tvoje bilješke, razgovori i profil se ne šalju. Ništa se ne čuva na ovom iPhoneu osim ako na kraju dodirneš Kopiraj ili Spremi. Nije za hitne slučajeve: nazovi 112."
+                  "value": "Oba glasa idu u OpenAI ili u ElevenLabs ako na Početnoj prebaciš glas na njega, radi prevođenja. Tvoje bilješke, razgovori i profil se ne šalju. Ništa se ne čuva na ovom iPhoneu osim ako na kraju dodirneš Kopiraj ili Spremi. Nije za hitne slučajeve: nazovi lokalni broj za hitne slučajeve."
                 }
               }
             }
@@ -8203,13 +8262,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Entrambe le voci vanno a OpenAI, o a ElevenLabs se in Home passi alla sua voce, per essere tradotte. Le tue note, le conversazioni e il profilo non vengono inviati. Niente resta su questo iPad a meno che alla fine tu non tocchi Copia o Salva. Non per le emergenze: chiama il 112."
+                  "value": "Entrambe le voci vanno a OpenAI, o a ElevenLabs se in Home passi alla sua voce, per essere tradotte. Le tue note, le conversazioni e il profilo non vengono inviati. Niente resta su questo iPad a meno che alla fine tu non tocchi Copia o Salva. Non per le emergenze: chiama il numero di emergenza locale."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Entrambe le voci vanno a OpenAI, o a ElevenLabs se in Home passi alla sua voce, per essere tradotte. Le tue note, le conversazioni e il profilo non vengono inviati. Niente resta su questo iPhone a meno che alla fine tu non tocchi Copia o Salva. Non per le emergenze: chiama il 112."
+                  "value": "Entrambe le voci vanno a OpenAI, o a ElevenLabs se in Home passi alla sua voce, per essere tradotte. Le tue note, le conversazioni e il profilo non vengono inviati. Niente resta su questo iPhone a meno che alla fine tu non tocchi Copia o Salva. Non per le emergenze: chiama il numero di emergenza locale."
                 }
               }
             }
@@ -8221,13 +8280,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "翻訳のため、両方の声はOpenAIに送られます。ホームの声をElevenLabsに切り替えている場合はElevenLabsに送られます。メモ、会話、プロフィールは送られません。最後に「コピー」か「保存」をタップしない限り、このiPadには何も残りません。緊急時用ではありません。緊急の場合は112に電話してください。"
+                  "value": "翻訳のため、両方の声はOpenAIに送られます。ホームの声をElevenLabsに切り替えている場合はElevenLabsに送られます。メモ、会話、プロフィールは送られません。最後に「コピー」か「保存」をタップしない限り、このiPadには何も残りません。緊急時用ではありません。緊急の場合は、お住まいの地域の緊急通報番号に電話してください。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "翻訳のため、両方の声はOpenAIに送られます。ホームの声をElevenLabsに切り替えている場合はElevenLabsに送られます。メモ、会話、プロフィールは送られません。最後に「コピー」か「保存」をタップしない限り、このiPhoneには何も残りません。緊急時用ではありません。緊急の場合は112に電話してください。"
+                  "value": "翻訳のため、両方の声はOpenAIに送られます。ホームの声をElevenLabsに切り替えている場合はElevenLabsに送られます。メモ、会話、プロフィールは送られません。最後に「コピー」か「保存」をタップしない限り、このiPhoneには何も残りません。緊急時用ではありません。緊急の場合は、お住まいの地域の緊急通報番号に電話してください。"
                 }
               }
             }
@@ -8239,13 +8298,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Oba głosy trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym do tłumaczenia. Twoje notatki, rozmowy i profil nie są wysyłane. Nic nie zostaje na tym iPadzie, chyba że na końcu stukniesz Kopiuj lub Zapisz. Nie w nagłych wypadkach: dzwoń pod 112."
+                  "value": "Oba głosy trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym do tłumaczenia. Twoje notatki, rozmowy i profil nie są wysyłane. Nic nie zostaje na tym iPadzie, chyba że na końcu stukniesz Kopiuj lub Zapisz. Nie w nagłych wypadkach: dzwoń pod lokalny numer alarmowy."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Oba głosy trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym do tłumaczenia. Twoje notatki, rozmowy i profil nie są wysyłane. Nic nie zostaje na tym iPhonie, chyba że na końcu stukniesz Kopiuj lub Zapisz. Nie w nagłych wypadkach: dzwoń pod 112."
+                  "value": "Oba głosy trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym do tłumaczenia. Twoje notatki, rozmowy i profil nie są wysyłane. Nic nie zostaje na tym iPhonie, chyba że na końcu stukniesz Kopiuj lub Zapisz. Nie w nagłych wypadkach: dzwoń pod lokalny numer alarmowy."
                 }
               }
             }
@@ -8257,13 +8316,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "As duas vozes vão para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, para serem traduzidas. Suas notas, conversas e perfil não são enviados. Nada fica neste iPad a menos que você toque em Copiar ou Salvar no fim. Não é para emergências: ligue para o 112."
+                  "value": "As duas vozes vão para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, para serem traduzidas. Suas notas, conversas e perfil não são enviados. Nada fica neste iPad a menos que você toque em Copiar ou Salvar no fim. Não é para emergências: ligue para o número de emergência local."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "As duas vozes vão para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, para serem traduzidas. Suas notas, conversas e perfil não são enviados. Nada fica neste iPhone a menos que você toque em Copiar ou Salvar no fim. Não é para emergências: ligue para o 112."
+                  "value": "As duas vozes vão para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, para serem traduzidas. Suas notas, conversas e perfil não são enviados. Nada fica neste iPhone a menos que você toque em Copiar ou Salvar no fim. Não é para emergências: ligue para o número de emergência local."
                 }
               }
             }
@@ -8275,13 +8334,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "双方的语音都会发送给 OpenAI 进行翻译（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。你的笔记、对话和个人资料不会被发送。除非你在结束时轻点“拷贝”或“保存”，否则这台 iPad 上不会保留任何内容。不适用于紧急情况：请拨打 112。"
+                  "value": "双方的语音都会发送给 OpenAI 进行翻译（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。你的笔记、对话和个人资料不会被发送。除非你在结束时轻点“拷贝”或“保存”，否则这台 iPad 上不会保留任何内容。不适用于紧急情况：请拨打当地的紧急电话。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "双方的语音都会发送给 OpenAI 进行翻译（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。你的笔记、对话和个人资料不会被发送。除非你在结束时轻点“拷贝”或“保存”，否则这台 iPhone 上不会保留任何内容。不适用于紧急情况：请拨打 112。"
+                  "value": "双方的语音都会发送给 OpenAI 进行翻译（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。你的笔记、对话和个人资料不会被发送。除非你在结束时轻点“拷贝”或“保存”，否则这台 iPhone 上不会保留任何内容。不适用于紧急情况：请拨打当地的紧急电话。"
                 }
               }
             }
@@ -19464,6 +19523,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 会用对方的语言向对方说出他的建议。"
+          }
+        }
+      }
+    },
+    "Doddy starts in English until you pick another language. A change shows the next time you open Doddy: close it first, then open it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy startet auf Englisch, bis du eine andere Sprache wählst. Eine Änderung siehst du beim nächsten Öffnen von Doddy: Schließe Doddy zuerst und öffne ihn dann erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy empieza en inglés hasta que elijas otro idioma. El cambio se ve la próxima vez que abras Doddy: ciérralo primero y vuelve a abrirlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy démarre en anglais tant que tu n’as pas choisi une autre langue. Un changement apparaît à la prochaine ouverture de Doddy : ferme-le d’abord, puis rouvre-le."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy se pokreće na engleskom dok ne odabereš drugi jezik. Promjena će se vidjeti pri sljedećem otvaranju Doddyja: prvo ga zatvori, pa ga ponovno otvori."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy parte in inglese finché non scegli un’altra lingua. Una modifica si vede alla prossima apertura di Doddy: chiudilo prima, poi riaprilo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "別の言語を選ぶまで、Doddyは英語で始まります。変更は次にDoddyを開いたときに反映されます。先にDoddyを閉じてから、もう一度開いてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy startuje po angielsku, dopóki nie wybierzesz innego języka. Zmiana pojawi się przy następnym otwarciu Doddy'ego: zamknij go, a potem otwórz ponownie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy começa em inglês até você escolher outro idioma. A mudança aparece na próxima vez que você abrir o Doddy: feche-o primeiro e abra de novo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在你选择其他语言之前，Doddy 会以英语启动。更改会在你下次打开 Doddy 时生效：请先关闭 Doddy，再重新打开。"
           }
         }
       }
@@ -55922,6 +56040,191 @@
           "stringUnit": {
             "state": "translated",
             "value": "运行这个快捷指令？"
+          }
+        }
+      }
+    },
+    "Same as this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wie dieses iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wie dieses iPhone"
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Same as this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Same as this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Igual que este iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Igual que este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Comme cet iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Comme cet iPhone"
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Isto kao na ovom iPadu"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Isto kao na ovom iPhoneu"
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Come questo iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Come questo iPhone"
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "このiPadと同じ"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "このiPhoneと同じ"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Taki jak na tym iPadzie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Taki jak na tym iPhonie"
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Igual a este iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Igual a este iPhone"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "与这台 iPad 相同"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "与这台 iPhone 相同"
+                }
+              }
+            }
           }
         }
       }

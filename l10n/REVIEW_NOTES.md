@@ -4,12 +4,14 @@ Eight languages were machine-translated in one pass, each by a separate Claude a
 
 ## Decisions for the owner (all languages)
 
-1. **The emergency number.** The English privacy text says "Not for emergencies: call 112" (#120, #1320). All eight agents kept 112 as written. 112 works from mobile phones across the EU and on most GSM networks elsewhere, but it is not the local number in Japan (110, 119), mainland China (110, 120), Brazil (190, 192) or the US (911). Options: keep 112 everywhere; or give each language its home-market number; or say "your local emergency number". A safety line should not be left to a translator's default.
+1. **The emergency number: decided.** The owner chose "your local emergency number" (2026-10-13). The privacy line (#120, #1320 before the change) and the translator mode in the voice prompt and tool spec now say that instead of "112", in English and in all nine tables. The live ElevenLabs agent still has "call 112" in its prompt until the owner syncs it; the OpenAI voice reads the new text from the app.
 2. **The example phone number** in two strings (#735, #1035) was changed to a local-looking number by the Chinese, Japanese and Portuguese agents, and kept by the others. It is only an example.
 3. **The tagline "Your mate in your pocket."** (#1310) stays in English in every language, as `BRAND_GUIDELINES.md` 3.8 requires until the owner approves a transcreated line.
 4. **"Hey Doddy"** stays in English everywhere. The spoken wake word is English; the screens around it are translated.
 5. **Feature names** (Morning check-in, Evening wrap-up, Weekly look-back, Weekly tidy-up, Shopping mode, Connections) each got a different invented name per language. Pick them once with a native speaker, then the other screens follow.
 6. **The Siri phrases** (`*_shortcuts.json`) must be read aloud to Siri on a device. The ones with a list name inside (`${list}`) are the riskiest in Chinese and Croatian.
+
+Answers on 2026-10-13: Japanese ぼく, Croatian gender handling and the Siri read-aloud test were accepted as they are (the Siri test still has to be done on a device). The three new Settings strings for the language picker ("App language", "Same as this iPhone" and the footer) were written by the same agent that made this page, not by the translation agents, and need the same native review.
 
 ## Per language
 

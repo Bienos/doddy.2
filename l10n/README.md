@@ -21,8 +21,10 @@ A table that has not been through steps 3 and 4 is a draft the app can show, not
 
 ## How a person switches language
 
-- **Screens:** iOS does this. Once the app ships more than one language, iOS Settings › Doddy shows a **Language** row (iOS 13 and later) and the app relaunches in that language. The app can add a "Change language" row in its own Settings that opens that page (`UIApplication.openSettingsURLString`). There is no in-app picker that bypasses iOS: Apple's guidance is the Settings row, and a bypass would need every string looked up through a custom bundle.
-- **Voice:** already there, Settings › Voice and personality › Language. Automatic follows the iPhone's language.
+- **In Doddy:** Settings › App language (ADR-459). **English until the person picks another** (owner, 2026-10-13). The list shows each language by its own name, plus "Same as this iPhone". iOS reads the language when an app starts, so a change shows the next time Doddy is opened; the footer says to close it and open it again. The choice is written to the app's own `AppleLanguages` setting by `AppLanguageStore`; the rules (English default, keeping a language set in iOS Settings, "same as this iPhone") are `AppLanguage` in DoddyCore, tested on Linux.
+- **In iOS Settings › Doddy › Language:** the same setting, and the only one that also moves widgets, Siri phrases and the system's permission prompts. A language picked there is kept if the person has made no choice in Doddy.
+- **A Polish (or any other) iPhone now starts Doddy in English** until the person picks their language. The first launch after an update can still show the iPhone's language, because iOS has already chosen by the time Doddy writes the setting; English shows from the next launch.
+- **Voice:** already there, Settings › Voice and personality › Language. Automatic follows what the person speaks.
 
 ## Limits to keep in mind
 

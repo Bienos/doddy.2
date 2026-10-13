@@ -9,6 +9,8 @@ enum PreferenceKey {
     static let memoriesShowsLists = "memoriesShowsLists"
     static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
+    /// Settings › App language (ADR-459): a language code, or "system" for the iPhone's language. Absent means English.
+    static let appLanguage = "appLanguage"
     /// Memories list order (`MemorySort` raw value); display only (ADR-186).
     static let memorySort = "memorySort"
     /// JSON array of pinned note ids (`PinnedNotes`); display only, never any note text (ADR-187).

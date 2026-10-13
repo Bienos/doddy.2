@@ -47,6 +47,8 @@ PROJECT = os.path.join(ROOT, "project.yml")
 SHORTCUTS_SOURCE = os.path.join(ROOT, "DoddyApp", "Intents", "DoddyShortcuts.swift")
 SHORTCUTS_CATALOG = os.path.join(ROOT, "DoddyApp", "Resources", "AppShortcuts.xcstrings")
 # The app and Mac bundles list their languages; the array is rewritten from the tables found.
+# Settings › App language lists the languages from this enum (ADR-459).
+APP_LANGUAGE = os.path.join(ROOT, "Packages", "DoddyCore", "Sources", "DoddyCore", "AppLanguage.swift")
 PLISTS = [os.path.join(ROOT, "Config", "Doddy-Info.plist"), os.path.join(ROOT, "Config", "DoddyMac-Info.plist")]
 PLIST_LANGUAGES = re.compile(r"(<key>CFBundleLocalizations</key>\n\t<array>\n)(?:\t\t<string>[^<]*</string>\n)*(\t</array>)")
 CALLS = (r'(?:Text|Button|Label|Toggle|Section|navigationTitle|TextField|SecureField|DisclosureGroup|Picker|'
@@ -255,6 +257,18 @@ def check_language(code, prompts, phrases, problems):
     return infoplist, shortcuts
 
 
+def check_picker(codes, problems):
+    """Every language with a table is a choice in Settings › App language (ADR-459), and the
+    picker offers nothing the app has no strings for."""
+    text = open(APP_LANGUAGE, encoding="utf-8").read()
+    offered = set(re.findall(r'case \w+ = "([^"]+)"', text))
+    for code in codes:
+        if code not in offered:
+            problems.append(f"{code} has a table in l10n/ but is not a case in AppLanguage.swift, so the picker can't offer it")
+    for code in sorted(offered - set(codes) - {"en", "system"}):
+        problems.append(f"AppLanguage.swift offers {code}, which has no table in l10n/")
+
+
 def plist_with_languages(text, codes, path):
     lines = "".join(f"\t\t<string>{code}</string>\n" for code in ["en"] + codes)
     new, count = PLIST_LANGUAGES.subn(lambda m: m.group(1) + lines + m.group(2), text, count=1)
@@ -277,6 +291,7 @@ def main():
     infoplists, shortcuts = {}, {}
     for code in codes:
         infoplists[code], shortcuts[code] = check_language(code, prompts, phrases, problems)
+    check_picker(codes, problems)
     outputs = {}
     for index, (path, folders) in enumerate(TARGETS):
         found = strings_in(*folders)

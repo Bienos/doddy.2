@@ -16,6 +16,13 @@ both and port hey doddy"). Fitted to what the default branch has that the source
   shared draft, Back Tap setup, onboarding): the same rule as listening on open (ADR-225).
 - The source branch's morning brief (and its read-aloud hook) isn't on the default branch, so it wasn't ported.
 
+## What is missing before it can wake (checked 2026-10-13)
+The code path is complete and the rules are tested on Linux (`WakeWordTests`), but it has never run on a device, and two things it needs are not in place. Until both are, Settings › Hey Doddy says "Add your … to turn this on" and nothing listens.
+1. **The keyword file.** `DoddyApp/Resources/WakeWord/hey-doddy.ppn` does not exist. It can only be made in the Picovoice Console (a web page behind the owner's account): create the wake phrase "Hey Doddy", language English, platform **iOS**, download the `.ppn`. Either put it in that folder and rebuild, or on one phone choose it in Settings › Hey Doddy › "Use my own Picovoice key and file".
+2. **A Picovoice AccessKey.** Either paste it on the phone (same Settings row), or set `PICOVOICE_ACCESS_KEY` as a secret on the token server so one tap works. The Supabase function `voice-token` (project `doddy-gateway`, version 1) already has the code for it and lists the secret; whether the secret is set can't be read from outside, and Vercel is not a working host (its last five deployments were cancelled and the account is blocked). The Render service `doddy-voice-token` is the other server; its secrets were not checked.
+3. **Then test on a phone,** in this order: turn it on with Doddy open and see "Listening for “Hey Doddy”"; say it; lock the phone and say it again; check the orange microphone dot. iOS only lets the microphone start while Doddy is open, so after a restart open Doddy once.
+The sensitivity is Porcupine's default (0.5) and has not been tuned to anyone's voice or accent; if it misses, raise it in `WakeWordListener.sensitivity` (more misses fixed, more false wake-ups).
+
 ## What iOS allows
 - Only Siri has a true system wake word. No other app can hear "Hey Doddy" while it is closed.
 - An app can keep the microphone running in the background **if it started while the app was open** (Doddy already

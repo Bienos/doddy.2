@@ -618,6 +618,8 @@ struct SettingsView: View {
                 }
                 .task { await refreshInviteState() }
 
+                AppLanguageSettingsSection()
+
                 Section("Appearance and accessibility") {
                     Picker("Appearance", selection: $appearanceRaw) {
                         ForEach(AppearancePreference.allCases, id: \.rawValue) { option in
