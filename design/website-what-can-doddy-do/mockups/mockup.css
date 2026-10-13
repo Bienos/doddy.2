@@ -59,10 +59,10 @@
 .wcd-grid { display: grid; gap: 40px; align-items: center; }
 @media (min-width: 960px) { .wcd-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); } }
 .wcd-copy { min-width: 0; }
-.wcd-copy .display { font-size: clamp(2.8rem, 1.4rem + 5vw, 5.6rem); max-width: 11ch; }
+.wcd-copy .display { max-width: 11ch; }  /* audit: the homepage's .display size, no override */
 .hand-word {
   display: inline-block; position: relative; padding: 0 0.08em;
-  font-family: var(--hand); font-weight: 700; font-size: 1.04em; line-height: 0.9; color: var(--accent-text);
+  font-family: var(--hand); font-weight: 700; font-size: 0.92em; line-height: 0.9; color: var(--accent-text);  /* audit: never larger than the display face */
   transform: rotate(-3deg); transform-origin: left bottom;
 }
 .hand-word .scribble { bottom: -0.1em; }
@@ -80,7 +80,7 @@
 
 .obj {
   position: absolute; width: 116px; aspect-ratio: 1; display: grid; place-items: center; padding: 12px;
-  background: var(--paper); border: 1px solid var(--separator); border-radius: 4px 20px 4px 20px; box-shadow: var(--lift);
+  background: var(--paper); border: 1px solid var(--separator); border-radius: 4px 14px 4px 14px; box-shadow: var(--lift);  /* audit: the scraps' corner */
   cursor: pointer; text-decoration: none; color: inherit;
   transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
@@ -123,7 +123,7 @@
 
 /* ---------- A moment: time, problem, what Doddy does, and the scene card ---------- */
 
-.moment { padding: clamp(40px, 6vw, 84px) 0; }
+.moment { padding: clamp(56px, 8vw, 104px) 0; overflow-x: clip; }  /* audit: the homepage's section rhythm */  /* the paper sun and the peek must not widen the page */
 .moment + .moment { border-top: 1px solid var(--separator); }
 .moment-grid { display: grid; gap: 32px 56px; align-items: center; }
 @media (min-width: 960px) {
@@ -144,7 +144,7 @@
 .moment-copy .says-small { margin-top: 18px; }
 
 .scene { position: relative; margin: 0; }
-.scene-card { position: relative; padding: 10px; background: var(--paper); border: 1px solid var(--separator); border-radius: 28px; box-shadow: var(--lift-strong); }
+.scene-card { position: relative; padding: 12px; background: var(--paper); border: 1px solid var(--separator); border-radius: 30px; box-shadow: var(--lift-strong); }  /* audit: the film card's padding and radius */
 .scene-art { position: relative; overflow: hidden; border-radius: 20px; aspect-ratio: 16 / 9; background: var(--canvas); }
 .scene-art .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .scene-art .doddy { position: absolute; bottom: 2%; left: 9%; height: 74%; width: auto; max-width: none; filter: drop-shadow(0 10px 10px rgb(60 40 10 / 14%)); }
@@ -318,7 +318,8 @@
 /* ---------- Honesty strip ---------- */
 
 .truth { padding: clamp(24px, 4vw, 48px) 0; }
-.truth-panel { padding: clamp(24px, 4vw, 40px); background: var(--paper); border: 1px solid var(--separator); border-radius: 28px; box-shadow: var(--lift); display: grid; gap: 16px 40px; align-items: start; }
+.truth-panel { position: relative; overflow: hidden; isolation: isolate; padding: clamp(36px, 6vw, 72px); background: var(--paper); border: 1px solid var(--separator); border-radius: 36px; box-shadow: var(--lift); display: grid; gap: 16px 40px; align-items: start; }  /* audit: the privacy panel's padding, radius and corner glow */
+.truth-panel::after { content: ""; position: absolute; right: -120px; top: -120px; width: 360px; height: 360px; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-cue) 16%, transparent), transparent); pointer-events: none; z-index: -1; }
 @media (min-width: 900px) { .truth-panel { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); } }
 .truth-panel h2 { font-family: var(--display); font-weight: 750; font-size: 1.5rem; letter-spacing: -0.02em; margin: 0 0 6px; }
 .truth-panel p { color: var(--secondary-text); margin: 0; max-width: 30rem; }
@@ -425,7 +426,7 @@ body.board { background: var(--board); }
 .comic .d-bubble { font-size: 1.2rem; max-width: 56%; }
 .comic .scene-panel { width: 56%; font-size: 0.75rem; bottom: 24%; }
 .stamp { position: absolute; z-index: 3; padding: 6px 10px; border: 3px solid var(--confirmed); color: var(--confirmed); border-radius: 8px; font: 800 0.75rem/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; rotate: -8deg; background: color-mix(in srgb, var(--paper) 75%, transparent); }
-.big-time { position: absolute; z-index: 2; left: 5%; top: 7%; margin: 0; font-family: var(--hand); font-weight: 700; font-size: 2.8rem; line-height: 1; color: var(--accent-text); rotate: -4deg; }
+.big-time { position: absolute; z-index: 2; left: 5%; top: 7%; margin: 0; padding: 2px 12px 6px; font-family: var(--hand); font-weight: 700; font-size: 2.8rem; line-height: 1; color: var(--accent-text); rotate: -4deg; background: color-mix(in srgb, var(--paper) 82%, transparent); border-radius: 4px 14px 4px 14px; }
 .tape-label { position: absolute; z-index: 3; right: 6%; top: 8%; margin: 0; padding: 6px 12px; background: var(--paper); border: 1px solid var(--separator); border-radius: 4px 14px 4px 14px; font-family: var(--hand); font-weight: 700; font-size: 1.5rem; line-height: 1; rotate: 2deg; box-shadow: var(--lift); }
 .flip-hint { position: absolute; z-index: 3; left: 50%; bottom: 14px; translate: -50% 0; padding: 7px 14px; border-radius: 999px; background: var(--reading-ink); color: var(--canvas); font: 650 0.75rem/1 var(--text); white-space: nowrap; box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--orange-cue) 85%, transparent); }
 .flip-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: stretch; }
@@ -458,3 +459,84 @@ body.board { background: var(--board); }
 .scene-panel .opts .on { background: var(--reading-ink); border-color: var(--reading-ink); color: var(--canvas); }
 .o-bubble-l .who { display: block; margin-bottom: 2px; font-size: 0.7rem; font-weight: 650; color: var(--secondary-text); }
 @media (max-width: 700px) { .from-msg { display: none; } }
+
+/* ---------- Phase 2: three-beat moments (mockups 16, 17) ---------- */
+.cue { margin: 10px 0 0; font-size: 0.8125rem; line-height: 1.45; color: var(--secondary-text); }
+.cue b { color: var(--reading-ink); }
+.cue .rm { display: block; margin-top: 2px; font-style: italic; }
+.bt-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0 0 14px; }
+.bt { min-width: 0; }
+.bt .scene-art { aspect-ratio: 16 / 10; border-radius: 16px; border: 1px solid var(--separator); box-shadow: var(--lift); }
+.bt .scene-art .doddy { height: 70%; }
+.bt .u-bubble { position: absolute; top: 6%; right: 5%; max-width: 50%; font-size: 0.75rem; padding: 7px 10px 8px; }
+.bt .d-bubble { font-size: 1.05rem; max-width: 50%; padding: 7px 10px 8px; }
+.bt .d-bubble.stack { top: 30%; }
+.bt .u-bubble.two-lines + .d-bubble.stack { top: 38%; }
+.bt .big-time { font-size: 2rem; }
+.bt .note { font-size: 0.9rem; padding: 4px 7px; }
+.bt .o-bubble-l { font-size: 0.75rem; max-width: 40%; padding: 6px 9px; }
+.caret { display: inline-block; width: 2px; height: 0.85em; margin-left: 2px; vertical-align: -0.08em; background: var(--accent-text); }
+.beat-num { position: absolute; left: 10px; top: 8px; z-index: 3; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--reading-ink); color: var(--canvas); font: 800 0.75rem/1 var(--display); }
+.scene .scene-card .beat-num { left: 22px; top: 20px; }
+.stamp.land { right: auto; }
+@media (max-width: 700px) {
+  .bt-row { grid-template-columns: minmax(0, 1fr); }
+  .bt .u-bubble { position: absolute; max-width: 54%; justify-self: auto; }
+  .bt .d-bubble { max-width: 54%; }
+}
+
+/* The paper sun: the hero glow travels down the day. One token colour, position and opacity only. */
+.scene { position: relative; isolation: isolate; }
+.scene::before {
+  content: ""; position: absolute; z-index: -1; left: var(--sun-x, 50%); top: var(--sun-y, 40%); width: 95%; aspect-ratio: 1; translate: -50% -50%;
+  border-radius: 50%; opacity: var(--sun, 0); pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-cue) 22%, transparent), color-mix(in srgb, var(--orange-cue) 6%, transparent) 60%, transparent);
+}
+.sun-0845 .scene { --sun: 1; --sun-x: 18%; --sun-y: 10%; }
+.sun-0910 .scene { --sun: .95; --sun-x: 30%; --sun-y: 4%; }
+.sun-1020 .scene { --sun: .9; --sun-x: 44%; --sun-y: 0%; }
+.sun-1300 .scene { --sun: .85; --sun-x: 50%; --sun-y: -4%; }
+.sun-away .scene { --sun: .8; --sun-x: 58%; --sun-y: 0%; }
+.sun-1530 .scene { --sun: .7; --sun-x: 68%; --sun-y: 6%; }
+.sun-1845 .scene { --sun: .55; --sun-x: 82%; --sun-y: 22%; }
+.sun-2015 .scene { --sun: .4; --sun-x: 90%; --sun-y: 46%; }
+.sun-2230 .scene { --sun: .22; --sun-x: 94%; --sun-y: 78%; }
+.sun-2330 .scene { --sun: 0; }
+
+/* Travel: stop to look, and the surprise */
+.travel.look { align-items: flex-end; }
+.travel .look-prop { width: 40px; height: auto; margin-left: -6px; }
+.travel.surprise img { width: 72px; }
+.peek { position: absolute; z-index: 4; right: -26px; bottom: 18px; width: 86px; height: auto; transform: scaleX(-1); filter: drop-shadow(0 8px 8px rgb(60 40 10 / 14%)); }
+.peek-note { position: absolute; z-index: 4; right: -30px; bottom: 110px; margin: 0; font-family: var(--hand); font-weight: 700; font-size: 1.2rem; color: var(--accent-text); rotate: 6deg; white-space: nowrap; }
+@media (max-width: 700px) { .peek, .peek-note { display: none; } }
+
+/* Share line under a moment (wow addition 2) */
+.send { display: inline-flex; align-items: center; gap: 8px; margin: 10px 0 0; font-family: var(--hand); font-weight: 700; font-size: 1.3rem; line-height: 1; color: var(--accent-text); text-decoration: none; }
+.send svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Phase 2: homepage proposal (mockup 25a) ---------- */
+.moments-teaser { padding: clamp(56px, 8vw, 104px) 0; border-top: 1px solid var(--separator); }
+.teaser { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.teaser li { min-width: 0; }
+.teaser a { display: block; height: 100%; padding: 12px 12px 16px; text-decoration: none; color: inherit; background: var(--paper); border: 1px solid var(--separator); border-radius: 30px; box-shadow: var(--lift); transition: transform 150ms ease, border-color 150ms ease; }
+.teaser a:hover { transform: translateY(-3px); border-color: var(--orange-cue); }
+.teaser .scene-art { display: block; aspect-ratio: 16 / 10; border-radius: 20px; margin-bottom: 12px; }
+.teaser .scene-art .doddy { height: 70%; }
+.teaser .d-bubble { font-size: 1.15rem; max-width: 52%; right: 5%; top: 8%; border-radius: 18px 18px 4px 18px; }
+.teaser .time { display: inline-block; margin: 0 8px 0 6px; font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 1; color: var(--accent-text); }
+.teaser h3 { display: inline; font-size: 1.25rem; }
+.teaser .cap { display: inline-flex; margin: 8px 0 0 6px; }
+.teaser-more { margin: 28px 0 0; }
+@media (max-width: 700px) {
+  .teaser { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 84%; overflow-x: auto; padding: 6px 2px 12px; scroll-snap-type: x mandatory; }
+  .teaser li { scroll-snap-align: start; }
+}
+/* The pack's poses are 2:3 where the v1.3 SVGs were square; the hero and steps make room. */
+.home-proposal .hero-doddy { width: clamp(130px, 18vw, 190px); bottom: 2%; }
+.home-proposal .says { top: -4%; }
+.home-proposal .step-pose { width: 28%; max-width: 110px; bottom: 6px; }
+.home-proposal .court-stand-in { display: block; width: 100%; aspect-ratio: 800 / 520; object-fit: cover; }
+
+.stamp.on-card { right: -10px; top: -16px; left: auto; bottom: auto; }
+@media (max-width: 700px) { .scene-panel { position: relative; } .stamp.on-card { right: 6px; top: -14px; } }

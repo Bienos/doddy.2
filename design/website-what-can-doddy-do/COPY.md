@@ -113,3 +113,42 @@ The words on the page, one place to edit them. Mockup 14 is this file rendered. 
 ## Rules the lines follow
 
 Answer first, one dry beat at most. Jokes land on the situation or on Doddy, never on the visitor (which is why "so no excuses" went). No feelings claimed. "Done" only with a receipt. Serious moments get no joke. (From `docs/product/PERSONALITY_SETTINGS.md`.)
+
+## Proposed copy (Phase 2, not approved)
+
+New words the Phase 2 mockups need. Nothing above changes until the owner says so.
+
+### One claim corrected (08:45, Doddy does)
+- Was: Moves the next thing back twenty minutes, after you tap Add.
+- Proposed: Nothing in your calendar changes unless you tap Add. (The agent adds events; it does not move them.)
+
+### Hero reactions (mockup 18), one per object
+- Alarm: *Oh. That one.* · Phone: *Go on. I'm listening.* · Coffee: *Lunch. Finally.* · Suitcase: *Got your passport?* · Speech bubble: *I'll find it. Your words.* · Shopping bag: *Top shelf. Of course.* · Calendar: *I'll remind you. Quietly.*
+
+### Between moments (mockup 19)
+- Stop to look, after 15:30: *Hang on. What's this?*
+- Surprises: *Still looking.* (sneaky crouch) · *Balance. Mostly.* (one-leg) · *Long day.* (yawn) · *Quiet bit. All true.* (shush)
+
+### The clock in the hero (mockup 22, addition 1)
+- Pill: It's 07:50 where you are (the visitor's own clock; nothing leaves the phone)
+- Lines by hour: morning *Morning. Ish.* · late morning *Pick one.* · lunch *Lunch. Finally.* · afternoon *Still here.* · evening *Nearly done for the day.* · small hours *Why are we both awake?*
+- Button: Start at 08:45 (the nearest moment)
+
+### Share lines (mockup 22, addition 2)
+- Under each moment: Send this one to someone who's always late · …who never checks the weather · …who sends "hey" by accident · …who "doesn't mind" · …who nods abroad · …who pretends to understand · …who forgets the place · …who forgot the oat milk · …who should call their mum · …with three loose ends
+- Share text, per moment: "The 10:20 one is you. Doddy drafts the reply; you send it." (pattern: the time, "is you", one line of what Doddy does and what stays yours)
+- Sign-off note after 23:30: *That's the day. Mostly.* / *Know someone who's always late? Send them 08:45.* (the suggested moment is the one the visitor spent longest on)
+- Desktop fallback chip: Copied
+
+### Stamps on the app's cards (mockup 16)
+- Read, not changed · Place name only · You send it · Opens Maps · Not built yet · Source: Wikipedia · Your words · Undo · You tap Add · Untick to skip
+
+### Homepage proposal (mockup 25a)
+- Hero second action: What Doddy does all day (the film keeps "Watch the film (1:15)" in its own section)
+- Teaser heading: Three moments from an ordinary day. · Lede: What a mate in your pocket does with them. Seven more on their own page, each one saying whether it's built, in testing, or later, maybe. · Buttons: See the whole day · Start at 08:45
+- If character art option A: Meet Doddy's "A hand-drawn mate with an orange backpack, oversized trainers and a basketball that never quite gets put down." loses the backpack; proposed: "A hand-drawn mate with oversized trainers and a basketball that never quite gets put down."
+- The voice line "Voice hasn't been tested on a real iPhone yet." is stale per the voice status doc; proposed, after the owner confirms: "Voice is being tried on real iPhones now."
+
+### New page head (mockup 25 · 11)
+- Title: What can Doddy do? · Doddy
+- Description: Ten random moments from an ordinary day, and what a mate in your pocket does with them.

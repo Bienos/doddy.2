@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mockup 18, the hero as a scene</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body class="board">
+  <!-- Everyday objects the pack has no prop for, drawn as inline line art in the same ink, cream and orange
+       as the pack's props sheet (010_doddy_props_v01): alarm clock, suitcase, calendar, shopping bag, speech bubble. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="o-alarm" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 100 L24 112 M88 100 L96 112"/>
+        <path d="M36 24 L24 12 M84 24 L96 12"/>
+        <circle cx="22" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="98" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="60" cy="64" r="40" fill="#FCF4E4"/>
+        <path d="M60 42 V64 L76 74"/>
+      </g>
+      <path d="M12 36 L5 30 M9 50 L1 48 M12 64 L5 70" stroke="#FC6800" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="o-suitcase" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M44 34 V22 a6 6 0 0 1 6-6 h20 a6 6 0 0 1 6 6 v12" fill="none"/>
+        <rect x="14" y="34" width="92" height="68" rx="12" fill="#FCF4E4"/>
+        <rect x="14" y="56" width="92" height="16" fill="#FC6800" stroke="none"/>
+        <path d="M14 56 H106 M14 72 H106" fill="none"/>
+        <rect x="34" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <rect x="74" y="50" width="12" height="28" rx="3" fill="#FCF4E4"/>
+        <path d="M30 102 V110 M90 102 V110" fill="none"/>
+      </g>
+    </symbol>
+    <symbol id="o-calendar" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="24" width="92" height="84" rx="12" fill="#FCF4E4"/>
+        <path d="M14 36 a12 12 0 0 1 12-12 h68 a12 12 0 0 1 12 12 v12 H14z" fill="#FC6800"/>
+        <path d="M36 14 V34 M84 14 V34" fill="none"/>
+      </g>
+      <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
+      <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
+    </symbol>
+    <symbol id="o-bag" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M40 42 V30 a20 20 0 0 1 40 0 v12" fill="none"/>
+        <path d="M22 42 H98 L104 102 a8 8 0 0 1-8 8 H24 a8 8 0 0 1-8-8 Z" fill="#FCF4E4"/>
+      </g>
+      <path d="M60 94 c-11-8-18-15-18-22 a9 9 0 0 1 18-4 a9 9 0 0 1 18 4 c0 7-7 14-18 22z" fill="#FC6800" stroke="#080808" stroke-width="5" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="o-bubble" viewBox="0 0 120 120">
+      <path d="M22 20 h76 a12 12 0 0 1 12 12 v44 a12 12 0 0 1-12 12 H58 L34 108 L40 88 H22 a12 12 0 0 1-12-12 V32 a12 12 0 0 1 12-12z" fill="#FCF4E4" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <g fill="#FC6800"><circle cx="40" cy="54" r="7"/><circle cx="60" cy="54" r="7"/><circle cx="80" cy="54" r="7"/></g>
+    </symbol>
+    <symbol id="o-pin" viewBox="0 0 120 120">
+      <path d="M60 110 C40 84 24 66 24 46 a36 36 0 0 1 72 0 c0 20-16 38-36 64z" fill="#FC6800" stroke="#080808" stroke-width="7" stroke-linejoin="round"/>
+      <circle cx="60" cy="46" r="13" fill="#FCF4E4" stroke="#080808" stroke-width="7"/>
+    </symbol>
+  </svg>
+
+  <style>
+    .hero18 .stage { width: 100%; max-width: 420px; }
+    .react { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; }
+    .react .r { padding: 12px 10px 12px; background: var(--paper); border: 1px solid var(--separator); border-radius: 16px; box-shadow: var(--lift); text-align: center; min-width: 0; }
+    .react .r .o { width: 44px; height: 44px; margin: 0 auto 6px; }
+    .react .r .o img, .react .r .o svg { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .react .r .p { width: 100%; height: 110px; object-fit: contain; display: block; margin: 0 auto 6px; }
+    .react .r .says-small { font-size: 1.15rem; margin: 0; transform: none; }
+    .react .r .m { font-size: 0.7rem; color: var(--secondary-text); margin: 4px 0 0; }
+  </style>
+  <div class="board-wrap hero18">
+    <div class="board-head">
+      <h1>18 · The hero as a scene</h1>
+      <p>Load, idle, hover or tap, selected. Doddy reacts to every object with a pose from the pack and one line. On phones, one tap shows the reaction, a second opens the moment.</p>
+    </div>
+
+    <div class="frames three">
+      <div class="frame">
+        <div class="frame-label"><b>1</b> Load · 0 to 900 ms</div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="stage">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble" style="translate: -50% -34px; opacity: .35"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm"><svg><use href="#o-alarm"/></svg></span>
+            <span class="obj o-phone" style="translate: 0 -26px; opacity: .55"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase" style="translate: 0 -18px; opacity: .75"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar" style="translate: 0 -40px; opacity: .2"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag" style="translate: 0 -40px; opacity: .1"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main"><img src="../assets/poses/pop_3.png" alt=""></figure>
+            <img src="../assets/fx/sparkle.png" alt="" style="position:absolute; left: 62%; top: 30%; width: 12%">
+          </div>
+        </div>
+        <p class="frame-note"><b>The paper is empty for one frame.</b> Doddy pops in at 0 ms (pop-in strip, 4 frames, 320 ms), then the seven objects drop in clockwise from the alarm, 60 ms apart (translateY -40 px → 0 and opacity, 300 ms, ease-out, the site's cubic-bezier(.2,.8,.2,1)). At 700 ms he waves (wave strip, 5 frames, 400 ms) and "Pick one." underlines itself (the homepage's scribble reveal). Done at 900 ms. <i>Reduced motion: everything is already in place; the scribble is drawn.</i></p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>2</b> Idle · nothing moves</div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="stage">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm"><svg><use href="#o-alarm"/></svg></span>
+            <span class="obj o-phone"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main"><img src="../assets/poses/wave.png" alt=""></figure>
+            <p class="says" aria-hidden="true">Pick one.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          </div>
+        </div>
+        <p class="frame-note"><b>A drawing until you touch it.</b> No drift, no bob, no blink: the motion budget says nothing loops, and a notebook page holds still. The invitation is the handwriting and the cursor changing over an object. If the owner wants life at rest, the one allowed thing is a blink from the pack's blink sheet every 4 to 6 s; it is listed as an open decision, not drawn here.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>3</b> Hover or focus · the alarm</div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="stage">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm is-hover"><svg><use href="#o-alarm"/></svg><span class="obj-label">08:45 · Late. Again.</span></span>
+            <span class="obj o-phone"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main"><img src="../assets/poses/facepalm.png" alt=""></figure>
+            <p class="says" aria-hidden="true">Oh. That one.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          </div>
+        </div>
+        <p class="frame-note"><b>150 ms.</b> The object lifts 5 px and gets its orange edge (the chapter buttons' hover), its handwritten label appears, Doddy swaps pose and line (image swap, no tween; the line is a crossfade of 120 ms). Leaving restores the wave after 300 ms, so a cursor crossing the ring doesn't make him flicker. Keyboard focus does exactly the same, with the site's focus ring.</p>
+      </div>
+    </div>
+
+    <div class="frames three" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>4</b> Selected · he goes first</div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="stage">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm is-active"><svg><use href="#o-alarm"/></svg><span class="obj-label">08:45 · Late. Again.</span></span>
+            <span class="obj o-phone"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main" style="left: 64%; bottom: 0; width: 38%"><img src="../assets/poses/run_2.png" alt=""></figure>
+            <img src="../assets/fx/dash-lines.png" alt="" style="position:absolute; left: 38%; bottom: 10%; width: 14%">
+          </div>
+        </div>
+        <p class="frame-note"><b>Click, Enter or second tap.</b> The object keeps its orange underline, Doddy runs out of the ring to the right (run strip, 500 ms) and the page scrolls to the moment (600 ms, ease-out); he arrives there with that moment's own entrance (beat 1 of mockup 16). Objects are links, so the URL carries the moment (<code>#late</code>) and a shared link opens on it. <i>Reduced motion: no run, instant scroll.</i></p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>5</b> Phone · first tap</div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="stage" style="max-width: 300px; aspect-ratio: 1 / 1.05">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble" style="width:70px; padding:7px"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm" style="width:70px; padding:7px"><svg><use href="#o-alarm"/></svg></span>
+            <span class="obj o-phone" style="width:70px; padding:7px"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee" style="width:70px; padding:7px"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase" style="width:70px; padding:7px"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar is-active" style="width:70px; padding:7px"><svg><use href="#o-calendar"/></svg><span class="obj-label" style="font-size:1rem">22:30 · Don't let me forget</span></span>
+            <span class="obj o-bag" style="width:70px; padding:7px"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main" style="width: 50%"><img src="../assets/poses/shush.png" alt=""></figure>
+            <p class="says" style="left: 58%; top: 26%; font-size: 1.3rem" aria-hidden="true">I'll remind you. Quietly.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          </div>
+        </div>
+        <p class="frame-note"><b>No hover on a phone,</b> so the first tap is the hover: the label shows, Doddy reacts, the object stays marked. A tap elsewhere clears it. Objects are 70 px, well over the 44 px minimum, and the ring is 300 px wide at 390 px.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>6</b> Phone · second tap, or "Start the day"</div>
+        <div class="frame-body" style="display:grid; place-items:center">
+          <div class="stage" style="max-width: 300px; aspect-ratio: 1 / 1.05">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <span class="obj o-bubble" style="width:70px; padding:7px"><svg><use href="#o-bubble"/></svg></span>
+            <span class="obj o-alarm" style="width:70px; padding:7px"><svg><use href="#o-alarm"/></svg></span>
+            <span class="obj o-phone" style="width:70px; padding:7px"><img src="../assets/props/phone.png" alt=""></span>
+            <span class="obj o-coffee" style="width:70px; padding:7px"><img src="../assets/props/coffee.png" alt=""></span>
+            <span class="obj o-suitcase" style="width:70px; padding:7px"><svg><use href="#o-suitcase"/></svg></span>
+            <span class="obj o-calendar is-active" style="width:70px; padding:7px"><svg><use href="#o-calendar"/></svg></span>
+            <span class="obj o-bag" style="width:70px; padding:7px"><svg><use href="#o-bag"/></svg></span>
+            <figure class="doddy-main" style="left: 70%; bottom: 6%; width: 36%"><img src="../assets/poses/run_2.png" alt=""></figure>
+            <img src="../assets/fx/dash-lines.png" alt="" style="position:absolute; left: 44%; bottom: 16%; width: 14%">
+          </div>
+        </div>
+        <p class="frame-note"><b>Second tap on the same object</b> opens the moment, as the click does on desktop. "Start the day" under the headline is the plain route for people who don't want to pick: it scrolls to 08:45 and Doddy walks in there. The ring never traps focus; Tab moves through the seven links in reading order.</p>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label"><b>7</b> One reaction per object: a pose from the pack and one line in Doddy's voice</div>
+      <div class="frame-body">
+        <div class="react">
+          <div class="r"><div class="o"><svg><use href="#o-alarm"/></svg></div><img class="p" src="../assets/poses/facepalm.png" alt=""><p class="says-small">Oh. That one.</p><p class="m">08:45 · facepalm</p></div>
+          <div class="r"><div class="o"><img src="../assets/props/phone.png" alt=""></div><img class="p" src="../assets/poses/listening.png" alt=""><p class="says-small">Go on. I'm listening.</p><p class="m">10:20 · listening</p></div>
+          <div class="r"><div class="o"><img src="../assets/props/coffee.png" alt=""></div><img class="p" src="../assets/poses/fistpump.png" alt=""><p class="says-small">Lunch. Finally.</p><p class="m">13:00 · fist pump</p></div>
+          <div class="r"><div class="o"><svg><use href="#o-suitcase"/></svg></div><img class="p" src="../assets/poses/tiptoe.png" alt=""><p class="says-small">Got your passport?</p><p class="m">Away · tiptoe</p></div>
+          <div class="r"><div class="o"><svg><use href="#o-bubble"/></svg></div><img class="p" src="../assets/poses/kneeling_inspect.png" alt=""><p class="says-small">I'll find it. Your words.</p><p class="m">18:45 · kneeling inspect</p></div>
+          <div class="r"><div class="o"><svg><use href="#o-bag"/></svg></div><img class="p" src="../assets/poses/reaching_high.png" alt=""><p class="says-small">Top shelf. Of course.</p><p class="m">20:15 · reaching high</p></div>
+          <div class="r"><div class="o"><svg><use href="#o-calendar"/></svg></div><img class="p" src="../assets/poses/shush.png" alt=""><p class="says-small">I'll remind you. Quietly.</p><p class="m">22:30 · shush</p></div>
+        </div>
+      </div>
+      <p class="frame-note">Seven lines, all answer-first and about the situation; none at the visitor. They are new words, so they sit in the proposed-copy list (COPY.md, Phase 2) until approved. Poses are swapped images; no tween, no rig.</p>
+    </div>
+  </div>
+</body>
+</html>

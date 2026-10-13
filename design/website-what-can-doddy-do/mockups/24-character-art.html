@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mockup 24, one Doddy for the whole site</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body class="board">
+  <style>
+    .shot-crop { position: relative; aspect-ratio: 1440 / 700; overflow: hidden; border-radius: 14px; border: 1px solid var(--separator); background: var(--canvas); }
+    .shot-crop img { position: absolute; left: 0; top: 0; width: 100%; height: auto; }
+    .pairs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px; }
+    .pair { display: grid; grid-template-columns: 96px 24px 96px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 12px; background: var(--paper); border: 1px solid var(--separator); border-radius: 14px; }
+    .pair img { width: 96px; height: 96px; object-fit: contain; display: block; }
+    .pair .arrow { text-align: center; color: var(--secondary-text); font-size: 1.1rem; }
+    .pair .what { font-size: 0.8125rem; line-height: 1.4; color: var(--secondary-text); min-width: 0; }
+    .pair .what b { display: block; color: var(--reading-ink); font-size: 0.875rem; }
+    .pair.same { border-color: color-mix(in srgb, var(--confirmed) 45%, transparent); }
+    .pair.near { border-color: var(--accent-text); }
+    .opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .opt { padding: 18px 20px; background: var(--paper); border: 1px solid var(--separator); border-radius: 18px; font-size: 0.9375rem; }
+    .opt h3 { margin: 0 0 8px; font-size: 1.1rem; }
+    .opt ul { margin: 0; padding-left: 18px; }
+    .opt li { margin: 0 0 6px; }
+    .opt.pick { border-color: var(--orange-cue); box-shadow: inset 0 -4px 0 var(--orange-cue), var(--lift); }
+  </style>
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>24 · One Doddy for the whole site</h1>
+      <p>The homepage draws Doddy from the v1.3 SVG set; the new page and the app draw him from the owner's pack. A visitor would see two Doddys. The owner decides which; the studio recommends the pack.</p>
+    </div>
+
+    <div class="frames two">
+      <div class="frame">
+        <div class="frame-label"><b>Today</b> · the homepage with the v1.3 SVG poses</div>
+        <div class="frame-body tight"><div class="shot-crop"><img src="../png/01-homepage-nav-1440.png" alt="The live homepage hero with the v1.3 waving pose"></div></div>
+        <p class="frame-note">Hand-drawn stick figure with an orange backpack and trainers, square 512 px SVGs, about 6 KB each, 10 poses on the page plus the favicon and the canvas court's own drawing.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>Proposed</b> · the same hero with the pack's wave (mockup 25a)</div>
+        <div class="frame-body tight"><div class="shot-crop"><img src="../png/25a-homepage-proposal-1440.png" alt="The homepage hero with the pack's waving pose"></div></div>
+        <p class="frame-note">The pack's Doddy: round head, oval eyes, mitten hands, big trainers, no backpack, 2:3 PNGs. The same character the app shows and the new page is built from.</p>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label">Every homepage pose, and what the pack offers for it</div>
+      <div class="frame-body">
+        <div class="pairs">
+          <div class="pair same"><img src="../assets/site/doddy-pose-waving-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/wave.png" alt=""><span class="what"><b>Hero, favicon · waving → wave</b>Frame 4 of the pack's wave strip, cut by the repo's own tool. Exact match.</span></div>
+          <div class="pair same"><img src="../assets/site/doddy-pose-basketball-dribble-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/basketball_dribble.png" alt=""><span class="what"><b>Film corner, Meet · dribble → basketball dribble</b>Exact match.</span></div>
+          <div class="pair near"><img src="../assets/site/doddy-pose-memory-card-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/kneeling_inspect.png" alt=""><span class="what"><b>Step 1, memory game · memory card → kneeling inspect</b>The pack has no card-holding pose. Kneeling to look is the app's own choice for notes (UploadedDoddy_Inspect). Loses the card.</span></div>
+          <div class="pair same"><img src="../assets/site/doddy-pose-reading-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/belly_reading.png" alt=""><span class="what"><b>Step 2 · reading → belly reading</b>Same idea, lying down.</span></div>
+          <div class="pair same"><img src="../assets/site/doddy-pose-fist-bump-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/fistpump.png" alt=""><span class="what"><b>Step 3 · fist bump → fist pump</b>Exact match; the app's "Kept" pose.</span></div>
+          <div class="pair near"><img src="../assets/site/doddy-pose-pointing-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/shrug.png" alt=""><span class="what"><b>"I couldn't find that" · pointing → shrug</b>No pointing pose in the pack. The shrug fits the line better than the point did.</span></div>
+          <div class="pair same"><img src="../assets/site/doddy-pose-listening-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/listening.png" alt=""><span class="what"><b>Voice · listening → listening</b>Exact match; the app's Listening pose.</span></div>
+          <div class="pair near"><img src="../assets/site/doddy-pose-holding-coffee-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/leaning.png" alt=""><span class="what"><b>Meet · holding coffee → leaning (+ the pack's coffee prop beside him)</b>No coffee-holding pose; the prop sheet has the cup, placed next to him, not in his hand.</span></div>
+          <div class="pair near"><img src="../assets/site/doddy-pose-working-laptop-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/crosslegged.png" alt=""><span class="what"><b>Meet · working at a laptop → cross-legged (+ the laptop prop)</b>Same rule: the prop sits beside him.</span></div>
+          <div class="pair near"><img src="../assets/site/doddy-pose-relaxing-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/oneleg_balance.png" alt=""><span class="what"><b>Meet · relaxing → one-leg balance</b>"Jokes about the queue, never about you" wants a playful pose; the pack's relaxing poses (belly reading, cross-legged) are already used.</span></div>
+          <div class="pair near"><img src="../assets/site/doddy-pose-basketball-shot-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><img src="../assets/poses/reaching_high.png" alt=""><span class="what"><b>Join · basketball shot → reaching high</b>The pack's basketball sheet (02-pose-sheets) has shooting frames that are not imported yet; reaching high stands in until the owner approves that cut.</span></div>
+          <div class="pair near" style="grid-template-columns: 96px 24px minmax(0, 1fr)"><img src="../assets/site/doddy-pose-basketball-shot-light-v1.3-r1.svg" alt=""><span class="arrow">→</span><span class="what"><b>"Take a shot" · the canvas draws its own Doddy</b>court.js draws him in code. It would need redrawing to the pack's proportions, or the game shows a pack pose (dribble) and animates only the ball. The second is cheaper and keeps the rule.</span></div>
+        </div>
+      </div>
+      <p class="frame-note">Green edge: exact match. Orange edge: nearest pose, with what it loses. Nothing here is redrawn; props are placed, never put in his hand.</p>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label">Three ways forward</div>
+      <div class="frame-body">
+        <div class="opts">
+          <div class="opt pick">
+            <h3>A · Swap the homepage to the pack now <span class="cap built" style="margin-left: 6px">recommended</span></h3>
+            <ul>
+              <li>One Doddy everywhere: the app, the new page, the homepage, the favicon.</li>
+              <li>The rule already says so (CLAUDE.md, 11 October) and the site README lists it as owed.</li>
+              <li>Eleven swaps, four of them exact, five nearest-with-a-prop, two waiting on cuts (basketball sheet, canvas).</li>
+              <li>Cost: an afternoon. Weight: SVGs of 6 KB become PNGs; at two sizes (320 and 640 px, WebP) about 25 to 60 KB each, so the homepage grows by roughly 350 KB, lazy-loaded below the hero.</li>
+              <li>Risk: the v1.3 backpack and basketball go; "orange backpack" in the Meet copy becomes a copy edit (proposed).</li>
+            </ul>
+          </div>
+          <div class="opt">
+            <h3>B · Keep both for now</h3>
+            <ul>
+              <li>Reason to: the v1.3 set is still a candidate brand master the owner has not formally retired, and the pack's README calls its poses concept art to be redrawn.</li>
+              <li>Cost: nothing today. Price: the new page launches with a different Doddy from the page it links from; the one contradiction every visitor sees.</li>
+              <li>Only defensible if the owner plans to retire the pack, not the SVGs.</li>
+            </ul>
+          </div>
+          <div class="opt">
+            <h3>C · Swap the new page to v1.3 instead</h3>
+            <ul>
+              <li>Also one Doddy, and the SVGs are lighter.</li>
+              <li>But it breaks the character-art rule, contradicts the app (where the pack is live), and the v1.3 set has no scenery, no props, no walk, run, jump or pop strips: the whole Phase 2 motion plan would go.</li>
+              <li>Not recommended.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <p class="frame-note"><b>Decision for the owner:</b> A, B or C. If A: approve the five nearest-pose swaps and the two pending cuts (basketball sheet shooting frame; a pack pose for the court game). The hero in mockup 25a shows A.</p>
+    </div>
+  </div>
+</body>
+</html>

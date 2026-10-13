@@ -34,6 +34,18 @@ const shots = [
   ['13-headline-options.html', '13-headline-options-1440', 1440, 900, true],
   ['14-copy-deck.html', '14-copy-deck-1440', 1440, 900, true],
   ['15-showcase-alternatives.html', '15-showcase-alternatives-1440', 1440, 900, true],
+  ['16-full-page-beats.html', '16-full-page-beats-1440', 1440, 900, true],
+  ['16-full-page-beats.html', '17-full-page-beats-390', 390, 844, true],
+  ['18-hero-scene.html', '18-hero-scene-1440', 1440, 900, true],
+  ['19-between-moments.html', '19-between-moments-1440', 1440, 900, true],
+  ['20-time-of-day.html', '20-time-of-day-1440', 1440, 900, true],
+  ['21-motion-spec.html', '21-motion-spec-1440', 1440, 900, true],
+  ['22-wow.html', '22-wow-1440', 1440, 900, true],
+  ['23-consistency-audit.html', '23-consistency-audit-1440', 1440, 900, true],
+  ['24-character-art.html', '24-character-art-1440', 1440, 900, true],
+  ['25-site-improvements.html', '25-site-improvements-1440', 1440, 900, true],
+  ['25a-homepage-proposal.html', '25a-homepage-proposal-1440', 1440, 900, true],
+  ['25a-homepage-proposal.html', '25a-homepage-proposal-390', 390, 844, true],
   ['02-hero-a.html', '02-hero-a-390', 390, 844, false],
   ['03-hero-b.html', '03-hero-b-390', 390, 844, false],
   ['04-hero-c.html', '04-hero-c-390', 390, 844, false],
@@ -76,8 +88,18 @@ for (const [file, out, width, height, fullPage] of shots) {
   await page.goto(`http://127.0.0.1:${port}/mockups/${file}`, { waitUntil: 'networkidle' });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForTimeout(400);
-  const families = await page.evaluate(() => [...new Set([...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '')))]);
-  for (const need of ['Bricolage Grotesque', 'Caveat']) if (!families.includes(need)) errors.push(`${file}: font not loaded: ${need}`);
+  // A web font the page uses must have loaded; one the page never uses is not asked for by the browser.
+  const fontCheck = await page.evaluate(() => {
+    const loaded = new Set([...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '')));
+    const used = new Set();
+    for (const el of document.querySelectorAll('body, body *')) {
+      const ff = getComputedStyle(el).fontFamily;
+      if (ff.includes('Caveat')) used.add('Caveat');
+      if (ff.includes('Bricolage Grotesque')) used.add('Bricolage Grotesque');
+    }
+    return [...used].filter((f) => !loaded.has(f));
+  });
+  for (const f of fontCheck) errors.push(`${file}: font not loaded: ${f}`);
   const scroll = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   if (scroll) errors.push(`${file} @${width}: horizontal scroll`);
   await page.screenshot({ path: path.join(outDir, `${out}.png`), fullPage });

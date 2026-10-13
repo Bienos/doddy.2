@@ -1,0 +1,157 @@
+<!--
+title: Mockup 21, motion spec sheet
+active: wcd
+-->
+{{> head}}
+<body class="board">
+  <style>
+    .spec table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .spec th, .spec td { text-align: left; vertical-align: top; padding: 8px 10px; border-top: 1px solid var(--separator); }
+    .spec th { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; color: var(--secondary-text); border-top: 0; }
+    .spec td:first-child { font-weight: 650; }
+    .spec code { font-size: 0.8125rem; background: var(--quiet-surface); padding: 1px 5px; border-radius: 5px; }
+    .budget { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .budget div { padding: 16px 18px; background: var(--paper); border: 1px solid var(--separator); border-radius: 16px; }
+    .budget b { display: block; font-family: var(--display); font-size: 1.6rem; font-weight: 760; letter-spacing: -0.02em; line-height: 1; margin-bottom: 6px; }
+    .budget span { font-size: 0.875rem; color: var(--secondary-text); }
+    .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .two-col ul { margin: 0; padding-left: 18px; font-size: 0.9375rem; }
+    .two-col li { margin: 0 0 6px; }
+  </style>
+  <div class="board-wrap spec">
+    <div class="board-head">
+      <h1>21 · Motion spec sheet</h1>
+      <p>Everything that moves on the page, with its number. Transform and opacity on still frames; text reveals but never travels.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><b>The budget</b></div>
+      <div class="frame-body">
+        <div class="budget">
+          <div><b>1.8 s</b><span>longest sequence, a scene's three beats, start to rest</span></div>
+          <div><b>0</b><span>loops. Nothing repeats on its own; every move has an end frame</span></div>
+          <div><b>1</b><span>thing at a time. A beat, a travel or a surprise, never two together</span></div>
+          <div><b>once</b><span>per visit per moment. A replay button re-runs a scene by choice</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frames two" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>What moves, and what never does</b></div>
+        <div class="frame-body two-col">
+          <div>
+            <h3 style="margin:0 0 8px; font-size:1.05rem">Moves (transform, opacity)</h3>
+            <ul>
+              <li>Doddy: frame swaps from the pack's strips, plus translateX along a path.</li>
+              <li>Objects and props: translateY on drop-in, rotate for a rattle or a tip, scaleY for a page flip.</li>
+              <li>Bubbles and cards: scale .97 → 1 with opacity (the homepage's bubble-pop), translateY 24 px → 0.</li>
+              <li>Stamps: scale 1.3 → 1 with opacity.</li>
+              <li>The scribble underline: clip-path reveal (the homepage's own rule).</li>
+              <li>Effects (burst, puff, dash lines, question mark): opacity, sometimes scale.</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="margin:0 0 8px; font-size:1.05rem">Never moves</h3>
+            <ul>
+              <li>Text never translates. Doddy's line is revealed word by word with a clip, inside a bubble that has already landed.</li>
+              <li>Layout never shifts: every animated thing is absolutely positioned or animates inside its own box, so nothing below it jumps.</li>
+              <li>Scenery never pans or zooms. The camera is a notebook page.</li>
+              <li>Doddy is never tweened between drawings; between frames he is one frame or the next.</li>
+              <li>Colour never animates (no glow pulsing, no orange flashing).</li>
+              <li>Nothing moves on the honesty panel, the join panel or the footer.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>Easings</b> · the site's own curves</div>
+        <div class="frame-body">
+          <table>
+            <thead><tr><th>Name</th><th>Curve</th><th>Where the homepage uses it</th><th>Used here for</th></tr></thead>
+            <tbody>
+              <tr><td>Arrive</td><td><code>cubic-bezier(.2,.8,.2,1)</code></td><td>hero pose settling, film card straightening, memory card flip</td><td>drop-ins, card slide-up, Doddy's walks and the scroll to a moment</td></tr>
+              <tr><td>Draw</td><td><code>cubic-bezier(.3,.7,.2,1)</code></td><td>the scribble underline</td><td>the time stamp writing itself, the scribble under "Pick one."</td></tr>
+              <tr><td>Touch</td><td><code>ease</code>, 150 ms</td><td>buttons, chapter buttons, memory card hover</td><td>object hover lift, label, line crossfade</td></tr>
+              <tr><td>Pop</td><td><code>cubic-bezier(.2,.8,.2,1)</code>, 260 ms</td><td>the memory game's bubble-pop</td><td>your bubble, the stamp</td></tr>
+              <tr><td>Strip</td><td><code>steps(n)</code></td><td>(new) frame swaps</td><td>every pack strip, 8 fps, no interpolation</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label"><b>Durations</b> · every move on the page</div>
+      <div class="frame-body">
+        <table>
+          <thead><tr><th>Move</th><th>Starts</th><th>Lasts</th><th>Easing</th><th>What changes</th><th>Reduced motion</th></tr></thead>
+          <tbody>
+            <tr><td colspan="6" style="font-family: var(--display); font-weight: 700; color: var(--reading-ink); background: var(--quiet-surface)">Hero (once, on load)</td></tr>
+            <tr><td>Doddy pops in</td><td>0 ms</td><td>320 ms</td><td>Strip</td><td>pop-in frames 1 to 4</td><td>final frame</td></tr>
+            <tr><td>Objects drop in</td><td>120 ms, 60 ms apart</td><td>300 ms each, done at 780 ms</td><td>Arrive</td><td>translateY -40 px → 0, opacity 0 → 1</td><td>in place</td></tr>
+            <tr><td>Wave</td><td>700 ms</td><td>400 ms</td><td>Strip</td><td>wave frames 1 to 5</td><td>final frame</td></tr>
+            <tr><td>"Pick one." underline</td><td>700 ms</td><td>650 ms</td><td>Draw</td><td>clip-path inset</td><td>drawn</td></tr>
+            <tr><td>Hover, focus, first tap</td><td>on input</td><td>150 ms</td><td>Touch</td><td>object translateY -5 px, border colour; label opacity; Doddy's line crossfade 120 ms; pose swap instant</td><td>same (150 ms is allowed; the homepage keeps its hover)</td></tr>
+            <tr><td>Selected: run out, scroll</td><td>on click</td><td>500 ms run, then 600 ms scroll</td><td>Strip, Arrive</td><td>run frames 1 to 6 with translateX 160 px; scroll-behavior</td><td>no run; instant scroll</td></tr>
+            <tr><td colspan="6" style="font-family: var(--display); font-weight: 700; color: var(--reading-ink); background: var(--quiet-surface)">A moment (once, when the card is 40% in view)</td></tr>
+            <tr><td>Beat 1 · entrance</td><td>0 ms</td><td>240 to 600 ms by strip</td><td>Strip + Arrive</td><td>walk/run/tiptoe/pop/jump/turn/sit frames; translateX up to 120 px</td><td>resting pose, in place</td></tr>
+            <tr><td>Beat 1 · time stamp</td><td>0 ms</td><td>300 ms</td><td>Draw</td><td>clip-path reveal of the handwritten time</td><td>visible</td></tr>
+            <tr><td>Beat 1 · prop reacts</td><td>300 ms</td><td>200 to 240 ms</td><td>Touch</td><td>rotate ±6°, translate ±2 px, scaleY flip, or opacity for steam and marks</td><td>still</td></tr>
+            <tr><td>Beat 2 · your bubble</td><td>600 ms</td><td>150 ms</td><td>Pop</td><td>scale .97 → 1, opacity</td><td>visible</td></tr>
+            <tr><td>Beat 2 · pose swap</td><td>750 ms</td><td>0 ms</td><td>none</td><td>image swap</td><td>resting pose from the start</td></tr>
+            <tr><td>Beat 2 · Doddy's line</td><td>750 ms</td><td>700 ms, word by word (longer lines go faster, never longer)</td><td>linear steps</td><td>clip reveal per word; a 2 px caret at the end until done</td><td>whole line, no caret</td></tr>
+            <tr><td>Beat 3 · card</td><td>1450 ms</td><td>300 ms</td><td>Arrive</td><td>translateY 24 px → 0, opacity</td><td>visible</td></tr>
+            <tr><td>Beat 3 · stamp</td><td>1600 ms</td><td>200 ms</td><td>Pop</td><td>scale 1.3 → 1, opacity</td><td>visible</td></tr>
+            <tr><td>Choices (chips)</td><td>on tap</td><td>200 ms</td><td>Touch</td><td>card text crossfade; card height follows the text</td><td>instant swap</td></tr>
+            <tr><td>Replay (↻)</td><td>on tap</td><td>1.8 s</td><td>as above</td><td>the three beats again, from beat 1</td><td>button hidden</td></tr>
+            <tr><td colspan="6" style="font-family: var(--display); font-weight: 700; color: var(--reading-ink); background: var(--quiet-surface)">Between moments</td></tr>
+            <tr><td>Walk</td><td>strip 30% in view</td><td>600 ms</td><td>Strip + Arrive</td><td>walk frames 1 to 5, translateX 120 px</td><td>frame 5 at the end of the path</td></tr>
+            <tr><td>Run</td><td>same</td><td>500 ms</td><td>Strip, ease-in-out</td><td>run frames 1 to 6, translateX 200 px, dash lines opacity</td><td>frame 6</td></tr>
+            <tr><td>Stop to look</td><td>same</td><td>400 + 200 ms</td><td>Strip, Touch</td><td>walk 80 px, pose swap, question mark opacity</td><td>kneeling frame</td></tr>
+            <tr><td>Surprise (one of four)</td><td>after two moments, when its spot is in view, never within 2 s of another move</td><td>300 ms</td><td>Arrive</td><td>translateX 30 px → 0 or opacity 0 → 1</td><td>in place</td></tr>
+            <tr><td>Day strip current state</td><td>on scroll</td><td>150 ms</td><td>Touch</td><td>border and inset underline colour (the chapters' aria-current rule)</td><td>same</td></tr>
+            <tr><td>Paper sun</td><td>never</td><td>0</td><td>none</td><td>position and opacity are fixed per section</td><td>same</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="frames two" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>The pack's strips</b> · what plays at 8 fps</div>
+        <div class="frame-body">
+          <table>
+            <thead><tr><th>Strip</th><th>Pack file</th><th>Frames used</th><th>Length</th><th>Where</th></tr></thead>
+            <tbody>
+              <tr><td>Walk</td><td>012_doddy_walk_v01</td><td>1 to 5 of 8</td><td>600 ms</td><td>08:45 and 18:45 entrances; after 08:45, 20:15, 23:30</td></tr>
+              <tr><td>Run</td><td>014_doddy_run_v01</td><td>1 to 6</td><td>500 ms</td><td>13:00 and 20:15 entrances; out of the hero; after 13:00</td></tr>
+              <tr><td>Jump</td><td>015_doddy_jump_v01</td><td>1 to 5</td><td>500 ms</td><td>Away entrance; the homepage crossing (mockup 11)</td></tr>
+              <tr><td>Pop-in</td><td>019_doddy_pop_v01</td><td>2 to 4 (frame 1 is a dot)</td><td>240 to 320 ms</td><td>hero load; 09:10 and 15:30 entrances</td></tr>
+              <tr><td>Turn</td><td>018_doddy_turn_v01</td><td>5, 1, 2, 3</td><td>300 ms</td><td>15:30 and 23:30 entrances</td></tr>
+              <tr><td>Sit</td><td>017_doddy_sit_v01</td><td>2 to 5</td><td>400 ms</td><td>22:30 entrance</td></tr>
+              <tr><td>Wave</td><td>016_doddy_wave_v01</td><td>1 to 5</td><td>400 ms</td><td>hero at 700 ms; join panel on "You're on the list"</td></tr>
+              <tr><td>Tiptoe</td><td>doddy_tiptoe_v02 (one pose)</td><td>1</td><td>500 ms slide</td><td>10:20 entrance</td></tr>
+              <tr><td>Idle, talking, blink</td><td>013, 020, 007</td><td>none</td><td>—</td><td>not used; idle is still (open decision: a blink from 007)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="frame-note">Frames are the app's own cut-outs of the pack (the DoddyMotion image sets), so the website and the app move the same way. Each strip is one sprite image per size, swapped with <code>steps()</code>; a moment never needs more than ten frames.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>Triggers, loading and the fallbacks</b></div>
+        <div class="frame-body">
+          <ul style="margin:0; padding-left:18px; font-size:.9375rem; line-height:1.5">
+            <li><b>Scroll triggers</b> use one IntersectionObserver: a card at 40% visibility starts its beats, a travel strip at 30% starts its walk, the day strip's current moment follows the card that is most in view. Each fires once; a flag per moment in memory, not in storage.</li>
+            <li><b>Preloading:</b> when a moment reaches 60% the next moment's strip and poses are fetched, so a swap never shows a blank. Scenery is lazy-loaded one moment ahead.</li>
+            <li><b>Reduced motion</b> (<code>prefers-reduced-motion: reduce</code>): the page is beat 3 everywhere, the travels show their last frame, the surprise is a still, hover keeps its 150 ms, the replay button is hidden. The homepage's own rule (every transition and animation off) still applies on top.</li>
+            <li><b>No JavaScript:</b> the page is beat 3 everywhere; the object ring is seven links; the day strip is a list of links. Nothing is hidden behind script.</li>
+            <li><b>Phones:</b> same beats, same timings; entrances are shorter paths (60 px) because the card is narrower. Tap replaces hover in the hero (mockup 18).</li>
+            <li><b>Battery and data:</b> frames are swapped, not decoded video; no requestAnimationFrame loop runs when nothing is animating; <code>will-change: transform</code> is set only for the 1.8 s a beat plays.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
