@@ -287,9 +287,17 @@ test("the Outlook draft is created once with the approved arguments, never sent,
   const stored = await kept(rig);
   for (const secret of ["budget", "Monday", "marta@demo.example"]) assert.ok(!stored.includes(secret), secret);
 
+  // A repeat of the same approval (the phone lost the answer) gets the first answer; nothing runs again (ADR-322).
+  assert.ok(typeof done.body.externalId === "string" && done.body.externalId !== "", "Outlook's draft id comes back");
   const again = await run(rig, "draft_outlook_email", DRAFT, { approvalId });
-  assert.equal(again.status, 403, "single use");
+  assert.equal(again.status, 200, again.text);
+  assert.equal(again.body.replayed, true);
+  assert.equal(again.body.text, done.body.text);
+  assert.equal(again.body.externalId, done.body.externalId);
+  assert.match(again.body.receipt.summary, /nothing ran again/);
   assert.equal(slugs(rig).filter((s) => s === "OUTLOOK_CREATE_DRAFT").length, 1);
+  // Changed words with that approval are still refused.
+  assert.equal((await run(rig, "draft_outlook_email", { ...DRAFT, body: "Other" }, { approvalId })).status, 403);
 });
 
 test("an Outlook draft answer without a draft id is 'outcome_unknown', never done, and is not retried", async () => {

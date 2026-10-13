@@ -72,12 +72,15 @@ public enum PlanBlock: Equatable, Sendable {
     /// Doddy's server didn't prepare a Gmail or Todoist step (not set up, switched off, not
     /// connected, unreachable). `screen` is for the card; `reply` is the agent's line.
     case onlineAccount(screen: String, reply: String)
+    /// Tried `count` times in the last day without a confirmed result (ActionRetry, ADR-319).
+    case tooManyTries(app: ActivityApp, count: Int)
 
     public var screenText: String {
         switch self {
         case .paused: "Skipped: connections are paused"
         case .notConnected(let connection): "\(connection.title) isn't connected"
         case .onlineAccount(let screen, _): screen
+        case .tooManyTries(let app, let count): "Tried \(count) times in the last day without a confirmed result. Look in \(app.title) first."
         }
     }
 
@@ -87,6 +90,7 @@ public enum PlanBlock: Equatable, Sendable {
         case .paused: ConnectionPause.reply
         case .notConnected(let connection): "failed: \(connection.title) isn't connected. Nothing was done."
         case .onlineAccount(_, let reply): reply
+        case .tooManyTries(let app, let count): VoiceToolReply.retryStopped(count: count, app: app)
         }
     }
 }

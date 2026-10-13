@@ -169,6 +169,8 @@ struct RootView: View {
                     pickUpSharedItem()
                 }
                 if phase == .background {
+                    // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
+                    UnfinishedNoteStore.shared.flush()
                     WidgetSync.shared.refresh()
                     AppLock.shared.wentToBackground()
                     QuickActions.install()
@@ -240,6 +242,8 @@ struct RootView: View {
             listener.forgetFinishedConversation()
         }
         listener.appBecameActive()
+        // The listening indicator above every screen (ADR-361).
+        ListeningIndicatorWindow.shared.install()
     }
 
     /// What the opening's rules need to know right now (ADR-225). Read at decision time, so a

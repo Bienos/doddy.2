@@ -143,7 +143,7 @@ final class ReminderActionTests: XCTestCase {
     func testAddWritesOnceAndReportsWhatWasReadBack() async {
         let store = FakeReminderStore()
         let outcome = await ReminderAction.add(milk, to: store, now: now)
-        XCTAssertEqual(outcome, .added(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: due(2026, 10, 12, 18, 0))))
+        XCTAssertEqual(outcome, .added(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: due(2026, 10, 12, 18, 0), id: "r1")))
         XCTAssertEqual(store.saves, 1)
         XCTAssertEqual(store.items.first?.markerURL, ReminderWrite(milk).markerURL)
         XCTAssertEqual(store.items.first?.due?.timeZoneID, warsaw, "the zone is written explicitly")
@@ -155,7 +155,7 @@ final class ReminderActionTests: XCTestCase {
         _ = await ReminderAction.add(milk, to: store, now: now)
         // A double tap, or the agent asking again with a new tool call after a timeout.
         let again = await ReminderAction.add(ReminderDraft(title: "buy milk", due: due(2026, 10, 12, 18, 0), notes: "2%"), to: store, now: now)
-        XCTAssertEqual(again, .alreadyThere(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: due(2026, 10, 12, 18, 0))))
+        XCTAssertEqual(again, .alreadyThere(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: due(2026, 10, 12, 18, 0), id: "r1")))
         XCTAssertEqual(store.saves, 1)
         XCTAssertEqual(store.items.count, 1)
     }
@@ -165,7 +165,7 @@ final class ReminderActionTests: XCTestCase {
         let store = FakeReminderStore()
         store.items = [ReminderSnapshot(id: "own", title: "Buy Milk", listTitle: "Groceries", due: due(2026, 10, 12, 18, 0), markerURL: nil)]
         await assertMilk(store,
-                       .alreadyThere(ReminderReceipt(title: "Buy Milk", listTitle: "Groceries", due: due(2026, 10, 12, 18, 0))))
+                       .alreadyThere(ReminderReceipt(title: "Buy Milk", listTitle: "Groceries", due: due(2026, 10, 12, 18, 0), id: "own")))
         XCTAssertEqual(store.saves, 0)
 
         store.items = [ReminderSnapshot(id: "done", title: "Buy milk", listTitle: "Reminders", due: due(2026, 10, 12, 18, 0), markerURL: nil, isCompleted: true)]
@@ -200,7 +200,7 @@ final class ReminderActionTests: XCTestCase {
         let store = FakeReminderStore()
         store.saveBehaviour = .writeThenThrow
         await assertMilk(store,
-                       .added(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: due(2026, 10, 12, 18, 0))))
+                       .added(ReminderReceipt(title: "Buy milk", listTitle: "Reminders", due: due(2026, 10, 12, 18, 0), id: "r1")))
         store.saveBehaviour = .write
         guard case .alreadyThere = await ReminderAction.add(milk, to: store, now: now) else { return XCTFail() }
         XCTAssertEqual(store.items.count, 1)
@@ -302,7 +302,8 @@ final class ReminderActionTests: XCTestCase {
             """)
         XCTAssertEqual(VoiceToolReply.reminder(.notAdded(.notAllowed)), "failed: Reminders isn't connected. Nothing was added.")
         XCTAssertTrue(VoiceToolReply.reminder(.notAdded(.couldNotCheck)).hasPrefix("failed: "))
-        XCTAssertEqual(VoiceToolReply.reminder(.unknown), VoiceToolReply.addUnconfirmed)
+        XCTAssertEqual(VoiceToolReply.reminder(.unknown), VoiceToolReply.unconfirmedLooksFirst(app: .reminders, tool: VoiceToolName.createReminder))
+        XCTAssertTrue(VoiceToolReply.reminder(.unknown).hasPrefix("unknown: "))
         for outcome in [ReminderOutcome.added(receipt), .alreadyThere(receipt)] {
             XCTAssertFalse(VoiceToolReply.reminder(outcome).contains("Groceries"), "the list name stays on the phone")
         }

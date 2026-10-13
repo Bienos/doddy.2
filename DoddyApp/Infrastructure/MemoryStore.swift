@@ -197,6 +197,8 @@ final class MemoryStore {
         environment.audioFiles.deleteOrphans(keeping: [])
         recentlyDeletedAudio = nil
         await environment.noteReminders?.allMemoriesDeleted()
+        // Unfinished notes go too (ADR-362).
+        UnfinishedNoteStore.shared.removeAll()
         await reload()
     }
 

@@ -64,6 +64,8 @@ extension VoiceToolReply {
                 if receipt?.errorCode == "confirmation_required" {
                     return "failed: the confirmation expired before it was used. Nothing was done. Offer to try again."
                 }
+                // A repeat of a confirmation whose first run may have gone through (ADR-322).
+                if receipt?.errorCode == "earlier_outcome_unknown" || receipt?.status == .outcomeUnknown { return maybeDone }
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
             case "not_connected", "connection_expired", "permission_insufficient":
                 return "failed: \(account) isn't connected or needs reconnecting. Tell the user they can connect it in Settings, Online accounts. Nothing was done."

@@ -21,13 +21,17 @@ public struct ConversationLog: Equatable, Sendable, Codable, Identifiable {
     /// Who ran the voice (`VoiceProvider` raw value), for comparing the two in testing (ADR-265).
     /// Logs kept before ADR-265 have none. Never sent to either provider.
     public let voiceProvider: String?
+    /// How it ended (`VoiceSessionEnd.code`, ADR-360): "user", "doddy", "quiet" or "dropped-…".
+    /// Logs kept before ADR-360 have none. Never sent to the voice provider as such.
+    public let ended: String?
 
-    public init(id: UUID = UUID(), startedAt: Date, endedAt: Date, lines: [Line], voiceProvider: String? = nil) {
+    public init(id: UUID = UUID(), startedAt: Date, endedAt: Date, lines: [Line], voiceProvider: String? = nil, ended: String? = nil) {
         self.id = id
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.lines = lines
         self.voiceProvider = voiceProvider
+        self.ended = ended
     }
 }
 

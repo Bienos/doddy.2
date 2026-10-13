@@ -221,6 +221,17 @@
         }
       }
     },
+    "No reminders coming up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak nadchodzących przypomnień."
+          }
+        }
+      }
+    },
     "Note saved": {
       "extractionState": "manual",
       "localizations": {

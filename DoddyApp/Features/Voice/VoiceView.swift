@@ -112,7 +112,7 @@ struct VoiceView: View {
                         HStack(alignment: .center, spacing: 16) {
                             VoiceDoddyView(art: screenArt(controller))
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(statusTitle(controller.phase))
+                                Text(statusTitle(controller))
                                     .font(.title2.bold())
                                     .accessibilityIdentifier("voice.status")
                                 if controller.isMuted && controller.isLive {
@@ -287,9 +287,17 @@ struct VoiceView: View {
             }
         case .failed(let message):
             if controller.isOffline {
-                OfflineNoteCard(controller: controller)
+                OfflineNoteCard(controller: controller, startText: controller.recovery?.text ?? "")
             } else {
                 ProblemView(message: message)
+                if controller.recovery != nil || controller.recoverySaved != nil {
+                    RecoveryDraftCard(controller: controller)
+                }
+            }
+        case .ended:
+            // After Stop listening (ADR-361): the note Doddy was asking about, as a draft.
+            if controller.recovery != nil || controller.recoverySaved != nil {
+                RecoveryDraftCard(controller: controller)
             }
         default:
             EmptyView()
@@ -1351,7 +1359,20 @@ struct VoiceView: View {
     }
 
     private func controls(_ controller: VoiceSessionController) -> some View {
-        HStack(spacing: 12) {
+        VStack(spacing: 12) {
+            // "Listen until I finish" (ADR-364); not in translator mode, which has its own hold-to-talk.
+            if controller.isLive && controller.translator == nil || controller.longTurn != .off {
+                LongTurnPanel(controller: controller)
+            }
+            HStack(spacing: 12) { mainControls(controller) }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .background(Theme.canvas)
+    }
+
+    @ViewBuilder
+    private func mainControls(_ controller: VoiceSessionController) -> some View {
             if controller.isLive {
                 Button {
                     Task { await controller.toggleMute() }
@@ -1359,6 +1380,7 @@ struct VoiceView: View {
                     Label(controller.isMuted ? "Unmute" : "Mute", systemImage: controller.isMuted ? "mic.slash" : "mic")
                 }
                 .buttonStyle(SecondaryButtonStyle())
+                .disabled(controller.longTurn != .off)
                 Button {
                     Task { await controller.stop() }
                 } label: {
@@ -1374,10 +1396,6 @@ struct VoiceView: View {
                 }
                 .buttonStyle(PrimaryButtonStyle())
             }
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 12)
-        .background(Theme.canvas)
     }
 
     /// Doddy's pose on this screen (ADR-299), the island's for the same moment.
@@ -1396,15 +1414,16 @@ struct VoiceView: View {
                       awaitingConfirmation: controller.pendingAction != nil, planRunning: planRunning)
     }
 
-        private func statusTitle(_ phase: VoiceSessionController.Phase) -> String {
-        switch phase {
+        private func statusTitle(_ controller: VoiceSessionController) -> String {
+        switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
         case .thinking: NSLocalizedString("Thinking…", comment: "")
         case .speaking: NSLocalizedString("Speaking", comment: "")
         case .ended: NSLocalizedString("Conversation ended", comment: "")
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
-        case .failed: NSLocalizedString("Couldn't connect", comment: "")
+        // A drop after Doddy was listening says so; it is never "Couldn't connect" (ADR-360).
+        case .failed: controller.endTitle ?? NSLocalizedString("Couldn't connect", comment: "")
         }
     }
 }
@@ -1413,7 +1432,10 @@ struct VoiceView: View {
 /// saved on this iPhone after Save and read back; nothing is queued to send later.
 struct OfflineNoteCard: View {
     let controller: VoiceSessionController
+    /// After a drop, what Doddy last heard (ADR-360); the user edits or clears it.
+    var startText = ""
     @State private var text = ""
+    @State private var started = false
     @State private var isSaving = false
     @State private var problem: String?
 
@@ -1444,12 +1466,149 @@ struct OfflineNoteCard: View {
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .onAppear {
+            guard !started else { return }
+            started = true
+            text = startText
+        }
     }
 
     private func save() async {
         isSaving = true
         defer { isSaving = false }
         problem = await controller.saveOfflineNote(text)
-        if problem == nil { text = "" }
+        if problem == nil {
+            text = ""
+            controller.discardRecovery()
+        }
+    }
+}
+
+/// After a conversation dropped (OP-023, ADR-360): what Doddy last heard and hadn't answered, or
+/// the note it was asking about, as a draft. It is not a note until Save; Discard drops it.
+struct RecoveryDraftCard: View {
+    let controller: VoiceSessionController
+    @State private var isSaving = false
+    @State private var problem: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let saved = controller.recoverySaved {
+                Label(String(format: NSLocalizedString("Saved as a note: “%@”", comment: ""), saved), systemImage: "checkmark.circle")
+                    .accessibilityIdentifier("voice.recovery.saved")
+            } else if let draft = controller.recovery {
+                Group {
+                    if draft.pendingNote != nil {
+                        Label("Doddy was asking to save this", systemImage: "text.bubble")
+                    } else {
+                        Label("Doddy last heard you say", systemImage: "text.bubble")
+                    }
+                }
+                .font(.headline)
+                Text("A draft, not a note: it's saved only if you tap Save as note.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                TextField("Draft", text: Binding(get: { controller.recovery?.text ?? "" }, set: { controller.editRecovery($0) }), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("voice.recovery.text")
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        HStack { Text("Save as note"); Spacer(); Image(systemName: "square.and.arrow.down") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(isSaving || draft.text.allSatisfy(\.isWhitespace))
+                    Button("Discard") { controller.discardRecovery() }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+                if let problem { ProblemView(message: problem) }
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.recovery")
+    }
+
+    private func save() async {
+        isSaving = true
+        defer { isSaving = false }
+        problem = await controller.saveRecovery()
+    }
+}
+
+/// "Listen until I finish" (OP-019, ADR-364): the button, the listening card with Done, writing
+/// out, and a turn that couldn't be sent, kept as a draft to retry, type or drop.
+struct LongTurnPanel: View {
+    let controller: VoiceSessionController
+    private var language: NotificationLanguage { .current }
+
+    var body: some View {
+        switch controller.longTurn {
+        case .off:
+            Button {
+                Task { await controller.startLongTurn() }
+            } label: {
+                Label { Text(verbatim: LongTurn.startLabel(language)) } icon: { Image(systemName: "hand.raised") }
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .accessibilityIdentifier("voice.longTurn.start")
+        case .listening(let since):
+            VStack(alignment: .leading, spacing: 10) {
+                Label { Text(verbatim: LongTurn.listeningTitle(language)).font(.headline) } icon: { Image(systemName: "waveform") }
+                Text(verbatim: LongTurn.listeningDetail(language))
+                    .font(.footnote).foregroundStyle(Theme.secondaryText)
+                TimelineView(.periodic(from: since, by: 1)) { context in
+                    Text(verbatim: "\(LongTurn.clock(context.date.timeIntervalSince(since))) / \(LongTurn.clock(LongTurn.maxSeconds))")
+                        .font(.footnote.monospacedDigit()).foregroundStyle(Theme.secondaryText)
+                }
+                HStack(spacing: 12) {
+                    Button {
+                        Task { await controller.finishLongTurn() }
+                    } label: {
+                        HStack { Text("Done"); Spacer(); Image(systemName: "checkmark") }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityIdentifier("voice.longTurn.done")
+                    Button("Cancel") { Task { await controller.cancelLongTurn() } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .padding(14)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+            .accessibilityIdentifier("voice.longTurn.listening")
+        case .writingOut:
+            HStack(spacing: 10) {
+                ProgressView()
+                Text(verbatim: LongTurn.writingOut(language)).font(.footnote)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        case .draft(let draft):
+            VStack(alignment: .leading, spacing: 10) {
+                ProblemView(message: LongTurn.problem(draft.problem, language))
+                TextField("What you said", text: Binding(get: { draft.text }, set: { controller.editLongTurn($0) }), axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("voice.longTurn.text")
+                HStack(spacing: 12) {
+                    if !draft.text.allSatisfy(\.isWhitespace) {
+                        Button {
+                            Task { await controller.retryLongTurn() }
+                        } label: {
+                            HStack { Text("Send"); Spacer(); Image(systemName: "arrow.up") }
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                    } else if draft.canWriteOutAgain {
+                        Button("Try again") { Task { await controller.retryLongTurn() } }
+                            .buttonStyle(PrimaryButtonStyle())
+                    }
+                    Button("Discard") { Task { await controller.discardLongTurn() } }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+            .padding(14)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
+            .accessibilityIdentifier("voice.longTurn.draft")
+        }
     }
 }

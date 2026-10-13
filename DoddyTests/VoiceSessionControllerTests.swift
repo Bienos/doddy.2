@@ -174,9 +174,10 @@ private final class FakeDevices: DeviceConnecting {
     func notificationAccess() async -> DeviceConnections.Access { accessResult }
     func events(in range: VoiceTimeRange) -> [CalendarEventSummary] { [] }
 
-    func addEvent(_ draft: CalendarEventDraft) throws -> (outcome: DeviceConnections.AddOutcome, eventID: String?) {
+    // CalendarEventWriter: an event saved is read back as written.
+    func saveEvent(_ draft: CalendarEventDraft) throws -> (event: CalendarEventSummary, eventID: String)? {
         writeCount += 1
-        return (.verified, nil)
+        return (CalendarEventSummary(id: "fake-event", title: draft.title, start: draft.start, end: draft.end, allDay: draft.allDay), "fake-event")
     }
 
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome {
@@ -212,9 +213,12 @@ private final class FakeDevices: DeviceConnecting {
 
     func reminderSnapshot(id: String) -> ReminderSnapshot? { nil }
 
-    func startTimer(_ draft: TimerDraft) async throws -> DeviceConnections.AddOutcome {
+    // TimerWriter: a timer scheduled is listed as waiting.
+    private var timers: [PendingTimer] = []
+    func pendingTimers() async -> [PendingTimer] { timers }
+    func scheduleTimer(_ draft: TimerDraft, identifier: String) async throws {
         writeCount += 1
-        return .verified
+        timers.append(PendingTimer(identifier: identifier, firesAt: Date().addingTimeInterval(TimeInterval(draft.seconds))))
     }
 
     func findContacts(named name: String) throws -> [DeviceConnections.ContactMatch] { [] }

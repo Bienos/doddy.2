@@ -123,9 +123,16 @@ test("the reply draft is created in the email's thread, to Gmail's sender, once,
   const stored = await kept(rig);
   for (const secret of ["Lunch", "1pm works", "anna", "from:anna"]) assert.ok(!stored.includes(secret), secret);
 
+  // A repeat of the same approval gets an answer from the first run, with none of this request's words (ADR-322).
+  assert.ok(typeof done.body.externalId === "string" && done.body.externalId !== "", "Gmail's draft id comes back");
   const again = await run(rig, "draft_email_reply", REPLY, { approvalId: prepared.body.approvalId });
-  assert.equal(again.status, 403, "single use");
+  assert.equal(again.status, 200, again.text);
+  assert.equal(again.body.replayed, true);
+  assert.equal(again.body.externalId, done.body.externalId);
+  assert.ok(!/anna|Lunch|1pm/.test(again.body.text), again.body.text);
+  assert.match(again.body.text, /^drafted: .*NOT sent/);
   assert.equal(slugs(rig).filter((s) => s === "GMAIL_CREATE_EMAIL_DRAFT").length, 1);
+  assert.equal(slugs(rig).filter((s) => s === "GMAIL_FETCH_EMAILS").length, 2, "no new lookup for the repeat");
 });
 
 test("no matching email, or a sender without an address, is refused at prepare with a receipt and no approval", async () => {
