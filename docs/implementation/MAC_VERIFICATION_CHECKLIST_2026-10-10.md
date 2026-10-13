@@ -396,6 +396,12 @@ Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources
 | W3 | Unset `PICOVOICE_ACCESS_KEY` on the server; fresh install; turn Hey Doddy on | A red line says the token server isn't set up; nothing claims to be listening |
 | W4 | Save your own key in "Use my own…", then remove it | Your key is used while saved; after removing it, the server's key is used again without fetching |
 
+## 4v. "Ask me about it" (ADR-403)
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Save "Gate code 4821"; on Home tap the waveform beside it | A conversation opens; after the greeting Doddy says the gate code is 4821 and asks what you'd like to do; nothing is saved or changed unless you ask |
+| N2 | Mark that note private (Face ID lock on) | No waveform beside it on Home |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |

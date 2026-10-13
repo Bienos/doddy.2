@@ -1090,6 +1090,17 @@
         }
       }
     },
+    "Ask me about it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj mnie o to"
+          }
+        }
+      }
+    },
     "Ask me anything.": {
       "extractionState": "manual",
       "localizations": {
