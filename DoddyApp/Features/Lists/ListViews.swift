@@ -131,10 +131,14 @@ struct ListDetailView: View {
         .background(Theme.canvas)
         .foregroundStyle(Theme.ink)
         // Only a change seen here counts: opening a list that was already finished doesn't jump.
-        .onChange(of: store.list(id: listID)?.open.count ?? 0) { old, new in
-            finishedNow = old > 0 && new == 0 && !(store.list(id: listID)?.items.isEmpty ?? true)
+        .onChange(of: openCount) { old, new in
+            finishedNow = old > 0 && new == 0 && hasItems
         }
     }
+
+    // Kept out of `body` so the compiler type-checks it in reasonable time.
+    private var openCount: Int { store.list(id: listID)?.open.count ?? 0 }
+    private var hasItems: Bool { !(store.list(id: listID)?.items.isEmpty ?? true) }
 
     private func content(_ list: DoddyList) -> some View {
         List {

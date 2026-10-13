@@ -1,3 +1,4 @@
+import DoddyCore
 import SwiftUI
 
 /// DODDY V2. Local text memory (M1) and the reviewed profile, voice with the ElevenLabs agent (V1),
