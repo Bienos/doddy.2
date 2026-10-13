@@ -165,7 +165,7 @@ public enum DataFlow {
                 note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
-                what: "Your access code.", when: "When a conversation starts, and once when you turn on \"Hey Doddy\" without a key of your own (to get its key).", isActive: state.tokenServerSet,
+                what: "Your access code.", when: "When a conversation starts.", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
@@ -191,14 +191,6 @@ public enum DataFlow {
                 note: state.siriReadsNotes
                     ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
                     : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
-            DataFlowRow(
-                id: "picovoice", destination: "Picovoice (the \"Hey Doddy\" detector)",
-                what: "The Picovoice AccessKey (your own, or the one Doddy's token server gave this iPhone), so Picovoice can check it and count its use. No sound: the wake word is detected on this iPhone.",
-                when: "When \"Hey Doddy\" listening starts.",
-                isActive: state.heyDoddyOn,
-                note: state.heyDoddyOn
-                    ? "After the wake word, the conversation goes to ElevenLabs exactly as if you had tapped Talk."
-                    : "\"Hey Doddy\" is off, so nothing goes there and the microphone isn't used for it."),
             DataFlowRow(
                 id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
@@ -241,7 +233,6 @@ public enum DataFlow {
         "doddyServer": "your Doddy server (Connected Apps)",
         "messagingServer": "your Doddy messaging server",
         "siri": "Siri (when you ask it)",
-        "picovoice": "Picovoice (\"Hey Doddy\" key check)",
         "askDoddy": "the Ask Doddy gateway",
     ]
 
@@ -274,7 +265,7 @@ public enum DataFlow {
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
-            "\"Hey Doddy\": what the microphone hears while it waits for the wake word is checked on this iPhone and not kept or sent.",
+            "\"Hey Doddy\": what the microphone hears while it waits for the wake word is written out by speech recognition on this iPhone only, and is not kept or sent.",
             "Access codes and tokens, in this iPhone's Keychain.",
         ]
     }

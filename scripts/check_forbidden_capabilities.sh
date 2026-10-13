@@ -9,10 +9,12 @@
 #  - the system authentication browser is used only by Connected Apps,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
-#  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
-#    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
+#  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos and in the "Hey Doddy"
+#    detector (SpeechWakeEngine.swift, ADR-472), and every recognition request in either sets
+#    requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
 #  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
-#  - the "Hey Doddy" wake-word engine (Picovoice Porcupine, ADR-254) only in WakeWordListener.swift,
+#  - the "Hey Doddy" wake-word engine is started only by WakeWordListener.swift (ADR-254), and no
+#    wake-word vendor library (Picovoice Porcupine, ADR-472) is linked or imported anywhere,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - on-device meaning search (NaturalLanguage embeddings) only inside DoddyApp/Features/Meaning (ADR-227);
@@ -87,10 +89,13 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
-# "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
-# isn't kept or sent" stays checkable.
+# "Hey Doddy" (ADR-254, ADR-472): the detector (SpeechWakeEngine.swift) is started only by
+# WakeWordListener.swift, and its one recognition request is on the device, so "what it hears
+# isn't kept or sent" stays checkable. A proprietary wake-word library must not come back.
 wake_file=DoddyApp/Features/Voice/WakeWordListener.swift
-wake_only='import Porcupine|PorcupineManager|Porcupine\(|import ios_voice_processor|VoiceProcessor\.instance'
+wake_engine_file=DoddyApp/Features/Voice/SpeechWakeEngine.swift
+wake_only='SpeechWakeEngine\('
+wake_vendor='import Porcupine|PorcupineManager|import ios_voice_processor|VoiceProcessor\.instance|picovoice|Picovoice'
 
 status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
@@ -110,8 +115,11 @@ fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
-  echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
+if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v -e "^$wake_file:" -e "^$wake_engine_file:"; then
+  echo "FAIL: the wake-word engine may only be started by $wake_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' --include='*.yml' "$wake_vendor" "${dirs[@]}" project.yml project-iphone.yml project-mac.yml | code_only; then
+  echo "FAIL: a wake-word vendor library (Picovoice) is linked or imported; it needs a paid licence for commercial use (ADR-472)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
   echo "FAIL: ElevenLabs code outside $voice_dir." >&2; status=1
@@ -119,8 +127,8 @@ fi
 if grep -RInE --include='*.swift' "$audio_only" "${dirs[@]}" | grep -v -e "^$voice_dir/" -e "^$memos_dir/"; then
   echo "FAIL: audio code outside $voice_dir and $memos_dir." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v "^$memos_dir/"; then
-  echo "FAIL: speech recognition outside $memos_dir (ADR-230)." >&2; status=1
+if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v -e "^$memos_dir/" -e "^$wake_engine_file:"; then
+  echo "FAIL: speech recognition outside $memos_dir and $wake_engine_file (ADR-230, ADR-472)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$watch_only" "${dirs[@]}" | grep -v -e "^$watch_link_dir/" -e "^$watch_app_dir/"; then
   echo "FAIL: WatchConnectivity outside $watch_link_dir and $watch_app_dir (ADR-232)." >&2; status=1
@@ -139,12 +147,12 @@ if grep -RInE --include='*.swift' 'import GRDB|DoddyPersistence|URLSession|impor
   echo "FAIL: the Mac desktop widget may only read the note count (ADR-439)." >&2; status=1
 fi
 if [ -d "$memos_dir" ]; then
-  for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$memos_dir"); do
+  for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$memos_dir" "$wake_engine_file"); do
     if ! grep -qE 'requiresOnDeviceRecognition = true' "$f"; then
       echo "FAIL: $f makes a speech request without requiresOnDeviceRecognition = true." >&2; status=1
     fi
   done
-  if grep -RInE --include='*.swift' 'requiresOnDeviceRecognition = false' "$memos_dir"; then
+  if grep -RInE --include='*.swift' 'requiresOnDeviceRecognition = false' "$memos_dir" "$wake_engine_file"; then
     echo "FAIL: speech recognition may not leave the iPhone (ADR-230)." >&2; status=1
   fi
 fi
@@ -223,5 +231,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos and the "Hey Doddy" detector, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

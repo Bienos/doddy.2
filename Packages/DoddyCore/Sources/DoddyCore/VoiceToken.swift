@@ -67,22 +67,6 @@ public enum VoiceTokenServer {
         }
     }
 
-    /// "Hey Doddy" for everyone (ADR-328): asks for the owner's Picovoice AccessKey.
-    public static let wakeWordKeyRequestBody = Data(#"{"provider":"picovoice"}"#.utf8)
-
-    /// Reply `{"accessKey": "…"}`, cleaned like a key the user would paste. A server from before
-    /// ADR-328 answers 400 (unknown provider), which is a server problem, never a key.
-    public static func wakeWordKey(status: Int, body: Data) -> Result<String, VoiceTokenError> {
-        guard status == 200 else {
-            if case .failure(let error) = token(status: status, body: body) { return .failure(error) }
-            return .failure(.serverProblem(status: status))
-        }
-        guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
-              let raw = json["accessKey"] as? String, let key = WakeAccessKey.clean(raw)
-        else { return .failure(.badResponse) }
-        return .success(key)
-    }
-
     public static func message(for error: VoiceTokenError) -> String {
         switch error {
         case .accessCodeRejected:

@@ -14,7 +14,9 @@ Authorization: Bearer <access code>
 → 500 {"error": "server_not_configured"} · 502/504 upstream errors
 ```
 
-### "Hey Doddy" key (ADR-328)
+### "Hey Doddy" key (ADR-328) — legacy, unused since ADR-472
+
+The app no longer asks for this: "Hey Doddy" now uses Apple's on-device speech recognition, with no key. The endpoint and `PICOVOICE_ACCESS_KEY` stay only for old app builds and can be removed once none are in use. Do not set `PICOVOICE_ACCESS_KEY` for a commercial product without a Picovoice commercial plan.
 
 So a tester can turn on "Hey Doddy" with one tap instead of making a Picovoice account, the app asks once
 for the owner's Picovoice AccessKey and keeps it in the iPhone's Keychain (Porcupine needs it on the phone):

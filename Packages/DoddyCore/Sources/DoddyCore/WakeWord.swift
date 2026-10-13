@@ -1,9 +1,9 @@
 import Foundation
 
 // "Hey Doddy" (ADR-254): an opt-in listening mode. While it is on and the user has opened Doddy,
-// the iPhone listens for the wake word on the device (Picovoice Porcupine, a keyword file the
-// user makes in the Picovoice Console). Saying it starts a normal voice conversation and the
-// Dynamic Island greets the user ("Hey Pat, what's up?").
+// the iPhone listens for the wake word on the device, with Apple's on-device speech recognition
+// (ADR-472; Picovoice before that), so there is no vendor, key or licence to bring. Saying it
+// starts a normal voice conversation and the Dynamic Island greets the user ("Hey Pat, what's up?").
 //
 // What iOS allows, and so what this promises: the microphone can only start while Doddy is open.
 // It keeps listening when the user leaves the app (background audio, the orange microphone dot
@@ -66,30 +66,28 @@ public enum WakePause: Equatable, Sendable {
     case tooManyWakeUps
 }
 
-/// What's missing before "Hey Doddy" can work.
-public enum WakeSetUpGap: Equatable, Sendable {
-    case accessKey, keywordFile, both
-}
-
 /// What the Settings row and the island say about the listener.
 public enum WakeListenerState: Equatable, Sendable {
     case off
-    case needsSetUp(WakeSetUpGap)
+    /// Speech recognition is off for Doddy in the iOS Settings app.
+    case speechNotAllowed
+    /// This iPhone can't recognize English on the device. Doddy won't send the sound to Apple
+    /// instead, so "Hey Doddy" stays off.
+    case speechUnavailable
     case microphoneDenied
     /// On, but iOS lets the microphone start only while Doddy is open.
     case waitingForApp
     case listening
     case paused(WakePause)
-    /// Picovoice refused the key or the keyword file, or the microphone couldn't start.
+    /// The microphone or speech recognition couldn't start.
     case failed(String)
 
     /// Plain words for Settings.
     public var summary: String {
         switch self {
         case .off: "Off."
-        case .needsSetUp(.accessKey): "Add your Picovoice AccessKey to turn this on."
-        case .needsSetUp(.keywordFile): "Add your “Hey Doddy” keyword file to turn this on."
-        case .needsSetUp(.both): "Add your Picovoice AccessKey and “Hey Doddy” keyword file to turn this on."
+        case .speechNotAllowed: "Doddy isn't allowed to use speech recognition. Allow it in iOS Settings, Doddy."
+        case .speechUnavailable: "This iPhone can't recognize English on the device, and Doddy never sends this sound to Apple, so “Hey Doddy” stays off."
         case .microphoneDenied: "Doddy isn't allowed to use the microphone. Allow it in iOS Settings, Doddy."
         case .waitingForApp: "On. Listening starts when Doddy is open (iOS only lets it start then)."
         case .listening: "Listening for “Hey Doddy” on this iPhone."
@@ -108,10 +106,11 @@ public enum WakeListenerState: Equatable, Sendable {
 /// Everything the listener's state depends on, read fresh each time it is worked out.
 public struct WakeConditions: Equatable, Sendable {
     public enum Microphone: Equatable, Sendable { case allowed, denied, notAsked }
+    /// Speech recognition on this iPhone, for the language and without sending sound to Apple.
+    public enum Speech: Equatable, Sendable { case allowed, denied, notAsked, unavailable }
 
     public var switchedOn: Bool
-    public var hasAccessKey: Bool
-    public var hasKeywordFile: Bool
+    public var speech: Speech
     public var microphone: Microphone
     /// A conversation is live or the voice screen is open.
     public var conversationOrVoiceScreen: Bool
@@ -130,13 +129,12 @@ public struct WakeConditions: Equatable, Sendable {
     /// Why the last start failed, until something changes.
     public var startFailure: String?
 
-    public init(switchedOn: Bool, hasAccessKey: Bool, hasKeywordFile: Bool, microphone: Microphone,
+    public init(switchedOn: Bool, speech: Speech, microphone: Microphone,
                 conversationOrVoiceScreen: Bool, appSoundPlaying: Bool = false, lowPowerMode: Bool,
                 interrupted: Bool, overWakeLimit: Bool, mayStartMicrophone: Bool, running: Bool,
                 startFailure: String? = nil) {
         self.switchedOn = switchedOn
-        self.hasAccessKey = hasAccessKey
-        self.hasKeywordFile = hasKeywordFile
+        self.speech = speech
         self.microphone = microphone
         self.conversationOrVoiceScreen = conversationOrVoiceScreen
         self.appSoundPlaying = appSoundPlaying
@@ -154,13 +152,12 @@ public enum WakeListenerPolicy {
     /// isn't running and `mayStartMicrophone`). Anything else means: the engine must be stopped.
     public static func state(_ c: WakeConditions) -> WakeListenerState {
         guard c.switchedOn else { return .off }
-        switch (c.hasAccessKey, c.hasKeywordFile) {
-        case (false, false): return .needsSetUp(.both)
-        case (false, true): return .needsSetUp(.accessKey)
-        case (true, false): return .needsSetUp(.keywordFile)
-        case (true, true): break
-        }
         if c.microphone == .denied { return .microphoneDenied }
+        switch c.speech {
+        case .denied: return .speechNotAllowed
+        case .unavailable: return .speechUnavailable
+        case .allowed, .notAsked: break
+        }
         // The conversation comes first: it must have the microphone to itself.
         if c.conversationOrVoiceScreen { return .paused(.conversation) }
         if c.appSoundPlaying { return .paused(.appSound) }
@@ -169,8 +166,8 @@ public enum WakeListenerPolicy {
         if c.interrupted { return .paused(.interrupted) }
         if let failure = c.startFailure, !c.running { return .failed(failure) }
         if c.running { return .listening }
-        // Asking for the microphone needs Doddy on screen, so does a first start.
-        return c.mayStartMicrophone && c.microphone == .allowed ? .listening : .waitingForApp
+        // Asking for the microphone or speech recognition needs Doddy on screen, so does a first start.
+        return c.mayStartMicrophone && c.microphone == .allowed && c.speech == .allowed ? .listening : .waitingForApp
     }
 }
 
@@ -223,74 +220,34 @@ public struct WakeGate: Equatable, Sendable {
     }
 }
 
-/// The Picovoice AccessKey as typed or pasted. It is kept in the Keychain on this iPhone only.
-public enum WakeAccessKey {
-    /// Trimmed key, or nil when it can't be one (empty, spaces inside, implausible length).
-    public static func clean(_ raw: String) -> String? {
-        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard (20...256).contains(trimmed.count),
-              !trimmed.contains(where: { $0.isWhitespace || $0.isNewline })
-        else { return nil }
-        return trimmed
-    }
-}
+/// Decides whether text the on-device recognizer wrote down contains "Hey Doddy" (ADR-472).
+/// Recognizers write a made-up name in many ways, so the common spellings of "Doddy" count, but
+/// only straight after a greeting: the name alone, or words like "daddy", never wake Doddy.
+public enum WakePhraseMatcher {
+    static let greetings: Set<String> = ["hey", "hay", "hei", "hej", "heya", "hi"]
+    static let names: Set<String> = ["doddy", "dody", "dodi", "dodie", "doddie", "doddi", "dodee", "dodey"]
 
-/// The "Hey Doddy" keyword file (.ppn) the user downloads from the Picovoice Console.
-public enum WakeKeywordFile {
-    public enum Problem: Equatable, Sendable {
-        case notAKeywordFile
-        case empty
-        case tooLarge
-        /// Made for another platform (Android, macOS …); Porcupine on iOS refuses it.
-        case otherPlatform(String)
-        /// Made for a language other than English, which needs a model file Doddy doesn't include.
-        case language(String)
-
-        public var message: String {
-            switch self {
-            case .notAKeywordFile: "That isn't a Porcupine keyword file. Choose the .ppn file from the Picovoice Console."
-            case .empty: "That file is empty."
-            case .tooLarge: "That file is too large to be a keyword file."
-            case .otherPlatform(let platform): "That keyword file is made for \(platform). Make it again in the Picovoice Console with the platform set to iOS."
-            case .language(let code): "That keyword file is for language “\(code)”. Doddy can only use English keyword files for now."
-            }
+    public static func containsWakePhrase(_ transcript: String) -> Bool {
+        let folded = transcript.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: nil)
+        let words = folded.split(whereSeparator: { !$0.isLetter }).map(String.init)
+        for (index, word) in words.enumerated() {
+            // "heydoddy" written as one word.
+            if greetings.contains(where: { greeting in names.contains(where: { greeting + $0 == word }) }) { return true }
+            if greetings.contains(word), index + 1 < words.count, names.contains(words[index + 1]) { return true }
         }
-    }
-
-    public static let maxBytes = 1_000_000
-    private static let otherPlatforms = [
-        "android": "Android", "linux": "Linux", "mac": "macOS", "windows": "Windows",
-        "wasm": "the web", "raspberry-pi": "Raspberry Pi", "jetson": "Jetson",
-    ]
-
-    /// Checks the console's naming (`Hey-Doddy_en_ios_v4_0_0.ppn`) when it is still there; a
-    /// renamed file is only checked for type and size, and Porcupine itself checks the rest.
-    public static func check(fileName: String, byteCount: Int) -> Problem? {
-        let lower = fileName.lowercased()
-        guard lower.hasSuffix(".ppn") else { return .notAKeywordFile }
-        guard byteCount > 0 else { return .empty }
-        guard byteCount <= maxBytes else { return .tooLarge }
-        let parts = lower.dropLast(4).split(separator: "_").map(String.init)
-        if let platform = parts.first(where: { otherPlatforms[$0] != nil }) {
-            return .otherPlatform(otherPlatforms[platform]!)
-        }
-        if let ios = parts.firstIndex(of: "ios"), ios > 0 {
-            let code = parts[ios - 1]
-            if code.count == 2, code.allSatisfy(\.isLetter), code != "en" { return .language(code) }
-        }
-        return nil
+        return false
     }
 }
 
 /// The Home card that offers "Hey Doddy" (ADR-328). Once, after a few real conversations, and only
-/// when one tap is enough: the keyword file is in the app and a key is on the iPhone or can come
-/// from Doddy's token server. "Not now" or "Turn on" ends the offer for good; it never comes back.
+/// when this iPhone can do it: speech recognition on the device is possible and not refused.
+/// "Not now" or "Turn on" ends the offer for good; it never comes back.
 public enum HeyDoddyOffer {
     /// Conversations that really connected before the card shows.
     public static let afterConversations = 3
 
-    public static func shouldOffer(conversations: Int, heyDoddyOn: Bool, dismissed: Bool, oneTapReady: Bool) -> Bool {
-        conversations >= afterConversations && !heyDoddyOn && !dismissed && oneTapReady
+    public static func shouldOffer(conversations: Int, heyDoddyOn: Bool, dismissed: Bool, speechPossible: Bool) -> Bool {
+        conversations >= afterConversations && !heyDoddyOn && !dismissed && speechPossible
     }
 }
 

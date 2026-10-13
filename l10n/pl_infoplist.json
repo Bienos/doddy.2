@@ -4,8 +4,8 @@
   "pl": "Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Jeśli włączysz Hej Doddy, mikrofon słucha też na tym iPhonie słowa wywołującego; ten dźwięk nie jest zapisywany ani wysyłany. Twój głos w rozmowie jest wysyłany do OpenAI, żeby ją prowadzić, albo do ElevenLabs, jeśli przełączysz głos na ekranie głównym na ElevenLabs. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
  },
  "NSSpeechRecognitionUsageDescription": {
-  "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-  "pl": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Nagranie i jego słowa nie są nigdzie wysyłane."
+  "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. If you turn on Hey Doddy, it also listens for the wake word with speech recognition on this iPhone. The sound and its words are not kept or sent anywhere.",
+  "pl": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Jeśli włączysz Hej Doddy, rozpoznawanie mowy na tym iPhonie nasłuchuje też słowa wywołującego. Dźwięk i jego słowa nie są nigdzie zapisywane ani wysyłane."
  },
  "NSCalendarsFullAccessUsageDescription": {
   "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",

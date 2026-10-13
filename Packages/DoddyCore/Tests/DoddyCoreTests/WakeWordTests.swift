@@ -2,8 +2,8 @@
 import Foundation
 import XCTest
 
-/// ADR-254. "Hey Doddy": the greeting, when the listener may run, which detections count, and
-/// the checks on what the user brings from the Picovoice Console.
+/// ADR-254, ADR-472. "Hey Doddy": the greeting, when the listener may run, which detections
+/// count, and which words the on-device recognizer may have written for the wake phrase.
 final class WakeWordTests: XCTestCase {
     // MARK: Greeting
 
@@ -42,11 +42,11 @@ final class WakeWordTests: XCTestCase {
     // MARK: Listener state
 
     private func conditions(
-        on: Bool = true, key: Bool = true, file: Bool = true, mic: WakeConditions.Microphone = .allowed,
+        on: Bool = true, speech: WakeConditions.Speech = .allowed, mic: WakeConditions.Microphone = .allowed,
         conversation: Bool = false, sound: Bool = false, lowPower: Bool = false, interrupted: Bool = false, overLimit: Bool = false,
         mayStart: Bool = true, running: Bool = false, failure: String? = nil
     ) -> WakeConditions {
-        WakeConditions(switchedOn: on, hasAccessKey: key, hasKeywordFile: file, microphone: mic,
+        WakeConditions(switchedOn: on, speech: speech, microphone: mic,
                        conversationOrVoiceScreen: conversation, appSoundPlaying: sound, lowPowerMode: lowPower, interrupted: interrupted,
                        overWakeLimit: overLimit, mayStartMicrophone: mayStart, running: running, startFailure: failure)
     }
@@ -55,10 +55,16 @@ final class WakeWordTests: XCTestCase {
         XCTAssertEqual(WakeListenerPolicy.state(conditions(on: false, running: true)), .off)
     }
 
-    func testSaysWhatIsMissing() {
-        XCTAssertEqual(WakeListenerPolicy.state(conditions(key: false, file: false)), .needsSetUp(.both))
-        XCTAssertEqual(WakeListenerPolicy.state(conditions(key: false)), .needsSetUp(.accessKey))
-        XCTAssertEqual(WakeListenerPolicy.state(conditions(file: false)), .needsSetUp(.keywordFile))
+    func testSaysWhenSpeechRecognitionIsRefusedOrNotPossibleOnTheDevice() {
+        XCTAssertEqual(WakeListenerPolicy.state(conditions(speech: .denied)), .speechNotAllowed)
+        XCTAssertEqual(WakeListenerPolicy.state(conditions(speech: .unavailable)), .speechUnavailable)
+        // Even if it was running a moment ago: it must stop, never listen without it.
+        XCTAssertEqual(WakeListenerPolicy.state(conditions(speech: .denied, running: true)), .speechNotAllowed)
+    }
+
+    func testSpeechNotAskedYetWaitsForDoddyToBeOpenToAsk() {
+        XCTAssertEqual(WakeListenerPolicy.state(conditions(speech: .notAsked)), .waitingForApp)
+        XCTAssertEqual(WakeListenerPolicy.state(conditions(speech: .notAsked, mayStart: false)), .waitingForApp)
     }
 
     func testMicrophoneDeniedNeverListens() {
@@ -95,14 +101,14 @@ final class WakeWordTests: XCTestCase {
     }
 
     func testStartFailureIsShownUntilItRuns() {
-        XCTAssertEqual(WakeListenerPolicy.state(conditions(failure: "The AccessKey was refused.")),
-                       .failed("The AccessKey was refused."))
+        XCTAssertEqual(WakeListenerPolicy.state(conditions(failure: "Speech recognition stopped.")),
+                       .failed("Speech recognition stopped."))
         XCTAssertEqual(WakeListenerPolicy.state(conditions(running: true, failure: "old")), .listening)
     }
 
     func testEverySummaryIsPlainAndNeverClaimsListeningWhenItIsNot() {
         let states: [WakeListenerState] = [
-            .off, .needsSetUp(.accessKey), .needsSetUp(.keywordFile), .needsSetUp(.both), .microphoneDenied,
+            .off, .speechNotAllowed, .speechUnavailable, .microphoneDenied,
             .waitingForApp, .paused(.conversation), .paused(.appSound), .paused(.lowPowerMode), .paused(.interrupted),
             .paused(.tooManyWakeUps), .failed("x"),
         ]
@@ -145,38 +151,29 @@ final class WakeWordTests: XCTestCase {
         XCTAssertTrue(gate.accept(at: later))
     }
 
-    // MARK: What the user brings
+    // MARK: The wake phrase
 
-    func testAccessKeyIsTrimmedAndChecked() {
-        let key = String(repeating: "Ab3/", count: 14) + "=="
-        XCTAssertEqual(WakeAccessKey.clean("  \(key)\n"), key)
-        XCTAssertNil(WakeAccessKey.clean(""))
-        XCTAssertNil(WakeAccessKey.clean("short"))
-        XCTAssertNil(WakeAccessKey.clean("two words " + key))
-        XCTAssertNil(WakeAccessKey.clean(String(repeating: "a", count: 300)))
+    func testWakePhraseIsHeardWithCommonSpellingsOfTheName() {
+        for heard in ["Hey Doddy", "hey, Doddy!", "HEY DODDI", "Hey Dody, what's the weather", "okay so hey dodie",
+                      "heydoddy", "Hej Doddy", "hay doddie", "Hi Doddy", "Héy Doddy"] {
+            XCTAssertTrue(WakePhraseMatcher.containsWakePhrase(heard), heard)
+        }
     }
 
-    func testKeywordFileFromTheConsoleIsAccepted() {
-        XCTAssertNil(WakeKeywordFile.check(fileName: "Hey-Doddy_en_ios_v4_0_0.ppn", byteCount: 3_000))
-        XCTAssertNil(WakeKeywordFile.check(fileName: "hey doddy.PPN", byteCount: 3_000), "renamed: type and size only")
+    func testWakePhraseNeedsTheGreetingStraightBeforeTheName() {
+        for heard in ["", "Doddy", "doddy is great", "hey daddy", "they doddy", "hey there doddy", "hey", "Hello Doddy",
+                      "I told Doddy hey", "hey dodgy"] {
+            XCTAssertFalse(WakePhraseMatcher.containsWakePhrase(heard), heard)
+        }
     }
 
-    func testKeywordFileProblemsAreNamed() {
-        XCTAssertEqual(WakeKeywordFile.check(fileName: "Hey-Doddy.zip", byteCount: 3_000), .notAKeywordFile)
-        XCTAssertEqual(WakeKeywordFile.check(fileName: "Hey-Doddy_en_ios_v4_0_0.ppn", byteCount: 0), .empty)
-        XCTAssertEqual(WakeKeywordFile.check(fileName: "Hey-Doddy_en_ios_v4_0_0.ppn", byteCount: 2_000_000), .tooLarge)
-        XCTAssertEqual(WakeKeywordFile.check(fileName: "Hey-Doddy_en_android_v4_0_0.ppn", byteCount: 3_000), .otherPlatform("Android"))
-        XCTAssertEqual(WakeKeywordFile.check(fileName: "Hej-Doddy_pl_ios_v4_0_0.ppn", byteCount: 3_000), .language("pl"))
-        XCTAssertTrue(WakeKeywordFile.Problem.language("pl").message.contains("English"))
-    }
-
-    /// ADR-328: once, after three real conversations, only when one tap is enough.
-    func testTheHeyDoddyCardIsOfferedOnceWhenOneTapIsEnough() {
-        XCTAssertTrue(HeyDoddyOffer.shouldOffer(conversations: 3, heyDoddyOn: false, dismissed: false, oneTapReady: true))
-        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 2, heyDoddyOn: false, dismissed: false, oneTapReady: true), "too soon")
-        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: true, dismissed: false, oneTapReady: true), "already on")
-        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: false, dismissed: true, oneTapReady: true), "never again after Not now")
-        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: false, dismissed: false, oneTapReady: false),
-                       "no card that leads to a Picovoice form")
+    /// ADR-328, now ADR-472: once, after three real conversations, only when this iPhone can do it.
+    func testTheHeyDoddyCardIsOfferedOnceWhenSpeechIsPossible() {
+        XCTAssertTrue(HeyDoddyOffer.shouldOffer(conversations: 3, heyDoddyOn: false, dismissed: false, speechPossible: true))
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 2, heyDoddyOn: false, dismissed: false, speechPossible: true), "too soon")
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: true, dismissed: false, speechPossible: true), "already on")
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: false, dismissed: true, speechPossible: true), "never again after Not now")
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: false, dismissed: false, speechPossible: false),
+                       "no card for an iPhone that can't do it")
     }
 }

@@ -45,6 +45,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 
   Not fixed yet. It needs a device log to confirm the cause.
 - **Vercel deployments are blocked** (account billing and the daily deployment limit), so the Vercel checks on PRs are red whatever the change. GitHub Actions runs again since 2026-10-12. The public site is still up at https://www.doddy.lol (production build `40c3b7d`); only new deployments are blocked.
+- **"Hey Doddy" (ADR-472):** moved from Picovoice (personal-use licence, not commercial) to Apple's on-device speech recognition on this branch. Not run on a device; background and locked-screen listening is the thing to test first. See `docs/implementation/HEY_DODDY_STATUS.md`.
 - **Where the servers run (checked 2026-10-13):** backend and messaging server on Render, at `e273494` and `ce02763`. The voice token server and the gateway also run on Render, but from the unmerged branch `claude/affectionate-tesla-nqu0nj` (`f835852`), which carries their `server.js` wrappers; this branch does not, so repointing those two services here would break them.
 
 ## Waiting on the owner
