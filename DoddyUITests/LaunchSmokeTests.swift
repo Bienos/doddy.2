@@ -70,8 +70,11 @@ final class LaunchSmokeTests: XCTestCase {
         let share = app.switches["quickStart.profile"]
         XCTAssertTrue(app.reveal(share))
         XCTAssertEqual(share.value as? String, "0")
+        // Quick start is a full-screen cover: the tab bar behind it still exists, so reveal(_:)
+        // would wait for Not now to rise above a bar that isn't in the way. Step until it's tappable.
         let notNow = app.buttons["quickStart.notNow"]
-        XCTAssertTrue(app.reveal(notNow))
+        XCTAssertTrue(notNow.waitForExistence(timeout: 5))
+        for _ in 0..<10 where !notNow.isHittable { app.scrollStep() }
         notNow.tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
