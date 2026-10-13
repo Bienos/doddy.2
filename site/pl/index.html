@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Doddy, your mate in your pocket</title>
+  <meta name="description" content="Doddy to aplikacja na iPhone’a z ręcznie narysowanym kumplem w środku. Zapisz drobne szczegóły, które mają znaczenie, własnymi słowami, a dokładną notatkę dostaniesz z powrotem, kiedy będziesz jej potrzebować.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Doddy, your mate in your pocket">
+  <meta property="og:description" content="Zapisz drobne szczegóły własnymi słowami. Dokładną notatkę odzyskasz później.">
+  <meta property="og:image" content="https://doddy-eight.vercel.app/assets/og-image.png">
+  <meta property="og:url" content="https://doddy-eight.vercel.app/pl/">
+  <link rel="canonical" href="https://doddy-eight.vercel.app/pl/">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://doddy-eight.vercel.app/">
+  <link rel="alternate" hreflang="es" href="https://doddy-eight.vercel.app/es/">
+  <link rel="alternate" hreflang="de" href="https://doddy-eight.vercel.app/de/">
+  <link rel="alternate" hreflang="fr" href="https://doddy-eight.vercel.app/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://doddy-eight.vercel.app/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://doddy-eight.vercel.app/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://doddy-eight.vercel.app/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://doddy-eight.vercel.app/it/">
+  <link rel="alternate" hreflang="hr" href="https://doddy-eight.vercel.app/hr/">
+  <link rel="alternate" hreflang="pl" href="https://doddy-eight.vercel.app/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://doddy-eight.vercel.app/">
+  <meta property="og:locale" content="pl_PL">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="zh_CN">
+  <meta property="og:locale:alternate" content="ja_JP">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <!-- /i18n:alternates -->
+  <!-- Smart App Banner: enable once Doddy has an App Store ID.
+  <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
+  -->
+  <link rel="icon" href="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="/i18n.js" defer></script>
+  <!-- i18n:dictionary --><script src="/i18n/pl.js" defer></script><!-- /i18n:dictionary -->
+  <script src="/main.js" defer></script>
+  <script src="/court.js" defer></script>
+  <script src="/memory.js" defer></script>
+  <script src="/analytics.js" defer></script>
+  <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
+       /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
+       queue below is the HTML snippet from vercel.com/docs/analytics (its hash is in vercel.json). -->
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="#top" aria-label="Doddy, wróć na górę">Doddy</a>
+      <nav aria-label="Sekcje">
+        <ul class="nav-links">
+          <li><a href="#how">Jak to działa</a></li>
+          <li><a href="#meet">Poznaj Doddy’ego</a></li>
+          <li><a href="#play">Oddaj rzut</a></li>
+          <li><a href="/blog/">Blog <span class="note">(Angielski)</span></a></li>
+          <li><a href="#privacy">Prywatność</a></li>
+        </ul>
+      </nav>
+      <a class="button small" href="#join">Dołącz do wczesnego dostępu</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>Język</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl" aria-current="page">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- Hero: the app's own headline, the real Home screen, Doddy saying hello in handwriting. -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Aplikacja na iPhone’a, we wczesnych testach</p>
+          <h1 id="hero-title" class="display">Trochę mniej do dźwigania.</h1>
+          <p class="lede">Doddy to kieszonkowy notes z kumplem w środku. Powiedz mu drobiazgi, których nie chcesz zgubić, a odzyskasz swoje dokładne słowa, kiedy będziesz ich potrzebować.</p>
+          <div class="actions">
+            <a class="button" href="#join">Dołącz do wczesnego dostępu</a>
+            <a class="text-link" href="#film">Obejrzyj film (1:15)</a>
+          </div>
+          <p class="fineprint">Doddy to AI, nie człowiek. Twoje notatki są przechowywane na Twoim iPhonie.</p>
+        </div>
+
+        <div class="hero-stage">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="hero-chip" aria-hidden="true">
+            <span class="chip-check">✓</span>
+            <span><strong>Zapisano</strong><br>Zapasowe klucze są w niebieskiej puszce nad lodówką.</span>
+          </div>
+          <div class="device tilt">
+            <img src="/assets/screens/home.png" width="390" height="845" alt="Ekran główny Doddy’ego: Trochę mniej do dźwigania. Przyciski, żeby zapisać szczegół albo coś znaleźć, oraz niedawno zapisana notatka o zapasowych kluczach.">
+          </div>
+          <div class="hero-doddy">
+            <p class="says" aria-hidden="true">Hej. Jestem Doddy.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+            <picture class="hero-pose"><img src="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt=""></picture>
+          </div>
+          <p class="caption">Podgląd projektu aplikacji</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- The brand film, right under the hero: taped into the notebook, Doddy dribbling in from the corner.
+         Without JavaScript it is a plain video with native controls. -->
+    <section class="film" id="film" aria-labelledby="film-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="film-title" class="display-m">Pewnego poranka w Warszawie.</h2>
+          <p>Krótki film o Doddym, piłce, której nigdy do końca nie odkłada, i jednym bardzo zdeterminowanym gołębiu. 1 min 15 s, najlepiej z dźwiękiem.</p>
+        </div>
+        <div class="film-stage">
+          <div class="film-card">
+            <span class="tape t1" aria-hidden="true"></span>
+            <span class="tape t2" aria-hidden="true"></span>
+            <div class="player">
+              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Film marki Doddy, 1 minuta 15 sekund">
+                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
+              </video>
+              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Podgląd, wyciszony</span>
+              <button class="cover" type="button" aria-label="Odtwórz film z dźwiękiem">
+                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
+                <span class="cover-label" aria-hidden="true"><span class="cover-title">Obejrzyj film</span>1:15 · z dźwiękiem</span>
+              </button>
+            </div>
+          </div>
+          <div class="film-doddy" aria-hidden="true">
+            <p class="says">To ja.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+            <img src="/assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" alt="">
+          </div>
+        </div>
+        <ol class="chapters" aria-label="Przejdź do momentu w filmie">
+          <li><button type="button" data-seek="0"><span class="t">0:00</span>Plac przy zamku</button></li>
+          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>Wielkie pytanie</button></li>
+          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Wszystkie języki naraz</button></li>
+          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>Pytanie do miejscowego</button></li>
+          <li><button type="button" data-seek="38"><span class="t">0:38</span>Gołąb</button></li>
+          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>Złamane serce przy bramce</button></li>
+          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Zamknięte</button></li>
+          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
+        </ol>
+        <p class="caption film-caption">Film marki. Opowieść o Doddym, a nie demo aplikacji.</p>
+      </div>
+    </section>
+
+    <!-- The problem, said plainly. -->
+    <section class="problem" aria-labelledby="problem-title">
+      <div class="wrap problem-grid">
+        <h2 id="problem-title" class="display-m">Drobiazgi znikają w chwili, gdy ich potrzebujesz.</h2>
+        <ul class="scraps" aria-label="Przykłady">
+          <li>Kod paczkomatu</li>
+          <li>W której puszce schowano zapasowe klucze</li>
+          <li>Książka, którą poleciła Marta</li>
+          <li>Rozmiar buta Twojego dziecka</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it works: a real three-step sequence, so it's numbered. -->
+    <section class="how" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="how-title" class="display-m">Jak to działa</h2>
+          <p>Trzy kroki, wszystkie na Twoim iPhonie. Bez konta, bez konfiguracji.</p>
+        </div>
+        <ol class="steps">
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/capture.png" width="390" height="845" loading="lazy" alt="Ekran Nowego wspomnienia: Co zachowamy? Szczegół brzmi: Zapasowe klucze są w niebieskiej puszce nad lodówką."></div>
+              <picture class="step-pose"><img src="/assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">1</p>
+            <h3>Powiedz Doddy’emu</h3>
+            <p>Wpisz to tak, jak to powiesz. Doddy zachowuje Twoje dokładne słowa, a także informację, kiedy je zapisano i skąd pochodzą.</p>
+            <p class="says-small" aria-hidden="true">Zapisane znaczy zapisane.</p>
+          </li>
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/recall.png" width="390" height="845" loading="lazy" alt="Ekran Wspomnień: Jest tu gdzieś. Wyszukanie „zapasowe klucze” znajduje zapisaną notatkę, napisaną przez Ciebie 8 października."></div>
+              <picture class="step-pose"><img src="/assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">2</p>
+            <h3>Później</h3>
+            <p>Szukaj słowami, które pamiętasz. Doddy pokazuje pasujące notatki w Twoich oryginalnych słowach, z datą i źródłem.</p>
+            <p class="says-small" aria-hidden="true">Twoje słowa, a nie zgadywanie.</p>
+          </li>
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/detail.png" width="390" height="845" loading="lazy" alt="Ekran Twojego wspomnienia: zapisana notatka z datą i źródłem oraz przyciski, żeby poprawić ten szczegół albo usunąć to wspomnienie."></div>
+              <picture class="step-pose"><img src="/assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">3</p>
+            <h3>Popraw albo zapomnij</h3>
+            <p>Popraw notatkę, a oryginał zostanie widoczny. Eksportuj wszystko albo usuń jedną notatkę lub wszystkie.</p>
+            <p class="says-small" aria-hidden="true">Oryginał zostaje.</p>
+          </li>
+        </ol>
+        <p class="caption left">Ekrany to podglądy projektu aplikacji.</p>
+      </div>
+    </section>
+
+    <!-- The detail only Doddy has: every note carries its receipt. -->
+    <section class="receipt-section" aria-labelledby="receipt-title">
+      <div class="wrap receipt-grid">
+        <div>
+          <h2 id="receipt-title" class="display-m">Każda notatka zachowuje swoje potwierdzenie.</h2>
+          <p>Doddy nigdy nie przerabia tego, co powiedziałeś. Każda notatka pokazuje, kiedy została zapisana i skąd pochodzi, a poprawka jest dopisywana na górze, więc pierwsza wersja nadal tam jest.</p>
+          <p>Gdy nic nie pasuje, Doddy mówi to wprost, zamiast coś wymyślać.</p>
+          <div class="no-match">
+            <picture class="no-match-pose"><img src="/assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <blockquote><p>Nie znalazłem tego w Twoich zapisanych wspomnieniach.</p></blockquote>
+          </div>
+        </div>
+        <figure class="receipt" aria-labelledby="receipt-caption">
+          <p class="receipt-text">Zapasowe klucze są w czerwonej puszce nad lodówką.</p>
+          <dl class="receipt-meta">
+            <div><dt>Zapisano</dt><dd>8 paź 2026, 09:41</dd></div>
+            <div><dt>Źródło</dt><dd>Twoja wpisana notatka</dd></div>
+            <div><dt>Wersja</dt><dd>2, poprawiono 9 paź</dd></div>
+          </dl>
+          <div class="receipt-original">
+            <p class="receipt-label">Oryginał, zachowany dosłownie</p>
+            <p>Zapasowe klucze są w niebieskiej puszce nad lodówką.</p>
+          </div>
+          <figcaption id="receipt-caption" class="caption left">Przykładowa notatka</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Voice: built, not yet tested on a real iPhone. -->
+    <section class="voice" aria-labelledby="voice-title">
+      <div class="wrap voice-grid">
+        <div class="voice-art">
+          <picture class="voice-pose"><img src="/assets/poses/doddy-pose-listening-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <ol class="voice-states" aria-label="Co pokazuje ekran rozmowy głosowej">
+            <li>Łączenie…</li>
+            <li>Słucham</li>
+            <li>Myśli…</li>
+            <li>Mówi</li>
+          </ol>
+          <div class="voice-card" role="img" aria-label="Doddy pyta: Zapisać tę notatkę? Z przyciskiem Zapisz i przyciskiem Nie zapisuj.">
+            <p class="voice-q">Zapisać tę notatkę?</p>
+            <p class="voice-quote">„Książka Marty to Hobbit.”</p>
+            <span class="voice-btn primary">Zapisz</span>
+            <span class="voice-btn">Nie zapisuj</span>
+          </div>
+        </div>
+        <div>
+          <p class="pill warn">W testach</p>
+          <h2 id="voice-title" class="display-m">Albo po prostu powiedz.</h2>
+          <p>Stuknij „Porozmawiaj z Doddym” i zapytaj na głos. Doddy przegląda Twoje notatki i odpowiada na podstawie tego, co zapisałeś.</p>
+          <p>Doddy słucha tylko wtedy, gdy otwarty jest ekran rozmowy głosowej, albo, jeśli włączysz „Hey Doddy”, gdy Dynamic Island pokazuje, że słucha; słowo wybudzające jest wykrywane na Twoim iPhonie. Jeśli powiesz coś wartego zapisania, Doddy najpierw zapyta, a niczego nie zapisze, dopóki nie stukniesz Zapisz.</p>
+          <p class="fineprint">Gdy rozmawiasz, Twój głos i notatki, które Doddy wyszukuje, są wysyłane do OpenAI, żeby prowadzić rozmowę, albo do ElevenLabs, jeśli włączysz głos na ekranie głównym. Głosu nie testowano jeszcze na prawdziwym iPhonie.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy band: inverted ink panel. -->
+    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <div class="privacy-panel">
+          <h2 id="privacy-title" class="display-m">Twoje notatki, Twoja decyzja.</h2>
+          <ul class="facts">
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
+              <h3>Przechowywane na Twoim iPhonie</h3>
+              <p>Notatki są przechowywane w aplikacji na Twoim telefonie, chronione przez iOS. Opuszczają ją tylko w przypadku rzeczy, które włączysz, a aplikacja wymienia każdą z nich w sekcji „Co opuszcza tego iPhone’a”.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
+              <h3>Bez konta</h3>
+              <p>Bez rejestracji, bez e-maila, bez hasła. Otwórz aplikację i zacznij.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
+              <h3>Eksport w każdej chwili</h3>
+              <p>Zabierz wszystko ze sobą jako JSON albo zwykły tekst.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
+              <h3>Usuń naprawdę</h3>
+              <p>Usuń jedną notatkę albo wszystkie. Od razu znikną z wyszukiwania.</p>
+            </li>
+          </ul>
+          <p class="privacy-note">Doddy to AI, nie człowiek. Niektóre rzeczy, które włączysz, wysyłają dane z telefonu: rozmowy głosowe (do OpenAI, a jeśli zmienisz głos, do ElevenLabs), rozmowy telefoniczne i Pamięć w rozmowach telefonicznych (serwer Doddy’ego, Twilio i ElevenLabs), udostępnione listy (Twój iCloud) oraz połączone konta, takie jak Gmail czy Todoist (przez serwer Doddy’ego). Wszystko inne zostaje na Twoim iPhonie. Wszystko to jest we wczesnych testach.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Character sketchbook. Doddy's captions are in Doddy's handwriting. -->
+    <section class="meet" id="meet" aria-labelledby="meet-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="meet-title" class="display-m">Poznaj Doddy’ego</h2>
+          <p>Ręcznie rysowany kumpel w pomarańczowym plecaku i za dużych trampkach, z piłką do koszykówki, której nigdy do końca nie odkłada. Najpierw pomocny, potem zabawny, zawsze szczery.</p>
+        </div>
+        <ul class="sketches">
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>Zawsze ma jakąś poboczną misję w toku.</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>Zauważa drobiazgi, które spowalniają Twój dzień.</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-working-laptop-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>Najpierw pomaga, potem rozmawia.</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>Żarty o kolejce, nigdy o Tobie.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Take a shot: a small game with Doddy's basketball. -->
+    <section class="court" id="play" aria-labelledby="play-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="play-title" class="display-m">Oddaj rzut</h2>
+          <p>Doddy nigdy do końca nie odkłada piłki. Naciśnij w dowolnym miejscu na boisku, odciągnij i puść, żeby rzucić. Albo pozwól, żeby Doddy spróbował.</p>
+        </div>
+        <div class="court-panel">
+          <canvas id="court" width="800" height="520" role="img" aria-label="Gra w koszykówkę: Doddy rzuca piłką do kosza. Użyj przycisku „Rzuć za mnie”, żeby rzucić."></canvas>
+          <div class="court-bar">
+            <p class="court-score" aria-live="polite">Kosze <strong id="made">0</strong> z <strong id="shots">0</strong> rzutów</p>
+            <button class="button small" id="auto-shot" type="button">Rzuć za mnie</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- "Remember it": a memory game with the small things Doddy keeps. Cards are built by memory.js;
+         without JavaScript the section stays hidden. -->
+    <section class="memory" id="remember" aria-labelledby="remember-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="remember-title" class="display-m">Zapamiętaj to</h2>
+          <p>Sześć drobiazgów, dwanaście kart. Odwracaj po dwie i znajdź pary. Doddy radzi sobie z tym lepiej niż reszta z nas.</p>
+        </div>
+        <div class="court-panel memory-panel">
+          <div class="memory-stage">
+            <div class="memory-grid" id="memory-grid" role="group" aria-label="Gra w pamięć"></div>
+            <div class="memory-doddy">
+              <p class="memory-bubble" id="memory-bubble" aria-live="polite">Odwróć dwie. Znajdź parę.</p>
+              <img src="/assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt="">
+            </div>
+          </div>
+          <div class="court-bar">
+            <p class="court-score">Pary <strong id="memory-pairs">0</strong> z 6 · Ruchy <strong id="memory-moves">0</strong></p>
+            <button class="button small" id="memory-restart" type="button">Nowa gra</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Join -->
+    <section class="join" id="join" aria-labelledby="join-title">
+      <div class="wrap">
+        <div class="join-panel">
+          <div class="join-copy">
+            <h2 id="join-title" class="display-m">Wpadnij, powiedz cześć.</h2>
+            <p>Doddy jest we wczesnych testach. Zostaw swój e-mail, żeby dowiedzieć się, kiedy otworzy się wczesny dostęp.</p>
+            <form class="waitlist" novalidate data-consent="waitlist-note-v1-pl">
+              <label for="email">E-mail</label>
+              <div class="field-row">
+                <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-note waitlist-status">
+                <button class="button" type="submit">Dołącz do wczesnego dostępu</button>
+              </div>
+              <!-- Left empty by people; bots that fill it are ignored. -->
+              <div class="hp" aria-hidden="true"><label for="website">Strona internetowa</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+              <p id="waitlist-note" class="fineprint form-note">Użyjemy Twojego e-maila tylko po to, żeby powiedzieć Ci, kiedy otworzy się wczesny dostęp, i usuniemy go, gdy tylko o to poprosisz.</p>
+              <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <!-- Shown only after a new signup. Every question is optional. -->
+            <form class="answers" id="answers" hidden novalidate aria-labelledby="answers-title">
+              <p class="says-small" id="answers-title" tabindex="-1">Trzy krótkie pytania? Wszystkie opcjonalne.</p>
+              <fieldset class="q">
+                <legend>Jakiego telefonu używasz?</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="phone" value="iphone"><span>iPhone</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="android"><span>Android</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="other"><span>Coś innego</span></label>
+                </div>
+              </fieldset>
+              <fieldset class="q">
+                <legend>Skąd wiesz o Doddym?</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="heard" value="tiktok"><span>TikTok</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="instagram"><span>Instagram</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="linkedin"><span>LinkedIn</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="friend"><span>Przyjaciel</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="search"><span>Szukaj</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="other"><span>Gdzie indziej</span></label>
+                </div>
+              </fieldset>
+              <div class="q">
+                <label for="wish">Co chcesz, żeby Doddy dla Ciebie zrobił?</label>
+                <textarea id="wish" name="wish" rows="3" maxlength="300" placeholder="Zapamiętaj miejsce parkowania, zapisz rozmiary dzieci, znajdź tę wskazówkę o książce…"></textarea>
+              </div>
+              <div class="answers-actions">
+                <button class="button" type="submit">Wyślij odpowiedzi</button>
+                <button class="link-button" type="button" id="answers-skip">Pomiń</button>
+              </div>
+              <p class="fineprint form-note">Używamy ich tylko po to, żeby zaplanować wczesny dostęp do Doddy’ego, a usuniemy je razem z Twoim e-mailem, gdy tylko o to poprosisz.</p>
+              <p id="answers-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <div class="open-app">
+              <p>Chcesz porozmawiać teraz? <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Dołącz do grupy na Telegramie</a></p>
+              <p>Obserwuj Doddy’ego: <a class="text-link" href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok doddy_mate</a> <a class="text-link" href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram doddy_mate</a></p>
+              <p>Już testujesz Doddy’ego? <a class="text-link" id="open-app" href="doddy://home">Otwórz Doddy’ego</a></p>
+              <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+          <picture class="join-pose"><img src="/assets/poses/doddy-pose-basketball-shot-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+        </div>
+        <div class="later">
+          <h2 class="later-title">Może później</h2>
+          <p>W testach teraz: Twój kalendarz, przypomnienia, budziki, minutniki, listy, mapy i szkice wiadomości, z tym że zmiany najpierw są potwierdzane na ekranie (szybkie zmiany na listach można zamiast tego cofnąć), oraz polski obok angielskiego. Jeszcze nie zbudowane i bez obiecanych terminów: Android.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="#how">Jak to działa</a></li>
+          <li><a href="#meet">Poznaj Doddy’ego</a></li>
+          <li><a href="#privacy">Prywatność</a></li>
+          <li><a href="/blog/">Blog <span class="note">(Angielski)</span></a></li>
+          <li><a href="#join">Dołącz do wczesnego dostępu</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Grupa na Telegramie</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="Język" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl" aria-current="page">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
+      </div>
+      <p>Doddy to asystent AI, nie człowiek. Twoje notatki są przechowywane na Twoim iPhonie; głos, rozmowy telefoniczne, udostępnione listy i połączone konta wysyłają dane z iPhone’a tylko wtedy, gdy je włączysz.</p>
+      <p>Ta strona liczy wizyty za pomocą Vercel Web Analytics, która nie ustawia plików cookie. Jej czcionki ładowane są z Google Fonts.</p>
+      <p data-ga-note hidden>Jeśli na to pozwolisz, Google Analytics dodatkowo mierzy wizyty i ustawia pliki cookie. <button type="button" class="foot-choice" data-analytics-choices>Ustawienia analityki</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>

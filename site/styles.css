@@ -673,19 +673,23 @@ h3 {
   display: inline-flex; min-height: 44px; align-items: center; color: var(--secondary-text); text-decoration: none; font-weight: 550;
 }
 .foot-lang a:hover { color: var(--reading-ink); }
-.note { font-size: 0.85em; color: var(--secondary-text); }
+.note { font-size: 0.85em; color: var(--secondary-text); margin-left: 0.3em; }
 
-/* Fonts for the scripts that the Latin faces don't cover. Headings and Doddy's handwriting use these too. */
+/* Fonts for the scripts the Latin faces don't cover. Latin letters keep the brand faces (Bricolage
+   Grotesque, Caveat); the CJK faces take over the characters they lack. */
 :lang(zh-Hans) {
-  --display: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
-  --hand: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
-  --text: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  --display: "Bricolage Grotesque", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  --hand: "Caveat", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", cursive;
+  --text: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
   line-height: 1.7;
 }
 :lang(ja) {
-  --display: "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", system-ui, sans-serif;
-  --hand: "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", system-ui, sans-serif;
-  --text: "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", system-ui, sans-serif;
+  --display: "Bricolage Grotesque", "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", system-ui, sans-serif;
+  --hand: "Caveat", "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", cursive;
+  --text: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", system-ui, sans-serif;
   line-height: 1.8;
 }
-:lang(zh-Hans), :lang(ja) { overflow-wrap: anywhere; }
+/* The name and the header button stay on one line in every language; the header gap tightens on phones. */
+.wordmark { white-space: nowrap; }
+.nav-inner .button.small { white-space: nowrap; }
+@media (max-width: 480px) { .nav-inner { flex-wrap: wrap; gap: 8px 12px; } }

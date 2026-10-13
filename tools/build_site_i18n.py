@@ -512,7 +512,7 @@ def check_page(path: Path, text: str, problems: list[str]) -> None:
         if e.tag in {"a", "link", "script", "img", "source", "video"}:
             for name in ("href", "src", "poster"):
                 value = e.attrs.get(name, "")
-                if value.startswith("/") and not value.startswith("//"):
+                if value.startswith("/") and not value.startswith(("//", "/_vercel/")):
                     target = SITE / value.split("?")[0].split("#")[0].lstrip("/")
                     if value.endswith("/"):
                         target = target / "index.html"

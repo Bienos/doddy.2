@@ -34,3 +34,27 @@ Answers on 2026-10-13: Japanese ぼく, Croatian gender handling and the Siri re
 ## What to do with this page
 
 A native reviewer works through one language at a time with `python3 -I tools/l10n_batch.py show <code> --all`, fixes lines with `merge`, then runs `python3 -I tools/build_strings_catalog.py` and commits. Privacy texts and the AI disclosure first (ADR-234). Record who reviewed which language and when, here, before anyone writes "supported".
+
+## Website (landing page, ADR-460)
+
+One agent per language made each table (`l10n/site/<code>.json`, 187 strings). Each reported the lines it was least sure of; the owner decides the open ones.
+
+**Decisions for the owner**
+1. **"A mate in your pocket"** (film chapter 1:05) is a variant of the tagline. Kept in English in French, Portuguese and Polish; translated in the other languages. Choose one rule.
+2. **Length in buttons.** "Join early access" is the header button and is long in several languages (Portuguese, German, Polish, French). The header wraps onto a second row on phones in five of them. Shorter wording needs an owner decision, because the same key also appears in the hero and the footer.
+3. **"In testing" and "Later, maybe"** are translated for meaning, not word for word (German "Testphase", Italian "In test"). Say if the English words should stay.
+4. **Polish "Paczkomat"** (parcel locker) is an InPost trademark. A generic term may be safer.
+5. **The emergency line and the early-access wording** need the same native read as the app (see the app sections above).
+
+**Per language, the lines to check first**
+- **Spanish:** "Pregúntale más tarde" (Ask later); "Corrígelo o olvídalo"; "Pedir acceso anticipado" is a third longer than the English; jokes "Qué va. Lo habría apuntado." and "De nada.".
+- **German:** "Später" drops "ask"; "Nicht speichern" is 50% longer; "Überspringen" (Skip) is about three times the English; "Am Ring abgeprallt", "Zisch", "Nur Netz" are the basketball lines; "phone" became "iPhone" in two sentences.
+- **French:** "Plus tard"; "Corriger ou oublier"; "Sur le cercle."; "Jeu de mémoire" for the memory game.
+- **Chinese (Simplified):** waitlist is 候补名单 while early access is 抢先体验; "不用谢" for "You're welcome."; the chapter title is translated, the page title keeps the English tagline.
+- **Japanese:** 事前登録 for the waitlist; "Doddyのほうが人より得意です" for "better at this than the rest of us"; "Saved means saved." lost its wordplay.
+- **Portuguese (Brazil):** "Mais tarde" drops "ask"; "Lançar por mim" for "Shoot for me"; "Inscreva-se no acesso antecipado" is long for a button.
+- **Italian:** "Iscriviti in anticipo" drops "access"; "Carte del memory"; "Tira per me".
+- **Croatian:** "Zatraži rani pristup" for early access; "Pitaj poslije" for "Ask later"; "Preskoči" (Skip) is longer than the English.
+- **Polish:** "Dołącz do wczesnego dostępu" is about 60% longer; "Później" drops "ask"; "Poziom B2" may read as a language level; "...and Polish alongside English" states Polish support as in testing, so check it does not read as available.
+
+**Terms for a native reviewer:** Doddy's pronoun in each language (the app's table decides); "mate" as the app translates it (companion, Begleiter, compañero, tip, compagnon); "receipt" (Bestätigung, potwierdzenie, Tiques, justificatif); "wake word" (palabra de activación, not in the app's table); "Blog" with the English note "(English)" in brackets after it.

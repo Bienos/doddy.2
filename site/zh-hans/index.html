@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Doddy，your mate in your pocket</title>
+  <meta name="description" content="Doddy 是一款 iPhone 应用，里面住着一个手绘的伙伴。用你自己的话记下重要的小细节，需要时，原样找回那条笔记。">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Doddy，your mate in your pocket">
+  <meta property="og:description" content="用你自己的话保存那些小细节。之后原样找回那条笔记。">
+  <meta property="og:image" content="https://doddy-eight.vercel.app/assets/og-image.png">
+  <meta property="og:url" content="https://doddy-eight.vercel.app/zh-hans/">
+  <link rel="canonical" href="https://doddy-eight.vercel.app/zh-hans/">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://doddy-eight.vercel.app/">
+  <link rel="alternate" hreflang="es" href="https://doddy-eight.vercel.app/es/">
+  <link rel="alternate" hreflang="de" href="https://doddy-eight.vercel.app/de/">
+  <link rel="alternate" hreflang="fr" href="https://doddy-eight.vercel.app/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://doddy-eight.vercel.app/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://doddy-eight.vercel.app/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://doddy-eight.vercel.app/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://doddy-eight.vercel.app/it/">
+  <link rel="alternate" hreflang="hr" href="https://doddy-eight.vercel.app/hr/">
+  <link rel="alternate" hreflang="pl" href="https://doddy-eight.vercel.app/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://doddy-eight.vercel.app/">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="ja_JP">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
+  <!-- Smart App Banner: enable once Doddy has an App Store ID.
+  <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
+  -->
+  <link rel="icon" href="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="/i18n.js" defer></script>
+  <!-- i18n:dictionary --><script src="/i18n/zh-hans.js" defer></script><!-- /i18n:dictionary -->
+  <script src="/main.js" defer></script>
+  <script src="/court.js" defer></script>
+  <script src="/memory.js" defer></script>
+  <script src="/analytics.js" defer></script>
+  <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
+       /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
+       queue below is the HTML snippet from vercel.com/docs/analytics (its hash is in vercel.json). -->
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到正文</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="#top" aria-label="Doddy，回到顶部">Doddy</a>
+      <nav aria-label="页面分区">
+        <ul class="nav-links">
+          <li><a href="#how">工作原理</a></li>
+          <li><a href="#meet">认识 Doddy</a></li>
+          <li><a href="#play">来投一球</a></li>
+          <li><a href="/blog/">博客 <span class="note">(英语)</span></a></li>
+          <li><a href="#privacy">隐私</a></li>
+        </ul>
+      </nav>
+      <a class="button small" href="#join">加入抢先体验</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>语言</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans" aria-current="page">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- Hero: the app's own headline, the real Home screen, Doddy saying hello in handwriting. -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>iPhone 应用，早期测试中</p>
+          <h1 id="hero-title" class="display">少记一点，轻松一点。</h1>
+          <p class="lede">Doddy 是一本口袋笔记本，里面住着一个伙伴。把那些不想弄丢的小事告诉它，需要时，原话就能找回来。</p>
+          <div class="actions">
+            <a class="button" href="#join">加入抢先体验</a>
+            <a class="text-link" href="#film">观看短片（1:15）</a>
+          </div>
+          <p class="fineprint">Doddy 是 AI，不是真人。你的笔记保存在你的 iPhone 上。</p>
+        </div>
+
+        <div class="hero-stage">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="hero-chip" aria-hidden="true">
+            <span class="chip-check">✓</span>
+            <span><strong>已保存</strong><br>备用钥匙在冰箱上方的蓝色铁盒里。</span>
+          </div>
+          <div class="device tilt">
+            <img src="/assets/screens/home.png" width="390" height="845" alt="Doddy 的首页：少记一点，轻松一点。有用于记下细节或查找内容的按钮，以及一条最近保存的关于备用钥匙的笔记。">
+          </div>
+          <div class="hero-doddy">
+            <p class="says" aria-hidden="true">嗨，我是 Doddy。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+            <picture class="hero-pose"><img src="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt=""></picture>
+          </div>
+          <p class="caption">应用的设计预览</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- The brand film, right under the hero: taped into the notebook, Doddy dribbling in from the corner.
+         Without JavaScript it is a plain video with native controls. -->
+    <section class="film" id="film" aria-labelledby="film-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="film-title" class="display-m">华沙的一个清晨。</h2>
+          <p>一部关于 Doddy 的短片，讲的是一只他总也放不下的球，还有一只非常执着的鸽子。时长 1 分 15 秒，最好开着声音看。</p>
+        </div>
+        <div class="film-stage">
+          <div class="film-card">
+            <span class="tape t1" aria-hidden="true"></span>
+            <span class="tape t2" aria-hidden="true"></span>
+            <div class="player">
+              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddy 品牌短片，时长 1 分 15 秒">
+                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
+              </video>
+              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>预览，静音播放</span>
+              <button class="cover" type="button" aria-label="带声音播放短片">
+                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
+                <span class="cover-label" aria-hidden="true"><span class="cover-title">观看短片</span>1:15 · 带声音</span>
+              </button>
+            </div>
+          </div>
+          <div class="film-doddy" aria-hidden="true">
+            <p class="says">这就是我。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+            <img src="/assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" alt="">
+          </div>
+        </div>
+        <ol class="chapters" aria-label="跳转到短片中的某一段">
+          <li><button type="button" data-seek="0"><span class="t">0:00</span>城堡广场</button></li>
+          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>一个大问题</button></li>
+          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>同时说所有语言</button></li>
+          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>问当地人</button></li>
+          <li><button type="button" data-seek="38"><span class="t">0:38</span>那只鸽子</button></li>
+          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>大门口的心碎</button></li>
+          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>已关门</button></li>
+          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>口袋里的伙伴</button></li>
+        </ol>
+        <p class="caption film-caption">品牌短片。讲的是 Doddy 的故事，不是应用演示。</p>
+      </div>
+    </section>
+
+    <!-- The problem, said plainly. -->
+    <section class="problem" aria-labelledby="problem-title">
+      <div class="wrap problem-grid">
+        <h2 id="problem-title" class="display-m">一到你需要的时候，那些小事就不见了。</h2>
+        <ul class="scraps" aria-label="示例">
+          <li>快递柜取件码</li>
+          <li>备用钥匙放在哪个铁盒里</li>
+          <li>Marta 推荐的那本书</li>
+          <li>孩子的鞋码</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it works: a real three-step sequence, so it's numbered. -->
+    <section class="how" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="how-title" class="display-m">工作原理</h2>
+          <p>三个步骤，全部在你的 iPhone 上完成。无需账户，无需设置。</p>
+        </div>
+        <ol class="steps">
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/capture.png" width="390" height="845" loading="lazy" alt="新建记忆屏幕：要记下什么？细节内容是：备用钥匙在冰箱上方的蓝色铁盒里。"></div>
+              <picture class="step-pose"><img src="/assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">1</p>
+            <h3>告诉 Doddy</h3>
+            <p>像说话一样打下来就行。Doddy 会保留你的原话，以及保存的时间和来源。</p>
+            <p class="says-small" aria-hidden="true">已保存就是真的保存了。</p>
+          </li>
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/recall.png" width="390" height="845" loading="lazy" alt="记忆屏幕：就在这里的某处。搜索“备用钥匙”会找到你在 10 月 8 日写下的那条已保存笔记。"></div>
+              <picture class="step-pose"><img src="/assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">2</p>
+            <h3>之后再问</h3>
+            <p>用你记得的词来搜索。Doddy 会显示匹配的笔记，保留你的原话，并附上日期和来源。</p>
+            <p class="says-small" aria-hidden="true">你的原话，不是猜测。</p>
+          </li>
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/detail.png" width="390" height="845" loading="lazy" alt="你的记忆屏幕：已保存的笔记，附有日期和来源，还有用于更正此细节或删除此条记忆的按钮。"></div>
+              <picture class="step-pose"><img src="/assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">3</p>
+            <h3>改正，或者删除</h3>
+            <p>修改一条笔记后，原文仍然可见。可以导出全部内容，也可以删除一条笔记或全部笔记。</p>
+            <p class="says-small" aria-hidden="true">原文会保留。</p>
+          </li>
+        </ol>
+        <p class="caption left">画面是应用的设计预览。</p>
+      </div>
+    </section>
+
+    <!-- The detail only Doddy has: every note carries its receipt. -->
+    <section class="receipt-section" aria-labelledby="receipt-title">
+      <div class="wrap receipt-grid">
+        <div>
+          <h2 id="receipt-title" class="display-m">每条笔记都附带凭证。</h2>
+          <p>Doddy 从不改写你说过的话。每条笔记都会显示保存的时间和来源；更正会加在上面，所以第一版仍然保留。</p>
+          <p>找不到匹配内容时，Doddy 会直接告诉你，而不是编一个出来。</p>
+          <div class="no-match">
+            <picture class="no-match-pose"><img src="/assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <blockquote><p>我没能在你保存的记忆里找到那条。</p></blockquote>
+          </div>
+        </div>
+        <figure class="receipt" aria-labelledby="receipt-caption">
+          <p class="receipt-text">备用钥匙在冰箱上方的红色铁盒里。</p>
+          <dl class="receipt-meta">
+            <div><dt>已保存</dt><dd>2026 年 10 月 8 日，09:41</dd></div>
+            <div><dt>来源</dt><dd>你输入的笔记</dd></div>
+            <div><dt>版本</dt><dd>第 2 版，10 月 9 日更正</dd></div>
+          </dl>
+          <div class="receipt-original">
+            <p class="receipt-label">原文，按原样保留</p>
+            <p>备用钥匙在冰箱上方的蓝色铁盒里。</p>
+          </div>
+          <figcaption id="receipt-caption" class="caption left">示例笔记</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Voice: built, not yet tested on a real iPhone. -->
+    <section class="voice" aria-labelledby="voice-title">
+      <div class="wrap voice-grid">
+        <div class="voice-art">
+          <picture class="voice-pose"><img src="/assets/poses/doddy-pose-listening-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <ol class="voice-states" aria-label="语音界面显示的内容">
+            <li>正在连接…</li>
+            <li>正在聆听</li>
+            <li>正在思考…</li>
+            <li>正在说话</li>
+          </ol>
+          <div class="voice-card" role="img" aria-label="Doddy 问：保存这条笔记？有“保存”按钮和“不保存”按钮。">
+            <p class="voice-q">保存这条笔记？</p>
+            <p class="voice-quote">“Marta 的书是《霍比特人》。”</p>
+            <span class="voice-btn primary">保存</span>
+            <span class="voice-btn">不保存</span>
+          </div>
+        </div>
+        <div>
+          <p class="pill warn">测试中</p>
+          <h2 id="voice-title" class="display-m">或者直接说出来。</h2>
+          <p>轻点“和 Doddy 聊聊”，大声提问。Doddy 会翻看你的笔记，并根据你保存的内容回答。</p>
+          <p>Doddy 只会在两种情况下聆听：语音界面打开时；或者你开启了 Hey Doddy，且灵动岛显示正在聆听时。唤醒词由你的 iPhone 本机识别。如果你说了值得保留的内容，Doddy 会先询问，在你轻点“保存”之前，不会存储任何内容。</p>
+          <p class="fineprint">你说话时，你的语音，以及 Doddy 查找的笔记，会发送给 OpenAI 来进行对话；如果你在主屏幕把语音切换为 ElevenLabs，则发送给 ElevenLabs。语音功能尚未在真实的 iPhone 上测试。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy band: inverted ink panel. -->
+    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <div class="privacy-panel">
+          <h2 id="privacy-title" class="display-m">你的笔记，由你决定。</h2>
+          <ul class="facts">
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
+              <h3>存储在你的 iPhone 上</h3>
+              <p>笔记保存在手机上的应用里，受 iOS 保护。只有你开启的功能才会让它们离开手机，应用会在“哪些内容会离开这台 iPhone”下逐项列出。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
+              <h3>无需账户</h3>
+              <p>无需注册，无需邮箱，无需密码。打开应用就能开始。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
+              <h3>随时导出</h3>
+              <p>把所有内容以 JSON 或纯文本带走。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
+              <h3>彻底删除</h3>
+              <p>可以删除一条笔记或全部笔记。它们会立即从搜索中消失。</p>
+            </li>
+          </ul>
+          <p class="privacy-note">Doddy 是 AI，不是真人。你开启的一些功能会把数据发送出手机：语音对话（发送给 OpenAI；如果你把语音切换为 ElevenLabs，则发送给 ElevenLabs）、电话和通话记忆（发送给 Doddy 的服务器、Twilio 和 ElevenLabs）、共享清单（发送到你的 iCloud），以及 Gmail 或 Todoist 等已连接的账户（通过 Doddy 的服务器）。其他一切都只留在你的 iPhone 上。以上全部功能仍在早期测试中。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Character sketchbook. Doddy's captions are in Doddy's handwriting. -->
+    <section class="meet" id="meet" aria-labelledby="meet-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="meet-title" class="display-m">认识 Doddy</h2>
+          <p>一个手绘的伙伴，背着橙色背包，穿着超大号运动鞋，手里的篮球总也放不下。先帮忙，其次有趣，始终诚实。</p>
+        </div>
+        <ul class="sketches">
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>总有一条支线任务在进行中。</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>留意那些拖慢你一天的小麻烦。</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-working-laptop-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>先帮忙，再聊天。</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <p>拿排队开玩笑，但从不拿你开玩笑。</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Take a shot: a small game with Doddy's basketball. -->
+    <section class="court" id="play" aria-labelledby="play-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="play-title" class="display-m">来投一球</h2>
+          <p>Doddy 总也放不下那颗球。在球场任意位置按下，向后拉，松手即可投篮。也可以让 Doddy 来试。</p>
+        </div>
+        <div class="court-panel">
+          <canvas id="court" width="800" height="520" role="img" aria-label="篮球小游戏：Doddy 把球投向篮筐。按“帮我投篮”按钮即可投篮。"></canvas>
+          <div class="court-bar">
+            <p class="court-score" aria-live="polite">投中 <strong id="made">0</strong> 球，共 <strong id="shots">0</strong> 次投篮</p>
+            <button class="button small" id="auto-shot" type="button">帮我投篮</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- "Remember it": a memory game with the small things Doddy keeps. Cards are built by memory.js;
+         without JavaScript the section stays hidden. -->
+    <section class="memory" id="remember" aria-labelledby="remember-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="remember-title" class="display-m">记住它</h2>
+          <p>六件小事，十二张卡片。每次翻两张，找出配对。Doddy 在这件事上比我们所有人都厉害。</p>
+        </div>
+        <div class="court-panel memory-panel">
+          <div class="memory-stage">
+            <div class="memory-grid" id="memory-grid" role="group" aria-label="记忆卡片"></div>
+            <div class="memory-doddy">
+              <p class="memory-bubble" id="memory-bubble" aria-live="polite">翻两张，找出一对。</p>
+              <img src="/assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt="">
+            </div>
+          </div>
+          <div class="court-bar">
+            <p class="court-score">已配对 <strong id="memory-pairs">0</strong> / 6 对 · 步数 <strong id="memory-moves">0</strong></p>
+            <button class="button small" id="memory-restart" type="button">再玩一局</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Join -->
+    <section class="join" id="join" aria-labelledby="join-title">
+      <div class="wrap">
+        <div class="join-panel">
+          <div class="join-copy">
+            <h2 id="join-title" class="display-m">来打个招呼吧。</h2>
+            <p>Doddy 仍在早期测试中。留下你的邮箱，抢先体验开放时通知你。</p>
+            <form class="waitlist" novalidate data-consent="waitlist-note-v1-zh-hans">
+              <label for="email">邮箱</label>
+              <div class="field-row">
+                <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-note waitlist-status">
+                <button class="button" type="submit">加入抢先体验</button>
+              </div>
+              <!-- Left empty by people; bots that fill it are ignored. -->
+              <div class="hp" aria-hidden="true"><label for="website">网站</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+              <p id="waitlist-note" class="fineprint form-note">我们只会用你的邮箱在抢先体验开放时通知你，并会在你提出要求时删除它。</p>
+              <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <!-- Shown only after a new signup. Every question is optional. -->
+            <form class="answers" id="answers" hidden novalidate aria-labelledby="answers-title">
+              <p class="says-small" id="answers-title" tabindex="-1">三个小问题？全部可选。</p>
+              <fieldset class="q">
+                <legend>你用哪种手机？</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="phone" value="iphone"><span>iPhone</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="android"><span>Android</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="other"><span>其他</span></label>
+                </div>
+              </fieldset>
+              <fieldset class="q">
+                <legend>你是从哪里听说 Doddy 的？</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="heard" value="tiktok"><span>TikTok</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="instagram"><span>Instagram</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="linkedin"><span>LinkedIn</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="friend"><span>朋友</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="search"><span>搜索</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="other"><span>其他地方</span></label>
+                </div>
+              </fieldset>
+              <div class="q">
+                <label for="wish">你希望 Doddy 为你做些什么？</label>
+                <textarea id="wish" name="wish" rows="3" maxlength="300" placeholder="记住我把车停哪了，记下孩子们的尺码，找到那条读书推荐…"></textarea>
+              </div>
+              <div class="answers-actions">
+                <button class="button" type="submit">发送回答</button>
+                <button class="link-button" type="button" id="answers-skip">跳过</button>
+              </div>
+              <p class="fineprint form-note">我们只会用这些信息规划 Doddy 的抢先体验，并会在你提出要求时与你的邮箱一并删除。</p>
+              <p id="answers-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <div class="open-app">
+              <p>想现在就聊聊？<a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">加入 Telegram 群组</a></p>
+              <p>关注 Doddy：<a class="text-link" href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok doddy_mate</a> <a class="text-link" href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram doddy_mate</a></p>
+              <p>你已经在测试 Doddy 了吗？<a class="text-link" id="open-app" href="doddy://home">打开 Doddy</a></p>
+              <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+          <picture class="join-pose"><img src="/assets/poses/doddy-pose-basketball-shot-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+        </div>
+        <div class="later">
+          <h2 class="later-title">以后也许</h2>
+          <p>目前正在测试的有：日历、提醒事项、闹钟、计时器、清单、地图和消息草稿，更改前会先在屏幕上确认（快速编辑清单则可以撤销）；另外还有与英语并列的波兰语。尚未开发，也不承诺任何时间：Android。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="#how">工作原理</a></li>
+          <li><a href="#meet">认识 Doddy</a></li>
+          <li><a href="#privacy">隐私</a></li>
+          <li><a href="/blog/">博客 <span class="note">(英语)</span></a></li>
+          <li><a href="#join">加入抢先体验</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram 群组</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="语言" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans" aria-current="page">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
+      </div>
+      <p>Doddy 是 AI 助手，不是真人。你的笔记保存在 iPhone 上；语音、电话、共享清单和已连接的账户，只有在你开启后才会把数据发送出 iPhone。</p>
+      <p>本页面使用 Vercel Web Analytics 统计访问，它不设置 Cookie。字体从 Google Fonts 加载。</p>
+      <p data-ga-note hidden>如果你允许，Google Analytics 还会统计访问并设置 Cookie。<button type="button" class="foot-choice" data-analytics-choices>分析选项</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>
