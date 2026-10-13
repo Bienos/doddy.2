@@ -29,19 +29,13 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
-    /// Memory on calls: a copy of the notes is on the Doddy messaging server (DOD-11).
-    @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
-    /// Testing only (ADR-265): who runs Doddy's voice, ElevenLabs (default) or OpenAI Realtime.
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
+    /// First visit (ADR-326): until a conversation has really connected, Home keeps to Talk to
+    /// Doddy and holds back the voice picker (ADR-443) and the Back Tap and Today cards.
+    @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
+    @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
+    @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
+    @State private var showDataFlow = false
     private var router: ShortcutRouter { .shared }
-
-    /// Where notes are kept, as switched on now: never "only on this iPhone" while a copy is on the server.
-    /// Whole sentences, not pieced together, so each has its Polish line.
-    private var statusText: String {
-        memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-    }
 
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
     /// four times and sits down on his box (ADR-323). The first time Home shows on a morning he
@@ -139,8 +133,21 @@ struct HomeView: View {
                         .accessibilityIdentifier("home.talk")
                         .modifier(SlideIn(shown: buttonsShown, delay: 0))
 
-                        voiceProviderSwitch
-                            .modifier(SlideIn(shown: buttonsShown, delay: 0))
+                        // Who runs the voice, and OpenAI's model (ADR-442), once there has been a first
+                        // conversation; before that it is one more choice ahead of talking (ADR-443).
+                        // Settings › Voice has it from the start.
+                        if hadFirstConversation {
+                            VoiceProviderPicker(idPrefix: "home")
+                                .modifier(SlideIn(shown: buttonsShown, delay: 0))
+                        }
+
+                        if !hadFirstConversation && store.environment.capabilities.isAvailable(.voiceInput) {
+                            Text("Try saying: \u{201C}Remember the gate code is 4821.\u{201D} I'll ask before I keep anything.")
+                                .font(.subheadline)
+                                .foregroundStyle(Theme.secondaryText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .accessibilityIdentifier("home.firstHint")
+                        }
 
                         Button { showAsk = true } label: {
                             HStack { Text("Ask Doddy"); Spacer(); Image(systemName: "text.bubble") }
@@ -176,10 +183,14 @@ struct HomeView: View {
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                         .frame(maxWidth: .infinity)
 
-                    TodayCard(openSettings: { selectedTab = .settings })
+                    // Today only points to Settings until something is connected; on the first
+                    // visit that is one more thing to read before talking (ADR-326).
+                    if hadFirstConversation || calendarOn || remindersOn {
+                        TodayCard(openSettings: { selectedTab = .settings })
+                    }
 
-                    // Back Tap exists only on iPhone (ADR-337).
-                    if router.setup.phase == .notStarted, DeviceSupport.hasBackTap {
+                    // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
+                    if router.setup.phase == .notStarted, DeviceSupport.hasBackTap, hadFirstConversation {
                         backTapCard
                     }
                     HeyDoddyCard()
@@ -187,10 +198,15 @@ struct HomeView: View {
 
                     recent
 
-                    Text(statusText)
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityIdentifier("home.status")
+                    // The longer summary is in Settings › Privacy (ADR-326).
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Doddy is an AI, not a person.")
+                            .accessibilityIdentifier("home.status")
+                        Button("What leaves this iPhone") { showDataFlow = true }
+                            .accessibilityIdentifier("home.dataFlow")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -199,6 +215,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
+            .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
@@ -328,28 +345,6 @@ struct HomeView: View {
     }
 }
 
-extension HomeView {
-    /// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to
-    /// compare them. Same notes, lists, tools and cards either way; it takes effect when the next
-    /// conversation starts, and Settings › What leaves this iPhone follows it.
-    fileprivate var voiceProviderSwitch: some View {
-        let provider = VoiceProvider(stored: voiceProvider)
-        return VStack(alignment: .leading, spacing: 6) {
-            Picker("Test voice", selection: $voiceProvider) {
-                ForEach(VoiceProvider.allCases) { option in
-                    Text(verbatim: option.shortName).tag(option.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("home.voiceProvider")
-            Text(verbatim: provider == .openAIRealtime
-                ? "Testing: OpenAI runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
-                : "Testing: ElevenLabs runs your next conversation.")
-                .font(.caption2).foregroundStyle(Theme.secondaryText)
-        }
-    }
-}
-
 /// A button's entrance after the opening: up from just below, with a little bounce, each a
 /// beat after the one before. Instant (never hidden) under Reduce Motion, where `shown` stays true.
 private struct SlideIn: ViewModifier {
@@ -398,6 +393,22 @@ enum HomeIdle {
         guard let day = MorningWave.dayToRecord(now: now, lastWaveDay: defaults.string(forKey: waveDayKey)) else { return false }
         defaults.set(day, forKey: waveDayKey)
         return true
+    }
+}
+
+/// Settings › Privacy › What leaves this iPhone, opened from Home's footer (ADR-326).
+private struct DataFlowSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            DataFlowView()
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+        }
     }
 }
 

@@ -5,9 +5,15 @@ import Foundation
 // the approved fields stored. Nothing here is inferred, and the profile is separate from
 // saved memories.
 
-/// The six optional fields the first introduction may ask about. Nothing else is stored.
+/// The six optional fields of "About you". Nothing else is stored.
 public enum ProfileKey: String, CaseIterable, Codable, Sendable {
     case name, help, style, language, humor, context
+
+    /// What the first introduction asks, in order (ADR-327): three questions, not six. Style,
+    /// language and humour already have sensible defaults in Settings › Doddy's voice and
+    /// personality (language auto, brief, casual, subtle humour), and can still be added under
+    /// Settings › About you › Edit.
+    public static let introductionQuestions: [ProfileKey] = [.name, .help, .context]
 
     /// Maximum length in Unicode scalars (same counting rule as memories and SQLite `length`).
     public var maxLength: Int {

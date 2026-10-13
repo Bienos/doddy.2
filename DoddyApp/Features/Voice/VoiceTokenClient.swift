@@ -4,7 +4,7 @@ import Security
 
 /// Fetches a one-conversation token from Doddy's token server. This is the app's only
 /// network request of its own: it sends the access code, nothing about the user or their notes.
-/// For the OpenAI test voice (ADR-265) the body also names the provider.
+/// For the OpenAI voice (ADR-265) the body also names the provider and the model (ADR-442).
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
     let accessCode: String
@@ -15,9 +15,9 @@ struct VoiceTokenClient: Sendable {
         return try VoiceTokenServer.token(status: status, body: data).get()
     }
 
-    /// OpenAI Realtime client secret (testing only).
-    func fetchOpenAIGrant() async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
-        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime))
+    /// OpenAI Realtime client secret for the chosen model.
+    func fetchOpenAIGrant(model: OpenAIRealtimeModel) async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
+        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime, model: model))
         return try VoiceTokenServer.openAIGrant(status: status, body: data).get()
     }
 

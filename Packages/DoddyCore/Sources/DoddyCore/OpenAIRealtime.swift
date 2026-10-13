@@ -1,15 +1,15 @@
 import Foundation
 
-// OpenAI Realtime as a second voice provider, for side-by-side testing only (ADR-265).
-// ElevenLabs stays the default. Everything here is pure: what the app sends over the WebSocket
+// OpenAI Realtime as Doddy's default live voice (ADR-265, default since ADR-442). ElevenLabs stays
+// as the fallback switch. Everything here is pure: what the app sends over the WebSocket
 // and how it reads what comes back. The socket and audio live in DoddyApp/Features/Voice.
 // Wire shapes follow the GA Realtime API (session.type "realtime", audio/pcm at 24 kHz).
 
 // MARK: Provider choice
 
-/// Which company runs Doddy's live voice. ElevenLabs is the default; OpenAI Realtime is a test
-/// switch on Home so the owner can talk to both and compare. Notes, lists and every tool are
-/// the same on both: they live on this iPhone, not with either provider.
+/// Which company runs Doddy's live voice. OpenAI Realtime is the default (cheaper, ADR-442) when
+/// the token server is set; ElevenLabs is the fallback switch on Home. Notes, lists and every
+/// tool are the same on both: they live on this iPhone, not with either provider.
 public enum VoiceProvider: String, CaseIterable, Sendable, Identifiable {
     case elevenLabs = "elevenlabs"
     case openAIRealtime = "openai"
@@ -25,9 +25,44 @@ public enum VoiceProvider: String, CaseIterable, Sendable, Identifiable {
         }
     }
 
-    /// Anything unknown or missing is ElevenLabs.
+    /// Anything unknown or missing is ElevenLabs. For a *stored value that is known to be set*
+    /// (a conversation log); for "which voice runs the next conversation" use `effective`.
     public init(stored: String?) {
         self = stored.flatMap(VoiceProvider.init(rawValue:)) ?? .elevenLabs
+    }
+
+    /// The voice that runs the next conversation. A choice the user made wins. With none, OpenAI
+    /// Realtime is the default, but only where it can start: it needs the token server (the OpenAI
+    /// key lives there), so without one the default stays ElevenLabs instead of an error.
+    public static func effective(stored: String?, tokenServerSet: Bool) -> VoiceProvider {
+        if let chosen = stored.flatMap(VoiceProvider.init(rawValue:)) { return chosen }
+        return tokenServerSet ? .openAIRealtime : .elevenLabs
+    }
+}
+
+/// Which OpenAI Realtime model runs the conversation. The token server only mints secrets for
+/// these two ids (it refuses anything else), so the app can't be pointed at a pricier model.
+public enum OpenAIRealtimeModel: String, CaseIterable, Sendable, Identifiable {
+    case full = "gpt-realtime-2.1"
+    case mini = "gpt-realtime-2.1-mini"
+
+    public static let preferenceKey = "voice.openaiModel"
+    /// Mini is about a third of the price (docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md);
+    /// how it does in Polish and with tools is for the owner to judge on a device.
+    public static let `default`: OpenAIRealtimeModel = .mini
+
+    public var id: String { rawValue }
+
+    public var shortName: String {
+        switch self {
+        case .full: "2.1"
+        case .mini: "2.1 mini"
+        }
+    }
+
+    /// Anything unknown or missing is the default.
+    public init(stored: String?) {
+        self = stored.flatMap(OpenAIRealtimeModel.init(rawValue:)) ?? .default
     }
 }
 
@@ -44,10 +79,11 @@ public struct OpenAIRealtimeGrant: Equatable, Sendable {
 
 extension VoiceTokenServer {
     /// Request body for the token server. ElevenLabs sends none, exactly as before ADR-265.
-    public static func requestBody(for provider: VoiceProvider) -> Data? {
+    /// OpenAI names the model; a server from before ADR-442 ignores it and uses its own.
+    public static func requestBody(for provider: VoiceProvider, model: OpenAIRealtimeModel = .default) -> Data? {
         switch provider {
         case .elevenLabs: nil
-        case .openAIRealtime: Data(#"{"provider":"openai"}"#.utf8)
+        case .openAIRealtime: Data(#"{"provider":"openai","model":"\#(model.rawValue)"}"#.utf8)
         }
     }
 
