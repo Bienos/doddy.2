@@ -30,7 +30,7 @@ struct HomeView: View {
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to Talk to
-    /// Doddy and holds back the Back Tap and Today cards.
+    /// Doddy and holds back the voice picker (ADR-443) and the Back Tap and Today cards.
     @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
     @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
     @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false

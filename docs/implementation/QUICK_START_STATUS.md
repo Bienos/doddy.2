@@ -16,7 +16,7 @@ says yes.
   | Evening wrap-up | 21:00 every day | only with Reminders connected | same; without Reminders its screen has nothing to show (owner, 2026-10-11) |
   | Weekly tidy-up | Sunday 18:00 | yes | same; nothing is deleted unless tapped |
   | Weekly look-back (ADR-306) | Sunday 19:00 | yes | same; an hour after the tidy-up so they never arrive together (owner, 2026-10-11). Settings' own default is now 19:00 too (owner, 2026-10-11) |
-  | Use "About you" answers in voice conversations | — | **no** | sends the answers to ElevenLabs; only offered when answers are saved |
+  | Use "About you" answers in voice conversations | — | **no** | sends the answers to OpenAI or ElevenLabs, whichever runs the voice (ADR-442); only offered when answers are saved |
 - **Rules** (`Packages/DoddyCore/Sources/DoddyCore/QuickStart.swift`, `QuickStart.plan`):
   - nothing changes until **Turn these on**;
   - an unticked item is left as it is, never turned off;

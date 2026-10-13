@@ -14026,13 +14026,13 @@
         }
       }
     },
-    "Your saved answers are sent to ElevenLabs at the start of each conversation so I know them. Off, they stay on this iPhone.": {
+    "Your saved answers are sent to whichever service runs my voice (OpenAI or ElevenLabs, see Settings › Voice) at the start of each conversation so I know them. Off, they stay on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zapisane odpowiedzi są wysyłane do ElevenLabs na początku każdej rozmowy, żebym je znał. Gdy to jest wyłączone, zostają na tym iPhonie."
+            "value": "Zapisane odpowiedzi są wysyłane do usługi, która obsługuje mój głos (OpenAI lub ElevenLabs, zobacz Ustawienia › Głos), na początku każdej rozmowy, żebym je znał. Gdy to jest wyłączone, zostają na tym iPhonie."
           }
         }
       }

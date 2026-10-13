@@ -1272,7 +1272,7 @@
  "Your parking spot": "Twoje miejsce parkowania",
  "Your preferences changed somewhere else while you were editing. Nothing was saved; your edits are still here. Check them and save again.": "Twoje ustawienia zmieniły się gdzieś indziej w trakcie edycji. Nic nie zostało zapisane; Twoje zmiany wciąż tu są. Sprawdź je i zapisz ponownie.",
  "Your question is still in the box. Your saved notes are not affected.": "Twoje pytanie wciąż jest w polu. Zapisane notatki pozostają bez zmian.",
- "Your saved answers are sent to ElevenLabs at the start of each conversation so I know them. Off, they stay on this iPhone.": "Zapisane odpowiedzi są wysyłane do ElevenLabs na początku każdej rozmowy, żebym je znał. Gdy to jest wyłączone, zostają na tym iPhonie.",
+ "Your saved answers are sent to whichever service runs my voice (OpenAI or ElevenLabs, see Settings › Voice) at the start of each conversation so I know them. Off, they stay on this iPhone.": "Zapisane odpowiedzi są wysyłane do usługi, która obsługuje mój głos (OpenAI lub ElevenLabs, zobacz Ustawienia › Głos), na początku każdej rozmowy, żebym je znał. Gdy to jest wyłączone, zostają na tym iPhonie.",
  "Your shortcut reached Doddy": "Twój skrót dotarł do Doddy’ego",
  "Your typed note": "Twoja wpisana notatka",
  "Your voice note": "Twoja notatka głosowa",
