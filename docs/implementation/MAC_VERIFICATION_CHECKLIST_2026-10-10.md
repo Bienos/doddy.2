@@ -431,6 +431,19 @@ Needs first: the new "First conversation" section on the live agent, with placeh
 | N3 | Turn on Ask Doddy, Hey Doddy and Pause all; set a messaging server; come back to Privacy | Network adds the Ask Doddy gateway, Picovoice and the messaging server, and drops the European Central Bank (paused). Cloud AI adds "OpenAI (Ask Doddy)" and the messaging server's calls and news writer |
 | N4 | Open What leaves this iPhone after N3 | Every service with a filled-in row is in the Network row, and nothing else; the screen still updates when a switch changes |
 
+## 4x. Stale tool calls (ADR-458)
+`VoiceSessionController` changed without a compile: `handle(_:attempt:)`, `ToolGate.decide` in place of the four checks, and the `ToolCallOwners` checks. Build first. To make a lookup slow enough, use Settings › Developer › Network Link Conditioner › Very Bad Network.
+| # | Do this | Expect |
+|---|---|---|
+| S1 | Build the app target | Compiles. The new code is in `handle`, `handleOpenAICall`, `propose`, `reply`, `dropStale`, `handlePlan`, `runPlan` |
+| S2 | End + Start while a Gmail draft is preparing ("draft an email to Ana saying hi", then End and Start at once) | No card in the new conversation. The new agent never hears about the draft. What Doddy did lists the draft request as not done; nothing was sent or drafted |
+| S3 | "Remind me about my parking note when I get to <a place>", then End and Start before the place list shows | No place card in the new conversation; the place choice of any card there is unchanged |
+| S4 | Confirm "add a reminder…" and End and Start straight after the tap | The reminder is added (check Reminders); What Doddy did shows its real result; the new conversation's agent is not told about it, and its screen shows no "Added" status for it |
+| S5 | Normal use, no End: a single card (confirm and decline), a plan card, Pause all on, a connection switched off, translator mode | Same replies and cards as before this change (the order of checks is unchanged) |
+| S6 | Repeat S2 with the OpenAI test voice | Same as S2 |
+| S7 | "Add milk to the shopping list", then End at once (slow device or many lists) | What Doddy did shows the add as done (or "in progress" for a moment), never "not done" when milk is on the list |
+| S8 | Confirm a plan with a note and a reminder, End and Start while it runs | Both steps run and are logged; the new conversation shows no plan progress and its saved-notes count starts at 0 |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |
