@@ -230,6 +230,10 @@ NODE_PATH=$(npm root -g) node render.mjs --fonts <dir>   # -> ../png/*.png
 8. How each moment is shown (mockup 15): the card as is, or the card playing in three beats on scroll, or one of the other three.
 9. The copy deck (`COPY.md`, mockup 14): any line to change before build.
 
+## Next: Phase 2 brief
+
+`prompts/WHAT_CAN_DODDY_DO_PHASE2_DESIGN.md` is the brief for the next design round: the moments as three-beat storyboards, a consistency audit against the live homepage, and a site-wide improvement plan. Mockups only, then stop again.
+
 ## Phase 5 — Stopped here
 
 Not done, on purpose: no page under `site/`, no nav change on the live site, no JavaScript for the interactions, no deployment, no Vercel change, no analytics events. The next step after approval is a build milestone: the page folder, the nav item on the homepage and blog templates, the scroll logic, the reduced-motion paths, a Playwright check at 1440 / 390 / 320 like the homepage has, and the CSP review (the page adds no new hosts).
