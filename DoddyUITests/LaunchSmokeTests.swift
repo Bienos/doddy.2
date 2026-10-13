@@ -38,7 +38,12 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.switches["quickStart.morning"].exists)
         XCTAssertEqual(app.switches["quickStart.evening"].value as? String, "0", "Reminders is off on a fresh install")
         XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
-        app.buttons["quickStart.notNow"].tap()
+        // ADR-402: where Siri, the Action Button and the control are, without claiming they're set.
+        XCTAssertTrue(app.descendants(matching: .any)["quickStart.quickAccess"].exists)
+        // The tips box can push Not now below the fold; the tab bar behind this cover isn't in the way.
+        let notNow = app.buttons["quickStart.notNow"]
+        for _ in 0..<10 where !notNow.isHittable { app.scrollStep() }
+        notNow.tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "A little less to carry.")
