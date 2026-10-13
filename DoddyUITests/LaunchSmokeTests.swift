@@ -190,7 +190,8 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
         XCTAssertTrue(scene.label.contains("Doddy"), scene.label)
         scene.tap()
-        XCTAssertTrue(scene.waitForNonExistence(timeout: 5))
+        // A tap jumps to the hand-over; at the tests' slower clock that is under 3 s from the end.
+        XCTAssertTrue(scene.waitForNonExistence(timeout: 10))
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
         // Save sits below Doddy and the scenery on Home; it is reachable once the opening is gone.
         XCTAssertTrue(app.reveal(app.buttons["home.save"]), "the app is usable as soon as the opening is gone")
@@ -205,9 +206,10 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true, opening: true)
         let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
-        // It fades out on its own after its timeline (OpeningScene.Beat.end, 2.4 s); the margin is for slow
-        // simulators, since this checks that it ends by itself, not how long it takes.
-        XCTAssertTrue(scene.waitForNonExistence(timeout: 10))
+        // It fades out on its own after its timeline (OpeningScene.Beat.end, 2.4 s, played
+        // UITestLaunch.openingTimeScale times slower here); the margin is for slow simulators,
+        // since this checks that it ends by itself, not how long it takes.
+        XCTAssertTrue(scene.waitForNonExistence(timeout: 30))
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
 
         XCUIDevice.shared.press(.home)

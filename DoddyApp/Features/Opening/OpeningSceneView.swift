@@ -24,7 +24,9 @@ struct OpeningSceneView: View {
     /// Seconds added to the clock by a tap: the tap jumps straight to the hand-over.
     @State private var shift: TimeInterval = 0
 
-    private func time(_ date: Date) -> TimeInterval { date.timeIntervalSince(play.startedAt) + shift }
+    private func time(_ date: Date) -> TimeInterval {
+        OpeningScene.sceneTime(elapsed: date.timeIntervalSince(play.startedAt), timeScale: play.timeScale) + shift
+    }
 
     var body: some View {
         GeometryReader { geo in
