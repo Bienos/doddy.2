@@ -102,10 +102,22 @@ struct SettingsView: View {
                         Label("Instagram · doddy_mate", systemImage: "camera")
                     }
                     .accessibilityIdentifier("settings.instagram")
+                    // Doddy's card (ADR-444) is only his picture, so it goes with "Hide character artwork".
+                    if !hideCharacterArt {
+                        ShareLink(item: BigBrainShareCard(),
+                                  preview: SharePreview("Big brain. Small body.", image: Image("ShareDoddy_big_brain"))) {
+                            Label("Share Doddy's card", systemImage: "square.and.arrow.up")
+                        }
+                        .accessibilityIdentifier("settings.shareCard")
+                    }
                 } header: {
                     Text("Follow Doddy")
                 } footer: {
-                    Text("Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.")
+                    if hideCharacterArt {
+                        Text("Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.")
+                    } else {
+                        Text("Opens TikTok or Instagram outside Doddy. Doddy's card is just his picture: nothing you saved is in it.")
+                    }
                 }
 
                 Section("About you") {
