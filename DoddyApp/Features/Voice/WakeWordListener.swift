@@ -93,8 +93,14 @@ final class WakeWordListener {
         refresh()
     }
 
-    /// Settings → Hey Doddy switch. Asks iOS for the microphone here, where the user can answer.
+    /// Why the last "turn on" couldn't get the token server's key (ADR-328), for Settings and the
+    /// Home card. Nil once a key is here.
+    private(set) var keyProblem: String?
+
+    /// Settings → Hey Doddy switch, or the Home card. Fetches the token server's key when no key is
+    /// here yet (ADR-328), then asks iOS for the microphone here, where the user can answer.
     func turnOn() async {
+        keyProblem = await WakeOneTapSetup.fetchKeyIfNeeded()
         UserDefaults.standard.set(true, forKey: PreferenceKey.heyDoddyOn)
         if AVAudioApplication.shared.recordPermission == .undetermined {
             _ = await AVAudioApplication.requestRecordPermission()
@@ -176,8 +182,8 @@ final class WakeWordListener {
             // A Focus with Doddy's filter can pause listening (ADR-312); the switch itself stays on.
             switchedOn: isAllowedThisLaunch && UserDefaults.standard.bool(forKey: PreferenceKey.heyDoddyOn)
                 && !FocusFilterState.shared.settings.pausesHeyDoddy,
-            hasAccessKey: WakeAccessKeyStore.isSaved,
-            hasKeywordFile: WakeKeywordStore.exists,
+            hasAccessKey: WakeAccessKeyStore.activeKey != nil,
+            hasKeywordFile: WakeKeywordStore.isAvailable,
             microphone: Self.microphone,
             conversationOrVoiceScreen: handingOver || waitingForConversationAudio
                 || VoiceSessionController.conversationInProgress || ShortcutRouter.shared.isVoicePresented,
@@ -227,7 +233,7 @@ final class WakeWordListener {
     // MARK: Engine
 
     private func startEngine(inBackground: Bool) {
-        guard let key = WakeAccessKeyStore.read(), let path = WakeKeywordStore.url?.path else { return }
+        guard let key = WakeAccessKeyStore.activeKey, let path = WakeKeywordStore.activeURL?.path else { return }
         do {
             if manager == nil {
                 // Picovoice checks the AccessKey here (online); the audio stays on this iPhone.
