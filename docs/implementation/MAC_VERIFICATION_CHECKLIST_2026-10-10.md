@@ -381,6 +381,12 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | Q5 | Fresh install; skip; **Turn these on** with the look-back ticked; allow notifications | "Weekly look-back set."; Settings › Weekly look-back shows Sunday 19:00, the tidy-up Sunday 18:00 |
 | Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |
 
+## 4t. A shorter introduction (ADR-327)
+| # | Do this | Expect |
+|---|---|---|
+| I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
+| I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |
