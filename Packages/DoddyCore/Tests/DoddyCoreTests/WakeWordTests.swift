@@ -169,4 +169,14 @@ final class WakeWordTests: XCTestCase {
         XCTAssertEqual(WakeKeywordFile.check(fileName: "Hej-Doddy_pl_ios_v4_0_0.ppn", byteCount: 3_000), .language("pl"))
         XCTAssertTrue(WakeKeywordFile.Problem.language("pl").message.contains("English"))
     }
+
+    /// ADR-328: once, after three real conversations, only when one tap is enough.
+    func testTheHeyDoddyCardIsOfferedOnceWhenOneTapIsEnough() {
+        XCTAssertTrue(HeyDoddyOffer.shouldOffer(conversations: 3, heyDoddyOn: false, dismissed: false, oneTapReady: true))
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 2, heyDoddyOn: false, dismissed: false, oneTapReady: true), "too soon")
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: true, dismissed: false, oneTapReady: true), "already on")
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: false, dismissed: true, oneTapReady: true), "never again after Not now")
+        XCTAssertFalse(HeyDoddyOffer.shouldOffer(conversations: 9, heyDoddyOn: false, dismissed: false, oneTapReady: false),
+                       "no card that leads to a Picovoice form")
+    }
 }
