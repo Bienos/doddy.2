@@ -775,7 +775,7 @@ public enum VoiceToolReply {
         "\(label): \"\(ToolData.clean(text))\""
     }
 
-    private static func durationText(_ seconds: Int) -> String {
+    static func durationText(_ seconds: Int) -> String {
         if seconds >= 60, seconds % 60 == 0 {
             let minutes = seconds / 60
             return "\(minutes) minute\(minutes == 1 ? "" : "s")"

@@ -27,6 +27,8 @@ TARGETS = [
     ("DoddyShare/Localizable.xcstrings", ("DoddyShare",)),
     ("DoddyWatch/Localizable.xcstrings", ("DoddyWatch",)),
     ("DoddyWatchWidgets/Localizable.xcstrings", ("DoddyWatchWidgets",)),
+    ("DoddyMac/Localizable.xcstrings", ("DoddyMac",)),
+    ("DoddyMacWidgets/Localizable.xcstrings", ("DoddyMacWidgets",)),
 ]
 # System permission prompts (INFOPLIST_KEY_NS…UsageDescription in project.yml, app target):
 # l10n/pl_infoplist.json holds the English each translation was made from, so a changed prompt
@@ -86,13 +88,47 @@ def app_strings():
     return strings_in(*[folder for _, folders in TARGETS for folder in folders])
 
 
-def catalog(table):
+# iPad wording (ADR-437): a string that says "this iPhone" gets a device variation, so on an iPad
+# it says "this iPad" in English and Polish. Every other "iPhone" in such a string also means
+# this device ("your iPhone backups"), checked when this was added. Only the targets that run on
+# iPad; the watch and Mac catalogs are left alone.
+IPAD_TARGETS = ("DoddyApp/Resources/Localizable.xcstrings", "DoddyWidgets/Localizable.xcstrings",
+                "DoddyShare/Localizable.xcstrings")
+
+
+def says_this_iphone(key):
+    return "this iPhone" in unescape(key)
+
+
+def ipad_english(text):
+    return text.replace("iPhone", "iPad")
+
+
+def ipad_polish(text):
+    # Locative "na tym iPhonie", genitive "z tego iPhone’a", nominative "iPhone".
+    return re.sub(r"iPhone[’']a", "iPada", text).replace("iPhonie", "iPadzie").replace("iPhone", "iPad")
+
+
+def unit(value):
+    return {"stringUnit": {"state": "translated", "value": value}}
+
+
+def by_device(other, ipad):
+    return {"variations": {"device": {"ipad": unit(ipad), "other": unit(other)}}}
+
+
+def catalog(table, ipad_keys=()):
     strings = {}
-    for key in sorted(table):
-        strings[unescape(key)] = {
-            "extractionState": "manual",
-            "localizations": {"pl": {"stringUnit": {"state": "translated", "value": table[key]}}},
-        }
+    for key in sorted(set(table) | set(ipad_keys)):
+        localizations = {}
+        if key in table:
+            localizations["pl"] = unit(table[key])
+        if key in ipad_keys:
+            english = unescape(key)
+            localizations["en"] = by_device(english, ipad_english(english))
+            if key in table:
+                localizations["pl"] = by_device(table[key], ipad_polish(table[key]))
+        strings[unescape(key)] = {"extractionState": "manual", "localizations": localizations}
     return json.dumps({"sourceLanguage": "en", "strings": strings, "version": "1.0"},
                       ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
@@ -174,7 +210,8 @@ def main():
         found = strings_in(*folders)
         # The app's catalog carries every line, as before; the others only their own strings.
         part = table if index == 0 else {k: v for k, v in table.items() if k in found}
-        outputs[os.path.join(ROOT, path)] = catalog(part)
+        ipad_keys = {k for k in found if says_this_iphone(k)} if path in IPAD_TARGETS else set()
+        outputs[os.path.join(ROOT, path)] = catalog(part, ipad_keys)
     outputs[INFOPLIST_CATALOG] = infoplist_catalog(infoplist)
     outputs[SHORTCUTS_CATALOG] = catalog(shortcuts)
     if "--check" in sys.argv:

@@ -62,7 +62,11 @@ const draftArgs = { to: "anna@example.com", subject: "Lunch Friday", body: "Yes,
 const prepared = await t.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: draftArgs } });
 writeTool("prepare-result-draft", prepared.body);
 writeTool("run-result-draft", (await runTool(t, "draft_email", draftArgs, { approvalId: prepared.body.approvalId })).body);
-writeTool("error-confirmation-expired", (await runTool(t, "draft_email", draftArgs, { approvalId: prepared.body.approvalId })).body);
+// Since ADR-322 a used approval answers again with its first answer, so this is an approval the
+// server never gave (the same reply an expired one gets).
+writeTool("run-result-draft-replayed", (await runTool(t, "draft_email", draftArgs, { approvalId: prepared.body.approvalId })).body);
+writeTool("error-confirmation-expired", (await runTool(t, "draft_email", draftArgs, { approvalId: "11111111-1111-4111-8111-111111111111" })).body);
+writeTool("prepare-result-draft-again", (await t.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: draftArgs } })).body);
 writeTool("catalog-gmail-on", (await t.call("GET", "/v1/tools")).body);
 writeTool("receipts", (await t.call("GET", "/v1/tools/receipts")).body);
 const t2 = await startRig();

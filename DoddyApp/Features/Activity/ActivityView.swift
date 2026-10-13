@@ -69,6 +69,11 @@ struct ActivityView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.canvas)
+        // Unsure notes and list changes are settled from Doddy's own database (ADR-321).
+        .task {
+            await store.reload()
+            if store.hasLoaded, store.loadError == nil { activity.settleLocal(notes: store.memories, lists: store.lists) }
+        }
         .navigationTitle("What Doddy did")
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Clear this list?", isPresented: $confirmClear, titleVisibility: .visible) {
@@ -116,6 +121,25 @@ struct ActivityView: View {
             }
             if let note = entry.note(.current) {
                 Text(note).font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+            // What the app itself read back (ADR-319); kept only on confirmed entries.
+            if let receipt = entry.receipt {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: receipt.heading(.current, time: receipt.readAt.formatted(date: .omitted, time: .shortened)))
+                        .font(.caption.weight(.semibold))
+                    ForEach(receipt.lines(.current), id: \.self) { line in
+                        Text(line).font(.caption)
+                    }
+                }
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityIdentifier("activity.receipt")
+            }
+            // How an unsure change was settled, step by step.
+            if entry.history.contains(where: { $0.status == .unknown }) {
+                Text(verbatim: entry.historyText(.current) { $0.formatted(date: .omitted, time: .shortened) })
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("activity.history")
             }
             if entry.canCheckInReminders {
                 Button(checking.contains(entry.id) ? "Checking…" : "Check in Reminders") {

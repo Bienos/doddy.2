@@ -114,7 +114,8 @@ struct CallsSettingsView: View {
         Section("Calling Doddy") {
             if let number = s.doddyNumber, let url = URL(string: "tel:\(number)") {
                 StatusRow(title: "Doddy's number", value: number)
-                Link("Call Doddy", destination: url)
+                // iPad has no phone; the number above is for calling from a phone (ADR-437).
+                if DeviceSupport.hasPhoneCalls { Link("Call Doddy", destination: url) }
             }
             Toggle("Answer calls from my number", isOn: Binding(
                 get: { s.inboundEnabled },

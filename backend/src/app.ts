@@ -72,9 +72,15 @@ export function buildApp(
   });
   server.requestTimeout = 20_000;
   server.headersTimeout = 10_000;
-  // Retention: once at start, then hourly while the server runs.
-  store.prune(Date.now());
-  const pruning = setInterval(() => store.prune(Date.now()), 3_600_000);
+  // Retention and abandoned sign-ins: once at start, then hourly while the server runs. The sweep
+  // runs first so an expired attempt's connection is queued for removal before prune drops the attempt.
+  const housekeeping = () => {
+    void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
+      .then(() => store.prune(Date.now()))
+      .catch(() => {}); // the store closed with the server; the next start sweeps again
+  };
+  housekeeping();
+  const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
   return { server, store, service, tools, provider };

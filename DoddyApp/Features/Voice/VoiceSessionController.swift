@@ -147,6 +147,12 @@ final class VoiceSessionController {
     private(set) var phase: Phase = .idle {
         didSet {
             Self.conversationInProgress = isLive
+            if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
+            ListeningIndicatorModel.shared.refresh()
+            switch phase {
+            case .listening, .thinking, .speaking: connectedOnce = true
+            default: break
+            }
             syncIsland()
             // Listening comes only from the provider's own event: this conversation really
             // connected. Counted once per conversation, for the Hey Doddy card (ADR-328).
@@ -167,6 +173,16 @@ final class VoiceSessionController {
     /// True while any conversation holds the microphone (the island keeps it alive in other
     /// screens). Voice samples in Settings don't play then, so they never take over its audio.
     static private(set) var conversationInProgress = false
+    /// The conversation that is connecting or live, for Stop listening (ADR-361).
+    static private(set) weak var current: VoiceSessionController?
+
+    /// What the listening indicator says about the conversation (ADR-361).
+    static var microphone: MicrophoneSnapshot.Conversation {
+        guard let current, current.isLive else { return .none }
+        if current.phase == .connecting { return .connecting }
+        if current.longTurn.isListening { return .longTurn }
+        return current.isMuted ? .muted : .listening
+    }
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
@@ -201,7 +217,12 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
-    private(set) var isMuted = false { didSet { syncIsland() } }
+    private(set) var isMuted = false {
+        didSet {
+            syncIsland()
+            ListeningIndicatorModel.shared.refresh()
+        }
+    }
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
@@ -220,6 +241,15 @@ final class VoiceSessionController {
     private(set) var translatorFactsSaved: Result<String, TranslatorSaveError>?
     /// Noisy place: the microphone is muted except while a hold-to-talk button is held (T4).
     private(set) var holdToTalk = false
+    /// "Listen until I finish" (OP-019, ADR-364): the user ends the turn; only the words are sent.
+    private(set) var longTurn: LongTurnPhase = .off {
+        didSet { ListeningIndicatorModel.shared.refresh() }
+    }
+    @ObservationIgnored private let longTurnRecorder = LongTurnRecorder()
+    /// The recording waiting to be written out (again); deleted once sent or dropped.
+    @ObservationIgnored private var longTurnFile: URL?
+    @ObservationIgnored private var mutedBeforeLongTurn = false
+    @ObservationIgnored private var longTurnLimit: Task<Void, Never>?
     private(set) var heldSide: TranslatorDirection?
     /// Opened from Home's Translate: Doddy's greeting comes first, then the app asks for the disclosure.
     private var translatorNeedsHello = false
@@ -252,6 +282,10 @@ final class VoiceSessionController {
     /// while that start is still `startAttempt`, so a lookup that finishes after End and a new
     /// Start never reaches the new conversation.
     private var callOwners = ToolCallOwners()
+    /// What earlier tries of a reminder or event meant when its card was shown (ADR-319).
+    private var retryChecks: [String: ActionRetryDecision] = [:]
+    /// The app's read-back and whether it was asked to write, for the entry logged with the reply.
+    private var writeResults: [String: WriteResult] = [:]
     /// Shared with "Hey Doddy" listening, which may have started it (ADR-254).
     private let island = VoiceLiveActivity.shared
     /// True once this conversation has shown its state on the island, so only it ends it.
@@ -274,6 +308,8 @@ final class VoiceSessionController {
     private static let toolLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-tools")
     /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
     private let devices: any DeviceConnecting
+    private let alarmWriter = AlarmKitWriter()
+    private let leaveByWriter = LeaveByScheduler()
     private var conversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's voice switch, read when it starts; ADR-265, ADR-442).
     private(set) var provider: VoiceProvider = .elevenLabs
@@ -363,6 +399,9 @@ final class VoiceSessionController {
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil
     ) async {
         guard !isLive else { return }
+        // The previous conversation's lines and unanswered cards are kept before they're cleared,
+        // even when it ended in a failure nothing else recorded (ADR-360).
+        keepLog()
         // This start's number (review H1): a start that was ended and replaced while it waited
         // never opens, keeps or hears a conversation.
         startAttempt += 1
@@ -370,6 +409,11 @@ final class VoiceSessionController {
         callOwners.forget(before: attempt)
         isOffline = false
         offlineSaved = nil
+        sessionEnd = nil
+        recovery = nil
+        recoverySaved = nil
+        userAskedToEnd = false
+        connectedOnce = false
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
         ReadAloudController.shared.stop()
         startedByWakeWord = wakeGreeting != nil
@@ -451,8 +495,9 @@ final class VoiceSessionController {
         guard attempt == startAttempt, phase == .connecting else { return }
         // Private notes (ADR-310) never reach the voice agent.
         var notes = VoiceContext.savedNotes(PrivateNotesStore.current().shareable(store.memories))
+        // After a drop the agent is told it was cut off (ADR-360), within the same switch.
         var recent = logs.isEnabled
-            ? VoiceContext.recentConversations(logs.logs)
+            ? SessionRecovery.withResumeNote(VoiceContext.recentConversations(logs.logs), logs: logs.logs, now: Date())
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
         var listsText = ListsPrompt.render(store.lists)
         if let templates = ListTemplateStore.current().promptLine { listsText += "\n" + templates }
@@ -546,8 +591,14 @@ final class VoiceSessionController {
                 ref.value?.startSilentWakeTimer()
             }
         }
-        config.onDisconnect = { _ in
-            Task { @MainActor in ref.value?.disconnected() }
+        config.onDisconnect = { reason in
+            // `.agent`: the connection was closed from the other side (ADR-360).
+            let kind: VoiceSessionEnd.Disconnect = switch reason {
+            case .user: .user
+            case .agent: .agent
+            case .error: .error
+            }
+            Task { @MainActor in ref.value?.disconnected(kind) }
         }
 
         let auth: ElevenLabsConfiguration
@@ -723,7 +774,7 @@ final class VoiceSessionController {
             fail(message)
             Task { await stop() }
         case .ended:
-            disconnected()
+            disconnected(.agent)
         }
     }
 
@@ -794,10 +845,14 @@ final class VoiceSessionController {
         return "\(session.category.rawValue), mode \(session.mode.rawValue), \(mixing), other app audio playing: \(session.isOtherAudioPlaying)"
     }
 
-    func stop() async {
+    /// `reason`: why it ends. Anything already known (a drop or failure) is kept.
+    func stop(_ reason: VoiceSessionEnd = .userEnded) async {
         // From here, a start still connecting ends itself and late events of this conversation
         // are dropped (review H1).
         startAttempt += 1
+        userAskedToEnd = true
+        if sessionEnd == nil { sessionEnd = reason }
+        dropLongTurn()
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
@@ -815,6 +870,15 @@ final class VoiceSessionController {
         WakeWordListener.shared.conversationAudioReleased()
     }
 
+    /// Stop listening from Siri or the indicator (OP-024, ADR-361): ends the conversation like End,
+    /// but keeps a "Save this note?" card that was showing as a draft. True when it kept one.
+    func stopListening() async -> Bool {
+        if sessionEnd == nil { sessionEnd = .stoppedListening }
+        keepRecoveryDraft()
+        await stop(.stoppedListening)
+        return recovery != nil
+    }
+
     /// Keeps the transcript lines of this conversation on the phone, once, so the next
     /// conversation can continue from it. Nothing is kept when there were no lines, when the
     /// user switched "Remember recent conversations" off, or when this conversation is private.
@@ -824,7 +888,7 @@ final class VoiceSessionController {
         self.startedAt = nil
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
-        logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: provider.rawValue))
+        logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: provider.rawValue, ended: sessionEnd?.code))
     }
 
     /// A random, stable id for this install, so ElevenLabs can tell the owner's conversations
@@ -838,13 +902,163 @@ final class VoiceSessionController {
     }
 
     func toggleMute() async {
-        guard let conversation else { return }
+        // During "Listen until I finish" the microphone stays muted until Done or Cancel.
+        guard let conversation, longTurn == .off else { return }
         do {
             try await conversation.setMuted(!isMuted)
             isMuted.toggle()
         } catch {
             // Keep the previous state; the UI shows what is actually set.
         }
+    }
+
+    // MARK: Listen until I finish (OP-019, ADR-364)
+
+    /// Mutes the conversation so the voice service hears nothing and can't end the turn, and
+    /// records the turn on this iPhone until Done.
+    func startLongTurn() async {
+        guard isLive, let conversation, longTurn == .off, translator == nil else { return }
+        mutedBeforeLongTurn = isMuted
+        if !isMuted {
+            do { try await conversation.setMuted(true) } catch {
+                longTurn = .draft(LongTurn.draft(for: .recordingFailed))
+                return
+            }
+            isMuted = true
+        }
+        guard longTurnRecorder.start() else {
+            await restoreMuteAfterLongTurn()
+            longTurn = .draft(LongTurn.draft(for: .recordingFailed))
+            return
+        }
+        longTurn = .listening(since: Date())
+        // At the limit it finishes as if Done was tapped.
+        longTurnLimit = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(LongTurn.maxSeconds))
+            guard !Task.isCancelled else { return }
+            await self?.finishLongTurn()
+        }
+    }
+
+    /// Done: the user has finished. Written out on this iPhone, then only the words are sent.
+    func finishLongTurn() async {
+        guard longTurn.isListening else { return }
+        longTurnLimit?.cancel()
+        longTurnLimit = nil
+        guard let file = longTurnRecorder.stop() else {
+            await restoreMuteAfterLongTurn()
+            longTurn = .draft(LongTurn.draft(for: .recordingFailed))
+            return
+        }
+        guard file.seconds >= LongTurn.minSeconds else {
+            try? FileManager.default.removeItem(at: file.url)
+            await restoreMuteAfterLongTurn()
+            longTurn = .draft(LongTurn.draft(for: .tooShort))
+            return
+        }
+        longTurnFile = file.url
+        await writeOutLongTurn()
+    }
+
+    /// Cancel while listening: the recording is deleted and nothing is sent.
+    func cancelLongTurn() async {
+        guard longTurn.isListening else { return }
+        dropLongTurn()
+        await restoreMuteAfterLongTurn()
+    }
+
+    /// Try again on a draft: writes the recording out again, or sends the text it holds.
+    func retryLongTurn() async {
+        guard case .draft(let draft) = longTurn else { return }
+        if !draft.text.allSatisfy(\.isWhitespace) {
+            await sendLongTurn(draft.text)
+        } else if draft.canWriteOutAgain, longTurnFile != nil {
+            await writeOutLongTurn()
+        }
+    }
+
+    func editLongTurn(_ text: String) {
+        guard case .draft(var draft) = longTurn else { return }
+        draft.text = text
+        longTurn = .draft(draft)
+    }
+
+    /// Discard on a draft: the recording and the text go; nothing is sent.
+    func discardLongTurn() async {
+        guard case .draft = longTurn else { return }
+        dropLongTurn()
+        await restoreMuteAfterLongTurn()
+    }
+
+    private func writeOutLongTurn() async {
+        guard let file = longTurnFile else { return }
+        longTurn = .writingOut
+        let available = VoiceMemoTranscriber.languages().map(\.identifier)
+        guard let identifier = LongTurn.locale(conversationCode: ConversationLanguage.stored().overrideCode, onDevice: available) else {
+            await draftLongTurn(LongTurn.draft(for: .notOnDevice))
+            return
+        }
+        switch await VoiceMemoTranscriber.transcribe(file, locale: Locale(identifier: identifier)) {
+        case .text(let result):
+            if let message = LongTurn.message(result.text) {
+                await sendLongTurn(message)
+            } else {
+                await draftLongTurn(LongTurn.draft(for: .nothingHeard))
+            }
+        case .noSpeech: await draftLongTurn(LongTurn.draft(for: .nothingHeard))
+        case .notOnDevice: await draftLongTurn(LongTurn.draft(for: .notOnDevice))
+        case .notAllowed: await draftLongTurn(LongTurn.draft(for: .notAllowed))
+        case .failed: await draftLongTurn(LongTurn.draft(for: .writeOutFailed))
+        }
+    }
+
+    /// The words go as one message, shown as the user's line; then the recording is deleted.
+    private func sendLongTurn(_ text: String) async {
+        guard let message = LongTurn.message(text) else {
+            await draftLongTurn(LongTurn.draft(for: .nothingHeard))
+            return
+        }
+        guard isLive, let conversation else {
+            await draftLongTurn(LongTurn.draft(for: .couldNotSend, text: message))
+            return
+        }
+        do {
+            try await conversation.sendMessage(message)
+        } catch {
+            await draftLongTurn(LongTurn.draft(for: .couldNotSend, text: message))
+            return
+        }
+        lines.append(Line(fromUser: true, text: message))
+        dropLongTurn()
+        await restoreMuteAfterLongTurn()
+    }
+
+    /// Not sent: kept as a draft on the screen, and the microphone goes back to how the user had
+    /// it, so the conversation carries on while the draft waits.
+    private func draftLongTurn(_ draft: LongTurnDraft) async {
+        // A recording that can't be written out again isn't kept a moment longer.
+        if !draft.canWriteOutAgain, let file = longTurnFile {
+            try? FileManager.default.removeItem(at: file)
+            longTurnFile = nil
+        }
+        longTurn = .draft(draft)
+        await restoreMuteAfterLongTurn()
+    }
+
+    /// Stops any recording and deletes the file. Used by every way out, the end included.
+    private func dropLongTurn() {
+        longTurnLimit?.cancel()
+        longTurnLimit = nil
+        longTurnRecorder.cancel()
+        if let file = longTurnFile { try? FileManager.default.removeItem(at: file) }
+        longTurnFile = nil
+        if longTurn != .off { longTurn = .off }
+    }
+
+    /// The microphone goes back to how the user had it before the long turn.
+    private func restoreMuteAfterLongTurn() async {
+        guard let conversation, isMuted, !mutedBeforeLongTurn else { return }
+        if (try? await conversation.setMuted(false)) != nil { isMuted = false }
     }
 
     /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
@@ -860,34 +1074,54 @@ final class VoiceSessionController {
         if action.changesSomething { markStarted(action.toolCallID) }
         switch action {
         case .memory(let id, let text):
-            do {
-                // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
-                let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
-                if onScreen(attempt) {
-                    pendingMemoryCategory = .other
-                    savedThisConversation += 1
-                    // Only after the store returned the saved record (ADR-240).
-                    flashIsland(.noteSaved)
+            let retry = retryChecks.removeValue(forKey: id)
+            // After an unconfirmed try: the note may be saved already (ADR-321). Look, don't save twice.
+            if let since = retry?.uncheckedSince, let existing = NoteIdempotency.savedSince(since, text: text, in: store.memories) {
+                let result = WriteResult(
+                    reply: VoiceToolReply.noteAlreadySaved(existing), receipt: ActivityReceipt(note: existing, readAt: Date()), attempted: false)
+                writeResults[id] = result
+                await reply(id, result.reply)
+            } else {
+                do {
+                    // rawText is the proposal the user reviewed, not a claimed verbatim transcript.
+                    let record = try await store.save(text: text, category: pendingMemoryCategory, source: .explicitVoice)
+                    if onScreen(attempt) {
+                        pendingMemoryCategory = .other
+                        savedThisConversation += 1
+                        // Only after the store returned the saved record (ADR-240).
+                        flashIsland(.noteSaved)
+                    }
+                    // What Doddy did can delete it again for a day, if it's left untouched (ADR-277).
+                    writeResults[id] = WriteResult(
+                        reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true,
+                        undo: .savedNote(id: record.id, text: record.currentText))
+                    await reply(id, VoiceToolReply.saved(record))
+                } catch {
+                    writeResults[id] = WriteResult(reply: "", attempted: true)
+                    await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
                 }
-                // What Doddy did can delete it again for a day, if it's left untouched (ADR-277).
-                await reply(id, VoiceToolReply.saved(record), undo: .savedNote(id: record.id, text: record.currentText))
-            } catch {
-                await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .event(let id, let draft):
-            let (text, undo) = addEvent(draft)
-            await reply(id, text, undo: undo)
+            let result = eventResult(addEvent(draft), draft: draft, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .reminder(let id, let draft):
             // The card is already gone (pendingAction is nil), so a second tap does nothing.
             reminderStatus = .adding(draft)
             let outcome = await addReminder(draft, attempt: attempt)
             if onScreen(attempt) { reminderStatus = .done(draft, outcome) }
             // Undo removes only a reminder Doddy wrote, found by its marker (ADR-268).
-            await reply(id, VoiceToolReply.reminder(outcome), undo: ActivityUndo.addedReminder(outcome, draft: draft))
+            let result = reminderResult(outcome, draft: draft, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .timer(let id, let draft):
-            await reply(id, await startTimer(draft))
+            let result = await timerResult(draft, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .alarm(let id, let draft):
-            await reply(id, await setAlarm(draft))
+            let result = await alarmResult(draft, retry: retryChecks.removeValue(forKey: id))
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .cancelAlarm(let id, let alarm):
             guard isOn(.timers) else {
                 connectionNeeded = .timers
@@ -922,7 +1156,10 @@ final class VoiceSessionController {
                 ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
         case .cloud(let id, let call, _, let approvalID, _):
-            await reply(id, await runConfirmedCloud(call, approvalID: approvalID))
+            retryChecks[id] = nil
+            let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
+            writeResults[id] = WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
+            await reply(id, record.reply)
         case .noteReminder(let id, let memoryID, let noteText, _, let target):
             guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
@@ -961,12 +1198,18 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
         case .leaveBy(let id, let plan):
-            // A local notification at the leave time, read back from iOS (ADR-335).
-            switch await LeaveByScheduler.schedule(plan) {
-            case .scheduled: await reply(id, VoiceToolReply.leaveBySet(plan, calendar: .current))
-            case .notAllowed: await reply(id, VoiceToolReply.leaveByNotAllowed)
-            case .failed: await reply(id, VoiceToolReply.leaveByFailed)
+            // A local notification at the leave time, read back from iOS (ADR-335). Doddy looks for
+            // the same one first, so asking again never sets a second (LeaveByActions).
+            let outcome = await LeaveBySetAction.set(plan, with: leaveByWriter)
+            var result = WriteResult(reply: VoiceToolReply.leaveBy(outcome, plan: plan, calendar: .current), attempted: outcome.attemptedWrite)
+            switch outcome {
+            case .set(let pending), .alreadySet(let pending):
+                result.receipt = ActivityReceipt(leaveBy: pending, plan: plan, calendar: .current, readAt: Date())
+            default:
+                break
             }
+            writeResults[id] = result
+            await reply(id, result.reply)
         case .parking(let id, let spot):
             // Kept on this iPhone, then read back (ADR-301).
             let saved = ParkingStore.save(spot)
@@ -1003,15 +1246,22 @@ final class VoiceSessionController {
             beginTranslator(setup)
             await reply(id, VoiceToolReply.translatorStarted(setup))
         case .createList(let id, let name, let items):
+            retryChecks[id] = nil
             do {
                 let list = try await store.createList(name: name, items: items, source: .voice)
                 if onScreen(attempt) {
                     listReceipt = ListReceipt(listID: list.id, title: "New list: \(list.name)", lines: list.items.map { .added($0.text) })
                 }
+                writeResults[id] = WriteResult(
+                    reply: "", receipt: ActivityReceipt(list: list.name, listID: list.id, lines: list.items.map { "Added: \($0.text)" }, readAt: Date()),
+                    attempted: true)
                 await reply(id, VoiceToolReply.listCreated(list))
             } catch ListError.nameTaken(let taken) {
+                // Refused before anything was written.
+                writeResults[id] = WriteResult(reply: "", attempted: false)
                 await reply(id, VoiceToolReply.listNameTaken(taken))
             } catch {
+                writeResults[id] = WriteResult(reply: "", attempted: true)
                 await reply(id, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
             }
         case .plan(let id, let steps, let blocked):
@@ -1160,6 +1410,7 @@ final class VoiceSessionController {
 
     /// L1: the user asked, so the items go straight on, read back, with a receipt and Undo.
     private func addToList(_ request: ListVoiceRequest, toolCallID: String) async {
+        guard await mayTryAgain(toolCallID, app: .memories) else { return }
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
         // Ended (or ended and started again) while the lists loaded: nothing changes after End
         // (review H9, ADR-458).
@@ -1167,6 +1418,9 @@ final class VoiceSessionController {
         markStarted(toolCallID)
         do {
             let result = try await store.addToList(request.items, listID: list.id, source: .voice)
+            writeResults[toolCallID] = WriteResult(
+                reply: "", receipt: ActivityReceipt(list: list.name, listID: list.id, lines: Self.receiptLines(result), readAt: Date()),
+                attempted: true)
             var lines = result.added.map { ListReceipt.Line.added($0.text) }
             lines += result.alreadyThere.map { .note("\($0) · already on the list, not added again") }
             lines += result.tooLong.map { .note("too long to add: \($0.prefix(40))…") }
@@ -1181,8 +1435,15 @@ final class VoiceSessionController {
             let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: list.id, list: list.name, items: result.added)
             await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name), undo: undo)
         } catch {
+            writeResults[toolCallID] = WriteResult(reply: "", attempted: true)
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
         }
+    }
+
+    /// What the list's own result says, for the receipt in What Doddy did (ADR-321).
+    private static func receiptLines(_ result: ListAddResult) -> [String] {
+        result.added.map { "Added: \($0.text)" } + result.alreadyThere.map { "Already on the list: \($0)" }
+            + result.tooLong.map { "Too long: \($0.prefix(40))" } + result.noRoom.map { "No room: \($0)" }
     }
 
     private func readList(_ name: String, toolCallID: String) async {
@@ -1194,6 +1455,7 @@ final class VoiceSessionController {
 
     /// Ticks or removes only clear matches; items that match several are offered to tap.
     private func changeList(_ request: ListVoiceRequest, tick: Bool, toolCallID: String) async {
+        guard await mayTryAgain(toolCallID, app: .memories) else { return }
         guard let list = await resolveList(request.list, toolCallID: toolCallID) else { return }
         // Ended (or ended and started again) while the lists loaded: nothing changes after End
         // (review H9, ADR-458).
@@ -1230,8 +1492,14 @@ final class VoiceSessionController {
             let undo: ActivityUndo? = changed.isEmpty ? nil
                 : tick ? .listTicked(listID: list.id, list: list.name, items: changed)
                 : .listRemoved(listID: list.id, list: list.name, items: changed)
+            writeResults[toolCallID] = WriteResult(
+                reply: "",
+                receipt: ActivityReceipt(
+                    list: list.name, listID: list.id, lines: changed.map { "\(tick ? "Ticked" : "Removed"): \($0.text)" }, readAt: Date()),
+                attempted: !matched.isEmpty)
             await reply(toolCallID, VoiceToolReply.listChanged(verb: verb, changed: changed, list: list.name, notFound: notFound, ambiguous: ambiguous), undo: undo)
         } catch {
+            writeResults[toolCallID] = WriteResult(reply: "", attempted: true)
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
         }
     }
@@ -1584,7 +1852,7 @@ final class VoiceSessionController {
         silentWakeTimer = Task { [weak self] in
             try? await Task.sleep(for: .seconds(WakeGate.silentWakeTimeout))
             guard !Task.isCancelled, let self, self.isLive, !self.lines.contains(where: \.fromUser) else { return }
-            await self.stop()
+            await self.stop(.quietTimeout)
         }
     }
 
@@ -1676,30 +1944,48 @@ final class VoiceSessionController {
     }
 
     private func fail(_ message: String) {
+        let wasLive = isLive
+        if sessionEnd == nil { sessionEnd = .dropped(isOffline ? .offline : .error(message)) }
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
+        keepRecoveryDraft()
         phase = .failed(message)
         pendingAction = nil
+        dropLongTurn()
+        // The lines and unanswered cards are kept now, not only at the next Close (ADR-360).
+        keepLog()
         // After an error the SDK may keep the microphone (review H2), so the conversation is
         // ended here as stop() does, instead of waiting for a disconnect that may not come.
-        guard let active = conversation else { return }
-        conversation = nil
-        endTranslator()
-        keepLog()
-        Task {
-            await active.endConversation()
-            WakeWordListener.shared.conversationAudioReleased()
+        if let active = conversation {
+            conversation = nil
+            endTranslator()
+            Task {
+                await active.endConversation()
+                WakeWordListener.shared.conversationAudioReleased()
+            }
         }
+        // As after a drop by disconnect: "Worth keeping?" once Doddy had been listening.
+        if wasLive { offerSaveSuggestions() }
     }
 
-    private func disconnected() {
+    private func disconnected(_ kind: VoiceSessionEnd.Disconnect) {
+        if sessionEnd == nil { sessionEnd = VoiceSessionEnd.afterDisconnect(kind, userAsked: userAskedToEnd) }
+        let wasLive = isLive
+        dropLongTurn()
         endTranslator()
         stopSilentWakeTimer()
         stopWatchingAudioInterruptions()
         conversation = nil
+        if wasLive { keepRecoveryDraft() }
         pendingAction = nil
         keepLog()
         if case .failed = phase { return }
+        // A drop is never shown as a normal end (ADR-360).
+        if let end = sessionEnd, end.isDrop, wasLive {
+            phase = .failed(SessionRecovery.status(end, connected: connectedOnce, language: .current).detail ?? "")
+            offerSaveSuggestions()
+            return
+        }
         phase = .ended
         offerSaveSuggestions()
         offerLearning()
@@ -1722,19 +2008,73 @@ final class VoiceSessionController {
         Task { await learning.proposeAfterConversation(leftover: leftover, isPrivate: wasPrivate) }
     }
 
+    // MARK: Session recovery (OP-023, ADR-360)
+
+    /// How this conversation ended; nil while it runs.
+    private(set) var sessionEnd: VoiceSessionEnd?
+    /// After a drop: what Doddy last heard and hadn't answered, and the note it was asking about.
+    /// On this screen only, never written anywhere; it becomes a note only on Save.
+    private(set) var recovery: RecoveryDraft?
+    /// The note saved from the draft, as read back.
+    private(set) var recoverySaved: String?
+    /// Set by End, Close or the island; a disconnect after it is the user's end, not a drop.
+    private var userAskedToEnd = false
+    /// True once Doddy was ready to listen, so a later stop is a drop, not "Couldn't connect".
+    private var connectedOnce = false
+
+    /// The title for how it ended: "The conversation dropped", "Couldn't connect"…
+    var endTitle: String? {
+        sessionEnd.map { SessionRecovery.status($0, connected: connectedOnce, language: .current).title }
+    }
+
+    private func keepRecoveryDraft() {
+        guard let end = sessionEnd, connectedOnce, recovery == nil else { return }
+        let pendingNote: String? = if case .memory(_, let text) = pendingAction { text } else { nil }
+        recovery = SessionRecovery.draft(
+            lines: lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) },
+            pendingNote: pendingNote, end: end, endedAt: Date())
+    }
+
+    func editRecovery(_ text: String) {
+        recovery?.text = text
+    }
+
+    /// Saves the draft as a note, only now that the user tapped Save; read back by the store.
+    /// Returns what went wrong, or nil.
+    func saveRecovery() async -> String? {
+        guard let text = recovery?.text else { return nil }
+        do {
+            try MemoryTextValidator.validate(text)
+            let record = try await store.save(text: text, category: .other, source: .explicitVoice)
+            guard store.record(id: record.id) != nil else { return NSLocalizedString("The note couldn't be confirmed. Check your notes.", comment: "") }
+            recoverySaved = record.currentText
+            recovery = nil
+            return nil
+        } catch {
+            return UserFacingError.message(for: error)
+        }
+    }
+
+    func discardRecovery() {
+        recovery = nil
+    }
+
     // MARK: End-of-conversation save suggestions (ADR-247)
 
     /// Picks what the user said that may be worth keeping, on the phone, from their own lines only.
     /// Not for a private conversation, not when switched off, not when notes can't be saved.
     private func offerSaveSuggestions() {
-        guard !suggestionsOffered, phase == .ended else { return }
+        // After an end, and after a drop once Doddy had been listening (ADR-360).
+        let dropped = sessionEnd?.isDrop == true && connectedOnce
+        guard !suggestionsOffered, phase == .ended || dropped else { return }
         suggestionsOffered = true
         guard !isPrivate, store.isStorageAvailable,
               UserDefaults.standard.object(forKey: PreferenceKey.suggestSavesAfterConversation) as? Bool ?? true
         else { return }
         let found = SaveSuggestions.suggest(
             userLines: lines.filter(\.fromUser).map(\.text),
-            alreadyProposed: proposedNoteTexts,
+            // What the recovery draft already offers isn't offered twice.
+            alreadyProposed: proposedNoteTexts + (recovery.map { $0.unanswered + [$0.pendingNote].compactMap { $0 } } ?? []),
             existingNotes: store.memories)
         saveSuggestions = found.isEmpty ? nil : SaveSuggestionCard(found)
     }
@@ -1819,6 +2159,7 @@ final class VoiceSessionController {
             }
         case .saveMemory(let text):
             // Nothing is stored until the user taps Save on the card.
+            guard await mayTryAgain(call.toolCallId, app: .memories) else { return }
             proposedNoteTexts.append(text)
             pendingMemoryCategory = .other
             propose(.memory(toolCallID: call.toolCallId, text: text), toolCallID: call.toolCallId)
@@ -1839,6 +2180,7 @@ final class VoiceSessionController {
             let days = FreeTime.days(request, events: events, now: Date(), calendar: .current)
             await reply(call.toolCallId, VoiceToolReply.freeTime(days, request: request, calendar: .current))
         case .createCalendarEvent(let draft):
+            guard await mayTryAgain(call.toolCallId, app: .calendar) else { return }
             propose(.event(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .createReminder(let draft):
             // Blocked by iOS: say so now instead of showing a card that can only fail.
@@ -1846,6 +2188,7 @@ final class VoiceSessionController {
                 await notConnected(call.toolCallId, .reminders)
                 return
             }
+            guard await mayTryAgain(call.toolCallId, app: .reminders) else { return }
             propose(.reminder(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .changeCalendarEvent(let draft):
             await proposeEventChange(draft, toolCallID: call.toolCallId)
@@ -1921,6 +2264,7 @@ final class VoiceSessionController {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
+            guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
@@ -1946,7 +2290,9 @@ final class VoiceSessionController {
             switch AlarmScheduler.support() {
             case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
             case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
-            case .available: propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+            case .available:
+                guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
+                propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
             }
         case .openMap(let place):
             propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
@@ -1998,6 +2344,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.listFailed(UserFacingError.listMessage(for: ListError.tooManyLists(maximum: ListLimits.lists))))
                 return
             }
+            guard await mayTryAgain(call.toolCallId, app: .memories) else { return }
             // From a template (ADR-334): its items first, then any the user said.
             var items = request.items
             if let wanted = request.template {
@@ -2056,6 +2403,10 @@ final class VoiceSessionController {
             if let block = await planBlock(for: step) {
                 blocked[step.number] = block
                 if connectionNeeded == nil, isCurrent(call.toolCallId), case .notConnected(let connection) = block { connectionNeeded = connection }
+            } else if let request = step.activity(calendar: .current),
+                      case .stop(let count) = ActionRetry.decide(for: request, in: activity.entries, now: Date()) {
+                // Tried too often without a confirmed result (ADR-319): shown on the card, not run.
+                blocked[step.number] = .tooManyTries(app: request.app, count: count)
             } else if let call = step.cloudCall {
                 // As a single card: the server checks the switch, the connection and the arguments,
                 // and returns the preview the card shows with an approval for exactly these.
@@ -2111,24 +2462,30 @@ final class VoiceSessionController {
         for step in steps {
             let ref = ActivityPlanRef(id: planID, step: step.number, count: steps.count)
             var startedEntry: ActivityEntry?
+            var write: WriteResult?
             let text: String
-            var undo: ActivityUndo?
             if let block = blocked[step.number] {
                 text = block.reply
             } else if !ticked.contains(step.number) {
                 text = PlanReply.unticked
             } else {
-                // On disk before it runs, like a single card (ActivityLog.recoverInterrupted).
-                if let request = step.activity(calendar: .current) {
-                    let entry = ActivityEntry.started(request, at: Date(), plan: ref)
-                    activity.append(entry)
-                    startedEntry = entry
+                // Earlier tries are read before this one is written down (ADR-319).
+                let request = step.activity(calendar: .current)
+                let retry = ActionRetry.decide(for: request, in: activity.entries, now: Date())
+                if case .stop(let count) = retry, let request {
+                    text = VoiceToolReply.retryStopped(count: count, app: request.app)
+                } else {
+                    // On disk before it runs, like a single card (ActivityLog.recoverInterrupted).
+                    if let request {
+                        let entry = ActivityEntry.started(request, at: Date(), plan: ref)
+                        activity.append(entry)
+                        startedEntry = entry
+                    }
+                    write = await runPlanStep(step, approval: approvals[step.number], retry: retry, attempt: attempt)
+                    text = write?.reply ?? ""
                 }
-                let ran = await runPlanStep(step, approval: approvals[step.number], attempt: attempt)
-                text = ran.0
-                undo = ran.1
             }
-            let logged = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry, undo: undo)
+            let logged = logPlanStep(step, reply: text, plan: ref, replacing: startedEntry, write: write)
             if attempt == startAttempt { planStatus?.results[step.number] = logged }
             results.append((step, text))
         }
@@ -2140,67 +2497,54 @@ final class VoiceSessionController {
         await reply(toolCallID, PlanReply.summary(results, changed: changed))
     }
 
-    /// A step's reply, and what Undo needs when it added an event or reminder and read it back
-    /// (ADR-271): the same as from its single card.
-    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?, attempt: Int) async -> (String, ActivityUndo?) {
-        if let block = await planBlock(for: step) { return (block.reply, nil) }
-        switch step.request {
-        case .createCalendarEvent(let draft):
-            return addEvent(draft)
-        case .createReminder(let draft):
-            let outcome = await addReminder(draft, attempt: attempt)
-            return (VoiceToolReply.reminder(outcome), ActivityUndo.addedReminder(outcome, draft: draft))
-        case .saveMemory(let text):
-            do {
-                let record = try await store.save(text: text, category: .other, source: .explicitVoice)
-                if onScreen(attempt) { savedThisConversation += 1 }
-                return (VoiceToolReply.saved(record), .savedNote(id: record.id, text: record.currentText))
-            } catch {
-                return (VoiceToolReply.failed(UserFacingError.message(for: error)), nil)
-            }
-        default:
-            return (await runOtherPlanStep(step, approval: approval, attempt: attempt), nil)
-        }
-    }
-
     /// Checked again at the tap: the user may have paused or switched off the app while the card waited.
-    private func runOtherPlanStep(_ step: PlanStep, approval: PlanCloudApproval?, attempt: Int) async -> String {
-        if let block = await planBlock(for: step) { return block.reply }
+    /// A step's reply, what its entry keeps (receipt, whether it wrote) and what Undo needs when it
+    /// added an event or reminder and read it back (ADR-271, ADR-319): the same as from its single card.
+    private func runPlanStep(_ step: PlanStep, approval: PlanCloudApproval?, retry: ActionRetryDecision, attempt: Int) async -> WriteResult {
+        if let block = await planBlock(for: step) { return WriteResult(reply: block.reply) }
         switch step.request {
+        case .createCalendarEvent(let draft):
+            return eventResult(addEvent(draft), draft: draft, retry: retry)
+        case .createReminder(let draft):
+            return reminderResult(await addReminder(draft, attempt: attempt), draft: draft, retry: retry)
+        case .setTimer(let draft):
+            return await timerResult(draft, retry: retry)
+        case .cloudTool(let call):
+            return await runPlanCloud(call, approval: approval, app: step.activity(calendar: .current)?.app ?? .gmail)
         case .saveMemory(let text):
+            if let since = retry.uncheckedSince, let existing = NoteIdempotency.savedSince(since, text: text, in: store.memories) {
+                return WriteResult(
+                    reply: VoiceToolReply.noteAlreadySaved(existing), receipt: ActivityReceipt(note: existing, readAt: Date()), attempted: false)
+            }
             do {
                 let record = try await store.save(text: text, category: .other, source: .explicitVoice)
                 if onScreen(attempt) { savedThisConversation += 1 }
-                return VoiceToolReply.saved(record)
+                return WriteResult(
+                    reply: VoiceToolReply.saved(record), receipt: ActivityReceipt(note: record, readAt: Date()), attempted: true,
+                    undo: .savedNote(id: record.id, text: record.currentText))
             } catch {
-                return VoiceToolReply.failed(UserFacingError.message(for: error))
+                return WriteResult(reply: VoiceToolReply.failed(UserFacingError.message(for: error)), attempted: true)
             }
-        case .createCalendarEvent(let draft):
-            // Run by runPlanStep, with Undo; kept so every step kind still has one path here.
-            return addEvent(draft).0
-        case .createReminder(let draft):
-            return VoiceToolReply.reminder(await addReminder(draft, attempt: attempt))
-        case .setTimer(let draft):
-            return await startTimer(draft)
-        case .cloudTool(let call):
-            return await runPlanCloud(call, approval: approval)
         case .addToList(let request):
             // Matched now, exactly as a single add_to_list would be; nothing changes on no match.
             await store.reload()
             switch ListMatch.list(named: request.list, in: store.lists) {
-            case .none: return VoiceToolReply.listNotFound(request.list, lists: store.lists)
-            case .several(let lists): return VoiceToolReply.listAmbiguous(request.list, lists: lists)
+            case .none: return WriteResult(reply: VoiceToolReply.listNotFound(request.list, lists: store.lists), attempted: false)
+            case .several(let lists): return WriteResult(reply: VoiceToolReply.listAmbiguous(request.list, lists: lists), attempted: false)
             case .one(let list):
                 do {
                     let result = try await store.addToList(request.items, listID: list.id, source: .voice)
-                    return VoiceToolReply.listAdded(result, list: list.name)
+                    return WriteResult(
+                        reply: VoiceToolReply.listAdded(result, list: list.name),
+                        receipt: ActivityReceipt(list: list.name, listID: list.id, lines: Self.receiptLines(result), readAt: Date()),
+                        attempted: true)
                 } catch {
-                    return VoiceToolReply.listFailed(UserFacingError.listMessage(for: error))
+                    return WriteResult(reply: VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), attempted: true)
                 }
             }
         default:
             // PlanProposal only makes the kinds above.
-            return VoiceToolReply.notAdded("This step can't run in a plan.")
+            return WriteResult(reply: VoiceToolReply.notAdded("This step can't run in a plan."))
         }
     }
 
@@ -2218,6 +2562,11 @@ final class VoiceSessionController {
         }
         do {
             let prepared = try await client.prepare(call)
+            // An earlier unsure try is already there (ADR-322): shown on the card, not run again.
+            if prepared.earlier?.status == .found {
+                return .blocked(.onlineAccount(
+                    screen: "Already in \(CloudToolName.account(call.name)) from an earlier try", reply: VoiceToolReply.cloudAlreadyThere(call.name)))
+            }
             return .ready(PlanCloudApproval(preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode, preparedAt: Date()))
         } catch {
             return .blocked(.onlineAccount(screen: error.userMessage, reply: VoiceToolReply.cloudFailed(error, tool: call.name)))
@@ -2226,20 +2575,35 @@ final class VoiceSessionController {
 
     /// The server's approval works once and lasts two minutes. If the card waited longer, a fresh
     /// one is asked for the same arguments the user saw; the server checks them again.
-    private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?) async -> String {
+    private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?, app: ActivityApp) async -> WriteResult {
+        func written(_ record: CloudWriteRecord) -> WriteResult {
+            WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
+        }
         guard let client = OnlineAccountsClientFactory.make() else {
-            return VoiceToolReply.cloudFailed(.notConfigured, tool: call.name)
+            return written(CloudWriteRecord(.failure(.notConfigured), tool: call.name, app: app, readAt: Date()))
         }
-        do {
-            var approvalID = approval?.approvalID
-            if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
-                approvalID = try await client.prepare(call).approvalId
+        var approvalID = approval?.approvalID
+        if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
+            do {
+                let prepared = try await client.prepare(call)
+                if prepared.earlier?.status == .found {
+                    return WriteResult(reply: VoiceToolReply.cloudAlreadyThere(call.name), attempted: false)
+                }
+                approvalID = prepared.approvalId
+            } catch {
+                return written(CloudWriteRecord(.failure(error), tool: call.name, app: app, readAt: Date()))
             }
-            let result = try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            return VoiceToolReply.cloudResult(result)
-        } catch {
-            return VoiceToolReply.cloudFailed(error, tool: call.name)
         }
+        guard let approvalID else {
+            // A read in a plan runs without a confirmation.
+            do {
+                return WriteResult(reply: VoiceToolReply.cloudResult(try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: nil)))
+            } catch {
+                return WriteResult(reply: VoiceToolReply.cloudFailed(error, tool: call.name))
+            }
+        }
+        let outcome = await CloudRun.confirmed(call, approvalId: approvalID, timeZone: TimeZone.current.identifier, client: client)
+        return written(CloudWriteRecord(outcome, tool: call.name, app: app, readAt: Date()))
     }
 
     private func planBlock(for step: PlanStep) async -> PlanBlock? {
@@ -2258,10 +2622,21 @@ final class VoiceSessionController {
     }
 
     @discardableResult
-    private func logPlanStep(_ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil, undo: ActivityUndo? = nil) -> ActivityEntry? {
+    private func logPlanStep(
+        _ step: PlanStep, reply text: String, plan: ActivityPlanRef, replacing started: ActivityEntry? = nil, write: WriteResult? = nil
+    ) -> ActivityEntry? {
         guard let request = step.activity(calendar: .current) else { return nil }
-        let entry = ActivityEntry(id: started?.id ?? UUID(), request: request, reply: text, at: started?.at ?? Date(), plan: plan, undo: undo)
-        if started != nil { activity.replace(entry) } else { activity.append(entry) }
+        if let started {
+            let entry = ActivityEntry.finished(
+                started, request: request, reply: text, at: Date(),
+                undo: write?.undo, receipt: write?.receipt, attempted: write?.attempted)
+            activity.replace(entry)
+            return entry
+        }
+        let entry = ActivityEntry(
+            request: request, reply: text, at: Date(), plan: plan,
+            undo: write?.undo, receipt: write?.receipt, attempted: write?.attempted)
+        activity.append(entry)
         return entry
     }
 
@@ -2274,7 +2649,15 @@ final class VoiceSessionController {
         }
         do {
             if cloud.isWrite {
+                // Tried too often without a confirmed result: stop before the card (ADR-322).
+                guard await mayTryAgain(toolCallID, app: asked[toolCallID]?.app ?? .gmail) else { return }
                 let prepared = try await client.prepare(cloud)
+                // An earlier unsure try is already there (the server looked): nothing more to do.
+                if prepared.earlier?.status == .found {
+                    writeResults[toolCallID] = WriteResult(reply: "", attempted: false)
+                    await reply(toolCallID, VoiceToolReply.cloudAlreadyThere(cloud.name))
+                    return
+                }
                 propose(
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
@@ -2287,17 +2670,14 @@ final class VoiceSessionController {
         }
     }
 
-    /// The user tapped the card. The approval is for exactly the arguments the card showed.
-    private func runConfirmedCloud(_ cloud: CloudToolCall, approvalID: UUID) async -> String {
+    /// The user tapped the card. The approval is for exactly the arguments the card showed. A lost
+    /// answer is asked for once more with the same approval, which can't run it twice (ADR-322).
+    private func runConfirmedCloud(_ cloud: CloudToolCall, approvalID: UUID, app: ActivityApp) async -> CloudWriteRecord {
         guard let client = OnlineAccountsClientFactory.make() else {
-            return VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name)
+            return CloudWriteRecord(.failure(.notConfigured), tool: cloud.name, app: app, readAt: Date())
         }
-        do {
-            let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            return VoiceToolReply.cloudResult(result)
-        } catch {
-            return VoiceToolReply.cloudFailed(error, tool: cloud.name)
-        }
+        let outcome = await CloudRun.confirmed(cloud, approvalId: approvalID, timeZone: TimeZone.current.identifier, client: client)
+        return CloudWriteRecord(outcome, tool: cloud.name, app: app, readAt: Date())
     }
 
     /// Finds the quoted note and, for a place, looks it up in Apple Maps before showing the card.
@@ -2374,6 +2754,9 @@ final class VoiceSessionController {
     /// "Remind me when to leave" (ADR-335): one position, an Apple Maps search near it and the
     /// travel time; the card shows what Maps found. Nothing is set until Set reminder.
     private func handleLeaveBy(_ request: LeaveByRequest, toolCallID: String) async {
+        // No 3-try stop here (ADR-319's asks the user to look in the app, and a waiting leave
+        // reminder shows nowhere): setting always looks for the same one first, so asking again
+        // can't set a second.
         let location = PlaceLocation.shared
         var readiness = await location.readiness()
         if readiness == .notDetermined { readiness = await location.requestWhenInUse() }
@@ -2451,26 +2834,76 @@ final class VoiceSessionController {
         pendingAction = action
     }
 
-    /// The reply, and what Undo needs when the event was added and read back (ADR-268).
-    private func addEvent(_ draft: CalendarEventDraft) -> (String, ActivityUndo?) {
-        guard devices.access(for: .calendar) == .granted else {
-            return (VoiceToolReply.notAdded("Calendar isn't connected."), nil)
+    /// Looks in Calendar first, so asking again after an unconfirmed try never adds a second copy;
+    /// the start is checked again too, since it may have passed while the card waited (ADR-128).
+    private func addEvent(_ draft: CalendarEventDraft) -> EventAddOutcome? {
+        guard devices.access(for: .calendar) == .granted else { return nil }
+        return EventAddAction.add(draft, to: devices, now: Date(), calendar: .current)
+    }
+
+    // MARK: Action status (ADR-319)
+
+    /// The reply for the agent, plus what the entry in "What Doddy did" keeps.
+    private struct WriteResult {
+        var reply: String
+        var receipt: ActivityReceipt? = nil
+        var attempted: Bool? = nil
+        /// What Undo needs; kept only when the reply says it was added and checked (ADR-268).
+        var undo: ActivityUndo? = nil
+    }
+
+    /// Stops before the card when this change was already tried too often without a confirmed
+    /// result; otherwise remembers whether an earlier try is open, so the reply can say Doddy checked.
+    private func mayTryAgain(_ toolCallID: String, app: ActivityApp) async -> Bool {
+        if app == .memories { await settleLocalEntries() }
+        let decision = ActionRetry.decide(for: asked[toolCallID], in: activity.entries, now: Date())
+        if case .stop(let count) = decision {
+            await reply(toolCallID, VoiceToolReply.retryStopped(count: count, app: app))
+            return false
         }
-        // The start may have passed while the card waited (ADR-128): ask again, add nothing.
-        if let late = draft.passed(now: Date(), calendar: .current) {
-            return (VoiceToolReply.clarification(late, tool: VoiceToolName.createCalendarEvent), nil)
+        retryChecks[toolCallID] = decision
+        return true
+    }
+
+    /// Unsure note and list entries are settled from Doddy's own database before any retry is
+    /// decided (ADR-321), and only once it has loaded.
+    private func settleLocalEntries() async {
+        await store.reload()
+        guard store.hasLoaded, store.loadError == nil else { return }
+        activity.settleLocal(notes: store.memories, lists: store.lists)
+    }
+
+    private func eventResult(_ outcome: EventAddOutcome?, draft: CalendarEventDraft, retry: ActionRetryDecision?) -> WriteResult {
+        guard let outcome else { return WriteResult(reply: VoiceToolReply.notAdded("Calendar isn't connected."), attempted: false) }
+        var result = WriteResult(reply: VoiceToolReply.event(outcome, draft: draft, calendar: .current), attempted: outcome.attemptedWrite)
+        switch outcome {
+        case .added(let event, let eventID):
+            result.receipt = ActivityReceipt(event: event, calendar: .current, readAt: Date())
+            // Undo only with Calendar's own identifier for the event Doddy wrote. Undo removes a
+            // single event only, so a repeating one isn't offered for undo.
+            result.undo = draft.repeats == nil ? eventID.map { .addedEvent(eventID: $0, event: event) } : nil
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .calendar) }
+        case .alreadyThere(let event):
+            result.receipt = ActivityReceipt(event: event, calendar: .current, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .calendar) }
+        default:
+            break
         }
-        do {
-            let added = try devices.addEvent(draft)
-            switch added.outcome {
-            case .verified:
-                let event = CalendarEventSummary(title: draft.title, start: draft.start, end: draft.end, allDay: draft.allDay)
-                return (VoiceToolReply.eventAdded(draft, calendar: .current), added.eventID.map { .addedEvent(eventID: $0, event: event) })
-            case .unconfirmed: return (VoiceToolReply.addUnconfirmed, nil)
-            }
-        } catch {
-            return (VoiceToolReply.notAdded(UserFacingError.message(for: error)), nil)
+        return result
+    }
+
+    private func reminderResult(_ outcome: ReminderOutcome, draft: ReminderDraft, retry: ActionRetryDecision?) -> WriteResult {
+        var result = WriteResult(
+            reply: VoiceToolReply.reminder(outcome), attempted: outcome.attemptedWrite,
+            undo: ActivityUndo.addedReminder(outcome, draft: draft))
+        switch outcome {
+        case .added(let receipt), .alreadyThere(let receipt):
+            result.receipt = ActivityReceipt(reminder: receipt, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .reminders) }
+        default:
+            break
         }
+        return result
     }
 
     /// The user tapped the undo card (ADR-271). The same checks and write as Undo in What Doddy
@@ -2843,42 +3276,43 @@ final class VoiceSessionController {
         return outcome
     }
 
-    private func startTimer(_ draft: TimerDraft) async -> String {
+    /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-320); "started"
+    /// only when the iPhone lists it, with the ring time it lists.
+    private func timerResult(_ draft: TimerDraft, retry: ActionRetryDecision?) async -> WriteResult {
         guard await devices.notificationAccess() == .granted else {
-            return VoiceToolReply.notAdded("Notifications are off for Doddy.")
+            return WriteResult(reply: VoiceToolReply.notAdded("Notifications are off for Doddy."), attempted: false)
         }
-        do {
-            switch try await devices.startTimer(draft) {
-            case .verified:
-                let endsAt = Date().addingTimeInterval(TimeInterval(draft.seconds))
-                return VoiceToolReply.timerAdded(draft, endsAt: endsAt, calendar: .current)
-            case .unconfirmed:
-                return VoiceToolReply.addUnconfirmed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
+        let outcome = await TimerStartAction.start(draft, with: devices, uncheckedSince: retry?.uncheckedSince)
+        var result = WriteResult(reply: VoiceToolReply.timer(outcome, draft: draft, calendar: .current), attempted: outcome.attemptedWrite)
+        switch outcome {
+        case .started(let timer):
+            result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
+        case .alreadyRunning(let timer):
+            result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+        default:
+            break
         }
+        return result
     }
 
     /// Checked again at the tap: the switch, and that the time hasn't passed while the card waited.
-    private func setAlarm(_ draft: AlarmDraft) async -> String {
+    /// Looks at Doddy's alarms first, so asking again never sets a second one (ADR-320).
+    private func alarmResult(_ draft: AlarmDraft, retry: ActionRetryDecision?) async -> WriteResult {
         guard isOn(.timers) else {
             connectionNeeded = .timers
-            return VoiceToolReply.failed("Timers and alarms are switched off. Nothing was set.")
+            return WriteResult(reply: VoiceToolReply.failed("Timers and alarms are switched off. Nothing was set."), attempted: false)
         }
-        if draft.repeats == nil, let late = ReminderDueRules.passed(draft.first, now: Date()) {
-            return VoiceToolReply.clarification(late, tool: VoiceToolName.setAlarm)
+        let outcome = await AlarmSetAction.set(draft, with: alarmWriter, now: Date())
+        var result = WriteResult(reply: VoiceToolReply.alarm(outcome), attempted: outcome.attemptedWrite)
+        switch outcome {
+        case .set(let alarm), .alreadySet(let alarm):
+            result.receipt = ActivityReceipt(alarm: alarm, readAt: Date())
+            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
+        default:
+            break
         }
-        do {
-            switch try await AlarmScheduler.schedule(draft) {
-            case .verified: return VoiceToolReply.alarmSet(draft)
-            case .unconfirmed: return VoiceToolReply.alarmUnconfirmed
-            case .needsNewerIOS: return VoiceToolReply.alarmNeedsNewerIOS
-            case .notAllowed: return VoiceToolReply.alarmNotAllowed
-            }
-        } catch {
-            return VoiceToolReply.notAdded(UserFacingError.message(for: error))
-        }
+        return result
     }
 
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
@@ -2903,13 +3337,19 @@ final class VoiceSessionController {
     }
 
     /// `undo` is what "What Doddy did" needs to put the change back; the entry keeps it only when
-    /// `text` says the change was made and checked (ADR-268).
+    /// `text` says the change was made and checked (ADR-268). A reminder or event add passes its
+    /// receipt, attempt and undo through `writeResults` instead (ADR-319).
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
+        let write = writeResults.removeValue(forKey: toolCallID)
+        retryChecks[toolCallID] = nil
+        let undo = undo ?? write?.undo
         if let request = asked.removeValue(forKey: toolCallID) {
             if let entry = started.removeValue(forKey: toolCallID) {
-                activity.replace(ActivityEntry(id: entry.id, request: request, reply: text, at: entry.at, undo: undo))
+                activity.replace(ActivityEntry.finished(
+                    entry, request: request, reply: text, at: Date(), undo: undo, receipt: write?.receipt, attempted: write?.attempted))
             } else {
-                activity.append(ActivityEntry(request: request, reply: text, at: Date(), undo: undo))
+                activity.append(ActivityEntry(
+                    request: request, reply: text, at: Date(), undo: undo, receipt: write?.receipt, attempted: write?.attempted))
             }
         }
         // Logged above whatever happens (a confirmed change that ran is still recorded), but sent
@@ -2935,7 +3375,8 @@ final class VoiceSessionController {
 
     /// On disk before a change runs: if the conversation ends, or Doddy is closed, mid-write, the
     /// row says "in progress" (then "Not sure") until the result replaces it, never "not done"
-    /// (`logUnanswered` skips started rows). Confirmed cards and the list tools (ADR-458).
+    /// (`logUnanswered` skips started rows), and is settled at the next look (ADR-321). Confirmed
+    /// cards and the list tools (ADR-458).
     private func markStarted(_ toolCallID: String) {
         guard started[toolCallID] == nil, let request = asked[toolCallID] else { return }
         let entry = ActivityEntry.started(request, at: Date())
@@ -2947,6 +3388,8 @@ final class VoiceSessionController {
     /// shown or sent. What it asked is logged as not done, once; `stop()` has usually done that.
     private func dropStale(_ toolCallID: String, steps: [PlanStep] = []) {
         callOwners.forget(toolCallID)
+        retryChecks[toolCallID] = nil
+        writeResults[toolCallID] = nil
         Self.toolLog.notice("dropped a tool call from an ended conversation")
         if started[toolCallID] == nil, let request = asked.removeValue(forKey: toolCallID) {
             activity.append(Self.unanswered(request))
@@ -2982,6 +3425,8 @@ final class VoiceSessionController {
             }
         }
         askedPlans = [:]
+        retryChecks = [:]
+        writeResults = [:]
     }
 
     private static func microphoneAllowed() async -> Bool {

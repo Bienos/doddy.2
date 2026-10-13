@@ -220,6 +220,25 @@ final class OpeningSceneTests: XCTestCase {
         XCTAssertEqual(frame(Beat.handoverStart).camera.shake, StagePoint(x: 0, y: 0))
     }
 
+    func testOnAWideScreenTheWholeStageFitsAndIsCentred() {
+        // A phone in portrait keeps the full width, so nothing changes there.
+        XCTAssertEqual(OpeningScene.stageWidth(screenWidth: 390, screenHeight: 844), 390)
+        // A 13-inch iPad in landscape (and a phone in landscape): the stage fits the height.
+        for (width, height) in [(1366.0, 1024.0), (844.0, 390.0), (1024.0, 1366.0)] {
+            let w = OpeningScene.stageWidth(screenWidth: width, screenHeight: height)
+            XCTAssertLessThanOrEqual(OpeningScene.stageHeight * w, height + 1e-9)
+            XCTAssertLessThanOrEqual(w, width)
+            // The ready pose, floor included, is on screen and centred left to right.
+            let box = OpeningHandover.courtBox(screenWidth: width, screenHeight: height)
+            let ready = OpeningLayout.ready
+            let top = (height - OpeningScene.stageHeight * w) / 2
+            XCTAssertEqual(box.centerX, width / 2 + (ready.center.x - 0.5) * w, accuracy: 1e-9)
+            XCTAssertEqual(box.height, ready.height * w, accuracy: 1e-9)
+            XCTAssertGreaterThanOrEqual(box.centerY - box.height / 2, 0)
+            XCTAssertLessThanOrEqual(top + OpeningLayout.floorY * w, height)
+        }
+    }
+
     func testWithoutAPlaceOnHomeDoddyFadesWithThePaper() {
         let court = OpeningHandover.courtBox(screenWidth: 390, screenHeight: 844)
         let start = OpeningHandover.place(court: court, home: nil, at: Beat.handoverStart, reducedMotion: false)
@@ -369,5 +388,20 @@ final class OpeningSceneTests: XCTestCase {
         }
         XCTAssertGreaterThan(Ease.backOut(0.7), 1, "overshoots")
         XCTAssertEqual(StagePoint.bezierHeading(StagePoint(x: 0, y: 0), StagePoint(x: 1, y: 0), StagePoint(x: 2, y: 0), 0.5), 0, accuracy: 1e-9)
+    }
+
+    func testATestLaunchCanSlowTheClockButNeverSpeedItUp() {
+        // Real speed: scene time is wall-clock time.
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 1.2, timeScale: 1), 1.2)
+        // A UI test's slower clock: the 2.4 s timeline lasts 12 s, and still ends.
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 12, timeScale: 5), Beat.end, accuracy: 1e-9)
+        XCTAssertTrue(OpeningScene.isFinished(at: OpeningScene.sceneTime(elapsed: 12, timeScale: 5), reducedMotion: false))
+        XCTAssertFalse(OpeningScene.isFinished(at: OpeningScene.sceneTime(elapsed: 11, timeScale: 5), reducedMotion: false))
+        // Missing (0), below 1, or not a number: real speed. Above the limit: held to it.
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: 0), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: 0.25), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: .nan), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 2, timeScale: .infinity), 2)
+        XCTAssertEqual(OpeningScene.sceneTime(elapsed: 20, timeScale: 1000), 20 / OpeningScene.maxTimeScale, accuracy: 1e-9)
     }
 }

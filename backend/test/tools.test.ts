@@ -301,9 +301,12 @@ test("an approval is bound to the exact arguments, the user, and works once", as
   assert.equal(rig.provider.executed.length, 1);
   assert.deepEqual(rig.provider.executed[0]!.arguments, { content: "Renew passport", due_string: "tomorrow 9am" });
 
+  // Used once: a repeat (the phone lost the answer) gets the first answer back and runs nothing (ADR-322).
   const again = await run(rig, "add_todoist_task", { content: "Renew passport", due: "tomorrow 9am" }, { approvalId });
-  assert.equal(again.status, 403, "single use");
-  assert.equal(rig.provider.executed.length, 1);
+  assert.equal(again.status, 200, again.text);
+  assert.equal(again.body.replayed, true);
+  assert.equal(again.body.text, done.body.text);
+  assert.equal(rig.provider.executed.length, 1, "single use: nothing ran again");
 });
 
 test("an approval expires", async () => {
@@ -532,4 +535,169 @@ test("contracts/online-accounts fixtures match the server's schemas", async () =
     if (body.error.receipt) c.ToolReceiptSchema.parse(body.error.receipt);
   }
   void ErrorResponseSchema;
+});
+
+// ------------------------------------------------------------------ action status (ADR-322)
+
+const todoistReady = async (r: Rig) => {
+  await ready(r, "todoist", "add_todoist_task");
+};
+const prepare = (r: Rig, tool: string, args: Record<string, unknown>) => r.call("POST", "/v1/tools/prepare", { body: { tool, arguments: args } });
+const creates = (r: Rig) => r.provider.executed.filter((e) => e.slug === "TODOIST_CREATE_TASK").length;
+
+test("a write's answer carries the provider's id, and a repeat gives the same answer without running again", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  const args = { content: "Renew passport" };
+  const first = await prepare(rig, "add_todoist_task", args);
+  const done = await run(rig, "add_todoist_task", args, { approvalId: first.body.approvalId });
+  assert.equal(done.status, 200, done.text);
+  assert.equal(done.body.externalId, "task_demo_1");
+  assert.equal(done.body.replayed, undefined);
+  const again = await run(rig, "add_todoist_task", args, { approvalId: first.body.approvalId });
+  assert.equal(again.status, 200);
+  assert.equal(again.body.externalId, "task_demo_1");
+  assert.equal(again.body.replayed, true);
+  assert.match(again.body.receipt.summary, /nothing ran again/);
+  assert.equal(creates(rig), 1);
+  // A repeat with changed words is not this approval's answer.
+  const changed = await run(rig, "add_todoist_task", { content: "Buy a boat" }, { approvalId: first.body.approvalId });
+  assert.equal(changed.status, 403);
+});
+
+test("a repeat after an answer that was lost says it may have gone through, never that it expired", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  const args = { content: "Pay rent" };
+  const prepared = await prepare(rig, "add_todoist_task", args);
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "lost_answer");
+  const lost = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  assert.equal(lost.status, 504);
+  assert.equal(lost.body.error.receipt.status, "outcome_unknown");
+  const again = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  assert.equal(again.status, 403);
+  assert.equal(again.body.error.receipt.status, "outcome_unknown");
+  assert.equal(again.body.error.receipt.errorCode, "earlier_outcome_unknown");
+  assert.equal(creates(rig), 1, "never run twice");
+});
+
+test("a write that provably didn't run needs a fresh confirmation on a repeat, as before", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  const args = { content: "Water plants" };
+  const prepared = await prepare(rig, "add_todoist_task", args);
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "rate_limited");
+  await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  const again = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  assert.equal(again.body.error.receipt.errorCode, "confirmation_required");
+  assert.equal((await prepare(rig, "add_todoist_task", args)).body.earlier, undefined, "nothing went through, so no warning");
+});
+
+test("preparing the same write again within a day says it was already done", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  const args = { content: "Renew passport", due: "tomorrow" };
+  const first = await prepare(rig, "add_todoist_task", args);
+  assert.equal(first.body.earlier, undefined);
+  await run(rig, "add_todoist_task", args, { approvalId: first.body.approvalId });
+  rig.clock.advance(60_000);
+  const second = await prepare(rig, "add_todoist_task", args);
+  assert.equal(second.body.earlier.status, "succeeded");
+  assert.deepEqual(second.body.preview.lines, ["Renew passport", "Due: tomorrow", "Doddy already did exactly this once in the last day."]);
+  assert.equal((await prepare(rig, "add_todoist_task", { content: "Renew passport" })).body.earlier, undefined, "other arguments: another write");
+  rig.clock.advance(25 * 3_600_000);
+  assert.equal((await prepare(rig, "add_todoist_task", args)).body.earlier, undefined, "older than a day");
+});
+
+test("after a lost answer, a Todoist task is looked for, only with the list read switched on", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  const args = { content: "Pay rent" };
+  const prepared = await prepare(rig, "add_todoist_task", args);
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "lost_answer");
+  await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+
+  // "List my tasks" is off: Doddy doesn't read the user's tasks; the card only warns.
+  const off = await prepare(rig, "add_todoist_task", args);
+  assert.equal(off.body.earlier.status, "outcome_unknown");
+  assert.match(off.body.preview.lines.at(-1), /may have gone through\. Check Todoist before doing it again\./);
+  assert.equal(rig.provider.executed.filter((e) => e.slug === "TODOIST_GET_ALL_TASKS").length, 0);
+
+  await on(rig, "list_todoist_tasks");
+  const found = await prepare(rig, "add_todoist_task", args);
+  assert.equal(found.body.earlier.status, "found");
+  assert.match(found.body.preview.lines.at(-1), /already in Todoist/);
+  const look = rig.provider.executed.find((e) => e.slug === "TODOIST_GET_ALL_TASKS");
+  assert.deepEqual(look?.arguments, { limit: 20, filter: "search: Pay rent" });
+});
+
+test("after a lost answer, a task that isn't listed is still only 'may have gone through'", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  await on(rig, "list_todoist_tasks");
+  const args = { content: "Pay rent" };
+  const prepared = await prepare(rig, "add_todoist_task", args);
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "provider_error");
+  await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+  const again = await prepare(rig, "add_todoist_task", args);
+  assert.equal(again.body.earlier.status, "outcome_unknown", "not listed proves nothing");
+});
+
+test("a Gmail draft whose answer was lost warns on the next card; drafts can't be looked for", async () => {
+  rig = await start();
+  await ready(rig, "gmail", "draft_email");
+  const args = { to: "anna@example.com", subject: "Lunch", body: "1pm?" };
+  const prepared = await prepare(rig, "draft_email", args);
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "lost_answer");
+  await run(rig, "draft_email", args, { approvalId: prepared.body.approvalId });
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "normal");
+  const again = await prepare(rig, "draft_email", args);
+  assert.equal(again.body.earlier.status, "outcome_unknown");
+  assert.match(again.body.preview.lines.at(-1), /Check Gmail before doing it again/);
+});
+
+test("the server keeps what happened to a write, never its words", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  const args = { content: "Secret surprise party for Ola" };
+  const prepared = await prepare(rig, "add_todoist_task", args);
+  await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  const rows = (rig.store as any).db.prepare("SELECT * FROM approvals").all() as Record<string, unknown>[];
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]!.outcome, "succeeded");
+  assert.equal(rows[0]!.external_id, "task_demo_1");
+  assert.ok(!JSON.stringify(rows).includes("Ola"), "no task text on the server");
+});
+
+test("an approvals table from before ADR-322 gets the new columns", async () => {
+  const { mkdtempSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { DatabaseSync } = await import("node:sqlite");
+  const path = join(mkdtempSync(join(tmpdir(), "doddy-")), "old.db");
+  const old = new DatabaseSync(path);
+  old.exec(`CREATE TABLE approvals (approval_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, capability TEXT NOT NULL, account_id TEXT NOT NULL,
+    args_digest TEXT NOT NULL, created_at INTEGER NOT NULL, expires_at INTEGER NOT NULL, consumed_at INTEGER);
+    INSERT INTO approvals VALUES ('a', 'u', 'add_todoist_task', 'c', 'd', 1, 2, 1);`);
+  old.close();
+  const store = new Store(path);
+  store.finishApproval("a", "succeeded", "task_1", 5);
+  assert.deepEqual(store.latestWrite({ userId: "u", capability: "add_todoist_task", argsDigest: "d", since: 0 }), { outcome: "succeeded", finishedAt: 5 });
+  store.close();
+});
+
+test("a repeat while the first run hasn't finished is 'may have gone through', not 'needs a confirmation'", async () => {
+  rig = await start();
+  await todoistReady(rig);
+  const args = { content: "Pay rent" };
+  const prepared = await prepare(rig, "add_todoist_task", args);
+  const userId = DEV_IDENTITIES[USER_A]!;
+  const accountId = rig.store.getConnection(userId, "todoist")!.connection_id;
+  // Used, as the first run does just before calling Todoist, and never finished.
+  assert.equal(rig.store.consumeApproval({ approvalId: prepared.body.approvalId, userId, capability: "add_todoist_task", accountId, argsDigest: argumentDigest(args), now: rig.clock.ms }), true);
+  const again = await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
+  assert.equal(again.body.error.receipt.errorCode, "earlier_outcome_unknown");
+  assert.equal(creates(rig), 0);
 });

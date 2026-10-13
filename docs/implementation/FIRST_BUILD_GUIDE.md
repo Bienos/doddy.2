@@ -32,6 +32,8 @@ git checkout claude/hopeful-fermat-1a63x0
 brew install xcodegen node python
 xcodebuild -version            # record this
 make project                   # xcodegen generate --spec project.yml -> Doddy.xcodeproj
+make project-iphone            # iPhone/iPad without the watch app -> DoddyiPhone.xcodeproj (ADR-457)
+make project-mac               # Mac menu bar app and widget only  -> DoddyMac.xcodeproj
 scripts/ci.sh                  # everything, including xcodebuild test on the first iPhone simulator
 ```
 - To pick the simulator: `DODDY_DESTINATION="platform=iOS Simulator,name=iPhone 16" scripts/ci.sh`.
@@ -174,3 +176,42 @@ In order of risk:
 - **Quick actions (ADR-339):** the async `windowScene(_:performActionFor:)` on the existing scene delegate; `connectionOptions.shortcutItem` on cold launch.
 - **Memories tags (ADR-333):** `MemoryTagRow` with `ForEach(tags, id: \.tag)` over tuples.
 - **List templates (ADR-334):** `.swipeActions` inside a `Form` section in `NewListSheet`.
+
+### Watch, iPad and Mac round (2026-10-11, ADR-430 to ADR-433): most likely to need a fix
+**First build: still BLOCKED** (no Xcode here; the hosted jobs end in seconds with no logs, so no runner starts). In order of risk:
+- **iPad sidebar (ADR-430), `DoddyApp/App/SidebarLayout.swift`:**
+  - `struct SidebarLayout<Detail: View>` with a `@ViewBuilder var detail: Detail` stored property, built with a trailing closure in `RootView.tabContent`;
+  - `NavigationSplitView(columnVisibility:)` with `.navigationSplitViewStyle(.balanced)`, and Home's and Memories' own `NavigationStack`s inside the detail column (check for a doubled navigation bar);
+  - `List(selection: Binding<SidebarItem?>)` with `.tag(SidebarItem...)` on `Label`s; a `Binding(get:set:)` whose setter writes two `@Binding`s (same pattern as the Settings pickers);
+  - `RootView.tabContent` is now `@ViewBuilder` with an `if`/`else`, and `selectedScreen` a `switch` over `AppTab`.
+- **The opening (ADR-431):** `OpeningSceneView.stage` converts `OpeningScene.stageWidth(...)` (a `Double`) to `CGFloat`.
+- **iPad tests (ADR-432):** `DoddyTests` and `DoddyUITests` now have `TARGETED_DEVICE_FAMILY "1,2"`. `LaunchSmokeTests.testBackTapCardCanBeDeferredAndNeverShowsAsVerified` is now `throws` (for `XCTSkipIf`). Run once on an iPad simulator: `DODDY_DESTINATION='platform=iOS Simulator,name=iPad Air 11-inch (M3)' scripts/ci.sh` (use a name from `xcrun simctl list devices available`).
+- **Watch "New note" complication (ADR-434):**
+  - `NewNoteComplication` with a nested `Entry` and `Provider` and `.widgetURL(...)` inside `StaticConfiguration`;
+  - in `WatchRootView`, `.navigationDestination(isPresented:)` on the `List` and `.onOpenURL` on the `NavigationStack`.
+- **Mac menu bar (ADR-435):** build with `xcodebuild -project Doddy.xcodeproj -scheme DoddyMac -destination 'platform=macOS' build`.
+  - Likely fixes: the `DoddyPersistence` package product on a macOS target (GRDB builds for macOS); `MenuBarExtra(... systemImage:)` with `.menuBarExtraStyle(.window)`; `@FocusState` set in `.task`; signing with no team (choose "Sign to Run Locally").
+- **iPad fixes (ADR-436, ADR-437):**
+  - the explicit `UIApplicationSceneManifest` in `Config/Doddy-Info.plist` with generation off (check the app still launches and the share-accept scene delegate still gets links);
+  - `confirmationDialog`s now on rows inside `Form` sections and on the list's toolbar `Menu` (SettingsView's body may need splitting if the type-checker times out);
+  - `readableColumn()` in `Components.swift`;
+  - the strings catalogs now carry `variations.device` entries (`ipad`/`other`) for English and Polish: check Xcode accepts them.
+- **Mac icon and widget (ADR-438, ADR-439):**
+  - `MenuBarExtra { } label: { }` with `Image(nsImage:)`;
+  - the `DoddyMacWidgets` target and its embedding;
+  - `$(TeamIdentifierPrefix)` in `Config/DoddyMac-Info.plist`, `Config/DoddyMacWidgets-Info.plist` and the App Group entitlements;
+  - `WidgetCenter` in the Mac app;
+  - `containerBackground(.background, for: .widget)` on macOS.
+- **New note widget and the Mac window (ADR-450, ADR-451):**
+  - `NewNoteWidget` in `DoddyWidgets/HomeWidgets.swift`: `Button(intent: NewNoteIntent())`, added to `DoddyHomeWidgets` (seven widgets in that bundle);
+  - `Window(..., id:)` next to `MenuBarExtra`, and `openWindow(id:)`;
+  - `HSplitView`, and `TextEditor` with `.scrollContentBackground(.hidden)`;
+  - `NSApplication.shared.activate()`, which is macOS 14+.
+- **Share extension (ADR-311), Swift 6:** `ShareViewController` no longer sends the main-actor `[NSExtensionItem]` to `Task.detached` or a `sending` parameter, which strict concurrency rejects. The items stay on the main actor, and each attachment is read with `NSItemProvider.loadItem(forTypeIdentifier:options:completionHandler:)` inside `withCheckedContinuation`; only a `String` comes back. Behaviour is unchanged: the first web link (never a file's address), else the plain text.
+- **Smart Stack, palette, iPadOS 26 (ADR-453 to ADR-455):**
+  - `DoddyToolLiveActivity.island(_:)` takes an `ActivityViewContext<DoddyToolAttributes>`;
+  - `DoddyToolLiveActivityWithWatch` uses `.supplementalActivityFamilies([.small])` and `@Environment(\.activityFamily)`;
+  - the bundle's `if #unavailable(iOS 18.0)`: if `WidgetBundleBuilder` rejects it, use `if #available { … } else { … }` or a nested bundle;
+  - `NSPanel` with `NSHostingView`;
+  - `if #available(iOS 26.0, *)` inside `DeviceSupport.hasLiveActivities`.
+- **Per-platform projects (ADR-457):** `project-iphone.yml` uses XcodeGen `include:` and `dependencies:REPLACE`/`schemes:REPLACE`; `project-mac.yml` stands alone. Generated with XcodeGen 2.44.1 on Linux. Check that Xcode opens all three, and that `DoddyiPhone` builds without the watch app.

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the Mac menu bar prototype (ADR-435), merged with the INFOPLIST_KEY_*
+  build settings. DoddyMacAppGroup names the folder it shares with its desktop widget (ADR-439);
+  on macOS an App Group starts with the team's identifier.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>pl</string>
+	</array>
+	<key>DoddyMacAppGroup</key>
+	<string>$(TeamIdentifierPrefix)$(DODDY_APP_BUNDLE_IDENTIFIER).mac</string>
+</dict>
+</plist>
