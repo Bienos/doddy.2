@@ -72,8 +72,11 @@ enum PreferenceKey {
     /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
     /// the keyword file in Application Support, never here.
     static let heyDoddyOn = "heyDoddy.on"
+    /// The Quick start screen (ADR-324) was shown once, at the end of first use; never again.
+    static let quickStartOffered = "quickStartOffered"
     /// A voice conversation has really connected once on this iPhone (the provider said it is
-    /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326).
+    /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326)
+    /// and the voice picker (ADR-443).
     static let hadFirstConversation = "hadFirstConversation"
 }
 

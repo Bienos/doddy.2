@@ -362,15 +362,30 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 ## 4o. First-use fixes (ADR-325)
 | # | Do this | Expect |
 |---|---|---|
-| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
+| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No voice picker on Home yet (ADR-443). Settings › Voice has the **Voice** picker (ElevenLabs / OpenAI; with OpenAI, the 2.1 / 2.1 mini model under it, ADR-442), and a choice there runs the next conversation with that voice |
 | O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
 
 ## 4p. Home's first visit (ADR-326)
 | # | Do this | Expect |
 |---|---|---|
-| H1 | Fresh install, finish onboarding | Home: under Talk to Doddy, "Try saying: “Remember the gate code is 4821.” …"; no Back Tap card; no Today card. Bottom: "Doddy is an AI, not a person." and What leaves this iPhone |
+| H1 | Fresh install, finish onboarding | Home: under Talk to Doddy, "Try saying: “Remember the gate code is 4821.” …"; no voice picker; no Back Tap card; no Today card. Bottom: "Doddy is an AI, not a person." and What leaves this iPhone |
 | H2 | Tap What leaves this iPhone; Done. Then Settings › Privacy | The row-by-row screen opens as a sheet and closes. Settings › Privacy starts with the paragraph that used to be on Home |
-| H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count |
+| H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Voice picker (ADR-443) is under Talk to Doddy, showing what Settings › Voice shows; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count. Do it once with OpenAI (token server set) and once with ElevenLabs: both must count |
+
+## 4r. Quick start (ADR-324, `QUICK_START_STATUS.md`)
+| # | Do this | Expect |
+|---|---|---|
+| Q1 | Fresh install; skip the introduction | Quick start with three rows (08:00 weekdays, 21:00, Sunday 18:00 in the iPhone's clock style): morning and tidy-up ticked, the wrap-up **not** ticked (Reminders is off on a fresh install); no profile row. **Not now** goes to Home; Settings shows all three still off |
+| Q2 | Fresh install; skip; tap **Turn these on**; allow notifications | iOS asks once. "Morning check-in set." and the other two; Settings shows them on at those times; the pending notifications exist (relaunch and check Settings' receipts) |
+| Q3 | Fresh install; skip; **Turn these on**; don't allow | Three "Notifications are off for Doddy…" lines, nothing claimed as set |
+| Q5 | Fresh install; skip; **Turn these on** with the look-back ticked; allow notifications | "Weekly look-back set."; Settings › Weekly look-back shows Sunday 19:00, the tidy-up Sunday 18:00 |
+| Q4 | Fresh install; answer and save a name; on Quick start | "Use what you told me…" row shown, **off**. Tick it, apply: Settings › About you › Use in voice conversations is on. Then Settings › Answer the intro questions again → finish: no Quick start |
+
+## 4t. A shorter introduction (ADR-327)
+| # | Do this | Expect |
+|---|---|---|
+| I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
+| I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
 
 ## 4q. A guided first conversation (ADR-401)
 Needs first: the new "First conversation" section on the live agent, with placeholder `first_conversation` = no.

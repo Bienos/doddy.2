@@ -13,11 +13,32 @@ final class OpenAIRealtimeTests: XCTestCase {
 
     // MARK: Provider choice
 
-    func testProviderDefaultsToElevenLabs() {
+    func testStoredProviderStillReadsAsBefore() {
+        // A conversation log's provider: unknown or missing stays ElevenLabs (logs from before ADR-265).
         XCTAssertEqual(VoiceProvider(stored: nil), .elevenLabs)
         XCTAssertEqual(VoiceProvider(stored: "something else"), .elevenLabs)
         XCTAssertEqual(VoiceProvider(stored: "openai"), .openAIRealtime)
         XCTAssertEqual(VoiceProvider(stored: "elevenlabs"), .elevenLabs)
+    }
+
+    func testOpenAIIsTheDefaultVoiceOnlyWhereItCanStart() {
+        // No choice yet: OpenAI where the token server is set, ElevenLabs where it can't start otherwise.
+        XCTAssertEqual(VoiceProvider.effective(stored: nil, tokenServerSet: true), .openAIRealtime)
+        XCTAssertEqual(VoiceProvider.effective(stored: nil, tokenServerSet: false), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "", tokenServerSet: true), .openAIRealtime)
+        XCTAssertEqual(VoiceProvider.effective(stored: "something else", tokenServerSet: true), .openAIRealtime)
+        // A choice the user made always wins.
+        XCTAssertEqual(VoiceProvider.effective(stored: "elevenlabs", tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "openai", tokenServerSet: false), .openAIRealtime)
+    }
+
+    func testRealtimeModelsAreTheTwoTheServerAllows() {
+        XCTAssertEqual(OpenAIRealtimeModel.allCases.map(\.rawValue), ["gpt-realtime-2.1", "gpt-realtime-2.1-mini"])
+        XCTAssertEqual(OpenAIRealtimeModel.default, .mini)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: nil), .mini)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: "gpt-4o"), .mini)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: "gpt-realtime-2.1"), .full)
+        XCTAssertEqual(OpenAIRealtimeModel(stored: "gpt-realtime-2.1-mini"), .mini)
     }
 
     // MARK: Token server contract
@@ -26,6 +47,9 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertNil(VoiceTokenServer.requestBody(for: .elevenLabs))
         let body = try object(String(decoding: try XCTUnwrap(VoiceTokenServer.requestBody(for: .openAIRealtime)), as: UTF8.self))
         XCTAssertEqual(body["provider"] as? String, "openai")
+        XCTAssertEqual(body["model"] as? String, "gpt-realtime-2.1-mini")
+        let full = try object(String(decoding: try XCTUnwrap(VoiceTokenServer.requestBody(for: .openAIRealtime, model: .full)), as: UTF8.self))
+        XCTAssertEqual(full["model"] as? String, "gpt-realtime-2.1")
     }
 
     func testOpenAIGrantParsing() {
@@ -181,7 +205,15 @@ final class OpenAIRealtimeTests: XCTestCase {
                           askDoddyUsesNotes: false, voiceProvider: provider)
         }
         func row(_ s: DataFlowState) -> DataFlowRow? { DataFlow.rows(s).first { $0.id == "openaiVoice" } }
+        func elevenLabsRow(_ s: DataFlowState) -> DataFlowRow? { DataFlow.rows(s).first { $0.id == "elevenlabs" } }
+        func translatorRow(_ s: DataFlowState) -> DataFlowRow? { DataFlow.rows(s).first { $0.id == "translator" } }
         XCTAssertEqual(row(state(.elevenLabs))?.isActive, false)
+        // ElevenLabs is named for voice only while it is the one running it.
+        XCTAssertEqual(elevenLabsRow(state(.elevenLabs))?.isActive, true)
+        XCTAssertEqual(elevenLabsRow(state(.openAIRealtime))?.isActive, false)
+        XCTAssertEqual(elevenLabsRow(state(.openAIRealtime, tokenServer: false))?.isActive, true)
+        XCTAssertEqual(translatorRow(state(.openAIRealtime))?.destination, "OpenAI (translator mode)")
+        XCTAssertEqual(translatorRow(state(.elevenLabs))?.destination, "ElevenLabs (translator mode)")
         XCTAssertEqual(row(state(.openAIRealtime))?.isActive, true)
         XCTAssertEqual(row(state(.openAIRealtime, tokenServer: false))?.isActive, false)
         XCTAssertTrue(row(state(.openAIRealtime))?.what.contains("your saved notes") ?? false)
