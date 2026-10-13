@@ -148,6 +148,14 @@ final class VoiceSessionController {
         didSet {
             Self.conversationInProgress = isLive
             syncIsland()
+            // Listening comes only from the provider's own event: this conversation really
+            // connected. Counted once per conversation, for the Hey Doddy card (ADR-328).
+            if phase == .listening, !countedAsConnected {
+                countedAsConnected = true
+                let defaults = UserDefaults.standard
+                defaults.set(defaults.integer(forKey: PreferenceKey.connectedConversations) + 1,
+                             forKey: PreferenceKey.connectedConversations)
+            }
             // Listening comes only from the provider's own event, so this marks a conversation
             // that really connected, not a tap that failed (ADR-326).
             if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
@@ -155,6 +163,7 @@ final class VoiceSessionController {
             }
         }
     }
+    private var countedAsConnected = false
     /// True while any conversation holds the microphone (the island keeps it alive in other
     /// screens). Voice samples in Settings don't play then, so they never take over its audio.
     static private(set) var conversationInProgress = false
@@ -386,6 +395,7 @@ final class VoiceSessionController {
         }
         guard attempt == startAttempt else { return }
         startedAt = Date()
+        countedAsConnected = false
         phase = .connecting
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.

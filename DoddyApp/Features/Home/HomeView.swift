@@ -193,6 +193,7 @@ struct HomeView: View {
                     if router.setup.phase == .notStarted, DeviceSupport.hasBackTap, hadFirstConversation {
                         backTapCard
                     }
+                    HeyDoddyCard()
                     aboutYou
 
                     recent
@@ -410,3 +411,77 @@ private struct DataFlowSheet: View {
         }
     }
 }
+
+/// "Hey Doddy" with one tap (ADR-328): offered once, after a few conversations that really
+/// connected, and only when one tap is enough (`HeyDoddyOffer`). Turn on and Not now both end the
+/// offer for good. After Turn on it shows the listener's own state, never a "Listening" it isn't.
+private struct HeyDoddyCard: View {
+    @AppStorage(PreferenceKey.connectedConversations) private var conversations = 0
+    @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
+    @AppStorage(PreferenceKey.heyDoddyOfferDone) private var offerDone = false
+    @State private var listener = WakeWordListener.shared
+    /// Read once: the Keychain isn't read again on every redraw of Home.
+    @State private var oneTapReady = WakeOneTapSetup.isReady
+    @State private var isTurningOn = false
+    @State private var showsResult = false
+
+    var body: some View {
+        if showsResult {
+            result
+        } else if HeyDoddyOffer.shouldOffer(conversations: conversations, heyDoddyOn: heyDoddyOn,
+                                            dismissed: offerDone, oneTapReady: oneTapReady) {
+            offer
+        }
+    }
+
+    private var offer: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Talk without tapping")
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            Text("Say \u{201C}Hey Doddy\u{201D} and I'll answer. I listen for it on this iPhone, with iOS's orange microphone dot showing, until you stop me. It uses some battery.")
+                .font(.subheadline)
+                .foregroundStyle(Theme.secondaryText)
+            HStack(spacing: 12) {
+                Button {
+                    isTurningOn = true
+                    offerDone = true
+                    Task {
+                        await listener.turnOn()
+                        isTurningOn = false
+                        showsResult = true
+                    }
+                } label: {
+                    if isTurningOn { Text("Turning on…") } else { Text("Turn on") }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(isTurningOn)
+                .accessibilityIdentifier("home.heyDoddy.turnOn")
+                Button("Not now") { offerDone = true }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .disabled(isTurningOn)
+                    .accessibilityIdentifier("home.heyDoddy.notNow")
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    private var result: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Hey Doddy")
+                .font(.headline)
+            Text(listener.keyProblem ?? listener.state.summary)
+                .font(.subheadline)
+                .foregroundStyle(listener.keyProblem == nil ? Theme.secondaryText : Theme.error)
+                .accessibilityIdentifier("home.heyDoddy.status")
+            Text("Change it in Settings \u{203A} Hey Doddy.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+}
+
