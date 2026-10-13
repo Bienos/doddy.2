@@ -43,7 +43,7 @@ final class MemoryBaselineTests: XCTestCase {
         app.terminate()
         app.launch()
         app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["No memories yet"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -84,10 +84,12 @@ final class MemoryBaselineTests: XCTestCase {
         let activeCompact = springboard.descendants(matching: .any).matching(NSPredicate(format: "label == 'Test activity'")).firstMatch
         XCTAssertTrue(activeCompact.waitForExistence(timeout: 15))
         activeCompact.press(forDuration: 1.2)
-        XCTAssertTrue(springboard.buttons["End"].waitForExistence(timeout: 8))
-        springboard.buttons["End"].tap()
+        // The island's end control is labelled "Stop" ("Stop listening" in Hey Doddy mode).
+        XCTAssertTrue(springboard.buttons["Stop"].waitForExistence(timeout: 8))
+        springboard.buttons["Stop"].tap()
         app.activate()
-        XCTAssertEqual(app.staticTexts["island.fixture.status"].label, "Fixture ended")
+        // Like Unmute above, the system button reaches the app's handler a few seconds later.
+        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture ended", timeout: 10), "System Stop must reach the app handler.")
         XCTAssertTrue(count.waitForLabel("0 native activities", timeout: 5))
     }
 
