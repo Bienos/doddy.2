@@ -24,6 +24,8 @@ final class ShortcutRouter {
     var isLookBackPresented = false
     /// "Talk it through": the conversation that opens next starts with this briefing.
     private var checkInBriefing: MorningBriefing?
+    /// "Ask me about it" on a recently saved note (ADR-403), for the conversation that is starting.
+    private var noteToAsk: UUID?
     /// Bound to the guided Back Tap setup sheet in `RootView`.
     var isSetupPresented = false
     let setup: BackTapSetupModel
@@ -123,6 +125,19 @@ final class ShortcutRouter {
 
     func checkInSheetDismissed() {
         if checkInBriefing != nil, !isVoicePresented { isVoicePresented = true } else { showWaitingDraft() }
+    }
+
+    /// "Ask me about it" on Home (ADR-403): a conversation about that note. Never over another sheet.
+    func askAboutNote(_ id: UUID) {
+        guard !isVoicePresented, !isSetupPresented, drafts.shown == nil else { return }
+        noteToAsk = id
+        isVoicePresented = true
+    }
+
+    /// The note to ask about in the conversation that is starting, once.
+    func takeNoteToAsk() -> UUID? {
+        defer { noteToAsk = nil }
+        return noteToAsk
     }
 
     /// The check-in briefing for the conversation that is starting, once.
