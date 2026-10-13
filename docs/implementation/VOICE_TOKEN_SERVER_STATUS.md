@@ -31,7 +31,7 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 | Item | State |
 |---|---|
 | Vercel project | `doddy-voice-token` (team `bienos`), linked to `Bienos/doddy.2`, root `server/voice-token`; created earlier the same day by a parallel session |
-| Production | Deployed from `claude/brave-keller-f8h6uq` @ `882fe97`, region `fra1`. Endpoint `https://doddy-voice-token.vercel.app/api/voice-token` |
+| Production | Deployed from `claude/brave-keller-f8h6uq` @ `882fe97`, region `fra1`. Endpoint `https://doddy-voice-token.vercel.app/api/voice-token` (13 Oct 2026: the owner's Vercel dashboard now lists this project at `https://doddy-voice-token-beta.vercel.app`, so the endpoint is `https://doddy-voice-token-beta.vercel.app/api/voice-token`; read from a dashboard screenshot, not yet called) |
 | Env `ELEVENLABS_AGENT_ID` | Set (plain, production + preview) |
 | Env `DODDY_ACCESS_CODES` | Set (sensitive, production): one owner code, label `owner`. The code was given to the owner as a file, not in chat or the repo |
 | Env `ELEVENLABS_API_KEY` | Set by the owner on 2026-10-10 (Sensitive, Production). Key scope: **ElevenAgents = Read, every other endpoint No Access**; switch Agents to Write only if a real token request fails with a permission error |
