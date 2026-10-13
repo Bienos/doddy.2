@@ -30,15 +30,13 @@ struct HomeView: View {
     @State private var translatorChoice: TranslatorSetup?
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to Talk to
-    /// Doddy and holds back the Back Tap and Today cards.
+    /// Doddy and holds back the voice picker (ADR-443) and the Back Tap and Today cards.
     @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
     @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
     @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
     @State private var showDataFlow = false
     private var router: ShortcutRouter { .shared }
 
-    /// Where notes are kept, as switched on now: never "only on this iPhone" while a copy is on the server.
-    /// Whole sentences, not pieced together, so each has its Polish line.
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
     /// four times and sits down on his box (ADR-323). The first time Home shows on a morning he
     /// waves instead (ADR-380). Waits a moment first, so an opening that is about to start wins.
@@ -134,6 +132,14 @@ struct HomeView: View {
                         .disabled(!store.environment.capabilities.isAvailable(.voiceInput))
                         .accessibilityIdentifier("home.talk")
                         .modifier(SlideIn(shown: buttonsShown, delay: 0))
+
+                        // Who runs the voice, and OpenAI's model (ADR-442), once there has been a first
+                        // conversation; before that it is one more choice ahead of talking (ADR-443).
+                        // Settings › Voice has it from the start.
+                        if hadFirstConversation {
+                            VoiceProviderPicker(idPrefix: "home")
+                                .modifier(SlideIn(shown: buttonsShown, delay: 0))
+                        }
 
                         if !hadFirstConversation && store.environment.capabilities.isAvailable(.voiceInput) {
                             Text("Try saying: \u{201C}Remember the gate code is 4821.\u{201D} I'll ask before I keep anything.")

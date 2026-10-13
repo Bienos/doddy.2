@@ -236,7 +236,7 @@ final class OpenAIRealtimeSession: LiveVoiceLink {
     }
 }
 
-/// Microphone in and Doddy's voice out for the OpenAI test voice. Called on audio threads, so all
+/// Microphone in and Doddy's voice out for the OpenAI voice. Called on audio threads, so all
 /// state is behind `lock`. Voice processing (Apple's echo cancellation) is on, so Doddy doesn't
 /// hear himself through the speaker and interrupt his own sentence. iOS stops the engine on a route
 /// change (AirPods) or an interruption (a call, Siri); it is restarted when iOS allows, and audio

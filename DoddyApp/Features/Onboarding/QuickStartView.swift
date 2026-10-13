@@ -94,7 +94,7 @@ struct QuickStartView: View {
             if profileSaved && !current.useProfileInVoice {
                 QuickStartRow(
                     title: "Use what you told me in voice conversations",
-                    detail: NSLocalizedString("Your saved answers are sent to ElevenLabs at the start of each conversation so I know them. Off, they stay on this iPhone.", comment: ""),
+                    detail: NSLocalizedString("Your saved answers are sent to whichever service runs my voice (OpenAI or ElevenLabs, see Settings › Voice) at the start of each conversation so I know them. Off, they stay on this iPhone.", comment: ""),
                     isOn: $choices.useProfileInVoice, id: "quickStart.profile")
             }
 

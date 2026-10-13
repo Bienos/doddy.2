@@ -7,7 +7,8 @@ import Foundation
 // pre-ticked: they stay on this iPhone, never show a note, and iOS itself asks before any of them
 // can ring. The evening wrap-up only when Reminders is connected: without it, its screen has
 // nothing to show. Using the "About you"
-// answers in voice conversations sends them to ElevenLabs, so it is never pre-ticked and is only
+// answers in voice conversations sends them off the phone, to OpenAI or ElevenLabs, whichever runs
+// the voice (ADR-442), so it is never pre-ticked and is only
 // offered when there are saved answers to send.
 
 public struct QuickStartChoices: Equatable, Sendable {

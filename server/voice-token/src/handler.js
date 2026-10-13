@@ -2,8 +2,8 @@
 // ElevenLabs conversation token, so the agent can require authentication and the
 // ElevenLabs API key never ships in the app.
 //
-// Testing only (ADR-265): a body of {"provider":"openai"} asks for a one-conversation OpenAI
-// Realtime client secret instead. The secret carries only the model and voice; Doddy's prompt,
+// A body of {"provider":"openai","model":"…"} (ADR-265, default voice since ADR-442) asks for a
+// one-conversation OpenAI Realtime client secret instead; the model must be on the allowlist. The secret carries only the model and voice; Doddy's prompt,
 // notes and tools go from the phone straight to OpenAI, never through this server.
 //
 // "Hey Doddy" for everyone (ADR-328): a body of {"provider":"picovoice"} returns the owner's
@@ -49,7 +49,9 @@ const reportedConfigs = new Set();
 // How long the phone has to open the OpenAI connection with the secret (the session itself
 // may then run longer). Short, because the secret is a bearer credential.
 const OPENAI_SECRET_SECONDS = 120;
-export const OPENAI_DEFAULT_MODEL = "gpt-realtime";
+export const OPENAI_DEFAULT_MODEL = "gpt-realtime-2.1-mini";
+/** The models the app may ask for. Anything else is refused, so a client can't pick a pricier one. */
+export const OPENAI_ALLOWED_MODELS = Object.freeze(["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]);
 export const OPENAI_DEFAULT_VOICE = "marin";
 
 /**
@@ -59,7 +61,7 @@ export const OPENAI_DEFAULT_VOICE = "marin";
  * @property {string} [DODDY_ACCESS_CODES]  "label:code,label:code" (labels appear in logs, codes never)
  * @property {string} [DODDY_TOKENS_PER_HOUR] per tester; default 30
  * @property {string} [OPENAI_API_KEY]        server-only secret; only needed for the OpenAI test voice
- * @property {string} [OPENAI_REALTIME_MODEL] default "gpt-realtime"
+ * @property {string} [OPENAI_REALTIME_MODEL] used when the app names no model; default "gpt-realtime-2.1-mini"
  * @property {string} [OPENAI_REALTIME_VOICE] default "marin"
  * @property {string} [PICOVOICE_ACCESS_KEY]  the owner's Picovoice AccessKey for "Hey Doddy" (ADR-328)
  */
@@ -87,9 +89,13 @@ export async function handleTokenRequest(request, env, deps = {}) {
     return finish(405, "method_not_allowed", {}, undefined, { allow: "POST" });
   }
 
-  const provider = await requestedProvider(request);
-  if (provider === null) {
+  const requested = await requestedProvider(request);
+  if (requested === null) {
     return finish(400, "unknown_provider");
+  }
+  const { provider } = requested;
+  if (provider === "openai" && requested.model !== undefined && !OPENAI_ALLOWED_MODELS.includes(requested.model)) {
+    return finish(400, "unknown_model", { provider });
   }
 
   const codes = parseAccessCodes(env.DODDY_ACCESS_CODES);
@@ -127,7 +133,7 @@ export async function handleTokenRequest(request, env, deps = {}) {
   }
 
   return provider === "openai"
-    ? openAISecret(env, fetchImpl, finish, tester)
+    ? openAISecret(env, fetchImpl, finish, tester, requested.model)
     : elevenLabsToken(env, fetchImpl, finish, tester);
 }
 
@@ -164,11 +170,11 @@ function tokensPerHour(raw) {
   return /^[1-9][0-9]*$/.test(raw.trim()) ? Number(raw.trim()) : null;
 }
 
-/** Testing only (ADR-265): a short-lived OpenAI Realtime client secret with model and voice set. */
-async function openAISecret(env, fetchImpl, finish, tester) {
-  const model = env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL;
+/** A short-lived OpenAI Realtime client secret with model and voice set (ADR-265, ADR-442). */
+async function openAISecret(env, fetchImpl, finish, tester, requestedModel) {
+  const model = requestedModel ?? (env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL);
   const voice = env.OPENAI_REALTIME_VOICE || OPENAI_DEFAULT_VOICE;
-  const fields = { tester, provider: "openai" };
+  const fields = { tester, provider: "openai", model };
 
   const upstream = await callUpstream(fetchImpl, OPENAI_CLIENT_SECRET_URL, {
     method: "POST",
@@ -210,13 +216,14 @@ async function callUpstream(fetchImpl, url, init) {
 }
 
 /**
- * "elevenlabs" (no body, as every app build before ADR-265 sends), "openai", "picovoice", or null when the
- * body names something else or isn't JSON.
+ * `{provider: "elevenlabs"}` (no body, as every app build before ADR-265 sends), `{provider:
+ * "openai", model?}`, `{provider: "picovoice"}` (ADR-328), or null when the body names something
+ * else or isn't JSON. A `model` that isn't a string is returned as-is so the caller refuses it.
  * @param {Request} request
  */
 async function requestedProvider(request) {
   const text = await request.text().catch(() => "");
-  if (text.trim() === "") return "elevenlabs";
+  if (text.trim() === "") return { provider: "elevenlabs" };
   let body;
   try {
     body = JSON.parse(text);
@@ -224,7 +231,8 @@ async function requestedProvider(request) {
     return null;
   }
   const provider = body?.provider ?? "elevenlabs";
-  return provider === "elevenlabs" || provider === "openai" || provider === "picovoice" ? provider : null;
+  if (provider !== "elevenlabs" && provider !== "openai" && provider !== "picovoice") return null;
+  return { provider, model: body?.model === undefined || body?.model === null ? undefined : body.model };
 }
 
 /** @param {string | undefined} raw */

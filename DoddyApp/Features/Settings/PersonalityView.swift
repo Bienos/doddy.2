@@ -90,7 +90,7 @@ struct PersonalityView: View {
             } header: {
                 Text("What Doddy calls you")
             } footer: {
-                Text("Optional. When set, it's sent to ElevenLabs with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.")
+                Text("Optional. When set, it's sent to OpenAI, or ElevenLabs if you switch Home's voice to it with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.")
             }
 
             Section("Quick picks") {

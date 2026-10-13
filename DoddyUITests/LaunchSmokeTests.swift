@@ -40,7 +40,10 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
         // ADR-402: where Siri, the Action Button and the control are, without claiming they're set.
         XCTAssertTrue(app.descendants(matching: .any)["quickStart.quickAccess"].exists)
-        app.buttons["quickStart.notNow"].tap()
+        // The tips box can push Not now below the fold; the tab bar behind this cover isn't in the way.
+        let notNow = app.buttons["quickStart.notNow"]
+        for _ in 0..<10 where !notNow.isHittable { app.scrollStep() }
+        notNow.tap()
 
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "A little less to carry.")
@@ -109,6 +112,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["home.firstHint"].exists)
         XCTAssertFalse(app.buttons["home.backTap.setup"].exists, "held back until the first conversation")
         XCTAssertFalse(app.buttons["today.openSettings"].exists, "nothing connected yet, so no Today card")
+        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the voice picker waits for the first conversation (ADR-443)")
 
         let link = app.buttons["home.dataFlow"]
         XCTAssertTrue(app.reveal(link))
@@ -116,6 +120,19 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForNonExistence(timeout: 5))
+
+        // Settings › Voice has the picker from the start.
+        app.buttons["tab.settings"].tap()
+        XCTAssertTrue(app.reveal(app.segmentedControls["settings.voiceProvider"]))
+    }
+
+    @MainActor
+    func testVoicePickerIsOnHomeAfterTheFirstConversation() {
+        // ADR-443: the provider (and OpenAI's model) picker from ADR-442, once there has been a conversation.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.reveal(app.segmentedControls["home.voiceProvider"]))
+        XCTAssertFalse(app.staticTexts["home.firstHint"].exists)
     }
 
     @MainActor
@@ -274,7 +291,6 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true, listen: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 3), "nothing opens before the microphone is allowed")
-        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the test voice switch is in Settings now")
 
         XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
         app.buttons["tab.settings"].tap()
