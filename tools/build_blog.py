@@ -383,9 +383,9 @@ def post_page(p: dict) -> str:
         </aside>
       </div>
     </article>"""
-    head = f'\n  <meta property="article:published_time" content="{p['date']}">'
+    head = f'\n  <meta property="article:published_time" content="{p["date"]}">'
     if p.get("keywords"):
-        head += f'\n  <meta name="keywords" content="{html.escape(p['keywords'])}">'
+        head += f'\n  <meta name="keywords" content="{html.escape(p["keywords"])}">'
     og = p.get("og_image") or "/assets/og-big-brain.png"
     if not (ROOT / "site" / og.lstrip("/")).is_file():
         sys.exit(f"{p['stem']}: og_image not found in site/: {og}")
