@@ -147,6 +147,15 @@ h3 {
 .nav-links a { text-decoration: none; font-size: 0.9375rem; font-weight: 550; color: var(--secondary-text); display: inline-flex; min-height: 44px; align-items: center; }
 .nav-links a:hover { color: var(--reading-ink); }
 @media (min-width: 820px) { .nav-links { display: flex; } }
+/* Six links plus the button need a little less room per link between 900 and 1040px, and below 900px
+   the newest link waits for more room (the other five fit down to 820px, as before). */
+.nav-links .nav-wide { display: none; }
+@media (min-width: 900px) { .nav-links .nav-wide { display: list-item; } }
+@media (min-width: 900px) and (max-width: 1039px) {
+  .nav-inner { gap: 16px; }
+  .nav-links { gap: 14px; }
+  .nav-links a { font-size: 0.875rem; }
+}
 
 /* ---------- Hero ---------- */
 

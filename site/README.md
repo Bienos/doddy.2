@@ -105,6 +105,21 @@ sent before the script has loaded. No npm dependency, no build step.
 
 A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards, six pairs of the small things the page talks about (spare keys, locker 4471, Marta's book, shoe size 31, Wi-Fi password, parked on B2). A match makes Doddy say where the thing is; finishing swaps him to the fist-bump pose. Cards are buttons with spoken labels ("Card 3, face down" / "Card 3: Spare keys, matched"), so it works with a keyboard and VoiceOver; Doddy's bubble is a polite live region. Nothing is stored. Hidden without JavaScript. Icons are inline line drawings in `memory.js`.
 
+## Doddy carries you across (page transition)
+
+The motion board's "Homepage → new page" transition, `carry.js` + `carry.css`, used by any link marked `data-carry`. Today that is the nav link "What can Doddy do?" (`/what-can-doddy-do/`, shown from 900px up; the other five links still fit down to 820px).
+
+- **The page doesn't exist yet.** The link goes to `/what-can-doddy-do/` and will 404 until that page is added (owner: "I will add what can Doddy do later"). Until then the arrival half has nothing to land on.
+- **Timeline.** Old page: 0 to 200 ms Doddy pops out of the link (pack `pop` frames) and lands; 200 to 600 ms he runs right (`run` frames) while everything but the nav fades to paper (opacity only, nothing moves); 600 to 900 ms ink wipes left to right and the page changes. New page: the ink is already over the page; it wipes off left to right with Doddy running just behind the edge to the ring, where he waves (`wave` frames) and the seven items drop in 60 ms apart. Constants are at the top of `carry.js`.
+- **What the destination page needs** (all optional; without them it is a normal page load):
+  - `<link rel="stylesheet" href="/carry.css">` and a plain `<script src="/carry.js"></script>` in `<head>` (not `defer`, so the ink is over the page before it first paints).
+  - `<div data-carry-ring><img src="/assets/motion/wave_4.png" width="200" height="300" alt=""></div>`: the ring he lands in. He ends on `wave_4`, which is also what a visit without JavaScript shows.
+  - `<ol data-carry-objects>` with one child per object (placeholders for now; the seven aren't decided).
+- **Progressive enhancement.** Without JavaScript it is a plain link. It also stays a plain link with reduced motion, a modified click (new tab), a different target, frames not loaded yet (they load on idle and on hover or focus, and not at all with Save-Data), or `sessionStorage` blocked. A direct visit, a stale flag (older than 10 s) or a page with no ring is a plain load. If the destination hasn't answered 3 s after the wipe, the ink comes off the old page. Back from the new page restores the old page (`pageshow`).
+- **What's stored.** One `sessionStorage` entry (`doddy-carry`: a timestamp and the target path), read once and removed by the next page. No cookies; nothing is sent anywhere. (`main.js`'s "no storage" line is about that file; this is the one exception.)
+- **Art.** `assets/motion/` holds 15 frames copied unchanged from the app's asset catalog (`DoddyMotion_pop_1..4`, `run_1..6`, `wave_1..5`, the `@2x` PNGs, 200×300), which come from the owner's `DODDY-Numbered-Video-Assets-v01` pack (`docs/design/UPLOADED_MEMORY_ASSETS.md`: `019_doddy_pop_v01`, `014_doddy_run_v01`, `016_doddy_wave_v01`). The board names the pack's ink storyboard for the wipe; its panels are phone-shaped photographs (`Story_ink_*`), so the wipe here is drawn in CSS (`--reading-ink`, a soft edge) and is **not** those panels. The pop frames are four, starting with the pack's scribble dot at the link.
+- **Checked** (2026-10-13, headless Chromium 1194 via Playwright, local server sending the production CSP from `vercel.json`, against a scratch destination page kept out of the repo): the full run and arrival, 20 checks including reduced motion, ctrl-click, direct visit, stale flag, back button, frames blocked, a 1.5 s-slow destination, a destination without a ring, keyboard Enter, a second click mid-run, and the nav at 820 to 1280px; no CSP violations. About 0.95 s on the old page plus 0.5 s on the new, so about 1.5 s with a fast server; real latency adds to that. Not checked: Safari, Firefox, a real phone, a screen reader, or the real page (it doesn't exist).
+
 ## Builds on Vercel
 
 `vercel.json` has an `ignoreCommand`: a push builds this project only when something under `site/` changed since the last deployment (or, without one, in the last commit). It builds whenever it can't tell. `gateway/` and `server/voice-token/` have the same rule. Before this, every push to any branch built all three projects and used up the free plan's 100 deployments a day.
@@ -117,7 +132,8 @@ A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards,
 4. **Fonts:** Bricolage Grotesque and Caveat (both OFL) load from Google Fonts, which sends visitors' IP addresses to Google. For an EU audience, self-host them after licence review; the CSS falls back to system fonts without them.
 5. **Character art:** the poses in `assets/poses/` are the v1.3 SVGs. From 2026-10-11, new Doddy art comes only from the owner's `DODDY-Numbered-Video-Assets-v01` pack (CLAUDE.md), so any change to the poses replaces them from that pack.
 6. **Voice testing line:** the page says "Voice hasn't been tested on a real iPhone yet." Change it only when the owner confirms otherwise.
-7. **Brand approval:** colours, character drawings and wordmark are candidates (`docs/design/CANONICAL_DESIGN_DIRECTION.md`), not an approved brand.
+7. **What can Doddy do page:** add `/what-can-doddy-do/` (copy, the seven objects, the ring); until then the nav link 404s. See "Doddy carries you across".
+8. **Brand approval:** colours, character drawings and wordmark are candidates (`docs/design/CANONICAL_DESIGN_DIRECTION.md`), not an approved brand.
 
 ## Checked (2026-10-09, design v3, headless Chromium 1194 via Playwright, local server)
 

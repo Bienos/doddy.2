@@ -1,4 +1,4 @@
-// Doddy landing page. No cookies, no storage. Page views are counted by Vercel Web Analytics
+// Doddy landing page. No cookies, no storage here (carry.js keeps one short-lived sessionStorage flag for the page transition). Page views are counted by Vercel Web Analytics
 // (script tag in index.html, served by Vercel); nothing here calls it.
 
 // The site's own waitlist endpoint (api/waitlist.js): stores each email privately in Vercel Blob.

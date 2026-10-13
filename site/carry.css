@@ -1,0 +1,70 @@
+/* "Doddy carries you across": styles for carry.js. Everything here applies only while carry.js has put a class on <html>
+   (carry-run on the old page, carry-in / carry-play on the new one), so a page without JavaScript never sees any of it.
+   Colours come from tokens.css. Nothing here changes layout: opacity, transform and fixed layers only. */
+
+:root { --carry-f: 160px; }                       /* width of the ink's soft edge */
+@media (max-width: 700px) { :root { --carry-f: 96px; } }
+
+/* The ink: one fixed layer, moved by carry.js through --carry-ink-x. It is wider than the window by the soft edge. */
+html.carry-run::before,
+html.carry-in::before {
+  content: "";
+  position: fixed; top: 0; left: 0; height: 100%;
+  width: calc(100% + var(--carry-f));
+  background: var(--reading-ink);
+  z-index: 9998;
+  pointer-events: none;
+  will-change: transform;
+}
+/* Leaving: soft edge on the right, so the ink arrives from the left. Starts fully off-screen. */
+html.carry-run::before {
+  transform: translateX(var(--carry-ink-x, -100%));
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - var(--carry-f)), transparent);
+          mask-image: linear-gradient(90deg, #000 calc(100% - var(--carry-f)), transparent);
+}
+/* Arriving: soft edge on the left, so the paper appears from the left. Starts covering the whole window. */
+html.carry-in::before {
+  transform: translateX(var(--carry-ink-x, calc(-1 * var(--carry-f))));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 var(--carry-f));
+          mask-image: linear-gradient(90deg, transparent, #000 var(--carry-f));
+}
+
+/* Old page: everything but the nav fades to paper (400 ms, after 200 ms). Nothing moves. */
+html.carry-run body > :not(.nav):not(.carry-doddy) {
+  opacity: 0;
+  transition: opacity 400ms ease 200ms;
+}
+
+/* Doddy: every frame is stacked in one element, one shown at a time. */
+.carry-doddy {
+  position: fixed; top: 0; left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+.carry-doddy img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  visibility: hidden;
+}
+.carry-doddy img.on { visibility: visible; }
+
+/* New page: until he arrives, the ring is empty and the items are waiting above their places. */
+html.carry-in [data-carry-ring] img { opacity: 0; }
+html.carry-in [data-carry-ring].is-here img { opacity: 1; }
+html.carry-in [data-carry-objects] > * { opacity: 0; }
+html.carry-play [data-carry-objects] > * {
+  animation: carry-drop var(--carry-drop-ms, 100ms) ease-out var(--carry-delay, 100ms) both;
+}
+@keyframes carry-drop {
+  from { opacity: 0; transform: translateY(-28px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* carry.js does nothing under reduced motion, but if a class is ever left on, show the page. */
+@media (prefers-reduced-motion: reduce) {
+  html.carry-run::before, html.carry-in::before, .carry-doddy { display: none; }
+  html.carry-run body > :not(.nav):not(.carry-doddy) { opacity: 1; transition: none; }
+  html.carry-in [data-carry-ring] img, html.carry-in [data-carry-objects] > * { opacity: 1; animation: none; }
+}
