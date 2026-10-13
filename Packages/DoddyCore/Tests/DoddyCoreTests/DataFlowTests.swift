@@ -178,9 +178,14 @@ final class DataFlowSummaryTests: XCTestCase {
 
     func testCloudAINamesEveryAIServiceThatIsOn() {
         XCTAssertEqual(DataFlow.cloudAISummary(base), "ElevenLabs (voice)")
+        // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "ElevenLabs (voice); OpenAI (test voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server")
+            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server")
+        XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
+        var elevenLabs = everything
+        elevenLabs.voiceProvider = .elevenLabs
+        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); OpenAI (Ask Doddy)"))
         var state = everything
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))

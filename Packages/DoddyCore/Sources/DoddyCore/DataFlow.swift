@@ -29,7 +29,7 @@ public struct DataFlowState: Equatable, Sendable {
     public var heyDoddyOn: Bool
     /// Lists shared through iCloud, by this user or with them (ADR-263).
     public var sharedLists: Int
-    /// Home's test switch for who runs the live voice (ADR-265).
+    /// Who runs the live voice: Home's voice switch, or its default (ADR-265, ADR-442).
     public var voiceProvider: VoiceProvider
     /// Settings → What I've learned → "Use in voice conversations" (ADR-440).
     public var learnedSharedWithVoice: Bool
@@ -115,22 +115,24 @@ public enum DataFlow {
                 id: "elevenlabs", destination: "ElevenLabs (Doddy's voice)",
                 what: sentence(voice),
                 when: openAIVoice
-                    ? "Only while a conversation is open, and not while Home's test switch says OpenAI."
+                    ? "Only while a conversation is open, and not while Home's voice switch says OpenAI."
                     : "Only while a conversation is open.",
-                isActive: true,
+                // OpenAI Realtime is the default where the token server is set (ADR-442); then
+                // nothing goes to ElevenLabs for voice, and the row says so instead of claiming it.
+                isActive: !(openAIVoice && state.tokenServerSet),
                 note: "ElevenLabs keeps a recording and transcript of each conversation. Notes you mark Private are never sent."),
             DataFlowRow(
-                id: "openaiVoice", destination: "OpenAI (test voice)",
+                id: "openaiVoice", destination: "OpenAI (Doddy's voice)",
                 what: sentence(voice),
-                when: "Only while a conversation is open and Home's test switch says OpenAI.",
+                when: "Only while a conversation is open and Home's voice switch says OpenAI.",
                 isActive: openAIVoice && state.tokenServerSet,
                 note: !openAIVoice
-                    ? "Home's test switch says ElevenLabs, so nothing goes to OpenAI for voice."
+                    ? "Home's voice switch says ElevenLabs, so nothing goes to OpenAI for voice."
                     : state.tokenServerSet
                         ? "Weather and Wikipedia don't work with this voice. How long OpenAI keeps the audio and transcript isn't verified in this build."
                         : "OpenAI voice needs the token server, so nothing goes there yet."),
             DataFlowRow(
-                id: "translator", destination: "ElevenLabs (translator mode)",
+                id: "translator", destination: openAIVoice && state.tokenServerSet ? "OpenAI (translator mode)" : "ElevenLabs (translator mode)",
                 what: "The other person's voice too, and everything said while translating. Opened from Translate on Home, your notes, conversations and profile aren't sent. Started in a conversation, what Doddy already had in it stays there, and he is told never to repeat it to them.",
                 when: "Only while translator mode is on.", isActive: true,
                 note: "Listen only hears whoever is near you. Nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes of the end."),
@@ -218,7 +220,7 @@ public enum DataFlow {
         let active = Set(rows(state).filter(\.isActive).map(\.id))
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
-        if active.contains("openaiVoice") { parts.append("OpenAI (test voice)") }
+        if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
         if active.contains("askDoddy") { parts.append("OpenAI (Ask Doddy)") }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
@@ -230,7 +232,7 @@ public enum DataFlow {
     /// `notInNetworkSummary` (DataFlowTests), so a new row can't be left out by accident.
     static let networkNames: [String: String] = [
         "elevenlabs": "ElevenLabs (while talking)",
-        "openaiVoice": "OpenAI (test voice, while talking)",
+        "openaiVoice": "OpenAI (while talking)",
         "iCloudSharing": "iCloud (lists you share)",
         "lookups": "Open-Meteo and Wikipedia (looked up by ElevenLabs)",
         "exchangeRates": "the European Central Bank (exchange rates; nothing about you)",
@@ -243,8 +245,8 @@ public enum DataFlow {
         "askDoddy": "the Ask Doddy gateway",
     ]
 
-    /// Covered by another name (translator mode is ElevenLabs), or not sent by the app (a backup
-    /// file goes where you save it).
+    /// Covered by another name (translator mode goes to whichever service runs the voice, which is
+    /// named), or not sent by the app (a backup file goes where you save it).
     static let notInNetworkSummary: Set<String> = ["translator", "backup"]
 
     private static func newsWriter(_ state: DataFlowState) -> String {

@@ -28,7 +28,9 @@ extension DataFlowState {
             siriReadsNotes: flag(PreferenceKey.siriReadsNotes, default: true),
             heyDoddyOn: flag(PreferenceKey.heyDoddyOn, default: false),
             sharedLists: SharedListsController.shared.links.count,
-            voiceProvider: VoiceProvider(stored: defaults.string(forKey: VoiceProvider.preferenceKey)),
+            // OpenAI is the default where the token server is set (ADR-442); a choice in Settings wins.
+            voiceProvider: VoiceProvider.effective(
+                stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: !text(PreferenceKey.voiceTokenServer).isEmpty),
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice))
     }
 }
@@ -46,7 +48,7 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
     @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
 
     /// The @AppStorage values above redraw this screen when a switch changes; the state itself is
     /// read by `DataFlowState.current()`, which Settings' Privacy rows use too (ADR-447).
