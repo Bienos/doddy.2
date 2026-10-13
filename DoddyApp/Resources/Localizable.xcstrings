@@ -34,6 +34,50 @@
         }
       }
     },
+    "%@ at %@. Notes from the week, ticked items and what's coming up. No scores or streaks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@. Notatki z tygodnia, odhaczone pozycje i to, co przed Tobą. Bez punktów i serii."
+          }
+        }
+      }
+    },
+    "%@ at %@. Notes saved twice and finished lists; nothing is deleted unless you tap it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, %@. Notatki zapisane dwa razy i ukończone listy; nic nie zostanie usunięte, dopóki tego nie stukniesz."
+          }
+        }
+      }
+    },
+    "%@ every day. Move today's open reminders to tomorrow. Needs Reminders on in Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ codziennie. Przenieś dzisiejsze niezałatwione przypomnienia na jutro. Wymaga włączonych Przypomnień w Połączeniach."
+          }
+        }
+      }
+    },
+    "%@ on weekdays. A quick look at your day: reminders and lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ w dni robocze. Szybki rzut oka na dzień: przypomnienia i listy."
+          }
+        }
+      }
+    },
     "%@ shared a reminder at “%@”.": {
       "extractionState": "manual",
       "localizations": {
@@ -96,6 +140,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To szkic, nie notatka: zapisze się dopiero po stuknięciu „Zapisz jako notatkę”."
+          }
+        }
+      }
+    },
+    "A few things that make Doddy easier.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kilka rzeczy, które ułatwiają życie z Doddym."
           }
         }
       }
@@ -1266,13 +1321,13 @@
         }
       }
     },
-    "Both voices go to ElevenLabs to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112.": {
+    "Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Oba głosy trafiają do ElevenLabs do tłumaczenia. Twoje notatki, rozmowy i profil nie są wysyłane. Nic nie zostaje na tym iPhonie, chyba że na końcu stukniesz Kopiuj lub Zapisz. Nie w nagłych wypadkach: dzwoń pod 112."
+            "value": "Oba głosy trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym do tłumaczenia. Twoje notatki, rozmowy i profil nie są wysyłane. Nic nie zostaje na tym iPhonie, chyba że na końcu stukniesz Kopiuj lub Zapisz. Nie w nagłych wypadkach: dzwoń pod 112."
           }
         }
       }
@@ -1537,6 +1592,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zmień notatkę"
+          }
+        }
+      }
+    },
+    "Change or turn off any of these in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdą z tych rzeczy zmienisz lub wyłączysz w Ustawieniach."
           }
         }
       }
@@ -2032,6 +2098,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dalej"
+          }
+        }
+      }
+    },
+    "Continue to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejdź do Doddy’ego"
           }
         }
       }
@@ -2916,24 +2993,35 @@
         }
       }
     },
-    "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": {
+    "Doddy is an AI, not a person.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy to SI, nie człowiek. Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje."
+            "value": "Doddy to AI, nie człowiek."
           }
         }
       }
     },
-    "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": {
+    "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy to SI, nie człowiek. Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje."
+            "value": "Doddy to SI, nie człowiek. Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje."
+          }
+        }
+      }
+    },
+    "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to SI, nie człowiek. Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje."
           }
         }
       }
@@ -3708,6 +3796,17 @@
         }
       }
     },
+    "Evening wrap-up set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wieczorne podsumowanie ustawione."
+          }
+        }
+      }
+    },
     "Event": {
       "extractionState": "manual",
       "localizations": {
@@ -4379,6 +4478,17 @@
         }
       }
     },
+    "Here's what's set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oto, co jest ustawione."
+          }
+        }
+      }
+    },
     "Hey Doddy paused": {
       "extractionState": "manual",
       "localizations": {
@@ -4709,13 +4819,13 @@
         }
       }
     },
-    "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs keeps its own record as described in Settings › Privacy.": {
+    "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and the voice provider (OpenAI or ElevenLabs) may keep its own record as described in Settings › Privacy.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zostanie usunięta z tego iPhone’a i nie będzie już przywoływana. Notatki zapisane podczas niej zostają, a ElevenLabs przechowuje własny zapis, jak opisano w Ustawieniach › Prywatność."
+            "value": "Zostanie usunięta z tego iPhone’a i nie będzie już przywoływana. Notatki zapisane podczas niej zostają, a dostawca głosu (OpenAI lub ElevenLabs) może przechowywać własny zapis, jak opisano w Ustawieniach › Prywatność."
           }
         }
       }
@@ -5809,6 +5919,17 @@
         }
       }
     },
+    "Morning check-in set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny przegląd ustawiony."
+          }
+        }
+      }
+    },
     "Move %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -6634,6 +6755,17 @@
         }
       }
     },
+    "Nothing changes until you tap the button. You can change any of it later in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic się nie zmieni, dopóki nie stukniesz przycisku. Każdą z tych rzeczy zmienisz później w Ustawieniach."
+          }
+        }
+      }
+    },
     "Nothing coming up.": {
       "extractionState": "manual",
       "localizations": {
@@ -6656,13 +6788,13 @@
         }
       }
     },
-    "Nothing from this conversation is kept on this iPhone, and Doddy won't bring it up later. No notes were saved and nothing was added anywhere. ElevenLabs ran the translation and keeps its own recording, as in Settings › Privacy.": {
+    "Nothing from this conversation is kept on this iPhone, and Doddy won't bring it up later. No notes were saved and nothing was added anywhere. The voice provider (OpenAI or ElevenLabs) ran the translation and may keep its own recording, as in Settings › Privacy.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nic z tej rozmowy nie zostaje na tym iPhonie i Doddy nie wróci do niej później. Nie zapisano żadnych notatek i nic nigdzie nie dodano. Tłumaczenie prowadził ElevenLabs, który zachowuje własne nagranie, jak w Ustawieniach › Prywatność."
+            "value": "Nic z tej rozmowy nie zostaje na tym iPhonie i Doddy nie wróci do niej później. Nie zapisano żadnych notatek i nic nigdzie nie dodano. Tłumaczenie prowadził dostawca głosu (OpenAI lub ElevenLabs), który może zachować własne nagranie, jak w Ustawieniach › Prywatność."
           }
         }
       }
@@ -6993,6 +7125,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Powiadomienia Doddy’ego są wyłączone, więc podsumowanie nie może się pojawić. Włącz je w Ustawieniach iOS."
+          }
+        }
+      }
+    },
+    "Notifications are off for Doddy, so this can't ring. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia Doddy’ego są wyłączone, więc to nie zadzwoni. Włącz je w Ustawieniach iOS."
           }
         }
       }
@@ -7613,13 +7756,13 @@
         }
       }
     },
-    "Optional. When set, it's sent to ElevenLabs with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.": {
+    "Optional. When set, it's sent to OpenAI, or ElevenLabs if you switch Home's voice to it with each voice conversation so Doddy can use it now and then. Leave it empty to send nothing.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Opcjonalnie. Gdy jest ustawione, trafia do ElevenLabs z każdą rozmową głosową, żeby Doddy mógł czasem go użyć. Zostaw puste, aby nic nie wysyłać."
+            "value": "Opcjonalnie. Gdy jest ustawione, trafia do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym z każdą rozmową głosową, żeby Doddy mógł czasem go użyć. Zostaw puste, aby nic nie wysyłać."
           }
         }
       }
@@ -8141,13 +8284,13 @@
         }
       }
     },
-    "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and keeps its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.": {
+    "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. OpenAI (or ElevenLabs, if you switched Home to it) still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i zachowuje własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
+            "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. OpenAI (albo ElevenLabs, jeśli przełączysz na niego ekran główny) nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
           }
         }
       }
@@ -9857,6 +10000,17 @@
         }
       }
     },
+    "Setting up…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawiam…"
+          }
+        }
+      }
+    },
     "Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -10682,13 +10836,13 @@
         }
       }
     },
-    "Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs at the start of each conversation so Doddy knows them; off, they stay on this iPhone.": {
+    "Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it at the start of each conversation so Doddy knows them; off, they stay on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przechowywane na tym iPhonie razem z notatkami, ale osobno: zapomnienie ich nie usuwa notatek, a usunięcie notatek ich nie zapomina. Gdy „Używaj w rozmowach głosowych” jest włączone, te odpowiedzi trafiają do ElevenLabs na początku każdej rozmowy, żeby Doddy je znał; gdy wyłączone, zostają na tym iPhonie."
+            "value": "Przechowywane na tym iPhonie razem z notatkami, ale osobno: zapomnienie ich nie usuwa notatek, a usunięcie notatek ich nie zapomina. Gdy „Używaj w rozmowach głosowych” jest włączone, te odpowiedzi trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym na początku każdej rozmowy, żeby Doddy je znał; gdy wyłączone, zostają na tym iPhonie."
           }
         }
       }
@@ -10836,13 +10990,13 @@
         }
       }
     },
-    "Talking sends these reminders and list names to ElevenLabs to run the conversation, as any conversation does. Calendar events are read only if Calendar is on in Settings, Connections.": {
+    "Talking sends these reminders and list names to OpenAI, or ElevenLabs if you switch Home's voice to it to run the conversation, as any conversation does. Calendar events are read only if Calendar is on in Settings, Connections.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rozmowa wysyła te przypomnienia i nazwy list do ElevenLabs, żeby ją prowadzić, jak każda rozmowa. Wydarzenia z kalendarza są czytane tylko, gdy Kalendarz jest włączony w Ustawieniach, Połączenia."
+            "value": "Rozmowa wysyła te przypomnienia i nazwy list do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, żeby ją prowadzić, jak każda rozmowa. Wydarzenia z kalendarza są czytane tylko, gdy Kalendarz jest włączony w Ustawieniach, Połączenia."
           }
         }
       }
@@ -11870,6 +12024,17 @@
         }
       }
     },
+    "This couldn't be set. Try again in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się tego ustawić. Spróbuj ponownie w Ustawieniach."
+          }
+        }
+      }
+    },
     "This evening": {
       "extractionState": "manual",
       "localizations": {
@@ -12508,6 +12673,17 @@
         }
       }
     },
+    "Try saying: “Remember the gate code is 4821.” I'll ask before I keep anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz na przykład: „Zapamiętaj, że kod do bramy to 4821”. Zapytam, zanim cokolwiek zachowam."
+          }
+        }
+      }
+    },
     "Try your two taps.": {
       "extractionState": "manual",
       "localizations": {
@@ -12647,6 +12823,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw włącz SMS-y w sekcji Powiadomienia i SMS-y."
+          }
+        }
+      }
+    },
+    "Turn these on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz to"
           }
         }
       }
@@ -12992,6 +13179,17 @@
         }
       }
     },
+    "Use what you told me in voice conversations": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używaj Twoich odpowiedzi „O Tobie” w rozmowach głosowych"
+          }
+        }
+      }
+    },
     "Used %lld times, last on %@": {
       "extractionState": "manual",
       "localizations": {
@@ -13201,6 +13399,17 @@
         }
       }
     },
+    "Weekly look-back set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie tygodnia ustawione."
+          }
+        }
+      }
+    },
     "Weekly tidy-up": {
       "extractionState": "manual",
       "localizations": {
@@ -13208,6 +13417,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cotygodniowe porządki"
+          }
+        }
+      }
+    },
+    "Weekly tidy-up set.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cotygodniowe porządki ustawione."
           }
         }
       }
@@ -13564,13 +13784,13 @@
         }
       }
     },
-    "While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs to run Doddy. Weather and Wikipedia lookups run from ElevenLabs’ servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.": {
+    "While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to OpenAI, or ElevenLabs if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Podczas rozmowy Twój głos, ta rozmowa, zapisane notatki, nazwy list (a pozycje listy, gdy Doddy ją czyta lub zmienia), kilka ostatnich rozmów oraz wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice, których Doddy używa, są wysyłane do ElevenLabs, żeby działał Doddy. Sprawdzanie pogody i Wikipedii odbywa się z serwerów ElevenLabs. Nic nie jest zapisywane, dodawane, uruchamiane, wysyłane ani otwierane, dopóki tego nie stukniesz. Jeśli wyjdziesz z aplikacji, Doddy dalej słucha (zobaczysz go w Dynamic Island), dopóki nie stukniesz Zakończ. Jeśli iOS zatrzyma Doddy’ego w tle, wyspa to pokaże, zamiast udawać, że nadal Cię słyszy."
+            "value": "Podczas rozmowy Twój głos, ta rozmowa, zapisane notatki, nazwy list (a pozycje listy, gdy Doddy ją czyta lub zmienia), kilka ostatnich rozmów oraz wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice, których Doddy używa, są wysyłane do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, żeby działał Doddy. Sprawdzanie pogody i Wikipedii działa tylko z ElevenLabs i odbywa się z jego serwerów. Nic nie jest zapisywane, dodawane, uruchamiane, wysyłane ani otwierane, dopóki tego nie stukniesz. Jeśli wyjdziesz z aplikacji, Doddy dalej słucha (zobaczysz go w Dynamic Island), dopóki nie stukniesz Zakończ. Jeśli iOS zatrzyma Doddy’ego w tle, wyspa to pokaże, zamiast udawać, że nadal Cię słyszy."
           }
         }
       }
@@ -13608,13 +13828,13 @@
         }
       }
     },
-    "With a token server, Doddy sends only your access code to it to get a one-conversation pass; the conversation itself goes to ElevenLabs. Without one, the development agent is open to anyone who has its ID. Conversations count toward the owner's ElevenLabs minutes.": {
+    "With a token server, Doddy sends only your access code to it to get a one-conversation pass; the conversation itself goes to OpenAI, or ElevenLabs if you switch Home's voice to it. Without one, only ElevenLabs works, and the development agent is open to anyone who has its ID. Conversations count toward the owner's OpenAI or ElevenLabs usage.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z serwerem tokenów Doddy wysyła do niego tylko Twój kod dostępu, żeby dostać przepustkę na jedną rozmowę; sama rozmowa idzie do ElevenLabs. Bez niego agent deweloperski jest otwarty dla każdego, kto zna jego identyfikator. Rozmowy liczą się do minut ElevenLabs właściciela."
+            "value": "Z serwerem tokenów Doddy wysyła do niego tylko Twój kod dostępu, żeby dostać przepustkę na jedną rozmowę; sama rozmowa idzie do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym. Bez niego działa tylko ElevenLabs, a agent deweloperski jest otwarty dla każdego, kto zna jego identyfikator. Rozmowy liczą się do zużycia OpenAI lub ElevenLabs właściciela."
           }
         }
       }
@@ -13927,6 +14147,17 @@
         }
       }
     },
+    "Your answers will be used in voice conversations.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje odpowiedzi będą używane w rozmowach głosowych."
+          }
+        }
+      }
+    },
     "Your day": {
       "extractionState": "manual",
       "localizations": {
@@ -14070,24 +14301,24 @@
         }
       }
     },
-    "Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs and are always on.": {
+    "Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Twoje notatki są zawsze na tym iPhonie. Pogoda i Wikipedia są sprawdzane przez ElevenLabs i zawsze włączone."
+            "value": "Twoje notatki są zawsze na tym iPhonie. Pogoda i Wikipedia są sprawdzane przez ElevenLabs, są zawsze włączone i nie działają, gdy głosem na ekranie głównym jest OpenAI."
           }
         }
       }
     },
-    "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts, ElevenLabs looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to ElevenLabs like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.": {
+    "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Twoje notatki zostają na tym iPhonie. Podczas rozmowy głosowej Twój głos, rozmowa, zapisane notatki (oprócz oznaczonych jako prywatne), nazwy list (pozycje listy tylko wtedy, gdy Doddy ją czyta lub zmienia), ustawienia osobowości oraz (jeśli są włączone) kilka ostatnich rozmów i odpowiedzi z przedstawienia się są wysyłane do ElevenLabs, który obsługuje agenta głosowego. Trafiają tam też wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice wiadomości, których Doddy użyje w rozmowie. Gdy pytasz o pogodę lub fakty, ElevenLabs sprawdza je dla Doddy’ego: nazwa miejsca i współrzędne trafiają do Open-Meteo, a szukane słowa do Wikipedii; ta aplikacja sama nie wysyła takich zapytań. ElevenLabs przechowuje nagranie i zapis każdej rozmowy. Jeśli ustawiono serwer tokenów, rozpoczęcie rozmowy wysyła do niego także Twój kod dostępu. Jeśli używasz Połączonych aplikacji lub włączysz narzędzie konta online, aplikacja wysyła to, o co prosisz (datę, szukane słowo albo treść potwierdzonego szkicu, odpowiedzi lub zadania), do Twojego serwera Doddy, który łączy się z Google, Microsoft (Outlook), Notion lub Todoist przez Composio; wyniki wracają do aplikacji i w trakcie rozmowy do ElevenLabs, żeby Doddy mógł odpowiedzieć; Twoje zapisane notatki nigdy nie trafiają na ten serwer. Jeśli poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane” (można to wyłączyć poniżej), Doddy szuka na tym iPhonie i przekazuje pasującą notatkę Siri, asystentowi Apple, do przeczytania na głos; Siri obsługuje to, co mówisz, i odpowiedź zgodnie z Twoimi ustawieniami Siri. Jeśli włączysz „Hey Doddy”, mikrofon nasłuchuje słowa wybudzającego na tym iPhonie, a to, co usłyszy, nie jest przechowywane ani wysyłane; Picovoice dostaje Twój AccessKey, żeby go sprawdzić, a rozmowa rozpoczęta tym słowem trafia do ElevenLabs jak każda inna. Jeśli włączysz wyszukiwanie w sieci, szukane słowa trafiają tą samą drogą do Twojego serwera Doddy, który wyszukuje je przez Monid (płatną usługę wyszukiwania używaną przez serwer Doddy’ego; nie logujesz się do niej). Jeśli włączysz Zapytaj Doddy’ego, wpisane pytania (oraz, jeśli pozwolisz, pasujące do nich zapisane notatki) trafiają do bramki Zapytaj Doddy’ego, osobnego serwera, który przekazuje je do OpenAI. Jeśli ustawiono serwer wiadomości Doddy i włączysz powiadomienia, SMS-y, połączenia telefoniczne lub codzienne wiadomości, dostaje on anonimowy token konta, token powiadomień tego iPhone’a, Twój numer telefonu po potwierdzeniu go kodem oraz wybrane tematy wiadomości; wysyła przez Apple i Twilio, prowadzi połączenia w ElevenLabs i pisze wiadomości z pomocą AI (Anthropic lub OpenAI, zależnie od konfiguracji serwera; ekran Codzienne wiadomości podaje którego) i GNews. Twoje zapisane notatki trafiają tam tylko, jeśli włączysz „Pozwól Doddy’emu używać moich wspomnień w rozmowach telefonicznych”. Jeśli szukasz miejsca dla przypomnienia, wpisane słowa (oraz przybliżone położenie, jeśli Doddy już je zna) trafiają do Apple Maps; wybrane miejsce zostaje na tym iPhonie, a to iOS, nie Doddy, zauważa, kiedy tam dotrzesz. W trybie tłumacza głos drugiej osoby też trafia do ElevenLabs (tryb słuchania słyszy tylko osoby w pobliżu); po uruchomieniu z Tłumacz na ekranie głównym Twoje notatki, rozmowy i profil nie są wysyłane, a nic z tego nie zostaje na tym iPhonie, chyba że w ciągu 5 minut stukniesz Kopiuj lub Zapisz. Jeśli udostępnisz listę, jej nazwa i pozycje trafiają do Twojego iCloud (Apple) i do zaproszonych osób, a ich zmiany wracają do Ciebie; miejsce przypomnienia listy trafia tam tylko wtedy, gdy stukniesz Udostępnij to miejsce. Jeśli poprosisz Doddy’ego o przeliczenie waluty, aplikacja pobiera publiczny plik kursów Europejskiego Banku Centralnego; nic o Tobie nie jest przy tym wysyłane. Jeśli włączysz „Read an email” (Przeczytaj e-mail) lub „Read a Notion page” (Przeczytaj stronę Notion), ten jeden e-mail (nadawca, temat i treść) lub strona (tytuł i treść), o które pytasz, skrócone, przychodzą z Twojego serwera Doddy i trafiają do ElevenLabs w tej rozmowie. Tekst udostępniony do Doddy’ego z innej aplikacji, zadania znalezione w notatce głosowej i ustawienia trybów skupienia zostają na tym iPhonie; widżet parkowania pokazuje, kiedy zaparkowano, i Twoją notatkę, nigdy miejsce. Jeśli poprosisz Doddy’ego o przypomnienie, kiedy wyjść, położenie Twojego iPhone’a i miejsce, do którego jedziesz, trafiają raz do Map Apple, żeby obliczyć czas dojazdu; nic z tego nie jest przechowywane. Jeśli włączysz Pokazuj notatki w wyszukiwaniu iPhone’a, Twoje notatki i listy (nigdy prywatne) są indeksowane przez iOS na tym iPhonie. Nic innego nie jest nigdzie wysyłane."
+            "value": "Twoje notatki zostają na tym iPhonie. Podczas rozmowy głosowej Twój głos, rozmowa, zapisane notatki (oprócz oznaczonych jako prywatne), nazwy list (pozycje listy tylko wtedy, gdy Doddy ją czyta lub zmienia), ustawienia osobowości oraz (jeśli są włączone) kilka ostatnich rozmów i odpowiedzi z przedstawienia się są wysyłane do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, który obsługuje agenta głosowego. Trafiają tam też wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice wiadomości, których Doddy użyje w rozmowie. Gdy pytasz o pogodę lub fakty, a głosem jest ElevenLabs, sprawdza je dla Doddy’ego: nazwa miejsca i współrzędne trafiają do Open-Meteo, a szukane słowa do Wikipedii; ta aplikacja sama nie wysyła takich zapytań. ElevenLabs przechowuje nagranie i zapis każdej rozmowy, którą prowadzi; jak długo OpenAI przechowuje dźwięk i zapis, nie zostało sprawdzone w tej wersji. Jeśli ustawiono serwer tokenów, rozpoczęcie rozmowy wysyła do niego także Twój kod dostępu. Jeśli używasz Połączonych aplikacji lub włączysz narzędzie konta online, aplikacja wysyła to, o co prosisz (datę, szukane słowo albo treść potwierdzonego szkicu, odpowiedzi lub zadania), do Twojego serwera Doddy, który łączy się z Google, Microsoft (Outlook), Notion lub Todoist przez Composio; wyniki wracają do aplikacji i w trakcie rozmowy do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy mógł odpowiedzieć; Twoje zapisane notatki nigdy nie trafiają na ten serwer. Jeśli poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane” (można to wyłączyć poniżej), Doddy szuka na tym iPhonie i przekazuje pasującą notatkę Siri, asystentowi Apple, do przeczytania na głos; Siri obsługuje to, co mówisz, i odpowiedź zgodnie z Twoimi ustawieniami Siri. Jeśli włączysz „Hey Doddy”, mikrofon nasłuchuje słowa wybudzającego na tym iPhonie, a to, co usłyszy, nie jest przechowywane ani wysyłane; Picovoice dostaje Twój AccessKey, żeby go sprawdzić, a rozmowa rozpoczęta tym słowem trafia do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym jak każda inna. Jeśli włączysz wyszukiwanie w sieci, szukane słowa trafiają tą samą drogą do Twojego serwera Doddy, który wyszukuje je przez Monid (płatną usługę wyszukiwania używaną przez serwer Doddy’ego; nie logujesz się do niej). Jeśli włączysz Zapytaj Doddy’ego, wpisane pytania (oraz, jeśli pozwolisz, pasujące do nich zapisane notatki) trafiają do bramki Zapytaj Doddy’ego, osobnego serwera, który przekazuje je do OpenAI. Jeśli ustawiono serwer wiadomości Doddy i włączysz powiadomienia, SMS-y, połączenia telefoniczne lub codzienne wiadomości, dostaje on anonimowy token konta, token powiadomień tego iPhone’a, Twój numer telefonu po potwierdzeniu go kodem oraz wybrane tematy wiadomości; wysyła przez Apple i Twilio, prowadzi połączenia w ElevenLabs i pisze wiadomości z pomocą AI (Anthropic lub OpenAI, zależnie od konfiguracji serwera; ekran Codzienne wiadomości podaje którego) i GNews. Twoje zapisane notatki trafiają tam tylko, jeśli włączysz „Pozwól Doddy’emu używać moich wspomnień w rozmowach telefonicznych”. Jeśli szukasz miejsca dla przypomnienia, wpisane słowa (oraz przybliżone położenie, jeśli Doddy już je zna) trafiają do Apple Maps; wybrane miejsce zostaje na tym iPhonie, a to iOS, nie Doddy, zauważa, kiedy tam dotrzesz. W trybie tłumacza głos drugiej osoby też trafia do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym (tryb słuchania słyszy tylko osoby w pobliżu); po uruchomieniu z Tłumacz na ekranie głównym Twoje notatki, rozmowy i profil nie są wysyłane, a nic z tego nie zostaje na tym iPhonie, chyba że w ciągu 5 minut stukniesz Kopiuj lub Zapisz. Jeśli udostępnisz listę, jej nazwa i pozycje trafiają do Twojego iCloud (Apple) i do zaproszonych osób, a ich zmiany wracają do Ciebie; miejsce przypomnienia listy trafia tam tylko wtedy, gdy stukniesz Udostępnij to miejsce. Jeśli poprosisz Doddy’ego o przeliczenie waluty, aplikacja pobiera publiczny plik kursów Europejskiego Banku Centralnego; nic o Tobie nie jest przy tym wysyłane. Jeśli włączysz „Read an email” (Przeczytaj e-mail) lub „Read a Notion page” (Przeczytaj stronę Notion), ten jeden e-mail (nadawca, temat i treść) lub strona (tytuł i treść), o które pytasz, skrócone, przychodzą z Twojego serwera Doddy i trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym w tej rozmowie. Tekst udostępniony do Doddy’ego z innej aplikacji, zadania znalezione w notatce głosowej i ustawienia trybów skupienia zostają na tym iPhonie; widżet parkowania pokazuje, kiedy zaparkowano, i Twoją notatkę, nigdy miejsce. Jeśli poprosisz Doddy’ego o przypomnienie, kiedy wyjść, położenie Twojego iPhone’a i miejsce, do którego jedziesz, trafiają raz do Map Apple, żeby obliczyć czas dojazdu; nic z tego nie jest przechowywane. Jeśli włączysz Pokazuj notatki w wyszukiwaniu iPhone’a, Twoje notatki i listy (nigdy prywatne) są indeksowane przez iOS na tym iPhonie. Nic innego nie jest nigdzie wysyłane."
           }
         }
       }
@@ -14143,6 +14374,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje pytanie wciąż jest w polu. Zapisane notatki pozostają bez zmian."
+          }
+        }
+      }
+    },
+    "Your saved answers are sent to whichever service runs my voice (OpenAI or ElevenLabs, see Settings › Voice) at the start of each conversation so I know them. Off, they stay on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisane odpowiedzi są wysyłane do usługi, która obsługuje mój głos (OpenAI lub ElevenLabs, zobacz Ustawienia › Głos), na początku każdej rozmowy, żebym je znał. Gdy to jest wyłączone, zostają na tym iPhonie."
           }
         }
       }
@@ -14275,6 +14517,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS obserwuje to miejsce na tym iPhonie. Doddy nigdy nie śledzi, dokąd chodzisz."
+          }
+        }
+      }
+    },
+    "iOS will ask whether Doddy may send notifications. They never show your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS zapyta, czy Doddy może wysyłać powiadomienia. Nigdy nie pokazują Twoich notatek."
           }
         }
       }
