@@ -540,3 +540,14 @@ body.board { background: var(--board); }
 
 .stamp.on-card { right: -10px; top: -16px; left: auto; bottom: auto; }
 @media (max-width: 700px) { .scene-panel { position: relative; } .stamp.on-card { right: 6px; top: -14px; } }
+
+/* Phones: the card is the page; a chip plays the two beats above it (decided 13 October). */
+.play-chip { display: none; }
+@media (max-width: 700px) {
+  .bt-row { display: none; }
+  .scene.is-playing .bt-row { display: grid; }
+  .play-chip { position: absolute; z-index: 3; left: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px; background: var(--reading-ink); color: var(--canvas); font: 650 0.75rem/1 var(--text); box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--orange-cue) 85%, transparent); }
+  .play-chip .pc-replay { display: none; }
+  .scene.is-playing .play-chip .pc-play { display: none; }
+  .scene.is-playing .play-chip .pc-replay { display: inline; }
+}

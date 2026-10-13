@@ -82,6 +82,9 @@ body = body[:a] + '<div id="court" role="img" aria-label="Basketball game (uncha
 cards = ''.join(f'<button class="mem-card" type="button" aria-label="Card {i}, face down"><span class="mem-inner"><span class="mem-back">?</span><span class="mem-front"></span></span></button>' for i in range(1, 13))
 must('<div class="memory-grid" id="memory-grid" role="group" aria-label="Memory cards"></div>', f'<div class="memory-grid" id="memory-grid" role="group" aria-label="Memory cards">{cards}</div>')
 
+# The voice line (proposed; the owner confirms at build, per the site README).
+must('Voice hasn\'t been tested on a real iPhone yet.', 'Voice is being tried on real iPhones now.')
+
 # Footer: the new link in the same position, and the analytics sentence shown.
 must('<li><a href="#how">How it works</a></li>\n          <li><a href="#meet">Meet Doddy</a></li>\n          <li><a href="#privacy">Privacy</a></li>',
      '<li><a href="#how">How it works</a></li>\n          <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>\n          <li><a href="#meet">Meet Doddy</a></li>\n          <li><a href="#privacy">Privacy</a></li>')

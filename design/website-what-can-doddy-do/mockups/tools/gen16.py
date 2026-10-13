@@ -229,6 +229,7 @@ def moment(m):
         'brain': 'someone who forgets the place', 'list': 'someone who forgot the oat milk', 'forget': 'someone who should call their mum',
         'plan': 'someone with three loose ends',
     }[m['id']]
+    playing = ' is-playing' if m['id'] == 'late' else ''
     return f'''
     <section class="moment{flip} sun-{m['sun']}" id="{m['id']}" aria-labelledby="{m['id']}-title">
       <div class="wrap moment-grid">
@@ -242,7 +243,7 @@ def moment(m):
           <p class="cap {cap_cls}">{cap_txt}</p>{aside}
           <a class="send" href="#{m['id']}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 15V3m-4 4 4-4 4 4"/></svg>Send this one to {send_line}</a>
         </div>
-        <figure class="scene">
+        <figure class="scene{playing}">
           <div class="bt-row">
             <div class="bt">
               <div class="scene-art">
@@ -264,9 +265,10 @@ def moment(m):
             <span class="beat-num">3</span>
             <div class="scene-art">
               {scene_art(m, 3)}
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>{page_bubble}{panel}{peek}
           </div>{choices}
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> {card_cue}; the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> {card_cue}; the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">{m['caption']}</figcaption>
         </figure>
       </div>

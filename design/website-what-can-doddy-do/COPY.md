@@ -17,7 +17,7 @@ The words on the page, one place to edit them. Mockup 14 is this file rendered. 
 - Problem: The alarm went off. You went back to sleep. The meeting didn't.
 - You say: Doddy, what's happening today?
 - Doddy says: *Well, your meeting started 15 minutes ago. Excellent start.*
-- Doddy does: Reads today's calendar out loud, with the bit you'd rather not hear first. · Drafts a two-line "running late" message. You tap send, Doddy never does. · Moves the next thing back twenty minutes, after you tap Add.
+- Doddy does: Reads today's calendar out loud, with the bit you'd rather not hear first. · Drafts a two-line "running late" message. You tap send, Doddy never does. · Nothing in your calendar changes unless you tap Add.
 - Card: Today — Team meeting 09:00, started · Dentist 12:30 · Call Mum 19:00
 - Caption: Scripted demonstration. The calendar is read only after you switch it on in Settings.
 - Then (Doddy walks): *Right. Coffee first.*
@@ -114,13 +114,13 @@ The words on the page, one place to edit them. Mockup 14 is this file rendered. 
 
 Answer first, one dry beat at most. Jokes land on the situation or on Doddy, never on the visitor (which is why "so no excuses" went). No feelings claimed. "Done" only with a receipt. Serious moments get no joke. (From `docs/product/PERSONALITY_SETTINGS.md`.)
 
-## Proposed copy (Phase 2, not approved)
+## Copy added in Phase 2 (approved by delegation, 13 October)
 
-New words the Phase 2 mockups need. Nothing above changes until the owner says so.
+New words the Phase 2 mockups need. The owner delegated the decision on 13 October; these follow the same rules as the deck above.
 
 ### One claim corrected (08:45, Doddy does)
 - Was: Moves the next thing back twenty minutes, after you tap Add.
-- Proposed: Nothing in your calendar changes unless you tap Add. (The agent adds events; it does not move them.)
+- Now: Nothing in your calendar changes unless you tap Add. (The agent adds events; it does not move them.)
 
 ### Hero reactions (mockup 18), one per object
 - Alarm: *Oh. That one.* · Phone: *Go on. I'm listening.* · Coffee: *Lunch. Finally.* · Suitcase: *Got your passport?* · Speech bubble: *I'll find it. Your words.* · Shopping bag: *Top shelf. Of course.* · Calendar: *I'll remind you. Quietly.*
@@ -147,7 +147,7 @@ New words the Phase 2 mockups need. Nothing above changes until the owner says s
 - Hero second action: What Doddy does all day (the film keeps "Watch the film (1:15)" in its own section)
 - Teaser heading: Three moments from an ordinary day. · Lede: What a mate in your pocket does with them. Seven more on their own page, each one saying whether it's built, in testing, or later, maybe. · Buttons: See the whole day · Start at 08:45
 - If character art option A: Meet Doddy's "A hand-drawn mate with an orange backpack, oversized trainers and a basketball that never quite gets put down." loses the backpack; proposed: "A hand-drawn mate with oversized trainers and a basketball that never quite gets put down."
-- The voice line "Voice hasn't been tested on a real iPhone yet." is stale per the voice status doc; proposed, after the owner confirms: "Voice is being tried on real iPhones now."
+- The voice line "Voice hasn't been tested on a real iPhone yet." is stale per the voice status doc; shown in 25a as "Voice is being tried on real iPhones now." The site README rule stands: the owner confirms this one at build.
 
 ### New page head (mockup 25 · 11)
 - Title: What can Doddy do? · Doddy

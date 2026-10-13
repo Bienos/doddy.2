@@ -231,21 +231,19 @@ Phase 2 adds three tools under `mockups/tools/`: `gen16.py` writes the three-bea
 
 `--fonts` points at a local cache of the two Google Fonts (the CSS plus woff2 files, kept outside the repository per CLAUDE.md); without it the renderer fetches them from Google Fonts. The script fails loudly if a font didn't load, if a page scrolls sideways, or if the console logs an error. Last run 2026-10-13, Chromium 1194: 17 renders, no issues.
 
-## Open decisions for the owner
+## Decisions (Phase 1 list, closed 13 October)
 
-1. Direction: A as recommended, B, C, or a different mix.
-2. Tab label (What can Doddy do? / Life with Doddy) and position; route `/what-can-doddy-do/`.
-3. Add the phone menu, or keep the phone nav as it is.
-4. Which moments ship first (suggested six: 08:45, 10:20, 18:45, 22:30, 13:00, 23:30) and the copy pass on Doddy's lines.
-5. Whether the pack's scenery and poses may be used as final web art, and whether the five drawn objects should come from the illustrator instead.
-6. Whether "Lost in translation" stays as a labelled concept or is cut.
-7. The transition animation: keep, simplify to a fade, or none.
-8. How each moment is shown (mockup 15): the card as is, or the card playing in three beats on scroll, or one of the other three.
-9. The copy deck (`COPY.md`, mockup 14): any line to change before build.
+The owner delegated these on 13 October ("do what you think would match best"). The studio's calls, each with its reason:
 
-## Next: Phase 2 brief
-
-`prompts/WHAT_CAN_DODDY_DO_PHASE2_DESIGN.md` is the brief for the next design round: the moments as three-beat storyboards, a consistency audit against the live homepage, and a site-wide improvement plan. Mockups only, then stop again.
+1. **Direction A**, as recommended (reuses every homepage component, stacks on phones, one honesty label per scene).
+2. **Tab "What can Doddy do?"**, second after "How it works", route `/what-can-doddy-do/`, the blog's active-state rule.
+3. **Add the phone menu, on every page.** Without it, Blog and the new page are unreachable on phones except through the footer; most visitors arrive on phones.
+4. **All ten moments ship**, in the day's order; none is cut. The copy is approved as in `COPY.md`.
+5. **The pack's scenery and poses are the web art**, and the five drawn objects stay (they are objects, not Doddy, in the props sheet's own colours).
+6. **"Lost in translation" stays** as a labelled concept: it is the honest line in the day and the funniest beat.
+7. **The homepage-to-page crossing stays** as drawn (mockup 11): a progressive enhancement over a plain link, skipped with reduced motion.
+8. **Each moment plays in three beats** (mockup 15, frame 1), now built out in 16 and 17.
+9. **The copy deck stands** with the one claim corrected (08:45).
 
 ## Phase 2 (13 October, second brief) — making the moments land, the audit, the site
 
@@ -298,16 +296,18 @@ Phase 2 adds words. None are in `COPY.md`'s approved section; all are listed und
 
 `node render.mjs` over all 33 renders on 13 October (headless Chromium 1194): every web font a page uses loaded, no horizontal scroll at 390 px, no console errors. The font check now asks only for fonts a page actually uses (a board with no handwriting never requests Caveat). Not checked: real Safari, VoiceOver, any live interaction (there is still no JavaScript).
 
-### Decisions needed (Phase 2)
+### Decisions (Phase 2 list, closed 13 October)
 
-1. Character art: A (swap the homepage to the pack), B or C (mockup 24). If A: the five nearest-pose swaps and the two pending cuts.
-2. The homepage proposal (25a): which of the five to take, and whether the hero's second link should be the new page (as proposed) or stay on the film.
-3. The three-beat form on phones (17): keep all three frames, or show only beat 3 on phones with the beats as a tap-to-play.
-4. The surprise rule (19) and the idle blink (18, not drawn): yes or no.
-5. The two additions (22): both, one, or neither; and the owner's yes on pack art in a share image.
-6. The proposed copy in `COPY.md`.
-7. The stale voice-testing line (25 · 4): the owner's confirmation.
-8. The site's addresses (25 · 2): confirm doddy.lol as the canonical host.
+Made by the studio on the owner's delegation; each applied to the mockups where it changes what is shown.
+
+1. **Character art: A.** The homepage swaps to the pack (mockups 24, 25a). The five nearest-pose swaps stand; the basketball sheet's shooting frame and a pack pose for the court game are build tasks.
+2. **The homepage proposal: all five.** The hero's second link goes to the new page ("What Doddy does all day"); the film keeps its own link in its section. Three moments after How it works, the phone menu, one nav for three pages, the footer link.
+3. **Phones: beat 3 only, with tap-to-play.** The card is the page; a "Play the scene" chip plays beats 1 and 2 above it, then reads "Replay". Mockup 17 shows the first moment playing and the rest at rest; the page drops from about 24 000 to 18 000 px at 390.
+4. **The surprise rule: in. The idle blink: no.** The hero holds still until touched; nothing loops.
+5. **Both additions: in.** The hero follows the visitor's clock; every moment has a share line. The share image is a crop of the page's own art.
+6. **The copy: approved by delegation** (`COPY.md`, "Copy added in Phase 2").
+7. **The voice line:** the proposal (25a) shows "Voice is being tried on real iPhones now."; the site README rule stands, so the owner confirms it at build.
+8. **Canonical host: https://www.doddy.lol/**, where the site already answers (the live fetch redirects there).
 
 ## Phase 5 — Stopped here
 

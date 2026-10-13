@@ -67,7 +67,7 @@ active: wcd
           <p class="cap testing">Calendar and messages · in testing</p>
           <a class="send" href="#late"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 15V3m-4 4 4-4 4 4"/></svg>Send this one to someone who's always late</a>
         </div>
-        <figure class="scene">
+        <figure class="scene is-playing">
           <div class="bt-row">
             <div class="bt">
               <div class="scene-art">
@@ -101,6 +101,7 @@ active: wcd
               <img class="doddy" src="../assets/poses/yawn_stretch.png" alt="" style="left: 12%; height: 76%;">
               <svg class="prop" style="left: 31%; bottom: 7%; width: 12%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
               <p class="d-bubble stack">Well, your meeting started 15 minutes ago. Excellent start.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble">Doddy, what's happening today?</p>
             <div class="scene-panel"><span class="stamp on-card">Read, not changed</span>
@@ -110,7 +111,7 @@ active: wcd
               <div class="row"><span>Call Mum</span><span class="t">19:00</span></div>
             </div>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. The calendar is read only after you switch it on in Settings.</figcaption>
         </figure>
       </div>
@@ -169,6 +170,7 @@ active: wcd
               <img class="doddy" src="../assets/poses/leaning.png" alt="" style="left: 8%; height: 72%;">
               <img class="prop" src="../assets/props/coffee.png" alt="" style="left: 30%; bottom: 8%; width: 9%">
               <p class="d-bubble stack">17 degrees now, rain at four. Jacket. Obviously.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble">Jacket or no jacket?</p>
             <div class="scene-panel"><span class="stamp on-card">Place name only</span>
@@ -177,7 +179,7 @@ active: wcd
               <div class="row"><span>Rain</span><span class="t late">from 16:00</span></div>
             </div>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. Weather comes from Open-Meteo, asked for by ElevenLabs' servers.</figcaption>
         </figure>
       </div>
@@ -232,6 +234,7 @@ active: wcd
               <img class="prop" src="../assets/props/phone.png" alt="" style="left: 24%; bottom: 7%; width: 8%">
               <p class="o-bubble-l from-msg" style="left: 31%; top: 8%; max-width: 22%"><span class="who">Alex</span>Yesterday was fun :)</p>
               <p class="d-bubble stack">That's a fairly ambitious request, but okay.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble two-lines">Help me reply to this without sounding desperate.</p>
             <div class="scene-panel" style="width: 46%"><span class="stamp on-card">You send it</span>
@@ -242,7 +245,7 @@ active: wcd
             </div>
           </div>
           <div class="choices" role="group"><label class="chip on"><input type="radio" name="draft" checked><span>Make it funnier</span></label><label class="chip"><input type="radio" name="draft"><span>Make it shorter</span></label><label class="chip"><input type="radio" name="draft"><span>Make it more confident</span></label></div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. Doddy never sends anything.</figcaption>
         </figure>
       </div>
@@ -295,6 +298,7 @@ active: wcd
               <img class="doddy" src="../assets/poses/fistpump.png" alt="" style="left: 9%; height: 76%;">
               <img class="prop" src="../assets/props/notecard.png" alt="" style="left: 30%; bottom: 9%; width: 11%">
               <p class="d-bubble stack">Finally. A problem worth solving. Opening Maps.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble two-lines">Find somewhere good and cheap near the centre.</p>
             <div class="scene-panel"><span class="stamp on-card">Opens Maps</span>
@@ -304,7 +308,7 @@ active: wcd
             </div>
           </div>
           <div class="choices" role="group"><label class="chip on"><input type="radio" name="eat" checked><span>Cheap</span></label><label class="chip"><input type="radio" name="eat"><span>Best rated</span></label><label class="chip"><input type="radio" name="eat"><span>Something different</span></label></div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. Opens Apple Maps with the search, which leaves the app.</figcaption>
         </figure>
       </div>
@@ -364,9 +368,10 @@ active: wcd
               <p class="o-bubble-l" style="left: 5%; top: 10%">Sur place ou à emporter?</p>
               <p class="d-bubble" style="right: 5%; top: 10%; max-width: 32%; border-radius: 18px 18px 4px 18px">Eat in or take away? Also, I'm not built yet. Soon-ish.</p>
               <span class="stamp land" style="left: 6%; top: 60%">Not built yet</span>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> No card: Doddy's line is the fix, and the stamp says what it is.; the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> No card: Doddy's line is the fix, and the stamp says what it is.; the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Concept. Shown so the page is honest about what's not here yet.</figcaption>
         </figure>
       </div>
@@ -419,6 +424,7 @@ active: wcd
               <img class="doddy" src="../assets/poses/belly_reading.png" alt="" style="left: 4%; height: 58%; bottom: 4%">
               <img class="prop" src="../assets/props/book.png" alt="" style="left: 30%; bottom: 7%; width: 11%">
               <p class="d-bubble stack">Right. A normal computer tries keys one at a time. A quantum one tries the whole keyring at once.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble">Explain quantum computing.</p>
             <div class="scene-panel"><span class="stamp on-card">Source: Wikipedia</span>
@@ -426,7 +432,7 @@ active: wcd
               <div class="row"><span>Wikipedia · Quantum computing</span><span class="t">looked up</span></div>
             </div>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. Lookups go to Wikipedia from ElevenLabs' servers.</figcaption>
         </figure>
       </div>
@@ -494,6 +500,7 @@ active: wcd
               <p class="note" style="left: 22%; top: 24%; rotate: 3deg">Locker 4471</p>
               <p class="note" style="left: 9%; top: 36%; rotate: -2deg">Parked on B2</p>
               <p class="d-bubble stack">Trattoria Nonna, Hoża 9. Your words, not mine.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble two-lines">What was that Italian place I mentioned last week?</p>
             <div class="scene-panel receipt-note" style="width: 44%"><span class="stamp on-card">Your words</span>
@@ -504,7 +511,7 @@ active: wcd
             <img class="peek" src="../assets/poses/sneaky_crouch.png" alt="">
             <p class="peek-note">Still looking.</p>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Works today. Only notes you chose to save; nothing is remembered on its own.</figcaption>
         </figure>
       </div>
@@ -557,6 +564,7 @@ active: wcd
               <img class="doddy" src="../assets/poses/reaching_high.png" alt="" style="left: 10%; height: 76%;">
               <svg class="prop" style="left: 31%; bottom: 7%; width: 10%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-bag"/></svg>
               <p class="d-bubble stack">Added to the list. Ola can see it too.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble">Add oat milk to the list.</p>
             <div class="scene-panel"><span class="stamp on-card">Undo</span>
@@ -565,7 +573,7 @@ active: wcd
               <div class="row"><span class="ok">✓ Oat milk</span><span class="undo">Undo</span></div>
             </div>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. Shared lists use your iCloud.</figcaption>
         </figure>
       </div>
@@ -624,6 +632,7 @@ active: wcd
               <img class="doddy" src="../assets/poses/crosslegged.png" alt="" style="left: 10%; height: 62%; bottom: 3%">
               <svg class="prop" style="left: 30%; bottom: 6%; width: 9%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-calendar"/></svg>
               <p class="d-bubble stack">Tomorrow. Morning or evening? Pick one.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble">Remind me to call Mum tomorrow.</p>
             <div class="scene-panel" style="width: 42%"><span class="stamp on-card">You tap Add</span>
@@ -634,7 +643,7 @@ active: wcd
               <div class="meta" style="margin-top: 8px"><b>✓ Added, 10:00 · read back 22:31</b></div>
             </div>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. The receipt appears only after Reminders confirms.</figcaption>
         </figure>
       </div>
@@ -687,6 +696,7 @@ active: wcd
               <img class="doddy" src="../assets/poses/shush.png" alt="" style="left: 8%; height: 74%;">
               <img class="prop" src="../assets/props/pencil.png" alt="" style="left: 30%; bottom: 7%; width: 13%">
               <p class="d-bubble stack">Three things, one tap. Untick to skip any.</p>
+              <span class="play-chip" aria-hidden="true"><span class="pc-play">▶ Play the scene</span><span class="pc-replay">↻ Replay</span></span>
             </div>
             <p class="u-bubble">Sort tomorrow out for me.</p>
             <div class="scene-panel" style="width: 48%"><span class="stamp on-card">Untick to skip</span>
@@ -697,7 +707,7 @@ active: wcd
               <div class="btns"><span class="primary">Do these (3)</span><span>Not now</span></div>
             </div>
           </div>
-          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page.<span class="rm">Reduced motion: this frame, still, from the start.</span></p>
+          <p class="cue"><b>1450 to 1800 ms · the fix.</b> The app's card slides up from the bottom edge (translateY 24 px → 0, opacity, 300 ms, ease-out); the stamp lands at 1600 ms (scale 1.3 → 1 and opacity, 200 ms). At rest at 1.8 s. This frame is the page. On phones this card is all that shows; "Play the scene" plays beats 1 and 2 above it, once per tap.<span class="rm">Reduced motion: this frame, still, from the start; no chip.</span></p>
           <figcaption class="caption left">Scripted demonstration. One tick box per change; nothing unticked runs.</figcaption>
         </figure>
       </div>
