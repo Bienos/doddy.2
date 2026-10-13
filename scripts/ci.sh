@@ -110,7 +110,10 @@ else
   else
     echo "Destination: $dest"
     run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
-    run_step "xcodebuild test (unit + UI)" xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "$dest"
+    # Keep compiling the other targets after the first error, so one run lists every compile
+    # error instead of stopping at the first target that fails (owner request, 2026-10-12).
+    run_step "xcodebuild test (unit + UI)" xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
+      -IDEBuildingContinueBuildingAfterErrors=YES
   fi
 fi
 
