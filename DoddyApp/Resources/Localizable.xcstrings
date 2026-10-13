@@ -474,6 +474,17 @@
         }
       }
     },
+    "Action Button, on iPhones that have one: iOS Settings › Action Button › Controls › Talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przycisk czynności, na iPhone’ach, które go mają: Ustawienia iOS › Przycisk czynności › Elementy sterujące › Porozmawiaj z Doddym."
+          }
+        }
+      }
+    },
     "Add": {
       "extractionState": "manual",
       "localizations": {
@@ -1090,6 +1101,17 @@
         }
       }
     },
+    "Ask me about it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj mnie o to"
+          }
+        }
+      }
+    },
     "Ask me anything.": {
       "extractionState": "manual",
       "localizations": {
@@ -1515,6 +1537,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zmień wydarzenie"
+          }
+        }
+      }
+    },
+    "Change it in Settings › Hey Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienisz to w Ustawieniach › Hey Doddy."
           }
         }
       }
@@ -2065,6 +2098,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kontynuuj bez zapisywania"
+          }
+        }
+      }
+    },
+    "Control Center or the Lock Screen: add the Talk to Doddy control (edit Control Center, Add a Control, search Doddy).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centrum sterowania lub ekran blokady: dodaj element „Porozmawiaj z Doddym” (edytuj Centrum sterowania, Dodaj element sterujący, wyszukaj Doddy)."
           }
         }
       }
@@ -9362,6 +9406,17 @@
         }
       }
     },
+    "Say “Hey Doddy” and I'll answer. I listen for it on this iPhone, with iOS's orange microphone dot showing, until you stop me. It uses some battery.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „Hey Doddy”, a odpowiem. Nasłuchuję tego na tym iPhonie, z pomarańczową kropką mikrofonu iOS, dopóki mnie nie zatrzymasz. Zużywa to trochę baterii."
+          }
+        }
+      }
+    },
     "Says what is left on one of your Doddy lists.": {
       "extractionState": "manual",
       "localizations": {
@@ -10121,6 +10176,17 @@
         }
       }
     },
+    "Siri: say “Hey Siri, talk to Doddy”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siri: powiedz „Hej Siri, porozmawiaj w aplikacji Doddy”."
+          }
+        }
+      }
+    },
     "Skip ahead to the tap test": {
       "extractionState": "manual",
       "localizations": {
@@ -10304,6 +10370,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zacznij słuchać, gdy otwieram Doddy’ego"
+          }
+        }
+      }
+    },
+    "Start me without opening the app": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchom mnie bez otwierania aplikacji"
           }
         }
       }
@@ -10667,6 +10744,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Porozmawiaj z Doddym"
+          }
+        }
+      }
+    },
+    "Talk without tapping": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmawiaj bez stukania"
           }
         }
       }
@@ -12530,6 +12618,17 @@
         }
       }
     },
+    "Turning on…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączam…"
+          }
+        }
+      }
+    },
     "Twilio sends a one-time code to check the number is yours. Texts with updates only start after you turn them on.": {
       "extractionState": "manual",
       "localizations": {
@@ -12801,6 +12900,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Używaj w rozmowach głosowych"
+          }
+        }
+      }
+    },
+    "Use my own Picovoice key and file": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj własnego klucza i pliku Picovoice"
           }
         }
       }

@@ -281,3 +281,16 @@ public enum WakeKeywordFile {
         return nil
     }
 }
+
+/// The Home card that offers "Hey Doddy" (ADR-328). Once, after a few real conversations, and only
+/// when one tap is enough: the keyword file is in the app and a key is on the iPhone or can come
+/// from Doddy's token server. "Not now" or "Turn on" ends the offer for good; it never comes back.
+public enum HeyDoddyOffer {
+    /// Conversations that really connected before the card shows.
+    public static let afterConversations = 3
+
+    public static func shouldOffer(conversations: Int, heyDoddyOn: Bool, dismissed: Bool, oneTapReady: Bool) -> Bool {
+        conversations >= afterConversations && !heyDoddyOn && !dismissed && oneTapReady
+    }
+}
+
