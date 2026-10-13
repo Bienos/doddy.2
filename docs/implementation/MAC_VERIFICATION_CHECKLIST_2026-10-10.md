@@ -359,6 +359,19 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 | L12 | Settings → Delete all memories | What I've learned is empty and the counts are zero, with no error |
 | L13 | Switch the iPhone to Polish | Every new label and the delete message are Polish; the card text and the routine name are Polish; Dynamic Type at the largest size and VoiceOver read the cards and rows in a sensible order |
 
+## 4o. First-use fixes (ADR-325)
+| # | Do this | Expect |
+|---|---|---|
+| O1 | Fresh install, finish onboarding, look at Home; then Settings › Voice | No ElevenLabs / OpenAI switch on Home. It is in Settings › Voice ("Test voice"), and picking OpenAI there still runs the next conversation with OpenAI |
+| O2 | Fresh install, finish onboarding, don't talk. Quit Doddy, wait 5 minutes, open it again. Then tap Talk to Doddy, allow the microphone, end, quit, wait 5 minutes, open again | Second opening: the animation, then Home; no conversation and no microphone question. After allowing it: the third opening starts listening by itself as before |
+
+## 4p. Home's first visit (ADR-326)
+| # | Do this | Expect |
+|---|---|---|
+| H1 | Fresh install, finish onboarding | Home: under Talk to Doddy, "Try saying: “Remember the gate code is 4821.” …"; no Back Tap card; no Today card. Bottom: "Doddy is an AI, not a person." and What leaves this iPhone |
+| H2 | Tap What leaves this iPhone; Done. Then Settings › Privacy | The row-by-row screen opens as a sheet and closes. Settings › Privacy starts with the paragraph that used to be on Home |
+| H3 | Tap Talk to Doddy, allow the microphone, wait for Listening, end. Back on Home | The hint is gone; the Back Tap card (if not set up) and the Today card are back. A failed connection (airplane mode) does not count |
+
 ## 4r. Quick start (ADR-324, `QUICK_START_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|

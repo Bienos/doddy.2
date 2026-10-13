@@ -21,6 +21,13 @@ struct SettingsView: View {
     @State private var accessCodeError: String?
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+
+    /// The privacy summary that used to be at the bottom of Home (ADR-326).
+    private var privacySummary: String {
+        memoryCopyOn
+            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+    }
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
     @State private var tokenMessage: String?
@@ -230,6 +237,12 @@ struct SettingsView: View {
                 Section("Privacy") {
                     // ADR-310: Face ID when Doddy opens, and after a minute away.
                     AppLockToggle()
+                    // The short version that used to sit at the bottom of Home (ADR-326); it follows
+                    // Memory on calls as it did there.
+                    Text(privacySummary)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("settings.privacySummary")
                     // iPhone search (ADR-330), off until switched on.
                     SpotlightToggle()
                     NavigationLink {
@@ -377,11 +390,12 @@ struct SettingsView: View {
                     Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
                         .accessibilityIdentifier("settings.listenOnOpen")
                     Text(listenOnOpen
-                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. iOS asks for the microphone the first time and shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when iOS has refused the microphone, or when you open Doddy from Back Tap or Siri, which start their own."
+                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. It starts by itself only after you've allowed the microphone, which iOS asks the first time you tap Talk to Doddy; iOS shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when you open Doddy from Back Tap or Siri, which start their own."
                         : "Off: nothing listens until you tap Talk to Doddy.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("settings.listenOnOpen.note")
+                    VoiceProviderPicker(idPrefix: "settings")
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
                     TextField("Token server (https://…)", text: $voiceTokenServer)
@@ -1011,5 +1025,46 @@ struct JSONExport: Transferable {
             try MemoryExport.json(export.records, listItems: export.listItems, corrections: export.corrections, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
+    }
+}
+
+/// Who runs Doddy's voice, and for OpenAI which model (ADR-265, ADR-442). Same notes, lists, tools
+/// and cards either way; it takes effect when the next conversation starts, and Settings › What
+/// leaves this iPhone follows it. Always in Settings › Voice; on Home only after the first
+/// conversation (ADR-325, ADR-443), so a new user's Home keeps to Talk to Doddy.
+struct VoiceProviderPicker: View {
+    /// "home" or "settings", for the UI tests' identifiers.
+    let idPrefix: String
+    /// Empty until the user chooses; then OpenAI Realtime where the token server is set, otherwise
+    /// ElevenLabs (ADR-442).
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
+    @AppStorage(OpenAIRealtimeModel.preferenceKey) private var realtimeModel = OpenAIRealtimeModel.default.rawValue
+    @AppStorage(PreferenceKey.voiceTokenServer) private var voiceTokenServer = ""
+
+    var body: some View {
+        let tokenServerSet = !voiceTokenServer.trimmingCharacters(in: .whitespaces).isEmpty
+        let provider = VoiceProvider.effective(stored: voiceProvider, tokenServerSet: tokenServerSet)
+        VStack(alignment: .leading, spacing: 6) {
+            Picker("Voice", selection: Binding(get: { provider.rawValue }, set: { voiceProvider = $0 })) {
+                ForEach(VoiceProvider.allCases) { option in
+                    Text(verbatim: option.shortName).tag(option.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("\(idPrefix).voiceProvider")
+            if provider == .openAIRealtime {
+                Picker("OpenAI model", selection: $realtimeModel) {
+                    ForEach(OpenAIRealtimeModel.allCases) { option in
+                        Text(verbatim: option.shortName).tag(option.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("\(idPrefix).realtimeModel")
+            }
+            Text(verbatim: provider == .openAIRealtime
+                ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
+                : "ElevenLabs runs your next conversation.")
+                .font(.caption2).foregroundStyle(Theme.secondaryText)
+        }
     }
 }
