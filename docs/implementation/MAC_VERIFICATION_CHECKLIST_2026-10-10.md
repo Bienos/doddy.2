@@ -386,6 +386,18 @@ Nothing in this section has run on a device or a simulator: the Swift logic is t
 |---|---|---|
 | I1 | Fresh install; tap Let's get to know each other and go through with Next | "Question 1 of 3": name, then what Doddy should help with, then anything else to know; then the review |
 | I2 | Settings › About you › Edit | "Add a preference" offers the other fields (style, language, humour); one added there is saved and shown as before |
+## 4x. Stale tool calls (ADR-458)
+`VoiceSessionController` changed without a compile: `handle(_:attempt:)`, `ToolGate.decide` in place of the four checks, and the `ToolCallOwners` checks. Build first. To make a lookup slow enough, use Settings › Developer › Network Link Conditioner › Very Bad Network.
+| # | Do this | Expect |
+|---|---|---|
+| S1 | Build the app target | Compiles. The new code is in `handle`, `handleOpenAICall`, `propose`, `reply`, `dropStale`, `handlePlan`, `runPlan` |
+| S2 | End + Start while a Gmail draft is preparing ("draft an email to Ana saying hi", then End and Start at once) | No card in the new conversation. The new agent never hears about the draft. What Doddy did lists the draft request as not done; nothing was sent or drafted |
+| S3 | "Remind me about my parking note when I get to <a place>", then End and Start before the place list shows | No place card in the new conversation; the place choice of any card there is unchanged |
+| S4 | Confirm "add a reminder…" and End and Start straight after the tap | The reminder is added (check Reminders); What Doddy did shows its real result; the new conversation's agent is not told about it, and its screen shows no "Added" status for it |
+| S5 | Normal use, no End: a single card (confirm and decline), a plan card, Pause all on, a connection switched off, translator mode | Same replies and cards as before this change (the order of checks is unchanged) |
+| S6 | Repeat S2 with the OpenAI test voice | Same as S2 |
+| S7 | "Add milk to the shopping list", then End at once (slow device or many lists) | What Doddy did shows the add as done (or "in progress" for a moment), never "not done" when milk is on the list |
+| S8 | Confirm a plan with a note and a reminder, End and Start while it runs | Both steps run and are logged; the new conversation shows no plan progress and its saved-notes count starts at 0 |
 
 ## 4u. "Hey Doddy" with one tap (ADR-328)
 Needs first: `PICOVOICE_ACCESS_KEY` set on the token server, `DoddyApp/Resources/WakeWord/hey-doddy.ppn` in the app, a token server address and access code in Settings › Voice.
