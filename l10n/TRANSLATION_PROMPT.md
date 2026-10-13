@@ -56,22 +56,22 @@ Run `python3 -I tools/build_strings_catalog.py --check`. Until the script reads 
 
 ## Language codes
 
-Use these as `<CODE>`; they are the codes Xcode and the App Store use. The first eight are the owner's request, then the languages Doddy's voice already speaks, then the rest.
+Use these as `<CODE>`; they are the codes Xcode and the App Store use. The first eight are the owner's request, then the languages the voice language picker lists, then the rest. The voice itself (OpenAI Realtime) speaks all of them.
 
 | `<CODE>` | Language | Note |
 |---|---|---|
 | `es` | Spanish (Spain) | `es-419` for Latin America if wanted later |
 | `de` | German | |
 | `fr` | French | |
-| `zh-Hans` | Chinese, Simplified | not in the voice agent yet |
-| `ja` | Japanese | not in the voice agent yet |
-| `pt-BR` | Portuguese (Brazil) | `pt-PT` for Portugal; the voice agent has one `pt` |
+| `zh-Hans` | Chinese, Simplified | voice: fine on OpenAI Realtime; no ElevenLabs preset |
+| `ja` | Japanese | voice: fine on OpenAI Realtime; no ElevenLabs preset |
+| `pt-BR` | Portuguese (Brazil) | `pt-PT` for Portugal; ElevenLabs has one `pt` preset |
 | `it` | Italian | |
 | `hr` | Croatian | |
 | `nl` | Dutch | |
 | `sv` | Swedish | |
 | `da` | Danish | |
-| `nb` | Norwegian Bokmål | the voice agent calls it `no` |
+| `nb` | Norwegian Bokmål | the ElevenLabs preset calls it `no` |
 | `fi` | Finnish | |
 | `cs` | Czech | |
 | `sk` | Slovak | |
@@ -85,7 +85,7 @@ Use these as `<CODE>`; they are the codes Xcode and the App Store use. The first
 | `uk` | Ukrainian | |
 | `ru` | Russian | |
 | `tr` | Turkish | |
-| `ko` | Korean | not in the voice agent yet |
+| `ko` | Korean | voice: fine on OpenAI Realtime; no ElevenLabs preset |
 | `ar` | Arabic | right to left: the screens need a layout review first |
 | `he` | Hebrew | right to left: the screens need a layout review first |
-| `hi` | Hindi | not in the voice agent yet |
+| `hi` | Hindi | voice: fine on OpenAI Realtime; no ElevenLabs preset |
