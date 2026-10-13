@@ -31,16 +31,19 @@ struct HomeView: View {
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     /// Memory on calls: a copy of the notes is on the Doddy messaging server (DOD-11).
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
-    /// Testing only (ADR-265): who runs Doddy's voice, ElevenLabs (default) or OpenAI Realtime.
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = VoiceProvider.elevenLabs.rawValue
+    /// Who runs Doddy's voice (ADR-265): empty until the user chooses; then OpenAI Realtime where the
+    /// token server is set, otherwise ElevenLabs (ADR-442).
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
+    @AppStorage(OpenAIRealtimeModel.preferenceKey) private var realtimeModel = OpenAIRealtimeModel.default.rawValue
+    @AppStorage(PreferenceKey.voiceTokenServer) private var voiceTokenServer = ""
     private var router: ShortcutRouter { .shared }
 
     /// Where notes are kept, as switched on now: never "only on this iPhone" while a copy is on the server.
     /// Whole sentences, not pieced together, so each has its Polish line.
     private var statusText: String {
         memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
     }
 
     /// Once per launch, when Home appears without the opening (ADR-225): Doddy stands, breathes
@@ -328,22 +331,32 @@ struct HomeView: View {
 }
 
 extension HomeView {
-    /// Testing only (ADR-265): switch Doddy's voice between ElevenLabs and OpenAI Realtime to
-    /// compare them. Same notes, lists, tools and cards either way; it takes effect when the next
-    /// conversation starts, and Settings › What leaves this iPhone follows it.
+    /// Who runs Doddy's voice, and for OpenAI which model (ADR-265, ADR-442). Same notes, lists,
+    /// tools and cards either way; it takes effect when the next conversation starts, and
+    /// Settings › What leaves this iPhone follows it.
     fileprivate var voiceProviderSwitch: some View {
-        let provider = VoiceProvider(stored: voiceProvider)
+        let tokenServerSet = !voiceTokenServer.trimmingCharacters(in: .whitespaces).isEmpty
+        let provider = VoiceProvider.effective(stored: voiceProvider, tokenServerSet: tokenServerSet)
         return VStack(alignment: .leading, spacing: 6) {
-            Picker("Test voice", selection: $voiceProvider) {
+            Picker("Voice", selection: Binding(get: { provider.rawValue }, set: { voiceProvider = $0 })) {
                 ForEach(VoiceProvider.allCases) { option in
                     Text(verbatim: option.shortName).tag(option.rawValue)
                 }
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("home.voiceProvider")
+            if provider == .openAIRealtime {
+                Picker("OpenAI model", selection: $realtimeModel) {
+                    ForEach(OpenAIRealtimeModel.allCases) { option in
+                        Text(verbatim: option.shortName).tag(option.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityIdentifier("home.realtimeModel")
+            }
             Text(verbatim: provider == .openAIRealtime
-                ? "Testing: OpenAI runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
-                : "Testing: ElevenLabs runs your next conversation.")
+                ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
+                : "ElevenLabs runs your next conversation.")
                 .font(.caption2).foregroundStyle(Theme.secondaryText)
         }
     }

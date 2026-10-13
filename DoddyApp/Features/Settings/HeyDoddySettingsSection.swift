@@ -98,8 +98,8 @@ struct HeyDoddySettingsSection: View {
         "When you say \u{201C}Hey Doddy\u{201D}, a conversation starts and the Dynamic Island says \u{201C}\(greeting)\u{201D} (the name comes from Doddy's personality, then About you). "
             + "To set it up, make a free Picovoice account, copy your AccessKey, and train the wake phrase \u{201C}Hey Doddy\u{201D} for iOS in English; download the .ppn file to this iPhone and choose it here. "
             + "The microphone can only start while Doddy is open. It then keeps listening when you leave the app, with iOS's orange microphone dot and the island showing, until you tap Stop listening on the island, turn this off, Low Power Mode comes on, a call or another app takes the microphone, or iOS closes Doddy. After a restart, open Doddy again. "
-            + "It listens on this iPhone; what it hears isn't kept or sent. Picovoice gets your AccessKey to check it. Only after the wake word does sound go to ElevenLabs, as when you tap Talk. "
-            + "It uses battery, and it can wake up by mistake (TV, similar words): a conversation that hears nothing from you ends after \(Int(WakeGate.silentWakeTimeout)) seconds, and after \(WakeGate.maxWakeUpsPerHour) wake-ups in an hour it rests until the hour has passed. Each conversation counts toward the ElevenLabs minutes."
+            + "It listens on this iPhone; what it hears isn't kept or sent. Picovoice gets your AccessKey to check it. Only after the wake word does sound go to OpenAI, or ElevenLabs if you switch Home's voice to it, as when you tap Talk. "
+            + "It uses battery, and it can wake up by mistake (TV, similar words): a conversation that hears nothing from you ends after \(Int(WakeGate.silentWakeTimeout)) seconds, and after \(WakeGate.maxWakeUpsPerHour) wake-ups in an hour it rests until the hour has passed. Each conversation counts toward the OpenAI or ElevenLabs usage."
     }
 
     private func saveKey() {
