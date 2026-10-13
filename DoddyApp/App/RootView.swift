@@ -25,6 +25,8 @@ enum PreferenceKey {
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
+    /// The voice screen shows the written-out conversation (ADR-463). Off by default: Doddy and the wave first.
+    static let voiceShowTranscript = "voiceShowTranscript"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
     /// UI-test override of the outcome: "-backTapSetupStatus deferred".

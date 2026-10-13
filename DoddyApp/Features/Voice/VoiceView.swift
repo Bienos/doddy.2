@@ -11,6 +11,7 @@ struct VoiceView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
+    @AppStorage(PreferenceKey.voiceShowTranscript) private var showTranscript = false
     @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
@@ -108,24 +109,10 @@ struct VoiceView: View {
 
     private func conversation(_ controller: VoiceSessionController) -> some View {
         VStack(spacing: 0) {
+            stage(controller)
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
-                        HStack(alignment: .center, spacing: 16) {
-                            VoiceDoddyView(art: screenArt(controller))
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(statusTitle(controller))
-                                    .font(.title2.bold())
-                                    .accessibilityIdentifier("voice.status")
-                                if controller.isMuted && controller.isLive {
-                                    Text("Your microphone is muted.")
-                                        .font(.footnote)
-                                        .foregroundStyle(Theme.secondaryText)
-                                }
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
-
                         // ADR-265/442: the copy below names ElevenLabs; say plainly when it isn't.
                         if controller.provider == .openAIRealtime {
                             Label {
@@ -171,9 +158,12 @@ struct VoiceView: View {
                                 .id("translatorSummary")
                         }
 
-                        ForEach(controller.lines) { line in
-                            transcriptLine(line)
-                                .id(line.id)
+                        // Doddy and the wave come first (ADR-463); the words are one tap away.
+                        if showTranscript {
+                            ForEach(controller.lines) { line in
+                                transcriptLine(line)
+                                    .id(line.id)
+                            }
                         }
 
                         if let pending = controller.pendingAction {
@@ -244,6 +234,7 @@ struct VoiceView: View {
                     .padding(24)
                 }
                 .onChange(of: controller.lines.count) { _, _ in
+                    guard showTranscript else { return }
                     if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
@@ -274,6 +265,57 @@ struct VoiceView: View {
             }
             controls(controller)
         }
+    }
+
+    /// Doddy with the sound wave beside him and what is happening, above the cards (ADR-463).
+    /// No written-out conversation here unless the user asks for it; the wave shows whose turn it
+    /// is and, in an ElevenLabs conversation, how loud (ADR-464).
+    private func stage(_ controller: VoiceSessionController) -> some View {
+        VStack(spacing: 8) {
+            HStack(alignment: .center, spacing: 20) {
+                VoiceDoddyView(art: screenArt(controller), height: 168)
+                // Not character art, so it stays with "Hide Doddy's pictures" on.
+                VoiceWaveView(mode: waveMode(controller), levels: controller.levels)
+            }
+            VStack(spacing: 4) {
+                Text(statusTitle(controller))
+                    .font(.title2.bold())
+                    .accessibilityIdentifier("voice.status")
+                if controller.isMuted && controller.isLive {
+                    Text("Your microphone is muted.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            Button {
+                showTranscript.toggle()
+            } label: {
+                Label(showTranscript ? "Hide transcript" : "Show transcript",
+                      systemImage: showTranscript ? "text.bubble.fill" : "text.bubble")
+                    .font(.subheadline)
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.accentText)
+            .accessibilityIdentifier("voice.transcriptToggle")
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 24)
+        .padding(.top, 12)
+    }
+
+    private func waveMode(_ controller: VoiceSessionController) -> VoiceWave.Mode {
+        let phase: VoiceScreenArt.Phase = switch controller.phase {
+        case .idle, .connecting: .connecting
+        case .listening: .listening
+        case .thinking: .thinking
+        case .speaking: .speaking
+        case .ended: .ended
+        case .microphoneDenied: .microphoneOff
+        case .failed: .failed
+        }
+        return VoiceWave.mode(phase, muted: controller.isMuted && controller.isLive)
     }
 
     @ViewBuilder
