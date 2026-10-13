@@ -14,7 +14,8 @@ final class PolishSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 8))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Trochę mniej do noszenia w głowie.")
-        XCTAssertTrue(app.buttons["home.save"].isHittable)
+        // Save sits below Doddy and the scenery on Home.
+        XCTAssertTrue(app.reveal(app.buttons["home.save"]))
 
         app.buttons["home.save"].tap()
         let save = app.buttons["capture.save"]
@@ -27,15 +28,11 @@ final class PolishSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.buttons["tab.memories"].waitForExistence(timeout: 5))
         app.buttons["tab.memories"].tap()
-        XCTAssertTrue(app.staticTexts["Brak wspomnień"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.text("Brak wspomnień").waitForExistence(timeout: 5))
 
         app.buttons["tab.settings"].tap()
-        let link = app.buttons["settings.dataFlow"]
-        for _ in 0..<8 {
-            if link.exists && link.isHittable { break }
-            app.swipeUp()
-        }
-        XCTAssertTrue(link.isHittable)
+        let link = app.button(labelled: "Co opuszcza tego iPhone’a")
+        XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["Co opuszcza tego iPhone’a"].waitForExistence(timeout: 5))
         attachScreenshot(app, "Polish What leaves this iPhone")
