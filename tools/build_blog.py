@@ -111,7 +111,8 @@ def markdown(src: str) -> str:
             if src.startswith("/") and not (ROOT / "site" / src.lstrip("/")).is_file():
                 sys.exit(f"image not found in site/: {src}")
             caption = f"<figcaption>{inline(m.group(3))}</figcaption>" if m.group(3) else ""
-            out.append(f'<figure class="post-figure"><img src="{html.escape(src)}" alt="{html.escape(m.group(1))}" '
+            # The alt text may already carry an entity such as &#x27; from the post; decode it once so it is not encoded twice.
+            out.append(f'<figure class="post-figure"><img src="{html.escape(src)}" alt="{html.escape(html.unescape(m.group(1)))}" '
                        f'loading="lazy" decoding="async">{caption}</figure>')
             i += 1
         elif m := re.fullmatch(r'\{\{doddy ([a-z-]+)(?: "([^"]*)")?\}\}\s*', line):
@@ -304,7 +305,8 @@ def banner(p: dict) -> str:
                 <p class="banner-card-text">{html.escape(p["banner_card_text"])}</p>
                 <p class="banner-card-actions"><span class="ghost">{html.escape(no)}</span><span class="solid">{html.escape(yes)}</span></p>
               </div>"""
-    label = f"Illustration of Doddy, the hand-drawn stick figure{', saying ' + chr(8220) + says + chr(8221) if says else ''}."
+    # `says` is already escaped for the page body; the label is escaped once below, so decode it first.
+    label = f"Illustration of Doddy, the hand-drawn stick figure{', saying ' + chr(8220) + html.unescape(says) + chr(8221) if says else ''}."
     return f"""
         <figure class="banner banner--{tint}" role="img" aria-label="{html.escape(label)}">
           <div class="banner-paper" aria-hidden="true">
