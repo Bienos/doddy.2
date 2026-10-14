@@ -1,0 +1,58 @@
+<!--
+title: What can Doddy do? Direction C, Got a problem? Ask Doddy.
+active: wcd
+-->
+{{> head}}
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+{{> symbols}}
+{{> nav}}
+  <main id="main">
+    <section class="wcd-hero loaded" aria-labelledby="wcd-title">
+      <div class="wrap ask-grid">
+        <div class="ask-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Got a problem? Ask Doddy.</p>
+          <h1 id="wcd-title" class="display">What can Doddy do? <span class="hand-word">Quite a lot, actually.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></span></h1>
+          <p class="lede">Ten random moments from an ordinary day, and what a mate in your pocket does with them. Pick one.</p>
+          <div class="picker" role="list" aria-label="Everyday problems">
+            <label class="chip on"><input type="radio" name="p" checked><span>I'm late. Again.</span></label>
+            <label class="chip"><input type="radio" name="p"><span>The awkward text</span></label>
+            <label class="chip"><input type="radio" name="p"><span>That place I mentioned</span></label>
+            <label class="chip hover"><input type="radio" name="p"><span>Somewhere good and cheap</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Explain quantum computing</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Remind me to call Mum</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Oat milk, on the list</span></label>
+            <label class="chip"><input type="radio" name="p"><span>Sort tomorrow out</span></label>
+          </div>
+          <p class="fineprint">Scripted demonstrations. Each one says whether it's built, in testing, or later, maybe.</p>
+        </div>
+        <div class="ask-doddy">
+          <p class="says" aria-hidden="true">Go on.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+          <img src="../assets/poses/listening.png" width="640" height="960" alt="Doddy, listening">
+        </div>
+        <div class="ask-phone">
+          <div class="device chat">
+            <div class="phone-screen">
+              <div class="ph-status"><span>09:41</span><span class="notch" aria-hidden="true"></span><span>▮▮▮</span></div>
+              <div class="ph-head"><img src="../assets/faces/smile.png" alt=""><div><div class="ph-name">Doddy</div><span class="ph-state">Listening</span></div></div>
+              <p class="msg me">Doddy, what's happening today?</p>
+              <p class="msg doddy">Well, your meeting started 15 minutes ago. Excellent start.</p>
+              <div class="ph-card">
+                <p class="q">Today</p>
+                <ul class="ph-list">
+                  <li><span>Team meeting</span><span class="t late">09:00 · started</span></li>
+                  <li><span>Dentist</span><span class="t">12:30</span></li>
+                  <li><span>Call Mum</span><span class="t">19:00</span></li>
+                </ul>
+              </div>
+              <p class="msg doddy">Want me to draft a "running late" to Ola? You send it.</p>
+              <div class="ph-chips"><span class="on">Yes, draft it</span><span>Not now</span></div>
+              <div class="ph-bottom"><span class="ph-talk"><span class="dot"></span>Talk to Doddy</span><span class="ph-type">Aa</span></div>
+            </div>
+          </div>
+          <p class="caption">Scripted demonstration · Calendar and messages: in testing</p>
+        </div>
+      </div>
+    </section>
+  </main>
+{{> footer}}

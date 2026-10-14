@@ -11,8 +11,8 @@
   const pose = document.querySelector(".memory-doddy img");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const POSE_THINKING = "assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg";
-  const POSE_DONE = "assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg";
+  const POSE_THINKING = "assets/day/poses/kneeling_inspect-320.webp";
+  const POSE_DONE = "assets/day/poses/fistpump-320.webp";
 
   // Line drawings on a 64 x 64 grid; ".acc" shapes take the orange cue.
   const ITEMS = [

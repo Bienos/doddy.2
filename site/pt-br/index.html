@@ -10,22 +10,22 @@
   <meta property="og:type" content="website">
   <meta property="og:title" content="Doddy, your mate in your pocket">
   <meta property="og:description" content="Salve os pequenos detalhes com suas próprias palavras. Receba a nota exata de volta depois.">
-  <meta property="og:image" content="https://doddy-eight.vercel.app/assets/og-image.png">
-  <meta property="og:url" content="https://doddy-eight.vercel.app/pt-br/">
-  <link rel="canonical" href="https://doddy-eight.vercel.app/pt-br/">
+  <meta property="og:image" content="https://www.doddy.lol/assets/og-image.png">
+  <meta property="og:url" content="https://www.doddy.lol/pt-br/">
+  <link rel="canonical" href="https://www.doddy.lol/pt-br/">
   <meta name="twitter:card" content="summary_large_image">
   <!-- i18n:alternates -->
-  <link rel="alternate" hreflang="en" href="https://doddy-eight.vercel.app/">
-  <link rel="alternate" hreflang="es" href="https://doddy-eight.vercel.app/es/">
-  <link rel="alternate" hreflang="de" href="https://doddy-eight.vercel.app/de/">
-  <link rel="alternate" hreflang="fr" href="https://doddy-eight.vercel.app/fr/">
-  <link rel="alternate" hreflang="zh-Hans" href="https://doddy-eight.vercel.app/zh-hans/">
-  <link rel="alternate" hreflang="ja" href="https://doddy-eight.vercel.app/ja/">
-  <link rel="alternate" hreflang="pt-BR" href="https://doddy-eight.vercel.app/pt-br/">
-  <link rel="alternate" hreflang="it" href="https://doddy-eight.vercel.app/it/">
-  <link rel="alternate" hreflang="hr" href="https://doddy-eight.vercel.app/hr/">
-  <link rel="alternate" hreflang="pl" href="https://doddy-eight.vercel.app/pl/">
-  <link rel="alternate" hreflang="x-default" href="https://doddy-eight.vercel.app/">
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/">
+  <link rel="alternate" hreflang="es" href="https://www.doddy.lol/es/">
+  <link rel="alternate" hreflang="de" href="https://www.doddy.lol/de/">
+  <link rel="alternate" hreflang="fr" href="https://www.doddy.lol/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://www.doddy.lol/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://www.doddy.lol/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://www.doddy.lol/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://www.doddy.lol/it/">
+  <link rel="alternate" hreflang="hr" href="https://www.doddy.lol/hr/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/">
   <meta property="og:locale" content="pt_BR">
   <meta property="og:locale:alternate" content="en_US">
   <meta property="og:locale:alternate" content="es_ES">
@@ -40,13 +40,15 @@
   <!-- Smart App Banner: enable once Doddy has an App Store ID.
   <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
   -->
-  <link rel="icon" href="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
   <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/styles.css">
   <script>document.documentElement.classList.add('js')</script>
+  <script src="/nav.js" defer></script>
   <script src="/i18n.js" defer></script>
   <!-- i18n:dictionary --><script src="/i18n/pt-br.js" defer></script><!-- /i18n:dictionary -->
   <script src="/main.js" defer></script>
@@ -61,6 +63,28 @@
 </head>
 <body>
   <a class="skip" href="#main">Pular para o conteúdo</a>
+  <svg width="0" height="0" class="sprite" aria-hidden="true">
+    <symbol id="o-alarm" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 100 L24 112 M88 100 L96 112"/>
+        <path d="M36 24 L24 12 M84 24 L96 12"/>
+        <circle cx="22" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="98" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="60" cy="64" r="40" fill="#FCF4E4"/>
+        <path d="M60 42 V64 L76 74"/>
+      </g>
+      <path d="M12 36 L5 30 M9 50 L1 48 M12 64 L5 70" stroke="#FC6800" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="o-calendar" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="24" width="92" height="84" rx="12" fill="#FCF4E4"/>
+        <path d="M14 36 a12 12 0 0 1 12-12 h68 a12 12 0 0 1 12 12 v12 H14z" fill="#FC6800"/>
+        <path d="M36 14 V34 M84 14 V34" fill="none"/>
+      </g>
+      <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
+      <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
+    </symbol>
+  </svg>
 
   <header class="nav">
     <div class="wrap nav-inner">
@@ -68,14 +92,29 @@
       <nav aria-label="Seções">
         <ul class="nav-links">
           <li><a href="#how">Como funciona</a></li>
+          <li><a href="/what-can-doddy-do/">O que o Doddy pode fazer?</a></li>
           <li><a href="#meet">Conheça o Doddy</a></li>
           <li><a href="#play">Arremessar</a></li>
           <li><a href="/blog/">Blog <span class="note">(Inglês)</span></a></li>
           <li><a href="#privacy">Privacidade</a></li>
         </ul>
       </nav>
+      <button class="menu-button" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
       <a class="button small" href="#join">Inscreva-se no acesso antecipado</a>
       <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>Idioma</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR" aria-current="page">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
+      <div class="menu-sheet" id="menu-sheet" aria-label="Menu">
+        <ul>
+          <li><a href="#how">Como funciona</a></li>
+          <li><a href="/what-can-doddy-do/" class="menu-new">O que o Doddy pode fazer? <img src="assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="#meet">Conheça o Doddy</a></li>
+          <li><a href="#play">Arremessar</a></li>
+          <li><a href="/blog/">Blog <span class="note">(Inglês)</span></a></li>
+          <li><a href="#privacy">Privacidade</a></li>
+        </ul>
+        <a class="button" href="#join">Inscreva-se no acesso antecipado</a>
+      </div>
     </div>
   </header>
 
@@ -90,7 +129,7 @@
           <p class="lede">O Doddy é um caderninho de bolso com um companheiro dentro. Conte a ele as pequenas coisas que você não quer perder e receba de volta suas palavras exatas quando precisar.</p>
           <div class="actions">
             <a class="button" href="#join">Inscreva-se no acesso antecipado</a>
-            <a class="text-link" href="#film">Assistir ao vídeo (1:15)</a>
+            <a class="text-link" href="/what-can-doddy-do/">O que o Doddy faz o dia todo</a>
           </div>
           <p class="fineprint">O Doddy é uma IA, não uma pessoa. Suas notas ficam guardadas no seu iPhone.</p>
         </div>
@@ -106,7 +145,7 @@
           </div>
           <div class="hero-doddy">
             <p class="says" aria-hidden="true">Oi. Eu sou o Doddy.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <picture class="hero-pose"><img src="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt=""></picture>
+            <picture class="hero-pose"><img src="/assets/day/poses/wave-320.webp" srcset="assets/day/poses/wave-320.webp 320w, assets/day/poses/wave.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt=""></picture>
           </div>
           <p class="caption">Prévia de design do app</p>
         </div>
@@ -138,7 +177,7 @@
           </div>
           <div class="film-doddy" aria-hidden="true">
             <p class="says">Sou eu.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="/assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" alt="">
+            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
           </div>
         </div>
         <ol class="chapters" aria-label="Pule para um momento do vídeo">
@@ -179,7 +218,7 @@
           <li class="step">
             <div class="step-visual">
               <div class="device small"><img src="/assets/screens/capture.png" width="390" height="845" loading="lazy" alt="Tela de nova memória: O que vamos guardar? O detalhe diz: As chaves de reserva estão na lata azul em cima da geladeira."></div>
-              <picture class="step-pose"><img src="/assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+              <picture class="step-pose"><img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">1</p>
             <h3>Conte ao Doddy</h3>
@@ -189,7 +228,7 @@
           <li class="step">
             <div class="step-visual">
               <div class="device small"><img src="/assets/screens/recall.png" width="390" height="845" loading="lazy" alt="Tela de Memórias: Está aqui em algum lugar. Uma busca por chaves de reserva encontra a nota salva, escrita por você em 8 de outubro."></div>
-              <picture class="step-pose"><img src="/assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+              <picture class="step-pose"><img src="/assets/day/poses/belly_reading-320.webp" srcset="assets/day/poses/belly_reading-320.webp 320w, assets/day/poses/belly_reading.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">2</p>
             <h3>Mais tarde</h3>
@@ -199,7 +238,7 @@
           <li class="step">
             <div class="step-visual">
               <div class="device small"><img src="/assets/screens/detail.png" width="390" height="845" loading="lazy" alt="A tela Sua memória: a nota salva com a data e a origem, e botões para corrigir este detalhe ou apagar esta memória."></div>
-              <picture class="step-pose"><img src="/assets/poses/doddy-pose-fist-bump-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+              <picture class="step-pose"><img src="/assets/day/poses/fistpump-320.webp" srcset="assets/day/poses/fistpump-320.webp 320w, assets/day/poses/fistpump.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">3</p>
             <h3>Corrija ou esqueça</h3>
@@ -211,6 +250,31 @@
       </div>
     </section>
 
+    <!-- Three moments from "What can Doddy do?" (ADR-469/470). Scripted scenes, each labelled with what is built. -->
+    <section class="moments-teaser" aria-labelledby="teaser-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="teaser-title" class="display-m">Três momentos de um dia comum.</h2>
+          <p>O que um companheiro no seu bolso faz com elas. Mais sete estão na própria página, e cada uma diz se já funciona, se está em teste ou se fica para depois, quem sabe.</p>
+        </div>
+        <ul class="teaser">
+          <li class="t-late"><a href="/what-can-doddy-do/#late">
+            <span class="scene-art"><img class="bg" src="/assets/day/scenery/bedroom-800.webp" srcset="assets/day/scenery/bedroom-800.webp 800w, assets/day/scenery/bedroom.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/yawn_stretch-320.webp" srcset="assets/day/poses/yawn_stretch-320.webp 320w, assets/day/poses/yawn_stretch.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg><span class="d-bubble">Pois é, sua reunião começou há 15 minutos. Ótimo começo.</span></span>
+            <span class="when">08:45</span><h3>Você está atrasado. De novo.</h3><br><span class="cap testing">Calendário · em teste</span>
+          </a></li>
+          <li class="t-brain"><a href="/what-can-doddy-do/#brain">
+            <span class="scene-art"><img class="bg" src="/assets/day/scenery/cosy_living_room-800.webp" srcset="assets/day/scenery/cosy_living_room-800.webp 800w, assets/day/scenery/cosy_living_room.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><span class="d-bubble">Trattoria Nonna, Hoża 9. Suas palavras, não as minhas.</span></span>
+            <span class="when">18:45</span><h3>Meu cérebro saiu do chat.</h3><br><span class="cap built">Notas salvas · já funciona</span>
+          </a></li>
+          <li class="t-forget"><a href="/what-can-doddy-do/#forget">
+            <span class="scene-art"><img class="bg" src="/assets/day/scenery/moonlit_hills-800.webp" srcset="assets/day/scenery/moonlit_hills-800.webp 800w, assets/day/scenery/moonlit_hills.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/crosslegged-320.webp" srcset="assets/day/poses/crosslegged-320.webp 320w, assets/day/poses/crosslegged.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-calendar"/></svg><span class="d-bubble">Amanhã. Manhã ou noite? Escolha uma.</span></span>
+            <span class="when">22:30</span><h3>Não deixe eu esquecer.</h3><br><span class="cap testing">Lembretes · em teste</span>
+          </a></li>
+        </ul>
+        <p class="actions teaser-more"><a class="button" href="/what-can-doddy-do/">Veja o dia inteiro</a><a class="text-link" href="/what-can-doddy-do/#late">Comece às 08:45</a></p>
+      </div>
+    </section>
+
     <!-- The detail only Doddy has: every note carries its receipt. -->
     <section class="receipt-section" aria-labelledby="receipt-title">
       <div class="wrap receipt-grid">
@@ -219,7 +283,7 @@
           <p>O Doddy nunca reescreve o que você disse. Cada nota mostra quando foi salva e de onde veio, e uma correção é adicionada por cima, para que a primeira versão continue ali.</p>
           <p>Quando nada combinar, o Doddy diz isso em vez de inventar algo.</p>
           <div class="no-match">
-            <picture class="no-match-pose"><img src="/assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture class="no-match-pose"><img src="/assets/day/poses/shrug-320.webp" srcset="assets/day/poses/shrug-320.webp 320w, assets/day/poses/shrug.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <blockquote><p>Não encontrei isso nas suas memórias salvas.</p></blockquote>
           </div>
         </div>
@@ -239,11 +303,11 @@
       </div>
     </section>
 
-    <!-- Voice: built, not yet tested on a real iPhone. -->
+    <!-- Voice: in testing (first real-iPhone conversation 9 Oct 2026, docs/implementation/V1_VOICE_STATUS.md). -->
     <section class="voice" aria-labelledby="voice-title">
       <div class="wrap voice-grid">
         <div class="voice-art">
-          <picture class="voice-pose"><img src="/assets/poses/doddy-pose-listening-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <picture class="voice-pose"><img src="/assets/day/poses/listening-320.webp" srcset="assets/day/poses/listening-320.webp 320w, assets/day/poses/listening.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
           <ol class="voice-states" aria-label="O que a tela de voz mostra">
             <li>Conectando…</li>
             <li>Ouvindo</li>
@@ -262,7 +326,7 @@
           <h2 id="voice-title" class="display-m">Ou só diga.</h2>
           <p>Toque em Falar com o Doddy e pergunte em voz alta. O Doddy procura nas suas notas e responde com base no que você salvou.</p>
           <p>O Doddy só escuta enquanto a tela de voz estiver aberta ou, se você ativar o Hey Doddy, enquanto a Dynamic Island mostrar que ele está escutando; a palavra de ativação é identificada no seu iPhone. Se você disser algo que vale guardar, o Doddy pergunta antes, e nada é guardado até você tocar em Salvar.</p>
-          <p class="fineprint">Enquanto você fala, sua voz e as notas que o Doddy consulta são enviadas à OpenAI para executar a conversa, ou à ElevenLabs se você trocar a voz na tela principal. A voz ainda não foi testada em um iPhone real.</p>
+          <p class="fineprint">Enquanto você fala, sua voz e as notas que o Doddy consulta são enviadas à OpenAI para fazer a conversa funcionar, ou à ElevenLabs se você trocar a voz na tela principal. A voz está em teste.</p>
         </div>
       </div>
     </section>
@@ -304,23 +368,23 @@
       <div class="wrap">
         <div class="section-head">
           <h2 id="meet-title" class="display-m">Conheça o Doddy</h2>
-          <p>Um companheiro desenhado à mão, com mochila laranja, tênis enormes e uma bola de basquete que ele nunca chega a largar. Prestativo primeiro, engraçado depois, sempre honesto.</p>
+          <p>Um companheiro desenhado à mão, com tênis enormes e uma bola de basquete que nunca larga. Útil primeiro, engraçado depois, sempre honesto.</p>
         </div>
         <ul class="sketches">
           <li class="sketch">
-            <picture><img src="/assets/poses/doddy-pose-basketball-dribble-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Sempre com alguma missão paralela em andamento.</p>
           </li>
           <li class="sketch">
-            <picture><img src="/assets/poses/doddy-pose-holding-coffee-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/leaning-320.webp" srcset="assets/day/poses/leaning-320.webp 320w, assets/day/poses/leaning.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Repara nas pequenas coisas que atrasam seu dia.</p>
           </li>
           <li class="sketch">
-            <picture><img src="/assets/poses/doddy-pose-working-laptop-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/crosslegged-320.webp" srcset="assets/day/poses/crosslegged-320.webp 320w, assets/day/poses/crosslegged.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Ajuda primeiro, conversa depois.</p>
           </li>
           <li class="sketch">
-            <picture><img src="/assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/oneleg_balance-320.webp" srcset="assets/day/poses/oneleg_balance-320.webp 320w, assets/day/poses/oneleg_balance.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Piadas sobre a fila, nunca sobre você.</p>
           </li>
         </ul>
@@ -357,7 +421,7 @@
             <div class="memory-grid" id="memory-grid" role="group" aria-label="Cartas da memória"></div>
             <div class="memory-doddy">
               <p class="memory-bubble" id="memory-bubble" aria-live="polite">Vire duas. Encontre o par.</p>
-              <img src="/assets/poses/doddy-pose-memory-card-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt="">
+              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
             </div>
           </div>
           <div class="court-bar">
@@ -426,7 +490,7 @@
               <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
             </div>
           </div>
-          <picture class="join-pose"><img src="/assets/poses/doddy-pose-basketball-shot-light-v1.3-r1.svg" width="512" height="512" loading="lazy" alt=""></picture>
+          <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="assets/day/poses/reaching_high-320.webp 320w, assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
         </div>
         <div class="later">
           <h2 class="later-title">Talvez mais tarde</h2>
@@ -442,6 +506,7 @@
         <p class="wordmark">Doddy</p>
         <ul class="foot-links">
           <li><a href="#how">Como funciona</a></li>
+          <li><a href="/what-can-doddy-do/">O que o Doddy pode fazer?</a></li>
           <li><a href="#meet">Conheça o Doddy</a></li>
           <li><a href="#privacy">Privacidade</a></li>
           <li><a href="/blog/">Blog <span class="note">(Inglês)</span></a></li>

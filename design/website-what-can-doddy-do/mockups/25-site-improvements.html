@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mockup 25, improving the whole site</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body class="board">
+  <style>
+    .tiers table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .tiers th, .tiers td { text-align: left; vertical-align: top; padding: 9px 10px; border-top: 1px solid var(--separator); }
+    .tiers th { font-family: var(--display); font-weight: 700; font-size: 0.8125rem; color: var(--secondary-text); border-top: 0; }
+    .tiers td:first-child { font-weight: 650; white-space: nowrap; }
+    .tiers tr.h td { background: var(--quiet-surface); font-family: var(--display); font-weight: 700; color: var(--reading-ink); }
+    .tiers .top { color: var(--accent-text); font-weight: 700; }
+    .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    .lp { grid-template-columns: 220px minmax(0, 1fr); }
+    .lp { display: grid; grid-template-columns: 200px minmax(0, 1fr); background: var(--paper); border: 1px solid var(--separator); border-radius: 14px; overflow: hidden; box-shadow: var(--lift); }
+    .lp .im { aspect-ratio: 1.91 / 1; overflow: hidden; background: var(--canvas); }
+    .lp .im img { width: 100%; height: 100%; object-fit: cover; object-position: center top; display: block; }
+    .lp .tx { padding: 10px 14px; font-size: 0.8125rem; min-width: 0; }
+    .lp .tx .d { color: var(--secondary-text); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.04em; }
+    .lp .tx b { display: block; font-size: 0.9375rem; margin: 2px 0; }
+    .lp .tx .bad { color: var(--error); font-weight: 650; }
+    .navrow { padding: 0; }
+  </style>
+  <div class="board-wrap tiers">
+    <div class="board-head">
+      <h1>25 · Improving the whole site</h1>
+      <p>Homepage and new page together. Three tiers; every row names the visitor it serves. The five rows marked <span class="top">top five</span> are mocked up in 25a and below.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label">Must fix · contradictions, broken promises, accessibility</div>
+      <div class="frame-body">
+        <table>
+          <thead><tr><th>#</th><th>What</th><th>Where</th><th>Visitor outcome</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr><td class="top">1 · top five</td><td>One Doddy. The homepage swaps its v1.3 SVG poses for the owner's pack (mockup 24).</td><td>homepage</td><td>The character on the page they came from is the character on the page they land on, and in the app.</td><td>afternoon</td></tr>
+            <tr><td class="top">2 · top five</td><td>The share and search addresses say doddy-eight.vercel.app, not doddy.lol: <code>canonical</code>, <code>og:url</code> and <code>og:image</code> all point at the Vercel preview host (checked on the live page, 13 Oct).</td><td>homepage head, blog pages</td><td>A link pasted into a chat shows the real domain and the right card; search engines index one address.</td><td>an hour, once the domain is confirmed</td></tr>
+            <tr><td class="top">3 · top five</td><td>Phones have no navigation: below 820 px the links vanish and there is no menu, so Blog and the new page are unreachable except by scrolling to the footer.</td><td>both pages</td><td>Someone arriving from TikTok on a phone can get to the blog, the new page and the privacy panel in one tap.</td><td>afternoon (the sheet in mockup 01)</td></tr>
+            <tr><td>4</td><td>The voice section says "Voice hasn't been tested on a real iPhone yet." The voice status doc records the owner's first real iPhone conversation on 9 October (79 s, 18 messages). The site README says to change the line only when the owner confirms; the proposal (25a) shows "Voice is being tried on real iPhones now."</td><td>homepage voice</td><td>The page says what is true; "In testing" stays, the "never tested" line goes.</td><td>owner's word at build, then ten minutes</td></tr>
+            <tr><td>5</td><td>The two paper panels on the new page repeated the homepage's "Later, maybe" paragraph word for word, from a second source. Removed; the honesty panel links to the homepage's list.</td><td>new page</td><td>One list of what's not built, kept in one place.</td><td>done in the mockups</td></tr>
+            <tr><td>6</td><td>Scenes need a text alternative: each scene card gets <code>aria-label</code> ("Scene: bedroom, 08:45. You ask what's happening today. Doddy says…") since the artwork is <code>alt=""</code> and the bubbles are real text.</td><td>new page</td><td>VoiceOver reads the moment as a short story, not twelve images.</td><td>an hour</td></tr>
+            <tr><td>7</td><td>Handwriting at small sizes: the chapter buttons' times (0.75 rem) and the day strip on phones are system text, fine; Caveat never goes below 1.1 rem anywhere. The orange cue on paper is 2.1:1 and is used only for decoration (scribble, dots, underlines); all text in orange is the darker accent (5.6:1). Checked, no change.</td><td>both</td><td>Readable on a phone in sunlight.</td><td>none</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label">Quick wins · an afternoon each</div>
+      <div class="frame-body">
+        <table>
+          <thead><tr><th>#</th><th>What</th><th>Where</th><th>Visitor outcome</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr><td class="top">8 · top five</td><td>Hand-off to the new page: the hero's secondary link becomes "What Doddy does all day" (the film keeps its own link in its section), and a "Three moments from an ordinary day" strip after How it works shows three scene cards that open the new page.</td><td>homepage</td><td>Within one scroll a visitor sees the character in a situation, not only the app's screens.</td><td>afternoon</td></tr>
+            <tr><td class="top">9 · top five</td><td>One nav for three pages: the blog's nav drops "Take a shot" (four links) while the homepage has five. One partial, six links, the active rule everywhere; the footer gets the new link in the same place.</td><td>homepage, blog, new page</td><td>The same menu on every page.</td><td>an hour (the blog builder already templates it)</td></tr>
+            <tr><td>10</td><td>Hand-off back: the new page's join panel links to the film and the blog (done in the mockups); the film section links to the new page's 13:00 moment ("Asking a local" is the same joke).</td><td>new page, homepage</td><td>Nobody hits a dead end.</td><td>an hour</td></tr>
+            <tr><td>11</td><td>Page head for the new page: title "What can Doddy do? · Doddy", description "Ten random moments from an ordinary day, and what a mate in your pocket does with them.", <code>og:image</code> a 1200 × 630 crop of the hero ring (below), canonical on doddy.lol.</td><td>new page</td><td>The link someone sends shows Doddy and the headline.</td><td>an hour (decided 13 October: the share image is a crop of the page's own art)</td></tr>
+            <tr><td>12</td><td>Order of the games: "Remember it" demonstrates the product (memory) and "Take a shot" the character; put Remember it first, directly after Meet Doddy, then the court.</td><td>homepage</td><td>The playful bit that explains the app comes before the one that only entertains.</td><td>ten minutes</td></tr>
+            <tr><td>13</td><td>The hero's first ten seconds at 1440 × 900: the film card starts 93 px below the fold (site README). Trim the hero's bottom padding by 24 px and the film's top edge shows, so the page says "there is more" without a scroll cue.</td><td>homepage</td><td>The second thing is visible before the first scroll.</td><td>ten minutes</td></tr>
+            <tr><td>14</td><td>The footer says fonts load from Google Fonts; the README already lists self-hosting after licence review. Until then, add <code>&lt;link rel="preload"&gt;</code> for the two faces so the handwriting doesn't swap in late on slow phones.</td><td>both</td><td>Doddy's lines appear in his handwriting the first time, not after a flash of system text.</td><td>twenty minutes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label">Bigger ideas · a milestone each</div>
+      <div class="frame-body">
+        <table>
+          <thead><tr><th>#</th><th>What</th><th>Where</th><th>Visitor outcome</th><th>Cost</th></tr></thead>
+          <tbody>
+            <tr><td>15</td><td>Performance plan for the new page: scenery as WebP at 800 and 1600 px (about 60 and 160 KB), poses at 320 and 640 px (25 to 60 KB), one moment preloaded ahead, strips as one sprite per size. Budget: 250 KB before the first scroll, 1.2 MB for the whole day. The homepage's SVG poses are 6 KB each; that is the cost of the swap, and it is paid below the fold.</td><td>new page</td><td>The first scene is on screen in under two seconds on a phone on 4G.</td><td>milestone (part of the build)</td></tr>
+            <tr><td>16</td><td>Replace the "Design preview" app screens with simulator screenshots once someone with Xcode captures them (site README owes this).</td><td>homepage</td><td>The screens are the app.</td><td>milestone (needs a Mac)</td></tr>
+            <tr><td>17</td><td>Custom domain everywhere, a privacy policy page, and self-hosted fonts after licence review: the three items the site README lists under "Needs the owner".</td><td>site</td><td>EU visitors' addresses stop going to Google; the footer's promise has a page behind it.</td><td>milestone</td></tr>
+            <tr><td>18</td><td>Polish versions of both pages (the app already speaks Polish). Doddy's lines need an owner's ear in Polish, not a translation pass.</td><td>both</td><td>The Warsaw film's audience reads the page in their language.</td><td>milestone</td></tr>
+            <tr><td>19</td><td>Section order on the homepage: hero → problem → how it works → the three moments → film → receipt → voice → privacy → meet → remember → court → join. The film moves down because social visitors have just watched a video; the product comes first for them.</td><td>homepage</td><td>Someone from TikTok reaches "what it does" in one scroll instead of three.</td><td>a day, after the owner weighs it against the film's role as the brand's front door</td></tr>
+            <tr><td>20</td><td>The blog's place: the nav link stays; the join panel on both pages links the latest post; posts get the same share-card treatment as the new page.</td><td>blog</td><td>The blog is reachable from everywhere and looks the same when shared.</td><td>a day</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="frames" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>Top five · 2 and 11</b> Share cards as they are, and as proposed</div>
+        <div class="frame-body cards">
+          <div class="lp"><div class="im" style="display:grid; place-items:center; color: var(--secondary-text); font-size: .8rem">the live og-image.png</div><div class="tx"><span class="d">doddy-eight.vercel.app <span class="bad">· wrong host</span></span><b>Doddy, your mate in your pocket</b>Save the small details in your own words. Get the exact note back later.</div></div>
+          <div class="lp"><div class="im"><img src="../png/crops/share-home.png" alt=""></div><div class="tx"><span class="d">doddy.lol</span><b>Doddy, your mate in your pocket</b>Save the small details in your own words. Get the exact note back later.</div></div>
+          <div class="lp"><div class="im" style="display:grid; place-items:center; color: var(--secondary-text); font-size: .8rem">no card yet</div><div class="tx"><span class="d">doddy.lol/what-can-doddy-do/</span><b>(untitled)</b><span class="bad">The new page has no title, description or image until the build adds them.</span></div></div>
+          <div class="lp"><div class="im"><img src="../png/crops/share-new.png" alt=""></div><div class="tx"><span class="d">doddy.lol/what-can-doddy-do/</span><b>What can Doddy do? · Doddy</b>Ten random moments from an ordinary day, and what a mate in your pocket does with them.</div></div>
+        </div>
+        <p class="frame-note">Left: today (the live head points at the Vercel host; the new page has nothing). Right: proposed. The share image for the new page is the hero ring at 1200 × 630, a crop of the page's own art (decided 13 October). Canonical host: https://www.doddy.lol/, where the site already answers.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>Top five · 9</b> One nav for the blog too</div>
+        <div class="frame-body tight navrow">
+          <header class="nav" style="position: static">
+            <div class="wrap nav-inner">
+              <a class="wordmark" href="#">Doddy</a>
+              <nav><ul class="nav-links">
+                <li><a href="#">How it works</a></li>
+                <li><a href="#">What can Doddy do?</a></li>
+                <li><a href="#">Meet Doddy</a></li>
+                <li><a href="#">Take a shot</a></li>
+                <li><a href="#" aria-current="page">Blog</a></li>
+                <li><a href="#">Privacy</a></li>
+              </ul></nav>
+              <a class="button small" href="#">Join early access</a>
+            </div>
+          </header>
+          <div style="padding: 22px 24px 8px; background: var(--canvas)">
+            <p class="pill" style="margin-bottom: 10px"><span class="dot"></span>Blog</p>
+            <h2 class="display-m" style="font-size: 2rem">Meet Doddy, an AI agent with a basketball</h2>
+            <p class="muted" style="color: var(--secondary-text); margin: 0">The blog's own head follows, unchanged.</p>
+          </div>
+        </div>
+        <p class="frame-note">Today the blog's nav has four links (no "Take a shot") and the homepage five. The builder (<code>tools/build_blog.py</code>) templates the nav, so it takes the same six links and the same active rule as the other two pages.</p>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label"><b>Top five · 1, 3 and 8</b> are the homepage proposal, mockup 25a, at 1440 and 390</div>
+      <p class="frame-note" style="border-top: 0">The pack's poses throughout, the phone menu, "What Doddy does all day" as the hero's second action, and "Three moments from an ordinary day" after How it works. Everything else on the page is the live homepage as it is.</p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!--
+title: Mockup 15, four ways to showcase one moment
+active: wcd
+-->
+{{> head}}
+<body class="board">
+{{> symbols}}
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>15 · Showcasing a moment: the current card and four alternatives</h1>
+      <p>All on the 08:45 moment, all inside the same page layout. Nothing else on the page changes.</p>
+    </div>
+
+    <div class="frames two">
+      <div class="frame">
+        <div class="frame-label"><b>0</b> The scene card, as mocked up</div>
+        <div class="frame-body">
+          <div class="scene-card">
+            <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+            <div class="scene-art">
+              <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+              <img class="doddy" src="../assets/poses/yawn_stretch.png" alt="" style="left: 12%; height: 76%;">
+              <svg class="prop" style="left: 31%; bottom: 7%; width: 12%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+              <img class="fx" src="../assets/fx/burst.png" alt="" style="left: 28%; bottom: 23%; width: 9%">
+              <p class="u-bubble">Doddy, what's happening today?</p>
+              <p class="d-bubble stack">Well, your meeting started 15 minutes ago. Excellent start.</p>
+              <div class="scene-panel">
+                <strong>Today</strong>
+                <div class="row"><span>Team meeting</span><span class="t late">09:00 · started</span></div>
+                <div class="row"><span>Dentist</span><span class="t">12:30</span></div>
+                <div class="row"><span>Call Mum</span><span class="t">19:00</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="frame-note"><b>One picture, everything in it.</b> Fast to read, cheap to build, works as a still. Weakest at the brief's beat order: problem, Doddy appears, something funny, Doddy helps all land at once.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>3</b> Scene plus the phone as proof</div>
+        <div class="frame-body">
+          <div class="scene-and-phone">
+            <div class="scene-card">
+              <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+              <div class="scene-art">
+                <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+                <img class="doddy" src="../assets/poses/facepalm.png" alt="" style="left: 10%; height: 74%;">
+                <svg class="prop" style="left: 34%; bottom: 7%; width: 12%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+                <img class="fx" src="../assets/fx/burst.png" alt="" style="left: 31%; bottom: 23%; width: 9%">
+                <p class="d-bubble" style="right: 5%; top: 10%; max-width: 46%; border-radius: 18px 18px 4px 18px">Well, your meeting started 15 minutes ago. Excellent start.</p>
+              </div>
+            </div>
+            <div class="device chat">
+              <div class="phone-screen">
+                <div class="ph-status"><span>08:47</span><span class="notch" aria-hidden="true"></span><span>▮▮▮</span></div>
+                <div class="ph-head"><img src="../assets/faces/sleepy.png" alt=""><div><div class="ph-name">Doddy</div><span class="ph-state">Listening</span></div></div>
+                <p class="msg me">Doddy, what's happening today?</p>
+                <div class="ph-card">
+                  <p class="q">Today</p>
+                  <ul class="ph-list">
+                    <li><span>Team meeting</span><span class="t late">09:00 · started</span></li>
+                    <li><span>Dentist</span><span class="t">12:30</span></li>
+                  </ul>
+                </div>
+                <p class="msg doddy">Draft a "running late" to Ola? You send it.</p>
+                <div class="ph-chips"><span class="on">Yes</span><span>Not now</span></div>
+                <div class="ph-bottom"><span class="ph-talk"><span class="dot"></span>Talk to Doddy</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="frame-note"><b>The character and the product, side by side.</b> The scene carries the story, the phone carries the proof. Clearest about what the app actually does; the busiest frame, and it needs the real screens once they exist.</p>
+      </div>
+    </div>
+
+    <div class="frames" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>1</b> The scene plays as you scroll (same card, three beats)</div>
+        <div class="frame-body">
+          <div class="storyboard">
+            <div>
+              <div class="scene-art">
+                <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+                <p class="big-time">08:45</p>
+                <svg class="dash-path" viewBox="0 0 400 20" preserveAspectRatio="none"><path d="M0 14 C 100 2, 200 18, 400 8"/></svg>
+                <img class="doddy" src="../assets/poses/walk_3.png" alt="" style="left: 2%; height: 60%;">
+                <svg class="prop" style="left: 44%; bottom: 8%; width: 14%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+                <img class="fx" src="../assets/fx/burst.png" alt="" style="left: 42%; bottom: 30%; width: 10%">
+              </div>
+              <p class="cue"><b>Card enters the screen.</b> The time stamp writes itself; the alarm rattles twice; Doddy walks in from the left (600 ms).</p>
+            </div>
+            <div>
+              <div class="scene-art">
+                <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+                <img class="doddy" src="../assets/poses/facepalm.png" alt="" style="left: 12%; height: 70%;">
+                <svg class="prop" style="left: 36%; bottom: 8%; width: 12%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+                <p class="u-bubble">Doddy, what's happening today?</p>
+                <p class="d-bubble stack">Well, your meeting started 15 minutes ago. Excellent start.</p>
+              </div>
+              <p class="cue"><b>The ask, the beat.</b> Your bubble pops; Doddy swaps to the facepalm; his line writes on in handwriting (40 ms a character).</p>
+            </div>
+            <div>
+              <div class="scene-art">
+                <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+                <img class="doddy" src="../assets/poses/fistpump.png" alt="" style="left: 10%; height: 72%;">
+                <span class="replay" aria-hidden="true">↻</span>
+                <div class="scene-panel" style="bottom: 8%">
+                  <strong>Draft to Ola</strong>
+                  <p style="margin: 3px 0 5px">Running 20 late, sorry. Start without me.</p>
+                  <div class="btns"><span class="primary">Open in Messages</span></div>
+                </div>
+                <span class="stamp" style="left: 52%; top: 10%">You send it</span>
+              </div>
+              <p class="cue"><b>The fix lands.</b> The app's card slides up from the bottom edge and the stamp drops. A replay button in the corner; nothing loops. Reduced motion: the finished frame, still.</p>
+            </div>
+          </div>
+        </div>
+        <p class="frame-note"><b>Recommended upgrade.</b> It is the current card, made to tell the story in the brief's order, with pose swaps and three CSS moves. Scroll-driven, once per visit, about 1.8 s. Static fallback is frame 3.</p>
+      </div>
+    </div>
+
+    <div class="frames" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>2</b> Three-panel comic strip</div>
+        <div class="frame-body">
+          <div class="scene-card" style="padding: 10px">
+            <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+            <div class="comic">
+              <div class="scene-art">
+                <span class="panel-num">1</span>
+                <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+                <img class="doddy" src="../assets/poses/yawn_stretch.png" alt="" style="left: 14%;">
+                <svg class="prop" style="left: 50%; bottom: 20%; width: 18%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+                <img class="fx" src="../assets/fx/burst.png" alt="" style="left: 46%; bottom: 44%; width: 14%">
+                <p class="beat">The alarm went off. Twice.</p>
+              </div>
+              <div class="scene-art">
+                <span class="panel-num">2</span>
+                <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+                <img class="doddy" src="../assets/poses/facepalm.png" alt="" style="left: 10%;">
+                <p class="u-bubble">What's happening today?</p>
+                <p class="d-bubble" style="right: 5%; top: 34%; border-radius: 18px 18px 4px 18px">Your meeting started 15 minutes ago. Excellent start.</p>
+                <p class="beat">Something funny happens.</p>
+              </div>
+              <div class="scene-art">
+                <span class="panel-num">3</span>
+                <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+                <img class="doddy" src="../assets/poses/fistpump.png" alt="" style="left: 8%;">
+                <div class="scene-panel">
+                  <strong>Draft to Ola</strong>
+                  <p style="margin: 3px 0 5px">Running 20 late, sorry. Start without me.</p>
+                  <div class="btns"><span class="primary">Open in Messages</span></div>
+                </div>
+                <p class="beat">Two lines, drafted. You tap send.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="frame-note"><b>The brief's beats, literally.</b> Problem, Doddy appears, the joke, the help. Very shareable as an image. Costs a third pose and line per moment, and the panels get small on phones (they stack to a vertical strip).</p>
+      </div>
+
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label"><b>4</b> Flip card: the problem on the front, Doddy's fix on the back</div>
+      <div class="frame-body">
+        <div class="flip-pair">
+          <div class="flip-face">
+            <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
+            <div class="scene-art">
+              <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+              <p class="big-time">08:45</p>
+              <p class="tape-label">Late. Again.</p>
+              <img class="doddy" src="../assets/poses/yawn_stretch.png" alt="" style="left: 30%; height: 76%;">
+              <svg class="prop" style="left: 52%; bottom: 7%; width: 12%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+              <img class="fx" src="../assets/fx/burst.png" alt="" style="left: 50%; bottom: 23%; width: 9%">
+              <span class="flip-hint">Tap to see what Doddy does</span>
+            </div>
+          </div>
+          <div class="flip-face back">
+            <p class="time">08:45</p>
+            <h3 style="margin: 0 0 10px">You're late. Again.</h3>
+            <p class="d-line">"Well, your meeting started 15 minutes ago. Excellent start."</p>
+            <div class="scene-panel" style="position: static; width: auto; margin: 0 0 4px">
+              <strong>Today</strong>
+              <div class="row"><span>Team meeting</span><span class="t late">09:00 · started</span></div>
+              <div class="row"><span>Dentist</span><span class="t">12:30</span></div>
+              <div class="row"><span>Call Mum</span><span class="t">19:00</span></div>
+            </div>
+            <ul class="helps">
+              <li>Reads today's calendar out loud, with the bit you'd rather not hear first.</li>
+              <li>Drafts a two-line "running late" message. You tap send.</li>
+            </ul>
+            <p class="cap testing" style="margin: 0">Calendar and messages · in testing</p>
+          </div>
+        </div>
+      </div>
+      <p class="frame-note"><b>A small reward for curiosity.</b> The front is pure problem, with Doddy asleep in it; the flip (400 ms, Y axis, the memory game's own move) shows the fix. Good on phones, where a tap is natural. The page becomes a row of ten flip cards, which is tidier but less of a story. Reduced motion: a crossfade.</p>
+    </div>
+  </div>
+</body>
+</html>

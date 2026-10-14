@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mockup 19, Doddy between moments and the surprise rule</title>
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="mockup.css">
+</head>
+
+<body class="board">
+  <style>
+    .strip { display: flex; align-items: flex-end; gap: 6px; padding: 10px 12px 6px; background: var(--canvas); border: 1px dashed var(--separator); border-radius: 14px; }
+    .strip img { width: 56px; height: auto; }
+    .strip .f { text-align: center; font-size: 0.6rem; color: var(--secondary-text); }
+    .strip .f img { display: block; margin: 0 auto 2px; }
+    .trav { position: relative; padding: 18px 20px 6px; background: var(--canvas); border: 1px solid var(--separator); border-radius: 18px; }
+    .trav .travel { padding: 0; }
+    .sur { position: relative; height: 150px; background: var(--canvas); border: 1px solid var(--separator); border-radius: 18px; overflow: hidden; }
+    .sur .card { position: absolute; left: 14px; top: 14px; right: 110px; bottom: 14px; background: var(--paper); border: 1px solid var(--separator); border-radius: 18px; box-shadow: var(--lift); }
+    .sur .card .ghost { height: 7px; border-radius: 4px; background: var(--quiet-surface); margin: 14px 16px 0; }
+    .sur img { position: absolute; width: 72px; height: auto; filter: drop-shadow(0 8px 8px rgb(60 40 10 / 14%)); }
+    .sur .says-small { position: absolute; margin: 0; font-size: 1.15rem; white-space: nowrap; }
+    .rule { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; margin: 0; padding: 0 0 0 18px; }
+    .rule li { font-size: 0.9375rem; }
+  </style>
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>19 · Doddy between moments, and the surprise rule</h1>
+      <p>Four travels from the pack's strips, then one unexpected thing per visit. All of it transform and opacity on still frames.</p>
+    </div>
+
+    <div class="frames two">
+      <div class="frame">
+        <div class="frame-label"><b>1</b> Walk · after 08:45 and after 20:15</div>
+        <div class="frame-body">
+          <div class="trav">
+            <div class="travel" aria-hidden="true">
+              <img src="../assets/poses/walk_3.png" alt="">
+              <svg class="path" viewBox="0 0 600 28" preserveAspectRatio="none"><path d="M0 20 C 150 2, 300 30, 600 10"/></svg>
+              <p class="says-small">Right. Coffee first.</p>
+            </div>
+          </div>
+          <div class="strip" style="margin-top: 14px">
+            <div class="f"><img src="../assets/poses/walk_3.png" alt="">3</div>
+            <div class="f"><img src="../assets/poses/walk_5.png" alt="">5</div>
+            <div class="f"><img src="../assets/poses/walk_7.png" alt="">7</div>
+            <div class="f" style="flex:1; text-align:left; padding-left: 10px; font-size: .8125rem; line-height: 1.4">Walk strip 012: 8 frames at 8 fps (1 s per cycle). Doddy walks 120 px along the dashed path as the strip scrolls into view: translateX, 600 ms, ease-out, frames 1 to 5. Stops on frame 5. The line appears at 400 ms.</div>
+          </div>
+        </div>
+        <p class="frame-note">The dashed path is the homepage's chapter-button language, drawn once. <i>Reduced motion: frame 5, already at the end of the path, line visible.</i></p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>2</b> Run · after 13:00</div>
+        <div class="frame-body">
+          <div class="trav">
+            <div class="travel" aria-hidden="true">
+              <img src="../assets/poses/run_2.png" alt="">
+              <svg class="path" viewBox="0 0 600 28" preserveAspectRatio="none"><path d="M0 10 C 150 30, 300 2, 600 18"/></svg>
+              <p class="says-small">Quick detour. Different day, different country.</p>
+            </div>
+          </div>
+          <div class="strip" style="margin-top: 14px">
+            <div class="f"><img src="../assets/poses/run_2.png" alt="">2</div>
+            <div class="f"><img src="../assets/poses/run_4.png" alt="">4</div>
+            <div class="f"><img src="../assets/poses/run_6.png" alt="">6</div>
+            <div class="f" style="flex:1; text-align:left; padding-left: 10px; font-size: .8125rem; line-height: 1.4">Run strip 014: 6 frames at 8 fps. 200 px in 500 ms, ease-in-out, with the dash-lines effect behind him (opacity 0 → .8 → 0). He runs only here and out of the hero ring; everywhere else he walks.</div>
+          </div>
+        </div>
+        <p class="frame-note">Running marks the one jump in the story (a different day, abroad). <i>Reduced motion: frame 6 at the end of the path.</i></p>
+      </div>
+    </div>
+
+    <div class="frames two" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>3</b> Stop to look · after 15:30</div>
+        <div class="frame-body">
+          <div class="trav">
+            <div class="travel look" aria-hidden="true">
+              <img src="../assets/poses/kneeling_inspect.png" alt="">
+              <img class="look-prop" src="../assets/fx/question.png" alt="">
+              <svg class="path" viewBox="0 0 600 28" preserveAspectRatio="none"><path d="M0 16 C 200 4, 400 26, 600 12"/></svg>
+              <p class="says-small">Hang on. What's this?</p>
+            </div>
+          </div>
+          <div class="strip" style="margin-top: 14px">
+            <div class="f"><img src="../assets/poses/walk_5.png" alt="">walk</div>
+            <div class="f"><img src="../assets/poses/kneeling_inspect.png" alt="">inspect</div>
+            <div class="f" style="flex:1; text-align:left; padding-left: 10px; font-size: .8125rem; line-height: 1.4">He walks 80 px (400 ms), stops, swaps to the kneeling pose and a question mark fades in beside him (200 ms). He stays there. The next moment's beat 1 picks him up with its own entrance, so nothing has to animate him away.</div>
+          </div>
+        </div>
+        <p class="frame-note">One stop in the day, placed where the story turns from the big question (quantum computing) to the small one (that restaurant). <i>Reduced motion: the kneeling frame and the question mark.</i></p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>4</b> Sit · the entrance at 22:30, and the wave at the end</div>
+        <div class="frame-body">
+          <div class="strip">
+            <div class="f"><img src="../assets/poses/sit_2.png" alt="">sit 2</div>
+            <div class="f"><img src="../assets/poses/sit_4.png" alt="">sit 4</div>
+            <div class="f"><img src="../assets/poses/sit_5.png" alt="">sit 5</div>
+            <div class="f"><img src="../assets/poses/crosslegged.png" alt="">rest</div>
+            <div class="f" style="flex:1; text-align:left; padding-left: 10px; font-size: .8125rem; line-height: 1.4">Sit strip 017, 4 frames in 400 ms, then the cross-legged pose. The pack's sit is on a cardboard box; the box is in the frames, so the 22:30 scene keeps it as a prop.</div>
+          </div>
+          <div class="strip" style="margin-top: 14px">
+            <div class="f"><img src="../assets/poses/wave_2.png" alt="">wave 2</div>
+            <div class="f"><img src="../assets/poses/wave_4.png" alt="">wave 4</div>
+            <div class="f"><img src="../assets/poses/wave.png" alt="">rest</div>
+            <div class="f" style="flex:1; text-align:left; padding-left: 10px; font-size: .8125rem; line-height: 1.4">Wave strip 016, 5 frames, 400 ms: the hero on load, and the join panel's fist pump becomes a wave when the form says "You're on the list" (the one animation tied to a real event).</div>
+          </div>
+        </div>
+        <p class="frame-note">Every strip is the pack's own frames swapped at 8 fps; nothing is tweened between drawings, so Doddy never deforms.</p>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label"><b>5</b> Once per visit: one of four surprises, and where each lives <span class="cap built" style="margin-left:auto">Decided 13 Oct: in</span></div>
+      <div class="frame-body">
+        <div class="frames four">
+          <div>
+            <div class="sur">
+              <div class="card"><div class="ghost" style="width: 60%"></div><div class="ghost" style="width: 40%"></div></div>
+              <img src="../assets/poses/sneaky_crouch.png" alt="" style="right: 14px; bottom: 6px; transform: scaleX(-1)">
+              <p class="says-small" style="right: 10px; top: 14px">Still looking.</p>
+            </div>
+            <p class="cue"><b>Sneaky crouch</b> peeks out from behind the 18:45 card (the memory one): he's hunting for the note. Slides in 30 px from the card's edge, 300 ms.</p>
+          </div>
+          <div>
+            <div class="sur">
+              <svg style="position:absolute; left: 14px; right: 14px; bottom: 36px; height: 28px; width: calc(100% - 28px)" viewBox="0 0 600 28" preserveAspectRatio="none"><path d="M0 20 C 150 2, 300 30, 600 10" fill="none" stroke="#DFD5C6" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+              <img src="../assets/poses/oneleg_balance.png" alt="" style="left: 46%; bottom: 20px">
+              <p class="says-small" style="left: 20px; top: 16px">Balance. Mostly.</p>
+            </div>
+            <p class="cue"><b>One-leg balance</b> on the dashed path after 13:00, instead of the run: he stops mid-path and holds it. The line appears after 300 ms.</p>
+          </div>
+          <div>
+            <div class="sur">
+              <svg style="position:absolute; left: 14px; right: 14px; bottom: 36px; height: 28px; width: calc(100% - 28px)" viewBox="0 0 600 28" preserveAspectRatio="none"><path d="M0 18 C 200 0, 400 28, 600 8" fill="none" stroke="#DFD5C6" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round"/></svg>
+              <img src="../assets/poses/yawn_stretch.png" alt="" style="left: 20px; bottom: 10px">
+              <p class="says-small" style="left: 110px; top: 20px">Long day.</p>
+            </div>
+            <p class="cue"><b>Yawn</b> on the walk before 22:30, instead of walking: the 08:45 pose comes back at the other end of the day.</p>
+          </div>
+          <div>
+            <div class="sur">
+              <div class="card" style="right: 14px; left: 100px"><div class="ghost" style="width: 50%"></div><div class="ghost" style="width: 70%"></div><div class="ghost" style="width: 40%"></div></div>
+              <img src="../assets/poses/shush.png" alt="" style="left: 16px; bottom: 6px">
+              <p class="says-small" style="left: 12px; top: 10px">Quiet bit. All true.</p>
+            </div>
+            <p class="cue"><b>Shush</b> beside the "What's real today" panel: the honesty strip gets the quiet pose. He fades in, no entrance.</p>
+          </div>
+        </div>
+        <ul class="rule" style="margin-top: 18px">
+          <li><b>One per visit.</b> Picked at load from the four with a seed from the date and a session flag, so a reload in the same session shows nothing new and a visit tomorrow shows a different one.</li>
+          <li><b>Never early.</b> Only after the visitor has passed two moments; the first screens stay clean.</li>
+          <li><b>One thing at a time.</b> Never within 2 s of a travel or a scene beat; if a beat is playing, the surprise waits for the next scroll stop.</li>
+          <li><b>Never on the serious bits.</b> Not in the hero, not on the join panel, not over a card's text.</li>
+          <li><b>Reduced motion keeps the joke.</b> The pose simply is there, no slide, no fade.</li>
+          <li><b>Pack only.</b> All four are existing poses; the lines are four new words each, approved by delegation on 13 October.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

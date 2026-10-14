@@ -36,7 +36,7 @@ TABLES = ROOT / "l10n" / "site"
 EN_KEYS = TABLES / "en.json"
 KEEP = TABLES / "keep-english.json"
 VERCEL = SITE / "vercel.json"
-BASE_URL = "https://doddy-eight.vercel.app"
+BASE_URL = "https://www.doddy.lol"
 
 # (code, URL slug, the language's own name, hreflang, og:locale). English is the master at "/".
 LANGUAGES = [
@@ -58,7 +58,7 @@ VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "met
 INLINE = {"a", "abbr", "b", "bdi", "br", "button", "cite", "code", "em", "i", "kbd", "mark", "q", "s",
           "small", "span", "strong", "sub", "sup", "time", "u"}
 # Drawings: allowed inside a unit, kept exactly as they are, shown to translators as [[svgN]].
-TOKEN_TAGS = {"svg"}
+TOKEN_TAGS = {"svg", "img"}
 # Never read for text or units (their own URL attributes are still rewritten).
 OPAQUE = {"svg", "script", "style"}
 CANDIDATES = {"p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "dt", "dd", "legend", "label", "button", "a",
@@ -70,8 +70,8 @@ URL_ATTRS = ("href", "src", "poster")
 GENERATED_KEYS = ("Language", "English")
 
 PLACEHOLDER = re.compile(r"\{[A-Za-z_][A-Za-z0-9_]*\}")
-TOKEN = re.compile(r"\[\[(svg|cmt)(\d+)\]\]")
-TOKEN_ANY = re.compile(r"\[\[(?:svg|cmt)\d+\]\]")
+TOKEN = re.compile(r"\[\[(svg|img|cmt)(\d+)\]\]")
+TOKEN_ANY = re.compile(r"\[\[(?:svg|img|cmt)\d+\]\]")
 TAG_ANY = re.compile(r"<[^>]*>")
 DOD_CALL = re.compile(r'doddyT\(\s*"((?:[^"\\]|\\.)*)"')
 BARE_AMP = re.compile(r"&(?!#?[A-Za-z0-9]+;)")
@@ -203,7 +203,7 @@ def unit_source(el, src, tokens) -> str:
         out.append(src[pos:child.start])
         if child.kind == "comment" or child.tag in TOKEN_TAGS:
             tokens.append(src[child.start:child.end])
-            name = "cmt" if child.kind == "comment" else "svg"
+            name = "cmt" if child.kind == "comment" else child.tag
             out.append(f"[[{name}{len(tokens)}]]")
         else:
             out.append(src[child.start:child.inner_start])

@@ -1,0 +1,114 @@
+<!--
+title: Mockup 20, time of day
+active: wcd
+-->
+{{> head}}
+<body class="board">
+{{> symbols}}
+  <style>
+    .tod { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .tod .scene { margin: 0; }
+    .tod .scene-card { padding: 8px; border-radius: 20px; }
+    .tod .scene-art { border-radius: 14px; }
+    .tod .d-bubble { font-size: 1.05rem; max-width: 48%; }
+    .tod .lab { margin: 8px 0 0; font-family: var(--hand); font-weight: 700; font-size: 1.3rem; color: var(--accent-text); }
+    .margin-clock { position: relative; padding: 22px 22px 22px 96px; background: var(--canvas); border: 1px solid var(--separator); border-radius: 18px; background-image: repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule) 35px 36px); }
+    .margin-clock .clk { position: absolute; left: 18px; top: 22px; margin: 0; font-family: var(--hand); font-weight: 700; font-size: 1.9rem; line-height: 1; color: var(--accent-text); rotate: -4deg; }
+    .margin-clock .clk small { display: block; font-size: 0.75rem; font-family: var(--text); font-weight: 600; color: var(--secondary-text); rotate: 0deg; margin-top: 4px; }
+    .margin-clock .ghost { height: 8px; border-radius: 4px; background: var(--quiet-surface); margin: 10px 0; }
+    .why { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .why div { padding: 16px 18px; background: var(--paper); border: 1px solid var(--separator); border-radius: 16px; font-size: 0.9375rem; }
+    .why h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    .why p { margin: 0; color: var(--secondary-text); }
+  </style>
+  <div class="board-wrap">
+    <div class="board-head">
+      <h1>20 · Making the day feel like a day</h1>
+      <p>One quiet device, in the site's own tokens. Three candidates on the same three moments; the paper sun is the pick.</p>
+    </div>
+
+    <div class="frame">
+      <div class="frame-label"><b>Chosen</b> · The paper sun: the homepage's hero glow travels down the day</div>
+      <div class="frame-body">
+        <div class="tod">
+          <figure class="scene" style="--sun: 1; --sun-x: 18%; --sun-y: 10%">
+            <div class="scene-card"><div class="scene-art">
+              <img class="bg" src="../assets/scenery/bedroom.jpg" alt="">
+              <img class="doddy" src="../assets/poses/yawn_stretch.png" alt="" style="left: 12%; height: 76%;">
+              <svg class="prop" style="left: 31%; bottom: 7%; width: 12%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg>
+              <p class="d-bubble" style="right: 5%; top: 10%; border-radius: 18px 18px 4px 18px">Well, your meeting started 15 minutes ago.</p>
+            </div></div>
+            <p class="lab">08:45 · low and bright, top left</p>
+          </figure>
+          <figure class="scene" style="--sun: .85; --sun-x: 50%; --sun-y: -4%">
+            <div class="scene-card"><div class="scene-art">
+              <img class="bg" src="../assets/scenery/corner_cafe.jpg" alt="">
+              <img class="doddy" src="../assets/poses/fistpump.png" alt="" style="left: 9%; height: 76%;">
+              <img class="prop" src="../assets/props/notecard.png" alt="" style="left: 30%; bottom: 9%; width: 11%">
+              <p class="d-bubble" style="right: 5%; top: 10%; border-radius: 18px 18px 4px 18px">Finally. A problem worth solving.</p>
+            </div></div>
+            <p class="lab">13:00 · overhead, a touch softer</p>
+          </figure>
+          <figure class="scene" style="--sun: .22; --sun-x: 94%; --sun-y: 78%">
+            <div class="scene-card"><div class="scene-art">
+              <img class="bg" src="../assets/scenery/moonlit_hills.jpg" alt="">
+              <img class="doddy" src="../assets/poses/crosslegged.png" alt="" style="left: 10%; height: 62%; bottom: 3%">
+              <svg class="prop" style="left: 30%; bottom: 6%; width: 9%" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-calendar"/></svg>
+              <p class="d-bubble" style="right: 5%; top: 10%; border-radius: 18px 18px 4px 18px">Tomorrow. Morning or evening?</p>
+            </div></div>
+            <p class="lab">22:30 · setting, bottom right, almost gone</p>
+          </figure>
+        </div>
+      </div>
+      <p class="frame-note"><b>What it is.</b> The same radial orange glow that sits behind the hero phone on the homepage, placed behind each scene card: high and bright at 08:45, overhead at 13:00, low and faint by 22:30, gone at 23:30 where the desk lamp in the drawing is the only light. Position and opacity only (two custom properties per moment, no JavaScript); on scroll it is simply where each card is, so there is nothing to animate and nothing to fall back from. One token colour, already on the site, invisible until you notice it, and it works at 390 px because it lives inside each card's own space. The 22:30 scene also moves to the pack's moonlit hills, the one night scene the 16:9 set has.</p>
+    </div>
+
+    <div class="frames two" style="margin-top: 28px">
+      <div class="frame">
+        <div class="frame-label"><b>Rejected A</b> · A handwritten clock in the margin</div>
+        <div class="frame-body">
+          <div class="margin-clock">
+            <p class="clk">13:00<small>sticks as you scroll</small></p>
+            <div class="ghost" style="width: 55%"></div><div class="ghost" style="width: 80%"></div><div class="ghost" style="width: 64%"></div><div class="ghost" style="width: 40%"></div>
+          </div>
+        </div>
+        <p class="frame-note">A Caveat time pinned in the left margin that flips as each moment passes. Cheap and in-token, but it says the time three times (the stamp, the day strip, the margin), it is the site's first sticky element after the nav, and at 390 px there is no margin for it to live in. It explains the day rather than letting you feel it.</p>
+      </div>
+      <div class="frame">
+        <div class="frame-label"><b>Rejected B</b> · The pack's night scenery for the late moments</div>
+        <div class="frame-body">
+          <div class="tod" style="grid-template-columns: repeat(2, minmax(0, 1fr))">
+            <figure class="scene">
+              <div class="scene-card"><div class="scene-art">
+                <img class="bg" src="../assets/scenery/moonlit_hills.jpg" alt="">
+                <img class="doddy" src="../assets/poses/crosslegged.png" alt="" style="left: 10%; height: 62%; bottom: 3%">
+              </div></div>
+              <p class="lab">22:30 · the only 16:9 night scene</p>
+            </figure>
+            <figure class="scene">
+              <div class="scene-card"><div class="scene-art">
+                <img class="bg" src="../assets/scenery/study.jpg" alt="" style="filter: saturate(.9)">
+                <img class="doddy" src="../assets/poses/shush.png" alt="" style="left: 8%; height: 74%;">
+                <span class="stamp" style="left: 40%; top: 12%; border-color: var(--error); color: var(--error)">No night version</span>
+              </div></div>
+              <p class="lab">23:30 · the study only exists by day</p>
+            </figure>
+          </div>
+        </div>
+        <p class="frame-note">Honest and pretty where it exists, but the 16:9 set has one night scene (the hills). The pack's night worlds (home, coffee, court, memory, rooftop) are 9:16 portraits that crop badly to a 16:9 card, and darkening a day scene would mean recolouring the owner's art, which the rules forbid. Kept only where it exists: 22:30 uses the hills, as a complement to the paper sun.</p>
+      </div>
+    </div>
+
+    <div class="frame" style="margin-top: 28px">
+      <div class="frame-label">Why the sun, in three lines</div>
+      <div class="frame-body">
+        <div class="why">
+          <div><h3>Already the site's</h3><p>The hero glow exists on the homepage. Moving it is an extension, not a new element, so the audit has nothing to flag.</p></div>
+          <div><h3>Zero cost, zero copy</h3><p>Two CSS variables per section. No script, no new words, no reduced-motion case, no phone case.</p></div>
+          <div><h3>Felt, not read</h3><p>Nobody will name it. They will reach the end of the page and feel it got late. That is the whole job.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

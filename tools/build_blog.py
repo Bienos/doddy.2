@@ -29,7 +29,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 POSTS = ROOT / "blog" / "posts"
 OUT = ROOT / "site" / "blog"
-SITE_URL = "https://doddy-eight.vercel.app"
+SITE_URL = "https://www.doddy.lol"  # canonical host for pages (owner decision, ADR-470)
+# The RSS feed keeps its original host: item links and guids must not change under subscribers.
+FEED_URL = "https://doddy-eight.vercel.app"
+NAV = (ROOT / "tools" / "partials" / "site-nav.html").read_text(encoding="utf-8")
 TELEGRAM = "https://t.me/+u-YA6P_MISFjYWE0"
 # Must stay byte-identical to index.html: vercel.json allows this inline script by its hash.
 ANALYTICS = ('<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>\n'
@@ -203,6 +206,8 @@ def nice_date(d: date) -> str:
 def page(title: str, description: str, path: str, main: str, og_type: str = "website", extra_head: str = "",
          og_image: str = "/assets/og-image.png") -> str:
     t, d, url = html.escape(title), html.escape(description), SITE_URL + path
+    nav_html = NAV.replace("{{wcd}}", ' aria-current="page"' if path == "/what-can-doddy-do/" else "") \
+                  .replace("{{blog}}", ' aria-current="page"' if path == "/blog/" else "")
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -220,7 +225,8 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
   <link rel="canonical" href="{url}">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="alternate" type="application/rss+xml" title="Doddy blog" href="/blog/feed.xml">
-  <link rel="icon" href="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
@@ -228,24 +234,12 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/blog.css">
   {ANALYTICS}
+  <script src="/nav.js" defer></script>
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
-  <header class="nav">
-    <div class="wrap nav-inner">
-      <a class="wordmark" href="/" aria-label="Doddy home">Doddy</a>
-      <nav aria-label="Sections">
-        <ul class="nav-links">
-          <li><a href="/#how">How it works</a></li>
-          <li><a href="/#meet">Meet Doddy</a></li>
-          <li><a href="/blog/" aria-current="{'page' if path == '/blog/' else 'false'}">Blog</a></li>
-          <li><a href="/#privacy">Privacy</a></li>
-        </ul>
-      </nav>
-      <a class="button small" href="/#join">Join early access</a>
-    </div>
-  </header>
+{nav_html}
 
   <main id="main">
 {main}
@@ -257,6 +251,7 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
         <p class="wordmark">Doddy</p>
         <ul class="foot-links">
           <li><a href="/">Home</a></li>
+          <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>
           <li><a href="/blog/">Blog</a></li>
           <li><a href="/blog/feed.xml">RSS</a></li>
           <li><a href="/#join">Join early access</a></li>
@@ -400,8 +395,8 @@ def feed(posts: list[dict]) -> str:
     items = "".join(f"""
     <item>
       <title>{html.escape(p['title'])}</title>
-      <link>{SITE_URL}/blog/{p['slug']}/</link>
-      <guid>{SITE_URL}/blog/{p['slug']}/</guid>
+      <link>{FEED_URL}/blog/{p['slug']}/</link>
+      <guid>{FEED_URL}/blog/{p['slug']}/</guid>
       <pubDate>{stamp(p['day'])}</pubDate>
       <description>{html.escape(p['summary'])}</description>
     </item>""" for p in posts)
@@ -409,7 +404,7 @@ def feed(posts: list[dict]) -> str:
 <rss version="2.0">
   <channel>
     <title>Doddy blog</title>
-    <link>{SITE_URL}/blog/</link>
+    <link>{FEED_URL}/blog/</link>
     <description>Notes from building Doddy, your mate in your pocket.</description>
     <language>en</language>{items}
   </channel>

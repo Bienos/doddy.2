@@ -30,6 +30,7 @@ run_step "Phone agent spec" python3 -I scripts/voice_agent_spec.py check --agent
 run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check
+run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --check
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else

@@ -693,3 +693,99 @@ h3 {
 .wordmark { white-space: nowrap; }
 .nav-inner .button.small { white-space: nowrap; }
 @media (max-width: 480px) { .nav-inner { flex-wrap: wrap; gap: 8px 12px; } }
+/* ---------- Shared with "What can Doddy do?" (ADR-468 to 470) ---------- */
+
+/* Nav: the current page, and a phone menu (the links are hidden below 820px). */
+.nav-links a[aria-current="page"] { color: var(--reading-ink); text-decoration: underline; text-decoration-color: var(--orange-cue); text-decoration-thickness: 2px; text-underline-offset: 8px; }
+.nav-inner { position: relative; }
+@media (max-width: 819px) { .nav-inner { gap: 12px; } .nav-inner .button.small { padding: 0 14px; white-space: nowrap; } }
+@media (max-width: 359px) { .nav-inner { gap: 8px; } .nav-inner .button.small { padding: 0 10px; font-size: 0.875rem; } .wordmark { font-size: 1.9rem; } }
+.menu-button {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; flex: none;
+  border: 0; border-radius: 12px; background: none; color: var(--reading-ink); cursor: pointer;
+}
+.menu-button svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+@media (min-width: 820px) { .menu-button, .menu-sheet { display: none !important; } }
+.menu-sheet {
+  display: none; position: absolute; left: var(--gutter); right: var(--gutter); top: calc(100% + 6px); z-index: 30;
+  padding: 10px 18px 18px; background: var(--paper); border: 1px solid var(--separator); border-radius: 24px; box-shadow: var(--lift-strong);
+}
+.menu-sheet.is-open { display: block; }
+.menu-sheet ul { list-style: none; margin: 0 0 14px; padding: 0; }
+.menu-sheet li + li { border-top: 1px solid var(--rule); }
+.menu-sheet li a {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px;
+  font-family: var(--display); font-weight: 650; font-size: 1.25rem; letter-spacing: -0.01em; text-decoration: none; color: var(--reading-ink);
+}
+.menu-sheet li a[aria-current="page"] { color: var(--accent-text); }
+.menu-sheet .menu-new img { width: 36px; height: 36px; border-radius: 50%; box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--separator); }
+.menu-sheet .button { width: 100%; }
+
+/* Capability labels: the site's own words (Built, In testing, Later, maybe). */
+.cap {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 6px; border-radius: 999px;
+  border: 1px solid var(--separator); background: color-mix(in srgb, var(--quiet-surface) 60%, transparent);
+  font: 650 0.8125rem/1 var(--text); color: var(--secondary-text); white-space: nowrap;
+}
+.cap::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--secondary-text); }
+.cap.built { color: var(--confirmed); border-color: color-mix(in srgb, var(--confirmed) 45%, transparent); }
+.cap.built::before { background: var(--confirmed); }
+.cap.testing { color: var(--accent-text); border-color: var(--accent-text); background: transparent; }
+.cap.testing::before { background: var(--orange-cue); }
+.cap.later { border-style: dashed; background: transparent; }
+
+/* Scene pieces (the new page's cards and the homepage's three-moments teaser). */
+.scene-art { position: relative; overflow: hidden; border-radius: 20px; aspect-ratio: 16 / 9; background: var(--canvas); }
+.scene-art .bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.scene-art .doddy { position: absolute; bottom: 2%; left: 9%; height: 74%; width: auto; max-width: none; filter: drop-shadow(0 10px 10px rgb(60 40 10 / 14%)); }
+.scene-art .prop { position: absolute; width: 14%; height: auto; filter: drop-shadow(0 6px 8px rgb(60 40 10 / 16%)); }
+.d-bubble {
+  position: absolute; margin: 0; max-width: 40%; padding: 10px 14px 11px; border: 1px solid var(--separator); box-shadow: var(--lift);
+  background: var(--paper); border-radius: 18px 18px 18px 4px; font: 700 1.45rem/1.05 var(--hand); color: var(--reading-ink);
+}
+
+/* Homepage: three moments from the new page, after How it works. */
+.moments-teaser { padding: clamp(56px, 8vw, 104px) 0; border-top: 1px solid var(--separator); }
+.teaser { list-style: none; margin: 0; padding: 0; display: grid; gap: 24px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.teaser li { min-width: 0; }
+.teaser a { display: block; height: 100%; padding: 12px 12px 16px; text-decoration: none; color: inherit; background: var(--paper); border: 1px solid var(--separator); border-radius: 30px; box-shadow: var(--lift); transition: transform 150ms ease, border-color 150ms ease; }
+.teaser a:hover { transform: translateY(-3px); border-color: var(--orange-cue); }
+.teaser .scene-art { display: block; aspect-ratio: 16 / 10; border-radius: 20px; margin-bottom: 12px; }
+.teaser .scene-art .doddy { height: 70%; }
+.teaser .d-bubble { font-size: 1.15rem; max-width: 52%; right: 5%; top: 8%; border-radius: 18px 18px 4px 18px; }
+.teaser .when { display: inline-block; margin: 0 8px 0 6px; font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 1; color: var(--accent-text); }
+.teaser h3 { display: inline; font-size: 1.25rem; }
+.teaser .cap { display: inline-flex; margin: 8px 0 0 6px; }
+.teaser-more { margin: 28px 0 0; }
+@media (max-width: 700px) {
+  .teaser { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 84%; overflow-x: auto; padding: 6px 2px 12px; scroll-snap-type: x mandatory; }
+  .teaser li { scroll-snap-align: start; }
+}
+
+/* The pack's poses are 2:3 where the v1.3 SVGs were square: the hero, the steps and the join panel make room. */
+.hero-doddy { width: clamp(130px, 18vw, 190px); bottom: 2%; }
+.hero-doddy .says { top: -4%; }
+.step-pose { width: 28%; max-width: 110px; bottom: 6px; }
+.sketch img { max-width: 170px; }
+.join-pose { max-width: 200px; }
+@media (max-width: 859px) { .join-pose { max-width: 150px; } }
+.memory-doddy img { width: min(100%, 150px); }
+@media (max-width: 760px) { .memory-doddy img { width: 64px; } .memory-doddy { grid-template-columns: 64px minmax(0, 1fr); } }
+
+.teaser .t-late .doddy { left: 10%; }
+.teaser .t-late .prop { left: 30%; bottom: 8%; width: 12%; }
+.teaser .t-brain .doddy { left: 8%; }
+.teaser .t-forget .doddy { left: 10%; height: 60%; }
+.teaser .t-forget .prop { left: 30%; bottom: 8%; width: 10%; }
+.sprite { position: absolute; }
+
+/* Tablets (820 to 1099 px): the inline links, the language menu and the Join button do not fit on one line in
+   every language, so the phone menu is used until 1100 px. Wider screens keep the inline links. */
+@media (min-width: 820px) and (max-width: 1099px) {
+  .nav-links { display: none; }
+  .menu-button { display: inline-grid !important; }
+}
+@media (min-width: 1100px) {
+  .nav-links { display: flex; }
+  .menu-button, .menu-sheet { display: none !important; }
+}
