@@ -16,7 +16,7 @@ Settings → Hey Doddy is a switch, and turning it on asks for the microphone an
 **What is verified and what is not**
 - Verified on Linux: the phrase matcher, the listener's rules (`WakeListenerPolicy`) and their tests; the capability guard
   (including that it fails when the on-device line is removed).
-- Compiled and UI-tested: see the CI result recorded in ADR-472 (hosted macOS build).
+- Compiled and tested in hosted CI: run 267 (https://github.com/Bienos/doddy.2/actions/runs/38481083445, commit cb0906f, 2026-10-13). Linux core job (Swift package tests incl. `WakePhraseMatcher`) and macOS job (`scripts/ci.sh`: Xcode build, unit tests, UI tests) both passed. UI tests never listen (`-inMemoryStore`), so this proves the build and the rules, not that the phrase is heard.
 - **Not verified on a device (do this first):** that recognition keeps running with the screen locked and the app in the
   background (iOS may stop speech recognition there even with the audio background mode on); how often it hears "Hey
   Doddy" in a noisy room and how often it wakes by mistake; battery use over an hour; that "Doddy" is written in one of the
