@@ -560,8 +560,8 @@ h3 {
 }
 .lang-menu > summary::-webkit-details-marker { display: none; }
 .lang-menu .lang-list {
-  position: absolute; right: 0; top: 100%; z-index: 20; margin: 6px 0 0; padding: 8px; list-style: none;
-  min-width: 14rem; background: var(--paper); border: 1px solid var(--separator); border-radius: 12px;
+  position: absolute; left: 0; top: 100%; z-index: 20; margin: 6px 0 0; padding: 8px; list-style: none;
+  min-width: 6.5rem; background: var(--paper); border: 1px solid var(--separator); border-radius: 12px;
   box-shadow: 0 8px 24px rgba(23, 23, 21, 0.12);
 }
 .lang-list a {

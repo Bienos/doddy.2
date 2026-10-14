@@ -52,6 +52,8 @@ LANGUAGES = [
     ("pl", "pl", "Polski", "pl", "pl_PL"),
 ]
 TRANSLATED = [lang for lang in LANGUAGES if lang[0] != "en"]
+# What the language menu shows: a short code. The full name stays in the link's accessible name and title.
+SHORT = {"en": "EN", "es": "ES", "de": "DE", "fr": "FR", "zh-Hans": "ZH", "ja": "JA", "pt-BR": "PT", "it": "IT", "hr": "HR", "pl": "PL"}
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
 # Inline elements may sit inside a text unit; anything else (an input, a div) ends the unit.
@@ -393,9 +395,10 @@ def generated_regions(lang, table, missing):
     for c2, s2, name2, h2, _ in LANGUAGES:
         href = "/" + (s2 + "/" if s2 else "")
         current = ' aria-current="page"' if c2 == code else ""
-        items.append(f'<li><a href="{href}" hreflang="{h2}" lang="{h2}"{current}>{html.escape(name2)}</a></li>')
+        name, short = html.escape(name2), SHORT[c2]
+        items.append(f'<li><a href="{href}" hreflang="{h2}" lang="{h2}" title="{name}" aria-label="{name} ({short})"{current}>{short}</a></li>')
     ul = '<ul class="lang-list">' + "".join(items) + "</ul>"
-    header = f'<details class="lang-menu" translate="no"><summary>{label}</summary>{ul}</details>'
+    header = f'<details class="lang-menu" translate="no"><summary title="{label}">{SHORT[code]}</summary>{ul}</details>'
     footer = f'<nav class="foot-lang" aria-label="{label}" translate="no">{ul}</nav>'
     dictionary = "" if code == "en" else f'<script src="/i18n/{slug}.js" defer></script>'
     return {
