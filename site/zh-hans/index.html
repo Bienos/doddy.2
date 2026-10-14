@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Doddy，your mate in your pocket</title>
-  <meta name="description" content="Doddy 是一款 iPhone 应用，里面住着一个手绘的伙伴。用你自己的话记下重要的小细节，需要时，原样找回那条笔记。">
+  <title>Doddy。说一次。点一次。搞定。</title>
+  <meta name="description" content="Doddy 是你 iPhone 上的 AI 伙伴。一句话变成你确认的一张卡片：日历、提醒、邮件、列表和地图。他总是先问你。">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FFF7E9">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Doddy，your mate in your pocket">
-  <meta property="og:description" content="用你自己的话保存那些小细节。之后原样找回那条笔记。">
+  <meta property="og:title" content="Doddy。说一次。点一次。搞定。">
+  <meta property="og:description" content="你 iPhone 上的 AI 伙伴，把一句话变成一张你确认的卡片。他总是先问你。">
   <meta property="og:image" content="https://www.doddy.lol/assets/og-image.png">
   <meta property="og:url" content="https://www.doddy.lol/zh-hans/">
   <link rel="canonical" href="https://www.doddy.lol/zh-hans/">
@@ -84,6 +84,17 @@
       <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
       <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
     </symbol>
+    <!-- Ink icons for the apps Doddy reaches, in the props sheet's own ink, cream and orange (same exception as the five objects, ADR-468). -->
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect class="f" x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7.5 12 13l8.5-5.5"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect class="f" x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><circle class="o" cx="15.5" cy="15.5" r="1.6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path class="f" d="M12 21s-6-5.5-6-10.5a6 6 0 0 1 12 0C18 15.5 12 21 12 21z"/><circle class="o" cx="12" cy="10.5" r="2"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path class="f" d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><rect class="f" x="4" y="3" width="16" height="18" rx="3"/><path d="M9 8h7M9 12h7M9 16h4"/><path class="o" d="M6.5 8h.01M6.5 12h.01M6.5 16h.01" stroke-width="2.8"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path class="o" d="M13 2 4 14h7l-1 8 9-12h-7z" stroke="#080808"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path class="f" d="M6 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path class="f" d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/><circle class="o" cx="17" cy="6" r="2"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><rect class="f" x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/><path class="o" d="M15 15l3 3" stroke-width="3"/></symbol>
   </svg>
 
   <header class="nav">
@@ -91,10 +102,10 @@
       <a class="wordmark" href="#top" aria-label="Doddy，回到顶部">Doddy</a>
       <nav aria-label="页面分区">
         <ul class="nav-links">
-          <li><a href="#how">工作原理</a></li>
+          <li><a href="#asks">你的请求</a></li>
           <li><a href="/what-can-doddy-do/">Doddy 能做什么？</a></li>
           <li><a href="#meet">认识 Doddy</a></li>
-          <li><a href="#play">来投一球</a></li>
+          <li><a href="#play">玩</a></li>
           <li><a href="/blog/">博客 <span class="note">(英语)</span></a></li>
           <li><a href="#privacy">隐私</a></li>
         </ul>
@@ -106,10 +117,10 @@
       <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>语言</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans" aria-current="page">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
       <div class="menu-sheet" id="menu-sheet" aria-label="菜单">
         <ul>
-          <li><a href="#how">工作原理</a></li>
+          <li><a href="#asks">你的请求</a></li>
           <li><a href="/what-can-doddy-do/" class="menu-new">Doddy 能做什么？ <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">认识 Doddy</a></li>
-          <li><a href="#play">来投一球</a></li>
+          <li><a href="#play">玩</a></li>
           <li><a href="/blog/">博客 <span class="note">(英语)</span></a></li>
           <li><a href="#privacy">隐私</a></li>
         </ul>
@@ -120,40 +131,90 @@
 
   <main id="main">
 
-    <!-- Hero: the app's own headline, the real Home screen, Doddy saying hello in handwriting. -->
+    <!-- Hero (ADR-482): one spoken sentence, and the one card it becomes. The card is the app's propose_plan
+         pattern: several changes, one tap, nothing runs until you tap. -->
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="pill"><span class="dot" aria-hidden="true"></span>iPhone 应用，早期测试中</p>
-          <h1 id="hero-title" class="display">少记一点，轻松一点。</h1>
-          <p class="lede">Doddy 是一本口袋笔记本，里面住着一个伙伴。把那些不想弄丢的小事告诉它，需要时，原话就能找回来。</p>
+          <p class="pill"><span class="dot" aria-hidden="true"></span>你 iPhone 上的 AI 伙伴。他总是先问你。</p>
+          <h1 id="hero-title" class="display">说一次。<span class="hand-line">点一次。搞定。</span></h1>
+          <p class="lede">Doddy 连接你的日历、提醒、邮件、列表和地图，把一句话变成一张你确认的卡片。他从不自作主张地发送、购买或删除任何东西。</p>
           <div class="actions">
             <a class="button" href="#join">加入抢先体验</a>
-            <a class="text-link" href="/what-can-doddy-do/">Doddy 一整天都在做什么</a>
+            <a class="text-link" href="#asks">看看大请求</a>
           </div>
-          <p class="fineprint">Doddy 是 AI，不是真人。你的笔记保存在你的 iPhone 上。</p>
+          <p class="fineprint">Doddy 是 AI，不是真人。你的笔记留在 iPhone 上。</p>
         </div>
-
-        <div class="hero-stage">
-          <div class="hero-glow" aria-hidden="true"></div>
-          <div class="hero-chip" aria-hidden="true">
-            <span class="chip-check">✓</span>
-            <span><strong>已保存</strong><br>备用钥匙在冰箱上方的蓝色铁盒里。</span>
+        <div class="demo" aria-label="示例：一个请求变成一张卡片">
+          <p class="ask big">Doddy，安排一下周四。牙医改到了 2 点，之后我要见 Alex，还得买面包。<small>语音说出，23:30</small></p>
+          <picture class="hero-pose demo-doddy"><img src="/assets/day/poses/listening-320.webp" srcset="/assets/day/poses/listening-320.webp 320w, /assets/day/poses/listening.webp 640w" sizes="120px" width="640" height="960" alt=""></picture>
+          <img class="demo-fx" src="/assets/day/fx/sparkle.webp" width="120" height="120" alt="">
+          <div class="plan">
+            <span class="stampt" aria-hidden="true">5 项更改，1 次点按</span>
+            <h2 class="plan-title">周四，如果你同意的话</h2>
+            <ul>
+              <li><span class="box" aria-hidden="true"></span><span><b>把牙医改到 14:00</b><small>原为 12:30</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>日历</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Alex，15:30，老地方</b><small>15:00 至 17:30 有空</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>日历</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>13:35 出门去看牙医</b><small>坐有轨电车 22 分钟</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>地图</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>发给 Alex 的短信：“周四 15:30，老地方？”</b><small>草稿。由你发送。</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>信息</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>面包</b><small>购物清单，与 Ola 共享</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>列表</span></li>
+            </ul>
+            <div class="do" aria-hidden="true"><span class="yes">做这些（5）</span><span class="no">暂不</span></div>
           </div>
-          <div class="device tilt">
-            <img src="/assets/screens/home.png" width="390" height="845" alt="Doddy 的首页：少记一点，轻松一点。有用于记下细节或查找内容的按钮，以及一条最近保存的关于备用钥匙的笔记。">
-          </div>
-          <div class="hero-doddy">
-            <p class="says" aria-hidden="true">嗨，我是 Doddy。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <picture class="hero-pose"><img src="/assets/day/poses/wave-320.webp" srcset="/assets/day/poses/wave-320.webp 320w, /assets/day/poses/wave.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt=""></picture>
-          </div>
-          <p class="caption">应用的设计预览</p>
+          <p class="caption">示例。Doddy 展示卡片；由你点按。</p>
         </div>
       </div>
     </section>
 
-    <!-- The brand film, right under the hero: taped into the notebook, Doddy dribbling in from the corner.
-         Without JavaScript it is a plain video with native controls. -->
+    <!-- The big asks: the kind of thing you'd only ask a mate who had your phone in his hands. -->
+    <section class="asks-section" id="asks" aria-labelledby="asks-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="asks-title" class="display-m">大请求。</h2>
+          <p>这种话，你只会对手里拿着你手机的朋友说。他拿着。</p>
+        </div>
+        <ul class="asks">
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Gmail</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Outlook</span></div>
+            <p class="ask">房东的邮件说了什么？回复说周二可以。</p>
+            <p class="says-d">他要在周五前的电表照片。回复已起草。由你发送。</p>
+            <img class="dd" src="/assets/day/poses/belly_reading-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>日历</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>地图</span></div>
+            <p class="ask">帮我找下周和 Alex 见面的一小时，别是早上 7 点。</p>
+            <p class="says-d">周三 16:00。已添加，我会告诉你什么时候出发。</p>
+            <img class="dd" src="/assets/day/poses/fistpump-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Drive</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Notion</span></div>
+            <p class="ask">押金的 PDF 在哪里？Kraków 那一页写了什么？</p>
+            <p class="says-d">"Lease_final_v3.pdf"，5 月修改。Kraków：周五的火车，Ola 订下了公寓。</p>
+            <img class="dd" src="/assets/day/poses/kneeling_inspect-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>翻译</span></div>
+            <p class="ask">翻译。他在问关于钥匙的事。</p>
+            <p class="says-d">他说把它放在门边的盒子里。要我回复他吗？</p>
+            <img class="dd" src="/assets/day/poses/oneleg_balance-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg>快捷指令</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>提醒事项</span></div>
+            <p class="ask">运行“离开家”，并在我回来时提醒我包裹的事。</p>
+            <p class="says-d">关灯，关音乐，你一进门就开 4471 号储物柜。</p>
+            <img class="dd" src="/assets/day/poses/leaning-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-note"/></svg>日常流程</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>Todoist</span></div>
+            <p class="ask">帮我安排周日。</p>
+            <p class="says-d">洗衣、垃圾桶、本周三件事，7 点给妈妈打电话。一张卡片。开始吧。</p>
+            <img class="dd" src="/assets/day/poses/crosslegged-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+        </ul>
+        <p class="truth"><img src="/assets/day/smile.webp" width="44" height="44" alt=""><span>其中一些他今天就能做，另一些还在练习。<a href="/what-can-doddy-do/">Doddy 能做什么？</a>逐个时刻地演示完整的一天，并附上标签。</span></p>
+      </div>
+    </section>
+
     <section class="film" id="film" aria-labelledby="film-title">
       <div class="wrap">
         <div class="section-head">
@@ -194,176 +255,36 @@
       </div>
     </section>
 
-    <!-- The problem, said plainly. -->
-    <section class="problem" aria-labelledby="problem-title">
-      <div class="wrap problem-grid">
-        <h2 id="problem-title" class="display-m">一到你需要的时候，那些小事就不见了。</h2>
-        <ul class="scraps" aria-label="示例">
-          <li>快递柜取件码</li>
-          <li>备用钥匙放在哪个铁盒里</li>
-          <li>Marta 推荐的那本书</li>
-          <li>孩子的鞋码</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- How it works: a real three-step sequence, so it's numbered. -->
-    <section class="how" id="how" aria-labelledby="how-title">
+    <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
+    <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
         <div class="section-head">
-          <h2 id="how-title" class="display-m">工作原理</h2>
-          <p>三个步骤，全部在你的 iPhone 上完成。无需账户，无需设置。</p>
+          <h2 id="vs-title" class="display-m">你愿意让它进入收件箱的智能体。</h2>
+          <p>大家都在打造在你睡觉时订机票的智能体。只有 9% 的人会允许智能体未经检查就购买东西。Doddy 是为另外 91% 打造的。</p>
         </div>
-        <ol class="steps">
-          <li class="step">
-            <div class="step-visual">
-              <div class="device small"><img src="/assets/screens/capture.png" width="390" height="845" loading="lazy" alt="新建记忆屏幕：要记下什么？细节内容是：备用钥匙在冰箱上方的蓝色铁盒里。"></div>
-              <picture class="step-pose"><img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            </div>
-            <p class="step-num" aria-hidden="true">1</p>
-            <h3>告诉 Doddy</h3>
-            <p>像说话一样打下来就行。Doddy 会保留你的原话，以及保存的时间和来源。</p>
-            <p class="says-small" aria-hidden="true">已保存就是真的保存了。</p>
-          </li>
-          <li class="step">
-            <div class="step-visual">
-              <div class="device small"><img src="/assets/screens/recall.png" width="390" height="845" loading="lazy" alt="记忆屏幕：就在这里的某处。搜索“备用钥匙”会找到你在 10 月 8 日写下的那条已保存笔记。"></div>
-              <picture class="step-pose"><img src="/assets/day/poses/belly_reading-320.webp" srcset="/assets/day/poses/belly_reading-320.webp 320w, /assets/day/poses/belly_reading.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            </div>
-            <p class="step-num" aria-hidden="true">2</p>
-            <h3>之后再问</h3>
-            <p>用你记得的词来搜索。Doddy 会显示匹配的笔记，保留你的原话，并附上日期和来源。</p>
-            <p class="says-small" aria-hidden="true">你的原话，不是猜测。</p>
-          </li>
-          <li class="step">
-            <div class="step-visual">
-              <div class="device small"><img src="/assets/screens/detail.png" width="390" height="845" loading="lazy" alt="你的记忆屏幕：已保存的笔记，附有日期和来源，还有用于更正此细节或删除此条记忆的按钮。"></div>
-              <picture class="step-pose"><img src="/assets/day/poses/fistpump-320.webp" srcset="/assets/day/poses/fistpump-320.webp 320w, /assets/day/poses/fistpump.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            </div>
-            <p class="step-num" aria-hidden="true">3</p>
-            <h3>改正，或者删除</h3>
-            <p>修改一条笔记后，原文仍然可见。可以导出全部内容，也可以删除一条笔记或全部笔记。</p>
-            <p class="says-small" aria-hidden="true">原文会保留。</p>
-          </li>
-        </ol>
-        <p class="caption left">画面是应用的设计预览。</p>
-      </div>
-    </section>
-
-    <!-- Three moments from "What can Doddy do?" (ADR-469/470). Scripted scenes, each labelled with what is built. -->
-    <section class="moments-teaser" aria-labelledby="teaser-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="teaser-title" class="display-m">普通一天里的三个瞬间。</h2>
-          <p>口袋里的伙伴会怎么做。另外七个在各自的页面上，每个都会说明是已可用、测试中，还是以后再说。</p>
-        </div>
-        <ul class="teaser">
-          <li class="t-late"><a href="/what-can-doddy-do/#late">
-            <span class="scene-art"><img class="bg" src="/assets/day/scenery/bedroom-800.webp" srcset="/assets/day/scenery/bedroom-800.webp 800w, /assets/day/scenery/bedroom.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/yawn_stretch-320.webp" srcset="/assets/day/poses/yawn_stretch-320.webp 320w, /assets/day/poses/yawn_stretch.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg><span class="d-bubble">嗯，你的会议 15 分钟前就开始了。真是个好开头。</span></span>
-            <span class="when">08:45</span><h3>你又迟到了。</h3><br><span class="cap testing">日历 · 测试中</span>
-          </a></li>
-          <li class="t-brain"><a href="/what-can-doddy-do/#brain">
-            <span class="scene-art"><img class="bg" src="/assets/day/scenery/cosy_living_room-800.webp" srcset="/assets/day/scenery/cosy_living_room-800.webp 800w, /assets/day/scenery/cosy_living_room.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><span class="d-bubble">Trattoria Nonna，Hoża 9。是你的原话，不是我的。</span></span>
-            <span class="when">18:45</span><h3>我的大脑已经退出聊天了。</h3><br><span class="cap built">保存的笔记 · 已可用</span>
-          </a></li>
-          <li class="t-forget"><a href="/what-can-doddy-do/#forget">
-            <span class="scene-art"><img class="bg" src="/assets/day/scenery/moonlit_hills-800.webp" srcset="/assets/day/scenery/moonlit_hills-800.webp 800w, /assets/day/scenery/moonlit_hills.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/crosslegged-320.webp" srcset="/assets/day/poses/crosslegged-320.webp 320w, /assets/day/poses/crosslegged.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-calendar"/></svg><span class="d-bubble">明天。早上还是晚上？选一个。</span></span>
-            <span class="when">22:30</span><h3>别让我忘了。</h3><br><span class="cap testing">提醒事项 · 测试中</span>
-          </a></li>
-        </ul>
-        <p class="actions teaser-more"><a class="button" href="/what-can-doddy-do/">看完整的一天</a><a class="text-link" href="/what-can-doddy-do/#late">从 08:45 开始</a></p>
-      </div>
-    </section>
-
-    <!-- The detail only Doddy has: every note carries its receipt. -->
-    <section class="receipt-section" aria-labelledby="receipt-title">
-      <div class="wrap receipt-grid">
-        <div>
-          <h2 id="receipt-title" class="display-m">每条笔记都附带凭证。</h2>
-          <p>Doddy 从不改写你说过的话。每条笔记都会显示保存的时间和来源；更正会加在上面，所以第一版仍然保留。</p>
-          <p>找不到匹配内容时，Doddy 会直接告诉你，而不是编一个出来。</p>
-          <div class="no-match">
-            <picture class="no-match-pose"><img src="/assets/day/poses/shrug-320.webp" srcset="/assets/day/poses/shrug-320.webp 320w, /assets/day/poses/shrug.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            <blockquote><p>我没能在你保存的记忆里找到那条。</p></blockquote>
-          </div>
-        </div>
-        <figure class="receipt" aria-labelledby="receipt-caption">
-          <p class="receipt-text">备用钥匙在冰箱上方的红色铁盒里。</p>
-          <dl class="receipt-meta">
-            <div><dt>已保存</dt><dd>2026 年 10 月 8 日，09:41</dd></div>
-            <div><dt>来源</dt><dd>你输入的笔记</dd></div>
-            <div><dt>版本</dt><dd>第 2 版，10 月 9 日更正</dd></div>
-          </dl>
-          <div class="receipt-original">
-            <p class="receipt-label">原文，按原样保留</p>
-            <p>备用钥匙在冰箱上方的蓝色铁盒里。</p>
-          </div>
-          <figcaption id="receipt-caption" class="caption left">示例笔记</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <!-- Voice: in testing (first real-iPhone conversation 9 Oct 2026, docs/implementation/V1_VOICE_STATUS.md). -->
-    <section class="voice" aria-labelledby="voice-title">
-      <div class="wrap voice-grid">
-        <div class="voice-art">
-          <picture class="voice-pose"><img src="/assets/day/poses/listening-320.webp" srcset="/assets/day/poses/listening-320.webp 320w, /assets/day/poses/listening.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-          <ol class="voice-states" aria-label="语音界面显示的内容">
-            <li>正在连接…</li>
-            <li>正在聆听</li>
-            <li>正在思考…</li>
-            <li>正在说话</li>
-          </ol>
-          <div class="voice-card" role="img" aria-label="Doddy 问：保存这条笔记？有“保存”按钮和“不保存”按钮。">
-            <p class="voice-q">保存这条笔记？</p>
-            <p class="voice-quote">“Marta 的书是《霍比特人》。”</p>
-            <span class="voice-btn primary">保存</span>
-            <span class="voice-btn">不保存</span>
-          </div>
-        </div>
-        <div>
-          <p class="pill warn">测试中</p>
-          <h2 id="voice-title" class="display-m">或者直接说出来。</h2>
-          <p>轻点“和 Doddy 聊聊”，大声提问。Doddy 会翻看你的笔记，并根据你保存的内容回答。</p>
-          <p>Doddy 只会在两种情况下聆听：语音界面打开时；或者你开启了 Hey Doddy，且灵动岛显示正在聆听时。唤醒词由你的 iPhone 本机识别。如果你说了值得保留的内容，Doddy 会先询问，在你轻点“保存”之前，不会存储任何内容。</p>
-          <p class="fineprint">你说话时，你的声音以及 Doddy 查阅的笔记会发送给 OpenAI 以运行对话；如果你在主屏幕上把语音切换为 ElevenLabs，则发送给 ElevenLabs。语音目前测试中。</p>
+        <div class="vs">
+          <div class="them"><h3>大多数智能体</h3><ul><li>先做，然后告诉你。</li><li>发送邮件。</li><li>他会记住一切，包括你没说出口的。</li><li>他不确定的时候，听起来却很笃定。</li><li>住在云端，和你的东西在一起。</li></ul></div>
+          <div class="us"><h3>Doddy</h3><ul><li>展示卡片，等待你的点按。</li><li>起草邮件。由你发送。</li><li>只保存你告诉他的内容，用你自己的话，并附日期。</li><li>会大声说“我不知道”。</li><li>你的笔记留在 iPhone 上。他会说明什么离开了手机，以及何时离开。</li></ul></div>
         </div>
       </div>
     </section>
 
-    <!-- Privacy band: inverted ink panel. -->
-    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
-      <div class="wrap">
-        <div class="privacy-panel">
-          <h2 id="privacy-title" class="display-m">你的笔记，由你决定。</h2>
-          <ul class="facts">
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
-              <h3>存储在你的 iPhone 上</h3>
-              <p>笔记保存在手机上的应用里，受 iOS 保护。只有你开启的功能才会让它们离开手机，应用会在“哪些内容会离开这台 iPhone”下逐项列出。</p>
-            </li>
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>无需账户</h3>
-              <p>无需注册，无需邮箱，无需密码。打开应用就能开始。</p>
-            </li>
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
-              <h3>随时导出</h3>
-              <p>把所有内容以 JSON 或纯文本带走。</p>
-            </li>
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
-              <h3>彻底删除</h3>
-              <p>可以删除一条笔记或全部笔记。它们会立即从搜索中消失。</p>
-            </li>
-          </ul>
-          <p class="privacy-note">Doddy 是 AI，不是真人。你开启的一些功能会把数据发送出手机：语音对话（发送给 OpenAI；如果你把语音切换为 ElevenLabs，则发送给 ElevenLabs）、电话和通话记忆（发送给 Doddy 的服务器、Twilio 和 ElevenLabs）、共享清单（发送到你的 iCloud），以及 Gmail 或 Todoist 等已连接的账户（通过 Doddy 的服务器）。其他一切都只留在你的 iPhone 上。以上全部功能仍在早期测试中。</p>
+    <!-- The phone line (spec'd, ADR-152/172; not live). Vision, labelled by the truth line above and the footer. -->
+    <section class="line-section" aria-labelledby="line-title">
+      <div class="wrap line">
+        <div class="section-head line-head">
+          <h2 id="line-title" class="display-m">手机丢了？借一部，给他打电话。</h2>
+          <p>Doddy 会拿到一个号码。任何电话，说出你的 PIN，他就会把你的笔记读给你听。新内容会在应用里等你确认。</p>
+        </div>
+        <div class="dial" aria-label="示例通话">
+          <p class="me">你用朋友的电话说：“是我。PIN 是 2-4-1-9。Ola 家的 Wi‑Fi 是什么？”</p>
+          <p class="dod">你好，我是 Doddy，一个 AI。Ola 的 Wi‑Fi：'sunflower99'，10 月 3 日保存。还有什么要记住的吗？</p>
+          <p class="me">好的。车在 B2 层。</p>
+          <p class="dod">在应用里等你确认。</p>
         </div>
       </div>
     </section>
 
-    <!-- Character sketchbook. Doddy's captions are in Doddy's handwriting. -->
     <section class="meet" id="meet" aria-labelledby="meet-title">
       <div class="wrap">
         <div class="section-head">
@@ -391,8 +312,18 @@
       </div>
     </section>
 
-    <!-- Take a shot: a small game with Doddy's basketball. -->
-    <section class="court" id="play" aria-labelledby="play-title">
+    <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
+    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
+      <div class="wrap play-head">
+        <div>
+          <p class="pill"><span class="dot" aria-hidden="true"></span>等待时</p>
+          <h2 id="play-intro-title" class="display-m">两个游戏。一个他从不放下的球。</h2>
+        </div>
+        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
+      </div>
+    </section>
+
+    <section class="court" id="shoot" aria-labelledby="play-title">
       <div class="wrap">
         <div class="section-head">
           <h2 id="play-title" class="display-m">来投一球</h2>
@@ -408,8 +339,6 @@
       </div>
     </section>
 
-    <!-- "Remember it": a memory game with the small things Doddy keeps. Cards are built by memory.js;
-         without JavaScript the section stays hidden. -->
     <section class="memory" id="remember" aria-labelledby="remember-title">
       <div class="wrap">
         <div class="section-head">
@@ -432,13 +361,46 @@
       </div>
     </section>
 
-    <!-- Join -->
+    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <div class="privacy-panel">
+          <h2 id="privacy-title" class="display-m">你的笔记，由你决定。</h2>
+          <ul class="facts">
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
+              <h3>存储在你的 iPhone 上</h3>
+              <p>笔记保存在手机上的应用里，受 iOS 保护。只有你开启的功能才会让它们离开手机，应用会在“哪些内容会离开这台 iPhone”下逐项列出。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
+              <h3>无需账户</h3>
+              <p>无需注册，无需邮箱，无需密码。打开应用就能开始。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
+              <h3>随时导出</h3>
+              <p>把所有内容以 JSON 或纯文本带走。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
+              <h3>彻底删除</h3>
+              <p>可以删除一条笔记或全部笔记。它们会立即从搜索中消失。</p>
+            </li>
+          </ul>
+          <p class="privacy-note">Doddy 是 AI，不是真人。你打开的一些功能会把数据发出手机：语音对话（OpenAI，若你更改语音则是 ElevenLabs）、天气和维基百科查询（地名或搜索词）、通话及通话中的记忆（Doddy 的服务器、Twilio 和 ElevenLabs）、共享列表（你的 iCloud），以及 Gmail 或 Todoist 等已连接的账户（经由 Doddy 的服务器）。其他一切都留在你的 iPhone 上。这些全部都在测试阶段。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Join (ADR-482): the waitlist as the page's one ask. Same endpoint, payload, consent wording, honeypot and
+         optional questions as before (api/waitlist.js, api/waitlist-answers.js); only the frame changed. -->
     <section class="join" id="join" aria-labelledby="join-title">
       <div class="wrap">
         <div class="join-panel">
           <div class="join-copy">
-            <h2 id="join-title" class="display-m">来打个招呼吧。</h2>
-            <p>Doddy 仍在早期测试中。留下你的邮箱，抢先体验开放时通知你。</p>
+            <p class="join-eyebrow">抢先体验 · 先登录 iPhone · 每次只开放少数人</p>
+            <h2 id="join-title" class="display-m">把你的周四交给他。</h2>
+            <p class="join-lede">留下你的邮箱，就会进入名单。轮到你时，Doddy 会打招呼。</p>
             <form class="waitlist" novalidate data-consent="waitlist-note-v1-zh-hans">
               <label for="email">邮箱</label>
               <div class="field-row">
@@ -450,7 +412,6 @@
               <p id="waitlist-note" class="fineprint form-note">我们只会用你的邮箱在抢先体验开放时通知你，并会在你提出要求时删除它。</p>
               <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
             </form>
-            <!-- Shown only after a new signup. Every question is optional. -->
             <form class="answers" id="answers" hidden novalidate aria-labelledby="answers-title">
               <p class="says-small" id="answers-title" tabindex="-1">三个小问题？全部可选。</p>
               <fieldset class="q">
@@ -483,6 +444,11 @@
               <p class="fineprint form-note">我们只会用这些信息规划 Doddy 的抢先体验，并会在你提出要求时与你的邮箱一并删除。</p>
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
+            <ul class="join-facts" aria-label="抢先体验是什么意思">
+              <li><b>无需账户。</b> 打开应用就能开始。</li>
+              <li><b>你的笔记留在 iPhone 上。</b> 只有你连接后，邮件、日历和文件才会使用。</li>
+              <li><b>随时删除。</b> 你的邮件、笔记，全部。</li>
+            </ul>
             <div class="open-app">
               <p>想现在就聊聊？<a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">加入 Telegram 群组</a></p>
               <p>关注 Doddy：<a class="text-link" href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok doddy_mate</a> <a class="text-link" href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram doddy_mate</a></p>
@@ -490,11 +456,18 @@
               <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
             </div>
           </div>
-          <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="/assets/day/poses/reaching_high-320.webp 320w, /assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-        </div>
-        <div class="later">
-          <h2 class="later-title">以后也许</h2>
-          <p>目前正在测试的有：日历、提醒事项、闹钟、计时器、清单、地图和消息草稿，更改前会先在屏幕上确认（快速编辑清单则可以撤销）；另外还有与英语并列的波兰语。尚未开发，也不承诺任何时间：Android。</p>
+          <div class="join-side" aria-hidden="true">
+            <ul class="scraps join-scraps">
+              <li>安排周四</li>
+              <li>回复房东</li>
+              <li>租约 PDF 在哪里？</li>
+              <li>运行“睡觉时间”</li>
+              <li>找一个和 Alex 的空闲时间</li>
+              <li>我答应过妈妈什么？</li>
+            </ul>
+            <p class="says-small join-says">说吧，我在听。</p>
+            <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="/assets/day/poses/reaching_high-320.webp 320w, /assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+          </div>
         </div>
       </div>
     </section>
@@ -505,7 +478,7 @@
       <div class="foot-top">
         <p class="wordmark">Doddy</p>
         <ul class="foot-links">
-          <li><a href="#how">工作原理</a></li>
+          <li><a href="#asks">你的请求</a></li>
           <li><a href="/what-can-doddy-do/">Doddy 能做什么？</a></li>
           <li><a href="#meet">认识 Doddy</a></li>
           <li><a href="#privacy">隐私</a></li>
@@ -517,7 +490,7 @@
         </ul>
         <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="语言" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans" aria-current="page">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
       </div>
-      <p>Doddy 是 AI 助手，不是真人。你的笔记保存在 iPhone 上；语音、电话、共享清单和已连接的账户，只有在你开启后才会把数据发送出 iPhone。</p>
+      <p>Doddy 是一个 AI 助手，不是真人。你的笔记保存在 iPhone 上；语音、通话、共享列表和已连接的账户，只有在你打开后才会把数据发出手机。抢先体验：本页部分内容是 Doddy 的发展方向，<a href="/what-can-doddy-do/">Doddy 能做什么？</a>说明了今天能用的功能。</p>
       <p>本页面使用 Vercel Web Analytics 统计访问，它不设置 Cookie。字体从 Google Fonts 加载。</p>
       <p data-ga-note hidden>如果你允许，Google Analytics 还会统计访问并设置 Cookie。<button type="button" class="foot-choice" data-analytics-choices>分析选项</button></p>
       <p>© 2026 Doddy</p>

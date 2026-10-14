@@ -15,6 +15,8 @@ Brief: a new tab on doddy.lol that shows what it feels like to have Doddy in you
 | Sources the pages are built from | `mockups/src/` and `mockups/src/partials/` |
 | Styles | `mockups/site.css` (copy of the live site's tokens + styles), `mockups/mockup.css` (the new page's components) |
 | Artwork used | `assets/` (see Provenance below) |
+| Audit prompt: does "How it works" agree with "What can Doddy do?" | `PROMPT_how-it-works-vs-the-day.md` |
+| Mockup 26: one story in one order (hand-written, links the live `site/` styles and pack art; render at 1440 and 390 in `png/`) | `mockups/26-how-it-works-and-the-day.html` |
 
 ## Phase 1 — Discovery: what doddy.lol actually is
 

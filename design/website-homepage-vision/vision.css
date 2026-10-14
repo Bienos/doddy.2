@@ -1,0 +1,36 @@
+/* Shared base for the three homepage vision mockups. Colours come from site/tokens.css; type matches the live site. */
+:root {
+  --display: "Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --hand: "Caveat", "Bradley Hand", cursive;
+  --text: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  --paper: color-mix(in srgb, var(--canvas) 35%, #fff);
+  --ink: var(--reading-ink);
+  --orange: #FC6800;
+  --gutter: clamp(16px, 4vw, 40px);
+  --lift: 0 1px 2px rgb(60 40 10 / 6%), 0 18px 40px -22px rgb(60 40 10 / 32%);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--canvas); color: var(--ink); font: 400 1.0625rem/1.55 var(--text); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+img { display: block; max-width: 100%; }
+p { margin: 0; }
+h1, h2, h3 { font-family: var(--display); letter-spacing: -0.025em; margin: 0; line-height: 1; }
+.wrap { width: 100%; max-width: 1240px; margin: 0 auto; padding-inline: var(--gutter); }
+.hand { font-family: var(--hand); font-weight: 700; }
+
+/* nav */
+.nav { display: flex; align-items: center; justify-content: space-between; padding-block: 22px; }
+.wordmark { font: 700 2rem/1 var(--hand); }
+.nav ul { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; font-weight: 600; font-size: 0.9375rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; padding: 0 26px; border-radius: 18px; background: var(--ink); color: var(--canvas); font-weight: 700; text-decoration: none; box-shadow: inset 0 -4px 0 var(--orange); }
+.btn.small { min-height: 44px; padding: 0 18px; border-radius: 14px; font-size: 0.9375rem; }
+.btn.light { background: var(--paper); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+.link { font-weight: 700; color: var(--ink); text-decoration: underline; text-decoration-color: var(--orange); text-decoration-thickness: 3px; text-underline-offset: 6px; }
+.fine { font-size: 0.8125rem; color: var(--secondary-text); }
+.mock-tag { position: fixed; z-index: 50; right: 12px; bottom: 12px; padding: 6px 12px; border-radius: 999px; background: var(--ink); color: var(--canvas); font: 700 0.75rem/1 var(--text); letter-spacing: 0.04em; text-transform: uppercase; }
+@media (max-width: 760px) { .nav ul { display: none; } .mock-tag { display: none; } }
+
+/* foot */
+.foot { padding: 40px 0 56px; border-top: 1px solid var(--separator); color: var(--secondary-text); font-size: 0.875rem; }
+.foot .row { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: center; justify-content: space-between; }
+.foot ul { display: flex; flex-wrap: wrap; gap: 8px 20px; list-style: none; margin: 0; padding: 0; font-weight: 600; color: var(--ink); }

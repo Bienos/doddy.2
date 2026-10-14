@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Just say it (homepage vision A)</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="../../site/tokens.css">
+  <link rel="stylesheet" href="vision.css">
+  <style>
+    /* hero */
+    .hero { padding: clamp(24px, 5vw, 64px) 0 clamp(56px, 8vw, 104px); }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center; }
+    .pill { display: inline-flex; gap: 8px; align-items: center; padding: 6px 14px; border-radius: 999px; background: var(--paper); border: 1px solid var(--separator); font-weight: 650; font-size: 0.875rem; }
+    .pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+    .hero h1 { font-size: clamp(4rem, 11vw, 9.5rem); font-weight: 800; letter-spacing: -0.045em; margin: 22px 0 22px; }
+    .hero h1 span { display: inline-block; position: relative; }
+    .hero h1 span::after { content: ""; position: absolute; left: 2%; right: 0; bottom: 0.06em; height: 0.14em; background: var(--orange); border-radius: 99px; z-index: -1; transform: rotate(-1.5deg); }
+    .lede { font-size: clamp(1.125rem, 1rem + 0.5vw, 1.375rem); max-width: 30rem; color: var(--ink); }
+    .actions { display: flex; flex-wrap: wrap; gap: 18px 26px; align-items: center; margin-top: 30px; }
+    .stage { position: relative; min-height: 560px; }
+    .stage .doddy { position: absolute; left: 0; bottom: 0; width: 40%; max-width: 220px; }
+    .bub { position: absolute; max-width: 64%; padding: 16px 20px; border-radius: 24px; box-shadow: var(--lift); }
+    .bub.you { right: 0; top: 4%; background: var(--ink); color: var(--canvas); font: 650 1.25rem/1.3 var(--text); border-bottom-right-radius: 6px; }
+    .bub.doddy-says { right: 0; top: 22%; background: var(--paper); border: 1.5px solid var(--ink); font: 700 2rem/1.05 var(--hand); border-bottom-left-radius: 6px; }
+    .bub.doddy-says small { display: block; margin-top: 6px; font: 600 0.8125rem/1.3 var(--text); color: var(--secondary-text); }
+    .wave { position: absolute; right: 4%; top: 64%; width: 46%; height: 70px; }
+    .wave path { fill: none; stroke: var(--orange); stroke-width: 5; stroke-linecap: round; }
+    .stage .fx { position: absolute; width: 64px; left: 38%; bottom: 40%; }
+
+    /* things you'll say */
+    .say { padding: clamp(56px, 8vw, 112px) 0; background: var(--paper); border-block: 1px solid var(--separator); }
+    .say h2 { font-size: clamp(2.4rem, 5.5vw, 4.4rem); font-weight: 800; max-width: 14ch; }
+    .say .sub { margin-top: 14px; color: var(--secondary-text); max-width: 34rem; font-size: 1.125rem; }
+    .wall { margin-top: clamp(36px, 5vw, 56px); columns: 3 280px; column-gap: 22px; }
+    .card { break-inside: avoid; margin: 0 0 22px; padding: 20px 22px 22px; background: #fff; border: 1px solid var(--separator); border-radius: 22px; box-shadow: var(--lift); }
+    .card:nth-child(3n+1) { transform: rotate(-1.2deg); }
+    .card:nth-child(3n+2) { transform: rotate(0.8deg); }
+    .card .you { display: inline-block; padding: 10px 14px; border-radius: 16px 16px 4px 16px; background: var(--ink); color: var(--canvas); font-weight: 650; }
+    .card .dd { display: flex; gap: 10px; align-items: flex-end; margin-top: 14px; }
+    .card .dd img { width: 44px; flex: none; }
+    .card .dd p { font: 700 1.6rem/1.05 var(--hand); }
+    .card.hot { background: var(--orange); border-color: var(--orange); }
+    .card.hot .you { background: #fff; color: var(--ink); }
+    .card.hot .dd p { color: #fff; }
+
+    /* how it works: three words */
+    .how { padding: clamp(56px, 8vw, 112px) 0; background: var(--ink); color: var(--canvas); }
+    .how .eyebrow { font: 700 1.6rem/1 var(--hand); color: var(--orange); }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; margin-top: 28px; list-style: none; padding: 0; }
+    .steps li { position: relative; padding-top: 170px; }
+    .steps img { position: absolute; top: 0; left: 0; height: 160px; width: auto; background: var(--canvas); border-radius: 24px; padding: 8px 18px 0; }
+    .steps h3 { font-size: clamp(2.2rem, 4.4vw, 3.6rem); font-weight: 800; color: #fff; }
+    .steps p { margin-top: 10px; color: color-mix(in srgb, var(--canvas) 75%, transparent); max-width: 22rem; }
+
+    /* film */
+    .film { padding: clamp(56px, 8vw, 104px) 0; }
+    .film-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 40px; align-items: center; }
+    .poster { position: relative; border-radius: 28px; overflow: hidden; box-shadow: var(--lift); transform: rotate(-1deg); }
+    .poster img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+    .play { position: absolute; inset: 0; margin: auto; width: 92px; height: 92px; border-radius: 50%; background: var(--orange); display: grid; place-items: center; box-shadow: 0 10px 30px rgb(0 0 0 / 25%); }
+    .play svg { width: 34px; fill: #fff; margin-left: 6px; }
+    .film h2 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; }
+    .film p { margin-top: 14px; color: var(--secondary-text); }
+
+    /* meet */
+    .meet { padding: clamp(40px, 6vw, 80px) 0; border-top: 1px solid var(--separator); }
+    .meet h2 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 800; }
+    .meet .sub { margin-top: 10px; color: var(--secondary-text); }
+    .poses { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; margin-top: 30px; list-style: none; padding: 0; }
+    .poses li { text-align: center; }
+    .poses img { height: 190px; width: auto; margin: 0 auto; }
+    .poses p { font: 700 1.5rem/1.05 var(--hand); color: var(--accent-text); margin-top: 6px; }
+
+    /* join */
+    .join { padding: clamp(24px, 4vw, 48px) 0 clamp(56px, 8vw, 96px); }
+    .join-box { position: relative; display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: center; padding: clamp(28px, 5vw, 56px); border-radius: 36px; background: var(--orange); color: #fff; overflow: hidden; }
+    .join-box h2 { font-size: clamp(2.4rem, 5.5vw, 4.6rem); font-weight: 800; color: #fff; }
+    .join-box p { margin-top: 12px; font-size: 1.125rem; max-width: 30rem; }
+    .field { display: flex; gap: 10px; margin-top: 24px; max-width: 520px; }
+    .field span { flex: 1; min-height: 54px; border-radius: 16px; background: #fff; color: var(--secondary-text); display: flex; align-items: center; padding: 0 18px; }
+    .join-box .btn { box-shadow: none; }
+    .join-box img { width: 220px; }
+    .follow { margin-top: 18px; font-weight: 700; }
+
+    @media (max-width: 900px) {
+      .hero-grid, .film-grid, .join-box { grid-template-columns: 1fr; }
+      .stage { min-height: 440px; }
+      .bub.you { font-size: 1.0625rem; }
+      .bub.doddy-says { font-size: 1.6rem; top: 24%; }
+      .steps { grid-template-columns: 1fr; gap: 40px; }
+      .poses { grid-template-columns: repeat(3, 1fr); }
+      .poses li:nth-child(n+4) { display: none; }
+      .poses img { height: 130px; }
+      .join-box img { width: 140px; justify-self: end; margin-top: -20px; }
+      .field { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <span class="mock-tag">Vision A · Just say it</span>
+  <header class="wrap nav">
+    <span class="wordmark">Doddy</span>
+    <ul><li>How it works</li><li>What can Doddy do?</li><li>Meet Doddy</li><li>Blog</li></ul>
+    <a class="btn small" href="#">Get early access</a>
+  </header>
+
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="pill"><i></i>Your mate in your pocket</span>
+        <h1>Just <span>say it.</span></h1>
+        <p class="lede">The parcel code. The book Marta swore by. The thing you promised Mum. Tell Doddy once, ask him any time, and get on with your day.</p>
+        <div class="actions">
+          <a class="btn" href="#">Get early access</a>
+          <a class="link" href="#">Watch the film (1:15)</a>
+        </div>
+      </div>
+      <div class="stage" aria-hidden="true">
+        <p class="bub you">Doddy, where did I park?</p>
+        <p class="bub doddy-says">Level B2, by the pillar with the dent.<small>You told me at 09:14.</small></p>
+        <svg class="wave" viewBox="0 0 300 70"><path d="M4 35 C 24 35, 24 12, 44 12 S 64 58, 84 58 S 104 20, 124 20 S 144 50, 164 50 S 184 6, 204 6 S 224 64, 244 64 S 264 30, 296 35"/></svg>
+        <img class="fx" src="../../site/assets/day/fx/sparkle.webp" alt="">
+        <img class="doddy" src="../../site/assets/day/poses/listening.webp" alt="">
+      </div>
+    </div>
+  </section>
+
+  <section class="say">
+    <div class="wrap">
+      <h2>Things you'll say to Doddy.</h2>
+      <p class="sub">Out loud, half asleep, in a hurry. He answers first and keeps the jokes short.</p>
+      <div class="wall">
+        <div class="card"><p class="you">Remember the locker code is 4471.</p><div class="dd"><img src="../../site/assets/day/poses/kneeling_inspect-320.webp" alt=""><p>4471. I'll have it when you're standing there.</p></div></div>
+        <div class="card"><p class="you">What was that book Marta told me about?</p><div class="dd"><img src="../../site/assets/day/poses/belly_reading-320.webp" alt=""><p>The Hobbit. She said you'd love the dragon.</p></div></div>
+        <div class="card hot"><p class="you">Plan my Saturday.</p><div class="dd"><img src="../../site/assets/day/poses/fistpump-320.webp" alt=""><p>Bakery at ten, park at noon. The nap is not negotiable.</p></div></div>
+        <div class="card"><p class="you">Remind me when I'm near the pharmacy.</p><div class="dd"><img src="../../site/assets/day/poses/leaning-320.webp" alt=""><p>Next time you pass it, I'll tap you on the shoulder.</p></div></div>
+        <div class="card"><p class="you">Jacket or no jacket?</p><div class="dd"><img src="../../site/assets/day/poses/reaching_high-320.webp" alt=""><p>Jacket. Rain at four.</p></div></div>
+        <div class="card"><p class="you">Tell Ola I'm ten minutes late.</p><div class="dd"><img src="../../site/assets/day/poses/facepalm-320.webp" alt=""><p>Draft's ready. You hit send.</p></div></div>
+        <div class="card"><p class="you">What did I promise Mum?</p><div class="dd"><img src="../../site/assets/day/poses/crosslegged-320.webp" alt=""><p>A call on Sunday. An actual call.</p></div></div>
+        <div class="card hot"><p class="you">How do I order a coffee in Paris?</p><div class="dd"><img src="../../site/assets/day/poses/oneleg_balance-320.webp" alt=""><p>"Un café, s'il vous plaît." Smile, it helps.</p></div></div>
+        <div class="card"><p class="you">Sort tomorrow out.</p><div class="dd"><img src="../../site/assets/day/poses/yawn_stretch-320.webp" alt=""><p>Three things, one tap. Go to sleep.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="how" id="how">
+    <div class="wrap">
+      <p class="eyebrow">How it works</p>
+      <ol class="steps">
+        <li><img src="../../site/assets/day/poses/listening-320.webp" alt=""><h3>Say it.</h3><p>Talk or type, the way you'd tell a friend.</p></li>
+        <li><img src="../../site/assets/day/poses/kneeling_inspect-320.webp" alt=""><h3>He keeps it.</h3><p>Your exact words, with when and where you said them.</p></li>
+        <li><img src="../../site/assets/day/poses/fistpump-320.webp" alt=""><h3>Ask any time.</h3><p>Next week, next year. He finds it, or tells you he can't.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="film">
+    <div class="wrap film-grid">
+      <div class="poster"><img src="../../site/assets/film/poster-v2.jpg" alt=""><span class="play"><svg viewBox="0 0 24 24"><path d="M5 3.5v17l15-8.5z"/></svg></span></div>
+      <div>
+        <h2>One morning in Warsaw.</h2>
+        <p>Doddy, a ball he never puts down, and one very determined pigeon. 1:15, sound on.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="meet">
+    <div class="wrap">
+      <h2>Meet Doddy.</h2>
+      <p class="sub">Helpful first, funny second, honest always.</p>
+      <ul class="poses">
+        <li><img src="../../site/assets/day/poses/basketball_dribble-320.webp" alt=""><p>Side quest: always.</p></li>
+        <li><img src="../../site/assets/day/poses/sneaky_crouch-320.webp" alt=""><p>Notices the small stuff.</p></li>
+        <li><img src="../../site/assets/day/poses/wave-320.webp" alt=""><p>Hey.</p></li>
+        <li><img src="../../site/assets/day/poses/shush-320.webp" alt=""><p>Keeps it to himself.</p></li>
+        <li><img src="../../site/assets/day/poses/oneleg_balance-320.webp" alt=""><p>Balance. Mostly.</p></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="join">
+    <div class="wrap">
+      <div class="join-box">
+        <div>
+          <h2>Be first to say hey.</h2>
+          <p>Doddy is in early access on iPhone. Leave your email and we'll let you in.</p>
+          <div class="field"><span>name@example.com</span><a class="btn" href="#">Get early access</a></div>
+          <p class="follow">@doddy_mate on TikTok and Instagram</p>
+        </div>
+        <img src="../../site/assets/day/poses/reaching_high-320.webp" alt="">
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="wrap row">
+      <span class="wordmark">Doddy</span>
+      <ul><li>What can Doddy do?</li><li>Privacy</li><li>Blog</li><li>TikTok</li><li>Instagram</li></ul>
+    </div>
+    <div class="wrap"><p class="fine" style="margin-top:14px">Doddy is an AI, not a person. Your notes live on your iPhone. Early access: some of what you see here is still on its way.</p></div>
+  </footer>
+</body>
+</html>

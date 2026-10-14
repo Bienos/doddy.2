@@ -1,0 +1,41 @@
+/* Round 2: shared notebook devices on top of the live site's tokens.css + styles.css. Paper, tape, rings, doodles. */
+:root { --orange: #FC6800; --ink-soft: color-mix(in srgb, var(--reading-ink) 70%, transparent); }
+.mock-tag { position: fixed; z-index: 50; right: 12px; bottom: 12px; padding: 6px 12px; border-radius: 999px; background: var(--reading-ink); color: var(--canvas); font: 700 0.75rem/1 var(--text); letter-spacing: 0.04em; text-transform: uppercase; }
+@media (max-width: 760px) { .mock-tag { display: none; } }
+@media (min-width: 900px) { .nav-links { display: flex; } }
+
+/* paper */
+.paper { position: relative; background: var(--paper); border: 1px solid var(--separator); border-radius: 18px; box-shadow: var(--lift); }
+.paper.lined { background-image: repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px); background-position: 0 24px; }
+.paper.index { background-image: linear-gradient(to bottom, transparent 44px, var(--orange-cue) 44px 46px, transparent 46px), repeating-linear-gradient(to bottom, transparent 0 31px, var(--rule) 31px 32px); background-position: 0 0, 0 14px; }
+.tape2 { position: absolute; top: -12px; width: 86px; height: 26px; background: color-mix(in srgb, var(--orange-cue) 32%, #fff 40%); opacity: 0.85; border-radius: 3px; box-shadow: 0 1px 2px rgb(60 40 10 / 15%); }
+.tape2.l { left: 8%; transform: rotate(-6deg); }
+.tape2.r { right: 8%; transform: rotate(5deg); }
+.ring { position: absolute; width: 92px; height: 92px; border-radius: 50%; border: 9px solid color-mix(in srgb, #8a4b12 24%, transparent); mask: radial-gradient(circle, transparent 54%, #000 56%); pointer-events: none; }
+.hand { font-family: var(--hand); font-weight: 700; }
+.doddy-hand { font-family: var(--hand); font-weight: 700; color: var(--accent-text); }
+.strike { text-decoration: line-through; text-decoration-color: var(--orange); text-decoration-thickness: 3px; }
+.sig { font-family: var(--hand); font-weight: 700; font-size: 1.25rem; color: var(--secondary-text); }
+.fx { position: absolute; pointer-events: none; }
+.rot-l { transform: rotate(-1.6deg); } .rot-r { transform: rotate(1.3deg); } .rot-l2 { transform: rotate(-3deg); } .rot-r2 { transform: rotate(2.4deg); }
+
+/* a honest line that every direction keeps */
+.truth { margin-top: clamp(32px, 5vw, 56px); display: flex; gap: 14px; align-items: center; max-width: 44rem; color: var(--secondary-text); font-size: 0.9375rem; }
+.truth img { width: 48px; flex: none; }
+.truth a { color: var(--reading-ink); font-weight: 600; }
+
+/* join (shared) */
+.join2 { padding: clamp(40px, 6vw, 80px) 0 clamp(56px, 8vw, 104px); }
+.join2 .box { display: grid; grid-template-columns: 1fr auto; gap: 24px 40px; align-items: center; padding: clamp(24px, 4vw, 44px); border-radius: 30px; background: var(--reading-ink); color: var(--canvas); }
+.join2 h2 { font-family: var(--display); font-weight: 700; font-size: clamp(1.9rem, 4vw, 3rem); letter-spacing: -0.02em; margin: 0; color: #fff; }
+.join2 p { margin: 8px 0 0; color: color-mix(in srgb, var(--canvas) 78%, transparent); max-width: 30rem; }
+.join2 .field { display: flex; gap: 10px; margin-top: 18px; max-width: 520px; }
+.join2 .field span { flex: 1; min-height: 54px; border-radius: 16px; background: #fff; color: var(--secondary-text); display: flex; align-items: center; padding: 0 18px; }
+.join2 .button { box-shadow: inset 0 -4px 0 var(--orange-cue); background: var(--orange); color: #fff; }
+.join2 img { height: 200px; width: auto; }
+@media (max-width: 760px) { .join2 .box { grid-template-columns: 1fr; } .join2 img { height: 140px; justify-self: end; } .join2 .field { flex-direction: column; } }
+
+.foot2 { padding: 32px 0 48px; border-top: 1px solid var(--separator); color: var(--secondary-text); font-size: 0.875rem; }
+.foot2 .row { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; justify-content: space-between; }
+.foot2 ul { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0; padding: 0; font-weight: 600; color: var(--reading-ink); }
+.foot2 p { margin: 12px 0 0; max-width: 46rem; }

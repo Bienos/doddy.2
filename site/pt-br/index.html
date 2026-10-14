@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Doddy, your mate in your pocket</title>
-  <meta name="description" content="O Doddy é um app para iPhone com um companheiro desenhado à mão dentro. Salve os pequenos detalhes que importam com suas próprias palavras e receba a nota exata de volta quando precisar.">
+  <title>Doddy. Fale uma vez. Toque uma vez. Pronto.</title>
+  <meta name="description" content="O Doddy é um parceiro de IA para o seu iPhone. Uma frase vira um cartão que você aprova: agenda, lembretes, e-mail, listas e mapas. Ele sempre pergunta antes.">
   <meta name="color-scheme" content="light">
   <meta name="theme-color" content="#FFF7E9">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Doddy, your mate in your pocket">
-  <meta property="og:description" content="Salve os pequenos detalhes com suas próprias palavras. Receba a nota exata de volta depois.">
+  <meta property="og:title" content="Doddy. Fale uma vez. Toque uma vez. Pronto.">
+  <meta property="og:description" content="Um parceiro de IA para o seu iPhone que transforma uma frase em um cartão que você aprova. Ele sempre pergunta antes.">
   <meta property="og:image" content="https://www.doddy.lol/assets/og-image.png">
   <meta property="og:url" content="https://www.doddy.lol/pt-br/">
   <link rel="canonical" href="https://www.doddy.lol/pt-br/">
@@ -84,6 +84,17 @@
       <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
       <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
     </symbol>
+    <!-- Ink icons for the apps Doddy reaches, in the props sheet's own ink, cream and orange (same exception as the five objects, ADR-468). -->
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect class="f" x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7.5 12 13l8.5-5.5"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect class="f" x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><circle class="o" cx="15.5" cy="15.5" r="1.6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path class="f" d="M12 21s-6-5.5-6-10.5a6 6 0 0 1 12 0C18 15.5 12 21 12 21z"/><circle class="o" cx="12" cy="10.5" r="2"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path class="f" d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><rect class="f" x="4" y="3" width="16" height="18" rx="3"/><path d="M9 8h7M9 12h7M9 16h4"/><path class="o" d="M6.5 8h.01M6.5 12h.01M6.5 16h.01" stroke-width="2.8"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path class="o" d="M13 2 4 14h7l-1 8 9-12h-7z" stroke="#080808"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path class="f" d="M6 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path class="f" d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/><circle class="o" cx="17" cy="6" r="2"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><rect class="f" x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/><path class="o" d="M15 15l3 3" stroke-width="3"/></symbol>
   </svg>
 
   <header class="nav">
@@ -91,10 +102,10 @@
       <a class="wordmark" href="#top" aria-label="Doddy, voltar ao topo">Doddy</a>
       <nav aria-label="Seções">
         <ul class="nav-links">
-          <li><a href="#how">Como funciona</a></li>
+          <li><a href="#asks">O que você pede</a></li>
           <li><a href="/what-can-doddy-do/">O que o Doddy pode fazer?</a></li>
           <li><a href="#meet">Conheça o Doddy</a></li>
-          <li><a href="#play">Arremessar</a></li>
+          <li><a href="#play">Jogar</a></li>
           <li><a href="/blog/">Blog <span class="note">(Inglês)</span></a></li>
           <li><a href="#privacy">Privacidade</a></li>
         </ul>
@@ -106,10 +117,10 @@
       <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>Idioma</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR" aria-current="page">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
       <div class="menu-sheet" id="menu-sheet" aria-label="Menu">
         <ul>
-          <li><a href="#how">Como funciona</a></li>
+          <li><a href="#asks">O que você pede</a></li>
           <li><a href="/what-can-doddy-do/" class="menu-new">O que o Doddy pode fazer? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">Conheça o Doddy</a></li>
-          <li><a href="#play">Arremessar</a></li>
+          <li><a href="#play">Jogar</a></li>
           <li><a href="/blog/">Blog <span class="note">(Inglês)</span></a></li>
           <li><a href="#privacy">Privacidade</a></li>
         </ul>
@@ -120,40 +131,90 @@
 
   <main id="main">
 
-    <!-- Hero: the app's own headline, the real Home screen, Doddy saying hello in handwriting. -->
+    <!-- Hero (ADR-482): one spoken sentence, and the one card it becomes. The card is the app's propose_plan
+         pattern: several changes, one tap, nothing runs until you tap. -->
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="pill"><span class="dot" aria-hidden="true"></span>App para iPhone, em teste inicial</p>
-          <h1 id="hero-title" class="display">Um pouco menos para carregar.</h1>
-          <p class="lede">O Doddy é um caderninho de bolso com um companheiro dentro. Conte a ele as pequenas coisas que você não quer perder e receba de volta suas palavras exatas quando precisar.</p>
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Um parceiro de IA para o seu iPhone. Ele sempre pergunta antes.</p>
+          <h1 id="hero-title" class="display">Fale uma vez. <span class="hand-line">Toque uma vez. Pronto.</span></h1>
+          <p class="lede">O Doddy se conecta à sua agenda, aos seus lembretes, ao seu e-mail, às suas listas e aos seus mapas, e transforma uma frase em um cartão que você aprova. Ele nunca envia, compra nem apaga nada por conta própria.</p>
           <div class="actions">
             <a class="button" href="#join">Inscreva-se no acesso antecipado</a>
-            <a class="text-link" href="/what-can-doddy-do/">O que o Doddy faz o dia todo</a>
+            <a class="text-link" href="#asks">Ver os grandes pedidos</a>
           </div>
-          <p class="fineprint">O Doddy é uma IA, não uma pessoa. Suas notas ficam guardadas no seu iPhone.</p>
+          <p class="fineprint">O Doddy é uma IA, não uma pessoa. Suas notas ficam no seu iPhone.</p>
         </div>
-
-        <div class="hero-stage">
-          <div class="hero-glow" aria-hidden="true"></div>
-          <div class="hero-chip" aria-hidden="true">
-            <span class="chip-check">✓</span>
-            <span><strong>Salvo</strong><br>As chaves de reserva estão na lata azul em cima da geladeira.</span>
+        <div class="demo" aria-label="Exemplo: um pedido vira um cartão">
+          <p class="ask big">Doddy, organiza a quinta. O dentista passou para as 14h, depois encontro a Alex e preciso de pão.<small>dito em voz alta, 23h30</small></p>
+          <picture class="hero-pose demo-doddy"><img src="/assets/day/poses/listening-320.webp" srcset="/assets/day/poses/listening-320.webp 320w, /assets/day/poses/listening.webp 640w" sizes="120px" width="640" height="960" alt=""></picture>
+          <img class="demo-fx" src="/assets/day/fx/sparkle.webp" width="120" height="120" alt="">
+          <div class="plan">
+            <span class="stampt" aria-hidden="true">5 mudanças, 1 toque</span>
+            <h2 class="plan-title">Quinta, se você concordar</h2>
+            <ul>
+              <li><span class="box" aria-hidden="true"></span><span><b>Mudar o dentista para 14h</b><small>era 12h30</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Agenda</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Alex, 15h30, o lugar de sempre</b><small>livre das 15h às 17h30</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Agenda</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Sair às 13h35 para o dentista</b><small>22 min de bonde</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Mapas</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Mensagem para a Alex: "Quinta, 15h30, no lugar de sempre?"</b><small>rascunho. Quem envia é você.</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Mensagens</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Pão</b><small>Compras, compartilhada com a Ola</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>Listas</span></li>
+            </ul>
+            <div class="do" aria-hidden="true"><span class="yes">Fazer estes (5)</span><span class="no">Agora não</span></div>
           </div>
-          <div class="device tilt">
-            <img src="/assets/screens/home.png" width="390" height="845" alt="Tela Início do Doddy: Um pouco menos para carregar. Botões para salvar um detalhe ou encontrar algo, e uma nota salva recentemente sobre as chaves de reserva.">
-          </div>
-          <div class="hero-doddy">
-            <p class="says" aria-hidden="true">Oi. Eu sou o Doddy.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <picture class="hero-pose"><img src="/assets/day/poses/wave-320.webp" srcset="/assets/day/poses/wave-320.webp 320w, /assets/day/poses/wave.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt=""></picture>
-          </div>
-          <p class="caption">Prévia de design do app</p>
+          <p class="caption">Exemplo. O Doddy mostra o cartão; você toca.</p>
         </div>
       </div>
     </section>
 
-    <!-- The brand film, right under the hero: taped into the notebook, Doddy dribbling in from the corner.
-         Without JavaScript it is a plain video with native controls. -->
+    <!-- The big asks: the kind of thing you'd only ask a mate who had your phone in his hands. -->
+    <section class="asks-section" id="asks" aria-labelledby="asks-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="asks-title" class="display-m">Os grandes pedidos.</h2>
+          <p>Isso você só diria a um amigo que tem o seu celular na mão. Ele tem.</p>
+        </div>
+        <ul class="asks">
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Gmail</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Outlook</span></div>
+            <p class="ask">O que dizia o e-mail do proprietário? Responda que terça está bom.</p>
+            <p class="says-d">Ele quer a foto do medidor até sexta. Resposta pronta. Quem envia é você.</p>
+            <img class="dd" src="/assets/day/poses/belly_reading-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Agenda</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Mapas</span></div>
+            <p class="ask">Acha uma hora com a Alex na semana que vem, mas não às 7h.</p>
+            <p class="says-d">Quarta, 16h. Adicionado, e eu aviso quando sair.</p>
+            <img class="dd" src="/assets/day/poses/fistpump-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Drive</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Notion</span></div>
+            <p class="ask">Onde está o PDF do depósito? E o que diz a página de Kraków?</p>
+            <p class="says-d">"Lease_final_v3.pdf", alterado em maio. Kraków: trem de sexta, a Ola reserva o apê.</p>
+            <img class="dd" src="/assets/day/poses/kneeling_inspect-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>Tradutor</span></div>
+            <p class="ask">Traduza. Ele está perguntando algo sobre a chave.</p>
+            <p class="says-d">Ele diz para deixar na caixa perto da porta. Quer que eu responda?</p>
+            <img class="dd" src="/assets/day/poses/oneleg_balance-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg>Atalhos</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Lembretes</span></div>
+            <p class="ask">Executar "sair de casa" e me lembrar da encomenda quando eu voltar.</p>
+            <p class="says-d">Luzes apagadas, música desligada, armário 4471 assim que você entrar.</p>
+            <img class="dd" src="/assets/day/poses/leaning-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-note"/></svg>Rotinas</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>Todoist</span></div>
+            <p class="ask">Organiza meu domingo.</p>
+            <p class="says-d">Roupa, lixeiras, as três tarefas da semana, a mãe às sete. Um cartão. Bora.</p>
+            <img class="dd" src="/assets/day/poses/crosslegged-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+        </ul>
+        <p class="truth"><img src="/assets/day/smile.webp" width="44" height="44" alt=""><span>Algumas coisas ele faz hoje, outras ainda está treinando. <a href="/what-can-doddy-do/">O que o Doddy pode fazer?</a> percorre um dia inteiro, momento a momento, com as etiquetas.</span></p>
+      </div>
+    </section>
+
     <section class="film" id="film" aria-labelledby="film-title">
       <div class="wrap">
         <div class="section-head">
@@ -194,176 +255,36 @@
       </div>
     </section>
 
-    <!-- The problem, said plainly. -->
-    <section class="problem" aria-labelledby="problem-title">
-      <div class="wrap problem-grid">
-        <h2 id="problem-title" class="display-m">As pequenas coisas somem no momento em que você precisa delas.</h2>
-        <ul class="scraps" aria-label="Exemplos">
-          <li>O código do armário de encomendas</li>
-          <li>Em qual lata ficaram as chaves de reserva</li>
-          <li>O livro que a Marta recomendou</li>
-          <li>Número do calçado da criança</li>
-        </ul>
-      </div>
-    </section>
-
-    <!-- How it works: a real three-step sequence, so it's numbered. -->
-    <section class="how" id="how" aria-labelledby="how-title">
+    <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
+    <section class="vs-section" aria-labelledby="vs-title">
       <div class="wrap">
         <div class="section-head">
-          <h2 id="how-title" class="display-m">Como funciona</h2>
-          <p>Três passos, tudo no seu iPhone. Sem conta, sem configuração.</p>
+          <h2 id="vs-title" class="display-m">O agente que você deixaria chegar à sua caixa de entrada.</h2>
+          <p>Todo mundo está criando agentes que reservam voos enquanto você dorme. Só 9% das pessoas deixariam um agente comprar algo sem conferir. O Doddy foi feito para os outros 91%.</p>
         </div>
-        <ol class="steps">
-          <li class="step">
-            <div class="step-visual">
-              <div class="device small"><img src="/assets/screens/capture.png" width="390" height="845" loading="lazy" alt="Tela de nova memória: O que vamos guardar? O detalhe diz: As chaves de reserva estão na lata azul em cima da geladeira."></div>
-              <picture class="step-pose"><img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            </div>
-            <p class="step-num" aria-hidden="true">1</p>
-            <h3>Conte ao Doddy</h3>
-            <p>Digite do jeito que você falaria. O Doddy guarda suas palavras exatas, junto com quando você as salvou e de onde vieram.</p>
-            <p class="says-small" aria-hidden="true">Salvo quer dizer salvo.</p>
-          </li>
-          <li class="step">
-            <div class="step-visual">
-              <div class="device small"><img src="/assets/screens/recall.png" width="390" height="845" loading="lazy" alt="Tela de Memórias: Está aqui em algum lugar. Uma busca por chaves de reserva encontra a nota salva, escrita por você em 8 de outubro."></div>
-              <picture class="step-pose"><img src="/assets/day/poses/belly_reading-320.webp" srcset="/assets/day/poses/belly_reading-320.webp 320w, /assets/day/poses/belly_reading.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            </div>
-            <p class="step-num" aria-hidden="true">2</p>
-            <h3>Mais tarde</h3>
-            <p>Busque com as palavras que você lembra. O Doddy mostra as notas que combinam, com suas palavras originais, com a data e a origem.</p>
-            <p class="says-small" aria-hidden="true">Suas palavras, não um palpite.</p>
-          </li>
-          <li class="step">
-            <div class="step-visual">
-              <div class="device small"><img src="/assets/screens/detail.png" width="390" height="845" loading="lazy" alt="A tela Sua memória: a nota salva com a data e a origem, e botões para corrigir este detalhe ou apagar esta memória."></div>
-              <picture class="step-pose"><img src="/assets/day/poses/fistpump-320.webp" srcset="/assets/day/poses/fistpump-320.webp 320w, /assets/day/poses/fistpump.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            </div>
-            <p class="step-num" aria-hidden="true">3</p>
-            <h3>Corrija ou esqueça</h3>
-            <p>Corrija uma nota e o original continua visível. Exporte tudo, ou apague uma nota ou todas.</p>
-            <p class="says-small" aria-hidden="true">O original fica.</p>
-          </li>
-        </ol>
-        <p class="caption left">As telas são prévias de design do app.</p>
-      </div>
-    </section>
-
-    <!-- Three moments from "What can Doddy do?" (ADR-469/470). Scripted scenes, each labelled with what is built. -->
-    <section class="moments-teaser" aria-labelledby="teaser-title">
-      <div class="wrap">
-        <div class="section-head">
-          <h2 id="teaser-title" class="display-m">Três momentos de um dia comum.</h2>
-          <p>O que um companheiro no seu bolso faz com elas. Mais sete estão na própria página, e cada uma diz se já funciona, se está em teste ou se fica para depois, quem sabe.</p>
-        </div>
-        <ul class="teaser">
-          <li class="t-late"><a href="/what-can-doddy-do/#late">
-            <span class="scene-art"><img class="bg" src="/assets/day/scenery/bedroom-800.webp" srcset="/assets/day/scenery/bedroom-800.webp 800w, /assets/day/scenery/bedroom.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/yawn_stretch-320.webp" srcset="/assets/day/poses/yawn_stretch-320.webp 320w, /assets/day/poses/yawn_stretch.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg><span class="d-bubble">Pois é, sua reunião começou há 15 minutos. Ótimo começo.</span></span>
-            <span class="when">08:45</span><h3>Você está atrasado. De novo.</h3><br><span class="cap testing">Calendário · em teste</span>
-          </a></li>
-          <li class="t-brain"><a href="/what-can-doddy-do/#brain">
-            <span class="scene-art"><img class="bg" src="/assets/day/scenery/cosy_living_room-800.webp" srcset="/assets/day/scenery/cosy_living_room-800.webp 800w, /assets/day/scenery/cosy_living_room.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><span class="d-bubble">Trattoria Nonna, Hoża 9. Suas palavras, não as minhas.</span></span>
-            <span class="when">18:45</span><h3>Meu cérebro saiu do chat.</h3><br><span class="cap built">Notas salvas · já funciona</span>
-          </a></li>
-          <li class="t-forget"><a href="/what-can-doddy-do/#forget">
-            <span class="scene-art"><img class="bg" src="/assets/day/scenery/moonlit_hills-800.webp" srcset="/assets/day/scenery/moonlit_hills-800.webp 800w, /assets/day/scenery/moonlit_hills.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/crosslegged-320.webp" srcset="/assets/day/poses/crosslegged-320.webp 320w, /assets/day/poses/crosslegged.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-calendar"/></svg><span class="d-bubble">Amanhã. Manhã ou noite? Escolha uma.</span></span>
-            <span class="when">22:30</span><h3>Não deixe eu esquecer.</h3><br><span class="cap testing">Lembretes · em teste</span>
-          </a></li>
-        </ul>
-        <p class="actions teaser-more"><a class="button" href="/what-can-doddy-do/">Veja o dia inteiro</a><a class="text-link" href="/what-can-doddy-do/#late">Comece às 08:45</a></p>
-      </div>
-    </section>
-
-    <!-- The detail only Doddy has: every note carries its receipt. -->
-    <section class="receipt-section" aria-labelledby="receipt-title">
-      <div class="wrap receipt-grid">
-        <div>
-          <h2 id="receipt-title" class="display-m">Cada nota guarda o seu recibo.</h2>
-          <p>O Doddy nunca reescreve o que você disse. Cada nota mostra quando foi salva e de onde veio, e uma correção é adicionada por cima, para que a primeira versão continue ali.</p>
-          <p>Quando nada combinar, o Doddy diz isso em vez de inventar algo.</p>
-          <div class="no-match">
-            <picture class="no-match-pose"><img src="/assets/day/poses/shrug-320.webp" srcset="/assets/day/poses/shrug-320.webp 320w, /assets/day/poses/shrug.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-            <blockquote><p>Não encontrei isso nas suas memórias salvas.</p></blockquote>
-          </div>
-        </div>
-        <figure class="receipt" aria-labelledby="receipt-caption">
-          <p class="receipt-text">As chaves de reserva estão na lata vermelha em cima da geladeira.</p>
-          <dl class="receipt-meta">
-            <div><dt>Salvo</dt><dd>8 out 2026, 09:41</dd></div>
-            <div><dt>Origem</dt><dd>Sua nota digitada</dd></div>
-            <div><dt>Revisão</dt><dd>2, corrigido em 9 out</dd></div>
-          </dl>
-          <div class="receipt-original">
-            <p class="receipt-label">Original, mantido como foi escrito</p>
-            <p>As chaves de reserva estão na lata azul em cima da geladeira.</p>
-          </div>
-          <figcaption id="receipt-caption" class="caption left">Nota de exemplo</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <!-- Voice: in testing (first real-iPhone conversation 9 Oct 2026, docs/implementation/V1_VOICE_STATUS.md). -->
-    <section class="voice" aria-labelledby="voice-title">
-      <div class="wrap voice-grid">
-        <div class="voice-art">
-          <picture class="voice-pose"><img src="/assets/day/poses/listening-320.webp" srcset="/assets/day/poses/listening-320.webp 320w, /assets/day/poses/listening.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-          <ol class="voice-states" aria-label="O que a tela de voz mostra">
-            <li>Conectando…</li>
-            <li>Ouvindo</li>
-            <li>Pensando…</li>
-            <li>Falando</li>
-          </ol>
-          <div class="voice-card" role="img" aria-label="O Doddy pergunta: Salvar esta nota? Com um botão Salvar e um botão Não salvar.">
-            <p class="voice-q">Salvar esta nota?</p>
-            <p class="voice-quote">“O livro da Marta é O Hobbit.”</p>
-            <span class="voice-btn primary">Salvar</span>
-            <span class="voice-btn">Não salvar</span>
-          </div>
-        </div>
-        <div>
-          <p class="pill warn">Em teste</p>
-          <h2 id="voice-title" class="display-m">Ou só diga.</h2>
-          <p>Toque em Falar com o Doddy e pergunte em voz alta. O Doddy procura nas suas notas e responde com base no que você salvou.</p>
-          <p>O Doddy só escuta enquanto a tela de voz estiver aberta ou, se você ativar o Hey Doddy, enquanto a Dynamic Island mostrar que ele está escutando; a palavra de ativação é identificada no seu iPhone. Se você disser algo que vale guardar, o Doddy pergunta antes, e nada é guardado até você tocar em Salvar.</p>
-          <p class="fineprint">Enquanto você fala, sua voz e as notas que o Doddy consulta são enviadas à OpenAI para fazer a conversa funcionar, ou à ElevenLabs se você trocar a voz na tela principal. A voz está em teste.</p>
+        <div class="vs">
+          <div class="them"><h3>A maioria dos agentes</h3><ul><li>Ele age e depois conta.</li><li>Envia o e-mail.</li><li>Ele guarda tudo, inclusive o que você não disse.</li><li>Soa muito seguro quando não está.</li><li>Vive na nuvem, junto com as suas coisas.</li></ul></div>
+          <div class="us"><h3>Doddy</h3><ul><li>Mostra o cartão e espera o seu toque.</li><li>Rascunha o e-mail. Quem envia é você.</li><li>Guarda só o que você contou, com as suas palavras e a data.</li><li>Diz em voz alta "não sei".</li><li>Suas notas ficam no seu iPhone. Ele diz o que sai do aparelho, e quando.</li></ul></div>
         </div>
       </div>
     </section>
 
-    <!-- Privacy band: inverted ink panel. -->
-    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
-      <div class="wrap">
-        <div class="privacy-panel">
-          <h2 id="privacy-title" class="display-m">Suas notas, sua decisão.</h2>
-          <ul class="facts">
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
-              <h3>Guardado no seu iPhone</h3>
-              <p>As notas ficam guardadas no app, no seu telefone, protegidas pelo iOS. Elas saem do telefone só para o que você ativa, e o app lista cada uma em O que sai deste iPhone.</p>
-            </li>
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
-              <h3>Sem conta</h3>
-              <p>Sem cadastro, sem e-mail, sem senha. Abra o app e comece.</p>
-            </li>
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
-              <h3>Exporte quando quiser</h3>
-              <p>Leve tudo com você em JSON ou texto simples.</p>
-            </li>
-            <li>
-              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
-              <h3>Apagar de verdade</h3>
-              <p>Apague uma nota ou todas. Elas saem da busca na hora.</p>
-            </li>
-          </ul>
-          <p class="privacy-note">O Doddy é uma IA, não uma pessoa. Algumas coisas que você ativa enviam dados para fora do telefone: conversas por voz (para a OpenAI, ou para a ElevenLabs se você trocar a voz), chamadas telefônicas e memória nas chamadas (para o servidor do Doddy, a Twilio e a ElevenLabs), listas compartilhadas (seu iCloud) e contas conectadas, como Gmail ou Todoist (pelo servidor do Doddy). Todo o resto fica no seu iPhone. Tudo isso está em teste inicial.</p>
+    <!-- The phone line (spec'd, ADR-152/172; not live). Vision, labelled by the truth line above and the footer. -->
+    <section class="line-section" aria-labelledby="line-title">
+      <div class="wrap line">
+        <div class="section-head line-head">
+          <h2 id="line-title" class="display-m">Perdeu o celular? Pegue outro emprestado. Ligue para ele.</h2>
+          <p>O Doddy recebe um número. Qualquer telefone, seu PIN, e ele lê suas notas para você. Uma nova fica esperando no app para você confirmar.</p>
+        </div>
+        <div class="dial" aria-label="Exemplo de ligação">
+          <p class="me">Você, do celular de um amigo: "Sou eu. O PIN é 2-4-1-9. Qual é o Wi‑Fi da Ola?"</p>
+          <p class="dod">Oi, sou o Doddy, uma IA. O Wi‑Fi da Ola: 'sunflower99', salvo em 3 de outubro. Quer que eu lembre de mais alguma coisa?</p>
+          <p class="me">Sim. O carro está no nível B2.</p>
+          <p class="dod">Esperando você confirmar no app.</p>
         </div>
       </div>
     </section>
 
-    <!-- Character sketchbook. Doddy's captions are in Doddy's handwriting. -->
     <section class="meet" id="meet" aria-labelledby="meet-title">
       <div class="wrap">
         <div class="section-head">
@@ -391,8 +312,18 @@
       </div>
     </section>
 
-    <!-- Take a shot: a small game with Doddy's basketball. -->
-    <section class="court" id="play" aria-labelledby="play-title">
+    <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
+    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
+      <div class="wrap play-head">
+        <div>
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Enquanto você espera</p>
+          <h2 id="play-intro-title" class="display-m">Dois jogos. Uma bola que ele nunca larga.</h2>
+        </div>
+        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
+      </div>
+    </section>
+
+    <section class="court" id="shoot" aria-labelledby="play-title">
       <div class="wrap">
         <div class="section-head">
           <h2 id="play-title" class="display-m">Arremessar</h2>
@@ -408,8 +339,6 @@
       </div>
     </section>
 
-    <!-- "Remember it": a memory game with the small things Doddy keeps. Cards are built by memory.js;
-         without JavaScript the section stays hidden. -->
     <section class="memory" id="remember" aria-labelledby="remember-title">
       <div class="wrap">
         <div class="section-head">
@@ -432,13 +361,46 @@
       </div>
     </section>
 
-    <!-- Join -->
+    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <div class="privacy-panel">
+          <h2 id="privacy-title" class="display-m">Suas notas, sua decisão.</h2>
+          <ul class="facts">
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
+              <h3>Guardado no seu iPhone</h3>
+              <p>As notas ficam guardadas no app, no seu telefone, protegidas pelo iOS. Elas saem do telefone só para o que você ativa, e o app lista cada uma em O que sai deste iPhone.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
+              <h3>Sem conta</h3>
+              <p>Sem cadastro, sem e-mail, sem senha. Abra o app e comece.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
+              <h3>Exporte quando quiser</h3>
+              <p>Leve tudo com você em JSON ou texto simples.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
+              <h3>Apagar de verdade</h3>
+              <p>Apague uma nota ou todas. Elas saem da busca na hora.</p>
+            </li>
+          </ul>
+          <p class="privacy-note">O Doddy é uma IA, não uma pessoa. Algumas coisas que você liga enviam dados para fora do celular: conversas por voz (OpenAI, ou ElevenLabs se você trocar a voz), consultas de clima e Wikipédia (um nome de lugar ou palavras de busca), chamadas e memória nas chamadas (servidor do Doddy, Twilio e ElevenLabs), listas compartilhadas (seu iCloud) e contas conectadas como Gmail ou Todoist (pelo servidor do Doddy). Todo o resto fica no seu iPhone. Tudo isso está em teste.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Join (ADR-482): the waitlist as the page's one ask. Same endpoint, payload, consent wording, honeypot and
+         optional questions as before (api/waitlist.js, api/waitlist-answers.js); only the frame changed. -->
     <section class="join" id="join" aria-labelledby="join-title">
       <div class="wrap">
         <div class="join-panel">
           <div class="join-copy">
-            <h2 id="join-title" class="display-m">Venha dar um oi.</h2>
-            <p>O Doddy está em teste inicial. Deixe seu e-mail para saber quando o acesso antecipado abrir.</p>
+            <p class="join-eyebrow">Acesso antecipado · iPhone primeiro · poucas pessoas por vez</p>
+            <h2 id="join-title" class="display-m">Dá a sua quinta para ele.</h2>
+            <p class="join-lede">Deixe seu e-mail e você entra na lista. Quando for a sua vez, o Doddy dá um oi.</p>
             <form class="waitlist" novalidate data-consent="waitlist-note-v1-pt-br">
               <label for="email">E-mail</label>
               <div class="field-row">
@@ -450,7 +412,6 @@
               <p id="waitlist-note" class="fineprint form-note">Usaremos seu e-mail só para avisar você quando o acesso antecipado abrir, e o apagaremos sempre que você pedir.</p>
               <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
             </form>
-            <!-- Shown only after a new signup. Every question is optional. -->
             <form class="answers" id="answers" hidden novalidate aria-labelledby="answers-title">
               <p class="says-small" id="answers-title" tabindex="-1">Três perguntas rápidas? Todas opcionais.</p>
               <fieldset class="q">
@@ -483,6 +444,11 @@
               <p class="fineprint form-note">Usamos estes dados só para planejar o acesso antecipado do Doddy, e vamos apagá-los, junto com seu e-mail, sempre que você pedir.</p>
               <p id="answers-status" class="status" role="status" aria-live="polite"></p>
             </form>
+            <ul class="join-facts" aria-label="O que significa o acesso antecipado">
+              <li><b>Sem conta.</b> Abra o app e comece.</li>
+              <li><b>Suas notas ficam no seu iPhone.</b> E-mail, agenda e arquivos só quando você conectar.</li>
+              <li><b>Apague quando quiser.</b> Seu e-mail, suas notas, tudo.</li>
+            </ul>
             <div class="open-app">
               <p>Quer conversar agora? <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Entre no grupo do Telegram</a></p>
               <p>Siga o Doddy: <a class="text-link" href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok doddy_mate</a> <a class="text-link" href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram doddy_mate</a></p>
@@ -490,11 +456,18 @@
               <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
             </div>
           </div>
-          <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="/assets/day/poses/reaching_high-320.webp 320w, /assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
-        </div>
-        <div class="later">
-          <h2 class="later-title">Talvez mais tarde</h2>
-          <p>Em teste agora: seu calendário, lembretes, alarmes, timers, listas, mapas e rascunhos de mensagens, com as mudanças confirmadas na tela antes (edições rápidas em listas podem ser desfeitas em vez disso), e polonês junto com inglês. Ainda não foi construído, e nenhuma data foi prometida: Android.</p>
+          <div class="join-side" aria-hidden="true">
+            <ul class="scraps join-scraps">
+              <li>Organizar a quinta</li>
+              <li>Responder ao proprietário</li>
+              <li>Onde está o PDF do contrato?</li>
+              <li>Executar "hora de dormir"</li>
+              <li>Achar uma hora com a Alex</li>
+              <li>O que eu prometi para a mãe?</li>
+            </ul>
+            <p class="says-small join-says">Pode falar, estou ouvindo.</p>
+            <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="/assets/day/poses/reaching_high-320.webp 320w, /assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+          </div>
         </div>
       </div>
     </section>
@@ -505,7 +478,7 @@
       <div class="foot-top">
         <p class="wordmark">Doddy</p>
         <ul class="foot-links">
-          <li><a href="#how">Como funciona</a></li>
+          <li><a href="#asks">O que você pede</a></li>
           <li><a href="/what-can-doddy-do/">O que o Doddy pode fazer?</a></li>
           <li><a href="#meet">Conheça o Doddy</a></li>
           <li><a href="#privacy">Privacidade</a></li>
@@ -517,7 +490,7 @@
         </ul>
         <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="Idioma" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR" aria-current="page">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
       </div>
-      <p>O Doddy é um assistente de IA, não uma pessoa. Suas notas ficam guardadas no seu iPhone; voz, chamadas, listas compartilhadas e contas conectadas enviam dados para fora do iPhone só quando você os ativa.</p>
+      <p>O Doddy é um assistente de IA, não uma pessoa. Suas notas ficam guardadas no seu iPhone; voz, chamadas, listas compartilhadas e contas conectadas só enviam dados para fora quando você as liga. Acesso antecipado: parte desta página mostra para onde o Doddy está indo, e <a href="/what-can-doddy-do/">O que o Doddy pode fazer?</a> diz o que funciona hoje.</p>
       <p>Esta página conta as visitas com o Vercel Web Analytics, que não define cookies. Suas fontes são carregadas do Google Fonts.</p>
       <p data-ga-note hidden>Se você permitir, o Google Analytics também mede as visitas e define cookies. <button type="button" class="foot-choice" data-analytics-choices>Escolhas de análises</button></p>
       <p>© 2026 Doddy</p>
