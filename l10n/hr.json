@@ -1210,7 +1210,6 @@
   "Updates by text message": "Ažuriranja SMS porukom",
   "Updates need a Doddy messaging server, and none is connected in this build yet. Nothing is sent anywhere until one is.": "Ažuriranja trebaju Doddyjev poslužitelj za poruke, a u ovoj verziji još nijedan nije povezan. Ništa se nikamo ne šalje dok ga ne bude.",
   "Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456.": "Koristi 6 do 8 znamenki koje je teže pogoditi: ne jednu ponovljenu znamenku ni niz poput 123456.",
-  "Use Doddy's own voice": "Koristi Doddyjev vlastiti glas",
   "Use a different number": "Koristi drugi broj",
   "Use an https address with no path, like https://doddy-messaging.onrender.com.": "Koristi https adresu bez putanje, npr. https://doddy-messaging.onrender.com.",
   "Use in voice conversations": "Koristi u glasovnim razgovorima",

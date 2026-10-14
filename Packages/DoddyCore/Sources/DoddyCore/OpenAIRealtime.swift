@@ -66,6 +66,25 @@ public enum OpenAIRealtimeModel: String, CaseIterable, Sendable, Identifiable {
     }
 }
 
+/// Which OpenAI voice speaks, from the token server's allowlist (`OPENAI_ALLOWED_VOICES`, ADR-483).
+/// Nothing chosen means the server's own default (`OPENAI_REALTIME_VOICE`, marin unless set). OpenAI
+/// doesn't label these voices by gender. ElevenLabs voices never reach OpenAI.
+public enum OpenAIRealtimeVoice: String, CaseIterable, Sendable, Identifiable {
+    case marin, cedar, alloy, echo, sage, shimmer, verse
+
+    public static let preferenceKey = "voice.openaiVoice"
+
+    public var id: String { rawValue }
+
+    public var name: String { rawValue.capitalized }
+
+    /// nil for nothing stored or an unknown value: the server's default applies.
+    public init?(stored: String?) {
+        guard let stored, let voice = OpenAIRealtimeVoice(rawValue: stored) else { return nil }
+        self = voice
+    }
+}
+
 /// A one-conversation OpenAI client secret from `server/voice-token`.
 public struct OpenAIRealtimeGrant: Equatable, Sendable {
     public let secret: String
@@ -79,11 +98,17 @@ public struct OpenAIRealtimeGrant: Equatable, Sendable {
 
 extension VoiceTokenServer {
     /// Request body for the token server. ElevenLabs sends none, exactly as before ADR-265.
-    /// OpenAI names the model; a server from before ADR-442 ignores it and uses its own.
-    public static func requestBody(for provider: VoiceProvider, model: OpenAIRealtimeModel = .default) -> Data? {
+    /// OpenAI names the model; a server from before ADR-442 ignores it and uses its own. The voice
+    /// is sent only when the owner chose one (ADR-483); otherwise the server's default applies.
+    public static func requestBody(
+        for provider: VoiceProvider, model: OpenAIRealtimeModel = .default, voice: OpenAIRealtimeVoice? = nil
+    ) -> Data? {
         switch provider {
         case .elevenLabs: nil
-        case .openAIRealtime: Data(#"{"provider":"openai","model":"\#(model.rawValue)"}"#.utf8)
+        case .openAIRealtime:
+            var fields = [#""provider":"openai""#, #""model":"\#(model.rawValue)""#]
+            if let voice { fields.append(#""voice":"\#(voice.rawValue)""#) }
+            return Data("{\(fields.joined(separator: ","))}".utf8)
         }
     }
 

@@ -53,6 +53,8 @@ export const OPENAI_DEFAULT_MODEL = "gpt-realtime-2.1-mini";
 /** The models the app may ask for. Anything else is refused, so a client can't pick a pricier one. */
 export const OPENAI_ALLOWED_MODELS = Object.freeze(["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]);
 export const OPENAI_DEFAULT_VOICE = "marin";
+/** The voices the app may ask for (ADR-483): OpenAI presets only. Anything else is refused. */
+export const OPENAI_ALLOWED_VOICES = Object.freeze(["marin", "cedar", "alloy", "echo", "sage", "shimmer", "verse"]);
 
 /**
  * @typedef {object} Env
@@ -97,6 +99,9 @@ export async function handleTokenRequest(request, env, deps = {}) {
   if (provider === "openai" && requested.model !== undefined && !OPENAI_ALLOWED_MODELS.includes(requested.model)) {
     return finish(400, "unknown_model", { provider });
   }
+  if (provider === "openai" && requested.voice !== undefined && !OPENAI_ALLOWED_VOICES.includes(requested.voice)) {
+    return finish(400, "unknown_voice", { provider });
+  }
 
   const codes = parseAccessCodes(env.DODDY_ACCESS_CODES);
   // A code under 16 characters is ignored; say so once (labels only), or that tester just sees 401.
@@ -133,7 +138,7 @@ export async function handleTokenRequest(request, env, deps = {}) {
   }
 
   return provider === "openai"
-    ? openAISecret(env, fetchImpl, finish, tester, requested.model)
+    ? openAISecret(env, fetchImpl, finish, tester, requested.model, requested.voice)
     : elevenLabsToken(env, fetchImpl, finish, tester);
 }
 
@@ -171,9 +176,9 @@ function tokensPerHour(raw) {
 }
 
 /** A short-lived OpenAI Realtime client secret with model and voice set (ADR-265, ADR-442). */
-async function openAISecret(env, fetchImpl, finish, tester, requestedModel) {
+async function openAISecret(env, fetchImpl, finish, tester, requestedModel, requestedVoice) {
   const model = requestedModel ?? (env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL);
-  const voice = env.OPENAI_REALTIME_VOICE || OPENAI_DEFAULT_VOICE;
+  const voice = requestedVoice ?? (env.OPENAI_REALTIME_VOICE || OPENAI_DEFAULT_VOICE);
   const fields = { tester, provider: "openai", model };
 
   const upstream = await callUpstream(fetchImpl, OPENAI_CLIENT_SECRET_URL, {
@@ -217,7 +222,7 @@ async function callUpstream(fetchImpl, url, init) {
 
 /**
  * `{provider: "elevenlabs"}` (no body, as every app build before ADR-265 sends), `{provider:
- * "openai", model?}`, `{provider: "picovoice"}` (ADR-328), or null when the body names something
+ * "openai", model?, voice?}`, `{provider: "picovoice"}` (ADR-328), or null when the body names something
  * else or isn't JSON. A `model` that isn't a string is returned as-is so the caller refuses it.
  * @param {Request} request
  */
@@ -232,7 +237,11 @@ async function requestedProvider(request) {
   }
   const provider = body?.provider ?? "elevenlabs";
   if (provider !== "elevenlabs" && provider !== "openai" && provider !== "picovoice") return null;
-  return { provider, model: body?.model === undefined || body?.model === null ? undefined : body.model };
+  return {
+    provider,
+    model: body?.model === undefined || body?.model === null ? undefined : body.model,
+    voice: body?.voice === undefined || body?.voice === null ? undefined : body.voice,
+  };
 }
 
 /** @param {string | undefined} raw */

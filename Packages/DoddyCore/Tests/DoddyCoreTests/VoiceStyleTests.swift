@@ -2,9 +2,11 @@ import XCTest
 @testable import DoddyCore
 
 final class VoiceStyleTests: XCTestCase {
-    func testDefaultSendsNothing() {
-        XCTAssertNil(VoiceStyle.doddyDefault.override)
-        XCTAssertNil(VoiceStyle(voice: nil, speed: nil, expressiveness: nil).override)
+    func testDefaultChangesOnlyTheVoice() {
+        // Wiktor is the default (ADR-483); speed and delivery at their defaults are not sent.
+        XCTAssertEqual(VoiceStyle.doddyDefault.override, VoiceOverride(voiceID: "Mmjvne5i15kUnfr4fQF3", speed: nil, stability: nil))
+        XCTAssertEqual(VoiceStyle(voice: nil, speed: nil, expressiveness: nil), .doddyDefault)
+        XCTAssertNil(VoiceStyle(voice: .doddy, speed: .normal, expressiveness: .natural).override)
     }
 
     func testOnlyChangedFieldsAreSent() {

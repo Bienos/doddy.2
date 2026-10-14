@@ -1210,7 +1210,6 @@
   "Updates by text message": "Aggiornamenti via SMS",
   "Updates need a Doddy messaging server, and none is connected in this build yet. Nothing is sent anywhere until one is.": "Gli aggiornamenti richiedono un server di messaggistica di Doddy, e in questa versione non ne è ancora collegato nessuno. Niente viene inviato da nessuna parte finché non ce n'è uno.",
   "Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456.": "Usa da 6 a 8 cifre difficili da indovinare: non una sola cifra ripetuta né una sequenza come 123456.",
-  "Use Doddy's own voice": "Usa la voce propria di Doddy",
   "Use a different number": "Usa un altro numero",
   "Use an https address with no path, like https://doddy-messaging.onrender.com.": "Usa un indirizzo https senza percorso, come https://doddy-messaging.onrender.com.",
   "Use in voice conversations": "Usa nelle conversazioni vocali",

@@ -46851,6 +46851,17 @@
         }
       }
     },
+    "OpenAI voice": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos OpenAI"
+          }
+        }
+      }
+    },
     "Opens Doddy and searches your saved notes on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -60706,6 +60717,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "服务器地址（https://…）"
+          }
+        }
+      }
+    },
+    "Server default": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domyślny z serwera"
           }
         }
       }
@@ -80961,65 +80983,6 @@
         }
       }
     },
-    "Use Doddy's own voice": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die eigene Stimme von Doddy verwenden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar la voz propia de Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utiliser la propre voix de Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koristi Doddyjev vlastiti glas"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usa la voce propria di Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy自身の声を使う"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Użyj własnego głosu Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar a voz do próprio Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 Doddy 自己的声音"
-          }
-        }
-      }
-    },
     "Use a different number": {
       "extractionState": "manual",
       "localizations": {
@@ -81311,6 +81274,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用相关的已保存笔记"
+          }
+        }
+      }
+    },
+    "Use the default voice": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj domyślnego głosu"
           }
         }
       }

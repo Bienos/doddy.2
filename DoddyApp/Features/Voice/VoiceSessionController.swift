@@ -315,6 +315,8 @@ final class VoiceSessionController {
     private(set) var provider: VoiceProvider = .elevenLabs
     /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
     private(set) var openAIModel: OpenAIRealtimeModel = .default
+    /// nil = the token server's own voice (ADR-483).
+    private(set) var openAIVoice: OpenAIRealtimeVoice?
     private var startedAt: Date?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
@@ -548,6 +550,7 @@ final class VoiceSessionController {
         provider = VoiceProvider.effective(
             stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: tokenServerSet)
         openAIModel = OpenAIRealtimeModel(stored: UserDefaults.standard.string(forKey: OpenAIRealtimeModel.preferenceKey))
+        openAIVoice = OpenAIRealtimeVoice(stored: UserDefaults.standard.string(forKey: OpenAIRealtimeVoice.preferenceKey))
         if provider == .openAIRealtime {
             await startOpenAI(mode, variables: variables)
             return
@@ -707,7 +710,7 @@ final class VoiceSessionController {
 
         let grant: OpenAIRealtimeGrant
         do throws(VoiceTokenError) {
-            grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant(model: openAIModel)
+            grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant(model: openAIModel, voice: openAIVoice)
         } catch {
             if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return

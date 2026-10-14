@@ -1047,6 +1047,8 @@ struct VoiceProviderPicker: View {
     /// ElevenLabs (ADR-442).
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(OpenAIRealtimeModel.preferenceKey) private var realtimeModel = OpenAIRealtimeModel.default.rawValue
+    /// "" = the token server's own voice (ADR-483).
+    @AppStorage(OpenAIRealtimeVoice.preferenceKey) private var realtimeVoice = ""
     @AppStorage(PreferenceKey.voiceTokenServer) private var voiceTokenServer = ""
 
     var body: some View {
@@ -1068,6 +1070,17 @@ struct VoiceProviderPicker: View {
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("\(idPrefix).realtimeModel")
+                // Voice choice lives in Settings only; Home keeps to the model (ADR-443).
+                if idPrefix == "settings" {
+                    Picker("OpenAI voice", selection: $realtimeVoice) {
+                        Text("Server default").tag("")
+                        ForEach(OpenAIRealtimeVoice.allCases) { option in
+                            Text(verbatim: option.name).tag(option.rawValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .accessibilityIdentifier("\(idPrefix).realtimeVoice")
+                }
             }
             Text(verbatim: provider == .openAIRealtime
                 ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."

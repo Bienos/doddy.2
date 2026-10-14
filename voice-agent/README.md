@@ -15,6 +15,8 @@ The app bundles `instructions.md`, `tools.json` and `session.json`, renders the 
 with the tools in `session.update`; see `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`. A change here
 reaches OpenAI with the next app build, and ElevenLabs only after the sync below.
 
+**Since ADR-483** `instructions.md` is the owner's persona text (the live ElevenLabs prompt, Identity to Final principle) plus the app's own tool, memory, calendar, list, timer and translator rules, which the persona does not carry. The live ElevenLabs agent was not changed in that step: it still runs the persona text alone, so the two prompts differ until someone syncs it. Syncing a live agent is a separate, outward-facing change.
+
 ## Source of truth and syncing
 
 **Not yet applied (ADR-309, camera shortcut help):** one sentence in the "Opening the camera" line differs from the live prompt on purpose. In `instructions.md`, the "camera didn't open" sentence sends the user to "Don't have the shortcut?" on the camera card or to Settings, Connections, Shortcuts. The live prompt still has the ADR-291 sentence. Apply it once an app build with that card button ships; until then, the compare step reports this one sentence.

@@ -281,3 +281,22 @@ test("picovoice: asking for the key doesn't use up the tester's conversations fo
   }
   assert.equal((await run(request(), { environment: oneAnHour, deps: { limiter } })).response.status, 200);
 });
+
+test("openai: the app can pick an allowed voice, and the pick beats the environment", async () => {
+  const upstream = Response.json({ value: "ek_secret", session: {} });
+  const environment = { ...openAIEnv, OPENAI_REALTIME_VOICE: "cedar" };
+  const { response, calls } = await run(
+    openAIRequest(JSON.stringify({ provider: "openai", voice: "echo" })), { upstream, environment });
+  assert.equal(response.status, 200);
+  assert.equal(JSON.parse(calls[0].init.body).session.audio.output.voice, "echo");
+});
+
+test("openai: a voice that is not on the allowlist is refused before OpenAI is called", async () => {
+  for (const voice of ["ballad", "onyx", "", 7, ["echo"]]) {
+    const { response, body, calls } = await run(
+      openAIRequest(JSON.stringify({ provider: "openai", voice })), { environment: openAIEnv });
+    assert.equal(response.status, 400, JSON.stringify(voice));
+    assert.deepEqual(body, { error: "unknown_voice" });
+    assert.equal(calls.length, 0);
+  }
+});

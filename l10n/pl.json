@@ -1210,7 +1210,6 @@
   "Updates by text message": "Wiadomości SMS-em",
   "Updates need a Doddy messaging server, and none is connected in this build yet. Nothing is sent anywhere until one is.": "Aktualności wymagają serwera wiadomości Doddy’ego, a w tej wersji żaden nie jest jeszcze podłączony. Nic nie jest nigdzie wysyłane, dopóki nie będzie.",
   "Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456.": "Użyj od 6 do 8 cyfr, trudniejszych do zgadnięcia: nie jednej powtarzanej cyfry ani ciągu w rodzaju 123456.",
-  "Use Doddy's own voice": "Użyj własnego głosu Doddy’ego",
   "Use a different number": "Użyj innego numeru",
   "Use an https address with no path, like https://doddy-messaging.onrender.com.": "Użyj adresu https bez ścieżki, np. https://doddy-messaging.onrender.com.",
   "Use in voice conversations": "Używaj w rozmowach głosowych",
@@ -1359,5 +1358,8 @@
   "the title": "tytuł",
   "until %@": "do %@",
   "“%@” is no longer shared. It stays on this iPhone.": "„%@” nie jest już udostępniana. Zostaje na tym iPhonie.",
-  "“%@” is now due %@.": "„%@” ma teraz termin %@."
+  "“%@” is now due %@.": "„%@” ma teraz termin %@.",
+  "Use the default voice": "Użyj domyślnego głosu",
+  "OpenAI voice": "Głos OpenAI",
+  "Server default": "Domyślny z serwera"
 }

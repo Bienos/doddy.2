@@ -15,9 +15,9 @@ struct VoiceTokenClient: Sendable {
         return try VoiceTokenServer.token(status: status, body: data).get()
     }
 
-    /// OpenAI Realtime client secret for the chosen model.
-    func fetchOpenAIGrant(model: OpenAIRealtimeModel) async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
-        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime, model: model))
+    /// OpenAI Realtime client secret for the chosen model and, when the owner picked one, voice.
+    func fetchOpenAIGrant(model: OpenAIRealtimeModel, voice: OpenAIRealtimeVoice?) async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
+        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime, model: model, voice: voice))
         return try VoiceTokenServer.openAIGrant(status: status, body: data).get()
     }
 

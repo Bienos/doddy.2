@@ -44,6 +44,8 @@ Content-Type: application/json
 → 200 {"token": "ek_…", "provider": "openai", "model": "gpt-realtime-2.1-mini"}
 → 400 {"error": "unknown_provider"}  (any other provider, or a body that isn't JSON)
 → 400 {"error": "unknown_model"}     (a model that is not on the allowlist; nothing is sent to OpenAI)
+
+With a voice (ADR-483): `{"provider": "openai", "model": "gpt-realtime-2.1-mini", "voice": "echo"}`. A voice outside the allowlist is refused with `400 {"error": "unknown_voice"}` before OpenAI is called.
 → 500 {"error": "server_not_configured"}  (no OPENAI_API_KEY)
 ```
 
@@ -64,7 +66,7 @@ They never contain codes, tokens, keys, IP addresses or anything the user said.
 | `DODDY_TOKENS_PER_HOUR` | optional, default `30`: tokens one tester may get per clock hour. Counted per server instance, so it's a brake against one tester using up the shared agent limits, not a hard cap. A value that isn't a positive whole number refuses to serve |
 | `OPENAI_API_KEY` | Needed for the OpenAI voice (the default voice, ADR-442). Put a monthly spending limit on its OpenAI project: this server has no counters |
 | `OPENAI_REALTIME_MODEL` | Optional, default `gpt-realtime-2.1-mini`. Used only when the app names no model (an older app build). The app can ask for `gpt-realtime-2.1` or `gpt-realtime-2.1-mini` only; the allowlist is `OPENAI_ALLOWED_MODELS` in `src/handler.js`, so a client can't pick a pricier model |
-| `OPENAI_REALTIME_VOICE` | Optional, default `marin` (OpenAI recommends `marin` or `cedar`) |
+| `OPENAI_REALTIME_VOICE` | Optional, default `marin` (OpenAI recommends `marin` or `cedar`). The app can pick another voice from `OPENAI_ALLOWED_VOICES` in `src/handler.js` (ADR-483); with "Server default" chosen it sends none, so this value applies |
 | `PICOVOICE_ACCESS_KEY` | Optional. The owner's Picovoice AccessKey for one-tap "Hey Doddy" (ADR-328). Check the Picovoice plan's limits on active users and keyword-file expiry before giving it to testers |
 | `DODDY_ACCESS_CODES` | `label:code,label:code`. Codes must be ≥16 characters (shorter ones are ignored). Generate with `openssl rand -base64 24`. Remove an entry to revoke that tester |
 

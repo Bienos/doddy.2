@@ -1,5 +1,14 @@
 # Voice provider: OpenAI Realtime (default) or ElevenLabs (ADR-265, ADR-442)
 
+## Update 2026-10-14 (ADR-483): one persona, Wiktor by default, a voice choice for OpenAI
+
+- **Prompt:** `voice-agent/instructions.md` is the owner's persona (the live ElevenLabs prompt) plus the app's tool rules. OpenAI now speaks with it. The live ElevenLabs agent was **not** changed; it still runs the persona alone.
+- **ElevenLabs default voice:** Wiktor (normal speed, natural delivery). Doddy's own voice is still a choice. Voices stored before this change are kept.
+- **OpenAI voice:** Settings › Voice › "OpenAI voice": "Server default" (nothing sent) or marin, cedar, alloy, echo, sage, shimmer, verse. The token server allowlists them (`OPENAI_ALLOWED_VOICES`) and refuses others with `unknown_voice`. A pick beats `OPENAI_REALTIME_VOICE`. OpenAI doesn't label these by gender.
+- **Not changed:** the interruption problem. OpenAI still runs semantic VAD with eagerness `high` and `interrupt_response` on (`VoiceSessionController.swift`, `eagerness: .high`).
+- **Tests run:** `npm test` in `server/voice-token`: 25 pass (2 new). `scripts/voice_agent_spec.py check`: PASS. `tools/build_strings_catalog.py --check`: PASS.
+- **NOT RUN:** Swift (DoddyCore tests and the app build): no Swift toolchain in this environment, so the Swift edits are unbuilt. Not heard on a device. Wiktor in a live ElevenLabs conversation is untested: the agent lists no supported voices, so the voice override is not yet proven there.
+
 ## Update 2026-10-13 (ADR-442): OpenAI Realtime is the default, with a model picker
 
 Owner: change only the model, to Realtime, because it is cheaper; keep ElevenLabs; "a switcher inside the app between realtime 2.1 and 2.1 mini".

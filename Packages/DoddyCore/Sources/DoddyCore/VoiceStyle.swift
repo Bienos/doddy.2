@@ -73,8 +73,9 @@ public struct VoiceStyle: Equatable, Sendable, Codable {
         self.expressiveness = expressiveness
     }
 
-    /// The agent's own settings: its voice, normal speed, natural delivery.
-    public static let doddyDefault = VoiceStyle(voice: .doddy, speed: .normal, expressiveness: .natural)
+    /// The app's default: Wiktor, normal speed, natural delivery (ADR-483). Doddy's own voice is
+    /// `.doddy`, the agent's voice, chosen by hand.
+    public static let doddyDefault = VoiceStyle(voice: .wiktor, speed: .normal, expressiveness: .natural)
 
     /// Builds the style from stored raw strings. Anything missing or unknown falls back to the
     /// default for that one setting, so an old or damaged value never blocks a conversation.

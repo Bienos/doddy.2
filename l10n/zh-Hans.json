@@ -1210,7 +1210,6 @@
   "Updates by text message": "以短信形式接收更新",
   "Updates need a Doddy messaging server, and none is connected in this build yet. Nothing is sent anywhere until one is.": "更新需要一台 Doddy 消息服务器，而此版本尚未连接任何服务器。在连接之前，不会向任何地方发送任何内容。",
   "Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456.": "请使用 6 到 8 位较难猜到的数字：不要用同一个数字重复，也不要用 123456 这样的连续数字。",
-  "Use Doddy's own voice": "使用 Doddy 自己的声音",
   "Use a different number": "使用其他号码",
   "Use an https address with no path, like https://doddy-messaging.onrender.com.": "请使用不带路径的 https 地址，例如 https://doddy-messaging.onrender.com。",
   "Use in voice conversations": "在语音对话中使用",

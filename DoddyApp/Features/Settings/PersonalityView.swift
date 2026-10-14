@@ -66,7 +66,7 @@ struct PersonalityView: View {
                         .foregroundStyle(Theme.error)
                 }
                 if voiceStyle != .doddyDefault {
-                    Button("Use Doddy's own voice") {
+                    Button("Use the default voice") {
                         voiceRaw = VoiceStyle.doddyDefault.voice.rawValue
                         speedRaw = VoiceStyle.doddyDefault.speed.rawValue
                         expressivenessRaw = VoiceStyle.doddyDefault.expressiveness.rawValue

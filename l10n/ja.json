@@ -1210,7 +1210,6 @@
   "Updates by text message": "更新をSMSで受け取る",
   "Updates need a Doddy messaging server, and none is connected in this build yet. Nothing is sent anywhere until one is.": "更新にはDoddyのメッセージサーバーが必要ですが、このビルドではまだ接続されていません。接続されるまで、どこにも何も送信されません。",
   "Use 6 to 8 digits that are harder to guess: not one repeated digit or a run like 123456.": "推測されにくい6〜8桁を使ってください。同じ数字の繰り返しや、123456のような連番は避けてください。",
-  "Use Doddy's own voice": "Doddy自身の声を使う",
   "Use a different number": "別の番号を使う",
   "Use an https address with no path, like https://doddy-messaging.onrender.com.": "https://doddy-messaging.onrender.comのように、パスのないhttpsアドレスを使ってください。",
   "Use in voice conversations": "音声会話で使う",

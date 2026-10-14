@@ -52,6 +52,16 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(full["model"] as? String, "gpt-realtime-2.1")
     }
 
+    func testOpenAIVoiceIsSentOnlyWhenChosen() throws {
+        let unchosen = try object(String(decoding: try XCTUnwrap(VoiceTokenServer.requestBody(for: .openAIRealtime)), as: UTF8.self))
+        XCTAssertNil(unchosen["voice"], "nothing chosen: the server's own voice applies")
+        let echo = try object(String(decoding: try XCTUnwrap(VoiceTokenServer.requestBody(for: .openAIRealtime, voice: .echo)), as: UTF8.self))
+        XCTAssertEqual(echo["voice"] as? String, "echo")
+        XCTAssertEqual(OpenAIRealtimeVoice(stored: "cedar"), .cedar)
+        XCTAssertNil(OpenAIRealtimeVoice(stored: "ballad"))
+        XCTAssertNil(OpenAIRealtimeVoice(stored: nil))
+    }
+
     func testOpenAIGrantParsing() {
         let good = Data(#"{"token":"ek_1","provider":"openai","model":"gpt-realtime"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: good), .success(OpenAIRealtimeGrant(secret: "ek_1", model: "gpt-realtime")))
