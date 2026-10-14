@@ -1,6 +1,28 @@
-# Homepage vision: round 2 (D, E, F) and round 1 (A, B, C)
+# Homepage vision: round 3 (G, H), round 2 (D, E, F), round 1 (A, B, C)
 
 **Status: design proposal, not live.** Round 1 (A, B, C) was turned down by the owner on 14 October as boring: layouts, not ideas. Round 2 is below; A to C stay in the folder as the record.
+
+## Round 3: the big asks (owner brief, 14 October, second pass)
+
+Rounds 1 and 2 were turned down: "none is relevant". The owner's answers to three questions: the homepage talks first to **18 to 30, phone-first** and to **AI-curious early adopters**; the first five seconds should feel **simple**, then **"this character is great"**, then **"ha, that's me"**; what killed the six designs was **the use cases**: parking and oat milk undersell it.
+
+So round 3 starts from what the repo says Doddy will actually do (`voice-agent/tools.json`, 60 tools; `voice-agent/phone/`; the two published blog posts): read Gmail and Outlook aloud and draft the reply; find the free hour, book it and say when to leave; find the file in Drive or the page in Notion; run Shortcuts by voice; translate face to face; `propose_plan`, one sentence into one card with several changes and one tap; routines by name; and a phone number any phone can call to reach your notes (spec'd, ADR-152/172, not live). The trust edge for the AI-curious comes from the agents post: asks first, never sends, buys or deletes, says "I don't know".
+
+Built **phone-first** (base CSS is 390 px; desktop widens it). Icons for mail, calendar, maps, docs, lists, translator, Shortcuts, phone, reminders and notes are drawn as ink symbols in the props sheet's style (`icons.svg.partial`), the same exception ADR-468 made for the five objects.
+
+| | Hook | What the page says | Sections |
+|---|---|---|---|
+| G | `g-sort-thursday.html` **Say it once. Tap once. Done.** | The hero is one spoken sentence ("sort Thursday out…") next to the one card it becomes: five changes across Calendar, Maps, Messages and Lists, one "Do these (5)". | The big asks (six cards, apps stamped on each, swipe row on phones) · The agent you'd let near your inbox (most agents vs Doddy) · Lost your phone? Borrow one. Call him · Meet Doddy · join |
+| H | `h-read-me-my-morning.html` **"Doddy, read me my morning."** | The hero is the briefing itself, in Doddy's handwriting: weather and jacket, calendar and when to leave, two emails, reminders, the list, a birthday, then one question that becomes one card. | Then, all day (six timed asks: Drive and Notion, translator, calendar and a text, parking and leaving, the phone line from Mum's landline, Shortcuts and routines) · Why you'd let him (four rules) · join |
+
+**Recommendation: G.** Its hero is the product's one real trick, `propose_plan`, shown rather than described, and "Say it once. Tap once. Done." is the simplest line any round has produced. H is warmer and more "that's me", but a morning briefing sits close to the 08:45 moment on "What can Doddy do?"; if H wins, that moment should change. Both keep the one honest line and the link to the day page.
+
+**Furthest-out claims, for the owner's eye:** the phone line (spec only, needs Twilio and the messaging server), the translator answering back on its own ("unless you stop me"), the Drive and Notion answers combining two sources in one reply, and routines by name. Everything else maps to a tool that exists today, in testing.
+
+### Checked (round 3)
+Headless Chromium 1194 at 390 and 1440 px: no horizontal scroll (G's "big asks" row scrolls sideways on phones by design), no broken images, both fonts loaded. Not checked: real Safari, VoiceOver, motion.
+
+---
 
 ## Round 2: three ideas in the notebook theme
 
