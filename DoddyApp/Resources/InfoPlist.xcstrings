@@ -4,10 +4,46 @@
     "NSAlarmKitUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy stellt einen Wecker nur, wenn du darum bittest und auf Wecker stellen tippst. Seine Wecker klingeln auch im Lautlos-Modus oder in einem Fokus. Schalte sie in den Doddy-Einstellungen unter Wecker aus."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pone una alarma solo cuando se lo pides y tocas Poner alarma. Sus alarmas suenan incluso en modo Silencio o en un modo de concentración. Desactívalas en los Ajustes de Doddy, Alarmas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ne règle une alarme que si tu le demandes et touches Régler l’alarme. Ses alarmes sonnent même en mode Silence ou en mode Concentration. Désactive-les dans les Réglages de Doddy, Alarmes."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy postavlja alarm samo kad to zatražiš i dodirneš Postavi alarm. Njegovi alarmi zvone čak i u tihom načinu ili tijekom Fokusa. Isključi ih u Doddyjevim Postavkama, Alarmi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy imposta una sveglia solo quando lo chiedi e tocchi Imposta sveglia. Le sue sveglie suonano anche in modalità Silenzioso o con una Full Immersion attiva. Disattivale nelle Impostazioni di Doddy, Sveglie."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyがアラームを設定するのは、あなたが頼んで「アラームを設定」をタップしたときだけです。Doddyのアラームは消音モードや集中モード中でも鳴ります。オフにするには、Doddyの設定の「アラーム」を使ってください。"
           }
         },
         "pl": {
@@ -15,16 +51,64 @@
             "state": "translated",
             "value": "Doddy ustawia budzik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik. Jego budziki dzwonią nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz je w Ustawieniach Doddy'ego, w sekcji Budziki."
           }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy só define um alarme quando você pede e toca em Definir alarme. Os alarmes dele tocam mesmo no modo Silencioso ou em um Foco. Desative nos Ajustes do Doddy, em Alarmes."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有在你提出请求并轻点“设置闹钟”时，Doddy 才会设置闹钟。它的闹钟在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭。"
+          }
         }
       }
     },
     "NSCalendarsFullAccessUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy liest deine Termine für die Tage, nach denen du fragst, und fügt einen Termin erst hinzu, ändert oder löscht ihn erst, nachdem du auf Hinzufügen, Ändern oder Löschen getippt hast. Schalte das unter Einstellungen, Verbindungen aus."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lee tus eventos de los días por los que preguntas, y añade, cambia o elimina un evento solo después de que toques Añadir, Cambiar o Eliminar. Desactívalo en Ajustes, Conexiones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lit tes événements pour les jours dont tu parles, et n’ajoute, ne modifie ou ne supprime un événement qu’après que tu as touché Ajouter, Modifier ou Supprimer. Désactive ceci dans Réglages, Connexions."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy čita tvoje događaje za dane o kojima pitaš, a dodaje, mijenja ili briše događaj tek nakon što dodirneš Dodaj, Promijeni ili Izbriši. Isključi to u Postavkama, Veze."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy legge i tuoi eventi per i giorni di cui chiedi, e aggiunge, modifica o elimina un evento solo dopo che tocchi Aggiungi, Modifica o Elimina. Disattivalo in Impostazioni, Collegamenti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyは、あなたが尋ねた日のイベントを読み、イベントの追加・変更・削除は「追加」「変更」「削除」をタップした後にだけ行います。オフにするには、設定の「連携」を使ってください。"
           }
         },
         "pl": {
@@ -32,16 +116,64 @@
             "state": "translated",
             "value": "Doddy czyta Twoje wydarzenia z dni, o które pytasz, a dodaje, zmienia lub usuwa wydarzenie tylko po stuknięciu Dodaj, Zmień lub Usuń. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy lê seus eventos dos dias sobre os quais você pergunta, e só adiciona, altera ou apaga um evento depois que você toca em Adicionar, Alterar ou Apagar. Desative em Ajustes, Conexões."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 会读取你询问的那些日子的日程，并且只有在你轻点“添加”、“更改”或“删除”后才会添加、更改或删除日程。可在设置的“连接”中关闭。"
+          }
         }
       }
     },
     "NSContactsUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy sucht einen Kontakt nach Namen oder schaut, wessen Geburtstag ansteht, wenn du fragst, und liest die Geburtstage der Personen, an die du erinnert werden willst. In einem Sprachgespräch gehen die gefundenen Namen sowie Tag und Monat ihres Geburtstags an ElevenLabs, das die Stimme von Doddy betreibt; Nummern, E-Mail-Adressen und Geburtsjahre bleiben auf diesem iPhone. Schalte das unter Einstellungen, Verbindungen aus."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy busca un contacto por su nombre, o de quién es el próximo cumpleaños, cuando se lo pides, y lee los cumpleaños de las personas que eliges para que te los recuerde. En una conversación de voz, los nombres que encuentra y el día y mes de su cumpleaños van a ElevenLabs, que ejecuta la voz de Doddy; los números, las direcciones de correo y los años de nacimiento se quedan en este iPhone. Desactívalo en Ajustes, Conexiones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy cherche un contact par son nom, ou dont l’anniversaire approche, quand tu le demandes, et lit les anniversaires des personnes que tu choisis pour te les rappeler. En conversation vocale, les noms qu’il trouve et le jour et le mois de leur anniversaire vont à ElevenLabs, qui fait tourner la voix de Doddy ; les numéros, adresses e-mail et années de naissance restent sur cet iPhone. Désactive ceci dans Réglages, Connexions."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy traži kontakt po imenu, ili čiji rođendan dolazi, kad to zatražiš, i čita rođendane osoba na koje želiš da te podsjeća. U glasovnom razgovoru imena koja pronađe te dan i mjesec njihova rođendana idu u ElevenLabs, koji pokreće Doddyjev glas; brojevi, adrese e-pošte i godine rođenja ostaju na ovom iPhoneu. Isključi to u Postavkama, Veze."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy cerca un contatto per nome, o di chi è il prossimo compleanno, quando lo chiedi, e legge i compleanni delle persone che scegli per ricevere un promemoria. In una conversazione vocale, i nomi che trova e il giorno e il mese del loro compleanno vanno a ElevenLabs, che fa funzionare la voce di Doddy; numeri, indirizzi email e anni di nascita restano su questo iPhone. Disattivalo in Impostazioni, Collegamenti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyは、あなたが頼んだときに名前で連絡先を探したり、誕生日が近い人を調べたりし、リマインドする相手として選んだ人の誕生日を読み取ります。音声会話では、見つかった名前と誕生日の日と月が、Doddyの声を動かすElevenLabsに送られます。電話番号、メールアドレス、生まれた年はこのiPhoneにとどまります。オフにするには、設定の「連携」を使ってください。"
           }
         },
         "pl": {
@@ -49,16 +181,64 @@
             "state": "translated",
             "value": "Doddy wyszukuje kontakt po imieniu albo sprawdza, czyje urodziny się zbliżają, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. W rozmowie głosowej znalezione imiona oraz dzień i miesiąc urodzin trafiają do ElevenLabs, które obsługuje głos Doddy'ego; numery, adresy e-mail i lata urodzenia zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy procura um contato pelo nome, ou de quem é o próximo aniversário, quando você pede, e lê os aniversários das pessoas que você escolhe para ser lembrado. Em uma conversa por voz, os nomes que ele encontra e o dia e o mês do aniversário vão para a ElevenLabs, que executa a voz do Doddy; números, endereços de e-mail e anos de nascimento ficam neste iPhone. Desative em Ajustes, Conexões."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在你提出请求时，Doddy 会按姓名查找联系人，或查找谁的生日快到了，并读取你选择要提醒生日的人的生日。在语音对话中，找到的姓名及其生日的日和月会发送给运行 Doddy 语音的 ElevenLabs；电话号码、电子邮件地址和出生年份只保留在这台 iPhone 上。可在设置的“连接”中关闭。"
+          }
         }
       }
     },
     "NSFaceIDUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy verwendet Face ID, um die App oder eine private Notiz zu öffnen, wenn du die Sperre einschaltest. iOS prüft dein Gesicht; Doddy erfährt nur, ob es gepasst hat."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy usa Face ID para abrir la app o una nota privada cuando activas el bloqueo. iOS comprueba tu cara; Doddy solo se entera de si ha coincidido."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy utilise Face ID pour ouvrir l’app ou une note privée quand tu actives le verrouillage. iOS vérifie ton visage ; Doddy apprend seulement si ça correspondait."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy koristi Face ID za otvaranje aplikacije ili privatne bilješke kad uključiš zaključavanje. iOS provjerava tvoje lice; Doddy saznaje samo je li se podudaralo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy usa Face ID per aprire l'app o una nota privata quando attivi il blocco. iOS controlla il tuo volto; Doddy sa solo se corrisponde."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ロックをオンにすると、DoddyはアプリやプライベートなメモをFace IDで開きます。顔の照合はiOSが行い、Doddyが知るのは一致したかどうかだけです。"
           }
         },
         "pl": {
@@ -66,16 +246,64 @@
             "state": "translated",
             "value": "Doddy używa Face ID, żeby otworzyć aplikację albo prywatną notatkę, gdy włączysz blokadę. iOS sprawdza Twoją twarz; Doddy dowiaduje się tylko, czy się zgadza."
           }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy usa o Face ID para abrir o app ou uma nota privada quando você ativa o bloqueio. O iOS verifica seu rosto; o Doddy só fica sabendo se correspondeu."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开启锁定后，Doddy 会使用面容 ID 来打开应用或私密笔记。由 iOS 检查你的面容；Doddy 只会得知是否匹配。"
+          }
         }
       }
     },
     "NSLocationWhenInUseUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy verwendet deinen Standort nur, wenn du darum bittest: für Erinnerungen, die du an einem Ort stellst (um herauszufinden, wo du bist, wenn du auf „Meinen aktuellen Standort verwenden“ tippst, und damit iOS dich beim Ankommen oder Gehen erinnern kann), um zu speichern, wo du geparkt hast, und um mit Apple Karten auszurechnen, wann du irgendwohin losmusst. Doddy behält ihn nicht und verfolgt nicht, wohin du gehst."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy usa tu ubicación solo cuando se lo pides: para los recordatorios que pones en un lugar (para saber dónde estás cuando tocas Usar donde estoy ahora, y para que iOS pueda recordártelo cuando llegues o salgas), para guardar dónde aparcaste y para calcular con Mapas de Apple cuándo salir hacia algún sitio. Doddy no la guarda ni rastrea adónde vas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy n’utilise ta position que lorsque tu le demandes : pour les rappels que tu règles à un lieu (pour trouver où tu es quand tu touches Utiliser ma position actuelle, et pour qu’iOS puisse te faire un rappel quand tu arrives ou pars), pour enregistrer où tu t’es garé, et pour calculer avec Apple Plans quand partir quelque part. Doddy ne la conserve pas et ne suit pas où tu vas."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy koristi tvoju lokaciju samo kad to zatražiš: za podsjetnike koje postaviš na mjestu (da pronađe gdje si kad dodirneš Koristi gdje sam sad, i da te iOS može podsjetiti kad stigneš ili odeš), za spremanje mjesta parkiranja i da s Appleovim Kartama izračuna kad krenuti nekamo. Doddy je ne čuva i ne prati kamo ideš."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy usa la tua posizione solo quando lo chiedi: per i promemoria che imposti in un luogo (per trovare dove sei quando tocchi Usa dove sono ora, e perché iOS possa ricordartelo quando arrivi o parti), per salvare dove hai parcheggiato, e per calcolare con Mappe di Apple quando partire per un posto. Doddy non la conserva e non traccia dove vai."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyが位置情報を使うのは、あなたが頼んだときだけです。場所で設定したリマインダーのため（「今いる場所を使う」をタップしたときに現在地を調べ、到着時や出発時にiOSがリマインドできるようにするため）、駐車した場所を保存するため、そしてAppleのマップでどこかへの出発時刻を計算するためです。Doddyは位置情報を保存せず、あなたの行き先を追跡することもありません。"
           }
         },
         "pl": {
@@ -83,16 +311,64 @@
             "state": "translated",
             "value": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu), do zapisania miejsca parkowania i do obliczenia z Mapami Apple, kiedy wyjść, żeby gdzieś dotrzeć. Doddy jej nie przechowuje i nie śledzi, dokąd chodzisz."
           }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy usa sua localização só quando você pede: para lembretes que você define em um lugar (para descobrir onde você está quando toca em Usar onde estou agora, e para o iOS poder lembrar você ao chegar ou sair), para salvar onde você estacionou, e para calcular com o Mapas da Apple quando sair para algum lugar. O Doddy não a guarda nem rastreia aonde você vai."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，以及通过 Apple 地图计算何时该出发去某个地方。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
+          }
         }
       }
     },
     "NSMicrophoneUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy hört zu, während du mit ihm redest: nachdem du auf Mit Doddy reden getippt hast, oder sobald du Doddy öffnest, wenn du das in den Einstellungen eingeschaltet hast. Wenn du Hey Doddy einschaltest, hört das Mikrofon auf diesem iPhone außerdem auf das Aktivierungswort; dieser Ton wird weder behalten noch gesendet. Deine Stimme in einem Gespräch wird an OpenAI gesendet, um es auszuführen, oder an ElevenLabs, wenn du die Stimme unter Home auf ElevenLabs umstellst. Ein Sprachmemo, das du zu einer Notiz aufnimmst, bleibt auf diesem iPhone."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy escucha mientras hablas con él: después de que toques Hablar con Doddy, o en cuanto abres Doddy si lo activaste en Ajustes. Si activas Hey Doddy, el micrófono también escucha en este iPhone la palabra de activación; ese sonido no se guarda ni se envía. Tu voz en una conversación se envía a OpenAI para ejecutarla, o a ElevenLabs si cambias la voz de Inicio a ElevenLabs. Una nota de voz que grabes en una nota se queda en este iPhone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy écoute pendant que tu lui parles : après que tu as touché Parler à Doddy, ou dès que tu ouvres Doddy si tu l’as activé dans Réglages. Si tu actives Hey Doddy, le micro écoute aussi le mot de réveil sur cet iPhone ; ce son n’est ni conservé ni envoyé. Ta voix en conversation est envoyée à OpenAI pour la mener, ou à ElevenLabs si tu as choisi ElevenLabs comme voix sur l’Accueil. Un mémo vocal que tu enregistres sur une note reste sur cet iPhone."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy sluša dok razgovaraš s njim: nakon što dodirneš Razgovaraj s Doddyjem ili čim otvoriš Doddyja ako je to uključeno u Postavkama. Ako uključiš Hey Doddy, mikrofon na ovom iPhoneu osluškuje i riječ za buđenje; taj se zvuk ne čuva i ne šalje. Tvoj glas u razgovoru šalje se u OpenAI radi vođenja razgovora, ili u ElevenLabs ako na Početnoj prebaciš glas na ElevenLabs. Glasovna bilješka koju snimiš uz bilješku ostaje na ovom iPhoneu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ascolta mentre parli con lui: dopo che tocchi Parla con Doddy, o appena apri Doddy se l'hai attivato in Impostazioni. Se attivi Hey Doddy, il microfono resta in ascolto anche della parola di attivazione su questo iPhone; quel suono non viene conservato né inviato. La tua voce in una conversazione viene inviata a OpenAI per condurla, o a ElevenLabs se in Home passi la voce a ElevenLabs. Un memo vocale che registri su una nota resta su questo iPhone."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。「Hey Doddy」をオンにすると、マイクはこのiPhone上でウェイクワードも待ち受けますが、その音声は保存も送信もされません。会話中のあなたの声は、会話を処理するためにOpenAIに送られます。ホームの声をElevenLabsに切り替えている場合はElevenLabsに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。"
           }
         },
         "pl": {
@@ -100,16 +376,64 @@
             "state": "translated",
             "value": "Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Jeśli włączysz Hej Doddy, mikrofon słucha też na tym iPhonie słowa wywołującego; ten dźwięk nie jest zapisywany ani wysyłany. Twój głos w rozmowie jest wysyłany do OpenAI, żeby ją prowadzić, albo do ElevenLabs, jeśli przełączysz głos na ekranie głównym na ElevenLabs. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
           }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy escuta enquanto você fala com ele: depois que você toca em Falar com o Doddy, ou assim que você abre o Doddy, se ativou isso nos Ajustes. Se você ativar o Hey Doddy, o microfone também escuta neste iPhone a palavra de ativação; esse som não é guardado nem enviado. Sua voz em uma conversa é enviada à OpenAI para executá-la, ou à ElevenLabs se você trocar a voz do Início para a ElevenLabs. Uma gravação de voz que você faz em uma nota fica neste iPhone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。如果你开启了 Hey Doddy，麦克风还会在这台 iPhone 上聆听唤醒词；这些声音不会保留或发送。你在对话中的语音会发送给 OpenAI 来运行对话，如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。"
+          }
         }
       }
     },
     "NSRemindersFullAccessUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy fügt eine Erinnerung erst hinzu, ändert, erledigt oder löscht sie erst, nachdem du auf Hinzufügen, Ändern, Erledigt oder Löschen getippt hast. Schalte das unter Einstellungen, Verbindungen aus."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy añade, cambia, completa o elimina un recordatorio solo después de que toques Añadir, Cambiar, Marcar como hecho o Eliminar. Desactívalo en Ajustes, Conexiones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy n’ajoute, ne modifie, ne termine ou ne supprime un rappel qu’après que tu as touché Ajouter, Modifier, Marquer comme fait ou Supprimer. Désactive ceci dans Réglages, Connexions."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dodaje, mijenja, dovršava ili briše podsjetnik tek nakon što dodirneš Dodaj, Promijeni, Označi kao obavljeno ili Izbriši. Isključi to u Postavkama, Veze."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy aggiunge, modifica, completa o elimina un promemoria solo dopo che tocchi Aggiungi, Modifica, Segna come fatto o Elimina. Disattivalo in Impostazioni, Collegamenti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyがリマインダーの追加・変更・完了・削除を行うのは、「追加」「変更」「完了にする」「削除」をタップした後だけです。オフにするには、設定の「連携」を使ってください。"
           }
         },
         "pl": {
@@ -117,22 +441,82 @@
             "state": "translated",
             "value": "Doddy dodaje, zmienia, kończy lub usuwa przypomnienie tylko po stuknięciu Dodaj, Zmień, Oznacz jako zrobione lub Usuń. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy só adiciona, altera, conclui ou apaga um lembrete depois que você toca em Adicionar, Alterar, Marcar como concluído ou Apagar. Desative em Ajustes, Conexões."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有在你轻点“添加”、“更改”、“标记为完成”或“删除”后，Doddy 才会添加、更改、完成或删除提醒。可在设置的“连接”中关闭。"
+          }
         }
       }
     },
     "NSSpeechRecognitionUsageDescription": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy verschriftlicht ein Sprachmemo auf diesem iPhone, wenn du eins aufnimmst, damit du den Text vor dem Speichern prüfen kannst. Die Aufnahme und ihr Text werden nirgendwohin gesendet."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
           }
         },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy transcribe una nota de voz en este iPhone cuando la grabas, para que puedas revisar su texto antes de guardarla. La grabación y su texto no se envían a ningún sitio."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy transcrit un mémo vocal sur cet iPhone quand tu en enregistres un, pour que tu puisses vérifier ses mots avant d’enregistrer. L’enregistrement et ses mots ne sont envoyés nulle part."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy pretvara glasovnu bilješku u tekst na ovom iPhoneu kad je snimiš, da možeš provjeriti riječi prije spremanja. Snimka i njezine riječi ne šalju se nikamo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy trascrive un memo vocale su questo iPhone quando lo registri, così puoi controllarne il testo prima di salvare. La registrazione e il suo testo non vengono inviati da nessuna parte."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ボイスメモを録音すると、Doddyは保存前に言葉を確認できるよう、このiPhone上で文字に書き起こします。録音とその文字はどこにも送られません。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Nagranie i jego słowa nie są nigdzie wysyłane."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy transcreve uma gravação de voz neste iPhone quando você grava uma, para você conferir as palavras antes de salvar. A gravação e as palavras dela não são enviadas a lugar nenhum."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当你录制语音备忘录时，Doddy 会在这台 iPhone 上将其转写成文字，以便你在保存前检查内容。录音及其文字不会发送到任何地方。"
           }
         }
       }

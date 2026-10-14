@@ -14,11 +14,34 @@
   <meta property="og:url" content="https://www.doddy.lol/">
   <link rel="canonical" href="https://www.doddy.lol/">
   <meta name="twitter:card" content="summary_large_image">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/">
+  <link rel="alternate" hreflang="es" href="https://www.doddy.lol/es/">
+  <link rel="alternate" hreflang="de" href="https://www.doddy.lol/de/">
+  <link rel="alternate" hreflang="fr" href="https://www.doddy.lol/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://www.doddy.lol/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://www.doddy.lol/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://www.doddy.lol/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://www.doddy.lol/it/">
+  <link rel="alternate" hreflang="hr" href="https://www.doddy.lol/hr/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="zh_CN">
+  <meta property="og:locale:alternate" content="ja_JP">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
   <!-- Smart App Banner: enable once Doddy has an App Store ID.
   <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
   -->
-  <link rel="icon" href="assets/doddy-favicon.png" type="image/png" sizes="64x64">
-  <link rel="apple-touch-icon" href="assets/doddy-touch-icon.png">
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
@@ -26,6 +49,8 @@
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js')</script>
   <script src="nav.js" defer></script>
+  <script src="i18n.js" defer></script>
+  <!-- i18n:dictionary --><!-- /i18n:dictionary -->
   <script src="main.js" defer></script>
   <script src="court.js" defer></script>
   <script src="memory.js" defer></script>
@@ -89,10 +114,11 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
       </button>
       <a class="button small" href="#join">Join early access</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>Language</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
       <div class="menu-sheet" id="menu-sheet" aria-label="Menu">
         <ul>
           <li><a href="#asks">Big asks</a></li>
-          <li><a href="/what-can-doddy-do/" class="menu-new">What can Doddy do? <img src="assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="/what-can-doddy-do/" class="menu-new">What can Doddy do? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
           <li><a href="#meet">Meet Doddy</a></li>
           <li><a href="#play">Play</a></li>
           <li><a href="/blog/">Blog</a></li>
@@ -121,8 +147,8 @@
         </div>
         <div class="demo" aria-label="Example: one request becomes one card">
           <p class="ask big">Doddy, sort Thursday out. Dentist's moved to 2, I'm meeting Alex after, and I need bread.<small>said out loud, 23:30</small></p>
-          <picture class="hero-pose demo-doddy"><img src="assets/day/poses/listening-320.webp" srcset="assets/day/poses/listening-320.webp 320w, assets/day/poses/listening.webp 640w" sizes="120px" width="640" height="960" alt=""></picture>
-          <img class="demo-fx" src="assets/day/fx/sparkle.webp" width="120" height="120" alt="">
+          <picture class="hero-pose demo-doddy"><img src="/assets/day/poses/listening-320.webp" srcset="/assets/day/poses/listening-320.webp 320w, /assets/day/poses/listening.webp 640w" sizes="120px" width="640" height="960" alt=""></picture>
+          <img class="demo-fx" src="/assets/day/fx/sparkle.webp" width="120" height="120" alt="">
           <div class="plan">
             <span class="stampt" aria-hidden="true">5 changes, 1 tap</span>
             <h2 class="plan-title">Thursday, if you say so</h2>
@@ -152,40 +178,40 @@
             <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Gmail</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Outlook</span></div>
             <p class="ask">What did the landlord's email say? Reply that Tuesday's fine.</p>
             <p class="says-d">He wants the meter photo by Friday. Reply drafted. You send.</p>
-            <img class="dd" src="assets/day/poses/belly_reading-320.webp" width="640" height="960" loading="lazy" alt="">
+            <img class="dd" src="/assets/day/poses/belly_reading-320.webp" width="640" height="960" loading="lazy" alt="">
           </li>
           <li>
             <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Calendar</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Maps</span></div>
             <p class="ask">Find me an hour with Alex next week that isn't 7am.</p>
             <p class="says-d">Wednesday 16:00. Added, and I'll tell you when to leave.</p>
-            <img class="dd" src="assets/day/poses/fistpump-320.webp" width="640" height="960" loading="lazy" alt="">
+            <img class="dd" src="/assets/day/poses/fistpump-320.webp" width="640" height="960" loading="lazy" alt="">
           </li>
           <li>
             <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Drive</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Notion</span></div>
             <p class="ask">Where's the PDF with the deposit? And what does the Kraków page say?</p>
             <p class="says-d">"Lease_final_v3.pdf", changed in May. Kraków: Friday train, Ola books the flat.</p>
-            <img class="dd" src="assets/day/poses/kneeling_inspect-320.webp" width="640" height="960" loading="lazy" alt="">
+            <img class="dd" src="/assets/day/poses/kneeling_inspect-320.webp" width="640" height="960" loading="lazy" alt="">
           </li>
           <li>
             <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>Translator</span></div>
             <p class="ask">Translate. He's asking something about the key.</p>
             <p class="says-d">He says leave it in the box by the door. Want me to answer him?</p>
-            <img class="dd" src="assets/day/poses/oneleg_balance-320.webp" width="640" height="960" loading="lazy" alt="">
+            <img class="dd" src="/assets/day/poses/oneleg_balance-320.webp" width="640" height="960" loading="lazy" alt="">
           </li>
           <li>
             <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg>Shortcuts</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Reminders</span></div>
             <p class="ask">Run "leaving home" and remind me about the parcel when I'm back.</p>
             <p class="says-d">Lights off, music off, locker 4471 the moment you walk in.</p>
-            <img class="dd" src="assets/day/poses/leaning-320.webp" width="640" height="960" loading="lazy" alt="">
+            <img class="dd" src="/assets/day/poses/leaning-320.webp" width="640" height="960" loading="lazy" alt="">
           </li>
           <li>
             <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-note"/></svg>Routines</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>Todoist</span></div>
             <p class="ask">Do my Sunday reset.</p>
             <p class="says-d">Laundry, bins, the week's three tasks, Mum at seven. One card. Go.</p>
-            <img class="dd" src="assets/day/poses/crosslegged-320.webp" width="640" height="960" loading="lazy" alt="">
+            <img class="dd" src="/assets/day/poses/crosslegged-320.webp" width="640" height="960" loading="lazy" alt="">
           </li>
         </ul>
-        <p class="truth"><img src="assets/day/smile.webp" width="44" height="44" alt=""><span>Some of these he does today, some he's practising. <a href="/what-can-doddy-do/">What can Doddy do?</a> walks through a whole day, moment by moment, with the labels.</span></p>
+        <p class="truth"><img src="/assets/day/smile.webp" width="44" height="44" alt=""><span>Some of these he does today, some he's practising. <a href="/what-can-doddy-do/">What can Doddy do?</a> walks through a whole day, moment by moment, with the labels.</span></p>
       </div>
     </section>
 
@@ -193,29 +219,29 @@
       <div class="wrap">
         <div class="section-head">
           <h2 id="film-title" class="display-m">One morning in Warsaw.</h2>
-          <p>A short film about Doddy, a ball he never quite puts down, and one very determined pigeon. 1 minute 15, best with sound.</p>
+          <p>A short video about Doddy, a ball he never quite puts down, and one very determined pigeon. 1 minute 15, best with sound.</p>
         </div>
         <div class="film-stage">
           <div class="film-card">
             <span class="tape t1" aria-hidden="true"></span>
             <span class="tape t2" aria-hidden="true"></span>
             <div class="player">
-              <video controls playsinline preload="metadata" poster="assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddy brand film, 1 minute 15 seconds">
-                <source src="assets/film/doddy-film-v2.mp4" type="video/mp4">
+              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddy brand video, 1 minute 15 seconds">
+                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
               </video>
               <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Preview, muted</span>
-              <button class="cover" type="button" aria-label="Play the film with sound">
+              <button class="cover" type="button" aria-label="Play the video with sound">
                 <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">Watch the film</span>1:15 · sound on</span>
+                <span class="cover-label" aria-hidden="true"><span class="cover-title">Watch the video</span>1:15 · sound on</span>
               </button>
             </div>
           </div>
           <div class="film-doddy" aria-hidden="true">
             <p class="says">That's me.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
-            <img src="assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
+            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
           </div>
         </div>
-        <ol class="chapters" aria-label="Jump to a moment in the film">
+        <ol class="chapters" aria-label="Jump to a moment in the video">
           <li><button type="button" data-seek="0"><span class="t">0:00</span>Castle Square</button></li>
           <li><button type="button" data-seek="9.3"><span class="t">0:09</span>A big question</button></li>
           <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Every language at once</button></li>
@@ -225,7 +251,7 @@
           <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Closed</button></li>
           <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
         </ol>
-        <p class="caption film-caption">Brand film. A story about Doddy, not a demo of the app.</p>
+        <p class="caption film-caption">Brand video. A story about Doddy, not a demo of the app.</p>
       </div>
     </section>
 
@@ -267,19 +293,19 @@
         </div>
         <ul class="sketches">
           <li class="sketch">
-            <picture><img src="assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Always has a side quest going.</p>
           </li>
           <li class="sketch">
-            <picture><img src="assets/day/poses/leaning-320.webp" srcset="assets/day/poses/leaning-320.webp 320w, assets/day/poses/leaning.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/leaning-320.webp" srcset="/assets/day/poses/leaning-320.webp 320w, /assets/day/poses/leaning.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Notices the small stuff that slows your day.</p>
           </li>
           <li class="sketch">
-            <picture><img src="assets/day/poses/crosslegged-320.webp" srcset="assets/day/poses/crosslegged-320.webp 320w, assets/day/poses/crosslegged.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/crosslegged-320.webp" srcset="/assets/day/poses/crosslegged-320.webp 320w, /assets/day/poses/crosslegged.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Helps first, chats second.</p>
           </li>
           <li class="sketch">
-            <picture><img src="assets/day/poses/oneleg_balance-320.webp" srcset="assets/day/poses/oneleg_balance-320.webp 320w, assets/day/poses/oneleg_balance.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <picture><img src="/assets/day/poses/oneleg_balance-320.webp" srcset="/assets/day/poses/oneleg_balance-320.webp 320w, /assets/day/poses/oneleg_balance.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             <p>Jokes about the queue, never about you.</p>
           </li>
         </ul>
@@ -293,7 +319,7 @@
           <p class="pill"><span class="dot" aria-hidden="true"></span>While you wait</p>
           <h2 id="play-intro-title" class="display-m">Two games. One ball he never puts down.</h2>
         </div>
-        <picture class="play-pose"><img src="assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
+        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
       </div>
     </section>
 
@@ -324,7 +350,7 @@
             <div class="memory-grid" id="memory-grid" role="group" aria-label="Memory cards"></div>
             <div class="memory-doddy">
               <p class="memory-bubble" id="memory-bubble" aria-live="polite">Flip two. Find the pair.</p>
-              <img src="assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
+              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
             </div>
           </div>
           <div class="court-bar">
@@ -375,7 +401,7 @@
             <p class="join-eyebrow">Early access · iPhone first · a few people at a time</p>
             <h2 id="join-title" class="display-m">Give him your Thursday.</h2>
             <p class="join-lede">Leave your email and you're on the list. When your turn comes, Doddy says hey.</p>
-            <form class="waitlist" novalidate>
+            <form class="waitlist" novalidate data-consent="waitlist-note-v1">
               <label for="email">Email</label>
               <div class="field-row">
                 <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-note waitlist-status">
@@ -440,7 +466,7 @@
               <li>What did I promise Mum?</li>
             </ul>
             <p class="says-small join-says">Go on. I'm listening.</p>
-            <picture class="join-pose"><img src="assets/day/poses/reaching_high-320.webp" srcset="assets/day/poses/reaching_high-320.webp 320w, assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="/assets/day/poses/reaching_high-320.webp 320w, /assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
           </div>
         </div>
       </div>
@@ -462,6 +488,7 @@
           <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
           <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
         </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="Language" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
       </div>
       <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on. Early access: some of this page is where Doddy is heading, and <a href="/what-can-doddy-do/">What can Doddy do?</a> says what works today.</p>
       <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>

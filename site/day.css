@@ -22,14 +22,14 @@
 .wcd-copy { min-width: 0; }
 .wcd-copy .display { max-width: 11ch; }
 .hand-word {
-  display: inline-block; position: relative; padding: 0 0.08em;
-  font-family: var(--hand); font-weight: 700; font-size: 0.92em; line-height: 0.9; color: var(--accent-text);
+  display: inline-block; position: relative; padding: 0 0.08em; white-space: nowrap;
+  font-family: var(--hand); font-weight: 700; font-size: clamp(1.7rem, 1.1rem + 2.4vw, 3.2rem); line-height: 1.05; color: var(--accent-text);
   transform: rotate(-3deg); transform-origin: left bottom;
 }
 .hand-word .scribble { bottom: -0.1em; }
 .wcd-copy .lede { max-width: 30rem; }
 
-.stage { position: relative; width: min(100%, 600px); aspect-ratio: 1 / 0.96; margin: 0 auto; isolation: isolate; }
+.stage { position: relative; width: min(100%, 600px); aspect-ratio: 1 / 0.96; margin: 0 auto clamp(64px, 9vw, 84px); isolation: isolate; }
 .stage-glow {
   position: absolute; z-index: -1; left: 50%; top: 52%; width: 110%; aspect-ratio: 1; translate: -50% -50%;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--orange-cue) 20%, transparent), color-mix(in srgb, var(--orange-cue) 5%, transparent) 60%, transparent);
@@ -38,28 +38,25 @@
 .doddy-main { position: absolute; left: 50%; bottom: 3%; width: 46%; translate: -50% 0; margin: 0; }
 .doddy-main img { width: 100%; height: auto; display: block; filter: drop-shadow(0 14px 14px rgb(60 40 10 / 14%)); }
 .stage .says {
-  display: block; left: 62%; right: auto; top: 29%; width: max-content; max-width: 36%;
-  white-space: normal; font-size: clamp(1.4rem, 1.1rem + 0.9vw, 2.2rem); line-height: 1; transition: opacity 120ms ease;
+  display: block; left: 50%; right: auto; top: calc(100% + 18px); translate: -50% 0; width: max-content; max-width: 94%;
+  white-space: normal; text-align: center; transform: rotate(-2deg);
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); line-height: 1.05; transition: opacity 120ms ease;
 }
 .stage .says.swap { opacity: 0; }
 
 .obj {
-  position: absolute; width: 116px; aspect-ratio: 1; display: grid; place-items: center; padding: 12px;
+  position: absolute; width: 118px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 8px 9px;
   background: var(--paper); border: 1px solid var(--separator); border-radius: 4px 14px 4px 14px; box-shadow: var(--lift);
   cursor: pointer; text-decoration: none; color: inherit;
   transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
-.obj img, .obj svg { width: 82%; height: 82%; object-fit: contain; display: block; }
-.obj-label {
-  position: absolute; left: 50%; top: calc(100% + 6px); translate: -50% 0; margin: 0;
-  font-family: var(--hand); font-weight: 700; font-size: 1.35rem; line-height: 1; white-space: nowrap; color: var(--accent-text);
-  opacity: 0; transition: opacity 150ms ease; pointer-events: none;
+.obj img, .obj svg { width: 62px; height: 62px; object-fit: contain; display: block; flex: none; }
+.obj-cap {
+  display: block; max-width: 100%; margin: 0; text-align: center; overflow-wrap: anywhere;
+  font-family: var(--hand); font-weight: 700; font-size: 1.1rem; line-height: 1; color: var(--accent-text);
 }
 .obj:hover, .obj:focus-visible, .obj.is-hover { border-color: var(--orange-cue); transform: translateY(-5px) rotate(0deg) !important; }
-.obj:hover .obj-label, .obj:focus-visible .obj-label, .obj.is-hover .obj-label, .obj.is-active .obj-label { opacity: 1; }
 .obj.is-active { border-color: var(--orange-cue); box-shadow: inset 0 -4px 0 var(--orange-cue), var(--lift); }
-.o-alarm .obj-label, .o-coffee .obj-label, .o-calendar .obj-label { left: 0; translate: 0; }
-.o-phone .obj-label, .o-suitcase .obj-label, .o-bag .obj-label { left: auto; right: 0; translate: 0; }
 .obj.o-bubble { left: 50%; top: 0; translate: -50% 0; rotate: 2deg; }
 .obj.o-alarm { left: 2%; top: 9%; rotate: -6deg; }
 .obj.o-phone { right: 2%; top: 7%; rotate: 5deg; }
@@ -70,12 +67,10 @@
 @media (max-width: 700px) {
   .stage { aspect-ratio: 1 / 1.05; }
   .stage-glow { width: 100%; }
-  .obj { width: 70px; padding: 7px; }
-  .obj-label { font-size: 1.05rem; }
+  .obj { width: 88px; padding: 7px 5px 6px; gap: 3px; }
+  .obj img, .obj svg { width: 40px; height: 40px; }
+  .obj-cap { font-size: 0.95rem; }
   .doddy-main { width: 50%; }
-  /* On a phone the line sits under the ring as a caption, clear of his pose and the objects' labels. */
-  .stage { margin-bottom: 76px; }
-  .stage .says { left: 0; right: 0; top: calc(100% + 32px); width: auto; max-width: none; text-align: center; font-size: 1.7rem; }
 }
 
 /* Hero arrival: Doddy pops in, the seven objects drop in 60 ms apart (the class is added by day.js, and never under reduced motion). */
@@ -188,7 +183,8 @@
   position: absolute; z-index: 3; padding: 6px 10px; border: 3px solid var(--confirmed); color: var(--confirmed); border-radius: 8px;
   font: 800 0.75rem/1 var(--display); letter-spacing: 0.05em; text-transform: uppercase; rotate: -8deg; background: color-mix(in srgb, var(--paper) 75%, transparent);
 }
-.stamp.on-card { right: -10px; top: -16px; }
+/* The stamp sits on the card's top edge, outside the app card, so it never covers its text. */
+.stamp.on-card { right: auto; left: 22px; top: -15px; bottom: auto; z-index: 4; }
 
 .choices { display: none; }
 .js .choices { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 0; }
@@ -251,20 +247,27 @@
 .d-bubble.typing:not(.done) .line::after { content: ""; display: inline-block; width: 2px; height: 0.85em; margin-left: 2px; vertical-align: -0.08em; background: var(--accent-text); }
 
 /* Phones: the card is the page, a chip plays the scene (the finished card is the default; day.js primes it on tap). */
-@media (max-width: 700px) {
+/* Up to 1100 px the card stacks like a phone: the scene, then what you said, then the app's card. */
+@media (max-width: 1100px) {
   .scene-card { display: grid; gap: 10px; padding: 7px; border-radius: 20px; }
   .scene-art { border-radius: 14px; }
   .u-bubble { position: static; justify-self: end; max-width: 86%; font-size: 0.875rem; }
   .d-bubble { font-size: 1.2rem; max-width: 58%; }
-  .d-bubble.stack, .u-bubble.two-lines ~ .d-bubble.stack, .d-bubble.stack.lower { top: 7%; }
+  /* Below the stamp on the card's edge, clear of the top of the scene. */
+  .d-bubble.stack, .u-bubble.two-lines ~ .d-bubble.stack, .d-bubble.stack.lower { top: 24%; }
+  .scene-art .note { font-size: 0.9rem; padding: 4px 7px; }
+  .scene-art .note.n1 { left: 3%; top: 13%; }
+  .scene-art .note.n2 { left: 3%; top: 32%; }
+  .scene-art .note.n3 { left: 3%; top: 51%; }
+  #text .r-extra.r-extra { left: 3%; top: 26%; max-width: 30%; }
   .scene-panel { position: relative; width: auto !important; font-size: 0.8125rem; }
   .scene-art .o-bubble-l { font-size: 0.8125rem; max-width: 40%; }
   .scene-art .o-bubble-l + .d-bubble { font-size: 1.05rem; max-width: 40%; }
   .scene-art .d-bubble.kiosk-reply { max-width: 40%; }
-  .stamp.on-card { right: 6px; top: -14px; }
   .scene-art .big-time { font-size: 2rem; }
   .scene.primed .r-enter { transform: translateX(-40px); }
 }
+@media (max-width: 700px) { .stamp.on-card { top: -14px; } }
 
 /* ---------- Doddy between moments ---------- */
 
@@ -328,4 +331,24 @@
 @media (prefers-reduced-motion: reduce) {
   .stage.intro .obj, .stage.intro.in .obj { opacity: 1; transform: none; }
   .scene.primed .r-enter { transform: none; }
+}
+
+/* Narrow phones: the tiles and the card's bubbles shrink so nothing touches. */
+@media (max-width: 400px) {
+  .obj { width: 80px; padding: 6px 4px 5px; gap: 2px; }
+  .obj img, .obj svg { width: 34px; height: 34px; }
+  .obj-cap { font-size: 0.82rem; }
+  .obj.o-alarm { top: 6%; }
+  .obj.o-phone { top: 4%; }
+  .obj.o-coffee { top: 38%; }
+  .obj.o-suitcase { top: 33%; }
+  .obj.o-calendar, .obj.o-bag { bottom: 0; }
+  .scene-art .d-bubble { font-size: 1.05rem; max-width: 62%; }
+  .scene-art .note { font-size: 0.82rem; }
+}
+/* Mid widths: tiles and their captions shrink so none touch. */
+@media (min-width: 701px) and (max-width: 1100px) {
+  .obj { width: 102px; padding: 8px 6px 7px; gap: 4px; }
+  .obj img, .obj svg { width: 50px; height: 50px; }
+  .obj-cap { font-size: 0.98rem; }
 }

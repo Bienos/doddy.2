@@ -4,10 +4,58 @@
     "Cancel": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abbrechen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odustani"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annulla"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャンセル"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Anuluj"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消"
           }
         }
       }
@@ -15,10 +63,58 @@
     "Doddy opens this on the capture screen next time you open the app. Nothing is saved until you tap Save there.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy öffnet das beim nächsten Öffnen der App auf dem Erfassen-Bildschirm. Nichts wird gespeichert, bis du dort auf Speichern tippst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lo abrirá en la pantalla de captura la próxima vez que abras la app. No se guarda nada hasta que toques Guardar allí."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy l’ouvre sur l’écran de saisie la prochaine fois que tu ouvres l’app. Rien n’est enregistré tant que tu n’y touches pas Enregistrer."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to otvara na zaslonu za bilježenje sljedeći put kad otvoriš aplikaciju. Ništa se ne sprema dok ondje ne dodirneš Spremi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lo apre nella schermata di acquisizione la prossima volta che apri l'app. Niente viene salvato finché non tocchi Salva lì."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次にアプリを開いたとき、Doddyはこれを記録画面で開きます。そこで「保存」をタップするまで、何も保存されません。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Doddy otworzy to na ekranie zapisu, gdy następnym razem otworzysz aplikację. Nic nie zostanie zapisane, dopóki nie stukniesz tam Zapisz."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy abre isto na tela de captura na próxima vez que você abrir o app. Nada é salvo até você tocar em Salvar lá."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下次你打开应用时，Doddy 会在记录界面打开它。在你在那里轻点“保存”之前，不会保存任何内容。"
           }
         }
       }
@@ -26,10 +122,58 @@
     "Done": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fertig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hecho"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotovo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fine"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完了"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Concluído"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成"
           }
         }
       }
@@ -37,10 +181,58 @@
     "Open Doddy to check it and tap Save. It isn't saved yet.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Doddy, prüfe es und tippe auf Speichern. Es ist noch nicht gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Doddy para revisarlo y toca Guardar. Aún no está guardado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvre Doddy pour vérifier et touche Enregistrer. Ce n’est pas encore enregistré."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otvori Doddyja da to provjeriš i dodirneš Spremi. Još nije spremljeno."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Doddy per controllarlo e tocca Salva. Non è ancora salvato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyを開いて内容を確認し、「保存」をタップしてください。まだ保存されていません。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz Doddy’ego, sprawdź to i stuknij Zapisz. To jeszcze nie jest zapisane."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra o Doddy para conferir e tocar em Salvar. Ainda não está salvo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Doddy 检查后轻点“保存”。它还没有保存。"
           }
         }
       }
@@ -48,10 +240,58 @@
     "Ready in Doddy": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bereit in Doddy"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo en Doddy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prêt dans Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spremno u Doddyju"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronto in Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyで準備完了"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Gotowe w Doddym"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pronto no Doddy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已在 Doddy 中就绪"
           }
         }
       }
@@ -59,10 +299,58 @@
     "Save to Doddy": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Doddy speichern"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar en Doddy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer dans Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spremi u Doddyju"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva in Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyに保存"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Zapisz w Doddym"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvar no Doddy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存到 Doddy"
           }
         }
       }
@@ -70,10 +358,58 @@
     "Send to Doddy": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An Doddy senden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar a Doddy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyer à Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pošalji Doddyju"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invia a Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyに送信"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Wyślij do Doddy’ego"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar ao Doddy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送到 Doddy"
           }
         }
       }
@@ -81,10 +417,58 @@
     "Sharing to Doddy isn't set up in this version of the app. Nothing was saved. You can use the Save to Doddy shortcut instead.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Teilen in Doddy ist in dieser Version der App nicht eingerichtet. Nichts wurde gespeichert. Du kannst stattdessen den Kurzbefehl „In Doddy speichern“ verwenden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir en Doddy no está configurado en esta versión de la app. No se ha guardado nada. Puedes usar el atajo Guardar en Doddy en su lugar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le partage vers Doddy n’est pas configuré dans cette version de l’app. Rien n’a été enregistré. Tu peux utiliser le raccourci Enregistrer dans Doddy à la place."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dijeljenje s Doddyjem nije postavljeno u ovoj verziji aplikacije. Ništa nije spremljeno. Umjesto toga možeš koristiti prečac Spremi u Doddyju."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La condivisione in Doddy non è configurata in questa versione dell'app. Niente è stato salvato. Puoi usare invece il comando rapido Salva in Doddy."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このバージョンのアプリでは、Doddyへの共有は設定されていません。何も保存されていません。代わりに「Doddyに保存」ショートカットを使えます。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnianie do Doddy’ego nie jest skonfigurowane w tej wersji aplikacji. Nic nie zostało zapisane. Możesz zamiast tego użyć skrótu Zapisz w Doddym."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O compartilhamento com o Doddy não está configurado nesta versão do app. Nada foi salvo. Você pode usar o atalho Salvar no Doddy no lugar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此版本的应用尚未设置共享到 Doddy。没有保存任何内容。你可以改用“保存到 Doddy”快捷指令。"
           }
         }
       }
@@ -92,10 +476,58 @@
     "That couldn't be handed to Doddy. Nothing was saved. Try again.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das konnte nicht an Doddy übergeben werden. Nichts wurde gespeichert. Versuch es noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se ha podido pasar eso a Doddy. No se ha guardado nada. Inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de le transmettre à Doddy. Rien n’a été enregistré. Réessaie."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nije bilo moguće predati Doddyju. Ništa nije spremljeno. Pokušaj ponovno."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è stato possibile passarlo a Doddy. Niente è stato salvato. Riprova."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyに渡せませんでした。何も保存されていません。もう一度お試しください。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się przekazać tego Doddy’emu. Nic nie zostało zapisane. Spróbuj ponownie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isso não pôde ser passado ao Doddy. Nada foi salvo. Tente de novo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法将其交给 Doddy。没有保存任何内容。请重试。"
           }
         }
       }
@@ -103,10 +535,58 @@
     "There's no text or web link here that Doddy can keep. Nothing was saved.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier ist kein Text und kein Weblink, den Doddy behalten kann. Nichts wurde gespeichert."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aquí no hay texto ni enlace web que Doddy pueda guardar. No se ha guardado nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il n’y a ici ni texte ni lien web que Doddy puisse garder. Rien n’a été enregistré."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ovdje nema teksta ni web-poveznice koje bi Doddy mogao sačuvati. Ništa nije spremljeno."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qui non c'è testo o link web che Doddy possa conservare. Niente è stato salvato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここにはDoddyが残せるテキストやWebリンクがありません。何も保存されていません。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "Nie ma tu tekstu ani linku, który Doddy mógłby zachować. Nic nie zostało zapisane."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não há texto nem link aqui que o Doddy possa guardar. Nada foi salvo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这里没有 Doddy 可以保留的文字或网页链接。没有保存任何内容。"
           }
         }
       }
@@ -114,10 +594,58 @@
     "This replaces something you shared earlier that isn't saved yet.": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das ersetzt etwas, das du vorher geteilt hast und das noch nicht gespeichert ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esto sustituye algo que compartiste antes y que aún no está guardado."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceci remplace quelque chose que tu as partagé plus tôt et qui n’est pas encore enregistré."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ovo zamjenjuje ranije podijeljeni sadržaj koji još nije spremljen."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo sostituisce qualcosa che hai condiviso prima e che non è ancora salvato."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "まだ保存されていない、以前に共有した内容と置き換わります。"
+          }
+        },
         "pl": {
           "stringUnit": {
             "state": "translated",
             "value": "To zastąpi wcześniej udostępnioną treść, która nie jest jeszcze zapisana."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isto substitui algo que você compartilhou antes e ainda não está salvo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这会替换你之前共享但尚未保存的内容。"
           }
         }
       }

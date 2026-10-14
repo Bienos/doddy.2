@@ -1,0 +1,34 @@
+{
+  "NSAlarmKitUsageDescription": {
+    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
+    "ja": "Doddyがアラームを設定するのは、あなたが頼んで「アラームを設定」をタップしたときだけです。Doddyのアラームは消音モードや集中モード中でも鳴ります。オフにするには、Doddyの設定の「アラーム」を使ってください。"
+  },
+  "NSCalendarsFullAccessUsageDescription": {
+    "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが尋ねた日のイベントを読み、イベントの追加・変更・削除は「追加」「変更」「削除」をタップした後にだけ行います。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSContactsUsageDescription": {
+    "en": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが頼んだときに名前で連絡先を探したり、誕生日が近い人を調べたりし、リマインドする相手として選んだ人の誕生日を読み取ります。音声会話では、見つかった名前と誕生日の日と月が、Doddyの声を動かすElevenLabsに送られます。電話番号、メールアドレス、生まれた年はこのiPhoneにとどまります。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSFaceIDUsageDescription": {
+    "en": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched.",
+    "ja": "ロックをオンにすると、DoddyはアプリやプライベートなメモをFace IDで開きます。顔の照合はiOSが行い、Doddyが知るのは一致したかどうかだけです。"
+  },
+  "NSLocationWhenInUseUsageDescription": {
+    "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go.",
+    "ja": "Doddyが位置情報を使うのは、あなたが頼んだときだけです。場所で設定したリマインダーのため（「今いる場所を使う」をタップしたときに現在地を調べ、到着時や出発時にiOSがリマインドできるようにするため）、駐車した場所を保存するため、そしてAppleのマップでどこかへの出発時刻を計算するためです。Doddyは位置情報を保存せず、あなたの行き先を追跡することもありません。"
+  },
+  "NSMicrophoneUsageDescription": {
+    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone.",
+    "ja": "Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。「Hey Doddy」をオンにすると、マイクはこのiPhone上でウェイクワードも待ち受けますが、その音声は保存も送信もされません。会話中のあなたの声は、会話を処理するためにOpenAIに送られます。ホームの声をElevenLabsに切り替えている場合はElevenLabsに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。"
+  },
+  "NSRemindersFullAccessUsageDescription": {
+    "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
+    "ja": "Doddyがリマインダーの追加・変更・完了・削除を行うのは、「追加」「変更」「完了にする」「削除」をタップした後だけです。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSSpeechRecognitionUsageDescription": {
+    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
+    "ja": "ボイスメモを録音すると、Doddyは保存前に言葉を確認できるよう、このiPhone上で文字に書き起こします。録音とその文字はどこにも送られません。"
+  }
+}

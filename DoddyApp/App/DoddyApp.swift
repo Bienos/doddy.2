@@ -14,6 +14,8 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
+        // The screens' language is read when the app starts: English unless the person picked another (ADR-459).
+        AppLanguageStore.applyAtLaunch()
         // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
         ServerKeychainStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared

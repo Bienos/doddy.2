@@ -12,7 +12,15 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
+		<string>de</string>
+		<string>es</string>
+		<string>fr</string>
+		<string>hr</string>
+		<string>it</string>
+		<string>ja</string>
 		<string>pl</string>
+		<string>pt-BR</string>
+		<string>zh-Hans</string>
 	</array>
 	<key>DoddyMacAppGroup</key>
 	<string>$(TeamIdentifierPrefix)$(DODDY_APP_BUNDLE_IDENTIFIER).mac</string>

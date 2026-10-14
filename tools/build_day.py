@@ -104,7 +104,7 @@ M = [
          enter=(["tiptoe"], "left: 2%; height: 72%"), path=False,
          prop=("img", "phone", "left: 24%; bottom: 7%; width: 8%"), fx=[("dash-lines", "left: 22%; bottom: 26%; width: 8%")],
          extra=("left: 31%; top: 8%; max-width: 22%", "Alex", "Yesterday was fun :)"),
-         you="Help me reply to this without sounding desperate.", two=True, doddy="That's a fairly ambitious request, but okay.",
+         you="Help me reply to this without sounding desperate.", two=True, utop=3, dtop=22, doddy="That's a fairly ambitious request, but okay.",
          panel='''<div class="scene-panel">
               <strong>Draft to Alex</strong>
               <p class="from"><b>Alex, 10:04</b>Yesterday was fun :)</p>
@@ -217,7 +217,7 @@ M = [
          cap=("testing", "Plans · in testing"), bg="study", rest=("shush", "left: 8%; height: 74%"),
          enter=(["turned_away", "turn_1", "turn_2"], "left: 10%; height: 72%"), path=False,
          prop=("img", "pencil", "left: 30%; bottom: 7%; width: 13%"), fx=[("bang", "left: 42%; bottom: 20%; width: 4%")],
-         you="Sort tomorrow out for me.", two=False, doddy="Three things, one tap. Untick to skip any.",
+         you="Sort tomorrow out for me.", two=False, dtop=20, doddy="Three things, one tap. Untick to skip any.",
          panel='''<div class="scene-panel">
               <strong>Tomorrow, if you say so</strong>
               <div class="row"><span>☑ Leave for the dentist</span><span class="t">Reminder · 12:00</span></div>
@@ -277,11 +277,17 @@ def moment(m: dict) -> str:
             f'<label class="chip"><input type="radio" name="{name}" data-text="{html.escape(text)}"{" checked" if i == 0 else ""}><span>{e(label)}</span></label>'
             for i, (label, text) in enumerate(opts))
         choices = f'\n          <div class="choices" role="radiogroup" aria-label="Try the ask a different way">{chips}</div>'
+    if m.get("dtop") is not None:
+        rule(f"#{mid} .d-bubble.stack", f"top: {m['dtop']}%")
+    if m.get("utop") is not None:
+        rule(f"#{mid} .u-bubble", f"top: {m['utop']}%")
     u_cls = "u-bubble two-lines" if m.get("two") else "u-bubble"
     u_bubble = "" if m.get("stranger") else f'\n            <p class="{u_cls}"><span class="sr">You say: </span>{e(m["you"])}</p>'
     panel = ""
+    stamp_html = ""
     if m["panel"]:
-        panel = "\n            " + m["panel"].replace(">", f'><span class="stamp on-card">{e(m["stamp"])}</span>', 1)
+        panel = "\n            " + m["panel"]
+        stamp_html = f'\n            <span class="stamp on-card">{e(m["stamp"])}</span>'
         if m["pw"]:
             rule(f"#{mid} .scene-panel", f"width: {m['pw']}")
     peek = (f'\n            <img class="peek" src="{A}/poses/sneaky_crouch-320.webp" width="640" height="960" alt="" hidden loading="lazy">'
@@ -304,7 +310,7 @@ def moment(m: dict) -> str:
             <span class="tape t1" aria-hidden="true"></span><span class="tape t2" aria-hidden="true"></span>
             <div class="scene-art">
               {scene_art(m)}
-            </div>{u_bubble}{panel}{peek}
+            </div>{stamp_html if m["panel"] else ""}{u_bubble}{panel}{peek}
           </div>{choices}
           <figcaption class="caption left"><span>{e(m["caption"])}</span><button class="play-chip" type="button" hidden><span class="pc-play">\u25b6 Play the scene</span><span class="pc-replay">\u21bb Replay the scene</span></button></figcaption>
         </figure>
@@ -338,12 +344,18 @@ OBJECTS = [  # id, class, moment, label, pose, line, art
 ]
 
 
+SHORT_CAPTION = {"bubble": "18:45 The place", "alarm": "08:45 Late. Again.", "phone": "10:20 The text",
+                 "coffee": "13:00 Lunch?", "suitcase": "Away · Translate", "calendar": "22:30 Remind me",
+                 "bag": "20:15 Oat milk"}
+
+
 def obj(o) -> str:
     _, cls, mid, label, pose, line, art = o
     inner = (f'<svg aria-hidden="true"><use href="#{art[1]}"/></svg>' if art[0] == "svg"
              else f'<img src="{A}/props/{art[1]}.webp" alt="" loading="lazy" decoding="async">')
-    return (f'<a class="obj {cls}" href="#{mid}" data-pose="{pose}" data-line="{html.escape(line)}">{inner}'
-            f'<span class="obj-label">{e(label)}</span></a>')
+    cap = SHORT_CAPTION[_]
+    return (f'<a class="obj {cls}" href="#{mid}" data-pose="{pose}" data-line="{html.escape(line)}" aria-label="{html.escape(label)}">{inner}'
+            f'<span class="obj-cap">{e(cap)}</span></a>')
 
 
 STRIP = [("late", "08:45", "Late. Again."), ("jacket", "09:10", "Jacket or no jacket?"), ("text", "10:20", "The awkward text"),

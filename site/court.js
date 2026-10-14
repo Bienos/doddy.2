@@ -28,7 +28,7 @@
   const poses = {};
   for (const name of ["basketball-shot", "basketball-follow-through", "basketball-gather"]) {
     const img = new Image();
-    img.src = `assets/poses/doddy-pose-${name}-light-v1.3-r1.svg`;
+    img.src = `/assets/poses/doddy-pose-${name}-light-v1.3-r1.svg`;
     img.onload = () => draw();
     poses[name] = img;
   }
@@ -135,7 +135,7 @@
         state.made += 1;
         madeEl.textContent = state.made;
         state.swish = 0.45;
-        say(pick(["Swish.", "Nothing but net.", "Too easy.", "Again?"]));
+        say(pick([doddyT("Swish."), doddyT("Nothing but net."), doddyT("Too easy."), doddyT("Again?")]));
       }
       // ground
       if (b.y + R > GROUND) {
@@ -144,7 +144,7 @@
       }
       const gone = b.x < -80 || b.x > W + 80 || b.t > 5 || b.rested > 0.35;
       if (gone) {
-        if (!b.scored) say(pick(["Off the rim.", "Close one.", "Warm-up shot.", "Wind, probably."]));
+        if (!b.scored) say(pick([doddyT("Off the rim."), doddyT("Close one."), doddyT("Warm-up shot."), doddyT("Wind, probably.")]));
         state.ball = null;
         state.pose = "basketball-gather";
         state.resetTimer = setTimeout(() => { state.pose = "basketball-shot"; draw(); }, 380);

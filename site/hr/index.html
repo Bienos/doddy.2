@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="hr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Doddy. Reci jednom. Dodirni jednom. Gotovo.</title>
+  <meta name="description" content="Doddy je AI prijatelj za tvoj iPhone. Rečenica postaje kartica koju odobravaš: kalendar, podsjetnici, e-pošta, liste i karte. Uvijek prvo pita.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Doddy. Reci jednom. Dodirni jednom. Gotovo.">
+  <meta property="og:description" content="AI prijatelj za tvoj iPhone koji rečenicu pretvara u karticu koju odobravaš. Uvijek prvo pita.">
+  <meta property="og:image" content="https://www.doddy.lol/assets/og-image.png">
+  <meta property="og:url" content="https://www.doddy.lol/hr/">
+  <link rel="canonical" href="https://www.doddy.lol/hr/">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/">
+  <link rel="alternate" hreflang="es" href="https://www.doddy.lol/es/">
+  <link rel="alternate" hreflang="de" href="https://www.doddy.lol/de/">
+  <link rel="alternate" hreflang="fr" href="https://www.doddy.lol/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://www.doddy.lol/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://www.doddy.lol/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://www.doddy.lol/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://www.doddy.lol/it/">
+  <link rel="alternate" hreflang="hr" href="https://www.doddy.lol/hr/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/">
+  <meta property="og:locale" content="hr_HR">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="zh_CN">
+  <meta property="og:locale:alternate" content="ja_JP">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
+  <!-- Smart App Banner: enable once Doddy has an App Store ID.
+  <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
+  -->
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="/nav.js" defer></script>
+  <script src="/i18n.js" defer></script>
+  <!-- i18n:dictionary --><script src="/i18n/hr.js" defer></script><!-- /i18n:dictionary -->
+  <script src="/main.js" defer></script>
+  <script src="/court.js" defer></script>
+  <script src="/memory.js" defer></script>
+  <script src="/analytics.js" defer></script>
+  <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
+       /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
+       queue below is the HTML snippet from vercel.com/docs/analytics (its hash is in vercel.json). -->
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Preskoči na sadržaj</a>
+  <svg width="0" height="0" class="sprite" aria-hidden="true">
+    <symbol id="o-alarm" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 100 L24 112 M88 100 L96 112"/>
+        <path d="M36 24 L24 12 M84 24 L96 12"/>
+        <circle cx="22" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="98" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="60" cy="64" r="40" fill="#FCF4E4"/>
+        <path d="M60 42 V64 L76 74"/>
+      </g>
+      <path d="M12 36 L5 30 M9 50 L1 48 M12 64 L5 70" stroke="#FC6800" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="o-calendar" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="24" width="92" height="84" rx="12" fill="#FCF4E4"/>
+        <path d="M14 36 a12 12 0 0 1 12-12 h68 a12 12 0 0 1 12 12 v12 H14z" fill="#FC6800"/>
+        <path d="M36 14 V34 M84 14 V34" fill="none"/>
+      </g>
+      <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
+      <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
+    </symbol>
+    <!-- Ink icons for the apps Doddy reaches, in the props sheet's own ink, cream and orange (same exception as the five objects, ADR-468). -->
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect class="f" x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7.5 12 13l8.5-5.5"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect class="f" x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/><circle class="o" cx="15.5" cy="15.5" r="1.6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path class="f" d="M12 21s-6-5.5-6-10.5a6 6 0 0 1 12 0C18 15.5 12 21 12 21z"/><circle class="o" cx="12" cy="10.5" r="2"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path class="f" d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><rect class="f" x="4" y="3" width="16" height="18" rx="3"/><path d="M9 8h7M9 12h7M9 16h4"/><path class="o" d="M6.5 8h.01M6.5 12h.01M6.5 16h.01" stroke-width="2.8"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle class="f" cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24"><path class="o" d="M13 2 4 14h7l-1 8 9-12h-7z" stroke="#080808"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><path class="f" d="M6 3h4l2 5-2.5 1.5a11 11 0 0 0 5 5L16 12l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 4 5a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path class="f" d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4z"/><path d="M10 21h4"/><circle class="o" cx="17" cy="6" r="2"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><rect class="f" x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/><path class="o" d="M15 15l3 3" stroke-width="3"/></symbol>
+  </svg>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="#top" aria-label="Doddy, natrag na vrh">Doddy</a>
+      <nav aria-label="Odjeljci">
+        <ul class="nav-links">
+          <li><a href="#asks">Što tražiš</a></li>
+          <li><a href="/what-can-doddy-do/">Što Doddy može?</a></li>
+          <li><a href="#meet">Upoznaj Doddyja</a></li>
+          <li><a href="#play">Igraj</a></li>
+          <li><a href="/blog/">Blog <span class="note">(Engleski)</span></a></li>
+          <li><a href="#privacy">Privatnost</a></li>
+        </ul>
+      </nav>
+      <button class="menu-button" type="button" aria-label="Izbornik" aria-expanded="false" aria-controls="menu-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <a class="button small" href="#join">Zatraži rani pristup</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>Jezik</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr" aria-current="page">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
+      <div class="menu-sheet" id="menu-sheet" aria-label="Izbornik">
+        <ul>
+          <li><a href="#asks">Što tražiš</a></li>
+          <li><a href="/what-can-doddy-do/" class="menu-new">Što Doddy može? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="#meet">Upoznaj Doddyja</a></li>
+          <li><a href="#play">Igraj</a></li>
+          <li><a href="/blog/">Blog <span class="note">(Engleski)</span></a></li>
+          <li><a href="#privacy">Privatnost</a></li>
+        </ul>
+        <a class="button" href="#join">Zatraži rani pristup</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- Hero (ADR-482): one spoken sentence, and the one card it becomes. The card is the app's propose_plan
+         pattern: several changes, one tap, nothing runs until you tap. -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>AI prijatelj za tvoj iPhone. Uvijek prvo pita.</p>
+          <h1 id="hero-title" class="display">Reci jednom. <span class="hand-line">Dodirni jednom. Gotovo.</span></h1>
+          <p class="lede">Doddy se povezuje s tvojim kalendarom, podsjetnicima, e-poštom, listama i kartama i pretvara rečenicu u karticu koju odobravaš. Nikad sam ništa ne šalje, ne kupuje i ne briše.</p>
+          <div class="actions">
+            <a class="button" href="#join">Zatraži rani pristup</a>
+            <a class="text-link" href="#asks">Pogledaj velike zahtjeve</a>
+          </div>
+          <p class="fineprint">Doddy je AI, a ne osoba. Tvoje bilješke ostaju na tvom iPhoneu.</p>
+        </div>
+        <div class="demo" aria-label="Primjer: zahtjev postaje kartica">
+          <p class="ask big">Doddy, organiziraj četvrtak. Zubar je pomaknut na 14 h, poslije se nalazim s Alexom, a treba mi kruh.<small>izgovoreno naglas, 23:30</small></p>
+          <picture class="hero-pose demo-doddy"><img src="/assets/day/poses/listening-320.webp" srcset="/assets/day/poses/listening-320.webp 320w, /assets/day/poses/listening.webp 640w" sizes="120px" width="640" height="960" alt=""></picture>
+          <img class="demo-fx" src="/assets/day/fx/sparkle.webp" width="120" height="120" alt="">
+          <div class="plan">
+            <span class="stampt" aria-hidden="true">5 promjena, 1 dodir</span>
+            <h2 class="plan-title">Četvrtak, ako se slažeš</h2>
+            <ul>
+              <li><span class="box" aria-hidden="true"></span><span><b>Pomakni zubara na 14:00</b><small>bilo je 12:30</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Kalendar</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Alex, 15:30, uobičajeno mjesto</b><small>slobodan od 15:00 do 17:30</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Kalendar</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Kreni u 13:35 kod zubara</b><small>22 min tramvajem</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Karte</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Poruka Alexu: "Četvrtak 15:30, uobičajeno mjesto?"</b><small>nacrt. Šalješ ti.</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Poruke</span></li>
+              <li><span class="box" aria-hidden="true"></span><span><b>Kruh</b><small>Kupovina, zajedno s Olom</small></span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>Liste</span></li>
+            </ul>
+            <div class="do" aria-hidden="true"><span class="yes">Obavi ovo (5)</span><span class="no">Ne sada</span></div>
+          </div>
+          <p class="caption">Primjer. Doddy pokazuje karticu; ti dodirneš.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- The big asks: the kind of thing you'd only ask a mate who had your phone in his hands. -->
+    <section class="asks-section" id="asks" aria-labelledby="asks-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="asks-title" class="display-m">Veliki zahtjevi.</h2>
+          <p>To bi rekao samo prijatelju koji drži tvoj telefon. On ga drži.</p>
+        </div>
+        <ul class="asks">
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Gmail</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-mail"/></svg>Outlook</span></div>
+            <p class="ask">Što je pisalo u e-pošti stanodavca? Odgovori da je utorak u redu.</p>
+            <p class="says-d">Traži fotografiju brojila do petka. Odgovor je pripremljen. Šalješ ti.</p>
+            <img class="dd" src="/assets/day/poses/belly_reading-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg>Kalendar</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg>Karte</span></div>
+            <p class="ask">Pronađi mi termin s Alexom sljedeći tjedan, ali ne u 7.</p>
+            <p class="says-d">Srijeda 16:00. Dodano, a reći ću ti kada krenuti.</p>
+            <img class="dd" src="/assets/day/poses/fistpump-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Drive</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-doc"/></svg>Notion</span></div>
+            <p class="ask">Gdje je PDF s depozitom? I što piše na stranici o Krakowu?</p>
+            <p class="says-d">"Lease_final_v3.pdf", promijenjeno u svibnju. Kraków: petkovski vlak, Ola rezervira stan.</p>
+            <img class="dd" src="/assets/day/poses/kneeling_inspect-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>Prevoditelj</span></div>
+            <p class="ask">Prevedi. Pita nešto o ključu.</p>
+            <p class="says-d">Kaže da je stavi u kutiju pokraj vrata. Da mu odgovorim?</p>
+            <img class="dd" src="/assets/day/poses/oneleg_balance-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bolt"/></svg>Prečaci</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg>Podsjetnici</span></div>
+            <p class="ask">Pokreni "odlazim iz kuće" i podsjeti me na paket kad se vratim.</p>
+            <p class="says-d">Svjetla ugašena, glazba isključena, ormarić 4471 čim uđeš.</p>
+            <img class="dd" src="/assets/day/poses/leaning-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+          <li>
+            <div class="apps"><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-note"/></svg>Rutine</span><span class="app"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg>Todoist</span></div>
+            <p class="ask">Pripremi mi nedjelju.</p>
+            <p class="says-d">Rublje, kante, tri zadatka za tjedan, mama u sedam. Jedna kartica. Idemo.</p>
+            <img class="dd" src="/assets/day/poses/crosslegged-320.webp" width="640" height="960" loading="lazy" alt="">
+          </li>
+        </ul>
+        <p class="truth"><img src="/assets/day/smile.webp" width="44" height="44" alt=""><span>Nešto od toga radi danas, a nešto još uvježbava. <a href="/what-can-doddy-do/">Što Doddy može?</a> prolazi kroz cijeli dan, trenutak po trenutak, s oznakama.</span></p>
+      </div>
+    </section>
+
+    <section class="film" id="film" aria-labelledby="film-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="film-title" class="display-m">Jednog jutra u Varšavi.</h2>
+          <p>Kratak video o Doddyju, lopti koju nikad sasvim ne spušta i jednom vrlo odlučnom golubu. 1 minuta i 15 sekundi, najbolje sa zvukom.</p>
+        </div>
+        <div class="film-stage">
+          <div class="film-card">
+            <span class="tape t1" aria-hidden="true"></span>
+            <span class="tape t2" aria-hidden="true"></span>
+            <div class="player">
+              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddyjev brend video, 1 minuta i 15 sekundi">
+                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
+              </video>
+              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Pregled, bez zvuka</span>
+              <button class="cover" type="button" aria-label="Pusti video sa zvukom">
+                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
+                <span class="cover-label" aria-hidden="true"><span class="cover-title">Pogledaj video</span>1:15 · sa zvukom</span>
+              </button>
+            </div>
+          </div>
+          <div class="film-doddy" aria-hidden="true">
+            <p class="says">To sam ja.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
+          </div>
+        </div>
+        <ol class="chapters" aria-label="Preskoči na trenutak u videu">
+          <li><button type="button" data-seek="0"><span class="t">0:00</span>Trg dvorca</button></li>
+          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>Veliko pitanje</button></li>
+          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Svi jezici odjednom</button></li>
+          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>Pitanje za mještanina</button></li>
+          <li><button type="button" data-seek="38"><span class="t">0:38</span>Golub</button></li>
+          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>Slomljeno srce kod kapije</button></li>
+          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Zatvoreno</button></li>
+          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>Tip u tvom džepu</button></li>
+        </ol>
+        <p class="caption film-caption">Brend video. Priča o Doddyju, a ne demonstracija aplikacije.</p>
+      </div>
+    </section>
+
+    <!-- The trust edge, for people comparing agents. The 9% figure is from the blog post "AI agents are coming" (its sources are listed there). -->
+    <section class="vs-section" aria-labelledby="vs-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="vs-title" class="display-m">Agent kojeg bi pustio u svoj poštanski sandučić.</h2>
+          <p>Svi grade agente koji rezerviraju letove dok spavaš. Samo 9 % ljudi dopustilo bi agentu da nešto kupi bez provjere. Doddy je napravljen za preostalih 91 %.</p>
+        </div>
+        <div class="vs">
+          <div class="them"><h3>Većina agenata</h3><ul><li>Najprije djeluje, pa ti javlja.</li><li>Pošalji e-poštu.</li><li>Pamti sve, i ono što nisi rekao.</li><li>Zvuči vrlo sigurno i kad nije.</li><li>Živi u oblaku, s tvojim stvarima.</li></ul></div>
+          <div class="us"><h3>Doddy</h3><ul><li>Pokazuje karticu i čeka tvoj dodir.</li><li>Sastavlja nacrt e-pošte. Šalješ ti.</li><li>Pamti samo ono što si mu rekao, tvojim riječima, s datumom.</li><li>Naglas kaže "ne znam".</li><li>Tvoje bilješke ostaju na tvom iPhoneu. Kaže što izlazi i kada.</li></ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- The phone line (spec'd, ADR-152/172; not live). Vision, labelled by the truth line above and the footer. -->
+    <section class="line-section" aria-labelledby="line-title">
+      <div class="wrap line">
+        <div class="section-head line-head">
+          <h2 id="line-title" class="display-m">Izgubio si telefon? Posudi jedan. Nazovi ga.</h2>
+          <p>Doddy dobiva broj. Bilo koji telefon, tvoj PIN, i on ti pročita bilješke. Nova čeka u aplikaciji da je potvrdiš.</p>
+        </div>
+        <div class="dial" aria-label="Primjer poziva">
+          <p class="me">Ti, s telefona prijatelja: "Ja sam. PIN je 2-4-1-9. Koji je Wi‑Fi kod Ole?"</p>
+          <p class="dod">Bok, ja sam Doddy, AI. Olin Wi‑Fi: 'sunflower99', spremljen 3. listopada. Želiš li da zapamtim još nešto?</p>
+          <p class="me">Da. Auto je na razini B2.</p>
+          <p class="dod">Čeka tvoju potvrdu u aplikaciji.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="meet" id="meet" aria-labelledby="meet-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="meet-title" class="display-m">Upoznaj Doddyja</h2>
+          <p>Tip nacrtan rukom, s prevelikim tenisicama i košarkaškom loptom koju nikad sasvim ne spušta. Prvo koristan, zatim duhovit, uvijek iskren.</p>
+        </div>
+        <ul class="sketches">
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>Uvijek ima neku sporednu misiju u tijeku.</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/leaning-320.webp" srcset="/assets/day/poses/leaning-320.webp 320w, /assets/day/poses/leaning.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>Primjećuje sitnice koje ti usporavaju dan.</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/crosslegged-320.webp" srcset="/assets/day/poses/crosslegged-320.webp 320w, /assets/day/poses/crosslegged.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>Prvo pomaže, zatim razgovara.</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/oneleg_balance-320.webp" srcset="/assets/day/poses/oneleg_balance-320.webp 320w, /assets/day/poses/oneleg_balance.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>Šale o redu, nikad o tebi.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Play: the two games, kept. Doddy's ball, and the small things he keeps. -->
+    <section class="play-intro" id="play" aria-labelledby="play-intro-title">
+      <div class="wrap play-head">
+        <div>
+          <p class="pill"><span class="dot" aria-hidden="true"></span>Dok čekaš</p>
+          <h2 id="play-intro-title" class="display-m">Dvije igre. Lopta koju nikad ne ispušta.</h2>
+        </div>
+        <picture class="play-pose"><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="/assets/day/poses/basketball_dribble-320.webp 320w, /assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 140px" width="640" height="960" loading="lazy" alt=""></picture>
+      </div>
+    </section>
+
+    <section class="court" id="shoot" aria-labelledby="play-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="play-title" class="display-m">Šutiraj</h2>
+          <p>Doddy loptu nikad sasvim ne spušta. Pritisni bilo gdje na terenu, povuci unazad i pusti za bacanje. Ili pusti Doddyja da proba.</p>
+        </div>
+        <div class="court-panel">
+          <canvas id="court" width="800" height="520" role="img" aria-label="Košarka: Doddy baca loptu u koš. Za bacanje koristi gumb „Šutiraj za mene“."></canvas>
+          <div class="court-bar">
+            <p class="court-score" aria-live="polite">Koševi <strong id="made">0</strong> od <strong id="shots">0</strong> šutova</p>
+            <button class="button small" id="auto-shot" type="button">Šutiraj za mene</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="memory" id="remember" aria-labelledby="remember-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="remember-title" class="display-m">Zapamti to</h2>
+          <p>Šest sitnica, dvanaest kartica. Okreći po dvije kartice i pronađi parove. Doddy je u tome bolji od nas ostalih.</p>
+        </div>
+        <div class="court-panel memory-panel">
+          <div class="memory-stage">
+            <div class="memory-grid" id="memory-grid" role="group" aria-label="Kartice pamćenja"></div>
+            <div class="memory-doddy">
+              <p class="memory-bubble" id="memory-bubble" aria-live="polite">Okreni dvije. Pronađi par.</p>
+              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="/assets/day/poses/kneeling_inspect-320.webp 320w, /assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
+            </div>
+          </div>
+          <div class="court-bar">
+            <p class="court-score">Parovi <strong id="memory-pairs">0</strong> od 6 · Potezi <strong id="memory-moves">0</strong></p>
+            <button class="button small" id="memory-restart" type="button">Nova igra</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <div class="privacy-panel">
+          <h2 id="privacy-title" class="display-m">Tvoje bilješke, tvoja odluka.</h2>
+          <ul class="facts">
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
+              <h3>Pohranjeno na tvom iPhoneu</h3>
+              <p>Bilješke se spremaju u aplikaciji na tvom telefonu, zaštićene sustavom iOS. Odlaze iz nje samo zbog stvari koje uključiš, a aplikacija svaku od njih navodi pod Što napušta ovaj iPhone.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
+              <h3>Bez računa</h3>
+              <p>Bez prijave, bez e-pošte, bez lozinke. Otvori aplikaciju i počni.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
+              <h3>Izvezi kad god želiš</h3>
+              <p>Ponesi sve sa sobom kao JSON ili običan tekst.</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
+              <h3>Izbriši doista</h3>
+              <p>Izbriši jednu bilješku ili sve. Odmah nestaju iz pretrage.</p>
+            </li>
+          </ul>
+          <p class="privacy-note">Doddy je AI, a ne osoba. Neke stvari koje uključiš šalju podatke izvan telefona: glasovni razgovori (OpenAI, ili ElevenLabs ako promijeniš glas), pretraživanja vremena i Wikipedije (naziv mjesta ili pojmovi za pretragu), pozivi i memorija u pozivima (Doddyjev poslužitelj, Twilio i ElevenLabs), zajedničke liste (tvoj iCloud) i povezani računi poput Gmaila ili Todoista (preko Doddyjeva poslužitelja). Sve ostalo ostaje na tvom iPhoneu. Sve je to u testiranju.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Join (ADR-482): the waitlist as the page's one ask. Same endpoint, payload, consent wording, honeypot and
+         optional questions as before (api/waitlist.js, api/waitlist-answers.js); only the frame changed. -->
+    <section class="join" id="join" aria-labelledby="join-title">
+      <div class="wrap">
+        <div class="join-panel">
+          <div class="join-copy">
+            <p class="join-eyebrow">Rani pristup · prvo iPhone · nekoliko ljudi odjednom</p>
+            <h2 id="join-title" class="display-m">Daj mu svoj četvrtak.</h2>
+            <p class="join-lede">Upiši e-poštu i bit ćeš na popisu. Kad dođe tvoj red, Doddy te pozdravlja.</p>
+            <form class="waitlist" novalidate data-consent="waitlist-note-v1-hr">
+              <label for="email">E-pošta</label>
+              <div class="field-row">
+                <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="ime@example.com" aria-describedby="waitlist-note waitlist-status">
+                <button class="button" type="submit">Zatraži rani pristup</button>
+              </div>
+              <!-- Left empty by people; bots that fill it are ignored. -->
+              <div class="hp" aria-hidden="true"><label for="website">Web-stranica</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+              <p id="waitlist-note" class="fineprint form-note">Tvoju e-adresu koristimo samo da te obavijestimo kad se otvori rani pristup, a obrisat ćemo je kad god to zatražiš.</p>
+              <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <form class="answers" id="answers" hidden novalidate aria-labelledby="answers-title">
+              <p class="says-small" id="answers-title" tabindex="-1">Tri kratka pitanja? Sva su neobavezna.</p>
+              <fieldset class="q">
+                <legend>Koji telefon koristiš?</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="phone" value="iphone"><span>iPhone</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="android"><span>Android</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="other"><span>Nešto drugo</span></label>
+                </div>
+              </fieldset>
+              <fieldset class="q">
+                <legend>Odakle znaš za Doddyja?</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="heard" value="tiktok"><span>TikTok</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="instagram"><span>Instagram</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="linkedin"><span>LinkedIn</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="friend"><span>Prijatelj</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="search"><span>Pretraži</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="other"><span>Negdje drugdje</span></label>
+                </div>
+              </fieldset>
+              <div class="q">
+                <label for="wish">Što želiš da Doddy učini za tebe?</label>
+                <textarea id="wish" name="wish" rows="3" maxlength="300" placeholder="Zapamti gdje je auto parkiran, zadrži veličine moje djece, nađi onaj savjet za knjigu…"></textarea>
+              </div>
+              <div class="answers-actions">
+                <button class="button" type="submit">Pošalji odgovore</button>
+                <button class="link-button" type="button" id="answers-skip">Preskoči</button>
+              </div>
+              <p class="fineprint form-note">Ove podatke koristimo samo za planiranje ranog pristupa Doddyju, a obrisat ćemo ih zajedno s tvojom e-adresom kad god to zatražiš.</p>
+              <p id="answers-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <ul class="join-facts" aria-label="Što znači rani pristup">
+              <li><b>Bez računa.</b> Otvori aplikaciju i počni.</li>
+              <li><b>Tvoje bilješke ostaju na tvom iPhoneu.</b> E-pošta, kalendar i datoteke samo kad ih spojiš.</li>
+              <li><b>Briši kad god želiš.</b> Tvoju e-poštu, bilješke, sve.</li>
+            </ul>
+            <div class="open-app">
+              <p>Želiš li odmah razgovarati? <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Pridruži se Telegram grupi</a></p>
+              <p>Prati Doddyja: <a class="text-link" href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok doddy_mate</a> <a class="text-link" href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram doddy_mate</a></p>
+              <p>Već testiraš Doddyja? <a class="text-link" id="open-app" href="doddy://home">Otvori Doddyja</a></p>
+              <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+          <div class="join-side" aria-hidden="true">
+            <ul class="scraps join-scraps">
+              <li>Organiziraj četvrtak</li>
+              <li>Odgovori stanodavcu</li>
+              <li>Gdje je PDF ugovora o najmu?</li>
+              <li>Pokreni "vrijeme za spavanje"</li>
+              <li>Pronađi termin s Alexom</li>
+              <li>Što sam obećao mami?</li>
+            </ul>
+            <p class="says-small join-says">Reci, slušam.</p>
+            <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="/assets/day/poses/reaching_high-320.webp 320w, /assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="#asks">Što tražiš</a></li>
+          <li><a href="/what-can-doddy-do/">Što Doddy može?</a></li>
+          <li><a href="#meet">Upoznaj Doddyja</a></li>
+          <li><a href="#privacy">Privatnost</a></li>
+          <li><a href="/blog/">Blog <span class="note">(Engleski)</span></a></li>
+          <li><a href="#join">Zatraži rani pristup</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram grupa</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="Jezik" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr" aria-current="page">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
+      </div>
+      <p>Doddy je AI asistent, a ne osoba. Tvoje bilješke spremljene su na tvom iPhoneu; glas, pozivi, zajedničke liste i povezani računi šalju podatke izvan telefona tek kad ih uključiš. Rani pristup: dio ove stranice pokazuje kamo Doddy ide, a <a href="/what-can-doddy-do/">Što Doddy može?</a> kaže što danas radi.</p>
+      <p>Ova stranica broji posjete pomoću Vercel Web Analytics, koji ne postavlja kolačiće. Njezini fontovi učitavaju se s Google Fonts.</p>
+      <p data-ga-note hidden>Ako to dopustiš, Google Analytics također mjeri posjete i postavlja kolačiće. <button type="button" class="foot-choice" data-analytics-choices>Izbori za analitiku</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>

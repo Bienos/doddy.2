@@ -48,6 +48,15 @@ There's no build step: plain HTML, CSS and a small vanilla script. Visits are co
 - **Admin password:** the admin routes have no lockout, so `WAITLIST_ADMIN_PASSWORD` must be long and random (for example `openssl rand -base64 24`), never a word.
 - **Rate limit (owner, recommended):** add a Vercel Firewall rule (Project → Firewall → Rules): rate-limit `/api/` by IP to about 20 requests a minute. It needs no code, and slows scripted signups and admin password guessing. Not set yet.
 
+## Languages (ADR-460)
+
+- **Pages:** the landing page is in English and nine other languages: Spanish, German, French, Simplified Chinese, Japanese, Brazilian Portuguese, Italian, Croatian and Polish. Each has its own URL (`/de/`, `/zh-hans/`, …); `/` stays English. The header and footer have a language menu, and every page has `hreflang` links, its canonical URL and an entry in `sitemap.xml`. The blog is English only.
+- **Sources:** `site/index.html` is the English master. `tools/build_site_i18n.py` writes every other page, `sitemap.xml` and the script dictionaries in `site/i18n/`. Don't edit those by hand. `--check` runs in `scripts/ci.sh` and fails when one is out of date.
+- **Translations:** `l10n/site/<code>.json` maps English text to the language. `l10n/site/en.json` lists the keys. Work on them with `python3 -I tools/l10n_batch.py show|merge|status <code> --table site`. A new sentence in the master or in a script needs a line in every table; `--check` names the missing ones. `l10n/site/keep-english.json` lists the sentences that may stay in English (the tagline in the title).
+- **Scripts:** text a script shows goes through `doddyT("English text", values)` in `site/i18n.js`. It returns the translation for the page's language, or the English. `{name}` is filled from the values.
+- **Consent:** the signup form sends its consent wording version (`data-consent`). English uses `waitlist-note-v1`; each other language uses `waitlist-note-v1-<code>`, for example `waitlist-note-v1-de`. The API stores what the page sends. The versions are listed in `docs/legal/PRIVACY_POLICY_DRAFT.md`.
+- **Status:** the translations are drafts until a native speaker has read them. Vercel is not publishing the site at the moment, so the pages can only be checked locally.
+
 ## Analytics
 
 Vercel Web Analytics counts page views and visitors on the landing page. It is the plain-HTML
@@ -109,7 +118,7 @@ A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards,
 
 ## Builds on Vercel
 
-`vercel.json` has an `ignoreCommand`: a push builds this project only when something under `site/` changed since the last deployment (or, without one, in the last commit). It builds whenever it can't tell. `gateway/` and `server/voice-token/` have the same rule. **Merge commits:** the comparison is against the commit's first parent, so a push of the default branch that ends in a merge commit whose `site/` equals its first parent's builds nothing (14 October: such a push, carrying the whole What can Doddy do? work, created no deployment, and www.doddy.lol kept serving the older site). If production doesn't update after a merge, make the newest commit change a file under `site/`. Before this, every push to any branch built all three projects and used up the free plan's 100 deployments a day.
+`vercel.json` has an `ignoreCommand`: a push builds this project only when something under `site/` changed since the last deployment (or, without one, in the last commit). It builds whenever it can't tell. `gateway/` and `server/voice-token/` have the same rule. **Daily cap:** the Vercel team is on the free plan, which allows 100 deployments a day. On 13 October Vercel began refusing new ones (API error `api-deployments-free-per-day`, "try again in 24 hours"), and from about 22:47 UTC no push to any branch produced a build, so the first push of the What can Doddy do? work to the default branch made no deployment. Every push can create up to three deployments (this site, the gateway, the voice-token server), including ones the ignore step then cancels. Promoting an existing preview (`request_promote`) was refused too (422). If production doesn't update after a push, look for this error in the dashboard before suspecting the code. Before this, every push to any branch built all three projects and used up the free plan's 100 deployments a day.
 
 ## Needs the owner
 
@@ -191,3 +200,11 @@ Design: `design/website-homepage-vision/g-sort-thursday.html` (round 3, chosen b
 Checked (headless Chromium 1194, a local server sending the `vercel.json` headers including the CSP; Vercel's insights script stubbed; `/api/waitlist` mocked with `{ok:true,id,key}`): homepage at 1440, 390 and 320 px: no horizontal scroll (the big-asks row scrolls sideways on phones by design), no console errors, no CSP violations, no broken images, no `style=` attributes, every anchor the nav and footer use exists; the hero's arrival class is set; the memory game builds its 12 cards; the waitlist posts and shows "You're on the list" and the optional questions. `npm test` in `site/`: 18 pass; `build_day.py --check` and `build_blog.py --check`: pass. Not checked: real Safari on iPhone, VoiceOver, the film's playback, the live deploy.
 
 **Claims past today's tools, for the owner's eye:** the phone line (ADR-152/172, needs Twilio and the messaging server); the translator offering to answer on its own; Drive and Notion combined in one reply; routines by name. The footer and the truth line frame the page as where Doddy is heading. The translation branch `claude/inspiring-rubin-1agiui` rewrites `index.html` and will conflict.
+
+### Checked (2026-10-14, hero and moment-card cleanup, headless Chromium 1194 via Playwright, site/ served with the vercel.json headers)
+
+- Hero: "Quite a lot, actually." is one line at 320, 390, 1024 and 1440 px, and fits its column. Each of the seven tiles shows its own time and short title without hovering. Tiles don't touch each other, the reaction line, Doddy or the copy at any of the four widths, including while each tile is hovered. Doddy's reaction line sits in one fixed place under the ring. The coffee cup's stray speck is removed from the pack image and the site's WebP.
+- Moment cards (all ten) at 320, 390, 1024 and 1440 px: no card has a stamp, bubble, note or panel covering text. Stamps sit on the card's top edge. At 1100 px and below the cards stack like the phone layout. No sideways scroll, console errors, failed requests or broken images on the page at any width.
+- Known small remaining item: at 1440 px the 10:20 card's "You say" bubble rises a few pixels into the card's padding. It overlaps nothing and clips nothing.
+- Regression: check.mjs (82 checks: CSP, nav, phone menu, interactions, reduced motion, no-JS, homepage and blog) passes. `npm test` in site/: 18 pass. `build_day.py --check` and `build_blog.py --check`: pass. `verify_imported_pack.py`: pass.
+- Not checked: real Safari on iPhone, VoiceOver, Dynamic Type, Low Power Mode, and the live deploy (the daily Vercel cap is still blocking builds).
