@@ -394,9 +394,12 @@ final class VoiceSessionController {
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
     /// Settings → About you → "Use in voice conversations" is on. `wakeGreeting` is set when
     /// "Hey Doddy" started the conversation (ADR-254): Doddy says it first and the island shows it.
+    /// `byWakeWord: false` keeps the greeting but not the wake-word rule that ends a silent
+    /// conversation, for "Talk to Doddy" (Back Tap and the other shortcuts).
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
-        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil
+        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil,
+        byWakeWord: Bool = true
     ) async {
         guard !isLive else { return }
         // The previous conversation's lines and unanswered cards are kept before they're cleared,
@@ -416,7 +419,7 @@ final class VoiceSessionController {
         connectedOnce = false
         // A note being read aloud would fight the conversation for the speaker (ADR-243).
         ReadAloudController.shared.stop()
-        startedByWakeWord = wakeGreeting != nil
+        startedByWakeWord = byWakeWord && wakeGreeting != nil
         self.wakeGreeting = wakeGreeting
         silentWakeTimer?.cancel()
         silentWakeTimer = nil
