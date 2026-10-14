@@ -2,13 +2,14 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-13, 15:00 UTC (this branch merged with the default branch after #76).
+Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the default branch).
 
 ## Known-good build
 - **Main branch:** `claude/loving-dirac-uuxoux`.
 - **Last build seen working on a device:** head `ce02763` (PR #60, the learning loop).
 - **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
 - **Since then on main:** OpenAI Realtime is the default voice, with a model picker on Home (ADR-442), and the first-use screens landed (#76: ADR-324 to 327, ADR-443).
+- **Also on main (PR #80, 14 Oct):** the iPhone app and the landing page in ten languages, as machine-translated drafts (ADR-458 to 460). The landing page is live at https://www.doddy.lol in all ten. CI built the app and passed the unit and UI tests with these changes; the language picker and the translated screens have not been seen on a device, and no native speaker has read any of it (`l10n/REVIEW_NOTES.md`).
 - **Evidence:**
   - The live voice agent worked from this code on 2026-10-11 at 22:35 Warsaw time: a 139 s conversation that used `search_memories`, `save_memory` and `web_search`.
   - The variables the app sent to ElevenLabs match this branch, and not the unmerged `-all` branch.
@@ -33,7 +34,6 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | `claude/admiring-curie-bsuwv9-all` (PR #67) | Quick start, the first-use fixes, Home's first visit and the shorter intro merged on 13 Oct (#76). Still open: "Hey Doddy" with one tap, the guided first conversation, Quick start shortcuts and "Ask me about it" (#53, #56, #57, #58). | High for what's left: the wake word and the first conversation |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
-| `claude/inspiring-rubin-1agiui` | Screens in eight more languages (Spanish, German, French, Simplified Chinese, Japanese, Brazilian Portuguese, Italian, Croatian) as machine-translated drafts, the generator that builds them (ADR-458) and `l10n/REVIEW_NOTES.md`. Also Settings › App language (English by default, ADR-459) and "your local emergency number" in the translator text. The picker and its launch call are new Swift, not compiled; the catalogs and both Info.plist language lists change. Not seen on a device, not read by a native speaker. The landing page is in the same ten languages (ADR-460), generated and checked locally; it is not deployed, because the Vercel account is blocked.| None for the voice session; the translator prompt line about emergencies changed (the live ElevenLabs agent keeps the old line until the owner syncs it) |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 | PR #44 `claude/peaceful-hopper-v3gx75` | Action status, session recovery, Stop listening, unfinished notes, "Listen until I finish" | High: changes the voice session |
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
@@ -45,10 +45,10 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
   - a session that can't hear the user.
 
   Not fixed yet. It needs a device log to confirm the cause.
-- **Vercel deployments are blocked** (account billing and the daily deployment limit), so the Vercel checks on PRs are red whatever the change. GitHub Actions runs again since 2026-10-12.
+- **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. GitHub Actions has run again since 2026-10-12.
 
 ## Waiting on the owner
-- A native review of the eight new languages (`l10n/REVIEW_NOTES.md`).
+- A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
 - "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
 - Whether notes sync between the Mac and the iPhone (today they never do).
 - The kitchen timer Live Activity.
