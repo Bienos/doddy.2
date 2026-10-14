@@ -89,8 +89,8 @@ struct VoiceView: View {
             await controller.start(
                 mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
                 checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
-                aboutNote: ShortcutRouter.shared.takeNoteToAsk(),
-                wakeGreeting: greeting, byWakeWord: false)
+                wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk(),
+                byWakeWord: false)
             // "Big island": the app is in the foreground, so it can open the island now without a push.
             if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
         }
