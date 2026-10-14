@@ -82,7 +82,8 @@ struct VoiceView: View {
             // Back Tap (or another "Talk to Doddy" shortcut) greets on the island like "Hey Doddy" does,
             // but a silent conversation stays open: only the wake word ends one by itself.
             let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
-            let greeting = openedByShortcut ? WakeGreeting.line(
+            let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
+            let greeting = openedByShortcut && action.startsConversation ? WakeGreeting.line(
                 name: WakeGreeting.name(nickname: Nickname.stored(), profileName: profiles.profile.value(.name)),
                 polish: ConversationLanguage.stored() == .polish) : nil
             await controller.start(
@@ -90,6 +91,8 @@ struct VoiceView: View {
                 checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
                 aboutNote: ShortcutRouter.shared.takeNoteToAsk(),
                 wakeGreeting: greeting, byWakeWord: false)
+            // "Big island": the app is in the foreground, so it can open the island now without a push.
+            if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
         }
         .onDisappear {
             Task { await controller?.stop() }

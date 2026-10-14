@@ -57,6 +57,22 @@ final class VoiceLiveActivity {
         }
     }
 
+    /// Asks iOS to open the island up once with `greeting` (the big island: it unfolds and plays a
+    /// sound). Only for a conversation the app is running, so no push is needed; a no-op when
+    /// there is no activity. iOS decides the final size, so this is a request.
+    func openForGreeting(_ greeting: String) {
+        guard let activity, let shown else { return }
+        let alert = AlertConfiguration(
+            title: LocalizedStringResource(stringLiteral: greeting),
+            body: LocalizedStringResource(stringLiteral: ""),
+            sound: .default)
+        let previous = updating
+        updating = Task {
+            await previous?.value
+            await activity.update(Self.content(shown), alertConfiguration: alert)
+        }
+    }
+
     /// How long the "Conversation ended" card stays on the Lock Screen. The Dynamic Island
     /// drops an ended activity at once whatever this says.
     static let endedCardFor: TimeInterval = 120

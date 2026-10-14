@@ -8045,6 +8045,17 @@
         }
       }
     },
+    "Big island: start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duża wyspa: rozpocznij rozmowę"
+          }
+        }
+      }
+    },
     "Birthdays": {
       "extractionState": "manual",
       "localizations": {
@@ -63812,6 +63823,17 @@
         }
       }
     },
+    "Small island: start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mała wyspa: rozpocznij rozmowę"
+          }
+        }
+      }
+    },
     "Smart home": {
       "extractionState": "manual",
       "localizations": {
@@ -64398,17 +64420,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "开始"
-          }
-        }
-      }
-    },
-    "Start a conversation": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rozpocznij rozmowę"
           }
         }
       }

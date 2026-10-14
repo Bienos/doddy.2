@@ -486,7 +486,8 @@ struct SettingsView: View {
                     }
                     // What "Talk to Doddy" does, for Back Tap, the Action Button, Siri and the control.
                     Picker("When I use Talk to Doddy", selection: $backTapActionRaw) {
-                        Text("Start a conversation").tag(BackTapAction.conversation.rawValue)
+                        Text("Big island: start a conversation").tag(BackTapAction.conversation.rawValue)
+                        Text("Small island: start a conversation").tag(BackTapAction.smallIsland.rawValue)
                         Text("Only open Doddy").tag(BackTapAction.openApp.rawValue)
                     }
                     .accessibilityIdentifier("settings.backTapAction")
