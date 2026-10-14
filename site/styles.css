@@ -1,5 +1,5 @@
 /* Doddy landing page, v3 "light editorial notebook" (light-only by owner request).
-   Layout: one 1200px column; hero split copy/device; numbered three-step row; receipt card; inverted ink privacy panel.
+   Layout: one 1200px column; hero split copy/example note; numbered three-step row; receipt card; inverted ink privacy panel.
    Colours come only from tokens.css (generated from the app's CandidateTokens.swift).
    Type: Bricolage Grotesque for headings (the brand speaking), Caveat only for Doddy's own voice and the wordmark,
    system UI for reading text (matches the native app's Dynamic Type). */
@@ -163,19 +163,6 @@ h3 {
 @media (min-width: 960px) { .hero-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); } }
 
 .hero-stage { position: relative; display: grid; justify-items: center; padding-left: clamp(60px, 14vw, 140px); }
-.device {
-  position: relative;
-  width: min(100%, 320px);
-  aspect-ratio: 390 / 845;
-  border-radius: 48px;
-  padding: 9px;
-  background: var(--reading-ink);
-  box-shadow: var(--lift-strong);
-}
-.device img { width: 100%; height: 100%; object-fit: cover; border-radius: 39px; background: var(--canvas); }
-.device.tilt { transform: rotate(3deg); }
-.device.small { width: min(100%, 220px); border-radius: 36px; padding: 7px; box-shadow: var(--lift); }
-.device.small img { border-radius: 29px; }
 
 .hero-doddy { position: absolute; z-index: 2; left: 0; bottom: 4%; width: clamp(150px, 22vw, 230px); }
 .hero-pose img { width: 100%; }
@@ -185,7 +172,6 @@ h3 {
   white-space: nowrap; transform: rotate(-4deg);
   margin: 0;
 }
-.hero-stage .caption { margin-top: 20px; }
 
 /* One orchestrated arrival: Doddy settles in, then the greeting underlines itself. */
 .js .hero-pose { display: block; transition: transform 420ms cubic-bezier(.2,.8,.2,1); }
@@ -334,6 +320,37 @@ h3 {
 .ladder li.is-later { background: transparent; border-style: dashed; box-shadow: none; }
 .ladder p { margin: 12px 0 0; color: var(--secondary-text); }
 
+/* ---------- Example cards (no app screenshots yet): the hero note and the three steps ---------- */
+
+.hero-stage { min-height: clamp(340px, 42vw, 440px); align-content: center; }
+.hero-stage { padding-left: clamp(104px, 16vw, 140px); }
+.hero-note {
+  position: relative; z-index: 1; width: min(100%, 330px); margin: 0; padding: 22px 24px 20px;
+  background: var(--paper); border: 1px solid var(--separator); border-radius: 22px; box-shadow: var(--lift-strong);
+  transform: rotate(2deg);
+}
+.hero-note-text { font-family: var(--display); font-weight: 650; font-size: 1.35rem; line-height: 1.3; letter-spacing: -0.01em; margin: 12px 0 14px; }
+.hero-note .receipt-meta { margin: 0 0 12px; padding: 12px 0 0; border: 0; border-top: 1px dashed var(--separator); }
+.sc-label { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 0.8125rem; font-weight: 700; color: var(--confirmed); }
+.sc-meta { margin: 0; font-size: 0.75rem; color: var(--secondary-text); }
+.chip-check {
+  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--confirmed); color: var(--paper); font-size: 0.8125rem; font-weight: 700;
+}
+
+.step-visual { justify-items: end; align-content: center; min-height: 250px; padding: 28px 16px; }
+@media (min-width: 860px) { .step-visual { min-height: 300px; } }
+.step-card {
+  width: 70%; min-width: 0; margin: 0; padding: 14px 16px 16px; text-align: left;
+  background: var(--paper); border: 1px solid var(--separator); border-radius: 16px; box-shadow: var(--lift);
+}
+.step-card > * + * { margin-top: 8px; }
+.sc-note { margin: 0; font-family: var(--display); font-weight: 650; font-size: 1rem; line-height: 1.3; color: var(--reading-ink); }
+.sc-search { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--quiet-surface); color: var(--secondary-text); font-size: 0.9375rem; }
+.step-card .receipt-meta { margin: 8px 0; padding: 8px 0; gap: 4px; }
+.step-card .receipt-meta div { font-size: 0.8125rem; }
+.step-card .receipt-original p:last-child { font-size: 0.875rem; }
+
 /* ---------- Receipt, inside step 3 ---------- */
 
 .no-match { display: flex; align-items: flex-end; gap: 4px; margin-top: 28px; }
@@ -345,8 +362,6 @@ h3 {
 }
 .no-match blockquote p { font-family: var(--hand); font-weight: 700; font-size: 1.7rem; line-height: 1.05; margin: 0; }
 
-.step-receipt { margin: 18px 0 0; max-width: 30rem; padding: 18px 20px 20px; background: var(--quiet-surface); border: 1px solid var(--separator); border-radius: 16px; }
-.receipt-text { font-family: var(--display); font-weight: 650; font-size: 1.125rem; line-height: 1.3; letter-spacing: -0.01em; margin: 0 0 12px; color: var(--reading-ink); }
 .receipt-meta { display: grid; gap: 6px; margin: 0 0 12px; padding: 12px 0; border-block: 1px dashed var(--separator); }
 .receipt-meta div { display: flex; justify-content: space-between; gap: 16px; font-size: 0.9375rem; }
 .receipt-meta dt { color: var(--secondary-text); }
@@ -490,22 +505,6 @@ h3 {
 }
 .hero-stage { isolation: isolate; }
 
-/* A floating save receipt, the moment the app is built around. */
-.hero-chip {
-  position: absolute; z-index: 3; right: -6%; top: 66%;
-  display: flex; align-items: flex-start; gap: 10px;
-  width: min(250px, 62%); padding: 12px 14px;
-  background: var(--paper); border: 1px solid var(--separator); border-radius: 16px;
-  box-shadow: var(--lift);
-  font-size: 0.8125rem; line-height: 1.4; color: var(--secondary-text);
-  transform: rotate(-2deg);
-}
-.hero-chip strong { color: var(--confirmed); font-size: 0.875rem; }
-.chip-check {
-  flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--confirmed); color: var(--paper); font-size: 0.8125rem; font-weight: 700;
-}
-@media (max-width: 959px) { .hero-chip { right: 0; top: 64%; } }
 
 /* Footer links */
 .foot-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 32px; margin-bottom: 8px; }

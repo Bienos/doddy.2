@@ -110,18 +110,19 @@
 
         <div class="hero-stage">
           <div class="hero-glow" aria-hidden="true"></div>
-          <div class="hero-chip" aria-hidden="true">
-            <span class="chip-check">✓</span>
-            <span><strong>Saved</strong><br>The spare keys are in the blue tin above the fridge.</span>
-          </div>
-          <div class="device tilt">
-            <img src="assets/screens/home.png" width="390" height="845" alt="Doddy's Home screen: A little less to carry. Buttons to save a detail or find something, and a recently saved note about spare keys.">
-          </div>
+          <figure class="hero-note" aria-label="Example: a saved note and its receipt">
+            <p class="sc-label"><span class="chip-check" aria-hidden="true">✓</span>Saved</p>
+            <p class="hero-note-text">The spare keys are in the blue tin above the fridge.</p>
+            <dl class="receipt-meta">
+              <div><dt>Saved</dt><dd>8 Oct 2026, 09:41</dd></div>
+              <div><dt>Source</dt><dd>Your typed note</dd></div>
+            </dl>
+            <figcaption class="sc-meta">Example note</figcaption>
+          </figure>
           <div class="hero-doddy">
             <p class="says" aria-hidden="true">Hey. I'm Doddy.<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
             <picture class="hero-pose"><img src="assets/day/poses/wave-320.webp" srcset="assets/day/poses/wave-320.webp 320w, assets/day/poses/wave.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt=""></picture>
           </div>
-          <p class="caption">Design preview of the app</p>
         </div>
       </div>
     </section>
@@ -206,7 +207,11 @@
         <ol class="steps">
           <li class="step">
             <div class="step-visual">
-              <div class="device small"><img src="assets/screens/capture.png" width="390" height="845" loading="lazy" alt="The New memory screen: What shall we keep? The detail reads: The spare keys are in the blue tin above the fridge."></div>
+              <figure class="step-card" aria-label="Example: typing a note">
+                <p class="sc-label">You type</p>
+                <p class="sc-note">The spare keys are in the blue tin above the fridge.</p>
+                <p class="sc-meta">Example note</p>
+              </figure>
               <picture class="step-pose"><img src="assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">1</p>
@@ -216,7 +221,12 @@
           </li>
           <li class="step">
             <div class="step-visual">
-              <div class="device small"><img src="assets/screens/recall.png" width="390" height="845" loading="lazy" alt="The Memories screen: It's in here somewhere. A search for spare keys finds the saved note, written by you on 8 October."></div>
+              <figure class="step-card" aria-label="Example: searching your notes">
+                <p class="sc-label">You search</p>
+                <p class="sc-search">spare keys</p>
+                <p class="sc-note">The spare keys are in the blue tin above the fridge.</p>
+                <p class="sc-meta">Written by you · 8 Oct 2026</p>
+              </figure>
               <picture class="step-pose"><img src="assets/day/poses/belly_reading-320.webp" srcset="assets/day/poses/belly_reading-320.webp 320w, assets/day/poses/belly_reading.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">2</p>
@@ -230,27 +240,26 @@
           </li>
           <li class="step">
             <div class="step-visual">
-              <div class="device small"><img src="assets/screens/detail.png" width="390" height="845" loading="lazy" alt="The Your memory screen: the saved note with its date and source, and buttons to correct this detail or delete this memory."></div>
+              <figure class="step-card" aria-label="Example: a corrected note keeps its original">
+                <p class="sc-note">The spare keys are in the red tin above the fridge.</p>
+                <dl class="receipt-meta">
+                  <div><dt>Saved</dt><dd>8 Oct 2026, 09:41</dd></div>
+                  <div><dt>Revision</dt><dd>2, corrected 9 Oct</dd></div>
+                </dl>
+                <div class="receipt-original">
+                  <p class="receipt-label">Original, kept as written</p>
+                  <p>The spare keys are in the blue tin above the fridge.</p>
+                </div>
+              </figure>
               <picture class="step-pose"><img src="assets/day/poses/fistpump-320.webp" srcset="assets/day/poses/fistpump-320.webp 320w, assets/day/poses/fistpump.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
             </div>
             <p class="step-num" aria-hidden="true">3</p>
             <h3>Fix it or forget it</h3>
             <p>Correct a note and the original stays visible. Export everything, or delete one note or all of them.</p>
-            <figure class="step-receipt" aria-label="Example: a corrected note keeps its original">
-              <p class="receipt-text">The spare keys are in the red tin above the fridge.</p>
-              <dl class="receipt-meta">
-                <div><dt>Saved</dt><dd>8 Oct 2026, 09:41</dd></div>
-                <div><dt>Revision</dt><dd>2, corrected 9 Oct</dd></div>
-              </dl>
-              <div class="receipt-original">
-                <p class="receipt-label">Original, kept as written</p>
-                <p>The spare keys are in the blue tin above the fridge.</p>
-              </div>
-            </figure>
             <p class="says-small" aria-hidden="true">The original stays.</p>
           </li>
         </ol>
-        <p class="caption left">Screens are design previews of the app. The note in step 3 is an example.</p>
+        <p class="caption left">Examples, not screenshots of the app.</p>
       </div>
     </section>
 
