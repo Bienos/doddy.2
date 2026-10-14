@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en" class="js">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Doddy's notebook (homepage vision E)</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="../../site/tokens.css">
+  <link rel="stylesheet" href="../../site/styles.css">
+  <link rel="stylesheet" href="notebook.css">
+  <style>
+    .eh { padding: clamp(28px, 5vw, 64px) 0 clamp(32px, 5vw, 56px); text-align: center; }
+    .eh .display { font-size: clamp(3rem, 7vw, 6rem); max-width: 14ch; margin-inline: auto; }
+    .eh .display .hand { color: var(--accent-text); font-size: 0.9em; }
+    .eh .lede { margin: 16px auto 0; }
+    .eh .actions { justify-content: center; }
+
+    /* the open notebook */
+    .book { position: relative; display: grid; grid-template-columns: 1fr 1fr; margin-top: clamp(28px, 4vw, 48px); background: var(--paper); border: 1px solid var(--separator); border-radius: 22px; box-shadow: var(--lift-strong); overflow: visible; }
+    .book::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, transparent, var(--separator) 10%, var(--separator) 90%, transparent); transform: translateX(-50%); }
+    .spiral { position: absolute; left: 50%; top: 18px; bottom: 18px; width: 36px; transform: translateX(-50%); display: grid; grid-auto-rows: 1fr; z-index: 3; }
+    .spiral i { display: block; width: 36px; height: 12px; border: 3px solid var(--reading-ink); border-radius: 8px; background: var(--canvas); }
+    .page { padding: clamp(24px, 4vw, 44px) clamp(22px, 4vw, 48px); background-image: repeating-linear-gradient(to bottom, transparent 0 35px, var(--rule) 35px 36px); background-position: 0 58px; min-height: 520px; }
+    .page h2 { font-family: var(--hand); font-weight: 700; font-size: clamp(1.9rem, 3.4vw, 2.6rem); line-height: 1; margin: 0 0 18px; color: var(--reading-ink); }
+    .page h2 small { display: block; font-size: 0.55em; color: var(--secondary-text); margin-top: 4px; }
+    .list { list-style: none; margin: 0; padding: 0; text-align: left; font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 36px; color: var(--reading-ink); }
+    .list li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; }
+    .list .box { width: 22px; height: 22px; margin-top: 7px; border: 2.5px solid var(--reading-ink); border-radius: 6px; position: relative; }
+    .list .box.on::after { content: ""; position: absolute; left: 2px; top: -8px; width: 10px; height: 20px; border: solid var(--orange); border-width: 0 4px 4px 0; transform: rotate(40deg); }
+    .list .box.half::after { content: "…"; position: absolute; left: 1px; top: -14px; color: var(--orange); font-size: 1.4rem; }
+    .list em { font-style: normal; color: var(--accent-text); }
+    .list .note { font-size: 0.72em; color: var(--secondary-text); line-height: 1.1; display: block; }
+    .page .dd { position: absolute; width: 150px; }
+    .page.left .dd { left: -4%; bottom: -16%; }
+    .page.right .dd { right: -3%; bottom: -14%; }
+    .page.right .fx { right: 4%; top: 3%; width: 60px; }
+    .ring.p1 { left: 8%; bottom: 30%; }
+    .book .caption { position: absolute; left: 0; right: 0; bottom: -34px; }
+
+    /* my job, by me */
+    .job { padding: clamp(48px, 7vw, 96px) 0 clamp(40px, 6vw, 72px); }
+    .job-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: clamp(24px, 4vw, 56px); align-items: start; }
+    .card { padding: 22px 26px 26px; }
+    .card h3 { font-family: var(--display); font-weight: 700; font-size: 1.1rem; letter-spacing: 0.02em; text-transform: uppercase; color: var(--secondary-text); margin: 0 0 10px; }
+    .card dl { margin: 0; display: grid; gap: 2px; font-size: 1.0625rem; }
+    .card dt { font-weight: 700; margin-top: 10px; }
+    .card dd { margin: 0; color: var(--reading-ink); }
+    .card dd.hand { font-size: 1.5rem; line-height: 1.1; color: var(--accent-text); }
+    .notjob { padding: 22px 26px; }
+    .notjob h3 { font-family: var(--hand); font-weight: 700; font-size: 1.9rem; margin: 0 0 8px; }
+    .notjob ul { margin: 0; padding: 0; list-style: none; font-size: 1.0625rem; display: grid; gap: 8px; }
+    .notjob li::before { content: "✗ "; color: var(--orange); font-weight: 800; }
+
+    /* house rules as sticky notes */
+    .rules { padding: clamp(40px, 6vw, 80px) 0; border-top: 1px solid var(--separator); }
+    .stickies { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+    .stickies li { position: relative; aspect-ratio: 1; padding: 22px 20px; background: color-mix(in srgb, var(--orange-cue) 18%, #fff5d6); box-shadow: var(--lift); font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 1.05; color: var(--reading-ink); }
+    .stickies li:nth-child(odd) { transform: rotate(-2deg); } .stickies li:nth-child(even) { transform: rotate(1.6deg); }
+    .stickies li:nth-child(3) { background: color-mix(in srgb, var(--confirmed) 14%, #e9f3ea); }
+    .stickies li small { display: block; margin-top: 10px; font: 500 0.875rem/1.35 var(--text); color: var(--secondary-text); }
+    .stickies li::before { content: ""; position: absolute; left: 50%; top: -10px; width: 70px; height: 22px; transform: translateX(-50%) rotate(-2deg); background: color-mix(in srgb, #fff 55%, transparent); box-shadow: 0 1px 2px rgb(60 40 10 / 12%); }
+
+    /* margin doodles */
+    .doodles { padding: clamp(40px, 6vw, 72px) 0; border-top: 1px solid var(--separator); }
+    .doodle-row { display: flex; flex-wrap: wrap; gap: 24px 36px; justify-content: space-between; align-items: flex-end; }
+    .doodle { text-align: center; width: 150px; }
+    .doodle img { height: 150px; width: auto; margin: 0 auto; }
+    .doodle p { margin: 6px 0 0; font-family: var(--hand); font-weight: 700; font-size: 1.35rem; color: var(--accent-text); line-height: 1; }
+    @media (max-width: 900px) {
+      .book, .job-grid { grid-template-columns: 1fr; }
+      .book::before, .spiral { display: none; }
+      .page { min-height: 0; }
+      .page.left { border-bottom: 2px dashed var(--separator); }
+      .page .dd { display: none; }
+      .book { margin-bottom: 40px; }
+      .stickies { grid-template-columns: 1fr 1fr; }
+      .doodle { width: 44%; } .doodle img { height: 110px; }
+    }
+  </style>
+</head>
+<body>
+  <span class="mock-tag">Vision E · Doddy's notebook</span>
+  <header class="nav"><div class="wrap nav-inner">
+    <a class="wordmark" href="#">Doddy</a>
+    <nav><ul class="nav-links"><li><a href="#">The notebook</a></li><li><a href="#">What can Doddy do?</a></li><li><a href="#">Meet Doddy</a></li><li><a href="#">Blog</a></li></ul></nav>
+    <a class="button small" href="#" style="margin-left:auto">Join early access</a>
+  </div></header>
+
+  <section class="eh">
+    <div class="wrap">
+      <p class="pill"><span class="dot"></span>Found on a bench. Property of Doddy.</p>
+      <h1 class="display">Doddy's notebook. <span class="hand">(Mostly about you.)</span></h1>
+      <p class="lede">A mate in your pocket keeps a notebook too. The left page is what he's holding for you. The right page is what he's getting good at.</p>
+      <div class="actions"><a class="button" href="#">Join early access</a><a class="text-link" href="#">What can Doddy do?</a></div>
+
+      <div class="book">
+        <div class="spiral" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="page left">
+          <span class="ring p1" aria-hidden="true"></span>
+          <h2>Keeping for you <small>your words, not mine</small></h2>
+          <ul class="list">
+            <li><span class="box on"></span><span>Spare keys: blue tin above the fridge <span class="note">8 Oct, typed</span></span></li>
+            <li><span class="box on"></span><span>Locker 4471 <span class="note">said out loud, Monday</span></span></li>
+            <li><span class="box on"></span><span>Marta's book: <em>The Hobbit</em>, "the one with the dragon"</span></li>
+            <li><span class="box on"></span><span>Shoe size 31 <span class="note">he's growing, I'll remind you</span></span></li>
+            <li><span class="box on"></span><span>Parked on B2, pillar with the dent</span></li>
+            <li><span class="box on"></span><span>Mum: blue teapot from the market <span class="note">14 March, while you made toast</span></span></li>
+            <li><span class="box on"></span><span>Wi-Fi at Ola's: <span class="strike">password123</span> the new one</span></li>
+          </ul>
+          <img class="dd" src="../../site/assets/day/poses/kneeling_inspect-320.webp" alt="">
+        </div>
+        <div class="page right">
+          <img class="fx" src="../../site/assets/day/fx/sparkle.webp" alt="">
+          <h2>Getting good at <small>practising on real iPhones</small></h2>
+          <ul class="list">
+            <li><span class="box on"></span><span>Reading you the morning before you're awake</span></li>
+            <li><span class="box on"></span><span>Writing the text you can't. You press send.</span></li>
+            <li><span class="box on"></span><span>Jacket or no jacket</span></li>
+            <li><span class="box on"></span><span>Sorting tomorrow out in one tap</span></li>
+            <li><span class="box half"></span><span>Tapping you on the shoulder near the pharmacy</span></li>
+            <li><span class="box half"></span><span>Understanding the man at the kiosk in Paris</span></li>
+            <li><span class="box"></span><span>Picking the restaurant for you <span class="note">no. you pick. I open Maps.</span></span></li>
+            <li><span class="box"></span><span>Doing the actual shopping <span class="note">one day. maybe.</span></span></li>
+          </ul>
+          <img class="dd" src="../../site/assets/day/poses/fistpump-320.webp" alt="">
+        </div>
+        <p class="caption">Ticks: works now. Dots: practising. Empty: not built, no dates promised.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="job">
+    <div class="wrap">
+      <div class="section-head"><h2 class="display-m">My job. By me.</h2><p>Doddy wrote his own job description. We kept it as is.</p></div>
+      <div class="job-grid">
+        <div class="paper index card rot-l">
+          <h3>Job description</h3>
+          <dl>
+            <dt>Title</dt><dd class="hand">Mate. In your pocket.</dd>
+            <dt>Hours</dt><dd>Whenever you say my name. Or tap. I don't listen otherwise.</dd>
+            <dt>Main duties</dt><dd>Remember the small stuff in your exact words. Find it when you ask. Read your morning out loud. Draft the awkward text. Set the reminder, after you tap. Sort tomorrow. Tell you when it rains at four.</dd>
+            <dt>Skills</dt><dd>Saying "I don't know". Not guessing. One joke per problem, maximum.</dd>
+            <dt>Salary</dt><dd class="hand">A "cheers" now and then.</dd>
+          </dl>
+        </div>
+        <div>
+          <div class="paper notjob rot-r">
+            <h3>Not my job</h3>
+            <ul>
+              <li>Sending anything. You send.</li>
+              <li>Remembering things you didn't tell me.</li>
+              <li>Changing your calendar without a tap.</li>
+              <li>Having feelings about it. I'm an AI.</li>
+              <li>Making you feel bad for forgetting. That's what I'm for.</li>
+              <li>Doing the shopping. Yet.</li>
+            </ul>
+          </div>
+          <p class="truth"><img src="../../site/assets/day/smile.webp" alt="">The right page above is where Doddy is heading. For what he does today, moment by moment, see <a href="#">What can Doddy do?</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rules">
+    <div class="wrap">
+      <div class="section-head"><h2 class="display-m">House rules.</h2><p>Stuck to the fridge. Non-negotiable.</p></div>
+      <ul class="stickies">
+        <li>I don't send.<br>You send.</li>
+        <li>Your words.<br>Never a guess.<small>Every note keeps its date and where it came from.</small></li>
+        <li>"Done" only after it's done.<small>I read it back from Reminders to check.</small></li>
+        <li>No jokes at funerals.<small>Serious moments get a straight answer.</small></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="doodles">
+    <div class="wrap">
+      <div class="section-head"><h2 class="display-m">Margin doodles.</h2><p>Also by Doddy. Mostly of Doddy.</p></div>
+      <div class="doodle-row">
+        <div class="doodle"><img src="../../site/assets/day/poses/basketball_dribble-320.webp" alt=""><p>Side quest.</p></div>
+        <div class="doodle"><img src="../../site/assets/day/poses/sneaky_crouch-320.webp" alt=""><p>Still looking.</p></div>
+        <div class="doodle"><img src="../../site/assets/day/poses/shush-320.webp" alt=""><p>Quiet bit.</p></div>
+        <div class="doodle"><img src="../../site/assets/day/poses/yawn_stretch-320.webp" alt=""><p>Long day.</p></div>
+        <div class="doodle"><img src="../../site/assets/day/poses/oneleg_balance-320.webp" alt=""><p>Balance. Mostly.</p></div>
+        <div class="doodle"><img src="../../site/assets/day/poses/wave-320.webp" alt=""><p>Hey.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="join2"><div class="wrap"><div class="box">
+    <div><h2>Get a page in the notebook.</h2><p>Early access on iPhone, a few people at a time. Your email goes on the list, nothing else.</p><div class="field"><span>name@example.com</span><a class="button" href="#">Join early access</a></div></div>
+    <img src="../../site/assets/day/poses/reaching_high-320.webp" alt="">
+  </div></div></section>
+
+  <footer class="foot2"><div class="wrap"><div class="row"><span class="wordmark">Doddy</span><ul><li>What can Doddy do?</li><li>Privacy</li><li>Blog</li><li>TikTok</li><li>Instagram</li></ul></div><p>Doddy is an AI, not a person. Your notes stay on your iPhone. The notebook's right page is where he's heading, not a promise with a date.</p></div></footer>
+</body>
+</html>
