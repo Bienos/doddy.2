@@ -8045,6 +8045,17 @@
         }
       }
     },
+    "Big island: start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duża wyspa: rozpocznij rozmowę"
+          }
+        }
+      }
+    },
     "Birthdays": {
       "extractionState": "manual",
       "localizations": {
@@ -44896,6 +44907,17 @@
         }
       }
     },
+    "Only open Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko otwórz Doddy"
+          }
+        }
+      }
+    },
     "Only reminders you set yourself.": {
       "extractionState": "manual",
       "localizations": {
@@ -63797,6 +63819,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "更慢"
+          }
+        }
+      }
+    },
+    "Small island: start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mała wyspa: rozpocznij rozmowę"
           }
         }
       }
@@ -84328,6 +84361,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我离开时"
+          }
+        }
+      }
+    },
+    "When I use Talk to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy używam „Talk to Doddy”"
           }
         }
       }

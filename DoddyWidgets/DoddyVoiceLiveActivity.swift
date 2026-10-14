@@ -141,6 +141,12 @@ private struct IslandControls: View {
                 }
                 .buttonStyle(.plain)
             }
+            // Opens the app's home screen (doddy://home, as the Lock Screen's "Open Doddy" does).
+            // Always offered: on a stale island it is the way back to Doddy.
+            Link(destination: URL(string: "doddy://home")!) {
+                IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+            }
+            .buttonStyle(.plain)
             Button(intent: EndDoddyConversationIntent()) {
                 IslandPillLabel(title: shown.isStale ? "Dismiss" : (shown.state.isWakeMode ? "Stop listening" : "Stop"),
                                 systemImage: shown.isStale ? "xmark" : "stop.fill")
