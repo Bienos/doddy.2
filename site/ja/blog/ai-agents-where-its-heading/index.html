@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AIエージェントがやってきます。その行き先と、Doddy の立ち位置 · Doddy</title>
+  <meta name="description" content="AIエージェントは、話すだけの段階から実行する段階へ、速いペースで移りつつあります。私たちは、エージェントがどこへ向かっているのか、何がその足を引っ張っているのかを研究から調べました。そして、行動する前に確認する、小さくて信頼できるエージェントこそが勝つと考えています。">
+  <meta property="article:published_time" content="2026-10-11">
+  <meta name="keywords" content="AI agents, agentic AI, future of AI, AI assistant, AI companion, personal AI agent, AI trust, human in the loop">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="AIエージェントがやってきます。その行き先と、Doddy の立ち位置 · Doddy">
+  <meta property="og:description" content="AIエージェントは、話すだけの段階から実行する段階へ、速いペースで移りつつあります。私たちは、エージェントがどこへ向かっているのか、何がその足を引っ張っているのかを研究から調べました。そして、行動する前に確認する、小さくて信頼できるエージェントこそが勝つと考えています。">
+  <meta property="og:image" content="https://www.doddy.lol/assets/blog/agents-cover.png">
+  <meta property="og:url" content="https://www.doddy.lol/ja/blog/ai-agents-where-its-heading/">
+  <link rel="canonical" href="https://www.doddy.lol/ja/blog/ai-agents-where-its-heading/">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="es" href="https://www.doddy.lol/es/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="de" href="https://www.doddy.lol/de/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="fr" href="https://www.doddy.lol/fr/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://www.doddy.lol/zh-hans/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="ja" href="https://www.doddy.lol/ja/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="pt-BR" href="https://www.doddy.lol/pt-br/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="it" href="https://www.doddy.lol/it/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="hr" href="https://www.doddy.lol/hr/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/blog/ai-agents-where-its-heading/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/blog/ai-agents-where-its-heading/">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="zh_CN">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" type="application/rss+xml" title="Doddy のブログ" href="/blog/feed.xml">
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/blog.css">
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+  <script src="/analytics.js" defer></script>
+  <!-- i18n:dictionary --><script src="/i18n/ja.js" defer></script><!-- /i18n:dictionary -->
+  <script src="/i18n.js" defer></script>
+  <script src="/nav.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">本文へスキップ</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="/ja/" aria-label="Doddy のホーム">Doddy</a>
+      <nav aria-label="セクション">
+        <ul class="nav-links">
+          <li><a href="/ja/#how">しくみ</a></li>
+          <li><a href="/ja/what-can-doddy-do/">Doddyに何ができる？</a></li>
+          <li><a href="/ja/#meet">Doddyに会う</a></li>
+          <li><a href="/ja/#play">シュートに挑戦</a></li>
+          <li><a href="/ja/blog/">ブログ</a></li>
+          <li><a href="/ja/#privacy">プライバシー</a></li>
+        </ul>
+      </nav>
+      <button class="menu-button" type="button" aria-label="メニュー" aria-expanded="false" aria-controls="menu-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <a class="button small" href="/ja/#join">早期アクセスに参加</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary title="言語">JA</summary><ul class="lang-list"><li><a href="/blog/ai-agents-where-its-heading/" hreflang="en" lang="en" title="English" aria-label="English (EN)">EN</a></li><li><a href="/es/blog/ai-agents-where-its-heading/" hreflang="es" lang="es" title="Español" aria-label="Español (ES)">ES</a></li><li><a href="/de/blog/ai-agents-where-its-heading/" hreflang="de" lang="de" title="Deutsch" aria-label="Deutsch (DE)">DE</a></li><li><a href="/fr/blog/ai-agents-where-its-heading/" hreflang="fr" lang="fr" title="Français" aria-label="Français (FR)">FR</a></li><li><a href="/zh-hans/blog/ai-agents-where-its-heading/" hreflang="zh-Hans" lang="zh-Hans" title="简体中文" aria-label="简体中文 (ZH)">ZH</a></li><li><a href="/ja/blog/ai-agents-where-its-heading/" hreflang="ja" lang="ja" title="日本語" aria-label="日本語 (JA)" aria-current="page">JA</a></li><li><a href="/pt-br/blog/ai-agents-where-its-heading/" hreflang="pt-BR" lang="pt-BR" title="Português (Brasil)" aria-label="Português (Brasil) (PT)">PT</a></li><li><a href="/it/blog/ai-agents-where-its-heading/" hreflang="it" lang="it" title="Italiano" aria-label="Italiano (IT)">IT</a></li><li><a href="/hr/blog/ai-agents-where-its-heading/" hreflang="hr" lang="hr" title="Hrvatski" aria-label="Hrvatski (HR)">HR</a></li><li><a href="/pl/blog/ai-agents-where-its-heading/" hreflang="pl" lang="pl" title="Polski" aria-label="Polski (PL)">PL</a></li></ul></details><!-- /i18n:switcher-header -->
+      <div class="menu-sheet" id="menu-sheet" aria-label="メニュー">
+        <ul>
+          <li><a href="/ja/#how">しくみ</a></li>
+          <li><a href="/ja/what-can-doddy-do/" class="menu-new">Doddyに何ができる？ <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="/ja/#meet">Doddyに会う</a></li>
+          <li><a href="/ja/#play">シュートに挑戦</a></li>
+          <li><a href="/ja/blog/">ブログ</a></li>
+          <li><a href="/ja/#privacy">プライバシー</a></li>
+        </ul>
+        <a class="button" href="/ja/#join">早期アクセスに参加</a>
+      </div>
+    </div>
+  </header>
+
+
+  <main id="main">
+    <article class="post">
+      <div class="wrap post-wrap">
+        <p class="post-back"><a class="text-link" href="/ja/blog/">← すべての投稿</a></p>
+        <header class="post-header">
+          <h1 class="display-m">AIエージェントがやってきます。その行き先と、Doddy の立ち位置。</h1>
+          <p class="post-meta"><time datetime="2026-10-11">2026年10月11日</time> · Doddyチーム · 読了目安 8 分</p>
+        </header>
+        <figure class="banner banner--orange" role="img" aria-label="手描きの棒人間 Doddy が「未来は、まず確認します。」と言っているイラスト。">
+          <div class="banner-paper" aria-hidden="true">
+            <span class="tape t1"></span><span class="tape t2"></span>
+            <svg class="doodle d-sparkle" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 C21 14 26 19 37 20 C26 21 21 26 20 37 C19 26 14 21 3 20 C14 19 19 14 20 3Z"/></svg><svg class="doodle d-sparkle-sm" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 C21 14 26 19 37 20 C26 21 21 26 20 37 C19 26 14 21 3 20 C14 19 19 14 20 3Z"/></svg><svg class="doodle d-squiggle" viewBox="0 0 120 24" aria-hidden="true"><path d="M4 14 C 16 2, 26 22, 38 12 S 60 2, 72 12 S 94 22, 116 8"/></svg>
+            <div class="banner-copy">
+              <p class="says banner-says">未来は、まず確認します。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p><svg class="doodle d-arrow" viewBox="0 0 90 60" aria-hidden="true"><path d="M6 8 C 20 46, 52 54, 80 40"/><path d="M66 34 L81 40 L71 52"/></svg>
+              <div class="banner-card">
+                <p class="banner-card-title">カレンダーに追加しますか？</p>
+                <p class="banner-card-text">歯医者、金曜の 3pm。Doddy は、保存されたことを確認してから、そう伝えます。</p>
+                <p class="banner-card-actions"><span class="ghost">今はしない</span><span class="solid">追加</span></p>
+              </div>
+            </div>
+            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="/assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" alt=""></div>
+            <span class="banner-tag">イラスト</span>
+          </div>
+        </figure>
+        <aside class="tldr" aria-label="要約（TL;DR）">
+          <p class="tldr-label">要約（TL;DR）</p>
+          <ul><li>AIエージェントは、ただ話すだけではなく、予約、購入、予定の登録、送信など、実際に代わりに動けるソフトウェアです。</li><li>研究によると、エージェントは速いペースで良くなっています。エージェントが終えられる作業の長さは、およそ7か月ごとに倍増しています。</li><li>大きなお金も、その後ろに並び始めています。McKinsey は、2030年までにエージェントが世界の買い物の 3〜5 兆ドルを動かす可能性があると見ています。</li><li>問題は信頼です。確認せずにエージェントが何かを買うことを許す人は、わずか9%です。また、Gartner は2027年までに、エージェントのプロジェクトの40%超が中止されると予想しています。</li><li>勝つエージェントは、小さくて、個人的で、正直なものになると私たちは考えています。Doddy はそのようなエージェントになるよう作られています。</li></ul>
+        </aside>
+        <div class="post-body">
+<p>ここ数年、AI は主に話すだけでした。質問すると答えが返ってきて、実際のことは自分でやりに行く。そんな形でした。</p>
+<p>それは変わりつつあります。今のテクノロジーの大きな話題は AI エージェントです。つまり、歯医者の予約方法を教えるだけでなく、カレンダーを開いて予約までしてくれるソフトウェアのことです。その行き先についての研究を読んでみましたが、正直なところ、わくわくします。それは、私たちが今の形で Doddy を作っている理由でもあります。</p>
+<h2>おしゃべりから実行へ</h2>
+<p>違いはシンプルです。チャットボットは言葉を返します。エージェントは、カレンダー、リマインダー、メール、お店などのツールを使って、あなたの代わりに何かを終わらせます。</p>
+<p>ツールの標準化も進んでいます。2025年12月、Anthropic、OpenAI、Block は、エージェントの共通標準を管理するため、Linux Foundation のもとに Agentic AI Foundation を設立しました。Google、Microsoft、Amazon Web Services もその支援に加わっています。その一つが Model Context Protocol で、AI がアプリやデータに接続するための共通の方法です。Anthropic は、このプロトコルを引き渡した時点で、公開されている MCP サーバーがすでに 10,000 以上あったと述べています（<a class="text-link" href="https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank" rel="noopener">Anthropic, 2025</a>）。競合する企業が配管部分で合意するのは、たいていその技術が定着することを意味します。</p>
+<h2>エージェントは、速いペースで良くなっています</h2>
+<p>私たちが見つけた中でもっとも衝撃的な数字は、AI が実際に何をできるかを測る研究グループ METR によるものです。彼らは、AI エージェントが単独で終えられる作業の長さを追跡しました。それは、熟練した人が同じ作業にかかる時間で測ります。その長さは、2019年以降、およそ7か月ごとに倍増してきました。この傾向が続けば、5年ほどで、人なら1か月かかるソフトウェア作業の多くをエージェントがこなせるようになると見込んでいます（<a class="text-link" href="https://arxiv.org/abs/2503.14499" target="_blank" rel="noopener">METR, Kwa et al., arXiv 2503.14499</a>）。</p>
+<p>METR は、これはソフトウェア作業で測ったものであり、正確な数値はテスト方法によって変わると慎重に述べています。とはいえ、その方向性は無視しにくいものです。2年ほど前には数分の作業しか扱えなかったエージェントが、いまではずっと多くをこなせるようになっています。</p>
+<figure class="post-figure"><img src="/assets/blog/agents-doubling.webp" alt="Doddy&#x27;s ノート風の棒グラフ。7か月ごとに倍増するとどうなるかを示しています。今日は1倍、7か月後は2倍、14か月後は4倍、21か月後は8倍、28か月後は16倍。METR&#x27;s が報告した傾向のイラストであり、測定データではないと明記しています。" loading="lazy" decoding="async"><figcaption>METR が測定したペースが続けば、エージェントが扱える作業の長さは、2年半足らずで16倍になります。</figcaption></figure>
+<h2>人々はすでに AI と多くの時間を過ごしています</h2>
+<p>これは研究室の中だけの話ではありません。Sensor Tower は、2026年上半期に人々が生成 AI アプリで費やす時間が360億時間になると見積もっています。1年前の172億時間からの増加で、1年で2倍以上です（<a class="text-link" href="https://sensortower.com/press/sensor-tower-state-of-ai-2026-report-global-time-spent-on-generative-ai-apps-projected-to-more-than-double-year-over-year" target="_blank" rel="noopener">Sensor Tower, 2026</a>）。米国では、成人の49%が AI チャットボットを使ったことがあり、24%が毎日使っています（<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">Pew Research Center, 2026</a>）。</p>
+<figure class="post-figure"><img src="/assets/blog/agents-hours.webp" alt="生成AIアプリに世界で費やされた時間の棒グラフ。2025年上半期は172億時間。2026年上半期は360億時間で、予測値のため斜線で表示しています。出典：Sensor Tower。" loading="lazy" decoding="async"><figcaption>AI アプリの利用時間。2025年上半期と2026年上半期（予測）の比較。</figcaption></figure>
+<p>企業の中でも、同じことが起きています。Gartner は、2028年までにビジネスソフトウェアの3分の1にエージェントが組み込まれると予測しています。2024年は1%未満でした。また、その時点で日常の業務上の判断の少なくとも15%がエージェントによって行われると見込んでいます（<a class="text-link" href="https://www.gartner.com/en/newsroom/press-releases/2025-06-25-gartner-predicts-over-40-percent-of-agentic-ai-projects-will-be-canceled-by-end-of-2027" target="_blank" rel="noopener">Gartner, 2025</a>）。</p>
+<h2>お金もついてきている</h2>
+<p>McKinsey は、エージェントが人に代わって買い物を始めると何が起きるかを調べています。同社の見積もりでは、2030年までにエージェントは米国の小売売上の最大1兆ドル、世界では3〜5兆ドルを動かす可能性があります（<a class="text-link" href="https://www.mckinsey.com/industries/retail/our-insights/the-agentic-commerce-opportunity-how-ai-agents-are-ushering-in-a-new-era-for-consumers-and-merchants" target="_blank" rel="noopener">McKinsey, 2025</a>）。この数字は、比較や推薦を含め、エージェントが手助けするすべての購入を数えているので、広い指標です。それでも、業界がこれをどれほど真剣に受け止めているかはわかります。</p>
+<h2>問題は信頼</h2>
+<p>私たちがいちばん興味深いと感じている点はこちらです。人はエージェントというアイデアが好きですが、エージェントを自由に動かすことには不安を感じています。</p>
+<p>Accenture の 2026 年調査（16か国の25,000人超）では、74%が、買い物を任せるなら個人の AI エージェントを親友より信頼すると答えました。ただし、エージェントが購入を完全に単独で終えることに前向きだったのは、わずか9%でした。AI が選び、支払いだけを自分で確認する形のほうが、はるかに多い32%に好まれました（<a class="text-link" href="https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent" target="_blank" rel="noopener">Accenture, 2026</a>）。</p>
+<figure class="post-figure"><img src="/assets/blog/agents-trust.webp" alt="Accenture&#x27;s 2026 年調査による横棒グラフ。74%は、誰かに代わって買い物を頼むなら、個人の AI エージェントを親友より信頼すると答えています。32%は、支払いの確認さえすれば AI が選んでもよいと答えています。9%は、AI が完全に単独で購入してもよいと答えています。" loading="lazy" decoding="async"><figcaption>理論上は信頼されているけれど、エージェントが単独で動くことを望む人はほとんどいません。</figcaption></figure>
+<p>また、米国の成人の71%は、AIによって個人情報の安全性が下がると予想しています（<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">Pew, 2026</a>）。</p>
+<p>企業も同じ壁にぶつかっています。Gartner は、2027年末までに、エージェントのプロジェクトの40%超がコスト増、不明確な価値、弱いリスク管理を理由に中止されると予想しています。また、古いチャットボットをエージェントとして売り直す「エージェント・ウォッシング」にも警鐘を鳴らし、「エージェンティック AI」を売る数千社のうち、本物と言えるのは約130社だけだとみています（<a class="text-link" href="https://www.gartner.com/en/newsroom/press-releases/2025-06-25-gartner-predicts-over-40-percent-of-agentic-ai-projects-will-be-canceled-by-end-of-2027" target="_blank" rel="noopener">Gartner, 2025</a>）。</p>
+<p>セキュリティの専門家は、このリスクに名前をつけています。「excessive agency」と呼び、仕事に必要な以上の権限や自由を持つ AI を指します。彼らが勧める対策は、重要なことが起きる前に、人が承認することです（<a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">OWASP, 2025</a>）。</p>
+<p>全部まとめると、見通しはかなりはっきりしています。どちらにしても、エージェントはやってきます。そして、人が使い続けるのは、信頼できるものになるでしょう。</p>
+<h2>Doddy の立ち位置</h2>
+<p>Doddy は、iPhone 用の個人向け AI エージェントです。手描きの相棒で、話しかけられます。あえて小さく始めました。メモ、カレンダー、リマインダー、リストから始め、信頼の仕組みは初日から組み込みました。</p>
+<figure class="post-figure"><img src="/assets/blog/agents-flow.webp" alt="Doddy&#x27;s ノート風の4つのステップ。あなたが &quot;金曜の 3 時に歯医者を追加&quot; と頼みます。Doddy は「カレンダーに追加しますか？」というカードを表示しますが、まだ何も変わりません。あなたが「追加」をタップします。Doddy は予定が保存されたかを確認し、そのあとで初めて「追加しました」と言います。下の方で気が変わったら、「Doddyがしたこと」から元に戻せます。" loading="lazy" decoding="async"><figcaption>Doddy が行う操作はすべて、同じ4つのステップを通ります。</figcaption></figure>
+<p>それがアプリでどう表示されるかは、こちらです。</p>
+<ul><li>先に確認します。Doddy が予定を追加したい、リマインダーを設定したい、メモを保存したいときは、カードを表示して、あなたのタップを待ちます。Doddy はメッセージを書くことはできますが、送信を押すのはあなたです。</li><li>自分の仕事を確認します。Doddy は、スマホが変更を本当に行ったと確認してから初めて「追加しました」「保存しました」と言います。</li><li>元に戻せます。Doddy は自分がしたことのリストを残していて、カレンダー、リマインダー、リストに行った変更を取り消せます。エージェントは間違えることもあるので、元に戻せることは、操作そのものと同じくらい大切です。</li><li>あいまいなときは聞き返します。「金曜」が今週か来週かわからない場合、Doddy は推測せずに、短い質問をひとつします。</li><li>数字を推測したりしません。足し算や単位変換は、AI が頭の中で計算すると間違えやすいので、Doddy は計算をスマホに任せます。</li><li>大きな仕事は、ひとつのプランとしてまとまります。複数の手順がある頼みごとは、ひとつのカードとして表示され、何かが実行される前であれば、どの手順も変更できます。</li><li>すべてオプトイン制です。カレンダー、リマインダー、連絡先には、それぞれ専用のスイッチがあり、最初はすべてオフです。新しい「Hey Doddy」の起動ワードも、オンにしたときだけ聞き取ります。聞き取り中は端末に明確に表示され、すぐ横に停止ボタンがあります。</li></ul>
+<p>率直に言うと、Doddy はまだ早期テスト中です。音声会話とメモの保存は、実機の iPhone で試しました。上に挙げた機能の多くは実装済みで、私たちの端末でテストしています。そのため、チーム外の人はまだ誰も使っていません。誇張して伝えるより、正直にそう伝えたいと思います。</p>
+<h2>次に起きること</h2>
+<p>傾向を示す線はすべて同じ方向を指しています。エージェントは毎年できることが増え、私たちの一日のより多くがエージェントを通るようになり、本当の競争は、人が自分の持ち物を誰に任せたいと思うかをめぐるものになるでしょう。</p>
+<p>何でもこなす巨大なアシスタントとは違うものの余地があると私たちは考えています。暮らしの細かいことを知っていて、頼まれたことをして、動く前に確認し、見つからないときは正直に認める、小さくて個人的なエージェント。それが Doddy です。スキルは一つずつ増え、どのスキルも同じテストに合格しなければなりません。先に確認し、自分の仕事を確かめ、オフにすることもできます。</p>
+<p>ポケットに入れておきたいと思えるAIなら、<a class="text-link" href="/ja/#join">早期アクセスに参加</a>するか、<a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegramグループ</a>に挨拶しに来てください。</p>
+<h2>よくある質問</h2>
+<h3>AI エージェントとは？</h3>
+<p>質問に答えるだけでなく、予定の追加、リマインダーの設定、注文などの操作を代わりに行える AI です。</p>
+<h3>Doddy は AI エージェント？</h3>
+<p>はい。小さくて個人的なエージェントです。iPhone にあるあなたのメモ、リスト、カレンダー、リマインダーを使って動き、何かを変える前には必ず確認します。</p>
+<h3>AI エージェントはアプリに取って代わる？</h3>
+<p>完全にそうなるとは限りません。むしろ、エージェントがあなたのアプリを通して代わりに仕事をする形になりそうで、だからこそ Model Context Protocol のような共通標準が大事なのです。</p>
+<h3>AIエージェントは安全？</h3>
+<p>丁寧に作られていれば、そうなることもあります。もっとも安全な設計は、エージェントに必要なツールだけを渡し、重要なことは人が承認できるようにするものです。Doddy もそのように動きます。</p>
+<h3>Doddy はいつ試せる？</h3>
+<p>Doddy は iPhone で早期テスト中です。<a class="text-link" href="/ja/#join">早期アクセスに参加</a>すると、開始時にお知らせします。</p>
+<h2>出典</h2>
+<ul><li>Anthropic、<em>Donating the Model Context Protocol and establishing the Agentic AI Foundation</em>、2025年12月9日。<a class="text-link" href="https://www.anthropic.com/news/donating-the-model-context-protocol-and-establishing-of-the-agentic-ai-foundation" target="_blank" rel="noopener">anthropic.com</a></li><li>Kwa ほか（METR）、<em>Measuring AI Ability to Complete Long Tasks</em>、arXiv 2503.14499、2025年3月、2026年7月更新。<a class="text-link" href="https://arxiv.org/abs/2503.14499" target="_blank" rel="noopener">arxiv.org</a></li><li>Sensor Tower、<em>State of AI 2026</em>、2026年6月16日。<a class="text-link" href="https://sensortower.com/press/sensor-tower-state-of-ai-2026-report-global-time-spent-on-generative-ai-apps-projected-to-more-than-double-year-over-year" target="_blank" rel="noopener">sensortower.com</a></li><li>Pew Research Center、<em>Americans and AI 2026</em>、2026年6月17日（2026年2月17〜23日に実施された米国の成人5,119人の調査）。<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">pewresearch.org</a></li><li>Gartner、<em>Gartner Predicts Over 40% of Agentic AI Projects Will Be Canceled by End of 2027</em>、2025年6月25日。<a class="text-link" href="https://www.gartner.com/en/newsroom/press-releases/2025-06-25-gartner-predicts-over-40-percent-of-agentic-ai-projects-will-be-canceled-by-end-of-2027" target="_blank" rel="noopener">gartner.com</a></li><li>McKinsey、<em>The agentic commerce opportunity</em>、2025年10月。<a class="text-link" href="https://www.mckinsey.com/industries/retail/our-insights/the-agentic-commerce-opportunity-how-ai-agents-are-ushering-in-a-new-era-for-consumers-and-merchants" target="_blank" rel="noopener">mckinsey.com</a></li><li>Accenture、<em>Consumer Pulse Research 2026</em>（2026年1月、16か国の25,590人の消費者）。<a class="text-link" href="https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent" target="_blank" rel="noopener">accenture.com</a></li><li>OWASP、<em>LLM06 2025 Excessive Agency</em>、OWASP Top 10 for LLM Applications 2025。<a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">genai.owasp.org</a></li></ul>
+        </div>
+        <aside class="post-cta" aria-label="早期アクセスに参加">
+          <p class="says-small">Doddy を試してみたい？</p>
+          <p>Doddy は iPhone で早期テスト中です。メールアドレスを残していただければ、早期アクセスが始まったときにお知らせします。</p>
+          <a class="button small" href="/ja/#join">早期アクセスに参加</a>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="/ja/">ホーム</a></li>
+          <li><a href="/ja/what-can-doddy-do/">Doddyに何ができる？</a></li>
+          <li><a href="/ja/blog/">ブログ</a></li>
+          <li><a href="/blog/feed.xml">RSS</a></li>
+          <li><a href="/ja/#join">早期アクセスに参加</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegramグループ</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="言語" translate="no"><ul class="lang-list"><li><a href="/blog/ai-agents-where-its-heading/" hreflang="en" lang="en" title="English" aria-label="English (EN)">EN</a></li><li><a href="/es/blog/ai-agents-where-its-heading/" hreflang="es" lang="es" title="Español" aria-label="Español (ES)">ES</a></li><li><a href="/de/blog/ai-agents-where-its-heading/" hreflang="de" lang="de" title="Deutsch" aria-label="Deutsch (DE)">DE</a></li><li><a href="/fr/blog/ai-agents-where-its-heading/" hreflang="fr" lang="fr" title="Français" aria-label="Français (FR)">FR</a></li><li><a href="/zh-hans/blog/ai-agents-where-its-heading/" hreflang="zh-Hans" lang="zh-Hans" title="简体中文" aria-label="简体中文 (ZH)">ZH</a></li><li><a href="/ja/blog/ai-agents-where-its-heading/" hreflang="ja" lang="ja" title="日本語" aria-label="日本語 (JA)" aria-current="page">JA</a></li><li><a href="/pt-br/blog/ai-agents-where-its-heading/" hreflang="pt-BR" lang="pt-BR" title="Português (Brasil)" aria-label="Português (Brasil) (PT)">PT</a></li><li><a href="/it/blog/ai-agents-where-its-heading/" hreflang="it" lang="it" title="Italiano" aria-label="Italiano (IT)">IT</a></li><li><a href="/hr/blog/ai-agents-where-its-heading/" hreflang="hr" lang="hr" title="Hrvatski" aria-label="Hrvatski (HR)">HR</a></li><li><a href="/pl/blog/ai-agents-where-its-heading/" hreflang="pl" lang="pl" title="Polski" aria-label="Polski (PL)">PL</a></li></ul></nav><!-- /i18n:switcher-footer -->
+      </div>
+      <p>Doddy は人ではなく AI アシスタントです。メモは iPhone に保存されます。音声、通話、共有リスト、連携アカウントは、オンにしたときだけ、データを端末の外に送ります。</p>
+      <p>このページでは、Cookieを使わないVercel Web Analyticsで訪問を数えています。フォントはGoogle Fontsから読み込まれます。</p>
+      <p data-ga-note hidden>許可すると、Google Analyticsも訪問を計測し、Cookieを設定します。<button type="button" class="foot-choice" data-analytics-choices>アナリティクスの選択</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>

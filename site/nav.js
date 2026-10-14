@@ -7,7 +7,7 @@
   function setOpen(open) {
     sheet.classList.toggle("is-open", open);
     button.setAttribute("aria-expanded", String(open));
-    button.setAttribute("aria-label", open ? "Close menu" : "Menu");
+    button.setAttribute("aria-label", open ? doddyT("Close menu") : doddyT("Menu"));
   }
   button.addEventListener("click", () => setOpen(!sheet.classList.contains("is-open")));
   sheet.addEventListener("click", (event) => { if (event.target.closest("a")) setOpen(false); });

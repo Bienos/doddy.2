@@ -24,6 +24,7 @@ import hashlib
 import base64
 import html
 import json
+import posixpath
 import re
 import sys
 from html.parser import HTMLParser
@@ -85,8 +86,51 @@ BARE_AMP = re.compile(r"&(?!#?[A-Za-z0-9]+;)")
 CSP_HASH = re.compile(r"'sha256-([A-Za-z0-9+/=]+)'")
 
 
+def page_path(slug: str, page_dir: str) -> str:
+    """The URL path of a page in one language: '/' or '/de/', then the page's folder: '/de/blog/first-post/'."""
+    return (f"/{slug}/" if slug else "/") + page_dir
+
+
+def page_url_for(slug: str, page_dir: str) -> str:
+    return BASE_URL + page_path(slug, page_dir)
+
+
 def page_url(slug: str) -> str:
-    return f"{BASE_URL}/{slug}/" if slug else f"{BASE_URL}/"
+    return page_url_for(slug, "")
+
+
+_PAGE_DIRS: list[str] | None = None
+
+
+def page_dirs() -> list[str]:
+    """Every page we translate, as its folder under site/: '' is the home page, 'blog/first-post/' a post."""
+    global _PAGE_DIRS
+    if _PAGE_DIRS is None:
+        found = [""]
+        if (SITE / "what-can-doddy-do" / "index.html").exists():
+            found.append("what-can-doddy-do/")
+        if (SITE / "blog" / "index.html").exists():
+            found.append("blog/")
+        for post in sorted((SITE / "blog").glob("*/index.html")) if (SITE / "blog").exists() else []:
+            found.append(f"blog/{post.parent.name}/")
+        _PAGE_DIRS = found
+    return _PAGE_DIRS
+
+
+def localize(value: str, page_dir: str, slug: str) -> str:
+    """A URL on a translated page. Relative URLs go to the site root; links to our own pages go to that language's version."""
+    if not value or value.startswith(("#", "mailto:", "tel:", "data:", "javascript:", "doddy:", "http:", "https:", "//", "?")):
+        return value
+    target = value if value.startswith("/") else "/" + posixpath.join(page_dir, value)
+    head, hashpart = target.split("#", 1) if "#" in target else (target, None)
+    path, query = head.split("?", 1) if "?" in head else (head, None)
+    norm = posixpath.normpath(path)
+    if path.endswith("/") and not norm.endswith("/"):
+        norm += "/"
+    suffix = ("?" + query if query is not None else "") + ("#" + hashpart if hashpart is not None else "")
+    if norm == "/" or (norm.endswith("/") and norm[1:] in page_dirs()):
+        return page_path(slug, "" if norm == "/" else norm[1:]) + suffix
+    return norm + suffix
 
 
 def consent_for(lang) -> str:
@@ -97,29 +141,25 @@ def is_relative(value: str) -> bool:
     return bool(value) and not value.startswith(NOT_RELATIVE)
 
 
-def root_url(value: str) -> str:
-    return "/" + (value[2:] if value.startswith("./") else value)
-
-
 def srcset_urls(value: str) -> list[str]:
     return [part.strip().partition(" ")[0] for part in value.split(",") if part.strip()]
 
 
-def root_srcset(value: str) -> str:
-    """A srcset is 'URL descriptor, URL descriptor'; every relative URL in it becomes root-absolute."""
+def root_srcset(value: str, page_dir: str, slug: str) -> str:
+    """A srcset is 'URL descriptor, URL descriptor'; every URL in it is localized for this page."""
     out = []
     for part in value.split(","):
         url, _, descriptor = part.strip().partition(" ")
         if url:
-            out.append((root_url(url) if is_relative(url) else url) + (" " + descriptor.strip() if descriptor.strip() else ""))
+            out.append(localize(url, page_dir, slug) + (" " + descriptor.strip() if descriptor.strip() else ""))
     return ", ".join(out)
 
 
-def root_urls_in(fragment: str) -> str:
-    """The same rewrite for markup kept as it is inside a text unit: a drawing token, an inline link."""
+def root_urls_in(fragment: str, page_dir: str, slug: str) -> str:
+    """The same rewrite for markup kept inside a text unit: a drawing token, an inline link."""
     def fix(m):
         name, eq, quote, value = m.groups()
-        new = root_srcset(value) if name == "srcset" else (root_url(value) if is_relative(value) else value)
+        new = root_srcset(value, page_dir, slug) if name == "srcset" else localize(value, page_dir, slug)
         return f"{name}{eq}{quote}{new}{quote}"
     return URL_IN_HTML.sub(fix, fragment)
 
@@ -276,8 +316,12 @@ def attr_sites(c):
                 out.append(("attr", c, name, span[2], span))
     for name in URL_ATTRS + (SRCSET_ATTR,):
         value = c.attrs.get(name, "")
-        relative = any(is_relative(u) for u in srcset_urls(value)) if name == SRCSET_ATTR else is_relative(value)
-        if value and relative:
+        if name == SRCSET_ATTR:
+            needs = any(is_relative(u) for u in srcset_urls(value))
+        else:
+            # A root-absolute link to one of our pages ("/blog/", "/#how") also changes on a translated page.
+            needs = is_relative(value) or (name == "href" and value.startswith("/") and not value.startswith("//"))
+        if value and needs:
             span = attr_span(c, name)
             if span:
                 out.append(("url", c, name, span[2], span))
@@ -379,12 +423,12 @@ def lookup(table, code: str, key: str, missing: list[str]) -> str:
     return table[key]
 
 
-def generated_regions(lang, table, missing):
+def generated_regions(lang, table, missing, page_dir=""):
     code, slug = lang[0], lang[1]
     alternates = []
     for _, s2, _, h2, _ in LANGUAGES:
-        alternates.append(f'<link rel="alternate" hreflang="{h2}" href="{page_url(s2)}">')
-    alternates.append(f'<link rel="alternate" hreflang="x-default" href="{page_url("")}">')
+        alternates.append(f'<link rel="alternate" hreflang="{h2}" href="{page_url_for(s2, page_dir)}">')
+    alternates.append(f'<link rel="alternate" hreflang="x-default" href="{page_url_for("", page_dir)}">')
     alternates.append(f'<meta property="og:locale" content="{lang[4]}">')
     for other in LANGUAGES:
         if other[0] != code:
@@ -393,7 +437,7 @@ def generated_regions(lang, table, missing):
     label = html.escape(lookup(table, code, "Language", missing))
     items = []
     for c2, s2, name2, h2, _ in LANGUAGES:
-        href = "/" + (s2 + "/" if s2 else "")
+        href = page_path(s2, page_dir)
         current = ' aria-current="page"' if c2 == code else ""
         name, short = html.escape(name2), SHORT[c2]
         items.append(f'<li><a href="{href}" hreflang="{h2}" lang="{h2}" title="{name}" aria-label="{name} ({short})"{current}>{short}</a></li>')
@@ -409,7 +453,7 @@ def generated_regions(lang, table, missing):
     }
 
 
-def render_page(base: str, sites, lang, table, problems: list[str]) -> str:
+def render_page(base: str, sites, lang, table, problems: list[str], page_dir: str = "") -> str:
     code, slug = lang[0], lang[1]
     missing: list[str] = []
     reps = []
@@ -417,26 +461,23 @@ def render_page(base: str, sites, lang, table, problems: list[str]) -> str:
         kind, el = site[0], site[1]
         if kind == "unit":
             key, tokens = site[2], site[3]
-            if not translatable(key) and not (code != "en" and el.tag == "a" and el.attrs.get("href") == "/blog/"):
+            if not translatable(key):
                 continue
             text = lookup(table, code, key, missing)
             if code != "en" and text != key and problems_with(key, text):
                 problems.append(f"{code}: {key[:60]!r}: {problems_with(key, text)[0]}")
                 text = key
-            blog = code != "en" and el.tag == "a" and el.attrs.get("href") == "/blog/"
-            if text == key and not blog:
+            if text == key:
                 # Untranslated, but a drawing or link inside it may still carry a page-relative URL.
                 if code != "en":
                     inner = base[el.inner_start:el.inner_end]
-                    fixed = root_urls_in(inner)
+                    fixed = root_urls_in(inner, page_dir, slug)
                     if fixed != inner:
                         reps.append((el.inner_start, el.inner_end, fixed))
                 continue
             new = restore(text, tokens)
             if code != "en":
-                new = root_urls_in(new)
-            if blog:
-                new += f' <span class="note">({html.escape(lookup(table, code, "English", missing))})</span>'
+                new = root_urls_in(new, page_dir, slug)
             reps.append((el.inner_start, el.inner_end, new))
         elif kind == "attr":
             key, span = site[3], site[4]
@@ -450,16 +491,16 @@ def render_page(base: str, sites, lang, table, problems: list[str]) -> str:
                 reps.append((span[0], span[1], text.replace('"', "&quot;")))
         elif kind == "url":
             if code != "en":
-                new = root_srcset(site[3]) if site[2] == SRCSET_ATTR else root_url(site[3])
+                new = root_srcset(site[3], page_dir, slug) if site[2] == SRCSET_ATTR else localize(site[3], page_dir, slug)
                 reps.append((site[4][0], site[4][1], new))
         elif kind == "lang":
             reps.append((site[4][0], site[4][1], code))
         elif kind == "consent":
             reps.append((site[4][0], site[4][1], consent_for(lang)))
         elif kind == "pageurl":
-            reps.append((site[4][0], site[4][1], page_url(slug)))
+            reps.append((site[4][0], site[4][1], page_url_for(slug, page_dir)))
 
-    regions = generated_regions(lang, table, missing)
+    regions = generated_regions(lang, table, missing, page_dir)
     for name, content in regions.items():
         open_tag, close_tag = f"<!-- i18n:{name} -->", f"<!-- /i18n:{name} -->"
         a = base.index(open_tag) + len(open_tag)
@@ -486,13 +527,14 @@ def dictionary_js(table, js: set[str]) -> str:
 def sitemap() -> str:
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">']
-    for _, slug, _, _, _ in LANGUAGES:
-        lines.append("  <url>")
-        lines.append(f"    <loc>{page_url(slug)}</loc>")
-        for _, s2, _, h2, _ in LANGUAGES:
-            lines.append(f'    <xhtml:link rel="alternate" hreflang="{h2}" href="{page_url(s2)}"/>')
-        lines.append(f'    <xhtml:link rel="alternate" hreflang="x-default" href="{page_url("")}"/>')
-        lines.append("  </url>")
+    for page_dir in page_dirs():
+        for _, slug, _, _, _ in LANGUAGES:
+            lines.append("  <url>")
+            lines.append(f"    <loc>{page_url_for(slug, page_dir)}</loc>")
+            for _, s2, _, h2, _ in LANGUAGES:
+                lines.append(f'    <xhtml:link rel="alternate" hreflang="{h2}" href="{page_url_for(s2, page_dir)}"/>')
+            lines.append(f'    <xhtml:link rel="alternate" hreflang="x-default" href="{page_url_for("", page_dir)}"/>')
+            lines.append("  </url>")
     lines.append("</urlset>")
     return "\n".join(lines) + "\n"
 
@@ -509,16 +551,30 @@ def load_tables():
     return tables
 
 
-def build(base, tree, sites, expected, tables, problems):
-    """Every file this tool owns, as {path: text}."""
+def fill_english_regions(text: str, page_dir: str) -> str:
+    """The English page's generated parts (language links, hreflang), for the generators that write English pages."""
+    regions = generated_regions(LANGUAGES[0], None, [], page_dir)
+    for name, content in regions.items():
+        open_tag, close_tag = f"<!-- i18n:{name} -->", f"<!-- /i18n:{name} -->"
+        a = text.index(open_tag) + len(open_tag)
+        b = text.index(close_tag)
+        text = text[:a] + content + text[b:]
+    return text
+
+
+def build(pages, tables, problems):
+    """Every file this tool owns, as {path: text}. pages: (master path, page folder, base text, sites)."""
     out = {}
-    out[MASTER] = render_page(base, sites, LANGUAGES[0], None, problems)
+    for path, page_dir, base, sites in pages:
+        if page_dir == "":
+            out[MASTER] = render_page(base, sites, LANGUAGES[0], None, problems, page_dir)
+        for lang in TRANSLATED:
+            table = tables[lang[0]]
+            if table is None:
+                problems.append(f"{lang[0]}: no table at l10n/site/{lang[0]}.json (English is shown)")
+            out[SITE / lang[1] / page_dir / "index.html"] = render_page(base, sites, lang, table, problems, page_dir)
     for lang in TRANSLATED:
         table = tables[lang[0]]
-        if table is None:
-            problems.append(f"{lang[0]}: no table at l10n/site/{lang[0]}.json (English is shown)")
-        page = render_page(base, sites, lang, table, problems)
-        out[SITE / lang[1] / "index.html"] = page
         if table is not None:
             out[SITE / "i18n" / f"{lang[1]}.js"] = dictionary_js(table, js_keys())
     out[SITE / "sitemap.xml"] = sitemap()
@@ -573,17 +629,27 @@ def check_page(path: Path, text: str, problems: list[str]) -> None:
                             problems.append(f"{rel}: {name}={url} does not exist in site/")
 
 
+def masters():
+    """Every page we translate, as (path, folder, base text, sites): the home page, then What can Doddy?, the blog and each post."""
+    out = []
+    for page_dir in page_dirs():
+        path = MASTER if page_dir == "" else SITE / page_dir / "index.html"
+        base = empty_regions(path.read_text(encoding="utf-8"))
+        tree = Tree(base)
+        if tree.problems:
+            sys.exit(f"FAIL: {path.relative_to(ROOT)} does not parse: " + tree.problems[0])
+        sites, leftovers = collect(base, tree)
+        if leftovers:
+            sys.exit(f"FAIL: {path.relative_to(ROOT)} has text the walk can't place (add its element to CANDIDATES or move it):\n  "
+                     + "\n  ".join(leftovers[:8]))
+        out.append((path, page_dir, base, sites))
+    return out
+
+
 def main() -> None:
     check = "--check" in sys.argv
-    master_text = MASTER.read_text(encoding="utf-8")
-    base = empty_regions(master_text)
-    tree = Tree(base)
-    if tree.problems:
-        sys.exit("FAIL: the master does not parse: " + tree.problems[0])
-    sites, leftovers = collect(base, tree)
-    if leftovers:
-        sys.exit("FAIL: text the walk can't place (add its element to CANDIDATES or move it):\n  " + "\n  ".join(leftovers[:8]))
-    expected = expected_keys(sites)
+    pages = masters()
+    expected = sorted({key for _, _, _, sites in pages for key in expected_keys(sites)})
     en_identity = {k: k for k in expected}
     tables = load_tables()
     problems: list[str] = []
@@ -605,8 +671,10 @@ def main() -> None:
                     problems.append(f"{code}: {key[:60]!r}: {bad[0]}")
                 elif table[key] == key and len(key.split()) >= 3 and key not in keep:
                     problems.append(f"{code}: still English: {key[:60]!r}")
+                if "a mate in your pocket" in key.lower() and "a mate in your pocket" not in table[key].lower():
+                    problems.append(f"{code}: {key[:60]!r}: 'A mate in your pocket' stays in English (owner decision)")
 
-    outputs = build(base, tree, sites, expected, tables, problems)
+    outputs = build(pages, tables, problems)
 
     if check:
         for path, text in outputs.items():

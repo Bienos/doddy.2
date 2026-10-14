@@ -78,12 +78,12 @@
   requestAnimationFrame(() => requestAnimationFrame(() => hero.classList.add("loaded")));
 
   const HOURS = [
-    { to: 5, pose: "shush", line: "Why are we both awake?" },
+    { to: 5, pose: "shush", line: doddyT("Why are we both awake?") },
     { to: 10, pose: "yawn_stretch", line: "Morning. Ish." },
-    { to: 12, pose: "wave", line: "Pick one." },
+    { to: 12, pose: "wave", line: doddyT("Pick one.") },
     { to: 14, pose: "fistpump", line: "Lunch. Finally." },
-    { to: 18, pose: "leaning", line: "Still here." },
-    { to: 24, pose: "crosslegged", line: "Nearly done for the day." },
+    { to: 18, pose: "leaning", line: doddyT("Still here.") },
+    { to: 24, pose: "crosslegged", line: doddyT("Nearly done for the day.") },
   ];
   const timed = moments.map((m) => {
     const t = /^(\d\d):(\d\d)$/.exec(m.dataset.time);
@@ -278,7 +278,7 @@
   const SURPRISE = ["peek", "balance", "yawn", "shush"][Math.floor(Date.now() / 864e5) % 4];  // seeded by the date; nothing stored
   const SURPRISES = {
     balance: { pose: "oneleg_balance", line: "Balance. Mostly." },
-    yawn: { pose: "yawn_stretch", line: "Long day." },
+    yawn: { pose: "yawn_stretch", line: doddyT("Long day.") },
   };
   preload(["walk_3", "walk_5", "walk_7", "run_2", "run_4", "run_6", "kneeling_inspect", ...(SURPRISES[SURPRISE] ? [SURPRISES[SURPRISE].pose] : [])]);
   const travels = $$(".travel");
@@ -342,7 +342,7 @@
       catch (error) { if (error && error.name === "AbortError") return; }
     }
     try { await navigator.clipboard.writeText(url); say(statusEl, "Copied"); }
-    catch { say(statusEl, "Copy the link from the address bar"); }
+    catch { say(statusEl, doddyT("Copy the link from the address bar")); }
   }
   $$("[data-send]").forEach((link) => {
     link.addEventListener("click", (event) => {
@@ -406,12 +406,12 @@
         if (!reduce.matches) playFrames(joinPose, ["wave_2", "wave_4", "wave"], 8);
       } else if (reply.error === "invalid_email") {
         email.setAttribute("aria-invalid", "true");
-        say2("That email address doesn't look right. Check it and try again.", "err");
+        say2(doddyT("That email address doesn't look right. Check it and try again."), "err");
       } else {
         throw new Error(reply.error);
       }
     } catch {
-      say2("That didn't go through. Check your connection and try again.", "err");
+      say2(doddyT("That didn't go through. Check your connection and try again."), "err");
     } finally {
       submit.disabled = false;
     }

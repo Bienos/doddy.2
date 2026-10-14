@@ -40,7 +40,8 @@ A native reviewer works through one language at a time with `python3 -I tools/l1
 One agent per language made each table (`l10n/site/<code>.json`, 187 strings). Each reported the lines it was least sure of; the owner decides the open ones.
 
 **Decisions for the owner**
-1. **"A mate in your pocket"** (film chapter 1:05) is a variant of the tagline. Kept in English in French, Portuguese and Polish; translated in the other languages. Choose one rule.
+1. **"A mate in your pocket"** (film chapter 1:05, and the same phrase in the description and lead of What can Doddy?) stays in English in every language. Decided by the owner on 2026-10-14. `build_site_i18n.py --check` fails if a table translates it.
+   - Owner decisions on 2026-10-14: the Chinese pages are standard Mandarin in simplified characters (zh-Hans), and the website uses 列表 for "list" throughout (the app's table still uses 清单; decide if they must match). Brazilian Portuguese uses você everywhere. The Polish translation stays as it is. No native review for now. The admin page is outside translation (internal, noindex).
 2. **Length in buttons.** "Join early access" is the header button and is long in several languages (Portuguese, German, Polish, French). The header wraps onto a second row on phones in five of them. Shorter wording needs an owner decision, because the same key also appears in the hero and the footer.
 3. **"In testing" and "Later, maybe"** are translated for meaning, not word for word (German "Testphase", Italian "In test"). Say if the English words should stay.
 4. **Polish parcel locker: changed.** "Paczkomat" is InPost's trademark, so the Polish page now says "skrytka na paczki" (parcel locker). Check the wording reads naturally.
@@ -50,7 +51,7 @@ One agent per language made each table (`l10n/site/<code>.json`, 187 strings). E
 - **Spanish:** "Pregúntale más tarde" (Ask later); "Corrígelo o olvídalo"; "Pedir acceso anticipado" is a third longer than the English; jokes "Qué va. Lo habría apuntado." and "De nada.".
 - **German:** "Später" drops "ask"; "Nicht speichern" is 50% longer; "Überspringen" (Skip) is about three times the English; "Am Ring abgeprallt", "Zisch", "Nur Netz" are the basketball lines; "phone" became "iPhone" in two sentences.
 - **French:** "Plus tard"; "Corriger ou oublier"; "Sur le cercle."; "Jeu de mémoire" for the memory game.
-- **Chinese (Simplified):** waitlist is 候补名单 while early access is 抢先体验; "不用谢" for "You're welcome."; the chapter title is translated, the page title keeps the English tagline.
+- **Chinese (Simplified):** waitlist is 候补名单 while early access is 抢先体验; "不用谢" for "You're welcome."; the chapter title stays in English (decided 2026-10-14), and the page title keeps the English tagline.
 - **Japanese:** 事前登録 for the waitlist; "Doddyのほうが人より得意です" for "better at this than the rest of us"; "Saved means saved." lost its wordplay.
 - **Portuguese (Brazil):** "Mais tarde" drops "ask"; "Lançar por mim" for "Shoot for me"; "Inscreva-se no acesso antecipado" is long for a button.
 - **Italian:** "Iscriviti in anticipo" drops "access"; "Carte del memory"; "Tira per me".

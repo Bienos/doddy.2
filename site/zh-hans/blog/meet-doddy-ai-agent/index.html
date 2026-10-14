@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>认识 Doddy：一个想替你搞定一切的 AI 陪伴 · Doddy</title>
+  <meta name="description" content="Doddy 是面向 iPhone 的 AI 陪伴，目标很远大。总有一天，它应该能帮你处理任何需要的事，而且行动前总会先问你。下面是它今天能做什么、暂时还做不到什么、我们如何保证它的安全，以及人们最常问的问题的解答。">
+  <meta property="article:published_time" content="2026-10-10">
+  <meta name="keywords" content="AI companion, AI agent, AI personal assistant, iPhone AI assistant, AI memory app, voice assistant, AI safety, human in the loop">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="认识 Doddy：一个想替你搞定一切的 AI 陪伴 · Doddy">
+  <meta property="og:description" content="Doddy 是面向 iPhone 的 AI 陪伴，目标很远大。总有一天，它应该能帮你处理任何需要的事，而且行动前总会先问你。下面是它今天能做什么、暂时还做不到什么、我们如何保证它的安全，以及人们最常问的问题的解答。">
+  <meta property="og:image" content="https://www.doddy.lol/assets/og-image.png">
+  <meta property="og:url" content="https://www.doddy.lol/zh-hans/blog/meet-doddy-ai-agent/">
+  <link rel="canonical" href="https://www.doddy.lol/zh-hans/blog/meet-doddy-ai-agent/">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="es" href="https://www.doddy.lol/es/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="de" href="https://www.doddy.lol/de/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="fr" href="https://www.doddy.lol/fr/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://www.doddy.lol/zh-hans/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="ja" href="https://www.doddy.lol/ja/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="pt-BR" href="https://www.doddy.lol/pt-br/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="it" href="https://www.doddy.lol/it/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="hr" href="https://www.doddy.lol/hr/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/blog/meet-doddy-ai-agent/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/blog/meet-doddy-ai-agent/">
+  <meta property="og:locale" content="zh_CN">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="ja_JP">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" type="application/rss+xml" title="Doddy 博客" href="/blog/feed.xml">
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/blog.css">
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+  <script src="/analytics.js" defer></script>
+  <!-- i18n:dictionary --><script src="/i18n/zh-hans.js" defer></script><!-- /i18n:dictionary -->
+  <script src="/i18n.js" defer></script>
+  <script src="/nav.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">跳到正文</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="/zh-hans/" aria-label="Doddy 首页">Doddy</a>
+      <nav aria-label="页面分区">
+        <ul class="nav-links">
+          <li><a href="/zh-hans/#how">工作原理</a></li>
+          <li><a href="/zh-hans/what-can-doddy-do/">Doddy 能做什么？</a></li>
+          <li><a href="/zh-hans/#meet">认识 Doddy</a></li>
+          <li><a href="/zh-hans/#play">来投一球</a></li>
+          <li><a href="/zh-hans/blog/">博客</a></li>
+          <li><a href="/zh-hans/#privacy">隐私</a></li>
+        </ul>
+      </nav>
+      <button class="menu-button" type="button" aria-label="菜单" aria-expanded="false" aria-controls="menu-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <a class="button small" href="/zh-hans/#join">加入抢先体验</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary title="语言">ZH</summary><ul class="lang-list"><li><a href="/blog/meet-doddy-ai-agent/" hreflang="en" lang="en" title="English" aria-label="English (EN)">EN</a></li><li><a href="/es/blog/meet-doddy-ai-agent/" hreflang="es" lang="es" title="Español" aria-label="Español (ES)">ES</a></li><li><a href="/de/blog/meet-doddy-ai-agent/" hreflang="de" lang="de" title="Deutsch" aria-label="Deutsch (DE)">DE</a></li><li><a href="/fr/blog/meet-doddy-ai-agent/" hreflang="fr" lang="fr" title="Français" aria-label="Français (FR)">FR</a></li><li><a href="/zh-hans/blog/meet-doddy-ai-agent/" hreflang="zh-Hans" lang="zh-Hans" title="简体中文" aria-label="简体中文 (ZH)" aria-current="page">ZH</a></li><li><a href="/ja/blog/meet-doddy-ai-agent/" hreflang="ja" lang="ja" title="日本語" aria-label="日本語 (JA)">JA</a></li><li><a href="/pt-br/blog/meet-doddy-ai-agent/" hreflang="pt-BR" lang="pt-BR" title="Português (Brasil)" aria-label="Português (Brasil) (PT)">PT</a></li><li><a href="/it/blog/meet-doddy-ai-agent/" hreflang="it" lang="it" title="Italiano" aria-label="Italiano (IT)">IT</a></li><li><a href="/hr/blog/meet-doddy-ai-agent/" hreflang="hr" lang="hr" title="Hrvatski" aria-label="Hrvatski (HR)">HR</a></li><li><a href="/pl/blog/meet-doddy-ai-agent/" hreflang="pl" lang="pl" title="Polski" aria-label="Polski (PL)">PL</a></li></ul></details><!-- /i18n:switcher-header -->
+      <div class="menu-sheet" id="menu-sheet" aria-label="菜单">
+        <ul>
+          <li><a href="/zh-hans/#how">工作原理</a></li>
+          <li><a href="/zh-hans/what-can-doddy-do/" class="menu-new">Doddy 能做什么？ <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="/zh-hans/#meet">认识 Doddy</a></li>
+          <li><a href="/zh-hans/#play">来投一球</a></li>
+          <li><a href="/zh-hans/blog/">博客</a></li>
+          <li><a href="/zh-hans/#privacy">隐私</a></li>
+        </ul>
+        <a class="button" href="/zh-hans/#join">加入抢先体验</a>
+      </div>
+    </div>
+  </header>
+
+
+  <main id="main">
+    <article class="post">
+      <div class="wrap post-wrap">
+        <p class="post-back"><a class="text-link" href="/zh-hans/blog/">← 所有文章</a></p>
+        <header class="post-header">
+          <h1 class="display-m">认识 Doddy：一个想替你搞定一切的 AI 陪伴</h1>
+          <p class="post-meta"><time datetime="2026-10-10">2026 年 10 月 10 日</time> · Doddy 团队 · 阅读需 12 分钟</p>
+        </header>
+        <figure class="banner banner--orange" role="img" aria-label="一个手绘棒状小人 Doddy 说“Hey. I&#x27;m Doddy.”的插图。">
+          <div class="banner-paper" aria-hidden="true">
+            <span class="tape t1"></span><span class="tape t2"></span>
+            <svg class="doodle d-sparkle" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 C21 14 26 19 37 20 C26 21 21 26 20 37 C19 26 14 21 3 20 C14 19 19 14 20 3Z"/></svg><svg class="doodle d-sparkle-sm" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 3 C21 14 26 19 37 20 C26 21 21 26 20 37 C19 26 14 21 3 20 C14 19 19 14 20 3Z"/></svg><svg class="doodle d-squiggle" viewBox="0 0 120 24" aria-hidden="true"><path d="M4 14 C 16 2, 26 22, 38 12 S 60 2, 72 12 S 94 22, 116 8"/></svg>
+            <div class="banner-copy">
+              <p class="says banner-says">嘿。我是 Doddy。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p><svg class="doodle d-arrow" viewBox="0 0 90 60" aria-hidden="true"><path d="M6 8 C 20 46, 52 54, 80 40"/><path d="M66 34 L81 40 L71 52"/></svg>
+              <div class="banner-card">
+                <p class="banner-card-title">保存这条笔记？</p>
+                <p class="banner-card-text">备用钥匙在冰箱上方的蓝色铁盒里。</p>
+                <p class="banner-card-actions"><span class="ghost">不保存</span><span class="solid">保存</span></p>
+              </div>
+            </div>
+            <div class="banner-stage"><span class="banner-glow"></span><img class="banner-pose" src="/assets/poses/doddy-pose-waving-light-v1.3-r1.svg" width="512" height="512" alt=""></div>
+            <span class="banner-tag">插图</span>
+          </div>
+        </figure>
+        <aside class="tldr" aria-label="太长不看版">
+          <p class="tldr-label">太长不看版</p>
+          <ul><li>Doddy 是面向 iPhone 的 AI 陪伴，一个可以对话的手绘伙伴，支持英语、波兰语等语言。</li><li>远大的目标是一个能帮你做任何事的陪伴，我们正在一次一项技能地接近它。</li><li>今天，它会记住你用自己的话告诉它的内容，并能再次找到。它还能帮你处理日历、提醒、计时器、地图和消息草稿。</li><li>它总是先问你。每个操作都是一张你要点按的卡片，它从不会自行发送、购买或删除任何东西。</li><li>如果找不到，它会告诉你，而且从不假装自己是真人。</li><li>还处于早期。我们在自己的 iPhone 上测试它，它还没有公开，所以如果你想试试，就<a class="text-link" href="/zh-hans/#join">加入抢先体验</a>。</li></ul>
+        </aside>
+        <div class="post-body">
+<p>现在似乎人人都在打造 AI 智能体。有的智能体在你睡觉时订机票、写代码、替你购物、回复邮件。信息量真是太大了。</p>
+<p>Doddy 是我们心中的版本：住在你 iPhone 里的 AI 陪伴。它是一个你可以像对人一样对话的手绘伙伴（它不是真人，而且会告诉你）。梦想很简单：你需要什么，告诉 Doddy，事情就会被处理好。记住这个，计划那件事，把另一件事也理清楚。</p>
+<p>我们还没到那一步，也不会假装已经到了。今天 Doddy 只把少数几件事做好，只有能安全地完成某项技能时，才会学习这项新技能。有一条规则永远不变：Doddy 做任何事之前都会先问你。</p>
+<p>下面是 Doddy 的发展方向、它目前能做什么和不能做什么，以及我们如何看待安全问题。末尾有常见问题，以及我们的资料来源，因为 AI 圈子里的凭感觉已经够多了。</p>
+<h2>等等，AI 智能体是什么？</h2>
+<p>聊天机器人只会说话。智能体则真的会做事。它可以使用日历、联系人或搜索等工具，替你完成任务。</p>
+<p>这既是令人兴奋的部分，也是令人害怕的部分。聊天机器人出错，你得到的只是一个糟糕的答案。智能体出错，可能会发出错误的消息、预订错误的东西，或删除你需要的东西。安全领域的人甚至为此起了个名字，叫“过度代理”，指 AI 拥有的权力、权限或行动自由超出了任务所需（<a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">《大语言模型应用 OWASP 十大风险》</a>）。</p>
+<p>大多数人似乎已经隐约察觉到了这一点。Accenture 在 2026 年对 16 个国家超过 25,000 名消费者进行了调查，74% 的人表示，他们会比信任最好的朋友更信任个人 AI 智能体替自己购买东西。但只有 9% 的人乐意让它独自完成购买。更多的人（32%）更喜欢由 AI 来选择，而自己仍然确认付款（<a class="text-link" href="https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent" target="_blank" rel="noopener">Accenture 消费者脉搏 2026</a>）。</p>
+<p>所以人们想要帮助，也想在任何事情发生之前说“好”。这正是 Doddy 的运作方式。</p>
+<h2>少背一点东西</h2>
+<p>你的脑子里装满了零碎的事。快递柜取件码、备用钥匙放哪儿了、朋友推荐的那本书、孩子的鞋码、那瓶酒的名字。这些都不值得专门建一套系统，可丢了又让人烦躁。</p>
+<p>已经有很多人依赖 AI 来解决这类日常帮助。在 Pew 2026 年的调查中，49% 的美国成年人使用过 AI 聊天机器人，24% 的人每天都在用。最常见的原因只是查找信息，占 42%（<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">Pew 研究中心，2026</a>）。在欧盟，2025 年有 32.7% 的 16 至 74 岁人群使用过生成式 AI 工具（<a class="text-link" href="https://ec.europa.eu/eurostat/web/products-eurostat-news/w/ddn-20251216-3" target="_blank" rel="noopener">Eurostat，2025</a>）。研究人员在观察人们究竟如何使用 ChatGPT 时发现，超过 70% 的消息与工作之外的日常生活有关，比如实用指导、查找信息和写作（<a class="text-link" href="https://www.nber.org/papers/w34255" target="_blank" rel="noopener">NBER 工作论文 34255</a>）。</p>
+<p>人们显然需要日常生活的帮助。但他们并不总能得到一个会记住自己真正说过什么、并承认自己不知道的助手。通用聊天机器人很擅长显得十分笃定。Doddy 的回答直接来自你自己的话。</p>
+<h2>我们的方向</h2>
+<p>当我们说“一个能替你做任何事的陪伴”时，我们真正的意思是这样的。Doddy 一次增加一项技能，每项新技能上线前都必须通过三项测试。</p>
+<ol><li>它会先问你。你会看到 Doddy 即将做什么，点按同意即可。</li><li>它会检查自己的工作。Doddy 在说“完成”之前，会先查看结果。</li><li>你可以把它关掉。每个会接触你的东西的技能，都有自己的开关。</li></ol>
+<p>我们很希望有一天 Doddy 能帮上更多忙。比如记录包裹和预约、规划你的一周、记住生日和人们的喜好，以及处理那些占用你晚上时间的琐碎行政事务。这些都还没有完成，也没有日期。无论演示看起来多酷，无法通过三项测试的技能都不会上线。</p>
+<h2>为什么要做一个角色？</h2>
+<figure class="spot spot--right"><img src="/assets/poses/doddy-pose-relaxing-light-v1.3-r1.svg" width="512" height="512" alt=""><figcaption class="says-small">有用优先，讨喜其次。</figcaption></figure>
+<p>对着空白的文本框说话有点怪。对着一个穿白色运动鞋的火柴人说话，就没那么怪了。Doddy 应该是那种能注意到小烦恼、不声不响帮你解决的伙伴，也可能会笑话你打开了十二个标签页。</p>
+<p>我们说的“陪伴”，指的是帮你把日子过下去的伙伴。你的朋友依然是你的朋友。研究人员已经开始仔细研究 AI 陪伴，早期结果值得认真对待。发表于 <em>Nature Human Behaviour</em> 的一项 2026 年研究，调查了一千一百多名 Character.AI 用户，发现主要把聊天机器人用于陪伴，与较低的幸福感有关，重度用户尤其如此（<a class="text-link" href="https://www.nature.com/articles/s41562-026-02516-2" target="_blank" rel="noopener">Zhang 等，2026</a>）。OpenAI 与 MIT Media Lab 的一项研究也发现了类似的情况。总体而言，情感使用并不常见，但对一些人来说，使用越多，结果越糟（<a class="text-link" href="https://www.media.mit.edu/posts/openai-mit-research-collaboration-affective-use-and-emotional-wellbeing-in-ChatGPT/" target="_blank" rel="noopener">MIT Media Lab，2025</a>）。这两项研究都不能证明因果关系，不过方向已经足够清楚，让我们不能忽视。</p>
+<p>所以 Doddy 的性格也有规则。它不会让你内疚，也不会说它想你，不会假装有感情，也不会想办法让你比需要的时间聊得更久。有用排在前面，魅力排在后面。</p>
+<h2>Doddy 今天能做什么</h2>
+<figure class="spot spot--left"><img src="/assets/poses/doddy-pose-listening-light-v1.3-r1.svg" width="512" height="512" alt=""><figcaption class="says-small">说吧，我在听。</figcaption></figure>
+<p>先说我们目前的情况。Doddy 正在我们自己的 iPhone 上进行早期测试，团队以外还没有人使用。下面的功能清单中，一部分已经在真实手机上试过，其余的目前只在电脑上完成了构建和测试。我们会逐项告诉你是哪一种。</p>
+<p>这些已经在真实 iPhone 上试过。</p>
+<ul><li>你可以用英语或波兰语进行真正的语音对话，你切换语言时，Doddy 也会切换。</li><li>你可以用语音保存笔记。说“我的储物柜密码是 5678”，就会弹出一张“保存这条笔记？”卡片。在你点按“保存”之前，什么都不会被存储。</li><li>你可以问：“我的储物柜密码是多少？”Doddy 会搜索你手机上的笔记。如果找不到，它会直说。</li></ul>
+<p>这些已经完成，仍在手机上测试。</p>
+<ul><li>输入笔记，然后搜索、编辑、导出或删除。原文始终会保留。</li><li>更聪明的搜索，可以跨波兰语和英语匹配（“code”能找到“kod”）、口语中的数字，以及小错别字。</li><li>日历和提醒。“明天有什么安排？”会读取你的日历。“周五 3 点添加看牙医”会显示一张卡片，只有你轻点“添加”，事件才会加入。随后 Doddy 会先确认它确实已保存，再告诉你。</li><li>一张“今日”卡片，展示你一天剩下的安排；如果你愿意，还可以在活动前轻轻提醒你。</li><li>一些手机上的小任务，比如启动计时器、在 Apple 地图中打开某个地点、运行你的一个快捷指令，或查找联系人。</li><li>正在起草消息。Doddy 可以写下“我会晚 10 分钟”，并在信息或邮件中打开它，发送由你自己按下。</li><li>关于天气或维基百科上任何内容的问题。</li><li>无需打开应用即可对话，可从控制中心、操作按钮或轻点背面开始（轻点背面需要你自己在 iOS 设置中配置）。在你使用其他应用时，对话会在灵动岛中继续进行。</li></ul>
+<h2>Doddy 不能做什么（有意为之，或尚未做到）</h2>
+<p>通常只有在对话打开时，Doddy 才会听你说话。唯一的例外是“Hey Doddy”唤醒词，除非你打开它，否则它是关闭的。在等待这两个词时，你的 iPhone 会显示橙色麦克风圆点，Doddy 的灵动岛会显示正在聆听，并且旁边就有“停止聆听”按钮。等待期间麦克风听到的内容在你的 iPhone 上处理，不会保存，也不会发送到任何地方。（此模式已经做好，仍在我们的手机上测试。）Doddy 也不会自行保存任何内容，这意味着它无法悄悄根据你的聊天记录为你建立画像。</p>
+<p>它从不会在你的其他应用里发送、购买或删除东西。它写草稿，接下来做什么由你决定。它也无法读取你的屏幕、邮件或其他应用。</p>
+<p>Doddy 不会编造记忆。如果笔记里没有某件事，它会说自己找不到。目前还没有实时网页搜索，所以它无法查看今天的新闻或价格，它会直接说明这一点。</p>
+<p>它不是心理咨询师、医生或理财顾问。遇到健康、钱、法律问题或感受等严肃的事，它会收起玩笑，保持冷静、只讲事实。另外，目前它只支持 iPhone。</p>
+<h2>我们如何看待安全</h2>
+<figure class="spot spot--right"><img src="/assets/poses/doddy-pose-pointing-light-v1.3-r1.svg" width="512" height="512" alt=""><figcaption class="says-small">由你点按，由你决定。</figcaption></figure>
+<p>还记得“过度代理”吗？我们尽力避免它，大致遵循安全专家的建议（<a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">OWASP</a>）。</p>
+<ol><li>每项操作都由你批准。保存笔记、添加事件、启动计时器和打开草稿，都是需要你点按的卡片。人们称之为“人在回路中”，而在 Doddy 里，你无法将它关闭。</li><li>Doddy 只能使用它需要的工具。它的任务列表简短且固定，没有“在我的手机上做任何事”的按钮。</li><li>所有功能一开始都是关闭的。日历、提醒和联系人各有自己的开关，默认全部关闭，另外还会出现常见的 iOS 权限提示。</li><li>只有在你的手机确认之后，Doddy 才会说“已保存”或“已添加”。早期我们发现它在有人点按之前就说“我正在保存这个”，于是改掉了。</li><li>它会告诉你它是 AI。在自我介绍中，Doddy 会说“我是一个 AI 助手，不是真人。”这在欧盟也正在成为法律要求。根据《AI 法案》，与人对话的 AI 系统必须清楚表明自己是 AI，这些透明度规则将从 2026 年 8 月 2 日起适用（<a class="text-link" href="https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems" target="_blank" rel="noopener">欧盟委员会</a>）。</li></ol>
+<p>然后还有你的数据去向的问题。你的笔记存储在你的 iPhone 上，也没有 Doddy 账户。语音的情况不同，我们宁愿现在就告诉你。对话通过我们的语音服务商 ElevenLabs 进行。在当前测试版本中，开始对话时还会一并发送你保存的笔记和最近几次对话，好让 Doddy 有内容可用。天气和维基百科查询同样来自 ElevenLabs 的服务器。目前，服务商会保留录音；在团队以外的人使用语音之前，设定合适的保留期限已列入我们的计划。人们担心这些问题是对的。在同一项 Pew 调查中，71% 的美国成年人认为 AI 会让他们的个人信息更不安全（<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">Pew，2026</a>）。我们希望成为让这种情况不会发生的原因之一。</p>
+<h2>你可能怎样使用 Doddy</h2>
+<p>下面是几个日常例子，都用到了上面提到的功能。</p>
+<ul><li>“记住，备用钥匙在冰箱上方的蓝色铁盒里。”三周后你问：“备用钥匙在哪里？”</li><li>站在鞋店里，你问：“Maja 穿多大码的鞋？”</li><li>和朋友吃完晚饭后，你说“保存这个：这瓶酒是 Bodegas Muga 的 Rioja”，下次点酒前就能再找到它。</li><li>早上你问“今天有什么安排？”，然后说“看牙医前 30 分钟提醒我。”</li><li>快迟到了，你说“告诉 Kasia 我会晚 10 分钟。”Doddy 打开草稿，你按下发送。</li><li>Tomek 推荐了<em>《挽救计划》</em>。几个月后你问：“Tomek 推荐过什么书？”</li></ul>
+<h2>接下来</h2>
+<p>Doddy 是一场赌注。我们认为，已经习惯给自己发提醒短信的人，会更愿意告诉一个友好的角色，之后再回来找东西。团队以外还没有人试过，所以我们不知道自己是否判断正确。接下来的步骤枯燥却重要：我们会在真实手机上测试每一项功能，加固语音功能，设定保留期限，然后开放一个小型抢先体验小组，看看是否真的有人会回来。</p>
+<p>如果这正合你的口味，就<a class="text-link" href="/zh-hans/#join">加入抢先体验</a>，或者来 <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram 群组</a>打个招呼。</p>
+<h2>常见问题</h2>
+<figure class="spot spot--left"><img src="/assets/poses/doddy-pose-reading-light-v1.3-r1.svg" width="512" height="512" alt=""><figcaption class="says-small">问得好。</figcaption></figure>
+<h3>Doddy 是什么？</h3>
+<p>这是一款面向 iPhone 的 AI 陪伴应用。你可以对它说话或打字，它会保存你要求它保存的内容，并帮你处理手机上的日常事务，比如日历、提醒、计时器和消息草稿。</p>
+<h3>Doddy 真的能为我做任何事吗？</h3>
+<p>还没有，不过这是我们的方向。今天它能记住事情、再找到它们，并帮你处理一小部分手机上的任务。等 Doddy 能先问你、并检查自己的工作时，我们才会添加新技能。</p>
+<h3>Doddy 是真人吗？</h3>
+<p>不是。Doddy 是 AI，它会明说。画风和性格只是为了让聊天更舒服。</p>
+<h3>Doddy 是那种 AI 男友或女友类应用吗？</h3>
+<p>不会。Doddy 是一个帮你处理各种事情的伙伴。它不会让你内疚，不会说它想你，也不会想办法让你一直聊下去。</p>
+<h3>Doddy 一直在听吗？</h3>
+<p>不会。通常它只会在对话打开时听你说话。如果你打开可选的“Hey Doddy”唤醒词，它就会听这两个词，你的 iPhone 会显示它正在聆听，而且你随时可以让它停止。这种聆听发生在你的 iPhone 上，不保存也不发送任何内容。此模式已经做好，仍在测试中。</p>
+<h3>我的笔记存储在哪里？</h3>
+<p>运行在你的 iPhone 上，无需账户。语音是例外。对话通过我们的语音服务商 ElevenLabs 进行；在当前测试版本中，对话开始时会一并发送你保存的笔记和最近的对话，以便 Doddy 有一些上下文。</p>
+<h3>我能全部删除吗？</h3>
+<p>你的笔记，是的。你可以在“设置”中一次删除一条，或一次全部删除，也可以先以 JSON 或纯文本格式导出。我们仍需决定语音服务商保留对话录音的时长，并会在团队以外的人使用语音之前完成这一决定。</p>
+<h3>Doddy 会不经询问就做事吗？</h3>
+<p>不会。保存笔记、添加事件、启动计时器和打开消息草稿，都是需要你点按的卡片。Doddy 从不会在你的其他应用中发送、购买或删除任何东西。</p>
+<h3>如果 Doddy 出错了怎么办？</h3>
+<p>如果找不到，它会告诉你。你可以编辑任何笔记，原文会被保留。而且由于每个操作都需要你点按，你可以在错误发生之前就把它拦下。</p>
+<h3>Doddy 会说哪些语言？</h3>
+<p>Doddy 设计为支持英语以及另外 36 种欧洲语言（包括波兰语），你切换语言时它也会跟着切换。到目前为止，我们只在真实对话中试过英语和波兰语。</p>
+<h3>有 Android 版本吗？</h3>
+<p>还没有。Doddy 先从 iPhone 开始。</p>
+<h3>多少钱？</h3>
+<p>我们还没有决定定价。</p>
+<h3>我什么时候能试用？</h3>
+<p>Doddy 仍在早期测试中。<a class="text-link" href="/zh-hans/#join">加入抢先体验</a>，开放时我们会通知你。目前还没有确定日期。</p>
+<h2>来源</h2>
+<ul><li>Pew 研究中心，<em>2026 年的美国人与 AI</em>，2026 年 6 月 17 日（对 5,119 名美国成年人的调查，2026 年 2 月 17 日至 23 日）。<a class="text-link" href="https://www.pewresearch.org/internet/2026/06/17/americans-and-ai-2026-chatbots-smart-devices-and-views-on-impact/" target="_blank" rel="noopener">pewresearch.org</a></li><li>Eurostat，<em>2025 年，32.7% 的欧盟人使用了生成式 AI 工具</em>，2025 年 12 月 16 日。<a class="text-link" href="https://ec.europa.eu/eurostat/web/products-eurostat-news/w/ddn-20251216-3" target="_blank" rel="noopener">ec.europa.eu</a></li><li>Chatterji 等，<em>人们如何使用 ChatGPT</em>，NBER 工作论文 34255，2025 年 9 月。<a class="text-link" href="https://www.nber.org/papers/w34255" target="_blank" rel="noopener">nber.org</a></li><li>Accenture，<em>消费者脉搏研究 2026</em>（2026 年 1 月，16 个国家的 25,590 名消费者）。<a class="text-link" href="https://www.accenture.com/gb-en/insights/consulting/talk-my-ai-agent" target="_blank" rel="noopener">accenture.com</a></li><li>OWASP，<em>LLM06 2025 过度代理</em>，《大语言模型应用 OWASP 十大风险》2025。<a class="text-link" href="https://genai.owasp.org/llmrisk/llm062025-excessive-agency/" target="_blank" rel="noopener">genai.owasp.org</a></li><li>Zhang、Zhao、Hancock、Kraut 与 Yang，<em>与 AI 陪伴的互动及心理健康</em>，Nature Human Behaviour，2026 年 8 月 4 日。<a class="text-link" href="https://www.nature.com/articles/s41562-026-02516-2" target="_blank" rel="noopener">nature.com</a></li><li>MIT Media Lab 与 OpenAI，<em>研究 ChatGPT 中情感使用与情绪健康的早期方法</em>，2025 年 3 月 21 日。<a class="text-link" href="https://www.media.mit.edu/posts/openai-mit-research-collaboration-affective-use-and-emotional-wellbeing-in-ChatGPT/" target="_blank" rel="noopener">media.mit.edu</a></li><li>欧盟委员会，<em>《AI 系统提供者和部署者透明度义务指南》</em>（《AI 法案》第 50 条），2026 年 7 月 20 日。<a class="text-link" href="https://digital-strategy.ec.europa.eu/en/library/guidelines-transparency-obligations-providers-and-deployers-ai-systems" target="_blank" rel="noopener">digital-strategy.ec.europa.eu</a></li></ul>
+        </div>
+        <aside class="post-cta" aria-label="加入抢先体验">
+          <p class="says-small">想试试 Doddy 吗？</p>
+          <p>Doddy 正在 iPhone 上进行早期测试。留下你的邮箱，抢先体验开放时我们会通知你。</p>
+          <a class="button small" href="/zh-hans/#join">加入抢先体验</a>
+        </aside>
+      </div>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="/zh-hans/">首页</a></li>
+          <li><a href="/zh-hans/what-can-doddy-do/">Doddy 能做什么？</a></li>
+          <li><a href="/zh-hans/blog/">博客</a></li>
+          <li><a href="/blog/feed.xml">RSS</a></li>
+          <li><a href="/zh-hans/#join">加入抢先体验</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegram 群组</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="语言" translate="no"><ul class="lang-list"><li><a href="/blog/meet-doddy-ai-agent/" hreflang="en" lang="en" title="English" aria-label="English (EN)">EN</a></li><li><a href="/es/blog/meet-doddy-ai-agent/" hreflang="es" lang="es" title="Español" aria-label="Español (ES)">ES</a></li><li><a href="/de/blog/meet-doddy-ai-agent/" hreflang="de" lang="de" title="Deutsch" aria-label="Deutsch (DE)">DE</a></li><li><a href="/fr/blog/meet-doddy-ai-agent/" hreflang="fr" lang="fr" title="Français" aria-label="Français (FR)">FR</a></li><li><a href="/zh-hans/blog/meet-doddy-ai-agent/" hreflang="zh-Hans" lang="zh-Hans" title="简体中文" aria-label="简体中文 (ZH)" aria-current="page">ZH</a></li><li><a href="/ja/blog/meet-doddy-ai-agent/" hreflang="ja" lang="ja" title="日本語" aria-label="日本語 (JA)">JA</a></li><li><a href="/pt-br/blog/meet-doddy-ai-agent/" hreflang="pt-BR" lang="pt-BR" title="Português (Brasil)" aria-label="Português (Brasil) (PT)">PT</a></li><li><a href="/it/blog/meet-doddy-ai-agent/" hreflang="it" lang="it" title="Italiano" aria-label="Italiano (IT)">IT</a></li><li><a href="/hr/blog/meet-doddy-ai-agent/" hreflang="hr" lang="hr" title="Hrvatski" aria-label="Hrvatski (HR)">HR</a></li><li><a href="/pl/blog/meet-doddy-ai-agent/" hreflang="pl" lang="pl" title="Polski" aria-label="Polski (PL)">PL</a></li></ul></nav><!-- /i18n:switcher-footer -->
+      </div>
+      <p>Doddy 是一个 AI 助手，不是真人。你的笔记存储在你的 iPhone 上；只有在你打开语音、电话、共享列表和已连接账户时，相关数据才会发送离开手机。</p>
+      <p>本页面使用 Vercel Web Analytics 统计访问，它不设置 Cookie。字体从 Google Fonts 加载。</p>
+      <p data-ga-note hidden>如果你允许，Google Analytics 还会统计访问并设置 Cookie。<button type="button" class="foot-choice" data-analytics-choices>分析选项</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>
