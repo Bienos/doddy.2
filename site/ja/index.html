@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Doddy, your mate in your pocket</title>
+  <meta name="description" content="Doddyは、中に手描きの相棒がいるiPhoneアプリです。大事な細かいことをあなたの言葉で保存し、必要なときに、そのままのメモを取り出せます。">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Doddy, your mate in your pocket">
+  <meta property="og:description" content="細かいことは、あなたの言葉で保存しましょう。あとで、そのままのメモを取り出せます。">
+  <meta property="og:image" content="https://www.doddy.lol/assets/og-image.png">
+  <meta property="og:url" content="https://www.doddy.lol/ja/">
+  <link rel="canonical" href="https://www.doddy.lol/ja/">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/">
+  <link rel="alternate" hreflang="es" href="https://www.doddy.lol/es/">
+  <link rel="alternate" hreflang="de" href="https://www.doddy.lol/de/">
+  <link rel="alternate" hreflang="fr" href="https://www.doddy.lol/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://www.doddy.lol/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://www.doddy.lol/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://www.doddy.lol/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://www.doddy.lol/it/">
+  <link rel="alternate" hreflang="hr" href="https://www.doddy.lol/hr/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:locale:alternate" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="zh_CN">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
+  <!-- Smart App Banner: enable once Doddy has an App Store ID.
+  <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
+  -->
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="/nav.js" defer></script>
+  <script src="/i18n.js" defer></script>
+  <!-- i18n:dictionary --><script src="/i18n/ja.js" defer></script><!-- /i18n:dictionary -->
+  <script src="/main.js" defer></script>
+  <script src="/court.js" defer></script>
+  <script src="/memory.js" defer></script>
+  <script src="/analytics.js" defer></script>
+  <!-- Vercel Web Analytics: page views and visitors, no cookies. Vercel serves this script at
+       /_vercel/insights/script.js once Web Analytics is enabled on the project; the inline
+       queue below is the HTML snippet from vercel.com/docs/analytics (its hash is in vercel.json). -->
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">本文へスキップ</a>
+  <svg width="0" height="0" class="sprite" aria-hidden="true">
+    <symbol id="o-alarm" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path d="M32 100 L24 112 M88 100 L96 112"/>
+        <path d="M36 24 L24 12 M84 24 L96 12"/>
+        <circle cx="22" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="98" cy="12" r="9" fill="#FC6800"/>
+        <circle cx="60" cy="64" r="40" fill="#FCF4E4"/>
+        <path d="M60 42 V64 L76 74"/>
+      </g>
+      <path d="M12 36 L5 30 M9 50 L1 48 M12 64 L5 70" stroke="#FC6800" stroke-width="6" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="o-calendar" viewBox="0 0 120 120">
+      <g stroke="#080808" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="14" y="24" width="92" height="84" rx="12" fill="#FCF4E4"/>
+        <path d="M14 36 a12 12 0 0 1 12-12 h68 a12 12 0 0 1 12 12 v12 H14z" fill="#FC6800"/>
+        <path d="M36 14 V34 M84 14 V34" fill="none"/>
+      </g>
+      <g fill="#080808"><circle cx="36" cy="66" r="4"/><circle cx="60" cy="66" r="4"/><circle cx="84" cy="66" r="4"/><circle cx="36" cy="88" r="4"/><circle cx="84" cy="88" r="4"/></g>
+      <circle cx="60" cy="88" r="11" fill="none" stroke="#FC6800" stroke-width="6"/>
+    </symbol>
+  </svg>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="#top" aria-label="Doddy、トップへ戻る">Doddy</a>
+      <nav aria-label="セクション">
+        <ul class="nav-links">
+          <li><a href="#how">使い方</a></li>
+          <li><a href="/what-can-doddy-do/">Doddyに何ができる？</a></li>
+          <li><a href="#meet">Doddyに会う</a></li>
+          <li><a href="#play">シュートに挑戦</a></li>
+          <li><a href="/blog/">ブログ <span class="note">(英語)</span></a></li>
+          <li><a href="#privacy">プライバシー</a></li>
+        </ul>
+      </nav>
+      <button class="menu-button" type="button" aria-label="メニュー" aria-expanded="false" aria-controls="menu-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <a class="button small" href="#join">早期アクセスに参加</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>言語</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja" aria-current="page">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
+      <div class="menu-sheet" id="menu-sheet" aria-label="メニュー">
+        <ul>
+          <li><a href="#how">使い方</a></li>
+          <li><a href="/what-can-doddy-do/" class="menu-new">Doddyに何ができる？ <img src="assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="#meet">Doddyに会う</a></li>
+          <li><a href="#play">シュートに挑戦</a></li>
+          <li><a href="/blog/">ブログ <span class="note">(英語)</span></a></li>
+          <li><a href="#privacy">プライバシー</a></li>
+        </ul>
+        <a class="button" href="#join">早期アクセスに参加</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- Hero: the app's own headline, the real Home screen, Doddy saying hello in handwriting. -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="pill"><span class="dot" aria-hidden="true"></span>iPhoneアプリ、早期テスト中</p>
+          <h1 id="hero-title" class="display">覚えておくことが少し減ります。</h1>
+          <p class="lede">Doddyは、中に相棒がいるポケットのノートです。なくしたくない細かいことを伝えておけば、必要なときに、あなたの言葉そのままを取り出せます。</p>
+          <div class="actions">
+            <a class="button" href="#join">早期アクセスに参加</a>
+            <a class="text-link" href="/what-can-doddy-do/">Doddyが一日中していること</a>
+          </div>
+          <p class="fineprint">DoddyはAIであり、人ではありません。メモはiPhoneに保存されます。</p>
+        </div>
+
+        <div class="hero-stage">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="hero-chip" aria-hidden="true">
+            <span class="chip-check">✓</span>
+            <span><strong>保存しました</strong><br>スペアキーは冷蔵庫の上の青い缶に入っています。</span>
+          </div>
+          <div class="device tilt">
+            <img src="/assets/screens/home.png" width="390" height="845" alt="Doddyのホーム画面：覚えておくことが少し減ります。細かいことを保存したり、何かを探したりするボタンと、最近保存したスペアキーのメモがあります。">
+          </div>
+          <div class="hero-doddy">
+            <p class="says" aria-hidden="true">やあ。ぼくはDoddyです。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+            <picture class="hero-pose"><img src="/assets/day/poses/wave-320.webp" srcset="assets/day/poses/wave-320.webp 320w, assets/day/poses/wave.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt=""></picture>
+          </div>
+          <p class="caption">アプリのデザインプレビュー</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- The brand film, right under the hero: taped into the notebook, Doddy dribbling in from the corner.
+         Without JavaScript it is a plain video with native controls. -->
+    <section class="film" id="film" aria-labelledby="film-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="film-title" class="display-m">ワルシャワのある朝。</h2>
+          <p>Doddyと、なかなか手放さないボール、そして、とても根気強いハトの短編映像です。1分15秒。音声ありでご覧ください。</p>
+        </div>
+        <div class="film-stage">
+          <div class="film-card">
+            <span class="tape t1" aria-hidden="true"></span>
+            <span class="tape t2" aria-hidden="true"></span>
+            <div class="player">
+              <video controls playsinline preload="metadata" poster="/assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddyのブランド映像、1分15秒">
+                <source src="/assets/film/doddy-film-v2.mp4" type="video/mp4">
+              </video>
+              <span class="preview-tag" aria-hidden="true"><span class="dot"></span>プレビュー、消音</span>
+              <button class="cover" type="button" aria-label="音声ありで映像を再生">
+                <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
+                <span class="cover-label" aria-hidden="true"><span class="cover-title">映像を見る</span>1:15 · 音声オン</span>
+              </button>
+            </div>
+          </div>
+          <div class="film-doddy" aria-hidden="true">
+            <p class="says">それがぼくです。<svg class="scribble" viewBox="0 0 240 16" preserveAspectRatio="none"><path d="M4 11 C 52 3, 128 15, 236 6"/></svg></p>
+            <img src="/assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
+          </div>
+        </div>
+        <ol class="chapters" aria-label="映像の好きな場面へ移動">
+          <li><button type="button" data-seek="0"><span class="t">0:00</span>城の広場</button></li>
+          <li><button type="button" data-seek="9.3"><span class="t">0:09</span>大事な質問</button></li>
+          <li><button type="button" data-seek="19.1"><span class="t">0:19</span>すべての言語が一度に</button></li>
+          <li><button type="button" data-seek="33.3"><span class="t">0:33</span>地元の人に聞く</button></li>
+          <li><button type="button" data-seek="38"><span class="t">0:38</span>ハト</button></li>
+          <li><button type="button" data-seek="43.1"><span class="t">0:43</span>ゲートでの切ない別れ</button></li>
+          <li><button type="button" data-seek="52.6"><span class="t">0:52</span>閉店</button></li>
+          <li><button type="button" data-seek="65.3"><span class="t">1:05</span>ポケットの中の相棒</button></li>
+        </ol>
+        <p class="caption film-caption">ブランド映像です。Doddyの物語で、アプリのデモではありません。</p>
+      </div>
+    </section>
+
+    <!-- The problem, said plainly. -->
+    <section class="problem" aria-labelledby="problem-title">
+      <div class="wrap problem-grid">
+        <h2 id="problem-title" class="display-m">小さなことは、必要になった瞬間に消えてしまいます。</h2>
+        <ul class="scraps" aria-label="例">
+          <li>宅配ロッカーの番号</li>
+          <li>スペアキーを入れた缶</li>
+          <li>マルタさんが勧めた本</li>
+          <li>お子さんの靴のサイズ</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- How it works: a real three-step sequence, so it's numbered. -->
+    <section class="how" id="how" aria-labelledby="how-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="how-title" class="display-m">使い方</h2>
+          <p>3つのステップは、すべてiPhone上で行われます。アカウントも初期設定も不要です。</p>
+        </div>
+        <ol class="steps">
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/capture.png" width="390" height="845" loading="lazy" alt="新しい記憶の画面：何を残しましょうか？ 詳細には「スペアキーは冷蔵庫の上の青い缶に入っています。」と書かれています。"></div>
+              <picture class="step-pose"><img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">1</p>
+            <h3>Doddyに伝える</h3>
+            <p>話すように入力してください。Doddyは、あなたの言葉そのままを、保存した日時と出どころとともに残します。</p>
+            <p class="says-small" aria-hidden="true">保存したら、ちゃんと残ります。</p>
+          </li>
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/recall.png" width="390" height="845" loading="lazy" alt="記憶の画面：それはここのどこかにあります。「スペアキー」を検索すると、10月8日にあなたが書いた、保存済みのメモが見つかります。"></div>
+              <picture class="step-pose"><img src="/assets/day/poses/belly_reading-320.webp" srcset="assets/day/poses/belly_reading-320.webp 320w, assets/day/poses/belly_reading.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">2</p>
+            <h3>あとで聞く</h3>
+            <p>覚えている言葉で検索してください。Doddyは一致するメモを、元の言葉のまま、日付と出どころとともに表示します。</p>
+            <p class="says-small" aria-hidden="true">あなたの言葉であり、推測ではありません。</p>
+          </li>
+          <li class="step">
+            <div class="step-visual">
+              <div class="device small"><img src="/assets/screens/detail.png" width="390" height="845" loading="lazy" alt="あなたの記憶の画面：日付と出どころ付きの保存済みメモと、この内容を訂正するボタン、この記憶を削除するボタン。"></div>
+              <picture class="step-pose"><img src="/assets/day/poses/fistpump-320.webp" srcset="assets/day/poses/fistpump-320.webp 320w, assets/day/poses/fistpump.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            </div>
+            <p class="step-num" aria-hidden="true">3</p>
+            <h3>直すか、消すか</h3>
+            <p>メモを訂正しても、元の内容は表示されたままです。すべてを書き出すか、メモを1件または全件削除できます。</p>
+            <p class="says-small" aria-hidden="true">元の文は残ります。</p>
+          </li>
+        </ol>
+        <p class="caption left">画面はアプリのデザインプレビューです。</p>
+      </div>
+    </section>
+
+    <!-- Three moments from "What can Doddy do?" (ADR-469/470). Scripted scenes, each labelled with what is built. -->
+    <section class="moments-teaser" aria-labelledby="teaser-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="teaser-title" class="display-m">ふつうの一日からの三つの場面。</h2>
+          <p>ポケットの中の相棒がこれをどう使うか。ほかに7つは専用のページにあり、それぞれ、もう使える・テスト中・そのうちに、のどれかを書いています。</p>
+        </div>
+        <ul class="teaser">
+          <li class="t-late"><a href="/what-can-doddy-do/#late">
+            <span class="scene-art"><img class="bg" src="/assets/day/scenery/bedroom-800.webp" srcset="assets/day/scenery/bedroom-800.webp 800w, assets/day/scenery/bedroom.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/yawn_stretch-320.webp" srcset="assets/day/poses/yawn_stretch-320.webp 320w, assets/day/poses/yawn_stretch.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-alarm"/></svg><span class="d-bubble">そうそう、会議は15分前に始まっていますよ。いい出だしですね。</span></span>
+            <span class="when">08:45</span><h3>また遅刻ですね。</h3><br><span class="cap testing">カレンダー · テスト中</span>
+          </a></li>
+          <li class="t-brain"><a href="/what-can-doddy-do/#brain">
+            <span class="scene-art"><img class="bg" src="/assets/day/scenery/cosy_living_room-800.webp" srcset="assets/day/scenery/cosy_living_room-800.webp 800w, assets/day/scenery/cosy_living_room.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><span class="d-bubble">Trattoria Nonna、Hoża 9。あなたの言葉のまま。</span></span>
+            <span class="when">18:45</span><h3>頭がチャットから抜けてしまった。</h3><br><span class="cap built">保存したメモ · すでに使えます</span>
+          </a></li>
+          <li class="t-forget"><a href="/what-can-doddy-do/#forget">
+            <span class="scene-art"><img class="bg" src="/assets/day/scenery/moonlit_hills-800.webp" srcset="assets/day/scenery/moonlit_hills-800.webp 800w, assets/day/scenery/moonlit_hills.webp 1600w" sizes="(min-width: 860px) 360px, 84vw" width="1600" height="900" alt="" loading="lazy"><img class="doddy" src="/assets/day/poses/crosslegged-320.webp" srcset="assets/day/poses/crosslegged-320.webp 320w, assets/day/poses/crosslegged.webp 640w" sizes="150px" width="640" height="960" alt="" loading="lazy"><svg class="prop" viewBox="0 0 120 120" aria-hidden="true"><use href="#o-calendar"/></svg><span class="d-bubble">明日。朝？夜？どちらか選んで。</span></span>
+            <span class="when">22:30</span><h3>忘れないようにして。</h3><br><span class="cap testing">リマインダー · テスト中</span>
+          </a></li>
+        </ul>
+        <p class="actions teaser-more"><a class="button" href="/what-can-doddy-do/">一日の全体を見る</a><a class="text-link" href="/what-can-doddy-do/#late">08:45 に始める</a></p>
+      </div>
+    </section>
+
+    <!-- The detail only Doddy has: every note carries its receipt. -->
+    <section class="receipt-section" aria-labelledby="receipt-title">
+      <div class="wrap receipt-grid">
+        <div>
+          <h2 id="receipt-title" class="display-m">どのメモにも、記録が残ります。</h2>
+          <p>Doddyは、あなたが言ったことを書き換えません。どのメモにも、保存された日時と出どころが表示されます。訂正は上に重ねて追加されるので、最初の版も残ります。</p>
+          <p>一致するものがないときは、作り話をせず、Doddyがそう伝えます。</p>
+          <div class="no-match">
+            <picture class="no-match-pose"><img src="/assets/day/poses/shrug-320.webp" srcset="assets/day/poses/shrug-320.webp 320w, assets/day/poses/shrug.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <blockquote><p>保存した記憶の中に、それは見つかりませんでした。</p></blockquote>
+          </div>
+        </div>
+        <figure class="receipt" aria-labelledby="receipt-caption">
+          <p class="receipt-text">スペアキーは冷蔵庫の上の赤い缶に入っています。</p>
+          <dl class="receipt-meta">
+            <div><dt>保存しました</dt><dd>2026年10月8日 09:41</dd></div>
+            <div><dt>出どころ</dt><dd>入力したメモ</dd></div>
+            <div><dt>改訂</dt><dd>2版、10月9日に訂正</dd></div>
+          </dl>
+          <div class="receipt-original">
+            <p class="receipt-label">元の文、そのまま保存</p>
+            <p>スペアキーは冷蔵庫の上の青い缶に入っています。</p>
+          </div>
+          <figcaption id="receipt-caption" class="caption left">メモの例</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <!-- Voice: in testing (first real-iPhone conversation 9 Oct 2026, docs/implementation/V1_VOICE_STATUS.md). -->
+    <section class="voice" aria-labelledby="voice-title">
+      <div class="wrap voice-grid">
+        <div class="voice-art">
+          <picture class="voice-pose"><img src="/assets/day/poses/listening-320.webp" srcset="assets/day/poses/listening-320.webp 320w, assets/day/poses/listening.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+          <ol class="voice-states" aria-label="音声画面に表示される状態">
+            <li>接続中…</li>
+            <li>聞き取り中</li>
+            <li>考え中…</li>
+            <li>話し中</li>
+          </ol>
+          <div class="voice-card" role="img" aria-label="Doddyの質問：このメモを保存しますか？「保存」ボタンと「保存しない」ボタンがあります。">
+            <p class="voice-q">このメモを保存しますか？</p>
+            <p class="voice-quote">「マルタさんの本は『ホビットの冒険』です。」</p>
+            <span class="voice-btn primary">保存</span>
+            <span class="voice-btn">保存しない</span>
+          </div>
+        </div>
+        <div>
+          <p class="pill warn">テスト中</p>
+          <h2 id="voice-title" class="display-m">声に出して伝えることもできます。</h2>
+          <p>「Doddyと話す」をタップして、声に出して質問してください。Doddyはメモを調べ、保存したものから答えます。</p>
+          <p>Doddyが聞き取るのは、音声画面が開いている間だけです。または、「Hey Doddy」をオンにしている場合は、Dynamic Islandに聞き取り中と表示されている間です。ウェイクワードの検出はiPhone上で行われます。残しておく価値のあることを話すと、Doddyが先に確認します。「保存」をタップするまで、何も保存されません。</p>
+          <p class="fineprint">話している間、あなたの声と、Doddyが参照するメモは、会話を動かすためにOpenAIに送られます。主画面で音声をElevenLabsに切り替えている場合は、ElevenLabsに送られます。音声はテスト中です。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy band: inverted ink panel. -->
+    <section class="privacy" id="privacy" aria-labelledby="privacy-title">
+      <div class="wrap">
+        <div class="privacy-panel">
+          <h2 id="privacy-title" class="display-m">メモの扱いは、あなたが決めます。</h2>
+          <ul class="facts">
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="9" y="3" width="14" height="26" rx="3.5"/><path d="M14 25h4"/></svg>
+              <h3>iPhoneに保存</h3>
+              <p>メモは、iPhoneのアプリ内に保存され、iOSで保護されます。iPhoneの外に出るのは、あなたがオンにしたものだけです。アプリは、それぞれを「このiPhoneから出るもの」の下に表示します。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="5"/><path d="M6 27c1.5-5 5.5-7.5 10-7.5s8.5 2.5 10 7.5M5 5l22 22"/></svg>
+              <h3>アカウント不要</h3>
+              <p>登録も、メールアドレスも、パスワードも不要です。アプリを開いて始めるだけです。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 4v16M10 14l6 6 6-6M6 22v5h20v-5"/></svg>
+              <h3>いつでも書き出せます</h3>
+              <p>JSONまたはプレーンテキストで、すべてを持ち出せます。</p>
+            </li>
+            <li>
+              <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M7 9h18M13 9V5h6v4M9 9l1.5 18h11L23 9"/></svg>
+              <h3>完全に削除</h3>
+              <p>メモを1件または全件削除できます。削除したメモは、すぐに検索からも消えます。</p>
+            </li>
+          </ul>
+          <p class="privacy-note">DoddyはAIであり、人ではありません。オンにすると、データがiPhoneの外に送られるものがあります。音声による会話（OpenAI。音声をElevenLabsに切り替えた場合はElevenLabs）、電話と「通話中の記憶」（Doddyのサーバー、TwilioとElevenLabs）、共有リスト（あなたのiCloud）、そしてGmailやTodoistなどの接続済みのアカウント（Doddyのサーバー経由）。それ以外はすべてiPhoneにとどまります。これらはすべて早期テスト中です。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Character sketchbook. Doddy's captions are in Doddy's handwriting. -->
+    <section class="meet" id="meet" aria-labelledby="meet-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="meet-title" class="display-m">Doddyに会う</h2>
+          <p>手描きの相棒。大きすぎるスニーカーを履き、バスケットボールを手放せずにいます。まず役に立ち、次に面白く、いつも正直。</p>
+        </div>
+        <ul class="sketches">
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>いつも何かの寄り道中。</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/leaning-320.webp" srcset="assets/day/poses/leaning-320.webp 320w, assets/day/poses/leaning.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>一日の妨げになる小さなことに気づきます。</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/crosslegged-320.webp" srcset="assets/day/poses/crosslegged-320.webp 320w, assets/day/poses/crosslegged.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>まず役に立ち、次におしゃべりします。</p>
+          </li>
+          <li class="sketch">
+            <picture><img src="/assets/day/poses/oneleg_balance-320.webp" srcset="assets/day/poses/oneleg_balance-320.webp 320w, assets/day/poses/oneleg_balance.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+            <p>行列の冗談は言っても、あなたをからかうことはありません。</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Take a shot: a small game with Doddy's basketball. -->
+    <section class="court" id="play" aria-labelledby="play-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="play-title" class="display-m">シュートに挑戦</h2>
+          <p>Doddyは、なかなかボールを手放しません。コートのどこでも押して引き、そのまま離すと投げられます。または、Doddyに任せることもできます。</p>
+        </div>
+        <div class="court-panel">
+          <canvas id="court" width="800" height="520" role="img" aria-label="バスケットボールのゲーム：Doddyがゴールめがけてボールを投げます。投げるには「代わりにシュート」ボタンを使ってください。"></canvas>
+          <div class="court-bar">
+            <p class="court-score" aria-live="polite">成功 <strong id="made">0</strong> 本（<strong id="shots">0</strong> 回中）</p>
+            <button class="button small" id="auto-shot" type="button">代わりにシュート</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- "Remember it": a memory game with the small things Doddy keeps. Cards are built by memory.js;
+         without JavaScript the section stays hidden. -->
+    <section class="memory" id="remember" aria-labelledby="remember-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="remember-title" class="display-m">覚えておく</h2>
+          <p>小さなことが6つ、カードは12枚。一度に2枚ずつめくって、ペアを見つけてください。こういうことは、Doddyのほうが人より得意です。</p>
+        </div>
+        <div class="court-panel memory-panel">
+          <div class="memory-stage">
+            <div class="memory-grid" id="memory-grid" role="group" aria-label="記憶のカード"></div>
+            <div class="memory-doddy">
+              <p class="memory-bubble" id="memory-bubble" aria-live="polite">2枚めくって、ペアを見つけてください。</p>
+              <img src="/assets/day/poses/kneeling_inspect-320.webp" srcset="assets/day/poses/kneeling_inspect-320.webp 320w, assets/day/poses/kneeling_inspect.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt="">
+            </div>
+          </div>
+          <div class="court-bar">
+            <p class="court-score">そろった組 <strong id="memory-pairs">0</strong>（全6組中） · 手数 <strong id="memory-moves">0</strong></p>
+            <button class="button small" id="memory-restart" type="button">新しいゲーム</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Join -->
+    <section class="join" id="join" aria-labelledby="join-title">
+      <div class="wrap">
+        <div class="join-panel">
+          <div class="join-copy">
+            <h2 id="join-title" class="display-m">気軽に声をかけてください。</h2>
+            <p>Doddyは早期テスト中です。メールアドレスを残していただくと、早期アクセスが始まったときにお知らせします。</p>
+            <form class="waitlist" novalidate data-consent="waitlist-note-v1-ja">
+              <label for="email">メールアドレス</label>
+              <div class="field-row">
+                <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-note waitlist-status">
+                <button class="button" type="submit">早期アクセスに参加</button>
+              </div>
+              <!-- Left empty by people; bots that fill it are ignored. -->
+              <div class="hp" aria-hidden="true"><label for="website">ウェブサイト</label><input id="website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+              <p id="waitlist-note" class="fineprint form-note">メールアドレスは、早期アクセスが始まったときにお知らせするためだけに使います。ご希望があれば、いつでも削除します。</p>
+              <p id="waitlist-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <!-- Shown only after a new signup. Every question is optional. -->
+            <form class="answers" id="answers" hidden novalidate aria-labelledby="answers-title">
+              <p class="says-small" id="answers-title" tabindex="-1">3つだけ、いいですか？すべて任意です。</p>
+              <fieldset class="q">
+                <legend>お使いのスマートフォンはどれですか？</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="phone" value="iphone"><span>iPhone</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="android"><span>Android</span></label>
+                  <label class="chip"><input type="radio" name="phone" value="other"><span>その他</span></label>
+                </div>
+              </fieldset>
+              <fieldset class="q">
+                <legend>Doddyのことは、どこで知りましたか？</legend>
+                <div class="chips">
+                  <label class="chip"><input type="radio" name="heard" value="tiktok"><span>TikTok</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="instagram"><span>Instagram</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="linkedin"><span>LinkedIn</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="friend"><span>友だち</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="search"><span>検索</span></label>
+                  <label class="chip"><input type="radio" name="heard" value="other"><span>その他の場所</span></label>
+                </div>
+              </fieldset>
+              <div class="q">
+                <label for="wish">Doddyに何をしてほしいですか？</label>
+                <textarea id="wish" name="wish" rows="3" maxlength="300" placeholder="駐車場所を覚えて、子どもたちのサイズを残して、あの本のおすすめを探して…"></textarea>
+              </div>
+              <div class="answers-actions">
+                <button class="button" type="submit">回答を送る</button>
+                <button class="link-button" type="button" id="answers-skip">スキップ</button>
+              </div>
+              <p class="fineprint form-note">これらは、Doddyの早期アクセスを計画するためだけに使います。ご希望があれば、いつでもメールアドレスと一緒に削除します。</p>
+              <p id="answers-status" class="status" role="status" aria-live="polite"></p>
+            </form>
+            <div class="open-app">
+              <p>今すぐ話したいですか？ <a class="text-link" href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegramグループに参加</a></p>
+              <p>Doddyをフォロー：<a class="text-link" href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok doddy_mate</a> <a class="text-link" href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram doddy_mate</a></p>
+              <p>すでにDoddyをテストしていますか？<a class="text-link" id="open-app" href="doddy://home">Doddyを開く</a></p>
+              <p id="open-app-status" class="status" role="status" aria-live="polite"></p>
+            </div>
+          </div>
+          <picture class="join-pose"><img src="/assets/day/poses/reaching_high-320.webp" srcset="assets/day/poses/reaching_high-320.webp 320w, assets/day/poses/reaching_high.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" loading="lazy" alt=""></picture>
+        </div>
+        <div class="later">
+          <h2 class="later-title">そのうち、かもしれません。</h2>
+          <p>いまテスト中：カレンダー、リマインダー、アラーム、タイマー、リスト、マップ、メッセージの下書き。変更は、まず画面で確認されます（リストのすばやい編集は、代わりに取り消せます）。英語と並んでポーランド語も。まだ作っていません。日付は約束しません：Android。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="#how">使い方</a></li>
+          <li><a href="/what-can-doddy-do/">Doddyに何ができる？</a></li>
+          <li><a href="#meet">Doddyに会う</a></li>
+          <li><a href="#privacy">プライバシー</a></li>
+          <li><a href="/blog/">ブログ <span class="note">(英語)</span></a></li>
+          <li><a href="#join">早期アクセスに参加</a></li>
+          <li><a href="https://t.me/+u-YA6P_MISFjYWE0" target="_blank" rel="noopener">Telegramグループ</a></li>
+          <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
+          <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
+        </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="言語" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja" aria-current="page">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
+      </div>
+      <p>DoddyはAIアシスタントで、人ではありません。メモはiPhoneに保存されます。音声、電話、共有リスト、接続済みのアカウントは、オンにしたときだけ、iPhoneの外にデータを送ります。</p>
+      <p>このページでは、Cookieを使わないVercel Web Analyticsで訪問を数えています。フォントはGoogle Fontsから読み込まれます。</p>
+      <p data-ga-note hidden>許可すると、Google Analyticsも訪問を計測し、Cookieを設定します。<button type="button" class="foot-choice" data-analytics-choices>アナリティクスの選択</button></p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>

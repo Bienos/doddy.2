@@ -1,0 +1,34 @@
+{
+  "NSAlarmKitUsageDescription": {
+    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
+    "pt-BR": "O Doddy só define um alarme quando você pede e toca em Definir alarme. Os alarmes dele tocam mesmo no modo Silencioso ou em um Foco. Desative nos Ajustes do Doddy, em Alarmes."
+  },
+  "NSCalendarsFullAccessUsageDescription": {
+    "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
+    "pt-BR": "O Doddy lê seus eventos dos dias sobre os quais você pergunta, e só adiciona, altera ou apaga um evento depois que você toca em Adicionar, Alterar ou Apagar. Desative em Ajustes, Conexões."
+  },
+  "NSContactsUsageDescription": {
+    "en": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections.",
+    "pt-BR": "O Doddy procura um contato pelo nome, ou de quem é o próximo aniversário, quando você pede, e lê os aniversários das pessoas que você escolhe para ser lembrado. Em uma conversa por voz, os nomes que ele encontra e o dia e o mês do aniversário vão para a ElevenLabs, que executa a voz do Doddy; números, endereços de e-mail e anos de nascimento ficam neste iPhone. Desative em Ajustes, Conexões."
+  },
+  "NSFaceIDUsageDescription": {
+    "en": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched.",
+    "pt-BR": "O Doddy usa o Face ID para abrir o app ou uma nota privada quando você ativa o bloqueio. O iOS verifica seu rosto; o Doddy só fica sabendo se correspondeu."
+  },
+  "NSLocationWhenInUseUsageDescription": {
+    "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go.",
+    "pt-BR": "O Doddy usa sua localização só quando você pede: para lembretes que você define em um lugar (para descobrir onde você está quando toca em Usar onde estou agora, e para o iOS poder lembrar você ao chegar ou sair), para salvar onde você estacionou, e para calcular com o Mapas da Apple quando sair para algum lugar. O Doddy não a guarda nem rastreia aonde você vai."
+  },
+  "NSMicrophoneUsageDescription": {
+    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone.",
+    "pt-BR": "O Doddy escuta enquanto você fala com ele: depois que você toca em Falar com o Doddy, ou assim que você abre o Doddy, se ativou isso nos Ajustes. Se você ativar o Hey Doddy, o microfone também escuta neste iPhone a palavra de ativação; esse som não é guardado nem enviado. Sua voz em uma conversa é enviada à OpenAI para executá-la, ou à ElevenLabs se você trocar a voz do Início para a ElevenLabs. Uma gravação de voz que você faz em uma nota fica neste iPhone."
+  },
+  "NSRemindersFullAccessUsageDescription": {
+    "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
+    "pt-BR": "O Doddy só adiciona, altera, conclui ou apaga um lembrete depois que você toca em Adicionar, Alterar, Marcar como concluído ou Apagar. Desative em Ajustes, Conexões."
+  },
+  "NSSpeechRecognitionUsageDescription": {
+    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
+    "pt-BR": "O Doddy transcreve uma gravação de voz neste iPhone quando você grava uma, para você conferir as palavras antes de salvar. A gravação e as palavras dela não são enviadas a lugar nenhum."
+  }
+}

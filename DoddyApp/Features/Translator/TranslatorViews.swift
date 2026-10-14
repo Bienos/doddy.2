@@ -398,7 +398,7 @@ struct TranslatorStartView: View {
                     } else {
                         Text("For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.")
                     }
-                    Text("Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call 112.")
+                    Text("Both voices go to OpenAI, or ElevenLabs if you switch Home's voice to it to be translated. Your notes, conversations and profile aren't sent. Nothing is kept on this iPhone unless you tap Copy or Save at the end. Not for emergencies: call your local emergency number.")
                         .foregroundStyle(Theme.secondaryText)
                 }
                 .font(.footnote)

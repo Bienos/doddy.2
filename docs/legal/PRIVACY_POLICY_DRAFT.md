@@ -223,7 +223,7 @@ Common points:
 | Item | Detail |
 |---|---|
 | Hosting | Vercel (project `doddy`). Vercel keeps its own server logs. **[CONFIRM: Vercel terms, log retention, transfers]** |
-| Waitlist form | You enter your email. We store the email, the page, a consent wording version (`waitlist-note-v1`), the time, and a hash of a one-time key that lets your browser add answers. No IP address or user agent is stored by our code. Emails are not written to logs. After sign-up you may answer three optional questions: iPhone, Android or other; where you heard about Doddy; what you want Doddy to do (300 characters). (`site/api/waitlist.js`, `waitlist-answers.js`, `site/README.md`.) |
+| Waitlist form | You enter your email. We store the email, the page, a consent wording version (`waitlist-note-v1` on the English page; on the other language pages a version for that language, for example `waitlist-note-v1-de` for German; see `site/README.md`), the time, and a hash of a one-time key that lets your browser add answers. No IP address or user agent is stored by our code. Emails are not written to logs. After sign-up you may answer three optional questions: iPhone, Android or other; where you heard about Doddy; what you want Doddy to do (300 characters). (`site/api/waitlist.js`, `waitlist-answers.js`, `site/README.md`.) |
 | Where stored | A private Vercel Blob store `doddy-waitlist`, region fra1 (Frankfurt), one file per email named by a hash. |
 | Who can read it | The owner, through a password-protected admin page and a CSV download. Both use one shared password and have no lockout (`site/README.md`). |
 | Purpose | To tell you when early access opens. The form says: "We'll only use your email to tell you when early access opens, and we'll delete it whenever you ask." |

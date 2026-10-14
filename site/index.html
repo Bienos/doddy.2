@@ -14,6 +14,29 @@
   <meta property="og:url" content="https://www.doddy.lol/">
   <link rel="canonical" href="https://www.doddy.lol/">
   <meta name="twitter:card" content="summary_large_image">
+  <!-- i18n:alternates -->
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/">
+  <link rel="alternate" hreflang="es" href="https://www.doddy.lol/es/">
+  <link rel="alternate" hreflang="de" href="https://www.doddy.lol/de/">
+  <link rel="alternate" hreflang="fr" href="https://www.doddy.lol/fr/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://www.doddy.lol/zh-hans/">
+  <link rel="alternate" hreflang="ja" href="https://www.doddy.lol/ja/">
+  <link rel="alternate" hreflang="pt-BR" href="https://www.doddy.lol/pt-br/">
+  <link rel="alternate" hreflang="it" href="https://www.doddy.lol/it/">
+  <link rel="alternate" hreflang="hr" href="https://www.doddy.lol/hr/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="es_ES">
+  <meta property="og:locale:alternate" content="de_DE">
+  <meta property="og:locale:alternate" content="fr_FR">
+  <meta property="og:locale:alternate" content="zh_CN">
+  <meta property="og:locale:alternate" content="ja_JP">
+  <meta property="og:locale:alternate" content="pt_BR">
+  <meta property="og:locale:alternate" content="it_IT">
+  <meta property="og:locale:alternate" content="hr_HR">
+  <meta property="og:locale:alternate" content="pl_PL">
+  <!-- /i18n:alternates -->
   <!-- Smart App Banner: enable once Doddy has an App Store ID.
   <meta name="apple-itunes-app" content="app-id=APP_STORE_ID, app-argument=doddy://home">
   -->
@@ -26,6 +49,8 @@
   <link rel="stylesheet" href="styles.css">
   <script>document.documentElement.classList.add('js')</script>
   <script src="nav.js" defer></script>
+  <script src="i18n.js" defer></script>
+  <!-- i18n:dictionary --><!-- /i18n:dictionary -->
   <script src="main.js" defer></script>
   <script src="court.js" defer></script>
   <script src="memory.js" defer></script>
@@ -78,6 +103,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
       </button>
       <a class="button small" href="#join">Join early access</a>
+      <!-- i18n:switcher-header --><details class="lang-menu" translate="no"><summary>Language</summary><ul class="lang-list"><li><a href="/" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></details><!-- /i18n:switcher-header -->
       <div class="menu-sheet" id="menu-sheet" aria-label="Menu">
         <ul>
           <li><a href="#how">How it works</a></li>
@@ -132,20 +158,20 @@
       <div class="wrap">
         <div class="section-head">
           <h2 id="film-title" class="display-m">One morning in Warsaw.</h2>
-          <p>A short film about Doddy, a ball he never quite puts down, and one very determined pigeon. 1 minute 15, best with sound.</p>
+          <p>A short video about Doddy, a ball he never quite puts down, and one very determined pigeon. 1 minute 15, best with sound.</p>
         </div>
         <div class="film-stage">
           <div class="film-card">
             <span class="tape t1" aria-hidden="true"></span>
             <span class="tape t2" aria-hidden="true"></span>
             <div class="player">
-              <video controls playsinline preload="metadata" poster="assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddy brand film, 1 minute 15 seconds">
+              <video controls playsinline preload="metadata" poster="assets/film/poster-v2.jpg" width="854" height="480" aria-label="Doddy brand video, 1 minute 15 seconds">
                 <source src="assets/film/doddy-film-v2.mp4" type="video/mp4">
               </video>
               <span class="preview-tag" aria-hidden="true"><span class="dot"></span>Preview, muted</span>
-              <button class="cover" type="button" aria-label="Play the film with sound">
+              <button class="cover" type="button" aria-label="Play the video with sound">
                 <span class="play-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5v17l15-8.5z"/></svg></span>
-                <span class="cover-label" aria-hidden="true"><span class="cover-title">Watch the film</span>1:15 · sound on</span>
+                <span class="cover-label" aria-hidden="true"><span class="cover-title">Watch the video</span>1:15 · sound on</span>
               </button>
             </div>
           </div>
@@ -154,7 +180,7 @@
             <img src="assets/day/poses/basketball_dribble-320.webp" srcset="assets/day/poses/basketball_dribble-320.webp 320w, assets/day/poses/basketball_dribble.webp 640w" sizes="(min-width: 960px) 190px, 160px" width="640" height="960" alt="">
           </div>
         </div>
-        <ol class="chapters" aria-label="Jump to a moment in the film">
+        <ol class="chapters" aria-label="Jump to a moment in the video">
           <li><button type="button" data-seek="0"><span class="t">0:00</span>Castle Square</button></li>
           <li><button type="button" data-seek="9.3"><span class="t">0:09</span>A big question</button></li>
           <li><button type="button" data-seek="19.1"><span class="t">0:19</span>Every language at once</button></li>
@@ -164,7 +190,7 @@
           <li><button type="button" data-seek="52.6"><span class="t">0:52</span>Closed</button></li>
           <li><button type="button" data-seek="65.3"><span class="t">1:05</span>A mate in your pocket</button></li>
         </ol>
-        <p class="caption film-caption">Brand film. A story about Doddy, not a demo of the app.</p>
+        <p class="caption film-caption">Brand video. A story about Doddy, not a demo of the app.</p>
       </div>
     </section>
 
@@ -413,7 +439,7 @@
           <div class="join-copy">
             <h2 id="join-title" class="display-m">Come say hey.</h2>
             <p>Doddy is in early testing. Leave your email to hear when early access opens.</p>
-            <form class="waitlist" novalidate>
+            <form class="waitlist" novalidate data-consent="waitlist-note-v1">
               <label for="email">Email</label>
               <div class="field-row">
                 <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" placeholder="name@example.com" aria-describedby="waitlist-note waitlist-status">
@@ -489,6 +515,7 @@
           <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
           <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
         </ul>
+        <!-- i18n:switcher-footer --><nav class="foot-lang" aria-label="Language" translate="no"><ul class="lang-list"><li><a href="/" hreflang="en" lang="en" aria-current="page">English</a></li><li><a href="/es/" hreflang="es" lang="es">Español</a></li><li><a href="/de/" hreflang="de" lang="de">Deutsch</a></li><li><a href="/fr/" hreflang="fr" lang="fr">Français</a></li><li><a href="/zh-hans/" hreflang="zh-Hans" lang="zh-Hans">简体中文</a></li><li><a href="/ja/" hreflang="ja" lang="ja">日本語</a></li><li><a href="/pt-br/" hreflang="pt-BR" lang="pt-BR">Português (Brasil)</a></li><li><a href="/it/" hreflang="it" lang="it">Italiano</a></li><li><a href="/hr/" hreflang="hr" lang="hr">Hrvatski</a></li><li><a href="/pl/" hreflang="pl" lang="pl">Polski</a></li></ul></nav><!-- /i18n:switcher-footer -->
       </div>
       <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
       <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>

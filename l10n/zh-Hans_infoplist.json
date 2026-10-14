@@ -1,0 +1,34 @@
+{
+  "NSAlarmKitUsageDescription": {
+    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
+    "zh-Hans": "只有在你提出请求并轻点“设置闹钟”时，Doddy 才会设置闹钟。它的闹钟在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭。"
+  },
+  "NSCalendarsFullAccessUsageDescription": {
+    "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
+    "zh-Hans": "Doddy 会读取你询问的那些日子的日程，并且只有在你轻点“添加”、“更改”或“删除”后才会添加、更改或删除日程。可在设置的“连接”中关闭。"
+  },
+  "NSContactsUsageDescription": {
+    "en": "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections.",
+    "zh-Hans": "在你提出请求时，Doddy 会按姓名查找联系人，或查找谁的生日快到了，并读取你选择要提醒生日的人的生日。在语音对话中，找到的姓名及其生日的日和月会发送给运行 Doddy 语音的 ElevenLabs；电话号码、电子邮件地址和出生年份只保留在这台 iPhone 上。可在设置的“连接”中关闭。"
+  },
+  "NSFaceIDUsageDescription": {
+    "en": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched.",
+    "zh-Hans": "开启锁定后，Doddy 会使用面容 ID 来打开应用或私密笔记。由 iOS 检查你的面容；Doddy 只会得知是否匹配。"
+  },
+  "NSLocationWhenInUseUsageDescription": {
+    "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go.",
+    "zh-Hans": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，以及通过 Apple 地图计算何时该出发去某个地方。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
+  },
+  "NSMicrophoneUsageDescription": {
+    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone.",
+    "zh-Hans": "Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。如果你开启了 Hey Doddy，麦克风还会在这台 iPhone 上聆听唤醒词；这些声音不会保留或发送。你在对话中的语音会发送给 OpenAI 来运行对话，如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。"
+  },
+  "NSRemindersFullAccessUsageDescription": {
+    "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
+    "zh-Hans": "只有在你轻点“添加”、“更改”、“标记为完成”或“删除”后，Doddy 才会添加、更改、完成或删除提醒。可在设置的“连接”中关闭。"
+  },
+  "NSSpeechRecognitionUsageDescription": {
+    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
+    "zh-Hans": "当你录制语音备忘录时，Doddy 会在这台 iPhone 上将其转写成文字，以便你在保存前检查内容。录音及其文字不会发送到任何地方。"
+  }
+}

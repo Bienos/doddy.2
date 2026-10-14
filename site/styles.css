@@ -646,6 +646,53 @@ h3 {
 .button.quiet:hover { box-shadow: inset 0 0 0 1.5px var(--reading-ink); }
 .foot-choice { padding: 0; border: 0; background: none; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
 
+/* Languages (ADR-460). Language menu in the header, a plain list in the footer. */
+.lang-menu { position: relative; font-size: 0.875rem; }
+.lang-menu > summary {
+  list-style: none; cursor: pointer; display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px;
+  color: var(--secondary-text); font-weight: 550; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap;
+}
+.lang-menu > summary::-webkit-details-marker { display: none; }
+.lang-menu .lang-list {
+  position: absolute; right: 0; top: 100%; z-index: 20; margin: 6px 0 0; padding: 8px; list-style: none;
+  min-width: 14rem; background: var(--paper); border: 1px solid var(--separator); border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(23, 23, 21, 0.12);
+}
+.lang-list a {
+  display: flex; align-items: center; min-height: 44px; padding: 0 10px; border-radius: 8px;
+  color: var(--reading-ink); text-decoration: none; white-space: nowrap;
+}
+.lang-list a:hover { background: rgba(23, 23, 21, 0.06); }
+.lang-list a[aria-current="page"] { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.lang-menu > summary:focus-visible, .lang-list a:focus-visible, .foot-lang a:focus-visible {
+  outline: 2px solid var(--accent-text); outline-offset: 2px;
+}
+.foot-lang { flex-basis: 100%; }
+.foot-lang .lang-list { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 0; padding: 0; list-style: none; }
+.foot-lang a {
+  display: inline-flex; min-height: 44px; align-items: center; color: var(--secondary-text); text-decoration: none; font-weight: 550;
+}
+.foot-lang a:hover { color: var(--reading-ink); }
+.note { font-size: 0.85em; color: var(--secondary-text); margin-left: 0.3em; }
+
+/* Fonts for the scripts the Latin faces don't cover. Latin letters keep the brand faces (Bricolage
+   Grotesque, Caveat); the CJK faces take over the characters they lack. */
+:lang(zh-Hans) {
+  --display: "Bricolage Grotesque", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  --hand: "Caveat", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", cursive;
+  --text: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", system-ui, sans-serif;
+  line-height: 1.7;
+}
+:lang(ja) {
+  --display: "Bricolage Grotesque", "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", system-ui, sans-serif;
+  --hand: "Caveat", "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", cursive;
+  --text: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Noto Sans CJK JP", system-ui, sans-serif;
+  line-height: 1.8;
+}
+/* The name and the header button stay on one line in every language; the header gap tightens on phones. */
+.wordmark { white-space: nowrap; }
+.nav-inner .button.small { white-space: nowrap; }
+@media (max-width: 480px) { .nav-inner { flex-wrap: wrap; gap: 8px 12px; } }
 /* ---------- Shared with "What can Doddy do?" (ADR-468 to 470) ---------- */
 
 /* Nav: the current page, and a phone menu (the links are hidden below 820px). */
@@ -731,3 +778,14 @@ h3 {
 .teaser .t-forget .doddy { left: 10%; height: 60%; }
 .teaser .t-forget .prop { left: 30%; bottom: 8%; width: 10%; }
 .sprite { position: absolute; }
+
+/* Tablets (820 to 1099 px): the inline links, the language menu and the Join button do not fit on one line in
+   every language, so the phone menu is used until 1100 px. Wider screens keep the inline links. */
+@media (min-width: 820px) and (max-width: 1099px) {
+  .nav-links { display: none; }
+  .menu-button { display: inline-grid !important; }
+}
+@media (min-width: 1100px) {
+  .nav-links { display: flex; }
+  .menu-button, .menu-sheet { display: none !important; }
+}
