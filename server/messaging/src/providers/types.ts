@@ -18,6 +18,21 @@ export interface PushSender {
   send(target: PushTarget, alert: { title: string; body: string }, messageId: string): Promise<SendOutcome>;
 }
 
+/** A Live Activity's push token. Environment matches the app's build (sandbox or production). */
+export interface LiveActivityTarget { activityToken: string; environment: "sandbox" | "production" }
+
+/** One update to a Live Activity. `contentState` is the widget's ContentState as JSON. */
+export interface LiveActivityPush {
+  event: "update" | "end";
+  contentState: Record<string, unknown>;
+  /** Present to show the expanded island with an alert and sound (time-sensitive). */
+  alert?: { title: string; body: string };
+}
+
+export interface LiveActivitySender {
+  sendLiveActivity(target: LiveActivityTarget, push: LiveActivityPush, messageId: string): Promise<SendOutcome>;
+}
+
 export interface SmsSender {
   send(toE164: string, body: string): Promise<SendOutcome>;
 }

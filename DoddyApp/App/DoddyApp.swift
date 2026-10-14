@@ -51,7 +51,7 @@ struct DoddyApp: App {
         // A focus timer does survive one (it is saved); this also lets its island's buttons work
         // when iOS starts the app just to run them (ADR-241). Breathing and read-aloud don't.
         FocusController.shared.refresh()
-        ToolLiveActivity.endLeftovers(keeping: [.focus])
+        ToolLiveActivity.endLeftovers(keeping: [.focus, .timer])
         // "Hey Doddy" (ADR-254) starts conversations with the same notes and profile.
         WakeWordListener.shared.store = store
         WakeWordListener.shared.profiles = profiles

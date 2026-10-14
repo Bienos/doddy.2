@@ -9,6 +9,8 @@ import Foundation
 struct DoddyToolAttributes: ActivityAttributes {
     enum Kind: String, Codable, Hashable {
         case focus, breathing, readAloud
+        /// A voice timer (ADR-483): drawn like focus, and the server updates it when it ends.
+        case timer
     }
 
     struct ContentState: Codable, Hashable {

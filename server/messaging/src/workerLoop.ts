@@ -4,7 +4,8 @@ import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue } from "./outbox.js";
-import type { PushSender, SmsSender } from "./providers/types.js";
+import { dispatchDueTimers } from "./liveActivity.js";
+import type { LiveActivitySender, PushSender, SmsSender } from "./providers/types.js";
 
 import { log } from "./log.js";
 
@@ -25,16 +26,21 @@ async function pause(ms: number, shouldStop: () => boolean) {
  * FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps }, shouldStop: () => boolean,
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; liveActivity?: LiveActivitySender },
+  shouldStop: () => boolean,
 ): Promise<void> {
   await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)]);
 }
 
-async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {
+async function dispatchLoop(
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; liveActivity?: LiveActivitySender },
+  shouldStop: () => boolean,
+) {
   let lastTidy = 0;
   while (!shouldStop()) {
     try {
       const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher });
+      const timers = await dispatchDueTimers(db, deps.liveActivity);
       if (Date.now() - lastTidy > 3_600_000) {
         lastTidy = Date.now();
         // Expired sessions are already refused by findSession; this only reclaims space.
@@ -43,7 +49,7 @@ async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; 
         if (sessions || pruned) log("tidied", { sessions, newsCacheRows: pruned });
       }
       if (r.processed || r.reaped) log("dispatch pass", r);
-      if (r.processed) continue; // more may be due
+      if (r.processed || timers.processed) continue; // more may be due
     } catch (err) {
       log("dispatch pass failed", { error: (err as Error).message });
     }

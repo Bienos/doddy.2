@@ -323,7 +323,7 @@ extension DoddyToolAttributes {
         if state.isFinished || isStale { return .fistpump }
         if state.isPaused { return .crosslegged }
         switch kind {
-        case .focus: return .basketballDribble
+        case .focus, .timer: return .basketballDribble
         case .breathing: return .onelegBalance
         case .readAloud: return .bellyReading
         }
@@ -342,7 +342,7 @@ extension DoddyToolAttributes {
                         expandedSign: .none, compactSign: compact, minimalSign: minimal, minimalSignCentred: centred)
         }
         switch kind {
-        case .focus:
+        case .focus, .timer:
             let minutes = "\(Int((duration / 60).rounded())) min"
             if over {
                 return scene(.tinyPromise, 0, label: "FOCUS", time: .text("Done"), title: "Time's up",

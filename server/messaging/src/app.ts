@@ -5,12 +5,13 @@ import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
-import type { OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
+import type { LiveActivitySender, OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
 import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
 import type { NewsDeps } from "./news/digest.js";
 import { accountRoutes } from "./routes/account.js";
+import { timerRoutes } from "./routes/timers.js";
 import { phoneRoutes } from "./routes/phone.js";
 import { updateRoutes } from "./routes/updates.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
@@ -18,6 +19,8 @@ import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
 export interface Deps {
   db: Db;
   push?: PushSender;
+  /** Live Activity updates for timers that end (ADR-483). */
+  liveActivity?: LiveActivitySender;
   sms?: SmsSender;
   verifier?: PhoneVerifier;
   /** Needed (with publicBaseUrl) to verify Twilio webhook signatures. */
@@ -81,6 +84,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   });
 
   await app.register(accountRoutes(deps));
+  await app.register(timerRoutes(deps));
   await app.register(phoneRoutes(deps));
   await app.register(updateRoutes(deps));
   await app.register(twilioWebhookRoutes(deps));

@@ -8,14 +8,14 @@ import { log, runWorkerLoop } from "./workerLoop.js";
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrateOrExit(db, log);
-const { push, sms, cipher, news } = providersFrom(config);
+const { push, sms, cipher, news, liveActivity } = providersFrom(config);
 log("worker started", { push: !!push, sms: !!sms });
 
 let stopping = false;
 process.on("SIGTERM", () => { stopping = true; });
 process.on("SIGINT", () => { stopping = true; });
 
-await runWorkerLoop(db, { push, sms, cipher, news }, () => stopping);
+await runWorkerLoop(db, { push, sms, cipher, news, liveActivity }, () => stopping);
 push?.close();
 await db.end();
 log("worker stopped");

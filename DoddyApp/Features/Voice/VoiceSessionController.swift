@@ -3290,6 +3290,7 @@ final class VoiceSessionController {
         switch outcome {
         case .started(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            TimerLivePush.start(seconds: TimeInterval(draft.seconds), label: draft.label)
             if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
         case .alreadyRunning(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())

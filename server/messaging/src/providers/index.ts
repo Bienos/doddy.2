@@ -11,9 +11,12 @@ export function providersFrom(config: Config) {
   const twilio = config.twilio
     ? new TwilioClient(config.twilio, config.publicBaseUrl && `${config.publicBaseUrl}/webhooks/twilio/status`)
     : undefined;
+  const push = config.apns ? new ApnsPushSender(config.apns) : undefined;
   const cipher = config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined;
   return {
-    push: config.apns ? new ApnsPushSender(config.apns) : undefined,
+    push,
+    // The same APNs connection sends alert pushes and Live Activity updates (ADR-483).
+    liveActivity: push,
     sms: twilio,
     verifier: twilio,
     outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
